@@ -13,7 +13,7 @@ contract ERC20Deposit is Initializable, OwnableUpgradeable {
 
     function initialize(
     ) public initializer {
-        // "constructor" code...
+        Ownable.initialize(msg.sender);
     }
     
     event TokenDeposit(address from, address to, IERC20 token, uint256 amount);
