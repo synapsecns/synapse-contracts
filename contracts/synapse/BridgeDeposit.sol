@@ -8,7 +8,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-
+// ignore
 contract BridgeDeposit is Initializable, OwnableUpgradeable {
     using SafeERC20 for IERC20;
 
