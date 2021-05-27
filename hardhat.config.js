@@ -6,6 +6,7 @@ require('hardhat-gas-reporter')
 require('solidity-coverage')
 require('hardhat-deploy')
 require('hardhat-spdx-license-identifier')
+require('@openzeppelin/hardhat-upgrades')
 
 const dotenv = require('dotenv')
 

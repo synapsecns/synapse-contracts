@@ -19,15 +19,16 @@
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@openzeppelin/hardhat-upgrades": "^1.8.2",
     "chai": "^4.3.4",
     "ethereum-waffle": "^3.3.0",
-    "ethers": "^5.1.4",
+    "ethers": "^5.2.0",
     "hardhat": "^2.3.0"
   },
   "dependencies": {
     "@nomiclabs/hardhat-etherscan": "^2.1.2",
     "@nomiclabs/hardhat-web3": "^2.0.0",
-    "@openzeppelin/contracts": "^4.0",
+    "@openzeppelin/contracts": "^3.4.1",
     "@openzeppelin/contracts-upgradeable": "^3.4.1",
     "dotenv": "^9.0.2",
     "hardhat-deploy": "^0.7.6",
