@@ -1,6 +1,3 @@
-// SPDX-License-Identifier: ISC
-
-// contracts/ERC20Deposit.sol
 // SPDX-License-Identifier: MIT
 
 pragma solidity >=0.6.0 <0.8.0;
@@ -187,7 +184,7 @@ contract ECDSANodeManagement {
         address _owner,
         address[] memory _members,
         uint256 _honestThreshold
-    ) internal {
+    ) public {
         require(!isInitialized, "Contract already initialized");
 
         owner = _owner;
