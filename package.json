@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-go": "sol-merger \"./contracts/synapse/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin",
+    "post-install": "build-go"
   },
   "repository": {
     "type": "git",
@@ -36,6 +38,7 @@
     "hardhat-spdx-license-identifier": "^2.0.3",
     "openzeppelin-contracts-3.4": "npm:@openzeppelin/contracts@3.4.1",
     "openzeppelin-contracts-sol-0.5": "npm:@openzeppelin/contracts@3.4.1",
+    "sol-merger": "^3.1.0",
     "solidity-coverage": "^0.7.16"
   }
 }
