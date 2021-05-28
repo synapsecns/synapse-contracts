@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: ISC
+
 // contracts/ERC20Deposit.sol
 // SPDX-License-Identifier: MIT
 
