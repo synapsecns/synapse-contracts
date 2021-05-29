@@ -25,6 +25,12 @@ contract ECDSAFactory is Ownable {
 
     constructor() public Ownable() {}
 
+    /// @notice Returns members of the keep.
+    /// @return List of the keep members' addresses.
+    function getMembers() public view returns (address[] memory) {
+        return latestNodeGroup.members;
+    }
+
     function deploy(
         address nodeMgmtAddress,
         address owner,
