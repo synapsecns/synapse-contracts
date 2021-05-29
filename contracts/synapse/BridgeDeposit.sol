@@ -18,12 +18,12 @@ contract BridgeDeposit is Initializable, OwnableUpgradeable {
         __Ownable_init_unchained();
     }
     
-    event TokenDeposit(address from, address to, IERC20 token, uint256 amount);
+    event TokenDeposit(address from, address to, uint256 chainId, IERC20 token, uint256 amount);
     event TokenWithdraw(address to, IERC20 token, uint256 amount);
 
-    function deposit(address to, IERC20 token, uint256 amount) public {
+    function deposit(address to, uint256 chainId, IERC20 token, uint256 amount) public {
        token.safeTransferFrom(msg.sender, address(this), amount);
-       emit TokenDeposit(msg.sender, to, token, amount);
+       emit TokenDeposit(msg.sender, to, chainId, token, amount);
     }
 
     function withdraw(address to, IERC20 token, uint256 amount) onlyOwner() public {
