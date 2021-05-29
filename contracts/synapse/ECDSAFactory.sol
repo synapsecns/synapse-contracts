@@ -14,6 +14,15 @@ contract ECDSAFactory is Ownable {
         uint256 honestThreshold
     );
 
+    struct LatestNodeGroup {
+        address keepAddress;
+        address[] members;
+        address owner;
+        uint256 honestThreshold;
+    }
+
+    LatestNodeGroup public latestNodeGroup;
+
     constructor() public Ownable() {}
 
     function deploy(
@@ -28,6 +37,12 @@ contract ECDSAFactory is Ownable {
             members,
             honestThreshold
         );
+        
+        latestNodeGroup.keepAddress = nodeClone;
+        latestNodeGroup.members = members;
+        latestNodeGroup.owner = owner;
+        latestNodeGroup.honestThreshold = honestThreshold;
+
         emit ECDSANodeGroupCreated(nodeClone, members, owner, honestThreshold);
         return nodeClone;
     }
