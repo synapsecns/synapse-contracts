@@ -21,6 +21,10 @@ let config = {
     testnet: {
       url: 'https://eth-ropsten.alchemyapi.io/v2/tmEmzPXw-YAGzFPxNjcYACSGIY8stGs0',
       gasPrice: 1 * 1000000000,
+      account: {
+        mnemonic:
+          'more foil hint dinosaur letter mesh ritual public hover decrease simple drum',
+      },
     },
     mainnet: {
       url: process.env.ALCHEMY_API,
