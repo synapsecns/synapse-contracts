@@ -12,21 +12,25 @@ contract SynapseERC20Factory  {
     /**
     * @notice Deploys a new node 
     * @param synapseERC20Address address of the synapseERC20Address contract to initialize with
-    * @param _name Token name
-    * @param _symbol Token symbol
-    * @param _decimals Token name
-    * @param _owner admin address to be initialized with
+    * @param name Token name
+    * @param symbol Token symbol
+    * @param decimals Token name
+    * @param underlyingChainId Base asset chain ID which SynapseERC20 represents 
+    * @param underlyingTokenAddress Base asset address which SynapseERC20 represents 
+    * @param owner admin address to be initialized with
     * @return Address of the newest node management contract created
     **/
     function deploy(
-    address synapseERC20Address, string memory _name, string memory _symbol, uint8 _decimals, address _owner
+    address synapseERC20Address, string memory name, string memory symbol, uint256 underlyingChainId, address underlyingTokenAddress, uint8 decimals, address owner
     ) external returns (address) {
         address synERC20Clone = Clones.clone(synapseERC20Address);
         ISynapseERC20(synERC20Clone).initialize(
-            _name,
-            _symbol,
-            _decimals,
-            _owner
+            name,
+            symbol,
+            decimals,
+            underlyingChainId,
+            underlyingTokenAddress,
+            owner
         );
 
         return synERC20Clone;
