@@ -4,44 +4,31 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "openzeppelin-contracts-3.4/proxy/Clones.sol";
-import "./interfaces/IECDSANodeManagement.sol";
+import "./interfaces/ISynapseERC20.sol";
 
 contract SynapseERC20Factory  {
-    constructor() public Ownable() {}
-
-    /// @notice Returns members of the keep.
-    /// @return List of the keep members' addresses.
-    function getMembers() public view returns (address[] memory) {
-        return latestNodeGroup.members;
-    }
+    constructor() public {}
 
     /**
-    @notice Deploys a new node 
-    @param nodeMgmtAddress address of the ECDSANodeManagement contract to initialize with
-    @param owner Owner of the  ECDSANodeManagement contract who can determine if the node group is closed or active
-    @param members Array of node group members addresses
-    @param honestThreshold Number of signers to process a transaction 
-    @return Address of the newest node management contract created
+    * @notice Deploys a new node 
+    * @param synapseERC20Address address of the synapseERC20Address contract to initialize with
+    * @param _name Token name
+    * @param _symbol Token symbol
+    * @param _decimals Token name
+    * @param _owner admin address to be initialized with
+    * @return Address of the newest node management contract created
     **/
     function deploy(
-        address nodeMgmtAddress,
-        address owner,
-        address[] memory members,
-        uint256 honestThreshold
+    address synapseERC20Address, string memory _name, string memory _symbol, uint8 _decimals, address _owner
     ) external returns (address) {
-        address nodeClone = Clones.clone(nodeMgmtAddress);
-        IECDSANodeManagement(nodeClone).initialize(
-            owner,
-            members,
-            honestThreshold
+        address synERC20Clone = Clones.clone(synapseERC20Address);
+        ISynapseERC20(synERC20Clone).initialize(
+            _name,
+            _symbol,
+            _decimals,
+            _owner
         );
-        
-        latestNodeGroup.keepAddress = nodeClone;
-        latestNodeGroup.members = members;
-        latestNodeGroup.owner = owner;
-        latestNodeGroup.honestThreshold = honestThreshold;
 
-        emit ECDSANodeGroupCreated(nodeClone, members, owner, honestThreshold);
-        return nodeClone;
+        return synERC20Clone;
     }
 }
