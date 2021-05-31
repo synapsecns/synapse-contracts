@@ -15,7 +15,8 @@ interface IERC20Mintable {
 contract BridgeDeposit is Initializable, AccessControlUpgradeable {
     using SafeERC20 for IERC20;
     bytes32 public constant NODEGROUP_ROLE = keccak256("NODEGROUP_ROLE");
-    
+    uint256[] fees;
+
     function initialize() public initializer {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         __AccessControl_init();
@@ -56,7 +57,7 @@ contract BridgeDeposit is Initializable, AccessControlUpgradeable {
     @param token ERC20 compatible token to deposit into the bridge
     @param amount Amount in native token decimals to transfer cross-chain pre-fees
     **/
-    function redeem(address to, uint256 chainId, ERC20Burnable token, uint256 amount, uint256 fee) public {
+    function redeem(address to, uint256 chainId, ERC20Burnable token, uint256 amount) public {
         token.burnFrom(msg.sender, amount);
         emit TokenRedeem(to, chainId, token, amount);
     }
@@ -67,7 +68,7 @@ contract BridgeDeposit is Initializable, AccessControlUpgradeable {
     @param token ERC20 compatible token to withdraw from the bridge
     @param amount Amount in native token decimals to withdraw
     **/
-    function withdraw(address to, IERC20 token, uint256 amount) public {
+    function withdraw(address to, IERC20 token, uint256 amount, uint256 fee) public {
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         token.safeTransferFrom(address(this), to, amount);
         emit TokenWithdraw(to, token, amount);
