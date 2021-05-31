@@ -23,6 +23,17 @@ contract BridgeDeposit is Initializable, AccessControlUpgradeable {
     event TokenWithdraw(address to, IERC20 token, uint256 amount);
 
     /**
+    @notice Relays to nodes to transfers the underlying chain gas token cross-chain
+    @param to address on other chain to bridge assets to
+    @param chainId which chain to bridge assets onto
+    @param amount Amount in native token decimals to transfer cross-chain pre-fees
+    **/
+    function depositETH(address to, uint256 chainId, uint256 amount) public payable {
+        require(msg.value == amount);
+        emit TokenDeposit(msg.sender, to, chainId, IERC20(address(0)), amount);
+    }
+
+    /**
     @notice Relays to nodes to transfers an ERC20 token cross-chain
     @param to address on other chain to bridge assets to
     @param chainId which chain to bridge assets onto
@@ -30,8 +41,8 @@ contract BridgeDeposit is Initializable, AccessControlUpgradeable {
     @param amount Amount in native token decimals to transfer cross-chain pre-fees
     **/
     function deposit(address to, uint256 chainId, IERC20 token, uint256 amount) public {
-       token.safeTransferFrom(msg.sender, address(this), amount);
-       emit TokenDeposit(msg.sender, to, chainId, token, amount);
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        emit TokenDeposit(msg.sender, to, chainId, token, amount);
     }
     
     /**
@@ -48,7 +59,7 @@ contract BridgeDeposit is Initializable, AccessControlUpgradeable {
     
     /**
     @notice Function to be called by the node group to withdraw the underlying assets from the contract
-    @param to address on other chain to redeem underlying assets to
+    @param to address on chain to send underlying assets to
     @param token ERC20 compatible token to withdraw from the bridge
     @param amount Amount in native token decimals to withdraw
     **/
@@ -56,5 +67,16 @@ contract BridgeDeposit is Initializable, AccessControlUpgradeable {
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         token.safeTransferFrom(address(this), to, amount);
         emit TokenWithdraw(to, token, amount);
+    }
+
+    /**
+    @notice Function to be called by the node group to withdraw the underlying gas asset from the contract
+    @param to address on chain to send gas asset to
+    @param amount Amount in gas token decimals to withdraw
+    **/
+    function withdrawETH(address payable to, uint256 amount) public {
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
+        to.transfer(amount);
+        emit TokenWithdraw(to, IERC20(address(0)), amount);
     }
 }
