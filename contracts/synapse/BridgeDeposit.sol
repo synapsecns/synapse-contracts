@@ -8,6 +8,9 @@ import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol"
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 
+interface IERC20Mintable {
+    function mint(address to, uint256 amount) external;
+}
 
 contract BridgeDeposit is Initializable, AccessControlUpgradeable {
     using SafeERC20 for IERC20;
@@ -21,6 +24,7 @@ contract BridgeDeposit is Initializable, AccessControlUpgradeable {
     event TokenDeposit(address from, address to, uint256 chainId, IERC20 token, uint256 amount);
     event TokenRedeem(address to, uint256 chainId, IERC20 token, uint256 amount);
     event TokenWithdraw(address to, IERC20 token, uint256 amount);
+    event TokenMint(address to, IERC20Mintable token, uint256 amount);
 
     /**
     @notice Relays to nodes to transfers the underlying chain gas token cross-chain
@@ -78,5 +82,18 @@ contract BridgeDeposit is Initializable, AccessControlUpgradeable {
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         to.transfer(amount);
         emit TokenWithdraw(to, IERC20(address(0)), amount);
+    }
+
+    /**
+    @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+    @dev This means the BridgeDeposit.sol contract must have minter access to the token attempting to be minted
+    @param to address on other chain to redeem underlying assets to
+    @param token ERC20 compatible token to deposit into the bridge
+    @param amount Amount in native token decimals to transfer cross-chain pre-fees
+    **/
+    function mint(address to, IERC20Mintable token, uint256 amount) public {
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
+        token.mint(to, amount);
+        emit TokenMint(to, token, amount);
     }
 }
