@@ -56,7 +56,7 @@ contract BridgeDeposit is Initializable, AccessControlUpgradeable {
     @param token ERC20 compatible token to deposit into the bridge
     @param amount Amount in native token decimals to transfer cross-chain pre-fees
     **/
-    function redeem(address to, uint256 chainId, ERC20Burnable token, uint256 amount) public {
+    function redeem(address to, uint256 chainId, ERC20Burnable token, uint256 amount, uint256 fee) public {
         token.burnFrom(msg.sender, amount);
         emit TokenRedeem(to, chainId, token, amount);
     }
@@ -91,7 +91,7 @@ contract BridgeDeposit is Initializable, AccessControlUpgradeable {
     @param token ERC20 compatible token to deposit into the bridge
     @param amount Amount in native token decimals to transfer cross-chain pre-fees
     **/
-    function mint(address to, IERC20Mintable token, uint256 amount) public {
+    function mint(address to, IERC20Mintable token, uint256 amount, uint256 fee) public {
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         token.mint(to, amount);
         emit TokenMint(to, token, amount);
