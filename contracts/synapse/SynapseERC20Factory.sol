@@ -6,23 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "openzeppelin-contracts-3.4/proxy/Clones.sol";
 import "./interfaces/IECDSANodeManagement.sol";
 
-contract ECDSAFactory is Ownable {
-    event ECDSANodeGroupCreated(
-        address indexed keepAddress,
-        address[] members,
-        address indexed owner, 
-        uint256 honestThreshold
-    );
-
-    struct LatestNodeGroup {
-        address keepAddress;
-        address[] members;
-        address owner;
-        uint256 honestThreshold;
-    }
-
-    LatestNodeGroup public latestNodeGroup;
-
+contract SynapseERC20Factory  {
     constructor() public Ownable() {}
 
     /// @notice Returns members of the keep.
