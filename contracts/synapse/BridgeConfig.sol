@@ -4,14 +4,19 @@ pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract BridgeConfig is AccessControl {
     bytes32 public constant BRIDGEMANAGER_ROLE = keccak256("BRIDGEMANAGER_ROLE");
     bytes32[] private _allTokenIDs;
+    using SafeMath for uint256;
     mapping (bytes32 => MultichainToken[]) private _allMultichainTokens; // key is tokenID
     mapping (uint256 => mapping(address => bytes32)) private _tokenIDMap; // key is chainID,tokenAddress
     mapping (bytes32 => mapping(uint256 => TokenConfig)) private _tokenConfig; // key is tokenID,chainID
 
+    // the denominator used to calculate fees. For example, an
+    // LP fee might be something like tradeAmount.mul(fee).div(FEE_DENOMINATOR)
+    uint256 private constant FEE_DENOMINATOR = 10**10;
 
     modifier checkTokenConfig(TokenConfig memory config) {
         require(config.maxSwap > 0, "zero MaximumSwap");
@@ -47,7 +52,7 @@ contract BridgeConfig is AccessControl {
     }
 
 
-    function getTokenID(uint256 chainID, address tokenAddress) external view returns (string memory) {
+    function getTokenID(uint256 chainID, address tokenAddress) public view returns (string memory) {
         return bytes32ToString(_tokenIDMap[chainID][tokenAddress]);
     }
 
@@ -74,7 +79,7 @@ contract BridgeConfig is AccessControl {
         return _isTokenIDExist(stringToBytes32(tokenID));
     }
 
-    function getTokenConfig(string calldata tokenID, uint256 chainID) external view returns (TokenConfig memory) {
+    function getTokenConfig(string memory tokenID, uint256 chainID) public view returns (TokenConfig memory) {
         return _tokenConfig[stringToBytes32(tokenID)][chainID];
     }
 
@@ -120,6 +125,17 @@ contract BridgeConfig is AccessControl {
     constructor() public {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(BRIDGEMANAGER_ROLE, msg.sender);
+    }
+    
+    function calculateSwapFee(uint256 chainId, address tokenAddress, uint256 amount) external view returns(uint256) {
+        string memory tokenId = getTokenID(chainId, tokenAddress);
+        TokenConfig memory config = getTokenConfig(tokenId, chainId);
+        uint256 calculatedSwapFee = amount.mul(config.swapFee).div(FEE_DENOMINATOR);
+        if (calculatedSwapFee > config.minSwapFee) {
+            return calculatedSwapFee;
+        } else {
+            return config.minSwapFee;
+        }
     }
 
     function stringToBytes32(string memory str) internal pure returns (bytes32 result) {
