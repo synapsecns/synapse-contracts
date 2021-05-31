@@ -22,16 +22,36 @@ contract BridgeDeposit is Initializable, AccessControlUpgradeable {
     event TokenRedeem(address to, uint256 chainId, IERC20 token, uint256 amount);
     event TokenWithdraw(address to, IERC20 token, uint256 amount);
 
+    /**
+    @notice Relays to nodes to transfers an ERC20 token cross-chain
+    @param to address on other chain to bridge assets to
+    @param chainId which chain to bridge assets onto
+    @param token ERC20 compatible token to deposit into the bridge
+    @param amount Amount in native token decimals to transfer cross-chain pre-fees
+    **/
     function deposit(address to, uint256 chainId, IERC20 token, uint256 amount) public {
        token.safeTransferFrom(msg.sender, address(this), amount);
        emit TokenDeposit(msg.sender, to, chainId, token, amount);
     }
     
+    /**
+    @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+    @param to address on other chain to redeem underlying assets to
+    @param chainId which underlying chain to bridge assets onto
+    @param token ERC20 compatible token to deposit into the bridge
+    @param amount Amount in native token decimals to transfer cross-chain pre-fees
+    **/
     function redeem(address to, uint256 chainId, ERC20Burnable token, uint256 amount) public {
         token.burnFrom(msg.sender, amount);
         emit TokenRedeem(to, chainId, token, amount);
     }
-
+    
+    /**
+    @notice Function to be called by the node group to withdraw the underlying assets from the contract
+    @param to address on other chain to redeem underlying assets to
+    @param token ERC20 compatible token to withdraw from the bridge
+    @param amount Amount in native token decimals to withdraw
+    **/
     function withdraw(address to, IERC20 token, uint256 amount) public {
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         token.safeTransferFrom(address(this), to, amount);
