@@ -6,6 +6,7 @@ pragma solidity >=0.6.0 <0.8.0;
 import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 
 
 contract BridgeDeposit is Initializable, AccessControlUpgradeable {
@@ -18,11 +19,17 @@ contract BridgeDeposit is Initializable, AccessControlUpgradeable {
     }
     
     event TokenDeposit(address from, address to, uint256 chainId, IERC20 token, uint256 amount);
+    event TokenRedeem(address to, uint256 chainId, IERC20 token, uint256 amount);
     event TokenWithdraw(address to, IERC20 token, uint256 amount);
 
     function deposit(address to, uint256 chainId, IERC20 token, uint256 amount) public {
        token.safeTransferFrom(msg.sender, address(this), amount);
        emit TokenDeposit(msg.sender, to, chainId, token, amount);
+    }
+    
+    function redeem(address to, uint256 chainId, ERC20Burnable token, uint256 amount) public {
+        token.burnFrom(msg.sender, amount);
+        emit TokenRedeem(to, chainId, token, amount);
     }
 
     function withdraw(address to, IERC20 token, uint256 amount) public {
