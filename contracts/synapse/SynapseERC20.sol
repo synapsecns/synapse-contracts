@@ -38,4 +38,10 @@ contract SynapseERC20 is Initializable, ContextUpgradeable, AccessControlUpgrade
         require(hasRole(MINTER_ROLE, msg.sender));
         _mint(to, amount);
     }
+
+    function mintMultiple(address to, uint256 amount, address feeAddress, uint256 feeAmount) public {
+        require(hasRole(MINTER_ROLE, msg.sender));
+        _mint(to, amount);
+        _mint (feeAddress, feeAmount);
+    }
 }
