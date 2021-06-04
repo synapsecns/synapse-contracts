@@ -9,6 +9,10 @@ import "./interfaces/ISynapseERC20.sol";
 contract SynapseERC20Factory  {
     constructor() public {}
 
+    event SynapseERC20Created(
+        address contractAddress
+    );
+
     /**
     * @notice Deploys a new node 
     * @param synapseERC20Address address of the synapseERC20Address contract to initialize with
@@ -32,6 +36,8 @@ contract SynapseERC20Factory  {
             underlyingTokenAddress,
             owner
         );
+
+        emit SynapseERC20Created(synERC20Clone);
 
         return synERC20Clone;
     }
