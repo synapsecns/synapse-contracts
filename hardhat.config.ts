@@ -1,18 +1,19 @@
-require('@nomiclabs/hardhat-ethers')
-require('@nomiclabs/hardhat-waffle')
-require('@nomiclabs/hardhat-web3')
-require('@nomiclabs/hardhat-etherscan')
-require('hardhat-gas-reporter')
-require('solidity-coverage')
-require('hardhat-deploy')
-require('hardhat-spdx-license-identifier')
-require('@openzeppelin/hardhat-upgrades')
+import '@nomiclabs/hardhat-ethers'
+import '@nomiclabs/hardhat-waffle'
+import '@nomiclabs/hardhat-web3'
+import '@nomiclabs/hardhat-etherscan'
+import '@typechain/hardhat'
+import 'hardhat-gas-reporter'
+import 'solidity-coverage'
+import 'hardhat-deploy'
+import 'hardhat-spdx-license-identifier'
 
-const dotenv = require('dotenv')
+import { HardhatUserConfig } from 'hardhat/config'
+import dotenv from 'dotenv'
 
 dotenv.config()
 
-let config = {
+let config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   networks: {
     coverage: {
@@ -30,6 +31,10 @@ let config = {
   paths: {
     artifacts: './build/artifacts',
     cache: './build/cache',
+  },
+  typechain: {
+    outDir: './build/typechain/',
+    target: 'ethers-v5',
   },
   solidity: {
     compilers: [
@@ -49,6 +54,16 @@ let config = {
         version: '0.8.3',
       },
     ],
+  },
+  namedAccounts: {
+    deployer: {
+      default: 0, // here this will by default take the first account as deployer
+      1: 0, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
+    },
+    libraryDeployer: {
+      default: 1, // use a different account for deploying libraries on the hardhat network
+      1: 0, // use the same address as the main deployer on mainnet
+    },
   },
   gasReporter: {
     currency: 'USD',
