@@ -19,6 +19,10 @@ let config: HardhatUserConfig = {
     coverage: {
       url: 'http://127.0.0.1:8555',
     },
+    bsctestnet: {
+      url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
+      gasPrice: 100 * 1000000000,
+    },
     testnet: {
       url: 'https://eth-ropsten.alchemyapi.io/v2/tmEmzPXw-YAGzFPxNjcYACSGIY8stGs0',
       gasPrice: 1 * 1000000000,
