@@ -131,6 +131,15 @@ describe("SynapseBridge", async () => {
         })
 
 
+        it("ERC20 Redeem - correct balance to user and keep correct fee", async () => {
+            // user decides to redeem back to base chainId
+            let preRedeem = await syntestERC20.balanceOf(user1Address)
+
+            await synapseBridge.redeem(user1Address, 1, syntestERC20.address, String(9e17))
+            await expect((await syntestERC20.balanceOf(user1Address)).sub(preRedeem)).to.be.eq(String(0))
+        })
+
+
 
     })
 
