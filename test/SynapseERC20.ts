@@ -65,6 +65,17 @@ describe("SynapseERC20Factory", async () => {
             expect(await synapseERC20.decimals()).to.be.eq(18)
         })
 
+        it("Initialize once", async () => {
+            await (expect( synapseERC20.initialize(
+                "Synapse Test Token",
+                "SYNTEST",
+                18,
+                "1",
+                "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+                await owner.getAddress()
+            ))).to.be.reverted
+        })
+
         describe("Mint", () => {
             it("mint", async () => {
                 await synapseERC20.connect(owner).grantRole(await synapseERC20.MINTER_ROLE(), await owner.getAddress());
