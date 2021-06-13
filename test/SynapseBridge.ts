@@ -98,48 +98,55 @@ describe("SynapseBridge", async () => {
     })
 
     describe("Bridge", () => {
-        it("Deposit should return correct balance in bridge contract", async () => {
-            await synapseBridge.deposit(user1Address, 56, testERC20.address, String(1e18))
-            await expect(await testERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e18))
+        describe("ERC20", () => {
+            it("Deposit - return correct balance in bridge contract", async () => {
+                await synapseBridge.deposit(user1Address, 56, testERC20.address, String(1e18))
+                await expect(await testERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e18))
+            })
+
+            it("Withdraw - correct balance to user and keep correct fee", async () => {
+                //user deposits 1 token 
+                await synapseBridge.deposit(user1Address, 56, testERC20.address, String(1e18))
+                let preWithdraw = await testERC20.balanceOf(user1Address)
+
+                // later, redeems it on a different chain. Node group withdraws w/ a selected fee
+                await synapseBridge.connect(nodeGroup).withdraw(user1Address, testERC20.address, String(9e17), String(1e17))
+                await expect((await testERC20.balanceOf(user1Address)).sub(preWithdraw)).to.be.eq(String(9e17))
+                await expect(await testERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e17))
+                await expect(await synapseBridge.getFeeBalance(testERC20.address)).to.be.eq(String(1e17))
+
+            })
+
+            it("Mint - correct balance to user and keep correct fee", async () => {
+                // nodegroup mints after receiving TokenDeposit Event
+                let preMint = await syntestERC20.balanceOf(user1Address)
+
+                await synapseBridge.connect(nodeGroup).mint(user1Address, syntestERC20.address, String(9e17), String(1e17))
+
+                // checks for mint and fee amounts
+
+                await expect((await syntestERC20.balanceOf(user1Address)).sub(preMint)).to.be.eq(String(9e17))
+                await expect(await syntestERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e17))
+                await expect(await synapseBridge.getFeeBalance(syntestERC20.address)).to.be.eq(String(1e17))
+
+            })
+
+
+            it("Redeem - correct balance to user and keep correct fee", async () => {
+                // user decides to redeem back to base chainId
+                let preRedeem = await syntestERC20.balanceOf(user1Address)
+
+                await synapseBridge.redeem(user1Address, 1, syntestERC20.address, String(9e17))
+                await expect((await syntestERC20.balanceOf(user1Address)).sub(preRedeem)).to.be.eq(String(0))
+            })
+
+            it("Withdraw fees", async () => {
+                let preWithdrawFees = await syntestERC20.balanceOf(ownerAddress)
+                let synTestFees = await synapseBridge.getFeeBalance(syntestERC20.address)
+                await synapseBridge.withdrawFees(syntestERC20.address, ownerAddress)
+                await expect((await syntestERC20.balanceOf(ownerAddress)).sub(preWithdrawFees)).to.be.eq(synTestFees)
+            })
         })
-
-        it("ERC20 Withdraw - correct balance to user and keep correct fee", async () => {
-            //user deposits 1 token 
-            await synapseBridge.deposit(user1Address, 56, testERC20.address, String(1e18))
-            let preWithdraw = await testERC20.balanceOf(user1Address)
-
-            // later, redeems it on a different chain. Node group withdraws w/ a selected fee
-            await synapseBridge.connect(nodeGroup).withdraw(user1Address, testERC20.address, String(9e17), String(1e17))
-            await expect((await testERC20.balanceOf(user1Address)).sub(preWithdraw)).to.be.eq(String(9e17))
-            await expect(await testERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e17))
-            await expect(await synapseBridge.getFeeBalance(testERC20.address)).to.be.eq(String(1e17))
-
-        })
-
-        it("ERC20 Mint - correct balance to user and keep correct fee", async () => {
-            // nodegroup mints after receiving TokenDeposit Event
-            let preMint = await syntestERC20.balanceOf(user1Address)
-
-            await synapseBridge.connect(nodeGroup).mint(user1Address, syntestERC20.address, String(9e17), String(1e17))
-
-            // checks for mint and fee amounts
-
-            await expect((await syntestERC20.balanceOf(user1Address)).sub(preMint)).to.be.eq(String(9e17))
-            await expect(await syntestERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e17))
-            await expect(await synapseBridge.getFeeBalance(syntestERC20.address)).to.be.eq(String(1e17))
-
-        })
-
-
-        it("ERC20 Redeem - correct balance to user and keep correct fee", async () => {
-            // user decides to redeem back to base chainId
-            let preRedeem = await syntestERC20.balanceOf(user1Address)
-
-            await synapseBridge.redeem(user1Address, 1, syntestERC20.address, String(9e17))
-            await expect((await syntestERC20.balanceOf(user1Address)).sub(preRedeem)).to.be.eq(String(0))
-        })
-
-
 
     })
 
