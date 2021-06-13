@@ -34,9 +34,9 @@ describe("SynapseBridge", async () => {
     let ownerAddress: string
     let user1Address: string
     let user2Address: string
-    let nodeGroupAddress: string 
+    let nodeGroupAddress: string
 
-    
+
     const setupTest = deployments.createFixture(
         async ({ deployments, ethers }) => {
             const { get } = deployments
@@ -97,21 +97,39 @@ describe("SynapseBridge", async () => {
     })
 
     describe("Bridge", () => {
-        it("Deposit should return correct balance in bridge contract", async() => {
+        it("Deposit should return correct balance in bridge contract", async () => {
             await synapseBridge.deposit(user1Address, 56, testERC20.address, String(1e18))
             await expect(await testERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e18))
         })
 
-        it("Withdraw should return correct balance to user and keep correct fee", async() => {
-            //user deposits 1 token 
-            await synapseBridge.deposit(user1Address, 56, testERC20.address, String(1e18))
-            let preWithdraw = await testERC20.balanceOf(user1Address)
+        describe("Withdraw & fees", () => {
+            it("Withdraw should return correct balance to user and keep correct fee", async () => {
+                //user deposits 1 token 
+                await synapseBridge.deposit(user1Address, 56, testERC20.address, String(1e18))
+                let preWithdraw = await testERC20.balanceOf(user1Address)
 
-            // later, redeems it on a different chain. Node group withdraws w/ a selected fee
-            await synapseBridge.connect(nodeGroup).withdraw(user1Address, testERC20.address, String(9e17), String(1e17))
-            await expect((await testERC20.balanceOf(user1Address)).sub(preWithdraw)).to.be.eq(String(9e17))
-            await expect(await testERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e17))
+                // later, redeems it on a different chain. Node group withdraws w/ a selected fee
+                await synapseBridge.connect(nodeGroup).withdraw(user1Address, testERC20.address, String(9e17), String(1e17))
+                await expect((await testERC20.balanceOf(user1Address)).sub(preWithdraw)).to.be.eq(String(9e17))
+                await expect(await testERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e17))
+            })
+
+            it("Check if fees are correct", async () => {
+
+                //user deposits 1 token 
+                await synapseBridge.deposit(user1Address, 56, testERC20.address, String(1e18))
+                let preWithdraw = await testERC20.balanceOf(user1Address)
+
+                // later, redeems it on a different chain. Node group withdraws w/ a selected fee
+                await synapseBridge.connect(nodeGroup).withdraw(user1Address, testERC20.address, String(9e17), String(1e17))
+                await expect((await testERC20.balanceOf(user1Address)).sub(preWithdraw)).to.be.eq(String(9e17))
+                await expect(await testERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e17))
+                    console.log(await (await testERC20.balanceOf(synapseBridge.address)).toString())
+                await expect(await synapseBridge.getFeeBalance(testERC20.address)).to.be.eq(String(1e17))
+            })
+            
         })
+
 
     })
 
