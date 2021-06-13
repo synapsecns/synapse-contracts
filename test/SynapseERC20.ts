@@ -99,5 +99,4 @@ describe("SynapseERC20Factory", async () => {
 
     })
 
-
 });

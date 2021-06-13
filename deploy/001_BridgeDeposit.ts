@@ -6,11 +6,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get } = deployments
   const { deployer } = await getNamedAccounts()
 
-  await deploy('BridgeDeposit', {
+  await deploy('SynapseBridge', {
     from: deployer,
     log: true,
     skipIfAlreadyDeployed: true,
   })
 }
 export default func
-func.tags = ['BridgeDeposit']
+func.tags = ['SynapseBridge']

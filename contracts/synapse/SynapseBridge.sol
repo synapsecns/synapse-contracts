@@ -15,7 +15,7 @@ interface IERC20Mintable {
     function mintMultiple(address to, uint256 amount, address feeAddress, uint256 feeAmount) external;
 }
 
-contract BridgeDeposit is Initializable, AccessControlUpgradeable {
+contract SynapseBridge is Initializable, AccessControlUpgradeable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -114,7 +114,7 @@ contract BridgeDeposit is Initializable, AccessControlUpgradeable {
     function withdraw(address to, IERC20 token, uint256 amount, uint256 fee) public {
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         fees[address(token)].add(fee);
-        token.safeTransferFrom(address(this), to, amount);
+        token.safeTransfer(to, amount);
         emit TokenWithdraw(to, token, amount, fee);
     }
 
