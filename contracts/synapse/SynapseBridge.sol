@@ -113,7 +113,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     **/
     function withdraw(address to, IERC20 token, uint256 amount, uint256 fee) public {
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
-        fees[address(token)].add(fee);
+        fees[address(token)] = fees[address(token)].add(fee);
         token.safeTransfer(to, amount);
         emit TokenWithdraw(to, token, amount, fee);
     }
@@ -126,7 +126,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     **/
     function withdrawETH(address payable to, uint256 amount, uint256 fee) public {
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
-        ethFees.add(fee);
+        ethFees = ethFees.add(fee);
         to.transfer(amount);
         emit TokenWithdraw(to, IERC20(address(0)), amount, fee);
     }
@@ -141,7 +141,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     **/
     function mint(address to, IERC20Mintable token, uint256 amount, uint256 fee) public {
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
-        fees[address(token)].add(fee);
+        fees[address(token)] = fees[address(token)].add(fee);
         token.mintMultiple(to, amount, address(this), fee);
         emit TokenMint(to, token, amount, fee);
     }
