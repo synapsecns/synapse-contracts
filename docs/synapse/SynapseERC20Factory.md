@@ -3,13 +3,13 @@
 
 
   # Functions:
-      - [`deploy(address synapseERC20Address, string name, string symbol, uint256 underlyingChainId, address underlyingTokenAddress, uint8 decimals, address owner)`](#SynapseERC20Factory-deploy-address-string-string-uint256-address-uint8-address-)
+      - [`deploy(address synapseERC20Address, string name, string symbol, uint8 decimals, uint256 underlyingChainId, address underlyingTokenAddress, address owner)`](#SynapseERC20Factory-deploy-address-string-string-uint8-uint256-address-address-)
 
   # Events:
     - [`SynapseERC20Created(address contractAddress)`](#SynapseERC20Factory-SynapseERC20Created-address-)
 
-    # Function `deploy(address synapseERC20Address, string name, string symbol, uint256 underlyingChainId, address underlyingTokenAddress, uint8 decimals, address owner) → address` {#SynapseERC20Factory-deploy-address-string-string-uint256-address-uint8-address-}
-    Deploys a new node 
+    # Function `deploy(address synapseERC20Address, string name, string symbol, uint8 decimals, uint256 underlyingChainId, address underlyingTokenAddress, address owner) → address` {#SynapseERC20Factory-deploy-address-string-string-uint8-uint256-address-address-}
+    Deploys a new node
 
     
       ## Parameters:
@@ -26,10 +26,10 @@
         Token name
 
         - `underlyingChainId`:
-        Base asset chain ID which SynapseERC20 represents 
+        Base asset chain ID which SynapseERC20 represents
 
         - `underlyingTokenAddress`:
-        Base asset address which SynapseERC20 represents 
+        Base asset address which SynapseERC20 represents
 
         - `owner`:
         admin address to be initialized with
