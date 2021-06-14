@@ -76,7 +76,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     @param amount Amount in native token decimals to transfer cross-chain pre-fees
     **/
     function depositETH(address to, uint256 chainId, uint256 amount) public payable {
-        require(msg.value == amount);
+        require(msg.value == amount, "Value doesn't match amount");
         emit TokenDeposit(msg.sender, to, chainId, IERC20(address(0)), amount);
     }
 
@@ -124,7 +124,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     @param amount Amount in gas token decimals to withdraw (after subtracting fee already)
     @param fee Amount in gas token decimals to save to the contract as fees
     **/
-    function withdrawETH(address payable to, uint256 amount, uint256 fee) public {
+    function withdrawETH(address payable to, uint256 amount, uint256 fee) public  {
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         ethFees = ethFees.add(fee);
         to.transfer(amount);
