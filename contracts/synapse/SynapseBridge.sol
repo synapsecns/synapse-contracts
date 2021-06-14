@@ -61,7 +61,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
      * @notice withdraw gas token fees to a given address
      * @param to Address to send the gas fees to
      */
-    function withdrawETHAdminFees(address payable to) external {
+    function withdrawETHFees(address payable to) external {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
         if (ethFees != 0) {
             to.transfer(ethFees);
