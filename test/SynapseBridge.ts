@@ -148,6 +148,31 @@ describe("SynapseBridge", async () => {
             })
         })
 
+        describe("ETH", () => {
+            it("Deposit ETH", async () => {
+                await synapseBridge.depositETH(user1Address, 56, String(1e18), {
+                    value: String(1e18)
+                })
+                expect(await ethers.provider.getBalance(synapseBridge.address)).to.be.eq(String(1e18))
+            })
+
+            it("Withdraw ETH", async () => {
+                // someone deposits eth
+                await synapseBridge.depositETH(ownerAddress, 56, String(1e18), {
+                    value: String(1e18)
+                })
+                expect(await ethers.provider.getBalance(synapseBridge.address)).to.be.eq(String(1e18))
+
+                // øn a redeem, node group withdraws eth
+                let preWithdrawOwner = await ethers.provider.getBalance(ownerAddress)
+                expect(await ethers.provider.getBalance(synapseBridge.address)).to.be.eq(String(1e18))
+                await synapseBridge.connect(nodeGroup).withdrawETH(ownerAddress, String(9e17), String(1e17))
+                expect(await ethers.provider.getBalance(synapseBridge.address)).to.be.eq(String(1e17))
+                let postWithdrawOwner = await ethers.provider.getBalance(ownerAddress)
+                expect(postWithdrawOwner.sub(preWithdrawOwner)).to.be.eq(String(9e17))
+            })
+        })
+
     })
 
 
