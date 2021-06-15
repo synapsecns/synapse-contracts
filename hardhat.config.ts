@@ -1,4 +1,4 @@
-import "@tenderly/hardhat-tenderly"
+import '@tenderly/hardhat-tenderly'
 import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
 import '@nomiclabs/hardhat-web3'
@@ -22,11 +22,11 @@ let config: HardhatUserConfig = {
     },
     bsctestnet: {
       url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
-      gasPrice: 100 * 1000000000,
+      gasPrice: 10 * 1000000000,
     },
     testnet: {
       url: 'https://eth-ropsten.alchemyapi.io/v2/tmEmzPXw-YAGzFPxNjcYACSGIY8stGs0',
-      gasPrice: 1 * 1000000000,
+      gasPrice: 2 * 1000000000,
     },
     mainnet: {
       url: process.env.ALCHEMY_API,
@@ -85,6 +85,26 @@ let config: HardhatUserConfig = {
 
 if (process.env.ETHERSCAN_API) {
   config = { ...config, etherscan: { apiKey: process.env.ETHERSCAN_API } }
+}
+
+if (process.env.ROPSTEN_PRIVATE_KEYS) {
+  config.networks = {
+    ...config.networks,
+    testnet: {
+      ...config.networks?.testnet,
+      accounts: JSON.parse(process.env.ROPSTEN_PRIVATE_KEYS),
+    },
+  }
+}
+
+if (process.env.BSC_PRIVATE_KEYS) {
+  config.networks = {
+    ...config.networks,
+    bsctestnet: {
+      ...config.networks?.bsctestnet,
+      accounts: JSON.parse(process.env.BSC_PRIVATE_KEYS),
+    },
+  }
 }
 
 module.exports = config
