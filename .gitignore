@@ -7,3 +7,5 @@ artifacts
 .vscode
 build
 tenderly.yaml
+
+.env
