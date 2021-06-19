@@ -20,6 +20,10 @@ let config: HardhatUserConfig = {
     coverage: {
       url: 'http://127.0.0.1:8555',
     },
+    mumbai: {
+      url: 'https://polygon-mumbai.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55',
+      gasPrice: 2 * 1000000000,
+    },
     bsctestnet: {
       url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
       gasPrice: 10 * 1000000000,
@@ -103,6 +107,16 @@ if (process.env.BSC_PRIVATE_KEYS) {
     bsctestnet: {
       ...config.networks?.bsctestnet,
       accounts: JSON.parse(process.env.BSC_PRIVATE_KEYS),
+    },
+  }
+}
+
+if (process.env.MUMBAI_PRIVATE_KEYS) {
+  config.networks = {
+    ...config.networks,
+    mumbai: {
+      ...config.networks?.bsctestnet,
+      accounts: JSON.parse(process.env.MUMBAI_PRIVATE_KEYS),
     },
   }
 }
