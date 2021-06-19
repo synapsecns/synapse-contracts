@@ -32,6 +32,10 @@ let config: HardhatUserConfig = {
       url: 'https://eth-ropsten.alchemyapi.io/v2/tmEmzPXw-YAGzFPxNjcYACSGIY8stGs0',
       gasPrice: 2 * 1000000000,
     },
+    polygonprodtest: {
+      url: 'https://polygon-mainnet.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55',
+      gasPrice: 6 * 1000000000,
+    },
     mainnet: {
       url: process.env.ALCHEMY_API,
       gasPrice: 140 * 1000000000,
@@ -117,6 +121,16 @@ if (process.env.MUMBAI_PRIVATE_KEYS) {
     mumbai: {
       ...config.networks?.bsctestnet,
       accounts: JSON.parse(process.env.MUMBAI_PRIVATE_KEYS),
+    },
+  }
+}
+
+if (process.env.POLYGONPRODTEST_PRIVATE_KEYS) {
+  config.networks = {
+    ...config.networks,
+    polygonprodtest: {
+      ...config.networks?.polygonprodtest,
+      accounts: JSON.parse(process.env.POLYGONPRODTEST_PRIVATE_KEYS),
     },
   }
 }
