@@ -130,7 +130,6 @@ contract BridgeConfig is AccessControl {
     uint256 chainID,
     address token
   ) internal {
-    require(tokenID != address(0), 'empty tokenID');
     require(chainID > 0, 'zero chainID');
     MultichainToken[] storage _mcTokens = _allMultichainTokens[tokenID];
     for (uint256 i = 0; i < _mcTokens.length; ++i) {
