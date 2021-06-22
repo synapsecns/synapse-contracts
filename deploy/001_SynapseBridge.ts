@@ -10,7 +10,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     from: deployer,
     log: true,
     skipIfAlreadyDeployed: true,
-    proxy: true,
+    proxy: {
+      owner: deployer,
+      proxyContract: 'OpenZeppelinTransparentProxy',
+    },
   })
 }
 export default func
