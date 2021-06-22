@@ -105,7 +105,6 @@ contract BridgeConfig is AccessControl {
     uint256 chainID,
     TokenConfig memory config
   ) internal checkTokenConfig(config) returns (bool) {
-    require(tokenID != address(0), 'empty tokenID');
     require(chainID > 0, 'zero chainID');
 
     _tokenConfig[tokenID][chainID] = config;
