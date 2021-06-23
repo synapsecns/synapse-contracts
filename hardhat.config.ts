@@ -38,7 +38,7 @@ let config: HardhatUserConfig = {
     },
     mainnet: {
       url: process.env.ALCHEMY_API,
-      gasPrice: 140 * 1000000000,
+      gasPrice: 16 * 1000000000,
     },
   },
   paths: {
@@ -70,8 +70,8 @@ let config: HardhatUserConfig = {
   },
   namedAccounts: {
     deployer: {
-      default: 0, // here this will by default take the first account as deployer
-      1: 0, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
+      default: 3, // here this will by default take the first account as deployer
+      1: 3, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
     },
     libraryDeployer: {
       default: 1, // use a different account for deploying libraries on the hardhat network
@@ -131,6 +131,16 @@ if (process.env.POLYGONPRODTEST_PRIVATE_KEYS) {
     polygonprodtest: {
       ...config.networks?.polygonprodtest,
       accounts: JSON.parse(process.env.POLYGONPRODTEST_PRIVATE_KEYS),
+    },
+  }
+}
+
+if (process.env.ACCOUNT_PRIVATE_KEYS) {
+  config.networks = {
+    ...config.networks,
+    mainnet: {
+      ...config.networks?.mainnet,
+      accounts: JSON.parse(process.env.ACCOUNT_PRIVATE_KEYS),
     },
   }
 }
