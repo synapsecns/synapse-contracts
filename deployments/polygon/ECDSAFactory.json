@@ -1,0 +1,334 @@
+{
+  "address": "0x07cA54031c81a76fc943d00CE2423FA8f60C7B17",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "keepAddress",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address[]",
+          "name": "members",
+          "type": "address[]"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "honestThreshold",
+          "type": "uint256"
+        }
+      ],
+      "name": "ECDSANodeGroupCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "nodeMgmtAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "address[]",
+          "name": "members",
+          "type": "address[]"
+        },
+        {
+          "internalType": "uint256",
+          "name": "honestThreshold",
+          "type": "uint256"
+        }
+      ],
+      "name": "deploy",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getMembers",
+      "outputs": [
+        {
+          "internalType": "address[]",
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "latestNodeGroup",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "keepAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "honestThreshold",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0xaedf185460adb0971431909986af395ced57be31f2bfae9797857b6eccc0eae3",
+  "receipt": {
+    "to": null,
+    "from": "0x235AF07E770f474d24F5bf73074735892371b40D",
+    "contractAddress": "0x07cA54031c81a76fc943d00CE2423FA8f60C7B17",
+    "transactionIndex": 311,
+    "gasUsed": "651655",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000900000000000000000000000000000800000000000000000008000000000000000000000000000000008008000000000000000000000800001000000000000000100000000000000000000020000000000000000000800000000000000000080000000000000400000000100000000000000000000000000000000000000000000000000000040200000000000000000000000000000000000000000000400000000000000004000000000000000000001000000000000000000000000000000100002000020000000000000000000000000000000000800000000000000000000000000100000",
+    "blockHash": "0x0f5a9c805ae053d96ccd1f10f2d6efaf398cda7d32fa1e049897a5a6e74d3d41",
+    "transactionHash": "0xaedf185460adb0971431909986af395ced57be31f2bfae9797857b6eccc0eae3",
+    "logs": [
+      {
+        "transactionIndex": 311,
+        "blockNumber": 16045339,
+        "transactionHash": "0xaedf185460adb0971431909986af395ced57be31f2bfae9797857b6eccc0eae3",
+        "address": "0x07cA54031c81a76fc943d00CE2423FA8f60C7B17",
+        "topics": [
+          "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x000000000000000000000000235af07e770f474d24f5bf73074735892371b40d"
+        ],
+        "data": "0x",
+        "logIndex": 370,
+        "blockHash": "0x0f5a9c805ae053d96ccd1f10f2d6efaf398cda7d32fa1e049897a5a6e74d3d41"
+      },
+      {
+        "transactionIndex": 311,
+        "blockNumber": 16045339,
+        "transactionHash": "0xaedf185460adb0971431909986af395ced57be31f2bfae9797857b6eccc0eae3",
+        "address": "0x0000000000000000000000000000000000001010",
+        "topics": [
+          "0x4dfe1bbbcf077ddc3e01291eea2d5c70c2b422b415d95645b9adcfd678cb1d63",
+          "0x0000000000000000000000000000000000000000000000000000000000001010",
+          "0x000000000000000000000000235af07e770f474d24f5bf73074735892371b40d",
+          "0x0000000000000000000000004f856f79f54592a48c8a1a1fafa1b0a3ac053f99"
+        ],
+        "data": "0x000000000000000000000000000000000000000000000000000de40f84bf24000000000000000000000000000000000000000000000000092d40e8be1b6b902d00000000000000000000000000000000000000000000033b5d47cac02a5b4b840000000000000000000000000000000000000000000000092d3304ae96ac6c2d00000000000000000000000000000000000000000000033b5d55aecfaf1a6f84",
+        "logIndex": 371,
+        "blockHash": "0x0f5a9c805ae053d96ccd1f10f2d6efaf398cda7d32fa1e049897a5a6e74d3d41"
+      }
+    ],
+    "blockNumber": 16045339,
+    "cumulativeGasUsed": "17806047",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "solcInputHash": "1fbbd2d4de8ae41573b47d642f734797",
+  "metadata": "{\"compiler\":{\"version\":\"0.6.12+commit.27d51765\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"keepAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address[]\",\"name\":\"members\",\"type\":\"address[]\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"honestThreshold\",\"type\":\"uint256\"}],\"name\":\"ECDSANodeGroupCreated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"nodeMgmtAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address[]\",\"name\":\"members\",\"type\":\"address[]\"},{\"internalType\":\"uint256\",\"name\":\"honestThreshold\",\"type\":\"uint256\"}],\"name\":\"deploy\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getMembers\",\"outputs\":[{\"internalType\":\"address[]\",\"name\":\"\",\"type\":\"address[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"latestNodeGroup\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"keepAddress\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"honestThreshold\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"deploy(address,address,address[],uint256)\":{\"params\":{\"honestThreshold\":\"Number of signers to process a transaction \",\"members\":\"Array of node group members addresses\",\"nodeMgmtAddress\":\"address of the ECDSANodeManagement contract to initialize with\",\"owner\":\"Owner of the  ECDSANodeManagement contract who can determine if the node group is closed or active\"},\"returns\":{\"_0\":\"Address of the newest node management contract created*\"}},\"getMembers()\":{\"returns\":{\"_0\":\"List of the keep members' addresses.\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.\"},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"deploy(address,address,address[],uint256)\":{\"notice\":\"Deploys a new node \"},\"getMembers()\":{\"notice\":\"Returns members of the keep.\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/synapse/ECDSAFactory.sol\":\"ECDSAFactory\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":10000},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/access/Ownable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.6.0 <0.8.0;\\n\\nimport \\\"../utils/Context.sol\\\";\\n/**\\n * @dev Contract module which provides a basic access control mechanism, where\\n * there is an account (an owner) that can be granted exclusive access to\\n * specific functions.\\n *\\n * By default, the owner account will be the one that deploys the contract. This\\n * can later be changed with {transferOwnership}.\\n *\\n * This module is used through inheritance. It will make available the modifier\\n * `onlyOwner`, which can be applied to your functions to restrict their use to\\n * the owner.\\n */\\nabstract contract Ownable is Context {\\n    address private _owner;\\n\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /**\\n     * @dev Initializes the contract setting the deployer as the initial owner.\\n     */\\n    constructor () internal {\\n        address msgSender = _msgSender();\\n        _owner = msgSender;\\n        emit OwnershipTransferred(address(0), msgSender);\\n    }\\n\\n    /**\\n     * @dev Returns the address of the current owner.\\n     */\\n    function owner() public view virtual returns (address) {\\n        return _owner;\\n    }\\n\\n    /**\\n     * @dev Throws if called by any account other than the owner.\\n     */\\n    modifier onlyOwner() {\\n        require(owner() == _msgSender(), \\\"Ownable: caller is not the owner\\\");\\n        _;\\n    }\\n\\n    /**\\n     * @dev Leaves the contract without owner. It will not be possible to call\\n     * `onlyOwner` functions anymore. Can only be called by the current owner.\\n     *\\n     * NOTE: Renouncing ownership will leave the contract without an owner,\\n     * thereby removing any functionality that is only available to the owner.\\n     */\\n    function renounceOwnership() public virtual onlyOwner {\\n        emit OwnershipTransferred(_owner, address(0));\\n        _owner = address(0);\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Can only be called by the current owner.\\n     */\\n    function transferOwnership(address newOwner) public virtual onlyOwner {\\n        require(newOwner != address(0), \\\"Ownable: new owner is the zero address\\\");\\n        emit OwnershipTransferred(_owner, newOwner);\\n        _owner = newOwner;\\n    }\\n}\\n\",\"keccak256\":\"0x15e2d5bd4c28a88548074c54d220e8086f638a71ed07e6b3ba5a70066fcf458d\",\"license\":\"MIT\"},\"@openzeppelin/contracts/proxy/Clones.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.6.0 <0.8.0;\\n\\n/**\\n * @dev https://eips.ethereum.org/EIPS/eip-1167[EIP 1167] is a standard for\\n * deploying minimal proxy contracts, also known as \\\"clones\\\".\\n *\\n * > To simply and cheaply clone contract functionality in an immutable way, this standard specifies\\n * > a minimal bytecode implementation that delegates all calls to a known, fixed address.\\n *\\n * The library includes functions to deploy a proxy using either `create` (traditional deployment) or `create2`\\n * (salted deterministic deployment). It also includes functions to predict the addresses of clones deployed using the\\n * deterministic method.\\n *\\n * _Available since v3.4._\\n */\\nlibrary Clones {\\n    /**\\n     * @dev Deploys and returns the address of a clone that mimics the behaviour of `master`.\\n     *\\n     * This function uses the create opcode, which should never revert.\\n     */\\n    function clone(address master) internal returns (address instance) {\\n        // solhint-disable-next-line no-inline-assembly\\n        assembly {\\n            let ptr := mload(0x40)\\n            mstore(ptr, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\\n            mstore(add(ptr, 0x14), shl(0x60, master))\\n            mstore(add(ptr, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)\\n            instance := create(0, ptr, 0x37)\\n        }\\n        require(instance != address(0), \\\"ERC1167: create failed\\\");\\n    }\\n\\n    /**\\n     * @dev Deploys and returns the address of a clone that mimics the behaviour of `master`.\\n     *\\n     * This function uses the create2 opcode and a `salt` to deterministically deploy\\n     * the clone. Using the same `master` and `salt` multiple time will revert, since\\n     * the clones cannot be deployed twice at the same address.\\n     */\\n    function cloneDeterministic(address master, bytes32 salt) internal returns (address instance) {\\n        // solhint-disable-next-line no-inline-assembly\\n        assembly {\\n            let ptr := mload(0x40)\\n            mstore(ptr, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\\n            mstore(add(ptr, 0x14), shl(0x60, master))\\n            mstore(add(ptr, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)\\n            instance := create2(0, ptr, 0x37, salt)\\n        }\\n        require(instance != address(0), \\\"ERC1167: create2 failed\\\");\\n    }\\n\\n    /**\\n     * @dev Computes the address of a clone deployed using {Clones-cloneDeterministic}.\\n     */\\n    function predictDeterministicAddress(address master, bytes32 salt, address deployer) internal pure returns (address predicted) {\\n        // solhint-disable-next-line no-inline-assembly\\n        assembly {\\n            let ptr := mload(0x40)\\n            mstore(ptr, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\\n            mstore(add(ptr, 0x14), shl(0x60, master))\\n            mstore(add(ptr, 0x28), 0x5af43d82803e903d91602b57fd5bf3ff00000000000000000000000000000000)\\n            mstore(add(ptr, 0x38), shl(0x60, deployer))\\n            mstore(add(ptr, 0x4c), salt)\\n            mstore(add(ptr, 0x6c), keccak256(ptr, 0x37))\\n            predicted := keccak256(add(ptr, 0x37), 0x55)\\n        }\\n    }\\n\\n    /**\\n     * @dev Computes the address of a clone deployed using {Clones-cloneDeterministic}.\\n     */\\n    function predictDeterministicAddress(address master, bytes32 salt) internal view returns (address predicted) {\\n        return predictDeterministicAddress(master, salt, address(this));\\n    }\\n}\\n\",\"keccak256\":\"0x0d24348f536f928d8b42789737bf34762faee065667ab530ea20969a9d9920d1\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Context.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.6.0 <0.8.0;\\n\\n/*\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with GSN meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract Context {\\n    function _msgSender() internal view virtual returns (address payable) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes memory) {\\n        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691\\n        return msg.data;\\n    }\\n}\\n\",\"keccak256\":\"0x8d3cb350f04ff49cfb10aef08d87f19dcbaecc8027b0bed12f3275cd12f38cf0\",\"license\":\"MIT\"},\"contracts/synapse/ECDSAFactory.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.6.12;\\n\\nimport '@openzeppelin/contracts/access/Ownable.sol';\\nimport '@openzeppelin/contracts/proxy/Clones.sol';\\nimport './interfaces/IECDSANodeManagement.sol';\\n\\ncontract ECDSAFactory is Ownable {\\n  event ECDSANodeGroupCreated(\\n    address indexed keepAddress,\\n    address[] members,\\n    address indexed owner,\\n    uint256 honestThreshold\\n  );\\n\\n  struct LatestNodeGroup {\\n    address keepAddress;\\n    address[] members;\\n    address owner;\\n    uint256 honestThreshold;\\n  }\\n\\n  LatestNodeGroup public latestNodeGroup;\\n\\n  constructor() public Ownable() {}\\n\\n  /// @notice Returns members of the keep.\\n  /// @return List of the keep members' addresses.\\n  function getMembers() public view returns (address[] memory) {\\n    return latestNodeGroup.members;\\n  }\\n\\n  /**\\n    @notice Deploys a new node \\n    @param nodeMgmtAddress address of the ECDSANodeManagement contract to initialize with\\n    @param owner Owner of the  ECDSANodeManagement contract who can determine if the node group is closed or active\\n    @param members Array of node group members addresses\\n    @param honestThreshold Number of signers to process a transaction \\n    @return Address of the newest node management contract created\\n    **/\\n  function deploy(\\n    address nodeMgmtAddress,\\n    address owner,\\n    address[] memory members,\\n    uint256 honestThreshold\\n  ) external onlyOwner returns (address) {\\n    address nodeClone = Clones.clone(nodeMgmtAddress);\\n    IECDSANodeManagement(nodeClone).initialize(owner, members, honestThreshold);\\n\\n    latestNodeGroup.keepAddress = nodeClone;\\n    latestNodeGroup.members = members;\\n    latestNodeGroup.owner = owner;\\n    latestNodeGroup.honestThreshold = honestThreshold;\\n\\n    emit ECDSANodeGroupCreated(nodeClone, members, owner, honestThreshold);\\n    return nodeClone;\\n  }\\n}\\n\",\"keccak256\":\"0x1e139417ab1451afe97141cc1d93375a219f939ecaff0c40fc149dd45607008a\",\"license\":\"MIT\"},\"contracts/synapse/interfaces/IECDSANodeManagement.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\n\\npragma solidity >=0.6.0 <0.8.0;\\n\\ninterface IECDSANodeManagement {    \\n    function initialize(\\n        address _owner,\\n        address[] memory _members,\\n        uint256 _honestThreshold) external;\\n}\\n\\n\",\"keccak256\":\"0x1eae77b655ea92ea7f119dc0ddedda74895ebe2834f3ac1437c585e42f480dd2\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b50600061001b61006a565b600080546001600160a01b0319166001600160a01b0383169081178255604051929350917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0908290a35061006e565b3390565b610a6e8061007d6000396000f3fe608060405234801561001057600080fd5b50600436106100725760003560e01c80639eab5253116100505780639eab5253146100f15780639ee10fcb14610149578063f2fde38b1461021457610072565b8063215b2b6a14610077578063715018a6146100b65780638da5cb5b146100c0575b600080fd5b61007f610247565b6040805173ffffffffffffffffffffffffffffffffffffffff94851681529290931660208301528183015290519081900360600190f35b6100be610270565b005b6100c8610387565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b6100f96103a3565b60408051602080825283518183015283519192839290830191858101910280838360005b8381101561013557818101518382015260200161011d565b505050509050019250505060405180910390f35b6100c86004803603608081101561015f57600080fd5b73ffffffffffffffffffffffffffffffffffffffff82358116926020810135909116918101906060810160408201356401000000008111156101a057600080fd5b8201836020820111156101b257600080fd5b803590602001918460208302840111640100000000831117156101d457600080fd5b9190808060200260200160405190810160405280939291908181526020018383602002808284376000920191909152509295505091359250610414915050565b6100be6004803603602081101561022a57600080fd5b503573ffffffffffffffffffffffffffffffffffffffff166106c5565b60015460035460045473ffffffffffffffffffffffffffffffffffffffff928316929091169083565b610278610866565b73ffffffffffffffffffffffffffffffffffffffff16610296610387565b73ffffffffffffffffffffffffffffffffffffffff161461031857604080517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b6000805460405173ffffffffffffffffffffffffffffffffffffffff909116907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0908390a3600080547fffffffffffffffffffffffff0000000000000000000000000000000000000000169055565b60005473ffffffffffffffffffffffffffffffffffffffff1690565b60606001800180548060200260200160405190810160405280929190818152602001828054801561040a57602002820191906000526020600020905b815473ffffffffffffffffffffffffffffffffffffffff1681526001909101906020018083116103df575b5050505050905090565b600061041e610866565b73ffffffffffffffffffffffffffffffffffffffff1661043c610387565b73ffffffffffffffffffffffffffffffffffffffff16146104be57604080517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b60006104c98661086a565b90508073ffffffffffffffffffffffffffffffffffffffff16633ede50c68686866040518463ffffffff1660e01b8152600401808473ffffffffffffffffffffffffffffffffffffffff16815260200180602001838152602001828103825284818151815260200191508051906020019060200280838360005b8381101561055b578181015183820152602001610543565b50505050905001945050505050600060405180830381600087803b15801561058257600080fd5b505af1158015610596573d6000803e3d6000fd5b5050600180547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff8516179055505083516105ed906002906020870190610951565b50600380547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff8781169182179092556004859055604080516020808201889052828252885192820192909252875192938516927f0111738b06eb1931e810f949dd1fe860c4b9708eaa16c2c0faa0b95dc764608f9289928992909182916060830191868101910280838360005b838110156106a8578181015183820152602001610690565b50505050905001935050505060405180910390a395945050505050565b6106cd610866565b73ffffffffffffffffffffffffffffffffffffffff166106eb610387565b73ffffffffffffffffffffffffffffffffffffffff161461076d57604080517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b73ffffffffffffffffffffffffffffffffffffffff81166107d9576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401808060200182810382526026815260200180610a136026913960400191505060405180910390fd5b6000805460405173ffffffffffffffffffffffffffffffffffffffff808516939216917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e091a3600080547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff92909216919091179055565b3390565b60006040517f3d602d80600a3d3981f3363d3d373d3d3d363d7300000000000000000000000081528260601b60148201527f5af43d82803e903d91602b57fd5bf3000000000000000000000000000000000060288201526037816000f091505073ffffffffffffffffffffffffffffffffffffffff811661094c57604080517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601660248201527f455243313136373a20637265617465206661696c656400000000000000000000604482015290519081900360640190fd5b919050565b8280548282559060005260206000209081019282156109cb579160200282015b828111156109cb57825182547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff909116178255602090920191600190910190610971565b506109d79291506109db565b5090565b5b808211156109d75780547fffffffffffffffffffffffff00000000000000000000000000000000000000001681556001016109dc56fe4f776e61626c653a206e6577206f776e657220697320746865207a65726f2061646472657373a26469706673582212203cc56f57eaaee74a3425c0e570eb630fec39b947666b01f1034a2592284bcb2664736f6c634300060c0033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106100725760003560e01c80639eab5253116100505780639eab5253146100f15780639ee10fcb14610149578063f2fde38b1461021457610072565b8063215b2b6a14610077578063715018a6146100b65780638da5cb5b146100c0575b600080fd5b61007f610247565b6040805173ffffffffffffffffffffffffffffffffffffffff94851681529290931660208301528183015290519081900360600190f35b6100be610270565b005b6100c8610387565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b6100f96103a3565b60408051602080825283518183015283519192839290830191858101910280838360005b8381101561013557818101518382015260200161011d565b505050509050019250505060405180910390f35b6100c86004803603608081101561015f57600080fd5b73ffffffffffffffffffffffffffffffffffffffff82358116926020810135909116918101906060810160408201356401000000008111156101a057600080fd5b8201836020820111156101b257600080fd5b803590602001918460208302840111640100000000831117156101d457600080fd5b9190808060200260200160405190810160405280939291908181526020018383602002808284376000920191909152509295505091359250610414915050565b6100be6004803603602081101561022a57600080fd5b503573ffffffffffffffffffffffffffffffffffffffff166106c5565b60015460035460045473ffffffffffffffffffffffffffffffffffffffff928316929091169083565b610278610866565b73ffffffffffffffffffffffffffffffffffffffff16610296610387565b73ffffffffffffffffffffffffffffffffffffffff161461031857604080517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b6000805460405173ffffffffffffffffffffffffffffffffffffffff909116907f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0908390a3600080547fffffffffffffffffffffffff0000000000000000000000000000000000000000169055565b60005473ffffffffffffffffffffffffffffffffffffffff1690565b60606001800180548060200260200160405190810160405280929190818152602001828054801561040a57602002820191906000526020600020905b815473ffffffffffffffffffffffffffffffffffffffff1681526001909101906020018083116103df575b5050505050905090565b600061041e610866565b73ffffffffffffffffffffffffffffffffffffffff1661043c610387565b73ffffffffffffffffffffffffffffffffffffffff16146104be57604080517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b60006104c98661086a565b90508073ffffffffffffffffffffffffffffffffffffffff16633ede50c68686866040518463ffffffff1660e01b8152600401808473ffffffffffffffffffffffffffffffffffffffff16815260200180602001838152602001828103825284818151815260200191508051906020019060200280838360005b8381101561055b578181015183820152602001610543565b50505050905001945050505050600060405180830381600087803b15801561058257600080fd5b505af1158015610596573d6000803e3d6000fd5b5050600180547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff8516179055505083516105ed906002906020870190610951565b50600380547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff8781169182179092556004859055604080516020808201889052828252885192820192909252875192938516927f0111738b06eb1931e810f949dd1fe860c4b9708eaa16c2c0faa0b95dc764608f9289928992909182916060830191868101910280838360005b838110156106a8578181015183820152602001610690565b50505050905001935050505060405180910390a395945050505050565b6106cd610866565b73ffffffffffffffffffffffffffffffffffffffff166106eb610387565b73ffffffffffffffffffffffffffffffffffffffff161461076d57604080517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015290519081900360640190fd5b73ffffffffffffffffffffffffffffffffffffffff81166107d9576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401808060200182810382526026815260200180610a136026913960400191505060405180910390fd5b6000805460405173ffffffffffffffffffffffffffffffffffffffff808516939216917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e091a3600080547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff92909216919091179055565b3390565b60006040517f3d602d80600a3d3981f3363d3d373d3d3d363d7300000000000000000000000081528260601b60148201527f5af43d82803e903d91602b57fd5bf3000000000000000000000000000000000060288201526037816000f091505073ffffffffffffffffffffffffffffffffffffffff811661094c57604080517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601660248201527f455243313136373a20637265617465206661696c656400000000000000000000604482015290519081900360640190fd5b919050565b8280548282559060005260206000209081019282156109cb579160200282015b828111156109cb57825182547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff909116178255602090920191600190910190610971565b506109d79291506109db565b5090565b5b808211156109d75780547fffffffffffffffffffffffff00000000000000000000000000000000000000001681556001016109dc56fe4f776e61626c653a206e6577206f776e657220697320746865207a65726f2061646472657373a26469706673582212203cc56f57eaaee74a3425c0e570eb630fec39b947666b01f1034a2592284bcb2664736f6c634300060c0033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "deploy(address,address,address[],uint256)": {
+        "params": {
+          "honestThreshold": "Number of signers to process a transaction ",
+          "members": "Array of node group members addresses",
+          "nodeMgmtAddress": "address of the ECDSANodeManagement contract to initialize with",
+          "owner": "Owner of the  ECDSANodeManagement contract who can determine if the node group is closed or active"
+        },
+        "returns": {
+          "_0": "Address of the newest node management contract created*"
+        }
+      },
+      "getMembers()": {
+        "returns": {
+          "_0": "List of the keep members' addresses."
+        }
+      },
+      "owner()": {
+        "details": "Returns the address of the current owner."
+      },
+      "renounceOwnership()": {
+        "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner."
+      },
+      "transferOwnership(address)": {
+        "details": "Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "deploy(address,address,address[],uint256)": {
+        "notice": "Deploys a new node "
+      },
+      "getMembers()": {
+        "notice": "Returns members of the keep."
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 3028,
+        "contract": "contracts/synapse/ECDSAFactory.sol:ECDSAFactory",
+        "label": "_owner",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_address"
+      },
+      {
+        "astId": 6344,
+        "contract": "contracts/synapse/ECDSAFactory.sol:ECDSAFactory",
+        "label": "latestNodeGroup",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_struct(LatestNodeGroup)6342_storage"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_array(t_address)dyn_storage": {
+        "base": "t_address",
+        "encoding": "dynamic_array",
+        "label": "address[]",
+        "numberOfBytes": "32"
+      },
+      "t_struct(LatestNodeGroup)6342_storage": {
+        "encoding": "inplace",
+        "label": "struct ECDSAFactory.LatestNodeGroup",
+        "members": [
+          {
+            "astId": 6334,
+            "contract": "contracts/synapse/ECDSAFactory.sol:ECDSAFactory",
+            "label": "keepAddress",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_address"
+          },
+          {
+            "astId": 6337,
+            "contract": "contracts/synapse/ECDSAFactory.sol:ECDSAFactory",
+            "label": "members",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_address)dyn_storage"
+          },
+          {
+            "astId": 6339,
+            "contract": "contracts/synapse/ECDSAFactory.sol:ECDSAFactory",
+            "label": "owner",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_address"
+          },
+          {
+            "astId": 6341,
+            "contract": "contracts/synapse/ECDSAFactory.sol:ECDSAFactory",
+            "label": "honestThreshold",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_uint256"
+          }
+        ],
+        "numberOfBytes": "128"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  }
+}
