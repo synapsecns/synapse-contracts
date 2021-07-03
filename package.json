@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build-go": "sol-merger \"./contracts/synapse/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin",
+    "build-go": "sol-merger \"./contracts/synapse/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/synapse/wrappers/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin",
     "post-install": "build-go"
   },
   "repository": {
