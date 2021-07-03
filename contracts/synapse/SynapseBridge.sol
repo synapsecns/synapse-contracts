@@ -6,9 +6,11 @@ import '@openzeppelin/contracts-upgradeable/proxy/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
 import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
+import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
+import './interfaces/IMetaSwapDeposit.sol';
 
-interface IERC20Mintable {
+interface IERC20Mintable is IERC20 {
   function mint(address to, uint256 amount) external;
 
   function mintMultiple(
@@ -50,6 +52,24 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     IERC20Mintable token,
     uint256 amount,
     uint256 fee
+  );
+  event TokenDepositAndSwap(
+    address from,
+    address to,
+    uint256 chainId,
+    IERC20 token,
+    uint256 amount,
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 minDy,
+    uint256 deadline
+  );
+  event TokenMintAndSwap(
+    address to,
+    IERC20Mintable token,
+    uint256 amount,
+    uint256 fee,
+    bool swapSuccess
   );
 
   // VIEW FUNCTIONS ***/
@@ -188,5 +208,94 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     fees[address(token)] = fees[address(token)].add(fee);
     token.mintMultiple(to, amount, address(this), fee);
     emit TokenMint(to, token, amount, fee);
+  }
+
+  /**
+    @notice Relays to nodes to transfers an ERC20 token cross-chain
+    @param to address on other chain to bridge assets to
+    @param chainId which chain to bridge assets onto
+    @param token ERC20 compatible token to deposit into the bridge
+    @param amount Amount in native token decimals to transfer cross-chain pre-fees
+    @param tokenIndexFrom the token the user wants to swap from
+    @param tokenIndexTo the token the user wants to swap to
+    @param minDy the min amount the user would like to receive, or revert.
+    @param deadline latest timestamp to accept this transaction
+    **/
+  function depositAndSwap(
+    address to,
+    uint256 chainId,
+    IERC20 token,
+    uint256 amount,
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 minDy,
+    uint256 deadline
+  ) public {
+    token.safeTransferFrom(msg.sender, address(this), amount);
+    emit TokenDepositAndSwap(
+      msg.sender,
+      to,
+      chainId,
+      token,
+      amount,
+      tokenIndexFrom,
+      tokenIndexTo,
+      minDy,
+      deadline
+    );
+  }
+
+  /**
+    @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+    @dev This means the BridgeDeposit.sol contract must have minter access to the token attempting to be minted
+    @param to address on other chain to redeem underlying assets to
+    @param token ERC20 compatible token to deposit into the bridge
+    @param amount Amount in native token decimals to transfer cross-chain post-fees
+    @param fee Amount in native token decimals to save to the contract as fees
+    **/
+  function mintAndSwap(
+    address to,
+    IERC20Mintable token,
+    uint256 amount,
+    uint256 fee,
+    IMetaSwapDeposit pool,
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 minDy,
+    uint256 deadline
+  ) public {
+    require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
+    fees[address(token)] = fees[address(token)].add(fee);
+    token.mint(address(this), amount.add(fee));
+    // first check to make sure more will be given than min amount required
+    uint256 expectedOutput = IMetaSwapDeposit(pool).calculateSwap(
+      tokenIndexFrom,
+      tokenIndexTo,
+      amount
+    );
+    if (expectedOutput >= minDy) {
+      // proceed with swap
+      token.approve(address(pool), amount);
+      try
+        IMetaSwapDeposit(pool).swap(
+          tokenIndexFrom,
+          tokenIndexTo,
+          amount,
+          minDy,
+          deadline
+        )
+      returns (uint256 finalSwappedAmount) {
+        // Swap succeeded, transfer swapped asset
+        IERC20 swappedTokenTo = IMetaSwapDeposit(pool).getToken(tokenIndexTo);
+        swappedTokenTo.safeTransfer(to, finalSwappedAmount);
+        emit TokenMintAndSwap(to, token, amount, fee, true);
+      } catch {
+        IERC20(token).safeTransfer(to, amount);
+        emit TokenMintAndSwap(to, token, amount, fee, false);
+      }
+    } else {
+      IERC20(token).safeTransfer(to, amount);
+      emit TokenMintAndSwap(to, token, amount, fee, false);
+    }
   }
 }
