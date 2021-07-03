@@ -9,6 +9,7 @@ import '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import './interfaces/IMetaSwapDeposit.sol';
+import './interfaces/ISwap.sol';
 
 interface IERC20Mintable is IERC20 {
   function mint(address to, uint256 amount) external;
@@ -67,6 +68,23 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
   event TokenMintAndSwap(
     address to,
     IERC20Mintable token,
+    uint256 amount,
+    uint256 fee,
+    bool swapSuccess
+  );
+  event TokenRedeemAndSwap(
+    address to,
+    uint256 chainId,
+    IERC20 token,
+    uint256 amount,
+    uint256 swapTokenAmount,
+    uint8 swapTokenIndex,
+    uint256 swapMinAmount,
+    uint256 swapDeadline
+  );
+  event TokenWithdrawAndRemove(
+    address to,
+    IERC20 token,
     uint256 amount,
     uint256 fee,
     bool swapSuccess
@@ -206,7 +224,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
   ) public {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
-    token.mintMultiple(to, amount, address(this), fee);
+    token.mint(address(this), amount.add(fee));
+    IERC20(token).safeTransfer(to, amount);
     emit TokenMint(to, token, amount, fee);
   }
 
@@ -247,6 +266,36 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
 
   /**
     @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+    @param to address on other chain to redeem underlying assets to
+    @param chainId which underlying chain to bridge assets onto
+    @param token ERC20 compatible token to deposit into the bridge
+    @param amount Amount in native token decimals to transfer cross-chain pre-fees
+    **/
+  function redeemAndSwap(
+    address to,
+    uint256 chainId,
+    ERC20Burnable token,
+    uint256 amount,
+    uint256 swapTokenAmount,
+    uint8 swapTokenIndex,
+    uint256 swapMinAmount,
+    uint256 swapDeadline
+  ) public {
+    token.burnFrom(msg.sender, amount);
+    emit TokenRedeemAndSwap(
+      to,
+      chainId,
+      token,
+      amount,
+      swapTokenAmount,
+      swapTokenIndex,
+      swapMinAmount,
+      swapDeadline
+    );
+  }
+
+  /**
+    @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
     @dev This means the BridgeDeposit.sol contract must have minter access to the token attempting to be minted
     @param to address on other chain to redeem underlying assets to
     @param token ERC20 compatible token to deposit into the bridge
@@ -266,15 +315,16 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
   ) public {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
-    token.mint(address(this), amount.add(fee));
     // first check to make sure more will be given than min amount required
     uint256 expectedOutput = IMetaSwapDeposit(pool).calculateSwap(
       tokenIndexFrom,
       tokenIndexTo,
       amount
     );
+
     if (expectedOutput >= minDy) {
       // proceed with swap
+      token.mint(address(this), amount.add(fee));
       token.approve(address(pool), amount);
       try
         IMetaSwapDeposit(pool).swap(
@@ -294,8 +344,60 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
         emit TokenMintAndSwap(to, token, amount, fee, false);
       }
     } else {
+      token.mint(address(this), amount.add(fee));
       IERC20(token).safeTransfer(to, amount);
       emit TokenMintAndSwap(to, token, amount, fee, false);
+    }
+  }
+
+  /**
+    @notice Function to be called by the node group to withdraw the underlying assets from the contract
+    @param to address on chain to send underlying assets to
+    @param token ERC20 compatible token to withdraw from the bridge
+    @param amount Amount in native token decimals to withdraw
+    @param fee Amount in native token decimals to save to the contract as fees
+    **/
+  function withdrawAndRemove(
+    address to,
+    IERC20 token,
+    uint256 amount,
+    uint256 fee,
+    ISwap pool,
+    uint256 swapTokenAmount,
+    uint8 swapTokenIndex,
+    uint256 swapMinAmount,
+    uint256 swapDeadline
+  ) public {
+    require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
+    fees[address(token)] = fees[address(token)].add(fee);
+    // first check to make sure more will be given than min amount required
+
+    uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
+      swapTokenAmount,
+      swapTokenIndex
+    );
+
+    if (expectedOutput >= swapMinAmount) {
+      token.safeApprove(address(pool), swapTokenAmount);
+      try
+        ISwap(pool).removeLiquidityOneToken(
+          swapTokenAmount,
+          swapTokenIndex,
+          swapMinAmount,
+          swapDeadline
+        )
+      returns (uint256 finalSwappedAmount) {
+        // Swap succeeded, transfer swapped asset
+        IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
+        swappedTokenTo.safeTransfer(to, finalSwappedAmount);
+        emit TokenWithdrawAndRemove(to, token, amount, fee, true);
+      } catch {
+        IERC20(token).safeTransfer(to, amount);
+        emit TokenWithdrawAndRemove(to, token, amount, fee, false);
+      }
+    } else {
+      token.safeTransfer(to, amount);
+      emit TokenWithdrawAndRemove(to, token, amount, fee, false);
     }
   }
 }
