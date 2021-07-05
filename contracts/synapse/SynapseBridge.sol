@@ -209,8 +209,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
   }
 
   /**
-    @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
-    @dev This means the BridgeDeposit.sol contract must have minter access to the token attempting to be minted
+    @notice Nodes call this function to mint a SynERC20 (or any asset that the bridge is given minter access to). This is called by the nodes after a TokenDeposit event is emitted.
+    @dev This means the SynapseBridge.sol contract must have minter access to the token attempting to be minted
     @param to address on other chain to redeem underlying assets to
     @param token ERC20 compatible token to deposit into the bridge
     @param amount Amount in native token decimals to transfer cross-chain post-fees
@@ -230,14 +230,14 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
   }
 
   /**
-    @notice Relays to nodes to transfers an ERC20 token cross-chain
+    @notice Relays to nodes to both transfer an ERC20 token cross-chain, and then have the nodes execute a swap through a liquidity pool on behalf of the user.
     @param to address on other chain to bridge assets to
     @param chainId which chain to bridge assets onto
     @param token ERC20 compatible token to deposit into the bridge
     @param amount Amount in native token decimals to transfer cross-chain pre-fees
     @param tokenIndexFrom the token the user wants to swap from
     @param tokenIndexTo the token the user wants to swap to
-    @param minDy the min amount the user would like to receive, or revert.
+    @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
     @param deadline latest timestamp to accept this transaction
     **/
   function depositAndSwap(
@@ -265,11 +265,15 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
   }
 
   /**
-    @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+    @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
     @param to address on other chain to redeem underlying assets to
     @param chainId which underlying chain to bridge assets onto
     @param token ERC20 compatible token to deposit into the bridge
     @param amount Amount in native token decimals to transfer cross-chain pre-fees
+    @param swapTokenAmount Amount of (typically) LP token to pass to the nodes to attempt to removeLiquidity() with to redeem for the underlying assets of the LP token
+    @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
+    @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
+    @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
     **/
   function redeemAndSwap(
     address to,
@@ -295,12 +299,17 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
   }
 
   /**
-    @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+    @notice Nodes call this function to mint a SynERC20 (or any asset that the bridge is given minter access to), and then attempt to swap the SynERC20 into the desired destination asset. This is called by the nodes after a TokenDepositAndSwap event is emitted.
     @dev This means the BridgeDeposit.sol contract must have minter access to the token attempting to be minted
     @param to address on other chain to redeem underlying assets to
     @param token ERC20 compatible token to deposit into the bridge
     @param amount Amount in native token decimals to transfer cross-chain post-fees
     @param fee Amount in native token decimals to save to the contract as fees
+    @param pool Destination chain's pool to use to swap SynERC20 -> Asset. The nodes determine this by using PoolConfig.sol.
+    @param tokenIndexFrom Index of the SynERC20 asset in the pool
+    @param tokenIndexTo Index of the desired final asset
+    @param minDy Minumum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20.
+    @param deadline Epoch time of the deadline that the swap is allowed to be executed. 
     **/
   function mintAndSwap(
     address to,
@@ -356,6 +365,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     @param token ERC20 compatible token to withdraw from the bridge
     @param amount Amount in native token decimals to withdraw
     @param fee Amount in native token decimals to save to the contract as fees
+    @param pool Destination chain's pool to use to swap SynERC20 -> Asset. The nodes determine this by using PoolConfig.sol.
+    @param swapTokenAmount Amount of (typically) LP token to attempt to removeLiquidity() with to redeem for the underlying assets of the LP token
+    @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
+    @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
+    @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
     **/
   function withdrawAndRemove(
     address to,
