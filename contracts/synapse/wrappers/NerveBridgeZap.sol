@@ -22,7 +22,9 @@ contract NerveBridgeZap {
   IERC20[] public baseTokens;
   uint256 constant MAX_UINT256 = 2**256 - 1;
 
-  // Constructs the contract, approves each token inside of baseSwap to be used by baseSwap (needed for addLiquidity())
+  /**
+   * @notice Constructs the contract, approves each token inside of baseSwap to be used by baseSwap (needed for addLiquidity())
+   */
   constructor(ISwap _baseSwap, ISynapseBridge _synapseBridge) public {
     baseSwap = _baseSwap;
     synapseBridge = _synapseBridge;
