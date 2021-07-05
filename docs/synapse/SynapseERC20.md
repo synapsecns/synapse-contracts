@@ -23,10 +23,10 @@
         Token name
 
         - `_underlyingChainId`:
-        Base asset chain ID which SynapseERC20 represents 
+        Base asset chain ID which SynapseERC20 represents
 
         - `_underlyingTokenAddress`:
-        Base asset address which SynapseERC20 represents 
+        Base asset address which SynapseERC20 represents
 
         - `_owner`:
         admin address to be initialized with

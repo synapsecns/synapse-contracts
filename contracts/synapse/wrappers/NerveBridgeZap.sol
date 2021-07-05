@@ -6,6 +6,14 @@ import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 import '../interfaces/ISwap.sol';
 import '../interfaces/ISynapseBridge.sol';
 
+/**
+ * @title NerveBridgeZap
+ * @notice This contract is responsible for handling user Zaps into the SynapseBridge contract, through the Nerve Swap contracts. It does so
+ * It does so by combining the action of addLiquidity() to the base swap pool, and then calling either deposit() or depositAndSwap() on the bridge.
+ * This is done in hopes of automating portions of the bridge user experience to users, while keeping the SynapseBridge contract logic small.
+ *
+ * @dev This contract should be deployed with a base Swap.sol address and a SynapseBridge.sol address, otherwise, it will not function.
+ */
 contract NerveBridgeZap {
   using SafeERC20 for IERC20;
 
@@ -14,6 +22,7 @@ contract NerveBridgeZap {
   IERC20[] public baseTokens;
   uint256 constant MAX_UINT256 = 2**256 - 1;
 
+  // Constructs the contract, approves each token inside of baseSwap to be used by baseSwap (needed for addLiquidity())
   constructor(ISwap _baseSwap, ISynapseBridge _synapseBridge) public {
     baseSwap = _baseSwap;
     synapseBridge = _synapseBridge;
@@ -31,6 +40,16 @@ contract NerveBridgeZap {
     }
   }
 
+  /**
+   * @notice Combines adding liquidity to the given Swap, and calls deposit() on the bridge using that LP token
+   * @param to address on other chain to bridge assets to
+   * @param chainId which chain to bridge assets onto
+   * @param token ERC20 compatible token to deposit into the bridge
+   * @param liquidityAmounts the amounts of each token to add, in their native precision
+   * @param minToMint the minimum LP tokens adding this amount of liquidity
+   * should mint, otherwise revert. Handy for front-running mitigation
+   * @param deadline latest timestamp to accept this transaction
+   **/
   function zapAndDeposit(
     address to,
     uint256 chainId,
@@ -62,6 +81,20 @@ contract NerveBridgeZap {
     synapseBridge.deposit(to, chainId, token, liqAdded);
   }
 
+  /**
+   * @notice Combines adding liquidity to the given Swap, and calls depositAndSwap() on the bridge using that LP token
+   * @param to address on other chain to bridge assets to
+   * @param chainId which chain to bridge assets onto
+   * @param token ERC20 compatible token to deposit into the bridge
+   * @param liquidityAmounts the amounts of each token to add, in their native precision
+   * @param minToMint the minimum LP tokens adding this amount of liquidity
+   * should mint, otherwise revert. Handy for front-running mitigation
+   * @param liqDeadline latest timestamp to accept this transaction
+   * @param tokenIndexFrom the token the user wants to swap from
+   * @param tokenIndexTo the token the user wants to swap to
+   * @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
+   * @param swapDeadline latest timestamp to accept this transaction
+   **/
   function zapAndDepositAndSwap(
     address to,
     uint256 chainId,
