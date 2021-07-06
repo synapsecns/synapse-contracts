@@ -20,7 +20,7 @@
 
 {{#ownFunctions}}
 {{#if (or (eq visibility "public") (eq visibility "external"))}}
-# Function `{{name}}({{args}}){{#if outputs}} → {{outputs}}{{/if}}` {#{{anchor~}} }
+# Function `{{name}}({{args}}){{#if outputs}} → {{outputs}}{{/if}}` (#{{anchor~}})
 {{#if natspec.userdoc}}{{natspec.userdoc}}{{else}}No description{{/if}}
 {{#if natspec.devdoc}}{{natspec.devdoc}}{{/if}}
 {{#if natspec.params}}

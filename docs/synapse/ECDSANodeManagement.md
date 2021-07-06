@@ -20,13 +20,13 @@
 - [`KeepClosed()`](#ECDSANodeManagement-KeepClosed--)
 - [`KeepTerminated()`](#ECDSANodeManagement-KeepTerminated--)
 
-# Function `getPublicKey() → bytes` {#ECDSANodeManagement-getPublicKey--}
+# Function `getPublicKey() → bytes` (#ECDSANodeManagement-getPublicKey--)
 Returns keep's ECDSA public key.
 
 
 ## Return Values:
 - s ECDSA public key.
-# Function `submitPublicKey(bytes _publicKey)` {#ECDSANodeManagement-submitPublicKey-bytes-}
+# Function `submitPublicKey(bytes _publicKey)` (#ECDSANodeManagement-submitPublicKey-bytes-)
 Submits a public key to the keep.
 
 Public key is published successfully if all members submit the same
@@ -37,38 +37,38 @@ event.
 
 ## Parameters:
 - `_publicKey`: Signer's public key.
-# Function `getOwner() → address` {#ECDSANodeManagement-getOwner--}
+# Function `getOwner() → address` (#ECDSANodeManagement-getOwner--)
 Gets the owner of the keep.
 
 
 ## Return Values:
 - Address of the keep owner.
-# Function `getOpenedTimestamp() → uint256` {#ECDSANodeManagement-getOpenedTimestamp--}
+# Function `getOpenedTimestamp() → uint256` (#ECDSANodeManagement-getOpenedTimestamp--)
 Gets the timestamp the keep was opened at.
 
 
 ## Return Values:
 - Timestamp the keep was opened at.
-# Function `closeKeep()` {#ECDSANodeManagement-closeKeep--}
+# Function `closeKeep()` (#ECDSANodeManagement-closeKeep--)
 Closes keep when owner decides that they no longer need it.
 Releases bonds to the keep members.
 
 The function can be called only by the owner of the keep and only
 if the keep has not been already closed.
-# Function `isActive() → bool` {#ECDSANodeManagement-isActive--}
+# Function `isActive() → bool` (#ECDSANodeManagement-isActive--)
 Returns true if the keep is active.
 
 
 ## Return Values:
 - true if the keep is active, false otherwise.
-# Function `isClosed() → bool` {#ECDSANodeManagement-isClosed--}
+# Function `isClosed() → bool` (#ECDSANodeManagement-isClosed--)
 Returns true if the keep is closed and members no longer support
 this keep.
 
 
 ## Return Values:
 - true if the keep is closed, false otherwise.
-# Function `isTerminated() → bool` {#ECDSANodeManagement-isTerminated--}
+# Function `isTerminated() → bool` (#ECDSANodeManagement-isTerminated--)
 Returns true if the keep has been terminated.
 Keep is terminated when bonds are seized and members no longer support
 this keep.
@@ -76,13 +76,13 @@ this keep.
 
 ## Return Values:
 - true if the keep has been terminated, false otherwise.
-# Function `getMembers() → address[]` {#ECDSANodeManagement-getMembers--}
+# Function `getMembers() → address[]` (#ECDSANodeManagement-getMembers--)
 Returns members of the keep.
 
 
 ## Return Values:
 - List of the keep members' addresses.
-# Function `initialize(address _owner, address[] _members, uint256 _honestThreshold)` {#ECDSANodeManagement-initialize-address-address---uint256-}
+# Function `initialize(address _owner, address[] _members, uint256 _honestThreshold)` (#ECDSANodeManagement-initialize-address-address---uint256-)
 Initialization function.
 
 We use clone factory to create new keep. That is why this contract
