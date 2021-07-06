@@ -28,17 +28,17 @@
 - [`TokenRedeemAndSwap(address to, uint256 chainId, contract IERC20 token, uint256 amount, uint256 swapTokenAmount, uint8 swapTokenIndex, uint256 swapMinAmount, uint256 swapDeadline)`](#SynapseBridge-TokenRedeemAndSwap-address-uint256-contract-IERC20-uint256-uint256-uint8-uint256-uint256-)
 - [`TokenWithdrawAndRemove(address to, contract IERC20 token, uint256 amount, uint256 fee, bool swapSuccess)`](#SynapseBridge-TokenWithdrawAndRemove-address-contract-IERC20-uint256-uint256-bool-)
 
-# Function `initialize()` {#SynapseBridge-initialize--}
+# <a id="SynapseBridge-initialize--"></a> Function `initialize()`
 No description
-# Function `getFeeBalance(address tokenAddress) → uint256` {#SynapseBridge-getFeeBalance-address-}
+# <a id="SynapseBridge-getFeeBalance-address-"></a> Function `getFeeBalance(address tokenAddress) → uint256`
 No description
-# Function `getETHFeeBalance() → uint256` {#SynapseBridge-getETHFeeBalance--}
+# <a id="SynapseBridge-getETHFeeBalance--"></a> Function `getETHFeeBalance() → uint256`
 No description
-# Function `withdrawFees(contract IERC20 token, address to)` {#SynapseBridge-withdrawFees-contract-IERC20-address-}
+# <a id="SynapseBridge-withdrawFees-contract-IERC20-address-"></a> Function `withdrawFees(contract IERC20 token, address to)`
 No description
-# Function `withdrawETHFees(address payable to)` {#SynapseBridge-withdrawETHFees-address-payable-}
+# <a id="SynapseBridge-withdrawETHFees-address-payable-"></a> Function `withdrawETHFees(address payable to)`
 No description
-# Function `depositETH(address to, uint256 chainId, uint256 amount)` {#SynapseBridge-depositETH-address-uint256-uint256-}
+# <a id="SynapseBridge-depositETH-address-uint256-uint256-"></a> Function `depositETH(address to, uint256 chainId, uint256 amount)`
 No description
 ## Parameters:
 - `to`: address on other chain to bridge assets to
@@ -47,7 +47,7 @@ No description
 
 - `amount`: Amount in native token decimals to transfer cross-chain pre-fees
 
-# Function `deposit(address to, uint256 chainId, contract IERC20 token, uint256 amount)` {#SynapseBridge-deposit-address-uint256-contract-IERC20-uint256-}
+# <a id="SynapseBridge-deposit-address-uint256-contract-IERC20-uint256-"></a> Function `deposit(address to, uint256 chainId, contract IERC20 token, uint256 amount)`
 No description
 ## Parameters:
 - `to`: address on other chain to bridge assets to
@@ -58,7 +58,7 @@ No description
 
 - `amount`: Amount in native token decimals to transfer cross-chain pre-fees
 
-# Function `redeem(address to, uint256 chainId, contract ERC20Burnable token, uint256 amount)` {#SynapseBridge-redeem-address-uint256-contract-ERC20Burnable-uint256-}
+# <a id="SynapseBridge-redeem-address-uint256-contract-ERC20Burnable-uint256-"></a> Function `redeem(address to, uint256 chainId, contract ERC20Burnable token, uint256 amount)`
 No description
 ## Parameters:
 - `to`: address on other chain to redeem underlying assets to
@@ -69,7 +69,7 @@ No description
 
 - `amount`: Amount in native token decimals to transfer cross-chain pre-fees
 
-# Function `withdraw(address to, contract IERC20 token, uint256 amount, uint256 fee)` {#SynapseBridge-withdraw-address-contract-IERC20-uint256-uint256-}
+# <a id="SynapseBridge-withdraw-address-contract-IERC20-uint256-uint256-"></a> Function `withdraw(address to, contract IERC20 token, uint256 amount, uint256 fee)`
 No description
 ## Parameters:
 - `to`: address on chain to send underlying assets to
@@ -80,7 +80,7 @@ No description
 
 - `fee`: Amount in native token decimals to save to the contract as fees
 
-# Function `withdrawETH(address payable to, uint256 amount, uint256 fee)` {#SynapseBridge-withdrawETH-address-payable-uint256-uint256-}
+# <a id="SynapseBridge-withdrawETH-address-payable-uint256-uint256-"></a> Function `withdrawETH(address payable to, uint256 amount, uint256 fee)`
 No description
 ## Parameters:
 - `to`: address on chain to send gas asset to
@@ -89,7 +89,7 @@ No description
 
 - `fee`: Amount in gas token decimals to save to the contract as fees
 
-# Function `mint(address to, contract IERC20Mintable token, uint256 amount, uint256 fee)` {#SynapseBridge-mint-address-contract-IERC20Mintable-uint256-uint256-}
+# <a id="SynapseBridge-mint-address-contract-IERC20Mintable-uint256-uint256-"></a> Function `mint(address to, contract IERC20Mintable token, uint256 amount, uint256 fee)`
 This means the SynapseBridge.sol contract must have minter access to the token attempting to be minted
 
 ## Parameters:
@@ -101,7 +101,7 @@ This means the SynapseBridge.sol contract must have minter access to the token a
 
 - `fee`: Amount in native token decimals to save to the contract as fees
 
-# Function `depositAndSwap(address to, uint256 chainId, contract IERC20 token, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline)` {#SynapseBridge-depositAndSwap-address-uint256-contract-IERC20-uint256-uint8-uint8-uint256-uint256-}
+# <a id="SynapseBridge-depositAndSwap-address-uint256-contract-IERC20-uint256-uint8-uint8-uint256-uint256-"></a> Function `depositAndSwap(address to, uint256 chainId, contract IERC20 token, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline)`
 No description
 ## Parameters:
 - `to`: address on other chain to bridge assets to
@@ -120,7 +120,7 @@ No description
 
 - `deadline`: latest timestamp to accept this transaction
 
-# Function `redeemAndSwap(address to, uint256 chainId, contract ERC20Burnable token, uint256 amount, uint256 swapTokenAmount, uint8 swapTokenIndex, uint256 swapMinAmount, uint256 swapDeadline)` {#SynapseBridge-redeemAndSwap-address-uint256-contract-ERC20Burnable-uint256-uint256-uint8-uint256-uint256-}
+# <a id="SynapseBridge-redeemAndSwap-address-uint256-contract-ERC20Burnable-uint256-uint256-uint8-uint256-uint256-"></a> Function `redeemAndSwap(address to, uint256 chainId, contract ERC20Burnable token, uint256 amount, uint256 swapTokenAmount, uint8 swapTokenIndex, uint256 swapMinAmount, uint256 swapDeadline)`
 No description
 ## Parameters:
 - `to`: address on other chain to redeem underlying assets to
@@ -139,7 +139,7 @@ No description
 
 - `swapDeadline`: Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
 
-# Function `mintAndSwap(address to, contract IERC20Mintable token, uint256 amount, uint256 fee, contract IMetaSwapDeposit pool, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline)` {#SynapseBridge-mintAndSwap-address-contract-IERC20Mintable-uint256-uint256-contract-IMetaSwapDeposit-uint8-uint8-uint256-uint256-}
+# <a id="SynapseBridge-mintAndSwap-address-contract-IERC20Mintable-uint256-uint256-contract-IMetaSwapDeposit-uint8-uint8-uint256-uint256-"></a> Function `mintAndSwap(address to, contract IERC20Mintable token, uint256 amount, uint256 fee, contract IMetaSwapDeposit pool, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline)`
 This means the BridgeDeposit.sol contract must have minter access to the token attempting to be minted
 
 ## Parameters:
@@ -161,7 +161,7 @@ This means the BridgeDeposit.sol contract must have minter access to the token a
 
 - `deadline`: Epoch time of the deadline that the swap is allowed to be executed.
 
-# Function `withdrawAndRemove(address to, contract IERC20 token, uint256 amount, uint256 fee, contract ISwap pool, uint256 swapTokenAmount, uint8 swapTokenIndex, uint256 swapMinAmount, uint256 swapDeadline)` {#SynapseBridge-withdrawAndRemove-address-contract-IERC20-uint256-uint256-contract-ISwap-uint256-uint8-uint256-uint256-}
+# <a id="SynapseBridge-withdrawAndRemove-address-contract-IERC20-uint256-uint256-contract-ISwap-uint256-uint8-uint256-uint256-"></a> Function `withdrawAndRemove(address to, contract IERC20 token, uint256 amount, uint256 fee, contract ISwap pool, uint256 swapTokenAmount, uint8 swapTokenIndex, uint256 swapMinAmount, uint256 swapDeadline)`
 No description
 ## Parameters:
 - `to`: address on chain to send underlying assets to
@@ -183,19 +183,19 @@ No description
 - `swapDeadline`: Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
 
 
-# <a id="SynapseBridge-TokenDeposit-address-address-uint256-contract-IERC20-uint256-"></a> Event `TokenDeposit(address from, address to, uint256 chainId, contract IERC20 token, uint256 amount)` }
+# <a id="SynapseBridge-TokenDeposit-address-address-uint256-contract-IERC20-uint256-"></a> Event `TokenDeposit(address from, address to, uint256 chainId, contract IERC20 token, uint256 amount)` 
 No description
-# <a id="SynapseBridge-TokenRedeem-address-uint256-contract-IERC20-uint256-"></a> Event `TokenRedeem(address to, uint256 chainId, contract IERC20 token, uint256 amount)` }
+# <a id="SynapseBridge-TokenRedeem-address-uint256-contract-IERC20-uint256-"></a> Event `TokenRedeem(address to, uint256 chainId, contract IERC20 token, uint256 amount)` 
 No description
-# <a id="SynapseBridge-TokenWithdraw-address-contract-IERC20-uint256-uint256-"></a> Event `TokenWithdraw(address to, contract IERC20 token, uint256 amount, uint256 fee)` }
+# <a id="SynapseBridge-TokenWithdraw-address-contract-IERC20-uint256-uint256-"></a> Event `TokenWithdraw(address to, contract IERC20 token, uint256 amount, uint256 fee)` 
 No description
-# <a id="SynapseBridge-TokenMint-address-contract-IERC20Mintable-uint256-uint256-"></a> Event `TokenMint(address to, contract IERC20Mintable token, uint256 amount, uint256 fee)` }
+# <a id="SynapseBridge-TokenMint-address-contract-IERC20Mintable-uint256-uint256-"></a> Event `TokenMint(address to, contract IERC20Mintable token, uint256 amount, uint256 fee)` 
 No description
-# <a id="SynapseBridge-TokenDepositAndSwap-address-address-uint256-contract-IERC20-uint256-uint8-uint8-uint256-uint256-"></a> Event `TokenDepositAndSwap(address from, address to, uint256 chainId, contract IERC20 token, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline)` }
+# <a id="SynapseBridge-TokenDepositAndSwap-address-address-uint256-contract-IERC20-uint256-uint8-uint8-uint256-uint256-"></a> Event `TokenDepositAndSwap(address from, address to, uint256 chainId, contract IERC20 token, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline)` 
 No description
-# <a id="SynapseBridge-TokenMintAndSwap-address-contract-IERC20Mintable-uint256-uint256-bool-"></a> Event `TokenMintAndSwap(address to, contract IERC20Mintable token, uint256 amount, uint256 fee, bool swapSuccess)` }
+# <a id="SynapseBridge-TokenMintAndSwap-address-contract-IERC20Mintable-uint256-uint256-bool-"></a> Event `TokenMintAndSwap(address to, contract IERC20Mintable token, uint256 amount, uint256 fee, bool swapSuccess)` 
 No description
-# <a id="SynapseBridge-TokenRedeemAndSwap-address-uint256-contract-IERC20-uint256-uint256-uint8-uint256-uint256-"></a> Event `TokenRedeemAndSwap(address to, uint256 chainId, contract IERC20 token, uint256 amount, uint256 swapTokenAmount, uint8 swapTokenIndex, uint256 swapMinAmount, uint256 swapDeadline)` }
+# <a id="SynapseBridge-TokenRedeemAndSwap-address-uint256-contract-IERC20-uint256-uint256-uint8-uint256-uint256-"></a> Event `TokenRedeemAndSwap(address to, uint256 chainId, contract IERC20 token, uint256 amount, uint256 swapTokenAmount, uint8 swapTokenIndex, uint256 swapMinAmount, uint256 swapDeadline)` 
 No description
-# <a id="SynapseBridge-TokenWithdrawAndRemove-address-contract-IERC20-uint256-uint256-bool-"></a> Event `TokenWithdrawAndRemove(address to, contract IERC20 token, uint256 amount, uint256 fee, bool swapSuccess)` }
+# <a id="SynapseBridge-TokenWithdrawAndRemove-address-contract-IERC20-uint256-uint256-bool-"></a> Event `TokenWithdrawAndRemove(address to, contract IERC20 token, uint256 amount, uint256 fee, bool swapSuccess)` 
 No description
