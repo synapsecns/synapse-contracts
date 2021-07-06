@@ -11,18 +11,18 @@
 - [`calculateSwapFee(uint256 chainId, address tokenAddress, uint256 amount)`](#BridgeConfig-calculateSwapFee-uint256-address-uint256-)
 
 
-# Function `getAllTokenIDs() → address[] result` {#BridgeConfig-getAllTokenIDs--}
+# <a id="BridgeConfig-getAllTokenIDs--"></a> Function `getAllTokenIDs() → address[] result`
 No description
-# Function `getTokenID(uint256 chainID, address tokenAddress) → address` {#BridgeConfig-getTokenID-uint256-address-}
+# <a id="BridgeConfig-getTokenID-uint256-address-"></a> Function `getTokenID(uint256 chainID, address tokenAddress) → address`
 No description
-# Function `getMultichainToken(address tokenID, uint256 chainID) → address` {#BridgeConfig-getMultichainToken-address-uint256-}
+# <a id="BridgeConfig-getMultichainToken-address-uint256-"></a> Function `getMultichainToken(address tokenID, uint256 chainID) → address`
 No description
-# Function `isTokenIDExist(address tokenID) → bool` {#BridgeConfig-isTokenIDExist-address-}
+# <a id="BridgeConfig-isTokenIDExist-address-"></a> Function `isTokenIDExist(address tokenID) → bool`
 No description
-# Function `getTokenConfig(address tokenID, uint256 chainID) → struct BridgeConfig.TokenConfig` {#BridgeConfig-getTokenConfig-address-uint256-}
+# <a id="BridgeConfig-getTokenConfig-address-uint256-"></a> Function `getTokenConfig(address tokenID, uint256 chainID) → struct BridgeConfig.TokenConfig`
 No description
-# Function `setTokenConfig(address tokenID, uint256 chainID, struct BridgeConfig.TokenConfig config) → bool` {#BridgeConfig-setTokenConfig-address-uint256-struct-BridgeConfig-TokenConfig-}
+# <a id="BridgeConfig-setTokenConfig-address-uint256-struct-BridgeConfig-TokenConfig-"></a> Function `setTokenConfig(address tokenID, uint256 chainID, struct BridgeConfig.TokenConfig config) → bool`
 No description
-# Function `calculateSwapFee(uint256 chainId, address tokenAddress, uint256 amount) → uint256` {#BridgeConfig-calculateSwapFee-uint256-address-uint256-}
+# <a id="BridgeConfig-calculateSwapFee-uint256-address-uint256-"></a> Function `calculateSwapFee(uint256 chainId, address tokenAddress, uint256 amount) → uint256`
 No description
 

@@ -19,34 +19,34 @@
 - [`removeLiquidityImbalance(uint256[] amounts, uint256 maxBurnAmount, uint256 deadline)`](#ISwap-removeLiquidityImbalance-uint256---uint256-uint256-)
 
 
-# Function `getA() → uint256` {#ISwap-getA--}
+# <a id="ISwap-getA--"></a> Function `getA() → uint256`
 No description
-# Function `getToken(uint8 index) → contract IERC20` {#ISwap-getToken-uint8-}
+# <a id="ISwap-getToken-uint8-"></a> Function `getToken(uint8 index) → contract IERC20`
 No description
-# Function `getTokenIndex(address tokenAddress) → uint8` {#ISwap-getTokenIndex-address-}
+# <a id="ISwap-getTokenIndex-address-"></a> Function `getTokenIndex(address tokenAddress) → uint8`
 No description
-# Function `getTokenBalance(uint8 index) → uint256` {#ISwap-getTokenBalance-uint8-}
+# <a id="ISwap-getTokenBalance-uint8-"></a> Function `getTokenBalance(uint8 index) → uint256`
 No description
-# Function `getVirtualPrice() → uint256` {#ISwap-getVirtualPrice--}
+# <a id="ISwap-getVirtualPrice--"></a> Function `getVirtualPrice() → uint256`
 No description
-# Function `calculateSwap(uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 dx) → uint256` {#ISwap-calculateSwap-uint8-uint8-uint256-}
+# <a id="ISwap-calculateSwap-uint8-uint8-uint256-"></a> Function `calculateSwap(uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 dx) → uint256`
 No description
-# Function `calculateTokenAmount(uint256[] amounts, bool deposit) → uint256` {#ISwap-calculateTokenAmount-uint256---bool-}
+# <a id="ISwap-calculateTokenAmount-uint256---bool-"></a> Function `calculateTokenAmount(uint256[] amounts, bool deposit) → uint256`
 No description
-# Function `calculateRemoveLiquidity(uint256 amount) → uint256[]` {#ISwap-calculateRemoveLiquidity-uint256-}
+# <a id="ISwap-calculateRemoveLiquidity-uint256-"></a> Function `calculateRemoveLiquidity(uint256 amount) → uint256[]`
 No description
-# Function `calculateRemoveLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex) → uint256 availableTokenAmount` {#ISwap-calculateRemoveLiquidityOneToken-uint256-uint8-}
+# <a id="ISwap-calculateRemoveLiquidityOneToken-uint256-uint8-"></a> Function `calculateRemoveLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex) → uint256 availableTokenAmount`
 No description
-# Function `initialize(contract IERC20[] pooledTokens, uint8[] decimals, string lpTokenName, string lpTokenSymbol, uint256 a, uint256 fee, uint256 adminFee, address lpTokenTargetAddress)` {#ISwap-initialize-contract-IERC20---uint8---string-string-uint256-uint256-uint256-address-}
+# <a id="ISwap-initialize-contract-IERC20---uint8---string-string-uint256-uint256-uint256-address-"></a> Function `initialize(contract IERC20[] pooledTokens, uint8[] decimals, string lpTokenName, string lpTokenSymbol, uint256 a, uint256 fee, uint256 adminFee, address lpTokenTargetAddress)`
 No description
-# Function `swap(uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 dx, uint256 minDy, uint256 deadline) → uint256` {#ISwap-swap-uint8-uint8-uint256-uint256-uint256-}
+# <a id="ISwap-swap-uint8-uint8-uint256-uint256-uint256-"></a> Function `swap(uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 dx, uint256 minDy, uint256 deadline) → uint256`
 No description
-# Function `addLiquidity(uint256[] amounts, uint256 minToMint, uint256 deadline) → uint256` {#ISwap-addLiquidity-uint256---uint256-uint256-}
+# <a id="ISwap-addLiquidity-uint256---uint256-uint256-"></a> Function `addLiquidity(uint256[] amounts, uint256 minToMint, uint256 deadline) → uint256`
 No description
-# Function `removeLiquidity(uint256 amount, uint256[] minAmounts, uint256 deadline) → uint256[]` {#ISwap-removeLiquidity-uint256-uint256---uint256-}
+# <a id="ISwap-removeLiquidity-uint256-uint256---uint256-"></a> Function `removeLiquidity(uint256 amount, uint256[] minAmounts, uint256 deadline) → uint256[]`
 No description
-# Function `removeLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex, uint256 minAmount, uint256 deadline) → uint256` {#ISwap-removeLiquidityOneToken-uint256-uint8-uint256-uint256-}
+# <a id="ISwap-removeLiquidityOneToken-uint256-uint8-uint256-uint256-"></a> Function `removeLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex, uint256 minAmount, uint256 deadline) → uint256`
 No description
-# Function `removeLiquidityImbalance(uint256[] amounts, uint256 maxBurnAmount, uint256 deadline) → uint256` {#ISwap-removeLiquidityImbalance-uint256---uint256-uint256-}
+# <a id="ISwap-removeLiquidityImbalance-uint256---uint256-uint256-"></a> Function `removeLiquidityImbalance(uint256[] amounts, uint256 maxBurnAmount, uint256 deadline) → uint256`
 No description
 

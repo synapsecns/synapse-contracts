@@ -19,7 +19,7 @@
 
 {{#ownFunctions}}
 {{#if (or (eq visibility "public") (eq visibility "external"))}}
-# Function `{{name}}({{args}}){{#if outputs}} → {{outputs}}{{/if}}` {#{{anchor~}} }
+# <a id="{{anchor~}}"></a> Function `{{name}}({{args}}){{#if outputs}} → {{outputs}}{{/if}}`
 {{#if natspec.devdoc}}{{natspec.devdoc}}{{else}}No description{{/if}}
 {{#if natspec.params}}
 ## Parameters:
@@ -37,7 +37,7 @@
 {{/ownFunctions}}
 
 {{#ownEvents}}
-# <a id="{{anchor~}}"></a> Event `{{name}}({{args}})` }
+# <a id="{{anchor~}}"></a> Event `{{name}}({{args}})` 
 {{#if natspec.devdoc}}{{natspec.devdoc}}{{else}}No description{{/if}}
 {{#if natspec.params}}
 ## Parameters:
