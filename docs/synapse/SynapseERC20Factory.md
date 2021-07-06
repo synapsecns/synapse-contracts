@@ -8,7 +8,7 @@
 # Events:
 - [`SynapseERC20Created(address contractAddress)`](#SynapseERC20Factory-SynapseERC20Created-address-)
 
-# Function `deploy(address synapseERC20Address, string name, string symbol, uint8 decimals, uint256 underlyingChainId, address underlyingTokenAddress, address owner) → address` {#SynapseERC20Factory-deploy-address-string-string-uint8-uint256-address-address-}
+# Function `deploy(address synapseERC20Address, string name, string symbol, uint8 decimals, uint256 underlyingChainId, address underlyingTokenAddress, address owner) → address` (#SynapseERC20Factory-deploy-address-string-string-uint8-uint256-address-address-)
 Deploys a new node
 
 
