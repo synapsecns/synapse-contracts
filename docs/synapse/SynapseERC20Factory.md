@@ -1,17 +1,14 @@
 
 
 
-
 # Functions:
 - [`deploy(address synapseERC20Address, string name, string symbol, uint8 decimals, uint256 underlyingChainId, address underlyingTokenAddress, address owner)`](#SynapseERC20Factory-deploy-address-string-string-uint8-uint256-address-address-)
 
 # Events:
 - [`SynapseERC20Created(address contractAddress)`](#SynapseERC20Factory-SynapseERC20Created-address-)
 
-# Function `deploy(address synapseERC20Address, string name, string symbol, uint8 decimals, uint256 underlyingChainId, address underlyingTokenAddress, address owner) → address` (#SynapseERC20Factory-deploy-address-string-string-uint8-uint256-address-address-)
-Deploys a new node
-
-
+# Function `deploy(address synapseERC20Address, string name, string symbol, uint8 decimals, uint256 underlyingChainId, address underlyingTokenAddress, address owner) → address` {#SynapseERC20Factory-deploy-address-string-string-uint8-uint256-address-address-}
+No description
 ## Parameters:
 - `synapseERC20Address`: address of the synapseERC20Address contract to initialize with
 
@@ -31,6 +28,5 @@ Deploys a new node
 - Address of the newest node management contract created
 
 
-# Event `SynapseERC20Created(address contractAddress)` {#SynapseERC20Factory-SynapseERC20Created-address-}
+# <a id="SynapseERC20Factory-SynapseERC20Created-address-"></a> Event `SynapseERC20Created(address contractAddress)` }
 No description
-
