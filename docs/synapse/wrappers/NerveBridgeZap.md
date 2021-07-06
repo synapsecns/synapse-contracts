@@ -3,7 +3,6 @@ It does so by combining the action of addLiquidity() to the base swap pool, and 
 This is done in hopes of automating portions of the bridge user experience to users, while keeping the SynapseBridge contract logic small.
 
 
-
 This contract should be deployed with a base Swap.sol address and a SynapseBridge.sol address, otherwise, it will not function.
 
 # Functions:
@@ -12,13 +11,10 @@ This contract should be deployed with a base Swap.sol address and a SynapseBridg
 - [`zapAndDepositAndSwap(address to, uint256 chainId, contract IERC20 token, uint256[] liquidityAmounts, uint256 minToMint, uint256 liqDeadline, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 swapDeadline)`](#NerveBridgeZap-zapAndDepositAndSwap-address-uint256-contract-IERC20-uint256---uint256-uint256-uint8-uint8-uint256-uint256-)
 
 
-# Function `constructor(contract ISwap _baseSwap, contract ISynapseBridge _synapseBridge)` (#NerveBridgeZap-constructor-contract-ISwap-contract-ISynapseBridge-)
-Constructs the contract, approves each token inside of baseSwap to be used by baseSwap (needed for addLiquidity())
-
-# Function `zapAndDeposit(address to, uint256 chainId, contract IERC20 token, uint256[] liquidityAmounts, uint256 minToMint, uint256 deadline)` (#NerveBridgeZap-zapAndDeposit-address-uint256-contract-IERC20-uint256---uint256-uint256-)
-Combines adding liquidity to the given Swap, and calls deposit() on the bridge using that LP token
-
-
+# Function `constructor(contract ISwap _baseSwap, contract ISynapseBridge _synapseBridge)` {#NerveBridgeZap-constructor-contract-ISwap-contract-ISynapseBridge-}
+No description
+# Function `zapAndDeposit(address to, uint256 chainId, contract IERC20 token, uint256[] liquidityAmounts, uint256 minToMint, uint256 deadline)` {#NerveBridgeZap-zapAndDeposit-address-uint256-contract-IERC20-uint256---uint256-uint256-}
+No description
 ## Parameters:
 - `to`: address on other chain to bridge assets to
 
@@ -33,10 +29,8 @@ should mint, otherwise revert. Handy for front-running mitigation
 
 - `deadline`: latest timestamp to accept this transaction
 
-# Function `zapAndDepositAndSwap(address to, uint256 chainId, contract IERC20 token, uint256[] liquidityAmounts, uint256 minToMint, uint256 liqDeadline, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 swapDeadline)` (#NerveBridgeZap-zapAndDepositAndSwap-address-uint256-contract-IERC20-uint256---uint256-uint256-uint8-uint8-uint256-uint256-)
-Combines adding liquidity to the given Swap, and calls depositAndSwap() on the bridge using that LP token
-
-
+# Function `zapAndDepositAndSwap(address to, uint256 chainId, contract IERC20 token, uint256[] liquidityAmounts, uint256 minToMint, uint256 liqDeadline, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 swapDeadline)` {#NerveBridgeZap-zapAndDepositAndSwap-address-uint256-contract-IERC20-uint256---uint256-uint256-uint8-uint8-uint256-uint256-}
+No description
 ## Parameters:
 - `to`: address on other chain to bridge assets to
 
