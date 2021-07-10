@@ -72,7 +72,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint256 fee,
     bool swapSuccess
   );
-  event TokenRedeemAndSwap(
+  event TokenRedeemAndRemove(
     address to,
     uint256 chainId,
     IERC20 token,
@@ -275,7 +275,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
    * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
    * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
    **/
-  function redeemAndSwap(
+  function redeemAndRemove(
     address to,
     uint256 chainId,
     ERC20Burnable token,
@@ -286,7 +286,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint256 swapDeadline
   ) public {
     token.burnFrom(msg.sender, amount);
-    emit TokenRedeemAndSwap(
+    emit TokenRedeemAndRemove(
       to,
       chainId,
       token,
