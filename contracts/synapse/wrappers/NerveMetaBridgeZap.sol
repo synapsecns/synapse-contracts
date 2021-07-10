@@ -62,7 +62,7 @@ contract NerveMetaBridgeZap {
     synapseBridge.redeem(to, chainId, token, swappedAmount);
   }
 
-  function swapAndRedeemAndSwap(
+  function swapAndRedeemAndRemove(
     address to,
     uint256 chainId,
     IERC20 token,
@@ -71,9 +71,9 @@ contract NerveMetaBridgeZap {
     uint256 dx,
     uint256 minDy,
     uint256 deadline,
-    uint8 swapTokenIndex,
-    uint256 swapMinAmount,
-    uint256 swapDeadline
+    uint8 liqTokenIndex,
+    uint256 liqMinAmount,
+    uint256 liqDeadline
   ) public {
     metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
     // swap
@@ -91,15 +91,15 @@ contract NerveMetaBridgeZap {
     ) {
       token.safeApprove(address(synapseBridge), MAX_UINT256);
     }
-    synapseBridge.redeemAndSwap(
+    synapseBridge.redeemAndRemove(
       to,
       chainId,
       token,
       swappedAmount,
       swappedAmount,
-      swapTokenIndex,
-      swapMinAmount,
-      swapDeadline
+      liqTokenIndex,
+      liqMinAmount,
+      liqDeadline
     );
   }
 }

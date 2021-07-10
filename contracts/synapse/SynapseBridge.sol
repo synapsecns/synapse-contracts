@@ -280,15 +280,15 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
    * @param chainId which underlying chain to bridge assets onto
    * @param token ERC20 compatible token to deposit into the bridge
    * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   * @param swapTokenAmount Amount of (typically) LP token to pass to the nodes to attempt to removeLiquidity() with to redeem for the underlying assets of the LP token
-   * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
-   * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
-   * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
+   * @param tokenIndexFrom the token the user wants to swap from
+   * @param tokenIndexTo the token the user wants to swap to
+   * @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
+   * @param deadline latest timestamp to accept this transaction
    **/
   function redeemAndSwap(
     address to,
     uint256 chainId,
-    IERC20 token,
+    ERC20Burnable token,
     uint256 amount,
     uint8 tokenIndexFrom,
     uint8 tokenIndexTo,
@@ -296,15 +296,15 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint256 deadline
   ) public {
     token.burnFrom(msg.sender, amount);
-    emit TokenRedeemAndRemove(
+    emit TokenRedeemAndSwap(
       to,
       chainId,
       token,
       amount,
-      swapTokenAmount,
-      swapTokenIndex,
-      swapMinAmount,
-      swapDeadline
+      tokenIndexFrom,
+      tokenIndexTo,
+      minDy,
+      deadline
     );
   }
 

@@ -38,9 +38,20 @@ interface ISynapseBridge {
     uint256 chainId,
     IERC20 token,
     uint256 amount,
-    uint256 swapTokenAmount,
-    uint8 swapTokenIndex,
-    uint256 swapMinAmount,
-    uint256 swapDeadline
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 minDy,
+    uint256 deadline
+  ) external;
+
+  function redeemAndRemove(
+    address to,
+    uint256 chainId,
+    IERC20 token,
+    uint256 amount,
+    uint256 liqTokenAmount,
+    uint8 liqTokenIndex,
+    uint256 liqMinAmount,
+    uint256 liqDeadline
   ) external;
 }
