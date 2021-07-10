@@ -72,6 +72,16 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint256 fee,
     bool swapSuccess
   );
+  event TokenRedeemAndSwap(
+    address to,
+    uint256 chainId,
+    IERC20 token,
+    uint256 amount,
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 minDy,
+    uint256 deadline
+  );
   event TokenRedeemAndRemove(
     address to,
     uint256 chainId,
@@ -261,6 +271,40 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
       tokenIndexTo,
       minDy,
       deadline
+    );
+  }
+
+  /**
+   * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
+   * @param to address on other chain to redeem underlying assets to
+   * @param chainId which underlying chain to bridge assets onto
+   * @param token ERC20 compatible token to deposit into the bridge
+   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+   * @param swapTokenAmount Amount of (typically) LP token to pass to the nodes to attempt to removeLiquidity() with to redeem for the underlying assets of the LP token
+   * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
+   * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
+   * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
+   **/
+  function redeemAndSwap(
+    address to,
+    uint256 chainId,
+    IERC20 token,
+    uint256 amount,
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 minDy,
+    uint256 deadline
+  ) public {
+    token.burnFrom(msg.sender, amount);
+    emit TokenRedeemAndRemove(
+      to,
+      chainId,
+      token,
+      amount,
+      swapTokenAmount,
+      swapTokenIndex,
+      swapMinAmount,
+      swapDeadline
     );
   }
 
