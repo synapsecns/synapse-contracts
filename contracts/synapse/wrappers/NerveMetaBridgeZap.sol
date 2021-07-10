@@ -71,11 +71,11 @@ contract NerveMetaBridgeZap {
     uint256 dx,
     uint256 minDy,
     uint256 deadline,
-    uint256 swapTokenAmount,
     uint8 swapTokenIndex,
     uint256 swapMinAmount,
     uint256 swapDeadline
   ) public {
+    metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
     // swap
 
     uint256 swappedAmount = metaSwap.swap(
