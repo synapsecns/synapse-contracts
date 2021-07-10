@@ -75,11 +75,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
   event TokenRedeemAndSwap(
     address to,
     uint256 chainId,
-    IERC20 token,
-    uint256 amount,
+    ERC20Burnable token,
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 minDy,
+    uint256 deadline,
     uint256 swapTokenAmount,
     uint8 swapTokenIndex,
-    uint256 swapMinAmount,
     uint256 swapDeadline
   );
   event TokenWithdrawAndRemove(
@@ -280,9 +282,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint256 chainId,
     ERC20Burnable token,
     uint256 amount,
-    uint256 swapTokenAmount,
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 minDy,
+    uint256 deadline,
     uint8 swapTokenIndex,
-    uint256 swapMinAmount,
     uint256 swapDeadline
   ) public {
     token.burnFrom(msg.sender, amount);
@@ -290,10 +294,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
       to,
       chainId,
       token,
-      amount,
+      tokenIndexFrom,
+      tokenIndexTo,
+      minDy,
+      deadline,
+
       swapTokenAmount,
       swapTokenIndex,
-      swapMinAmount,
       swapDeadline
     );
   }
