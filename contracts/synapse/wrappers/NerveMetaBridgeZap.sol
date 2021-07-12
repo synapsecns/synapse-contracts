@@ -34,13 +34,13 @@ contract NerveMetaBridgeZap {
   }
 
   /**
- * @notice Calculate amount of tokens you receive on swap
- * @param tokenIndexFrom the token the user wants to sell
- * @param tokenIndexTo the token the user wants to buy
- * @param dx the amount of tokens the user wants to sell. If the token charges
- * a fee on transfers, use the amount that gets transferred after the fee.
- * @return amount of tokens the user will receive
-*/
+   * @notice Calculate amount of tokens you receive on swap
+   * @param tokenIndexFrom the token the user wants to sell
+   * @param tokenIndexTo the token the user wants to buy
+   * @param dx the amount of tokens the user wants to sell. If the token charges
+   * a fee on transfers, use the amount that gets transferred after the fee.
+   * @return amount of tokens the user will receive
+   */
   function calculateSwap(
     uint8 tokenIndexFrom,
     uint8 tokenIndexTo,
@@ -48,7 +48,6 @@ contract NerveMetaBridgeZap {
   ) external view virtual returns (uint256) {
     return metaSwap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
   }
-
 
   function swapAndRedeem(
     address to,
@@ -77,6 +76,48 @@ contract NerveMetaBridgeZap {
       token.safeApprove(address(synapseBridge), MAX_UINT256);
     }
     synapseBridge.redeem(to, chainId, token, swappedAmount);
+  }
+
+  function swapAndRedeemAndSwap(
+    address to,
+    uint256 chainId,
+    IERC20 token,
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 dx,
+    uint256 minDy,
+    uint256 deadline,
+    uint8 swapTokenIndexFrom,
+    uint8 swapTokenIndexTo,
+    uint256 swapMinDy,
+    uint256 swapDeadline
+  ) public {
+    metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
+    // swap
+
+    uint256 swappedAmount = metaSwap.swap(
+      tokenIndexFrom,
+      tokenIndexTo,
+      dx,
+      minDy,
+      deadline
+    );
+    // deposit into bridge, gets nUSD
+    if (
+      token.allowance(address(this), address(synapseBridge)) < swappedAmount
+    ) {
+      token.safeApprove(address(synapseBridge), MAX_UINT256);
+    }
+    synapseBridge.redeemAndSwap(
+      to,
+      chainId,
+      token,
+      swappedAmount,
+      swapTokenIndexFrom,
+      swapTokenIndexTo,
+      swapMinDy,
+      swapDeadline
+    );
   }
 
   function swapAndRedeemAndRemove(
