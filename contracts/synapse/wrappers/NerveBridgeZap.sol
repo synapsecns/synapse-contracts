@@ -43,19 +43,26 @@ contract NerveBridgeZap {
   }
 
   /**
-   * @notice Calculate amount of tokens you receive on swap
-   * @param tokenIndexFrom the token the user wants to sell
-   * @param tokenIndexTo the token the user wants to buy
-   * @param dx the amount of tokens the user wants to sell. If the token charges
-   * a fee on transfers, use the amount that gets transferred after the fee.
-   * @return amount of tokens the user will receive
-  */
-  function calculateSwap(
-    uint8 tokenIndexFrom,
-    uint8 tokenIndexTo,
-    uint256 dx
-  ) external view virtual returns (uint256) {
-    return baseSwap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+   * @notice A simple method to calculate prices from deposits or
+   * withdrawals, excluding fees but including slippage. This is
+   * helpful as an input into the various "min" parameters on calls
+   * to fight front-running
+   *
+   * @dev This shouldn't be used outside frontends for user estimates.
+   *
+   * @param amounts an array of token amounts to deposit or withdrawal,
+   * corresponding to pooledTokens. The amount should be in each
+   * pooled token's native precision.
+   * @param deposit whether this is a deposit or a withdrawal
+   * @return token amount the user will receive
+   */
+  function calculateTokenAmount(uint256[] calldata amounts, bool deposit)
+    external
+    view
+    virtual
+    returns (uint256)
+  {
+    return baseSwap.calculateTokenAmount(amounts, deposit);
   }
 
   /**
