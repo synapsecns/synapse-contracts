@@ -7,12 +7,26 @@ This contract should be deployed with a base Swap.sol address and a SynapseBridg
 
 # Functions:
 - [`constructor(contract ISwap _baseSwap, contract ISynapseBridge _synapseBridge)`](#NerveBridgeZap-constructor-contract-ISwap-contract-ISynapseBridge-)
+- [`calculateTokenAmount(uint256[] amounts, bool deposit)`](#NerveBridgeZap-calculateTokenAmount-uint256---bool-)
 - [`zapAndDeposit(address to, uint256 chainId, contract IERC20 token, uint256[] liquidityAmounts, uint256 minToMint, uint256 deadline)`](#NerveBridgeZap-zapAndDeposit-address-uint256-contract-IERC20-uint256---uint256-uint256-)
 - [`zapAndDepositAndSwap(address to, uint256 chainId, contract IERC20 token, uint256[] liquidityAmounts, uint256 minToMint, uint256 liqDeadline, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 swapDeadline)`](#NerveBridgeZap-zapAndDepositAndSwap-address-uint256-contract-IERC20-uint256---uint256-uint256-uint8-uint8-uint256-uint256-)
 
 
 # <a id="NerveBridgeZap-constructor-contract-ISwap-contract-ISynapseBridge-"></a> Function `constructor(contract ISwap _baseSwap, contract ISynapseBridge _synapseBridge)`
 No description
+# <a id="NerveBridgeZap-calculateTokenAmount-uint256---bool-"></a> Function `calculateTokenAmount(uint256[] amounts, bool deposit) → uint256`
+This shouldn't be used outside frontends for user estimates.
+
+
+## Parameters:
+- `amounts`: an array of token amounts to deposit or withdrawal,
+corresponding to pooledTokens. The amount should be in each
+pooled token's native precision.
+
+- `deposit`: whether this is a deposit or a withdrawal
+
+## Return Values:
+- token amount the user will receive
 # <a id="NerveBridgeZap-zapAndDeposit-address-uint256-contract-IERC20-uint256---uint256-uint256-"></a> Function `zapAndDeposit(address to, uint256 chainId, contract IERC20 token, uint256[] liquidityAmounts, uint256 minToMint, uint256 deadline)`
 No description
 ## Parameters:
