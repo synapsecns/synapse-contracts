@@ -43,6 +43,22 @@ contract NerveBridgeZap {
   }
 
   /**
+   * @notice Calculate amount of tokens you receive on swap
+   * @param tokenIndexFrom the token the user wants to sell
+   * @param tokenIndexTo the token the user wants to buy
+   * @param dx the amount of tokens the user wants to sell. If the token charges
+   * a fee on transfers, use the amount that gets transferred after the fee.
+   * @return amount of tokens the user will receive
+  */
+  function calculateSwap(
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 dx
+  ) external view virtual returns (uint256) {
+    return baseSwap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+  }
+
+  /**
    * @notice Combines adding liquidity to the given Swap, and calls deposit() on the bridge using that LP token
    * @param to address on other chain to bridge assets to
    * @param chainId which chain to bridge assets onto

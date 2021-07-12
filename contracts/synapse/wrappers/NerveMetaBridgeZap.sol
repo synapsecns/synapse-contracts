@@ -33,6 +33,23 @@ contract NerveMetaBridgeZap {
     }
   }
 
+  /**
+ * @notice Calculate amount of tokens you receive on swap
+ * @param tokenIndexFrom the token the user wants to sell
+ * @param tokenIndexTo the token the user wants to buy
+ * @param dx the amount of tokens the user wants to sell. If the token charges
+ * a fee on transfers, use the amount that gets transferred after the fee.
+ * @return amount of tokens the user will receive
+*/
+  function calculateSwap(
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 dx
+  ) external view virtual returns (uint256) {
+    return metaSwap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+  }
+
+
   function swapAndRedeem(
     address to,
     uint256 chainId,
