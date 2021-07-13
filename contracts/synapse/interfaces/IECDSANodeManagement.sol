@@ -3,6 +3,11 @@
 
 pragma solidity >=0.6.0 <0.8.0;
 
+/**
+ * @title IECDSANodeManagement interface
+ * @notice Interface for the ECDSA node management interface.
+ * @dev implement this interface to develop a a factory-patterned ECDSA node management contract
+ **/
 interface IECDSANodeManagement {    
     function initialize(
         address _owner,

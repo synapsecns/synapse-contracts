@@ -6,6 +6,10 @@ pragma experimental ABIEncoderV2;
 import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 
+/**
+ * @title BridgeConfig contract
+ * @notice This token is used for configuring different tokens on the bridge and mapping them across chains.
+**/
 contract BridgeConfig is AccessControl {
   bytes32 public constant BRIDGEMANAGER_ROLE = keccak256('BRIDGEMANAGER_ROLE');
   address[] private _allTokenIDs;
@@ -92,6 +96,10 @@ contract BridgeConfig is AccessControl {
     return _isTokenIDExist(tokenID);
   }
 
+  /**
+   * @notice Gets the token config for a given token
+   * @dev you can pass 0 for origin chain to get the token address on the destination chain
+   */
   function getTokenConfig(
     address originToken,
     uint256 originChainID,

@@ -3,6 +3,11 @@
 pragma solidity 0.6.12;
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
+/**
+ * @title IMetaSwapDeposit interface
+ * @notice Interface for the meta swap contract.
+ * @dev implement this interface to develop a a factory-patterned ECDSA node management contract
+ **/
 interface IMetaSwapDeposit {
   // min return calculation functions
   function calculateSwap(
