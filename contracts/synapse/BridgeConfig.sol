@@ -6,6 +6,10 @@ pragma experimental ABIEncoderV2;
 import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 
+/**
+ * @title BridgeConfig contract
+ * @notice This token is used for configuring different tokens on the bridge and mapping them across chains.
+**/
 contract BridgeConfig is AccessControl {
   bytes32 public constant BRIDGEMANAGER_ROLE = keccak256('BRIDGEMANAGER_ROLE');
   address[] private _allTokenIDs;
@@ -92,12 +96,22 @@ contract BridgeConfig is AccessControl {
     return _isTokenIDExist(tokenID);
   }
 
-  function getTokenConfig(address tokenID, uint256 chainID)
-    public
-    view
-    returns (TokenConfig memory)
-  {
-    return _tokenConfig[tokenID][chainID];
+  /**
+   * @notice Gets the token config for a given token
+   * @dev you can pass 0 for origin chain to get the token address on the destination chain
+   */
+  function getTokenConfig(
+    address originToken,
+    uint256 originChainID,
+    uint256 destChainId
+  ) public view returns (TokenConfig memory) {
+    address tokenID;
+    if (getTokenID(originChainID, originToken) != address(0)) {
+      tokenID = getTokenID(originChainID, originToken);
+    } else {
+      tokenID = originToken;
+    }
+    return _tokenConfig[tokenID][destChainId];
   }
 
   function _setTokenConfig(
@@ -105,8 +119,6 @@ contract BridgeConfig is AccessControl {
     uint256 chainID,
     TokenConfig memory config
   ) internal checkTokenConfig(config) returns (bool) {
-    require(chainID > 0, 'zero chainID');
-
     _tokenConfig[tokenID][chainID] = config;
     if (!_isTokenIDExist(tokenID)) {
       _allTokenIDs.push(tokenID);
@@ -119,8 +131,22 @@ contract BridgeConfig is AccessControl {
   function setTokenConfig(
     address tokenID,
     uint256 chainID,
-    TokenConfig calldata config
+    address tokenAddress,
+    uint8 tokenDecimals,
+    uint256 maxSwap,
+    uint256 minSwap,
+    uint256 swapFee,
+    uint256 maxSwapFee,
+    uint256 minSwapFee
   ) external returns (bool) {
+    TokenConfig memory config;
+    config.tokenAddress = tokenAddress;
+    config.tokenDecimals = tokenDecimals;
+    config.maxSwap = maxSwap;
+    config.minSwap = minSwap;
+    config.swapFee = swapFee;
+    config.maxSwapFee = maxSwapFee;
+    config.minSwapFee = minSwapFee;
     require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));
     return _setTokenConfig(tokenID, chainID, config);
   }
@@ -130,7 +156,6 @@ contract BridgeConfig is AccessControl {
     uint256 chainID,
     address token
   ) internal {
-    require(chainID > 0, 'zero chainID');
     MultichainToken[] storage _mcTokens = _allMultichainTokens[tokenID];
     for (uint256 i = 0; i < _mcTokens.length; ++i) {
       if (_mcTokens[i].chainId == chainID) {
@@ -147,18 +172,13 @@ contract BridgeConfig is AccessControl {
     _tokenIDMap[chainID][token] = tokenID;
   }
 
-  constructor() public {
-    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    _setupRole(BRIDGEMANAGER_ROLE, msg.sender);
-  }
-
   function calculateSwapFee(
     uint256 chainId,
     address tokenAddress,
     uint256 amount
   ) external view returns (uint256) {
     address tokenId = getTokenID(chainId, tokenAddress);
-    TokenConfig memory config = getTokenConfig(tokenId, chainId);
+    TokenConfig memory config = getTokenConfig(tokenId, chainId, chainId);
     uint256 calculatedSwapFee = amount.mul(config.swapFee).div(FEE_DENOMINATOR);
     if (calculatedSwapFee > config.minSwapFee) {
       return calculatedSwapFee;
@@ -167,25 +187,8 @@ contract BridgeConfig is AccessControl {
     }
   }
 
-  function stringToBytes32(string memory str)
-    internal
-    pure
-    returns (bytes32 result)
-  {
-    assembly {
-      result := mload(add(str, 32))
-    }
-  }
-
-  function bytes32ToString(bytes32 data) internal pure returns (string memory) {
-    uint8 i = 0;
-    while (i < 32 && data[i] != 0) {
-      ++i;
-    }
-    bytes memory bs = new bytes(i);
-    for (uint8 j = 0; j < i; ++j) {
-      bs[j] = data[j];
-    }
-    return string(bs);
+  constructor() public {
+    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    _setupRole(BRIDGEMANAGER_ROLE, msg.sender);
   }
 }
