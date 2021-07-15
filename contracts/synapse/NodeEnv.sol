@@ -14,7 +14,7 @@ import "./utils/EnumerableStringMap.sol";
  * @notice This token is used for configuring different tokens on the bridge and mapping them across chains.
 **/
 contract NodeEnv is AccessControl {
-    using EnumerableStringMap for EnumerableStringMap.Map;
+    using EnumerableStringMap for EnumerableStringMap.StringToStringMap;
     // BRIDGEMANAGER_ROLE owns the bridge. They are the only user that can call setters on this contract
     bytes32 public constant BRIDGEMANAGER_ROLE = keccak256('BRIDGEMANAGER_ROLE');
     // _config stores the config
@@ -66,7 +66,7 @@ contract NodeEnv is AccessControl {
     *
     * @dev caller must have bridge manager role
     */
-    function set(string calldata _key, string calldata _value) public view returns(bool) {
+    function set(string calldata _key, string calldata _value) public returns(bool) {
         require(
             hasRole(BRIDGEMANAGER_ROLE, msg.sender),
             'Caller is not Bridge Manager'
