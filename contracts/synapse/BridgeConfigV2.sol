@@ -31,6 +31,12 @@ contract BridgeConfigV2 is AccessControl {
         bool isUnderlying;
     }
 
+
+    constructor() public {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(BRIDGEMANAGER_ROLE, msg.sender);
+    }
+
     function getAllTokenIDs() public view returns (bytes32[] memory result) {
         uint256 length = _allTokenIDs.length;
         result = new bytes32[](length);
