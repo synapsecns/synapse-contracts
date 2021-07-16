@@ -14,7 +14,7 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 contract BridgeConfigV2 is AccessControl {
     bytes32 public constant BRIDGEMANAGER_ROLE = keccak256('BRIDGEMANAGER_ROLE');
     bytes32 private _allTokenIDs;
-    mapping(bytes32 => Token) private _allTokens; // key is tokenID
+    mapping(bytes32 => Token[]) private _allTokens; // key is tokenID
     mapping(uint256 => mapping(address => bytes32)) private _tokenIDMap; // key is chainID,tokenAddress
     mapping(bytes32 => mapping(uint256 => Token)) private _tokens; // key is tokenID,chainID
 
@@ -45,6 +45,15 @@ contract BridgeConfigV2 is AccessControl {
 
     function getToken(bytes32 tokenID, uint256 chainID) public view returns (Token memory token) {
         return _tokens[tokenID][chainID];
+    }
+
+    function getUnderlyingToken(bytes32 tokenID) public view returns (Token memory token) {
+        Token[] storage _mcTokens = _allTokens[tokenID];
+        for (uint256 i = 0; i < _mcTokens.length; ++i) {
+            if (_mcTokens[i].isUnderlying == true) {
+                return _mcTokens[i];
+            }
+        }
     }
 
 }
