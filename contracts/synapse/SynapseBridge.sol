@@ -40,8 +40,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
   }
 
   event TokenDeposit(
-    address from,
-    address to,
+    address indexed from,
+    address indexed to,
     uint256 chainId,
     IERC20 token,
     uint256 amount
@@ -49,14 +49,14 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
   event TokenRedeem(address to, uint256 chainId, IERC20 token, uint256 amount);
   event TokenWithdraw(address to, IERC20 token, uint256 amount, uint256 fee);
   event TokenMint(
-    address to,
+    address indexed to,
     IERC20Mintable token,
     uint256 amount,
     uint256 fee
   );
   event TokenDepositAndSwap(
-    address from,
-    address to,
+    address indexed from,
+    address indexed to,
     uint256 chainId,
     IERC20 token,
     uint256 amount,
@@ -66,14 +66,14 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint256 deadline
   );
   event TokenMintAndSwap(
-    address to,
+    address indexed to,
     IERC20Mintable token,
     uint256 amount,
     uint256 fee,
     bool swapSuccess
   );
   event TokenRedeemAndSwap(
-    address to,
+    address indexed to,
     uint256 chainId,
     IERC20 token,
     uint256 amount,
@@ -83,7 +83,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint256 deadline
   );
   event TokenRedeemAndRemove(
-    address to,
+    address indexed to,
     uint256 chainId,
     IERC20 token,
     uint256 amount,
@@ -93,7 +93,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint256 swapDeadline
   );
   event TokenWithdrawAndRemove(
-    address to,
+    address indexed to,
     IERC20 token,
     uint256 amount,
     uint256 fee,
