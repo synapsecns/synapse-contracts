@@ -13,7 +13,7 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 
 contract BridgeConfigV2 is AccessControl {
     bytes32 public constant BRIDGEMANAGER_ROLE = keccak256('BRIDGEMANAGER_ROLE');
-    bytes32 private _allTokenIDs;
+    bytes32[] private _allTokenIDs;
     mapping(bytes32 => Token[]) private _allTokens; // key is tokenID
     mapping(uint256 => mapping(address => bytes32)) private _tokenIDMap; // key is chainID,tokenAddress
     mapping(bytes32 => mapping(uint256 => Token)) private _tokens; // key is tokenID,chainID
@@ -62,4 +62,58 @@ contract BridgeConfigV2 is AccessControl {
         }
     }
 
+    function _isTokenIDExist(bytes32 tokenID) internal view returns(bool) {
+        for (uint256 i = 0; i < _allTokenIDs.length; ++i) {
+            if (_allTokenIDs[i] == tokenID) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function setTokenConfig(
+        bytes32 tokenID,
+        uint256 chainID,
+        address tokenAddress,
+        uint8 tokenDecimals,
+        uint256 maxSwap,
+        uint256 minSwap,
+        uint256 swapFee,
+        uint256 maxSwapFee,
+        uint256 minSwapFee,
+        bool hasUnderlying,
+        bool isUnderlying
+    ) public returns (bool) {
+        require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));
+        Token memory tokenToAdd;
+        tokenToAdd.tokenAddress = tokenAddress;
+        tokenToAdd.tokenDecimals = tokenDecimals;
+        tokenToAdd.maxSwap = maxSwap;
+        tokenToAdd.minSwap = minSwap;
+        tokenToAdd.swapFee = swapFee;
+        tokenToAdd.maxSwapFee = maxSwapFee;
+        tokenToAdd.minSwapFee = minSwapFee;
+        tokenToAdd.hasUnderlying = hasUnderlying;
+        tokenToAdd.isUnderlying = isUnderlying;
+
+        _tokens[tokenID][chainID] = tokenToAdd;
+         if (!_isTokenIDExist(tokenID)) {
+            _allTokenIDs.push(tokenID);
+        }
+
+        Token[] memory _mcTokens = _allTokens[tokenID];
+        for (uint256 i = 0; i < _mcTokens.length; ++i) {
+            if (_mcTokens[i].chainId == chainID) {
+                address oldToken = _mcTokens[i].tokenAddress;
+                if (tokenToAdd.tokenAddress != oldToken) {
+                _mcTokens[i].tokenAddress = tokenToAdd.tokenAddress ;
+                _tokenIDMap[chainID][oldToken] = keccak256('');
+                _tokenIDMap[chainID][tokenToAdd.tokenAddress] = tokenID;
+                }
+            }
+        }
+
+        _tokenIDMap[chainID][tokenToAdd.tokenAddress] = tokenID;
+        return true;
+    }
 }
