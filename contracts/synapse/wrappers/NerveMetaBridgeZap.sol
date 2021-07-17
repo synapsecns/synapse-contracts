@@ -160,4 +160,21 @@ contract NerveMetaBridgeZap {
       liqDeadline
     );
   }
+
+  /**
+   * @notice wraps SynapseBridge redeem()
+   */
+  function redeem(
+    address to,
+    uint256 chainId,
+    IERC20 token,
+    uint256 amount
+    ) public {
+      if (token.allowance(address(this), address(synapseBridge)) < amount) {
+      token.safeApprove(address(synapseBridge), MAX_UINT256);
+      }
+      synapseBridge.redeem(to, chainId, token, amount);
+    }
+
+
 }
