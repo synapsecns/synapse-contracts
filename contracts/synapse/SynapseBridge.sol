@@ -40,7 +40,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
   }
 
   event TokenDeposit(
-    address indexed from,
     address indexed to,
     uint256 chainId,
     IERC20 token,
@@ -55,7 +54,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint256 fee
   );
   event TokenDepositAndSwap(
-    address indexed from,
     address indexed to,
     uint256 chainId,
     IERC20 token,
@@ -145,7 +143,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint256 amount
   ) public payable {
     require(msg.value == amount, "Value doesn't match amount");
-    emit TokenDeposit(msg.sender, to, chainId, IERC20(address(0)), amount);
+    emit TokenDeposit(to, chainId, IERC20(address(0)), amount);
   }
 
   /**
@@ -162,7 +160,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint256 amount
   ) public {
     token.safeTransferFrom(msg.sender, address(this), amount);
-    emit TokenDeposit(msg.sender, to, chainId, token, amount);
+    emit TokenDeposit(to, chainId, token, amount);
   }
 
   /**
@@ -262,7 +260,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
   ) public {
     token.safeTransferFrom(msg.sender, address(this), amount);
     emit TokenDepositAndSwap(
-      msg.sender,
       to,
       chainId,
       token,
