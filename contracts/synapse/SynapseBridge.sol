@@ -45,8 +45,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     IERC20 token,
     uint256 amount
   );
-  event TokenRedeem(address to, uint256 chainId, IERC20 token, uint256 amount);
-  event TokenWithdraw(address to, IERC20 token, uint256 amount, uint256 fee);
+  event TokenRedeem(address indexed to, uint256 chainId, IERC20 token, uint256 amount);
+  event TokenWithdraw(address indexed to, IERC20 token, uint256 amount, uint256 fee);
   event TokenMint(
     address indexed to,
     IERC20Mintable token,
