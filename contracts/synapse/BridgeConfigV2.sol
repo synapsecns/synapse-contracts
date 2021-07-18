@@ -56,22 +56,36 @@ contract BridgeConfigV2 is AccessControl {
 
     /**
      * @notice Returns the token ID (string) of the cross-chain token inputted
-     * @param tokenAddress
-     * @param chainID 
+     * @param tokenAddress address of token to get ID for
+     * @param chainID chainID of which to get token ID for
      */
     function getTokenID(address tokenAddress, uint256 chainID) public view returns (string memory)  {
         return bytes32ToString(_tokenIDMap[chainID][tokenAddress]);
     }
 
+    /**
+     * @notice Returns the full token config struct 
+     * @param tokenID String input of the token ID for the token
+     * @param chainID Chain ID of which token address + config to get
+     */
     function getToken(string calldata tokenID, uint256 chainID) public view returns (Token memory token) {
         return _tokens[stringToBytes32(tokenID)][chainID];
     }
 
+    /**
+     * @notice Returns token config struct, given an address and chainID
+     * @param tokenAddress Matches the token ID by using a combo of address + chain ID
+     * @param chainID Chain ID of which token to get config for
+     */
     function getToken(address tokenAddress, uint256 chainID) public view returns (Token memory token) {
         string memory tokenID = getTokenID(tokenAddress, chainID);
         return _tokens[stringToBytes32(tokenID)][chainID];
     }
 
+    /**
+     * @notice Returns true if the token has an underlying token -- meaning the token is deposited into the bridge
+     * @param tokenID String to check if it is a withdraw/underlying token
+     */
     function hasUnderlyingToken(string calldata tokenID) public view returns (bool) {
         bytes32 bytesTokenID = stringToBytes32(tokenID);
         Token[] memory _mcTokens = _allTokens[bytesTokenID];
@@ -83,6 +97,10 @@ contract BridgeConfigV2 is AccessControl {
         return false;
     }
 
+    /**
+     * @notice Returns which token is the underlying token to withdraw
+     * @param tokenID string token ID
+     */
     function getUnderlyingToken(string calldata tokenID) public view returns (Token memory token) {
         bytes32 bytesTokenID = stringToBytes32(tokenID);
         Token[] memory _mcTokens = _allTokens[bytesTokenID];
@@ -93,10 +111,16 @@ contract BridgeConfigV2 is AccessControl {
         }
     }
     
+    /**
+     @notice Public function returning if token ID exists given a string
+     */
     function isTokenIDExist(string calldata tokenID) public view returns (bool) {
         return _isTokenIDExist(stringToBytes32(tokenID));
     }
 
+    /**
+     @notice Internal function returning if token ID exists given bytes32 version of the ID
+     */
     function _isTokenIDExist(bytes32 tokenID) internal view returns(bool) {
         for (uint256 i = 0; i < _allTokenIDs.length; ++i) {
             if (_allTokenIDs[i] == tokenID) {
@@ -106,6 +130,12 @@ contract BridgeConfigV2 is AccessControl {
         return false;
     }
 
+    /**
+     * @notice Internal function which handles logic of setting token ID and dealing with mappings
+     * @param tokenID bytes32 version of ID
+     * @param chainID which chain to set the token config for
+     * @param tokenToAdd Token object to set the mapping to
+     */
     function _setTokenConfig(bytes32 tokenID, uint256 chainID, Token memory tokenToAdd) internal returns(bool) {
         _tokens[tokenID][chainID] = tokenToAdd;
          if (!_isTokenIDExist(tokenID)) {
@@ -128,6 +158,20 @@ contract BridgeConfigV2 is AccessControl {
         return true;
     }
 
+    /**
+     * @notice Main write function of this contract - Handles creating the struct and passing it to the internal logic function
+     * @param tokenID string ID to set the token config object form
+     * @param chainID chain ID to use for the token config object
+     * @param tokenAddress token address of the token on the given chain
+     * @param tokenDecimals decimals of token 
+     * @param maxSwap maximum amount of token allowed to be transferred at once - in native token decimals
+     * @param minSwap minimum amount of token needed to be transferred at once - in native token decimals
+     * @param swapFee percent based swap fee -- 10e6 == 10bps
+     * @param maxSwapFee max swap fee to be charged - in native token decimals
+     * @param minSwapFee min swap fee to be charged - in native token decimals - especially useful for mainnet ETH
+     * @param hasUnderlying bool which represents whether this is a global mint token or one to withdraw()
+     * @param isUnderlying bool which represents if this token is the one to withdraw on the given chain
+     */
     function setTokenConfig(
         string calldata tokenID,
         uint256 chainID,
@@ -156,6 +200,14 @@ contract BridgeConfigV2 is AccessControl {
         return _setTokenConfig(stringToBytes32(tokenID), chainID, tokenToAdd);
     }
 
+    /** 
+     * @notice Calculates bridge swap fee based on the destination chain's token transfer.
+     * @dev This means the fee should be calculated based on the chain that the nodes emit a tx on
+     * @param tokenAddress address of the destination token to query token config for
+     * @param chainID destination chain ID to query the token config for
+     * @param amount in native token decimals
+     * @return Fee calculated in token decimals
+     */
     function calculateSwapFee(
         address tokenAddress,
         uint256 chainID,
@@ -163,8 +215,10 @@ contract BridgeConfigV2 is AccessControl {
     ) external view returns (uint256) {
         Token memory token = getToken(tokenAddress, chainID);
         uint256 calculatedSwapFee = amount.mul(token.swapFee).div(FEE_DENOMINATOR);
-        if (calculatedSwapFee > token.minSwapFee) {
+        if (calculatedSwapFee > token.minSwapFee && calculatedSwapFee < token.maxSwapFee) {
             return calculatedSwapFee;
+        } else if (calculatedSwapFee > token.maxSwapFee) {
+            return token.maxSwapFee;
         } else {
             return token.minSwapFee;
         }

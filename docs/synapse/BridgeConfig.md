@@ -1,3 +1,4 @@
+This token is used for configuring different tokens on the bridge and mapping them across chains.
 
 
 
@@ -6,8 +7,8 @@
 - [`getTokenID(uint256 chainID, address tokenAddress)`](#BridgeConfig-getTokenID-uint256-address-)
 - [`getMultichainToken(address tokenID, uint256 chainID)`](#BridgeConfig-getMultichainToken-address-uint256-)
 - [`isTokenIDExist(address tokenID)`](#BridgeConfig-isTokenIDExist-address-)
-- [`getTokenConfig(address tokenID, uint256 chainID)`](#BridgeConfig-getTokenConfig-address-uint256-)
-- [`setTokenConfig(address tokenID, uint256 chainID, struct BridgeConfig.TokenConfig config)`](#BridgeConfig-setTokenConfig-address-uint256-struct-BridgeConfig-TokenConfig-)
+- [`getTokenConfig(address originToken, uint256 originChainID, uint256 destChainId)`](#BridgeConfig-getTokenConfig-address-uint256-uint256-)
+- [`setTokenConfig(address tokenID, uint256 chainID, address tokenAddress, uint8 tokenDecimals, uint256 maxSwap, uint256 minSwap, uint256 swapFee, uint256 maxSwapFee, uint256 minSwapFee)`](#BridgeConfig-setTokenConfig-address-uint256-address-uint8-uint256-uint256-uint256-uint256-uint256-)
 - [`calculateSwapFee(uint256 chainId, address tokenAddress, uint256 amount)`](#BridgeConfig-calculateSwapFee-uint256-address-uint256-)
 
 
@@ -19,9 +20,9 @@ No description
 No description
 # <a id="BridgeConfig-isTokenIDExist-address-"></a> Function `isTokenIDExist(address tokenID) → bool`
 No description
-# <a id="BridgeConfig-getTokenConfig-address-uint256-"></a> Function `getTokenConfig(address tokenID, uint256 chainID) → struct BridgeConfig.TokenConfig`
-No description
-# <a id="BridgeConfig-setTokenConfig-address-uint256-struct-BridgeConfig-TokenConfig-"></a> Function `setTokenConfig(address tokenID, uint256 chainID, struct BridgeConfig.TokenConfig config) → bool`
+# <a id="BridgeConfig-getTokenConfig-address-uint256-uint256-"></a> Function `getTokenConfig(address originToken, uint256 originChainID, uint256 destChainId) → struct BridgeConfig.TokenConfig`
+you can pass 0 for origin chain to get the token address on the destination chain
+# <a id="BridgeConfig-setTokenConfig-address-uint256-address-uint8-uint256-uint256-uint256-uint256-uint256-"></a> Function `setTokenConfig(address tokenID, uint256 chainID, address tokenAddress, uint8 tokenDecimals, uint256 maxSwap, uint256 minSwap, uint256 swapFee, uint256 maxSwapFee, uint256 minSwapFee) → bool`
 No description
 # <a id="BridgeConfig-calculateSwapFee-uint256-address-uint256-"></a> Function `calculateSwapFee(uint256 chainId, address tokenAddress, uint256 amount) → uint256`
 No description
