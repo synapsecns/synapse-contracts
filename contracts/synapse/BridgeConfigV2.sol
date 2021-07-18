@@ -37,29 +37,34 @@ contract BridgeConfigV2 is AccessControl {
         _setupRole(BRIDGEMANAGER_ROLE, msg.sender);
     }
 
-    function getAllTokenIDs() public view returns (bytes32[] memory result) {
+    function getAllTokenIDs() public view returns (string[] memory result) {
         uint256 length = _allTokenIDs.length;
-        result = new bytes32[](length);
+        result = new string[](length);
         for (uint256 i = 0; i < length; ++i) {
-            result[i] = _allTokenIDs[i];
+            result[i] = bytes32ToString(_allTokenIDs[i]);
         }
     }
 
-    function getTokenID(uint256 chainID, address tokenAddress) public view returns (bytes32)  {
-        return _tokenIDMap[chainID][tokenAddress];
+    function getTokenID(uint256 chainID, address tokenAddress) public view returns (string memory)  {
+        return bytes32ToString(_tokenIDMap[chainID][tokenAddress]);
     }
 
-    function getToken(bytes32 tokenID, uint256 chainID) public view returns (Token memory token) {
-        return _tokens[tokenID][chainID];
+    function getToken(string calldata tokenID, uint256 chainID) public view returns (Token memory token) {
+        return _tokens[stringToBytes32(tokenID)][chainID];
     }
 
-    function getUnderlyingToken(bytes32 tokenID) public view returns (Token memory token) {
-        Token[] storage _mcTokens = _allTokens[tokenID];
+    function getUnderlyingToken(string calldata tokenID) public view returns (Token memory token) {
+        bytes32 bytesTokenID = stringToBytes32(tokenID);
+        Token[] storage _mcTokens = _allTokens[bytesTokenID];
         for (uint256 i = 0; i < _mcTokens.length; ++i) {
             if (_mcTokens[i].isUnderlying == true) {
                 return _mcTokens[i];
             }
         }
+    }
+    
+    function isTokenIDExist(string calldata tokenID) public view returns (bool) {
+        return _isTokenIDExist(stringToBytes32(tokenID));
     }
 
     function _isTokenIDExist(bytes32 tokenID) internal view returns(bool) {
@@ -72,7 +77,7 @@ contract BridgeConfigV2 is AccessControl {
     }
 
     function setTokenConfig(
-        bytes32 tokenID,
+        string calldata tokenID,
         uint256 chainID,
         address tokenAddress,
         uint8 tokenDecimals,
@@ -85,6 +90,7 @@ contract BridgeConfigV2 is AccessControl {
         bool isUnderlying
     ) public returns (bool) {
         require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));
+        bytes32 bytesTokenID = stringToBytes32(tokenID);
         Token memory tokenToAdd;
         tokenToAdd.tokenAddress = tokenAddress;
         tokenToAdd.tokenDecimals = tokenDecimals;
@@ -96,24 +102,42 @@ contract BridgeConfigV2 is AccessControl {
         tokenToAdd.hasUnderlying = hasUnderlying;
         tokenToAdd.isUnderlying = isUnderlying;
 
-        _tokens[tokenID][chainID] = tokenToAdd;
-         if (!_isTokenIDExist(tokenID)) {
-            _allTokenIDs.push(tokenID);
+        _tokens[bytesTokenID][chainID] = tokenToAdd;
+         if (!_isTokenIDExist(bytesTokenID)) {
+            _allTokenIDs.push(bytesTokenID);
         }
 
-        Token[] memory _mcTokens = _allTokens[tokenID];
+        Token[] memory _mcTokens = _allTokens[bytesTokenID];
         for (uint256 i = 0; i < _mcTokens.length; ++i) {
             if (_mcTokens[i].chainId == chainID) {
                 address oldToken = _mcTokens[i].tokenAddress;
                 if (tokenToAdd.tokenAddress != oldToken) {
                 _mcTokens[i].tokenAddress = tokenToAdd.tokenAddress ;
                 _tokenIDMap[chainID][oldToken] = keccak256('');
-                _tokenIDMap[chainID][tokenToAdd.tokenAddress] = tokenID;
+                _tokenIDMap[chainID][tokenToAdd.tokenAddress] = bytesTokenID;
                 }
             }
         }
 
-        _tokenIDMap[chainID][tokenToAdd.tokenAddress] = tokenID;
+        _tokenIDMap[chainID][tokenToAdd.tokenAddress] = bytesTokenID;
         return true;
+    }
+    
+    function stringToBytes32(string memory str) internal pure returns (bytes32 result) {
+        assembly {
+            result := mload(add(str, 32))
+        }
+    }
+
+    function bytes32ToString(bytes32 data) internal pure returns (string memory) {
+        uint8 i = 0;
+        while (i < 32 && data[i] != 0) {
+            ++i;
+        }
+        bytes memory bs = new bytes(i);
+        for (uint8 j = 0; j < i; ++j) {
+            bs[j] = data[j];
+        }
+        return string(bs);
     }
 }
