@@ -23,6 +23,7 @@ contract BridgeConfigV2 is AccessControl {
     // LP fee might be something like tradeAmount.mul(fee).div(FEE_DENOMINATOR)
     uint256 private constant FEE_DENOMINATOR = 10**10;
 
+    // this struct must be initialized using setTokenConfig for each token that directly interacts with the bridge
     struct Token {
         uint256 chainId;
         address tokenAddress;
@@ -42,6 +43,9 @@ contract BridgeConfigV2 is AccessControl {
         _setupRole(BRIDGEMANAGER_ROLE, msg.sender);
     }
 
+    /**
+     * @notice Returns a list of all existing token IDs converted to strings
+     */
     function getAllTokenIDs() public view returns (string[] memory result) {
         uint256 length = _allTokenIDs.length;
         result = new string[](length);
@@ -50,6 +54,11 @@ contract BridgeConfigV2 is AccessControl {
         }
     }
 
+    /**
+     * @notice Returns the token ID (string) of the cross-chain token inputted
+     * @param tokenAddress
+     * @param chainID 
+     */
     function getTokenID(address tokenAddress, uint256 chainID) public view returns (string memory)  {
         return bytes32ToString(_tokenIDMap[chainID][tokenAddress]);
     }
