@@ -12,11 +12,16 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 **/
 
 contract BridgeConfigV2 is AccessControl {
+    using SafeMath for uint256;
     bytes32 public constant BRIDGEMANAGER_ROLE = keccak256('BRIDGEMANAGER_ROLE');
     bytes32[] private _allTokenIDs;
     mapping(bytes32 => Token[]) private _allTokens; // key is tokenID
     mapping(uint256 => mapping(address => bytes32)) private _tokenIDMap; // key is chainID,tokenAddress
     mapping(bytes32 => mapping(uint256 => Token)) private _tokens; // key is tokenID,chainID
+
+    // the denominator used to calculate fees. For example, an
+    // LP fee might be something like tradeAmount.mul(fee).div(FEE_DENOMINATOR)
+    uint256 private constant FEE_DENOMINATOR = 10**10;
 
     struct Token {
         uint256 chainId;
@@ -45,12 +50,28 @@ contract BridgeConfigV2 is AccessControl {
         }
     }
 
-    function getTokenID(uint256 chainID, address tokenAddress) public view returns (string memory)  {
+    function getTokenID(address tokenAddress, uint256 chainID) public view returns (string memory)  {
         return bytes32ToString(_tokenIDMap[chainID][tokenAddress]);
     }
 
     function getToken(string calldata tokenID, uint256 chainID) public view returns (Token memory token) {
         return _tokens[stringToBytes32(tokenID)][chainID];
+    }
+
+    function getToken(address tokenAddress, uint256 chainID) public view returns (Token memory token) {
+        string memory tokenID = getTokenID(tokenAddress, chainID);
+        return _tokens[stringToBytes32(tokenID)][chainID];
+    }
+
+    function hasUnderlyingToken(string calldata tokenID) public view returns (bool) {
+        bytes32 bytesTokenID = stringToBytes32(tokenID);
+        Token[] memory _mcTokens = _allTokens[bytesTokenID];
+        for (uint256 i = 0; i < _mcTokens.length; ++i) {
+            if (_mcTokens[i].hasUnderlying) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function getUnderlyingToken(string calldata tokenID) public view returns (Token memory token) {
@@ -124,6 +145,20 @@ contract BridgeConfigV2 is AccessControl {
         tokenToAdd.isUnderlying = isUnderlying;
 
         return _setTokenConfig(stringToBytes32(tokenID), chainID, tokenToAdd);
+    }
+
+    function calculateSwapFee(
+        address tokenAddress,
+        uint256 chainID,
+        uint256 amount
+    ) external view returns (uint256) {
+        Token memory token = getToken(tokenAddress, chainID);
+        uint256 calculatedSwapFee = amount.mul(token.swapFee).div(FEE_DENOMINATOR);
+        if (calculatedSwapFee > token.minSwapFee) {
+            return calculatedSwapFee;
+        } else {
+            return token.minSwapFee;
+        }
     }
     
     function stringToBytes32(string memory str) internal pure returns (bytes32 result) {
