@@ -55,9 +55,9 @@ contract BridgeConfigV2 is AccessControl {
 
     function getUnderlyingToken(string calldata tokenID) public view returns (Token memory token) {
         bytes32 bytesTokenID = stringToBytes32(tokenID);
-        Token[] storage _mcTokens = _allTokens[bytesTokenID];
+        Token[] memory _mcTokens = _allTokens[bytesTokenID];
         for (uint256 i = 0; i < _mcTokens.length; ++i) {
-            if (_mcTokens[i].isUnderlying == true) {
+            if (_mcTokens[i].isUnderlying) {
                 return _mcTokens[i];
             }
         }
@@ -76,6 +76,28 @@ contract BridgeConfigV2 is AccessControl {
         return false;
     }
 
+    function _setTokenConfig(bytes32 tokenID, uint256 chainID, Token memory tokenToAdd) internal returns(bool) {
+        _tokens[tokenID][chainID] = tokenToAdd;
+         if (!_isTokenIDExist(tokenID)) {
+            _allTokenIDs.push(tokenID);
+        }
+
+        Token[] storage _mcTokens = _allTokens[tokenID];
+        for (uint256 i = 0; i < _mcTokens.length; ++i) {
+            if (_mcTokens[i].chainId == chainID) {
+                address oldToken = _mcTokens[i].tokenAddress;
+                if (tokenToAdd.tokenAddress != oldToken) {
+                _mcTokens[i].tokenAddress = tokenToAdd.tokenAddress ;
+                _tokenIDMap[chainID][oldToken] = keccak256('');
+                _tokenIDMap[chainID][tokenToAdd.tokenAddress] = tokenID;
+                }
+            }
+        }
+        _mcTokens.push(tokenToAdd);
+        _tokenIDMap[chainID][tokenToAdd.tokenAddress] = tokenID;
+        return true;
+    }
+
     function setTokenConfig(
         string calldata tokenID,
         uint256 chainID,
@@ -90,7 +112,6 @@ contract BridgeConfigV2 is AccessControl {
         bool isUnderlying
     ) public returns (bool) {
         require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));
-        bytes32 bytesTokenID = stringToBytes32(tokenID);
         Token memory tokenToAdd;
         tokenToAdd.tokenAddress = tokenAddress;
         tokenToAdd.tokenDecimals = tokenDecimals;
@@ -102,25 +123,7 @@ contract BridgeConfigV2 is AccessControl {
         tokenToAdd.hasUnderlying = hasUnderlying;
         tokenToAdd.isUnderlying = isUnderlying;
 
-        _tokens[bytesTokenID][chainID] = tokenToAdd;
-         if (!_isTokenIDExist(bytesTokenID)) {
-            _allTokenIDs.push(bytesTokenID);
-        }
-
-        Token[] memory _mcTokens = _allTokens[bytesTokenID];
-        for (uint256 i = 0; i < _mcTokens.length; ++i) {
-            if (_mcTokens[i].chainId == chainID) {
-                address oldToken = _mcTokens[i].tokenAddress;
-                if (tokenToAdd.tokenAddress != oldToken) {
-                _mcTokens[i].tokenAddress = tokenToAdd.tokenAddress ;
-                _tokenIDMap[chainID][oldToken] = keccak256('');
-                _tokenIDMap[chainID][tokenToAdd.tokenAddress] = bytesTokenID;
-                }
-            }
-        }
-
-        _tokenIDMap[chainID][tokenToAdd.tokenAddress] = bytesTokenID;
-        return true;
+        return _setTokenConfig(stringToBytes32(tokenID), chainID, tokenToAdd);
     }
     
     function stringToBytes32(string memory str) internal pure returns (bytes32 result) {
