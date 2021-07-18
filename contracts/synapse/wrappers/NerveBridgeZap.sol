@@ -163,4 +163,50 @@ contract NerveBridgeZap {
       swapDeadline
     );
   }
+
+    /**
+   * @notice Wraps SynapseBridge deposit() function
+   * @param to address on other chain to bridge assets to
+   * @param chainId which chain to bridge assets onto
+   * @param token ERC20 compatible token to deposit into the bridge
+   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+   **/
+  function deposit(
+    address to,
+    uint256 chainId,
+    IERC20 token,
+    uint256 amount
+    ) public {
+      if (token.allowance(address(this), address(synapseBridge)) < amount) {
+        token.safeApprove(address(synapseBridge), MAX_UINT256);
+      }
+      synapseBridge.deposit(to, chainId, token, amount);
+  }
+  
+  /**
+   * @notice Wraps SynapseBridge depositAndSwap() function
+   * @param to address on other chain to bridge assets to
+   * @param chainId which chain to bridge assets onto
+   * @param token ERC20 compatible token to deposit into the bridge
+   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+   * @param tokenIndexFrom the token the user wants to swap from
+   * @param tokenIndexTo the token the user wants to swap to
+   * @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
+   * @param deadline latest timestamp to accept this transaction
+   **/
+  function depositAndSwap(
+    address to,
+    uint256 chainId,
+    IERC20 token,
+    uint256 amount,
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 minDy,
+    uint256 deadline
+  ) public {
+      if (token.allowance(address(this), address(synapseBridge)) < amount) {
+        token.safeApprove(address(synapseBridge), MAX_UINT256);
+      }
+      synapseBridge.depositAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
+  }
 }
