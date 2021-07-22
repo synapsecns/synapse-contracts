@@ -1,4 +1,6 @@
+Interface for the meta swap contract.
 
+implement this interface to develop a a factory-patterned ECDSA node management contract
 
 
 # Functions:

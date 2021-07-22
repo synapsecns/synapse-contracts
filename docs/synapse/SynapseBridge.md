@@ -20,11 +20,11 @@
 - [`withdrawAndRemove(address to, contract IERC20 token, uint256 amount, uint256 fee, contract ISwap pool, uint256 swapTokenAmount, uint8 swapTokenIndex, uint256 swapMinAmount, uint256 swapDeadline)`](#SynapseBridge-withdrawAndRemove-address-contract-IERC20-uint256-uint256-contract-ISwap-uint256-uint8-uint256-uint256-)
 
 # Events:
-- [`TokenDeposit(address from, address to, uint256 chainId, contract IERC20 token, uint256 amount)`](#SynapseBridge-TokenDeposit-address-address-uint256-contract-IERC20-uint256-)
+- [`TokenDeposit(address to, uint256 chainId, contract IERC20 token, uint256 amount)`](#SynapseBridge-TokenDeposit-address-uint256-contract-IERC20-uint256-)
 - [`TokenRedeem(address to, uint256 chainId, contract IERC20 token, uint256 amount)`](#SynapseBridge-TokenRedeem-address-uint256-contract-IERC20-uint256-)
 - [`TokenWithdraw(address to, contract IERC20 token, uint256 amount, uint256 fee)`](#SynapseBridge-TokenWithdraw-address-contract-IERC20-uint256-uint256-)
 - [`TokenMint(address to, contract IERC20Mintable token, uint256 amount, uint256 fee)`](#SynapseBridge-TokenMint-address-contract-IERC20Mintable-uint256-uint256-)
-- [`TokenDepositAndSwap(address from, address to, uint256 chainId, contract IERC20 token, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline)`](#SynapseBridge-TokenDepositAndSwap-address-address-uint256-contract-IERC20-uint256-uint8-uint8-uint256-uint256-)
+- [`TokenDepositAndSwap(address to, uint256 chainId, contract IERC20 token, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline)`](#SynapseBridge-TokenDepositAndSwap-address-uint256-contract-IERC20-uint256-uint8-uint8-uint256-uint256-)
 - [`TokenMintAndSwap(address to, contract IERC20Mintable token, uint256 amount, uint256 fee, bool swapSuccess)`](#SynapseBridge-TokenMintAndSwap-address-contract-IERC20Mintable-uint256-uint256-bool-)
 - [`TokenRedeemAndSwap(address to, uint256 chainId, contract IERC20 token, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline)`](#SynapseBridge-TokenRedeemAndSwap-address-uint256-contract-IERC20-uint256-uint8-uint8-uint256-uint256-)
 - [`TokenRedeemAndRemove(address to, uint256 chainId, contract IERC20 token, uint256 amount, uint256 swapTokenAmount, uint8 swapTokenIndex, uint256 swapMinAmount, uint256 swapDeadline)`](#SynapseBridge-TokenRedeemAndRemove-address-uint256-contract-IERC20-uint256-uint256-uint8-uint256-uint256-)
@@ -204,7 +204,7 @@ No description
 - `swapDeadline`: Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
 
 
-# <a id="SynapseBridge-TokenDeposit-address-address-uint256-contract-IERC20-uint256-"></a> Event `TokenDeposit(address from, address to, uint256 chainId, contract IERC20 token, uint256 amount)` 
+# <a id="SynapseBridge-TokenDeposit-address-uint256-contract-IERC20-uint256-"></a> Event `TokenDeposit(address to, uint256 chainId, contract IERC20 token, uint256 amount)` 
 No description
 # <a id="SynapseBridge-TokenRedeem-address-uint256-contract-IERC20-uint256-"></a> Event `TokenRedeem(address to, uint256 chainId, contract IERC20 token, uint256 amount)` 
 No description
@@ -212,7 +212,7 @@ No description
 No description
 # <a id="SynapseBridge-TokenMint-address-contract-IERC20Mintable-uint256-uint256-"></a> Event `TokenMint(address to, contract IERC20Mintable token, uint256 amount, uint256 fee)` 
 No description
-# <a id="SynapseBridge-TokenDepositAndSwap-address-address-uint256-contract-IERC20-uint256-uint8-uint8-uint256-uint256-"></a> Event `TokenDepositAndSwap(address from, address to, uint256 chainId, contract IERC20 token, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline)` 
+# <a id="SynapseBridge-TokenDepositAndSwap-address-uint256-contract-IERC20-uint256-uint8-uint8-uint256-uint256-"></a> Event `TokenDepositAndSwap(address to, uint256 chainId, contract IERC20 token, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline)` 
 No description
 # <a id="SynapseBridge-TokenMintAndSwap-address-contract-IERC20Mintable-uint256-uint256-bool-"></a> Event `TokenMintAndSwap(address to, contract IERC20Mintable token, uint256 amount, uint256 fee, bool swapSuccess)` 
 No description
