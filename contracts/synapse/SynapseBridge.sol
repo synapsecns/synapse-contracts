@@ -433,7 +433,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     );
 
     if (expectedOutput >= swapMinAmount) {
-      token.safeApprove(address(pool), swapTokenAmount);
+      token.approve(address(pool), swapTokenAmount);
       try
         ISwap(pool).removeLiquidityOneToken(
           swapTokenAmount,
