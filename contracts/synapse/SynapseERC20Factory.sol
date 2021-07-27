@@ -17,8 +17,6 @@ contract SynapseERC20Factory {
      * @param name Token name
      * @param symbol Token symbol
      * @param decimals Token name
-     * @param underlyingChainId Base asset chain ID which SynapseERC20 represents
-     * @param underlyingTokenAddress Base asset address which SynapseERC20 represents
      * @param owner admin address to be initialized with
      * @return Address of the newest node management contract created
      **/
@@ -27,8 +25,6 @@ contract SynapseERC20Factory {
         string memory name,
         string memory symbol,   
         uint8 decimals,
-        uint256 underlyingChainId,
-        address underlyingTokenAddress,
         address owner
     ) external returns (address) {
         address synERC20Clone = Clones.clone(synapseERC20Address);
@@ -36,8 +32,6 @@ contract SynapseERC20Factory {
             name,
             symbol,
             decimals,
-            underlyingChainId,
-            underlyingTokenAddress,
             owner
         );
 
