@@ -46,7 +46,7 @@ let config: HardhatUserConfig = {
     },
     mainnet: {
       url: process.env.ALCHEMY_API,
-      gasPrice: 26 * 1000000000,
+      gasPrice: 30 * 1000000000,
     },
   },
   paths: {

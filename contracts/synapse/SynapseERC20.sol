@@ -42,15 +42,4 @@ contract SynapseERC20 is
     require(hasRole(MINTER_ROLE, msg.sender), 'Not a minter');
     _mint(to, amount);
   }
-
-  function mintMultiple(
-    address to,
-    uint256 amount,
-    address feeAddress,
-    uint256 feeAmount
-  ) public {
-    require(hasRole(MINTER_ROLE, msg.sender), 'Not a minter');
-    _mint(to, amount);
-    _mint(feeAddress, feeAmount);
-  }
 }
