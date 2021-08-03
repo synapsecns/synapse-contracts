@@ -28,7 +28,7 @@ contract SynapseERC20 is
     string memory _symbol,
     uint8 _decimals,
     address _owner
-  ) public initializer {
+  ) external initializer {
     __Context_init_unchained();
     __AccessControl_init_unchained();
     __ERC20_init_unchained(_name, _symbol);
@@ -38,7 +38,7 @@ contract SynapseERC20 is
     _setupRole(DEFAULT_ADMIN_ROLE, _owner);
   }
 
-  function mint(address to, uint256 amount) public {
+  function mint(address to, uint256 amount) external {
     require(hasRole(MINTER_ROLE, msg.sender), 'Not a minter');
     _mint(to, amount);
   }
