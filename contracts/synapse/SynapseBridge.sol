@@ -215,8 +215,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     ethFees = ethFees.add(fee);
     require(to != address(0), 'Address is zero');
-    to.transfer(amount);
     emit TokenWithdraw(to, IERC20(address(0)), amount, fee);
+    to.transfer(amount);
   }
 
   /**
