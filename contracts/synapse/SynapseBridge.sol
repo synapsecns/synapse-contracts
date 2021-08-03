@@ -161,8 +161,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     IERC20 token,
     uint256 amount
   ) external nonReentrant() {
-    token.safeTransferFrom(msg.sender, address(this), amount);
     emit TokenDeposit(to, chainId, token, amount);
+    token.safeTransferFrom(msg.sender, address(this), amount);
   }
 
   /**
@@ -178,8 +178,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     ERC20Burnable token,
     uint256 amount
   ) external nonReentrant() {
-    token.burnFrom(msg.sender, amount);
     emit TokenRedeem(to, chainId, token, amount);
+    token.burnFrom(msg.sender, amount);
   }
 
   /**
@@ -197,8 +197,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   ) external nonReentrant() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
-    token.safeTransfer(to, amount);
     emit TokenWithdraw(to, token, amount, fee);
+    token.safeTransfer(to, amount);
   }
 
   /**
@@ -235,9 +235,9 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   ) external nonReentrant() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
+    emit TokenMint(to, token, amount, fee);
     token.mint(address(this), amount.add(fee));
     IERC20(token).safeTransfer(to, amount);
-    emit TokenMint(to, token, amount, fee);
   }
 
   /**
@@ -261,8 +261,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 minDy,
     uint256 deadline
   ) external nonReentrant() {
-    token.safeTransferFrom(msg.sender, address(this), amount);
-    emit TokenDepositAndSwap(
+     emit TokenDepositAndSwap(
       to,
       chainId,
       token,
@@ -272,6 +271,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       minDy,
       deadline
     );
+    token.safeTransferFrom(msg.sender, address(this), amount);
   }
 
   /**
@@ -295,7 +295,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 minDy,
     uint256 deadline
   ) external nonReentrant() {
-    token.burnFrom(msg.sender, amount);
     emit TokenRedeemAndSwap(
       to,
       chainId,
@@ -306,6 +305,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       minDy,
       deadline
     );
+    token.burnFrom(msg.sender, amount);
   }
 
   /**
@@ -329,8 +329,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 swapMinAmount,
     uint256 swapDeadline
   ) external nonReentrant() {
-    token.burnFrom(msg.sender, amount);
-    emit TokenRedeemAndRemove(
+      emit TokenRedeemAndRemove(
       to,
       chainId,
       token,
@@ -340,6 +339,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       swapMinAmount,
       swapDeadline
     );
+    token.burnFrom(msg.sender, amount);
   }
 
   /**
