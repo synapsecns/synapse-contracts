@@ -8,6 +8,7 @@ import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
+import '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
 import './interfaces/IMetaSwapDeposit.sol';
 import './interfaces/ISwap.sol';
 
@@ -22,7 +23,7 @@ interface IERC20Mintable is IERC20 {
   ) external;
 }
 
-contract SynapseBridge is Initializable, AccessControlUpgradeable {
+contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGuard {
   using SafeERC20 for IERC20;
   using SafeMath for uint256;
 
@@ -33,7 +34,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
 
   uint256 public startBlockNumber;
 
-  function initialize() public initializer {
+  function initialize() external initializer {
     startBlockNumber = block.number;
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     __AccessControl_init();
@@ -142,7 +143,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     address to,
     uint256 chainId,
     uint256 amount
-  ) public payable {
+  ) external payable {
     require(msg.value == amount, "Value doesn't match amount");
     emit TokenDeposit(to, chainId, IERC20(address(0)), amount);
   }
@@ -159,7 +160,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint256 chainId,
     IERC20 token,
     uint256 amount
-  ) public {
+  ) external {
     token.safeTransferFrom(msg.sender, address(this), amount);
     emit TokenDeposit(to, chainId, token, amount);
   }
@@ -176,7 +177,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint256 chainId,
     ERC20Burnable token,
     uint256 amount
-  ) public {
+  ) external {
     token.burnFrom(msg.sender, amount);
     emit TokenRedeem(to, chainId, token, amount);
   }
@@ -193,7 +194,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     IERC20 token,
     uint256 amount,
     uint256 fee
-  ) public {
+  ) external {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
     token.safeTransfer(to, amount);
@@ -210,7 +211,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     address payable to,
     uint256 amount,
     uint256 fee
-  ) public {
+  ) external {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     ethFees = ethFees.add(fee);
     require(to != address(0), 'Address is zero');
@@ -231,7 +232,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     IERC20Mintable token,
     uint256 amount,
     uint256 fee
-  ) public {
+  ) external {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
     token.mint(address(this), amount.add(fee));
@@ -259,7 +260,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 deadline
-  ) public {
+  ) external {
     token.safeTransferFrom(msg.sender, address(this), amount);
     emit TokenDepositAndSwap(
       to,
@@ -293,7 +294,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 deadline
-  ) public {
+  ) external {
     token.burnFrom(msg.sender, amount);
     emit TokenRedeemAndSwap(
       to,
@@ -327,7 +328,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint8 swapTokenIndex,
     uint256 swapMinAmount,
     uint256 swapDeadline
-  ) public {
+  ) external {
     token.burnFrom(msg.sender, amount);
     emit TokenRedeemAndRemove(
       to,
@@ -364,7 +365,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 deadline
-  ) public {
+  ) external {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required
@@ -424,7 +425,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
     uint8 swapTokenIndex,
     uint256 swapMinAmount,
     uint256 swapDeadline
-  ) public {
+  ) external {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required

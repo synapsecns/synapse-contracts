@@ -22,7 +22,7 @@ contract PoolConfig is AccessControl {
   }
 
   function getPoolConfig(address tokenAddress, uint256 chainID)
-    public
+    external
     view
     returns (Pool memory)
   {
@@ -34,7 +34,7 @@ contract PoolConfig is AccessControl {
     uint256 chainID,
     address poolAddress,
     bool metaswap
-  ) public returns (Pool memory) {
+  ) external returns (Pool memory) {
     require(
       hasRole(BRIDGEMANAGER_ROLE, msg.sender),
       'Caller is not Bridge Manager'

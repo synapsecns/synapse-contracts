@@ -15,7 +15,7 @@ contract Synapse is ERC20, ERC20Burnable, AccessControl, ERC20Permit {
         _setupRole(MINTER_ROLE, msg.sender);
     }
 
-    function mint(address to, uint256 amount) public {
+    function mint(address to, uint256 amount) external {
         require(hasRole(MINTER_ROLE, msg.sender));
         _mint(to, amount);
     }

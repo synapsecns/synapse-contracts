@@ -58,7 +58,7 @@ contract NerveMetaBridgeZap {
     uint256 dx,
     uint256 minDy,
     uint256 deadline
-  ) public {
+  ) external {
     metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
     // swap
 
@@ -91,7 +91,7 @@ contract NerveMetaBridgeZap {
     uint8 swapTokenIndexTo,
     uint256 swapMinDy,
     uint256 swapDeadline
-  ) public {
+  ) external {
     metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
     // swap
 
@@ -132,7 +132,7 @@ contract NerveMetaBridgeZap {
     uint8 liqTokenIndex,
     uint256 liqMinAmount,
     uint256 liqDeadline
-  ) public {
+  ) external {
     metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
     // swap
 
@@ -173,7 +173,7 @@ contract NerveMetaBridgeZap {
     uint256 chainId,
     IERC20 token,
     uint256 amount
-    ) public {
+    ) external {
       token.safeTransferFrom(msg.sender, address(this), amount);
       if (token.allowance(address(this), address(synapseBridge)) < amount) {
       token.safeApprove(address(synapseBridge), MAX_UINT256);
@@ -202,7 +202,7 @@ contract NerveMetaBridgeZap {
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 deadline
-  ) public {
+  ) external {
     if (token.allowance(address(this), address(synapseBridge)) < amount) {
       token.safeApprove(address(synapseBridge), MAX_UINT256);
     }
@@ -228,7 +228,7 @@ contract NerveMetaBridgeZap {
     uint8 liqTokenIndex,
     uint256 liqMinAmount,
     uint256 liqDeadline
-  ) public {
+  ) external {
     if (token.allowance(address(this), address(synapseBridge)) < amount) {
       token.safeApprove(address(synapseBridge), MAX_UINT256);
     }

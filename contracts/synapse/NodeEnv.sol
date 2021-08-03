@@ -36,7 +36,7 @@ contract NodeEnv is AccessControl {
     * @dev this is useful for enumerating through all keys in the env
     */
     function keyCount()
-    public
+    external
     view
     returns (uint256){
         return _config.length();
@@ -49,14 +49,14 @@ contract NodeEnv is AccessControl {
      *
      * - `index` must be strictly less than {length}.
      */
-    function keyValueByIndex(uint256 index) public view returns(string memory, string memory){
+    function keyValueByIndex(uint256 index) external view returns(string memory, string memory){
         return _config.at(index);
     }
 
     /**
     * @notice gets the value associated with the key
     */
-    function get(string calldata _key) public view returns(string memory){
+    function get(string calldata _key) external view returns(string memory){
         string memory key = _key;
         return _config.get(key);
     }
@@ -66,7 +66,7 @@ contract NodeEnv is AccessControl {
     *
     * @dev caller must have bridge manager role
     */
-    function set(string calldata _key, string calldata _value) public returns(bool) {
+    function set(string calldata _key, string calldata _value) external returns(bool) {
         require(
             hasRole(BRIDGEMANAGER_ROLE, msg.sender),
             'Caller is not Bridge Manager'
