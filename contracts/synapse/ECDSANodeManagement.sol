@@ -186,7 +186,7 @@ contract ECDSANodeManagement {
         uint256 _honestThreshold
     ) public {
         require(!isInitialized, "Contract already initialized");
-
+        require(_owner != address(0));
         owner = _owner;
         members = _members;
         honestThreshold = _honestThreshold;
