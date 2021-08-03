@@ -115,6 +115,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
    */
   function withdrawFees(IERC20 token, address to) external {
     require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+    require(to != address(0), "Address is 0x000");
     if (fees[address(token)] != 0) {
       token.safeTransfer(to, fees[address(token)]);
     }
@@ -126,9 +127,9 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
    */
   function withdrawETHFees(address payable to) external {
     require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-    if (ethFees != 0) {
-      to.transfer(ethFees);
-    }
+    require(to != address(0), "Address is 0x000");
+    require(ethFees != 0, "No fees to withdraw");
+    to.transfer(ethFees);
   }
 
   /**
@@ -212,6 +213,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable {
   ) public {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     ethFees = ethFees.add(fee);
+    require(to != address(0), 'Address is zero');
     to.transfer(amount);
     emit TokenWithdraw(to, IERC20(address(0)), amount, fee);
   }
