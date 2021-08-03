@@ -160,7 +160,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 chainId,
     IERC20 token,
     uint256 amount
-  ) external {
+  ) external nonReentrant() {
     token.safeTransferFrom(msg.sender, address(this), amount);
     emit TokenDeposit(to, chainId, token, amount);
   }
@@ -177,7 +177,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 chainId,
     ERC20Burnable token,
     uint256 amount
-  ) external {
+  ) external nonReentrant() {
     token.burnFrom(msg.sender, amount);
     emit TokenRedeem(to, chainId, token, amount);
   }
@@ -194,7 +194,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     IERC20 token,
     uint256 amount,
     uint256 fee
-  ) external {
+  ) external nonReentrant() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
     token.safeTransfer(to, amount);
@@ -211,7 +211,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     address payable to,
     uint256 amount,
     uint256 fee
-  ) external {
+  ) external nonReentrant() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     ethFees = ethFees.add(fee);
     require(to != address(0), 'Address is zero');
@@ -232,7 +232,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     IERC20Mintable token,
     uint256 amount,
     uint256 fee
-  ) external {
+  ) external nonReentrant() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
     token.mint(address(this), amount.add(fee));
@@ -260,7 +260,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 deadline
-  ) external {
+  ) external nonReentrant() {
     token.safeTransferFrom(msg.sender, address(this), amount);
     emit TokenDepositAndSwap(
       to,
@@ -294,7 +294,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 deadline
-  ) external {
+  ) external nonReentrant() {
     token.burnFrom(msg.sender, amount);
     emit TokenRedeemAndSwap(
       to,
@@ -328,7 +328,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint8 swapTokenIndex,
     uint256 swapMinAmount,
     uint256 swapDeadline
-  ) external {
+  ) external nonReentrant() {
     token.burnFrom(msg.sender, amount);
     emit TokenRedeemAndRemove(
       to,
@@ -365,7 +365,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 deadline
-  ) external {
+  ) external nonReentrant() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required
@@ -425,7 +425,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint8 swapTokenIndex,
     uint256 swapMinAmount,
     uint256 swapDeadline
-  ) external {
+  ) external nonReentrant() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required
