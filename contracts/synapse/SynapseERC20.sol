@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity 0.6.12;
 
 import '@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol';
 import '@openzeppelin/contracts-upgradeable/token/ERC20/ERC20BurnableUpgradeable.sol';
@@ -18,27 +18,27 @@ contract SynapseERC20 is
 
   /**
    * @notice Initializes this ERC20 contract with the given parameters.
-   * @param _name Token name
-   * @param _symbol Token symbol
-   * @param _decimals Token name
-   * @param _owner admin address to be initialized with
+   * @param name Token name
+   * @param symbol Token symbol
+   * @param decimals Token name
+   * @param owner admin address to be initialized with
    */
   function initialize(
-    string memory _name,
-    string memory _symbol,
-    uint8 _decimals,
-    address _owner
-  ) public initializer {
+    string memory name,
+    string memory symbol,
+    uint8 decimals,
+    address owner
+  ) external initializer {
     __Context_init_unchained();
     __AccessControl_init_unchained();
-    __ERC20_init_unchained(_name, _symbol);
+    __ERC20_init_unchained(name, symbol);
     __ERC20Burnable_init_unchained();
-    _setupDecimals(_decimals);
-    __ERC20Permit_init(_name);
-    _setupRole(DEFAULT_ADMIN_ROLE, _owner);
+    _setupDecimals(decimals);
+    __ERC20Permit_init(name);
+    _setupRole(DEFAULT_ADMIN_ROLE, owner);
   }
 
-  function mint(address to, uint256 amount) public {
+  function mint(address to, uint256 amount) external {
     require(hasRole(MINTER_ROLE, msg.sender), 'Not a minter');
     _mint(to, amount);
   }
