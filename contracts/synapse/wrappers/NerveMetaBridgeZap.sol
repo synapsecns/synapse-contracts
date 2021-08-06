@@ -203,6 +203,7 @@ contract NerveMetaBridgeZap {
     uint256 minDy,
     uint256 deadline
   ) public {
+    token.safeTransferFrom(msg.sender, address(this), amount);
     if (token.allowance(address(this), address(synapseBridge)) < amount) {
       token.safeApprove(address(synapseBridge), MAX_UINT256);
     }
@@ -229,6 +230,7 @@ contract NerveMetaBridgeZap {
     uint256 liqMinAmount,
     uint256 liqDeadline
   ) public {
+    token.safeTransferFrom(msg.sender, address(this), amount);
     if (token.allowance(address(this), address(synapseBridge)) < amount) {
       token.safeApprove(address(synapseBridge), MAX_UINT256);
     }
