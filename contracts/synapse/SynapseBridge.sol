@@ -69,6 +69,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     IERC20Mintable token,
     uint256 amount,
     uint256 fee,
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 minDy,
+    uint256 deadline,
     bool swapSuccess
   );
   event TokenRedeemAndSwap(
@@ -96,6 +100,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     IERC20 token,
     uint256 amount,
     uint256 fee,
+    uint256 swapTokenAmount,
+    uint8 swapTokenIndex,
+    uint256 swapMinAmount,
+    uint256 swapDeadline,
     bool swapSuccess
   );
 
@@ -391,15 +399,15 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         // Swap succeeded, transfer swapped asset
         IERC20 swappedTokenTo = IMetaSwapDeposit(pool).getToken(tokenIndexTo);
         swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-        emit TokenMintAndSwap(to, token, amount, fee, true);
+        emit TokenMintAndSwap(to, token, amount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, true);
       } catch {
         IERC20(token).safeTransfer(to, amount);
-        emit TokenMintAndSwap(to, token, amount, fee, false);
+        emit TokenMintAndSwap(to, token, amount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false);
       }
     } else {
       token.mint(address(this), amount.add(fee));
       IERC20(token).safeTransfer(to, amount);
-      emit TokenMintAndSwap(to, token, amount, fee, false);
+      emit TokenMintAndSwap(to, token, amount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false);
     }
   }
 
@@ -448,14 +456,14 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         // Swap succeeded, transfer swapped asset
         IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
         swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-        emit TokenWithdrawAndRemove(to, token, amount, fee, true);
+        emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenAmount, swapTokenIndex, swapMinAmount, swapDeadline, true);
       } catch {
         IERC20(token).safeTransfer(to, amount);
-        emit TokenWithdrawAndRemove(to, token, amount, fee, false);
+        emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenAmount, swapTokenIndex, swapMinAmount, swapDeadline, false);
       }
     } else {
       token.safeTransfer(to, amount);
-      emit TokenWithdrawAndRemove(to, token, amount, fee, false);
+      emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenAmount, swapTokenIndex, swapMinAmount, swapDeadline, false);
     }
   }
 }
