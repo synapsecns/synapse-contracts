@@ -176,7 +176,7 @@ contract NerveBridgeZap {
     uint256 chainId,
     IERC20 token,
     uint256 amount
-    ) public {
+    ) external {
       token.safeTransferFrom(msg.sender, address(this), amount);
 
       if (token.allowance(address(this), address(synapseBridge)) < amount) {
@@ -205,7 +205,7 @@ contract NerveBridgeZap {
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 deadline
-  ) public {
+  ) external {
       token.safeTransferFrom(msg.sender, address(this), amount);
       
       if (token.allowance(address(this), address(synapseBridge)) < amount) {
