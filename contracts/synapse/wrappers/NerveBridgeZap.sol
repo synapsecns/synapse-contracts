@@ -82,7 +82,7 @@ contract NerveBridgeZap {
     uint256[] calldata liquidityAmounts,
     uint256 minToMint,
     uint256 deadline
-  ) public {
+  ) external {
     // add liquidity
     for (uint256 i = 0; i < baseTokens.length; i++) {
       if (liquidityAmounts[i] != 0) {
@@ -131,7 +131,7 @@ contract NerveBridgeZap {
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 swapDeadline
-  ) public {
+  ) external {
     // add liquidity
     for (uint256 i = 0; i < baseTokens.length; i++) {
       if (liquidityAmounts[i] != 0) {
@@ -176,7 +176,12 @@ contract NerveBridgeZap {
     uint256 chainId,
     IERC20 token,
     uint256 amount
-    ) public {
+    ) external {
+      token.safeTransferFrom(
+          msg.sender,
+          address(this),
+          amount
+        );
       if (token.allowance(address(this), address(synapseBridge)) < amount) {
         token.safeApprove(address(synapseBridge), MAX_UINT256);
       }
@@ -203,7 +208,12 @@ contract NerveBridgeZap {
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 deadline
-  ) public {
+  ) external {
+     token.safeTransferFrom(
+          msg.sender,
+          address(this),
+          amount
+        );
       if (token.allowance(address(this), address(synapseBridge)) < amount) {
         token.safeApprove(address(synapseBridge), MAX_UINT256);
       }
