@@ -73,8 +73,6 @@ describe('SynapseERC20Factory', async () => {
           'Synapse Test Token',
           'SYNTEST',
           18,
-          '1',
-          '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
           await owner.getAddress()
         )
       ).to.be.reverted
@@ -89,21 +87,6 @@ describe('SynapseERC20Factory', async () => {
         expect(
           await synapseERC20.connect(owner).balanceOf(user1Address)
         ).to.be.eq('1000')
-      })
-
-      it('mintMultiple', async () => {
-        await synapseERC20
-          .connect(owner)
-          .grantRole(await synapseERC20.MINTER_ROLE(), await owner.getAddress())
-        await synapseERC20
-          .connect(owner)
-          .mintMultiple(user1Address, '1000', user2Address, '10')
-        expect(
-          await synapseERC20.connect(owner).balanceOf(user1Address)
-        ).to.be.eq('1000')
-        expect(
-          await synapseERC20.connect(owner).balanceOf(user2Address)
-        ).to.be.eq('10')
       })
 
       it('Mint not allowed without role', async () => {
