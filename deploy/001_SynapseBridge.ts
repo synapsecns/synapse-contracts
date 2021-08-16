@@ -4,21 +4,7 @@ import { DeployFunction } from 'hardhat-deploy/types'
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, getChainId } = hre
   const { deploy, get } = deployments
-  const { deployer, bscMultisig, ethMultisig, polyMultisig } = await getNamedAccounts()
-  let multisig;
-
-
-  if ((await getChainId()) === '1') {
-    multisig = ethMultisig;
-  }
-
-  if ((await getChainId()) === '56') {
-    multisig = bscMultisig;
-  }
-
-  if ((await getChainId()) === '137') {
-    multisig = polyMultisig;
-  }
+  const { deployer, devMultisig } = await getNamedAccounts()
 
 
   await deploy('SynapseBridge', {
@@ -26,7 +12,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true,
     skipIfAlreadyDeployed: true,
     proxy: {
-      owner: multisig,
+      owner: (await get('TimelockController')).address,
       proxyContract: 'OpenZeppelinTransparentProxy',
     },
   })
