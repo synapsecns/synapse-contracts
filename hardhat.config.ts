@@ -88,6 +88,9 @@ let config: HardhatUserConfig = {
       default: 1, // use a different account for deploying libraries on the hardhat network
       1: 0, // use the same address as the main deployer on mainnet
     },
+    "bscMultisig": '0xA316d83e67EEfD136f4C077de1cD4163A681F8A8',
+    "polyMultisig": '0xBdD38B2eaae34C9FCe187909e81e75CBec0dAA7A',
+    "ethMultisig": '0x67F60b0891EBD842Ebe55E4CCcA1098d7Aac1A55'
   },
   gasReporter: {
     currency: 'USD',
