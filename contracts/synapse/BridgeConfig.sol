@@ -40,7 +40,6 @@ contract BridgeConfig is AccessControl {
 
     constructor() public {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(BRIDGEMANAGER_ROLE, msg.sender);
     }
 
     /**
