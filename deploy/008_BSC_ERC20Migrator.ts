@@ -5,14 +5,17 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, getChainId } = hre
   const { deploy, get } = deployments
   const { deployer } = await getNamedAccounts()
-
-  if ((await getChainId()) === '1') { 
-    await deploy('ECDSANodeManagement', {
+  if ((await getChainId()) === '56') {
+    await deploy('ERC20Migrator', {
       from: deployer,
       log: true,
       skipIfAlreadyDeployed: true,
+      args: [
+        (await get('NerveToken')).address,
+        (await get('SynapseToken')).address,
+      ]
     })
   }
 }
 export default func
-func.tags = ['ECDSANodeManagement']
+func.tags = ['PoolConfig']

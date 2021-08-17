@@ -2,16 +2,17 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { DeployFunction } from 'hardhat-deploy/types'
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts } = hre
+  const { deployments, getNamedAccounts, getChainId } = hre
   const { deploy, get } = deployments
-  const { deployer } = await getNamedAccounts()
+  const { deployer, devMultisig } = await getNamedAccounts()
+
 
   await deploy('SynapseBridge', {
     from: deployer,
     log: true,
     skipIfAlreadyDeployed: true,
     proxy: {
-      owner: deployer,
+      owner: (await get('TimelockController')).address,
       proxyContract: 'OpenZeppelinTransparentProxy',
     },
   })

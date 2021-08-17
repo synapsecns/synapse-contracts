@@ -46,7 +46,7 @@ let config: HardhatUserConfig = {
     },
     mainnet: {
       url: process.env.ALCHEMY_API,
-      gasPrice: 40 * 1000000000,
+      gasPrice: 60 * 1000000000,
     },
   },
   paths: {
@@ -74,6 +74,9 @@ let config: HardhatUserConfig = {
       {
         version: '0.8.3',
       },
+      {
+        version: '0.4.24'
+      }
     ],
   },
   namedAccounts: {
@@ -85,6 +88,11 @@ let config: HardhatUserConfig = {
       default: 1, // use a different account for deploying libraries on the hardhat network
       1: 0, // use the same address as the main deployer on mainnet
     },
+    devMultisig: {
+      1: '0x67F60b0891EBD842Ebe55E4CCcA1098d7Aac1A55',
+      56: '0xA316d83e67EEfD136f4C077de1cD4163A681F8A8',
+      137: '0xBdD38B2eaae34C9FCe187909e81e75CBec0dAA7A',
+    }
   },
   gasReporter: {
     currency: 'USD',
