@@ -64,8 +64,6 @@ describe("SynapseBridge", async () => {
                 "Synapse Test Token",
                 "SYNTEST",
                 18,
-                "1",
-                "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
                 await owner.getAddress()
             )
 
@@ -73,8 +71,6 @@ describe("SynapseBridge", async () => {
                 "Test Token",
                 "Test",
                 18,
-                "1",
-                "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
                 await owner.getAddress()
             )
 

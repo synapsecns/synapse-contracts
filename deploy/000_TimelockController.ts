@@ -2,17 +2,20 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { DeployFunction } from 'hardhat-deploy/types'
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts, getChainId } = hre
+  const { deployments, getNamedAccounts } = hre
   const { deploy, get } = deployments
   const { deployer } = await getNamedAccounts()
 
-  if ((await getChainId()) === '1') { 
-    await deploy('ECDSANodeManagement', {
-      from: deployer,
-      log: true,
-      skipIfAlreadyDeployed: true,
-    })
-  }
+  await deploy('TimelockController', {
+    from: deployer,
+    log: true,
+    skipIfAlreadyDeployed: true,
+    args: [
+        180,
+        [],
+        []
+      ],
+  })
 }
 export default func
-func.tags = ['ECDSANodeManagement']
+func.tags = ['TimelockController']

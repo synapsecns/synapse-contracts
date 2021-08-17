@@ -4,11 +4,13 @@ pragma solidity 0.6.12;
 
 import '@openzeppelin/contracts-upgradeable/proxy/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol';
+import '@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol';
 import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
-import '@openzeppelin/contracts/utils/ReentrancyGuard.sol';
+
 import './interfaces/IMetaSwapDeposit.sol';
 import './interfaces/ISwap.sol';
 
@@ -23,7 +25,7 @@ interface IERC20Mintable is IERC20 {
   ) external;
 }
 
-contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGuard {
+contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
   using SafeERC20 for IERC20;
   using SafeMath for uint256;
 
@@ -125,7 +127,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
    * * @param token ERC20 token in which fees acccumulated to transfer
    * * @param to Address to send the fees to
    */
-  function withdrawFees(IERC20 token, address to) external {
+  function withdrawFees(IERC20 token, address to) external whenNotPaused() {
     require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
     require(to != address(0), "Address is 0x000");
     if (fees[address(token)] != 0) {
@@ -137,7 +139,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
    * * @notice withdraw gas token fees to a given address
    * * @param to Address to send the gas fees to
    */
-  function withdrawETHFees(address payable to) external {
+  function withdrawETHFees(address payable to) external whenNotPaused() {
     require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
     require(to != address(0), "Address is 0x000");
     require(ethFees != 0, "No fees to withdraw");
@@ -154,7 +156,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     address to,
     uint256 chainId,
     uint256 amount
-  ) external payable {
+  ) external payable whenNotPaused() {
     require(msg.value == amount, "Value doesn't match amount");
     emit TokenDeposit(to, chainId, IERC20(address(0)), amount);
   }
@@ -171,7 +173,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 chainId,
     IERC20 token,
     uint256 amount
-  ) external nonReentrant() {
+  ) external nonReentrant() whenNotPaused() {
     emit TokenDeposit(to, chainId, token, amount);
     token.safeTransferFrom(msg.sender, address(this), amount);
   }
@@ -188,7 +190,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 chainId,
     ERC20Burnable token,
     uint256 amount
-  ) external nonReentrant() {
+  ) external nonReentrant() whenNotPaused() {
     emit TokenRedeem(to, chainId, token, amount);
     token.burnFrom(msg.sender, amount);
   }
@@ -207,7 +209,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 amount,
     uint256 fee,
     bytes32 kappa
-  ) external nonReentrant() {
+  ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
     emit TokenWithdraw(to, token, amount, fee, kappa);
@@ -226,7 +228,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 amount,
     uint256 fee,
     bytes32 kappa
-  ) external nonReentrant() {
+  ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     ethFees = ethFees.add(fee);
     require(to != address(0), 'Address is zero');
@@ -249,7 +251,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 amount,
     uint256 fee,
     bytes32 kappa
-  ) external nonReentrant() {
+  ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
     emit TokenMint(to, token, amount, fee, kappa);
@@ -277,7 +279,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 deadline
-  ) external nonReentrant() {
+  ) external nonReentrant() whenNotPaused() {
      emit TokenDepositAndSwap(
       to,
       chainId,
@@ -311,7 +313,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 deadline
-  ) external nonReentrant() {
+  ) external nonReentrant() whenNotPaused() {
     emit TokenRedeemAndSwap(
       to,
       chainId,
@@ -345,7 +347,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint8 swapTokenIndex,
     uint256 swapMinAmount,
     uint256 swapDeadline
-  ) external nonReentrant() {
+  ) external nonReentrant() whenNotPaused() {
       emit TokenRedeemAndRemove(
       to,
       chainId,
@@ -384,7 +386,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 minDy,
     uint256 deadline,
     bytes32 kappa
-  ) external nonReentrant() {
+  ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required
@@ -446,7 +448,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 swapMinAmount,
     uint256 swapDeadline,
     bytes32 kappa
-  ) external nonReentrant() {
+  ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required
