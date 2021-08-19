@@ -32,7 +32,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   bytes32 public constant NODEGROUP_ROLE = keccak256('NODEGROUP_ROLE');
 
   mapping(address => uint256) private fees;
-  uint256 private ethFees;
 
   uint256 public startBlockNumber;
 
@@ -117,10 +116,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     return fees[tokenAddress];
   }
 
-  function getETHFeeBalance() external view returns (uint256) {
-    return ethFees;
-  }
-
   // FEE FUNCTIONS ***/
   /**
    * * @notice withdraw specified ERC20 token fees to a given address
@@ -133,32 +128,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     if (fees[address(token)] != 0) {
       token.safeTransfer(to, fees[address(token)]);
     }
-  }
-
-  /**
-   * * @notice withdraw gas token fees to a given address
-   * * @param to Address to send the gas fees to
-   */
-  function withdrawETHFees(address payable to) external whenNotPaused() {
-    require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-    require(to != address(0), "Address is 0x000");
-    require(ethFees != 0, "No fees to withdraw");
-    to.transfer(ethFees);
-  }
-
-  /**
-   * @notice Relays to nodes to transfers the underlying chain gas token cross-chain
-   * @param to address on other chain to bridge assets to
-   * @param chainId which chain to bridge assets onto
-   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   **/
-  function depositETH(
-    address to,
-    uint256 chainId,
-    uint256 amount
-  ) external payable whenNotPaused() {
-    require(msg.value == amount, "Value doesn't match amount");
-    emit TokenDeposit(to, chainId, IERC20(address(0)), amount);
   }
 
   /**
@@ -216,25 +185,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     token.safeTransfer(to, amount);
   }
 
-  /**
-   * @notice Function to be called by the node group to withdraw the underlying gas asset from the contract
-   * @param to address on chain to send gas asset to
-   * @param amount Amount in gas token decimals to withdraw (after subtracting fee already)
-   * @param fee Amount in gas token decimals to save to the contract as fees
-   * @param kappa kappa
-   **/
-  function withdrawETH(
-    address payable to,
-    uint256 amount,
-    uint256 fee,
-    bytes32 kappa
-  ) external nonReentrant() whenNotPaused() {
-    require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
-    ethFees = ethFees.add(fee);
-    require(to != address(0), 'Address is zero');
-    emit TokenWithdraw(to, IERC20(address(0)), amount, fee, kappa);
-    to.transfer(amount);
-  }
 
   /**
    * @notice Nodes call this function to mint a SynERC20 (or any asset that the bridge is given minter access to). This is called by the nodes after a TokenDeposit event is emitted.
