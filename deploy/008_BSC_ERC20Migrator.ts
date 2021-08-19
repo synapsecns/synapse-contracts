@@ -15,6 +15,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (await get('SynapseToken')).address,
       ]
     })
+
+    await deploy('MigratorBridgeZap', {
+      from: deployer,
+      log: true,
+      skipIfAlreadyDeployed: true
+    })
   }
 }
 export default func
