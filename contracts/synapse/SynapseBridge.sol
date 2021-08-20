@@ -32,9 +32,9 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   bytes32 public constant NODEGROUP_ROLE = keccak256('NODEGROUP_ROLE');
 
   mapping(address => uint256) private fees;
-  uint256 private ethFees;
 
   uint256 public startBlockNumber;
+  uint256 public bridgeVersion = 1;
 
   function initialize() external initializer {
     startBlockNumber = block.number;
@@ -117,10 +117,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     return fees[tokenAddress];
   }
 
-  function getETHFeeBalance() external view returns (uint256) {
-    return ethFees;
-  }
-
   // FEE FUNCTIONS ***/
   /**
    * * @notice withdraw specified ERC20 token fees to a given address
@@ -132,33 +128,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     require(to != address(0), "Address is 0x000");
     if (fees[address(token)] != 0) {
       token.safeTransfer(to, fees[address(token)]);
+      fees[address(token)] = 0;
     }
-  }
-
-  /**
-   * * @notice withdraw gas token fees to a given address
-   * * @param to Address to send the gas fees to
-   */
-  function withdrawETHFees(address payable to) external whenNotPaused() {
-    require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
-    require(to != address(0), "Address is 0x000");
-    require(ethFees != 0, "No fees to withdraw");
-    to.transfer(ethFees);
-  }
-
-  /**
-   * @notice Relays to nodes to transfers the underlying chain gas token cross-chain
-   * @param to address on other chain to bridge assets to
-   * @param chainId which chain to bridge assets onto
-   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   **/
-  function depositETH(
-    address to,
-    uint256 chainId,
-    uint256 amount
-  ) external payable whenNotPaused() {
-    require(msg.value == amount, "Value doesn't match amount");
-    emit TokenDeposit(to, chainId, IERC20(address(0)), amount);
   }
 
   /**
@@ -211,30 +182,12 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     bytes32 kappa
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
+    require(amount > fee, 'Amount must be greater than fee');
     fees[address(token)] = fees[address(token)].add(fee);
     emit TokenWithdraw(to, token, amount, fee, kappa);
-    token.safeTransfer(to, amount);
+    token.safeTransfer(to, amount.sub(fee));
   }
 
-  /**
-   * @notice Function to be called by the node group to withdraw the underlying gas asset from the contract
-   * @param to address on chain to send gas asset to
-   * @param amount Amount in gas token decimals to withdraw (after subtracting fee already)
-   * @param fee Amount in gas token decimals to save to the contract as fees
-   * @param kappa kappa
-   **/
-  function withdrawETH(
-    address payable to,
-    uint256 amount,
-    uint256 fee,
-    bytes32 kappa
-  ) external nonReentrant() whenNotPaused() {
-    require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
-    ethFees = ethFees.add(fee);
-    require(to != address(0), 'Address is zero');
-    emit TokenWithdraw(to, IERC20(address(0)), amount, fee, kappa);
-    to.transfer(amount);
-  }
 
   /**
    * @notice Nodes call this function to mint a SynERC20 (or any asset that the bridge is given minter access to). This is called by the nodes after a TokenDeposit event is emitted.
@@ -253,10 +206,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     bytes32 kappa
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
+    require(amount > fee, 'Amount must be greater than fee');
     fees[address(token)] = fees[address(token)].add(fee);
     emit TokenMint(to, token, amount, fee, kappa);
-    token.mint(address(this), amount.add(fee));
-    IERC20(token).safeTransfer(to, amount);
+    token.mint(address(this), amount);
+    IERC20(token).safeTransfer(to, amount.sub(fee));
   }
 
   /**
@@ -388,23 +342,24 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     bytes32 kappa
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
+    require(amount > fee, 'Amount must be greater than fee');
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required
     uint256 expectedOutput = IMetaSwapDeposit(pool).calculateSwap(
       tokenIndexFrom,
       tokenIndexTo,
-      amount
+      amount.sub(fee)
     );
 
     if (expectedOutput >= minDy) {
       // proceed with swap
-      token.mint(address(this), amount.add(fee));
+      token.mint(address(this), amount);
       token.approve(address(pool), amount);
       try
         IMetaSwapDeposit(pool).swap(
           tokenIndexFrom,
           tokenIndexTo,
-          amount,
+          amount.sub(fee),
           minDy,
           deadline
         )
@@ -418,8 +373,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         emit TokenMintAndSwap(to, token, amount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
       }
     } else {
-      token.mint(address(this), amount.add(fee));
-      IERC20(token).safeTransfer(to, amount);
+      token.mint(address(this), amount);
+      IERC20(token).safeTransfer(to, amount.sub(fee));
       emit TokenMintAndSwap(to, token, amount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
     }
   }
@@ -450,19 +405,19 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     bytes32 kappa
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
+    require(amount > fee, 'Amount must be greater than fee');
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required
-
     uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
-      swapTokenAmount,
+      swapTokenAmount.sub(fee),
       swapTokenIndex
     );
 
     if (expectedOutput >= swapMinAmount) {
-      token.approve(address(pool), swapTokenAmount);
+      token.safeApprove(address(pool), swapTokenAmount.sub(fee));
       try
         ISwap(pool).removeLiquidityOneToken(
-          swapTokenAmount,
+          swapTokenAmount.sub(fee),
           swapTokenIndex,
           swapMinAmount,
           swapDeadline
@@ -473,11 +428,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         swappedTokenTo.safeTransfer(to, finalSwappedAmount);
         emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenAmount, swapTokenIndex, swapMinAmount, swapDeadline, true, kappa);
       } catch {
-        IERC20(token).safeTransfer(to, amount);
+        IERC20(token).safeTransfer(to, amount.sub(fee));
         emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenAmount, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
       }
     } else {
-      token.safeTransfer(to, amount);
+      token.safeTransfer(to, amount.sub(fee));
       emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenAmount, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
     }
   }
