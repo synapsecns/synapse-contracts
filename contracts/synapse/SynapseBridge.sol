@@ -127,6 +127,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     require(to != address(0), "Address is 0x000");
     if (fees[address(token)] != 0) {
       token.safeTransfer(to, fees[address(token)]);
+      fees[address(token)] = 0;
     }
   }
 
@@ -180,9 +181,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     bytes32 kappa
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
+    require(amount > fee, 'Amount must be greater than fee');
     fees[address(token)] = fees[address(token)].add(fee);
     emit TokenWithdraw(to, token, amount, fee, kappa);
-    token.safeTransfer(to, amount);
+    token.safeTransfer(to, amount.sub(fee));
   }
 
 
@@ -203,10 +205,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     bytes32 kappa
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
+    require(amount > fee, 'Amount must be greater than fee');
     fees[address(token)] = fees[address(token)].add(fee);
     emit TokenMint(to, token, amount, fee, kappa);
-    token.mint(address(this), amount.add(fee));
-    IERC20(token).safeTransfer(to, amount);
+    token.mint(address(this), amount);
+    IERC20(token).safeTransfer(to, amount.sub(fee));
   }
 
   /**
@@ -338,23 +341,24 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     bytes32 kappa
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
+    require(amount > fee, 'Amount must be greater than fee');
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required
     uint256 expectedOutput = IMetaSwapDeposit(pool).calculateSwap(
       tokenIndexFrom,
       tokenIndexTo,
-      amount
+      amount.sub(fee)
     );
 
     if (expectedOutput >= minDy) {
       // proceed with swap
-      token.mint(address(this), amount.add(fee));
+      token.mint(address(this), amount);
       token.approve(address(pool), amount);
       try
         IMetaSwapDeposit(pool).swap(
           tokenIndexFrom,
           tokenIndexTo,
-          amount,
+          amount.sub(fee),
           minDy,
           deadline
         )
@@ -368,8 +372,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         emit TokenMintAndSwap(to, token, amount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
       }
     } else {
-      token.mint(address(this), amount.add(fee));
-      IERC20(token).safeTransfer(to, amount);
+      token.mint(address(this), amount);
+      IERC20(token).safeTransfer(to, amount.sub(fee));
       emit TokenMintAndSwap(to, token, amount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
     }
   }
@@ -400,19 +404,19 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     bytes32 kappa
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
+    require(amount > fee, 'Amount must be greater than fee');
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required
-
     uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
-      swapTokenAmount,
+      swapTokenAmount.sub(fee),
       swapTokenIndex
     );
 
     if (expectedOutput >= swapMinAmount) {
-      token.approve(address(pool), swapTokenAmount);
+      token.safeApprove(address(pool), swapTokenAmount.sub(fee));
       try
         ISwap(pool).removeLiquidityOneToken(
-          swapTokenAmount,
+          swapTokenAmount.sub(fee),
           swapTokenIndex,
           swapMinAmount,
           swapDeadline
@@ -423,11 +427,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         swappedTokenTo.safeTransfer(to, finalSwappedAmount);
         emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenAmount, swapTokenIndex, swapMinAmount, swapDeadline, true, kappa);
       } catch {
-        IERC20(token).safeTransfer(to, amount);
+        IERC20(token).safeTransfer(to, amount.sub(fee));
         emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenAmount, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
       }
     } else {
-      token.safeTransfer(to, amount);
+      token.safeTransfer(to, amount.sub(fee));
       emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenAmount, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
     }
   }
