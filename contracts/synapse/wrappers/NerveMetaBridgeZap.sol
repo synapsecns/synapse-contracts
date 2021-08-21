@@ -154,7 +154,6 @@ contract NerveMetaBridgeZap {
       chainId,
       token,
       swappedAmount,
-      swappedAmount,
       liqTokenIndex,
       liqMinAmount,
       liqDeadline
@@ -238,7 +237,6 @@ contract NerveMetaBridgeZap {
       to,
       chainId,
       token,
-      amount,
       amount,
       liqTokenIndex,
       liqMinAmount,
