@@ -49,7 +49,6 @@ interface ISynapseBridge {
     uint256 chainId,
     IERC20 token,
     uint256 amount,
-    uint256 liqTokenAmount,
     uint8 liqTokenIndex,
     uint256 liqMinAmount,
     uint256 liqDeadline

@@ -94,7 +94,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 chainId,
     IERC20 token,
     uint256 amount,
-    uint256 swapTokenAmount,
     uint8 swapTokenIndex,
     uint256 swapMinAmount,
     uint256 swapDeadline
@@ -104,7 +103,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     IERC20 token,
     uint256 amount,
     uint256 fee,
-    uint256 swapTokenAmount,
     uint8 swapTokenIndex,
     uint256 swapMinAmount,
     uint256 swapDeadline,
@@ -287,7 +285,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
    * @param chainId which underlying chain to bridge assets onto
    * @param token ERC20 compatible token to deposit into the bridge
    * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   * @param swapTokenAmount Amount of (typically) LP token to pass to the nodes to attempt to removeLiquidity() with to redeem for the underlying assets of the LP token
    * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
    * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
    * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
@@ -297,7 +294,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 chainId,
     ERC20Burnable token,
     uint256 amount,
-    uint256 swapTokenAmount,
     uint8 swapTokenIndex,
     uint256 swapMinAmount,
     uint256 swapDeadline
@@ -307,7 +303,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       chainId,
       token,
       amount,
-      swapTokenAmount,
       swapTokenIndex,
       swapMinAmount,
       swapDeadline
@@ -386,7 +381,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
    * @param amount Amount in native token decimals to withdraw
    * @param fee Amount in native token decimals to save to the contract as fees
    * @param pool Destination chain's pool to use to swap SynERC20 -> Asset. The nodes determine this by using PoolConfig.sol.
-   * @param swapTokenAmount Amount of (typically) LP token to attempt to removeLiquidity() with to redeem for the underlying assets of the LP token
    * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
    * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
    * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
@@ -398,7 +392,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 amount,
     uint256 fee,
     ISwap pool,
-    uint256 swapTokenAmount,
     uint8 swapTokenIndex,
     uint256 swapMinAmount,
     uint256 swapDeadline,
@@ -409,15 +402,15 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required
     uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
-      swapTokenAmount.sub(fee),
+      amount.sub(fee),
       swapTokenIndex
     );
 
     if (expectedOutput >= swapMinAmount) {
-      token.safeApprove(address(pool), swapTokenAmount.sub(fee));
+      token.safeApprove(address(pool), amount.sub(fee));
       try
         ISwap(pool).removeLiquidityOneToken(
-          swapTokenAmount.sub(fee),
+          amount.sub(fee),
           swapTokenIndex,
           swapMinAmount,
           swapDeadline
@@ -426,14 +419,14 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         // Swap succeeded, transfer swapped asset
         IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
         swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-        emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenAmount, swapTokenIndex, swapMinAmount, swapDeadline, true, kappa);
+        emit TokenWithdrawAndRemove(to, token, finalSwappedAmount, fee, swapTokenIndex, swapMinAmount, swapDeadline, true, kappa);
       } catch {
         IERC20(token).safeTransfer(to, amount.sub(fee));
-        emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenAmount, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
+        emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
       }
     } else {
       token.safeTransfer(to, amount.sub(fee));
-      emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenAmount, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
+      emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
     }
   }
 }
