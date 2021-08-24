@@ -206,7 +206,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
     fees[address(token)] = fees[address(token)].add(fee);
-    emit TokenMint(to, token, amount, fee, kappa);
+    emit TokenMint(to, token, amount.sub(fee), fee, kappa);
     token.mint(address(this), amount);
     IERC20(token).safeTransfer(to, amount.sub(fee));
   }
@@ -362,15 +362,15 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         // Swap succeeded, transfer swapped asset
         IERC20 swappedTokenTo = IMetaSwapDeposit(pool).getToken(tokenIndexTo);
         swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-        emit TokenMintAndSwap(to, token, amount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, true, kappa);
+        emit TokenMintAndSwap(to, token, finalSwappedAmount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, true, kappa);
       } catch {
-        IERC20(token).safeTransfer(to, amount);
-        emit TokenMintAndSwap(to, token, amount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
+        IERC20(token).safeTransfer(to, amount.sub(fee));
+        emit TokenMintAndSwap(to, token, amount.sub(fee), fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
       }
     } else {
       token.mint(address(this), amount);
       IERC20(token).safeTransfer(to, amount.sub(fee));
-      emit TokenMintAndSwap(to, token, amount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
+      emit TokenMintAndSwap(to, token, amount.sub(fee), fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
     }
   }
 
@@ -422,11 +422,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         emit TokenWithdrawAndRemove(to, token, finalSwappedAmount, fee, swapTokenIndex, swapMinAmount, swapDeadline, true, kappa);
       } catch {
         IERC20(token).safeTransfer(to, amount.sub(fee));
-        emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
+        emit TokenWithdrawAndRemove(to, token, amount.sub(fee), fee, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
       }
     } else {
       token.safeTransfer(to, amount.sub(fee));
-      emit TokenWithdrawAndRemove(to, token, amount, fee, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
+      emit TokenWithdrawAndRemove(to, token, amount.sub(fee), fee, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
     }
   }
 }
