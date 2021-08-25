@@ -27,7 +27,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     )
 
     await save("nUSD", {
-      abi: (await get("USDC")).abi, // Generic ERC20 ABI
+      abi: (await get("SynapseToken")).abi, // Generic ERC20 ABI
       address: tokenAddress,
     })
 
