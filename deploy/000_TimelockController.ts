@@ -12,8 +12,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     skipIfAlreadyDeployed: true,
     args: [
         180,
-        [],
-        []
+        [(await get("DevMultisig")).address],
+        [(await get("DevMultisig")).address]
       ],
   })
 }
