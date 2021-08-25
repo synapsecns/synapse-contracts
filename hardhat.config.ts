@@ -44,6 +44,10 @@ let config: HardhatUserConfig = {
       url: 'https://bsc-dataseed1.defibit.io',
       gasPrice: 6 * 1000000000,
     },
+    avalanche: {
+      url: "https://api.avax.network/ext/bc/C/rpc",
+      gasPrice: 225 * 1000000000,
+    },
     mainnet: {
       url: process.env.ALCHEMY_API,
       gasPrice: 70 * 1000000000,
@@ -147,6 +151,16 @@ if (process.env.POLYGONPRODTEST_PRIVATE_KEYS) {
     polygonprodtest: {
       ...config.networks?.polygonprodtest,
       accounts: JSON.parse(process.env.POLYGONPRODTEST_PRIVATE_KEYS),
+    },
+  }
+}
+
+if (process.env.AVALANCHE_PRIVATE_KEYS) {
+  config.networks = {
+    ...config.networks,
+    avalanche: {
+      ...config.networks?.avalanche,
+      accounts: JSON.parse(process.env.AVALANCHE_PRIVATE_KEYS),
     },
   }
 }
