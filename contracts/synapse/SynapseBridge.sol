@@ -30,11 +30,12 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   using SafeMath for uint256;
 
   bytes32 public constant NODEGROUP_ROLE = keccak256('NODEGROUP_ROLE');
+  bytes32 public constant GOVERNANCE_ROLE = keccak256('GOVERNANCE_ROLE');
 
   mapping(address => uint256) private fees;
 
   uint256 public startBlockNumber;
-  uint256 public constant bridgeVersion = 2;
+  uint256 public constant bridgeVersion = 3;
   uint256 private chainGasAmount = 0;
 
   receive() external payable {}
@@ -130,13 +131,25 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
    * * @param to Address to send the fees to
    */
   function withdrawFees(IERC20 token, address to) external whenNotPaused() {
-    require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
+    require(hasRole(GOVERNANCE_ROLE, msg.sender));
     require(to != address(0), "Address is 0x000");
     if (fees[address(token)] != 0) {
       fees[address(token)] = 0;
       token.safeTransfer(to, fees[address(token)]);
     }
   }
+
+  // PAUSABLE FUNCTIONS ***/
+  function pause() external {
+    require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+    _pause();
+  }
+
+  function unpause() external {
+    require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+    _unpause();
+  }
+
 
   /**
    * @notice Relays to nodes to transfers an ERC20 token cross-chain
