@@ -4,7 +4,7 @@ pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
-import "./utils/EnumerableStringMap.sol";
+import "../utils/EnumerableStringMap.sol";
 
 /**
  * @title NodeEnv contract
