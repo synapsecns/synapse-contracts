@@ -37,6 +37,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   uint256 public constant bridgeVersion = 2;
   uint256 private chainGasAmount = 0;
 
+  receive() external payable {}
+  
   function initialize() external initializer {
     startBlockNumber = block.number;
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
