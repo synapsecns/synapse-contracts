@@ -34,12 +34,18 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   mapping(address => uint256) private fees;
 
   uint256 public startBlockNumber;
-  uint256 public bridgeVersion = 1;
+  uint256 public constant bridgeVersion = 1;
+  uint256 private chainGasAmount = 0;
 
   function initialize() external initializer {
     startBlockNumber = block.number;
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     __AccessControl_init();
+  }
+
+  function setChainGasAmount(uint256 amount) external {
+    require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
+    chainGasAmount = amount;
   }
 
   event TokenDeposit(
@@ -125,8 +131,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender));
     require(to != address(0), "Address is 0x000");
     if (fees[address(token)] != 0) {
-      token.safeTransfer(to, fees[address(token)]);
       fees[address(token)] = 0;
+      token.safeTransfer(to, fees[address(token)]);
     }
   }
 
@@ -197,7 +203,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
    * @param kappa kappa
    **/
   function mint(
-    address to,
+    address payable to,
     IERC20Mintable token,
     uint256 amount,
     uint256 fee,
@@ -209,6 +215,9 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     emit TokenMint(to, token, amount.sub(fee), fee, kappa);
     token.mint(address(this), amount);
     IERC20(token).safeTransfer(to, amount.sub(fee));
+    if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
+      to.transfer(chainGasAmount);
+    }
   }
 
   /**
@@ -325,7 +334,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
    * @param kappa kappa
    **/
   function mintAndSwap(
-    address to,
+    address payable to,
     IERC20Mintable token,
     uint256 amount,
     uint256 fee,
@@ -339,6 +348,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
     fees[address(token)] = fees[address(token)].add(fee);
+    // Transfer gas airdrop
+    if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
+      to.transfer(chainGasAmount);
+    }
     // first check to make sure more will be given than min amount required
     uint256 expectedOutput = IMetaSwapDeposit(pool).calculateSwap(
       tokenIndexFrom,
