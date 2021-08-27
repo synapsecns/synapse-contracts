@@ -34,7 +34,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   mapping(address => uint256) private fees;
 
   uint256 public startBlockNumber;
-  uint256 public constant bridgeVersion = 1;
+  uint256 public constant bridgeVersion = 2;
   uint256 private chainGasAmount = 0;
 
   function initialize() external initializer {
