@@ -16,17 +16,11 @@ import './interfaces/ISwap.sol';
 
 interface IERC20Mintable is IERC20 {
   function mint(address to, uint256 amount) external;
-
-  function mintMultiple(
-    address to,
-    uint256 amount,
-    address feeAddress,
-    uint256 feeAmount
-  ) external;
 }
 
 contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
   using SafeERC20 for IERC20;
+  using SafeERC20 for IERC20Mintable;
   using SafeMath for uint256;
 
   bytes32 public constant NODEGROUP_ROLE = keccak256('NODEGROUP_ROLE');
@@ -35,8 +29,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   mapping(address => uint256) private fees;
 
   uint256 public startBlockNumber;
-  uint256 public constant bridgeVersion = 3;
-  uint256 private chainGasAmount = 0;
+  uint256 public constant bridgeVersion = 4;
+  uint256 public chainGasAmount;
 
   receive() external payable {}
   
@@ -377,7 +371,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     if (expectedOutput >= minDy) {
       // proceed with swap
       token.mint(address(this), amount);
-      token.approve(address(pool), amount);
+      token.safeIncreaseAllowance(address(pool), amount);
       try
         IMetaSwapDeposit(pool).swap(
           tokenIndexFrom,
@@ -435,7 +429,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     );
 
     if (expectedOutput >= swapMinAmount) {
-      token.safeApprove(address(pool), amount.sub(fee));
+      token.safeIncreaseAllowance(address(pool), amount.sub(fee));
       try
         ISwap(pool).removeLiquidityOneToken(
           amount.sub(fee),
