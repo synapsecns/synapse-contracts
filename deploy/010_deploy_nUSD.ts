@@ -2,11 +2,11 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { DeployFunction } from 'hardhat-deploy/types'
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts } = hre
+  const { deployments, getNamedAccounts, getChainId } = hre
   const { deploy, get, execute, getOrNull, log, save } = deployments
   const { deployer } = await getNamedAccounts()
-
-    if (await getOrNull('nUSD') == null) {  
+  if ((await getChainId()) != '42161') {
+    if (await getOrNull('nUSD') == null ) {  
         const receipt = await execute(
             "SynapseERC20Factory",
             { from: deployer, log: true },
@@ -32,6 +32,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
 
     }
+  }
 }
 
 export default func
