@@ -20,6 +20,11 @@ let config: HardhatUserConfig = {
     coverage: {
       url: 'http://127.0.0.1:8555',
     },
+    arbitrum: {
+      url: "https://arb1.arbitrum.io/rpc",
+      gasPrice: 10 * 1000000000,
+      // gas: 100000000
+    },
     mumbai: {
       url: 'https://polygon-mumbai.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55',
       gasPrice: 2 * 1000000000,
@@ -90,6 +95,7 @@ let config: HardhatUserConfig = {
     deployer: {
       default: 3, // here this will by default take the first account as deployer
       1: 3, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
+      42161: 0
     },
     libraryDeployer: {
       default: 1, // use a different account for deploying libraries on the hardhat network
@@ -197,5 +203,17 @@ if (process.env.ACCOUNT_PRIVATE_KEYS) {
     },
   }
 }
+
+
+if (process.env.ARBITRUM_PRIVATE_KEYS) {
+  config.networks = {
+    ...config.networks,
+    arbitrum: {
+      ...config.networks?.arbitrum,
+      accounts: JSON.parse(process.env.ARBITRUM_PRIVATE_KEYS),
+    },
+  }
+}
+
 
 module.exports = config
