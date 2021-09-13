@@ -5,10 +5,12 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 import '../interfaces/ISwap.sol';
 import '../interfaces/ISynapseBridge.sol';
+import "../interfaces/IWETH9.sol";
+
 
 /**
  * @title NerveBridgeZap
- * @notice This contract is responsible for handling user Zaps into the SynapseBridge contract, through the Nerve Swap contracts. It does so
+ * @notice This contract is responsible for handling user Zaps into the SynapseBridge contract, through the Synapse Swap contracts. It does so
  * It does so by combining the action of addLiquidity() to the base swap pool, and then calling either deposit() or depositAndSwap() on the bridge.
  * This is done in hopes of automating portions of the bridge user experience to users, while keeping the SynapseBridge contract logic small.
  *
@@ -17,17 +19,22 @@ import '../interfaces/ISynapseBridge.sol';
 contract NerveBridgeZap {
   using SafeERC20 for IERC20;
 
+  uint256 constant MAX_UINT256 = 2**256 - 1;
+  
   ISwap baseSwap;
   ISynapseBridge synapseBridge;
   IERC20[] public baseTokens;
-  uint256 constant MAX_UINT256 = 2**256 - 1;
+  address payable public immutable WETH_ADDRESS;
+  
 
   /**
    * @notice Constructs the contract, approves each token inside of baseSwap to be used by baseSwap (needed for addLiquidity())
    */
-  constructor(ISwap _baseSwap, ISynapseBridge _synapseBridge) public {
+  constructor(address payable _wethAddress, ISwap _baseSwap, ISynapseBridge _synapseBridge) public {
+    WETH_ADDRESS = _wethAddress;
     baseSwap = _baseSwap;
     synapseBridge = _synapseBridge;
+    IERC20(_wethAddress).safeIncreaseAllowance(address(_synapseBridge), MAX_UINT256);
     {
       uint8 i;
       for (; i < 32; i++) {
@@ -41,6 +48,22 @@ contract NerveBridgeZap {
       require(i > 1, 'baseSwap must have at least 2 tokens');
     }
   }
+  
+  /**
+   * @notice Wraps SynapseBridge deposit() function to make it compatible w/ ETH -> WETH conversions
+   * @param to address on other chain to bridge assets to
+   * @param chainId which chain to bridge assets onto
+   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+   **/
+  function depositETH(
+    address to,
+    uint256 chainId,
+    uint256 amount
+    ) external payable {
+      require(msg.value > 0 && msg.value == amount, 'INCORRECT MSG VALUE');
+      IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+      synapseBridge.deposit(to, chainId, IERC20(WETH_ADDRESS), amount);
+    }
 
   /**
    * @notice A simple method to calculate prices from deposits or
