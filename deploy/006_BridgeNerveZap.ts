@@ -11,6 +11,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       log: true,
       skipIfAlreadyDeployed: true,
       args: [
+        (await get('WETH')).address,
         (await get('NerveUSDPool')).address,
         (await get('SynapseBridge')).address,
       ],
