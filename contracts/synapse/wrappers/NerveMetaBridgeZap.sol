@@ -190,7 +190,6 @@ contract NerveMetaBridgeZap {
   function swapETHAndRedeem(
     address to,
     uint256 chainId,
-    IERC20 token,
     uint8 tokenIndexFrom,
     uint8 tokenIndexTo,
     uint256 dx,
@@ -212,11 +211,11 @@ contract NerveMetaBridgeZap {
     );
     // deposit into bridge, gets n-Wrapped asset
     if (
-      token.allowance(address(this), address(synapseBridge)) < swappedAmount
+      IERC20(WETH_ADDRESS).allowance(address(this), address(synapseBridge)) < swappedAmount
     ) {
-      token.safeApprove(address(synapseBridge), MAX_UINT256);
+      IERC20(WETH_ADDRESS).safeApprove(address(synapseBridge), MAX_UINT256);
     }
-    synapseBridge.redeem(to, chainId, token, swappedAmount);
+    synapseBridge.redeem(to, chainId, IERC20(WETH_ADDRESS), swappedAmount);
   }
 
     /**
