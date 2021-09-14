@@ -31,6 +31,7 @@ contract NerveMetaBridgeZap {
         try _metaSwap.getToken(i) returns (IERC20 token) {
           metaTokens.push(token);
           token.safeApprove(address(_metaSwap), MAX_UINT256);
+          token.safeApprove(address(synapseBridge), MAX_UINT256);
         } catch {
           break;
         }
@@ -190,6 +191,7 @@ contract NerveMetaBridgeZap {
   function swapETHAndRedeem(
     address to,
     uint256 chainId,
+    IERC20 token,
     uint8 tokenIndexFrom,
     uint8 tokenIndexTo,
     uint256 dx,
@@ -199,7 +201,6 @@ contract NerveMetaBridgeZap {
     require(WETH_ADDRESS != address(0), 'WETH 0');
     require(msg.value > 0 && msg.value == dx, 'INCORRECT MSG VALUE');
     IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
-    metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
     
     // swap
     uint256 swappedAmount = metaSwap.swap(
@@ -209,13 +210,7 @@ contract NerveMetaBridgeZap {
       minDy,
       deadline
     );
-    // deposit into bridge, gets n-Wrapped asset
-    if (
-      IERC20(WETH_ADDRESS).allowance(address(this), address(synapseBridge)) < swappedAmount
-    ) {
-      IERC20(WETH_ADDRESS).safeApprove(address(synapseBridge), MAX_UINT256);
-    }
-    synapseBridge.redeem(to, chainId, IERC20(WETH_ADDRESS), swappedAmount);
+    synapseBridge.redeem(to, chainId, token, swappedAmount);
   }
 
     /**
