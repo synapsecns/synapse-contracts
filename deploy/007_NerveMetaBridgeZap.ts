@@ -40,6 +40,20 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       ],
     })
   }
+
+    if ((await getChainId()) === '42161') {
+    await deploy('NerveMetaBridgeZap', {
+      from: deployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+      args: [
+        (await get('WETH')).address,
+        (await get('BaseSwapDeposit')).address,
+        (await get('SynapseBridge')).address,
+      ],
+    })
+  }
+
 }
 export default func
 func.tags = ['NerveMetaBridgeZap']

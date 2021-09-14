@@ -5,6 +5,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 import '../interfaces/IMetaSwapDeposit.sol';
 import '../interfaces/ISynapseBridge.sol';
+import "../interfaces/IWETH9.sol";
 
 contract NerveMetaBridgeZap {
   using SafeERC20 for IERC20;
@@ -12,11 +13,16 @@ contract NerveMetaBridgeZap {
   IMetaSwapDeposit metaSwap;
   ISynapseBridge synapseBridge;
   IERC20[] public metaTokens;
+
+  address payable public immutable WETH_ADDRESS;
+
+
   uint256 constant MAX_UINT256 = 2**256 - 1;
 
-  constructor(IMetaSwapDeposit _metaSwap, ISynapseBridge _synapseBridge)
+  constructor(address payable _wethAddress, IMetaSwapDeposit _metaSwap, ISynapseBridge _synapseBridge)
     public
   {
+    WETH_ADDRESS = _wethAddress;
     metaSwap = _metaSwap;
     synapseBridge = _synapseBridge;
     {
@@ -179,6 +185,39 @@ contract NerveMetaBridgeZap {
       }
       synapseBridge.redeem(to, chainId, token, amount);
     }
+
+
+  function swapETHAndRedeem(
+    address to,
+    uint256 chainId,
+    IERC20 token,
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 dx,
+    uint256 minDy,
+    uint256 deadline
+  ) external payable {
+    require(WETH_ADDRESS != address(0), 'WETH 0');
+    require(msg.value > 0 && msg.value == dx, 'INCORRECT MSG VALUE');
+    IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+    metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
+    
+    // swap
+    uint256 swappedAmount = metaSwap.swap(
+      tokenIndexFrom,
+      tokenIndexTo,
+      dx,
+      minDy,
+      deadline
+    );
+    // deposit into bridge, gets n-Wrapped asset
+    if (
+      token.allowance(address(this), address(synapseBridge)) < swappedAmount
+    ) {
+      token.safeApprove(address(synapseBridge), MAX_UINT256);
+    }
+    synapseBridge.redeem(to, chainId, token, swappedAmount);
+  }
 
     /**
    * @notice Wraps redeemAndSwap on SynapseBridge.sol
