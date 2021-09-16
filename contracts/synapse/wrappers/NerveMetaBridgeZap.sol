@@ -7,6 +7,8 @@ import '../interfaces/IMetaSwapDeposit.sol';
 import '../interfaces/ISynapseBridge.sol';
 import "../interfaces/IWETH9.sol";
 
+import {TokenUtils} from "../utils/TokenUtils.sol";
+
 contract NerveMetaBridgeZap {
   using SafeERC20 for IERC20;
 
@@ -66,22 +68,19 @@ contract NerveMetaBridgeZap {
     uint256 minDy,
     uint256 deadline
   ) external {
-    metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
-    // swap
-
-    uint256 swappedAmount = metaSwap.swap(
+    uint256 swappedAmount = TokenUtils.swapWithApproval(
+      to,
+      token,
       tokenIndexFrom,
       tokenIndexTo,
       dx,
       minDy,
-      deadline
+      deadline,
+      metaTokens,
+      metaSwap,
+      address(synapseBridge)
     );
-    // deposit into bridge, gets nUSD
-    if (
-      token.allowance(address(this), address(synapseBridge)) < swappedAmount
-    ) {
-      token.safeApprove(address(synapseBridge), MAX_UINT256);
-    }
+
     synapseBridge.redeem(to, chainId, token, swappedAmount);
   }
 
@@ -99,22 +98,19 @@ contract NerveMetaBridgeZap {
     uint256 swapMinDy,
     uint256 swapDeadline
   ) external {
-    metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
-    // swap
-
-    uint256 swappedAmount = metaSwap.swap(
+    uint256 swappedAmount = TokenUtils.swapWithApproval(
+      to,
+      token,
       tokenIndexFrom,
       tokenIndexTo,
       dx,
       minDy,
-      deadline
+      deadline,
+      metaTokens,
+      metaSwap,
+      address(synapseBridge)
     );
-    // deposit into bridge, gets nUSD
-    if (
-      token.allowance(address(this), address(synapseBridge)) < swappedAmount
-    ) {
-      token.safeApprove(address(synapseBridge), MAX_UINT256);
-    }
+
     synapseBridge.redeemAndSwap(
       to,
       chainId,
@@ -140,22 +136,19 @@ contract NerveMetaBridgeZap {
     uint256 liqMinAmount,
     uint256 liqDeadline
   ) external {
-    metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
-    // swap
-
-    uint256 swappedAmount = metaSwap.swap(
+    uint256 swappedAmount = TokenUtils.swapWithApproval(
+      to,
+      token,
       tokenIndexFrom,
       tokenIndexTo,
       dx,
       minDy,
-      deadline
+      deadline,
+      metaTokens,
+      metaSwap,
+      address(synapseBridge)
     );
-    // deposit into bridge, gets nUSD
-    if (
-      token.allowance(address(this), address(synapseBridge)) < swappedAmount
-    ) {
-      token.safeApprove(address(synapseBridge), MAX_UINT256);
-    }
+
     synapseBridge.redeemAndRemove(
       to,
       chainId,
@@ -180,12 +173,10 @@ contract NerveMetaBridgeZap {
     IERC20 token,
     uint256 amount
     ) external {
-      token.safeTransferFrom(msg.sender, address(this), amount);
-      if (token.allowance(address(this), address(synapseBridge)) < amount) {
-      token.safeApprove(address(synapseBridge), MAX_UINT256);
-      }
+      TokenUtils.safeTransferWithApprove(token, amount, address(synapseBridge));
+
       synapseBridge.redeem(to, chainId, token, amount);
-    }
+  }
 
 
   function swapETHAndRedeem(
@@ -210,6 +201,7 @@ contract NerveMetaBridgeZap {
       minDy,
       deadline
     );
+
     synapseBridge.redeem(to, chainId, token, swappedAmount);
   }
 
@@ -235,10 +227,8 @@ contract NerveMetaBridgeZap {
     uint256 minDy,
     uint256 deadline
   ) external {
-    token.safeTransferFrom(msg.sender, address(this), amount);
-    if (token.allowance(address(this), address(synapseBridge)) < amount) {
-      token.safeApprove(address(synapseBridge), MAX_UINT256);
-    }
+    TokenUtils.safeTransferWithApprove(token, amount, address(synapseBridge));
+
     synapseBridge.redeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
   }  
 
@@ -262,10 +252,8 @@ contract NerveMetaBridgeZap {
     uint256 liqMinAmount,
     uint256 liqDeadline
   ) external {
-    token.safeTransferFrom(msg.sender, address(this), amount);
-    if (token.allowance(address(this), address(synapseBridge)) < amount) {
-      token.safeApprove(address(synapseBridge), MAX_UINT256);
-    }
+    TokenUtils.safeTransferWithApprove(token, amount, address(synapseBridge));
+
     synapseBridge.redeemAndRemove(
       to,
       chainId,
