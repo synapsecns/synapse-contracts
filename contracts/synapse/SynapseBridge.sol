@@ -13,6 +13,7 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 
 import './interfaces/IMetaSwapDeposit.sol';
 import './interfaces/ISwap.sol';
+import './interfaces/IWETH9.sol';
 
 interface IERC20Mintable is IERC20 {
   function mint(address to, uint256 amount) external;
@@ -31,6 +32,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   uint256 public startBlockNumber;
   uint256 public constant bridgeVersion = 4;
   uint256 public chainGasAmount;
+  address payable public WETH_ADDRESS;
 
   receive() external payable {}
   
@@ -43,6 +45,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   function setChainGasAmount(uint256 amount) external {
     require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
     chainGasAmount = amount;
+  }
+
+  function setWethAddress(address payable _wethAddress) external {
+    require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
+    WETH_ADDRESS = _wethAddress;
   }
 
   event TokenDeposit(
@@ -197,8 +204,15 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
     fees[address(token)] = fees[address(token)].add(fee);
-    emit TokenWithdraw(to, token, amount, fee, kappa);
-    token.safeTransfer(to, amount.sub(fee));
+    if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
+      IWETH9(WETH_ADDRESS).withdraw(amount.sub(fee));
+      (bool success, ) = to.call{value: amount.sub(fee)}("");
+      require(success, "ETH_TRANSFER_FAILED");
+      emit TokenWithdraw(to, token, amount, fee, kappa);
+    } else {
+      emit TokenWithdraw(to, token, amount, fee, kappa);
+      token.safeTransfer(to, amount.sub(fee));
+    }
   }
 
 
@@ -383,8 +397,15 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       returns (uint256 finalSwappedAmount) {
         // Swap succeeded, transfer swapped asset
         IERC20 swappedTokenTo = IMetaSwapDeposit(pool).getToken(tokenIndexTo);
-        swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-        emit TokenMintAndSwap(to, token, finalSwappedAmount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, true, kappa);
+        if (address(swappedTokenTo) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
+          IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
+          (bool success, ) = to.call{value: finalSwappedAmount}("");
+          require(success, "ETH_TRANSFER_FAILED");
+          emit TokenMintAndSwap(to, token, finalSwappedAmount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, true, kappa);
+        } else {
+          swappedTokenTo.safeTransfer(to, finalSwappedAmount);
+          emit TokenMintAndSwap(to, token, finalSwappedAmount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, true, kappa);
+        }
       } catch {
         IERC20(token).safeTransfer(to, amount.sub(fee));
         emit TokenMintAndSwap(to, token, amount.sub(fee), fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
