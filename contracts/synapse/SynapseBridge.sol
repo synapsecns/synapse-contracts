@@ -30,9 +30,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   mapping(address => uint256) private fees;
 
   uint256 public startBlockNumber;
-  uint256 public constant bridgeVersion = 4;
+  uint256 public constant bridgeVersion = 5;
   uint256 public chainGasAmount;
   address payable public WETH_ADDRESS;
+
+  mapping(bytes32 => bool) private kappaMap;
 
   receive() external payable {}
   
@@ -59,13 +61,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 amount
   );
   event TokenRedeem(address indexed to, uint256 chainId, IERC20 token, uint256 amount);
-  event TokenWithdraw(address indexed to, IERC20 token, uint256 amount, uint256 fee, bytes32 kappa);
+  event TokenWithdraw(address indexed to, IERC20 token, uint256 amount, uint256 fee, bytes32 indexed kappa);
   event TokenMint(
     address indexed to,
     IERC20Mintable token,
     uint256 amount,
     uint256 fee,
-    bytes32 kappa
+    bytes32 indexed kappa
   );
   event TokenDepositAndSwap(
     address indexed to,
@@ -87,7 +89,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 minDy,
     uint256 deadline,
     bool swapSuccess,
-    bytes32 kappa
+    bytes32 indexed kappa
   );
   event TokenRedeemAndSwap(
     address indexed to,
@@ -117,12 +119,16 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 swapMinAmount,
     uint256 swapDeadline,
     bool swapSuccess,
-    bytes32 kappa
+    bytes32 indexed kappa
   );
 
   // VIEW FUNCTIONS ***/
   function getFeeBalance(address tokenAddress) external view returns (uint256) {
     return fees[tokenAddress];
+  }
+
+  function kappaExists(bytes32 kappa) external view returns (bool) {
+    return kappaMap[kappa];
   }
 
   // FEE FUNCTIONS ***/
@@ -135,8 +141,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     require(hasRole(GOVERNANCE_ROLE, msg.sender));
     require(to != address(0), "Address is 0x000");
     if (fees[address(token)] != 0) {
-      fees[address(token)] = 0;
       token.safeTransfer(to, fees[address(token)]);
+      fees[address(token)] = 0;
     }
   }
 
@@ -203,6 +209,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
+    require(!kappaMap[kappa], 'Kappa is already present');
+    kappaMap[kappa] = true;
     fees[address(token)] = fees[address(token)].add(fee);
     if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
       IWETH9(WETH_ADDRESS).withdraw(amount.sub(fee));
@@ -234,6 +242,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
+    require(!kappaMap[kappa], 'Kappa is already present');
+    kappaMap[kappa] = true;
     fees[address(token)] = fees[address(token)].add(fee);
     emit TokenMint(to, token, amount.sub(fee), fee, kappa);
     token.mint(address(this), amount);
@@ -370,6 +380,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
+    require(!kappaMap[kappa], 'Kappa is already present');
+    kappaMap[kappa] = true;
     fees[address(token)] = fees[address(token)].add(fee);
     // Transfer gas airdrop
     if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
@@ -442,6 +454,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
+    require(!kappaMap[kappa], 'Kappa is already present');
+    kappaMap[kappa] = true;
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required
     uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
