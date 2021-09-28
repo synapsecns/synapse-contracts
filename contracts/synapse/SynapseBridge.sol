@@ -30,7 +30,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   mapping(address => uint256) private fees;
 
   uint256 public startBlockNumber;
-  uint256 public constant bridgeVersion = 4;
+  uint256 public constant bridgeVersion = 5;
   uint256 public chainGasAmount;
   address payable public WETH_ADDRESS;
 
@@ -135,8 +135,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     require(hasRole(GOVERNANCE_ROLE, msg.sender));
     require(to != address(0), "Address is 0x000");
     if (fees[address(token)] != 0) {
-      fees[address(token)] = 0;
       token.safeTransfer(to, fees[address(token)]);
+      fees[address(token)] = 0;
     }
   }
 
