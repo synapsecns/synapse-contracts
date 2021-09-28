@@ -34,7 +34,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   uint256 public chainGasAmount;
   address payable public WETH_ADDRESS;
 
-  mapping(bytes32 => bool) public kappaMap;
+  mapping(bytes32 => bool) private kappaMap;
 
   receive() external payable {}
   
