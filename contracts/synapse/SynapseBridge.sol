@@ -59,13 +59,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 amount
   );
   event TokenRedeem(address indexed to, uint256 chainId, IERC20 token, uint256 amount);
-  event TokenWithdraw(address indexed to, IERC20 token, uint256 amount, uint256 fee, bytes32 kappa);
+  event TokenWithdraw(address indexed to, IERC20 token, uint256 amount, uint256 fee, bytes32 indexed kappa);
   event TokenMint(
     address indexed to,
     IERC20Mintable token,
     uint256 amount,
     uint256 fee,
-    bytes32 kappa
+    bytes32 indexed kappa
   );
   event TokenDepositAndSwap(
     address indexed to,
@@ -87,7 +87,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 minDy,
     uint256 deadline,
     bool swapSuccess,
-    bytes32 kappa
+    bytes32 indexed kappa
   );
   event TokenRedeemAndSwap(
     address indexed to,
@@ -117,7 +117,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 swapMinAmount,
     uint256 swapDeadline,
     bool swapSuccess,
-    bytes32 kappa
+    bytes32 indexed kappa
   );
 
   // VIEW FUNCTIONS ***/
