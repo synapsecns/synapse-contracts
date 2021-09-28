@@ -34,6 +34,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   uint256 public chainGasAmount;
   address payable public WETH_ADDRESS;
 
+  mapping(bytes32 => bool) public kappaMap;
+
   receive() external payable {}
   
   function initialize() external initializer {
@@ -125,6 +127,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     return fees[tokenAddress];
   }
 
+  function ifKappaExists(bytes32 kappa) external view returns (bool) {
+    return kappaMap[kappa];
+  }
+
   // FEE FUNCTIONS ***/
   /**
    * * @notice withdraw specified ERC20 token fees to a given address
@@ -203,6 +209,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
+    require(!kappaMap[kappa], 'Kappa is already present');
+    kappaMap[kappa] = true;
     fees[address(token)] = fees[address(token)].add(fee);
     if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
       IWETH9(WETH_ADDRESS).withdraw(amount.sub(fee));
@@ -234,6 +242,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
+    require(!kappaMap[kappa], 'Kappa is already present');
+    kappaMap[kappa] = true;
     fees[address(token)] = fees[address(token)].add(fee);
     emit TokenMint(to, token, amount.sub(fee), fee, kappa);
     token.mint(address(this), amount);
@@ -370,6 +380,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
+    require(!kappaMap[kappa], 'Kappa is already present');
+    kappaMap[kappa] = true;
     fees[address(token)] = fees[address(token)].add(fee);
     // Transfer gas airdrop
     if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
@@ -442,6 +454,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
+    require(!kappaMap[kappa], 'Kappa is already present');
+    kappaMap[kappa] = true;
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required
     uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
