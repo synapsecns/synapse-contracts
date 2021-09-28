@@ -127,7 +127,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     return fees[tokenAddress];
   }
 
-  function ifKappaExists(bytes32 kappa) external view returns (bool) {
+  function kappaExists(bytes32 kappa) external view returns (bool) {
     return kappaMap[kappa];
   }
 
