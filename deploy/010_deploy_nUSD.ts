@@ -5,7 +5,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, getChainId } = hre
   const { deploy, get, execute, getOrNull, log, save } = deployments
   const { deployer } = await getNamedAccounts()
-  if ((await getChainId()) != '42161') {
+  
     if (await getOrNull('nUSD') == null ) {  
         const receipt = await execute(
             "SynapseERC20Factory",
@@ -30,9 +30,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       abi: (await get("SynapseToken")).abi, // Generic ERC20 ABI
       address: tokenAddress,
     })
-
     }
-  }
 }
 
 export default func

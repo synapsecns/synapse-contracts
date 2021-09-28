@@ -22,7 +22,7 @@ let config: HardhatUserConfig = {
     },
     arbitrum: {
       url: "https://arb1.arbitrum.io/rpc",
-      gasPrice: 10 * 1000000000,
+      gasPrice: 2 * 1000000000,
       // gas: 100000000
     },
     mumbai: {
@@ -54,8 +54,7 @@ let config: HardhatUserConfig = {
       gasPrice: 225 * 1000000000,
     },
     mainnet: {
-      url: process.env.ALCHEMY_API,
-      gasPrice: 70 * 1000000000,
+      url: process.env.ALCHEMY_API
     },
   },
   paths: {
