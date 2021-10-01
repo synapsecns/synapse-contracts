@@ -10,33 +10,56 @@ import "../interfaces/IWETH9.sol";
 contract NerveMetaBridgeZap {
   using SafeERC20 for IERC20;
 
-  IMetaSwapDeposit metaSwap;
   ISynapseBridge synapseBridge;
-  IERC20[] public metaTokens;
+  mapping(IERC20 => IMetaSwapDeposit) public metaSwapMap;
+  mapping(IMetaSwapDeposit => IERC20[]) public metaSwapTokensMap;
 
   address payable public immutable WETH_ADDRESS;
 
 
   uint256 constant MAX_UINT256 = 2**256 - 1;
 
-  constructor(address payable _wethAddress, IMetaSwapDeposit _metaSwap, ISynapseBridge _synapseBridge)
+  constructor(address payable _wethAddress, IMetaSwapDeposit _metaSwapOne, IERC20 tokenOne, IMetaSwapDeposit _metaSwapTwo, IERC20 tokenTwo, ISynapseBridge _synapseBridge)
     public
   {
     WETH_ADDRESS = _wethAddress;
-    metaSwap = _metaSwap;
     synapseBridge = _synapseBridge;
-    {
-      uint8 i;
-      for (; i < 32; i++) {
-        try _metaSwap.getToken(i) returns (IERC20 token) {
-          metaTokens.push(token);
-          token.safeApprove(address(_metaSwap), MAX_UINT256);
-          token.safeApprove(address(synapseBridge), MAX_UINT256);
-        } catch {
-          break;
+    metaSwapMap[tokenOne] = _metaSwapOne;
+    metaSwapMap[tokenTwo] = _metaSwapTwo;
+    
+    if (address(_metaSwapOne) != address(0)) {
+      {
+        uint8 i;
+        IERC20[] storage _metaTokensOne;
+        for (; i < 32; i++) {
+          try _metaSwapOne.getToken(i) returns (IERC20 token) {
+            _metaTokensOne.push(token);
+            token.safeApprove(address(_metaSwapOne), MAX_UINT256);
+            token.safeApprove(address(synapseBridge), MAX_UINT256);
+          } catch {
+            break;
+          }
         }
+        require(i > 1, 'metaSwap must have at least 2 tokens');
+        metaSwapTokensMap[_metaSwapOne] = _metaTokensOne;
       }
-      require(i > 1, 'metaSwap must have at least 2 tokens');
+    }
+    if (address(_metaSwapTwo) != address(0)) {
+      {
+        uint8 i;
+        IERC20[] storage _metaTokensTwo;
+        for (; i < 32; i++) {
+          try _metaSwapTwo.getToken(i) returns (IERC20 token) {
+            _metaTokensTwo.push(token);
+            token.safeApprove(address(_metaSwapTwo), MAX_UINT256);
+            token.safeApprove(address(synapseBridge), MAX_UINT256);
+          } catch {
+            break;
+          }
+        }
+        require(i > 1, 'metaSwap must have at least 2 tokens');
+        metaSwapTokensMap[_metaSwapTwo] = _metaTokensTwo;
+        }
     }
   }
 
@@ -49,10 +72,12 @@ contract NerveMetaBridgeZap {
    * @return amount of tokens the user will receive
    */
   function calculateSwap(
+    IERC20 token,
     uint8 tokenIndexFrom,
     uint8 tokenIndexTo,
     uint256 dx
   ) external view virtual returns (uint256) {
+    IMetaSwapDeposit metaSwap = metaSwapMap[token];
     return metaSwap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
   }
 
@@ -66,6 +91,9 @@ contract NerveMetaBridgeZap {
     uint256 minDy,
     uint256 deadline
   ) external {
+    IMetaSwapDeposit metaSwap = metaSwapMap[token];
+    require(address(metaSwap) != address(0), "Metaswap is 0x00");
+    IERC20[] memory metaTokens  = metaSwapTokensMap[metaSwap];
     metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
     // swap
 
@@ -99,10 +127,12 @@ contract NerveMetaBridgeZap {
     uint256 swapMinDy,
     uint256 swapDeadline
   ) external {
+    require(address(metaSwapMap[token]) != address(0), "Metaswap is 0x00");
+    IERC20[] memory metaTokens  = metaSwapTokensMap[metaSwapMap[token]];
     metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
     // swap
 
-    uint256 swappedAmount = metaSwap.swap(
+    uint256 swappedAmount = metaSwapMap[token].swap(
       tokenIndexFrom,
       tokenIndexTo,
       dx,
@@ -140,6 +170,9 @@ contract NerveMetaBridgeZap {
     uint256 liqMinAmount,
     uint256 liqDeadline
   ) external {
+    IMetaSwapDeposit metaSwap = metaSwapMap[token];
+    require(address(metaSwap) != address(0), "Metaswap is 0x00");
+    IERC20[] memory metaTokens  = metaSwapTokensMap[metaSwap];
     metaTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
     // swap
 
@@ -200,6 +233,8 @@ contract NerveMetaBridgeZap {
   ) external payable {
     require(WETH_ADDRESS != address(0), 'WETH 0');
     require(msg.value > 0 && msg.value == dx, 'INCORRECT MSG VALUE');
+    IMetaSwapDeposit metaSwap = metaSwapMap[token];
+    require(address(metaSwap) != address(0), "Metaswap is 0x00");
     IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
     
     // swap
