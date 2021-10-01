@@ -17,7 +17,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         '0x0000000000000000000000000000000000000000',
         '0x0000000000000000000000000000000000000000',
         (await get('SynapseBridge')).address,
-      ]
+      ],
+      gasLimit: 15000000,
+      estimatedGasLimit: 20000000
     })
   }
 
