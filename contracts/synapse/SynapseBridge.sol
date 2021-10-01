@@ -349,7 +349,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
 
     IERC20(token).safeTransfer(to, amount.sub(fee));
 
-    if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
+    if (checkChainGasAmount()) {
       to.transfer(chainGasAmount);
     }
   }
@@ -506,7 +506,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     fees[address(token)] = fees[address(token)].add(fee);
 
     // Transfer gas airdrop
-    if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
+    if (checkChainGasAmount()) {
       to.transfer(chainGasAmount);
     }
 
@@ -708,5 +708,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     returns (bool)
   {
     return addr_ == WETH_ADDRESS && WETH_ADDRESS != address(0);
+  }
+
+  function checkChainGasAmount()
+    private
+    view
+    returns (bool)
+  {
+    return chainGasAmount != 0 && address(this).balance > chainGasAmount;
   }
 }
