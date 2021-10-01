@@ -502,11 +502,14 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     require(amount > fee, 'Amount must be greater than fee');
     require(!kappaMap[kappa], 'Kappa is already present');
     kappaMap[kappa] = true;
+
     fees[address(token)] = fees[address(token)].add(fee);
+
     // Transfer gas airdrop
     if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
       to.transfer(chainGasAmount);
     }
+
     // first check to make sure more will be given than min amount required
     uint256 expectedOutput = IMetaSwapDeposit(pool).calculateSwap(
       tokenIndexFrom,
@@ -518,6 +521,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       // proceed with swap
       token.mint(address(this), amount);
       token.safeIncreaseAllowance(address(pool), amount);
+
       try
         IMetaSwapDeposit(pool).swap(
           tokenIndexFrom,
