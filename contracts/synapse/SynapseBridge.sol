@@ -38,18 +38,25 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
 
   receive() external payable {}
   
-  function initialize() external initializer {
+  function initialize()
+    external
+    initializer
+  {
     startBlockNumber = block.number;
     _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     __AccessControl_init();
   }
 
-  function setChainGasAmount(uint256 amount) external {
+  function setChainGasAmount(uint256 amount)
+    external
+  {
     require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
     chainGasAmount = amount;
   }
 
-  function setWethAddress(address payable _wethAddress) external {
+  function setWethAddress(address payable _wethAddress)
+    external
+  {
     require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
     WETH_ADDRESS = _wethAddress;
   }
@@ -123,11 +130,19 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   );
 
   // VIEW FUNCTIONS ***/
-  function getFeeBalance(address tokenAddress) external view returns (uint256) {
+  function getFeeBalance(address tokenAddress)
+    external
+    view
+    returns (uint256)
+  {
     return fees[tokenAddress];
   }
 
-  function kappaExists(bytes32 kappa) external view returns (bool) {
+  function kappaExists(bytes32 kappa)
+    external
+    view
+    returns (bool)
+  {
     return kappaMap[kappa];
   }
 
@@ -137,7 +152,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
    * * @param token ERC20 token in which fees acccumulated to transfer
    * * @param to Address to send the fees to
    */
-  function withdrawFees(IERC20 token, address to) external whenNotPaused() {
+  function withdrawFees(IERC20 token, address to)
+    external
+    whenNotPaused
+  {
     require(hasRole(GOVERNANCE_ROLE, msg.sender));
     require(to != address(0), "Address is 0x000");
     if (fees[address(token)] != 0) {
@@ -147,12 +165,16 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   }
 
   // PAUSABLE FUNCTIONS ***/
-  function pause() external {
+  function pause()
+    external
+  {
     require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
     _pause();
   }
 
-  function unpause() external {
+  function unpause()
+    external
+  {
     require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
     _unpause();
   }
@@ -170,7 +192,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 chainId,
     IERC20 token,
     uint256 amount
-  ) external nonReentrant() whenNotPaused() {
+  )
+    external
+    nonReentrant
+    whenNotPaused
+  {
     emit TokenDeposit(to, chainId, token, amount);
     token.safeTransferFrom(msg.sender, address(this), amount);
   }
@@ -187,7 +213,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 chainId,
     ERC20Burnable token,
     uint256 amount
-  ) external nonReentrant() whenNotPaused() {
+  )
+    external
+    nonReentrant
+    whenNotPaused
+  {
     emit TokenRedeem(to, chainId, token, amount);
     token.burnFrom(msg.sender, amount);
   }
@@ -206,7 +236,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 amount,
     uint256 fee,
     bytes32 kappa
-  ) external nonReentrant() whenNotPaused() {
+  )
+    external
+    nonReentrant
+    whenNotPaused
+  {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
     require(!kappaMap[kappa], 'Kappa is already present');
@@ -239,7 +273,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 amount,
     uint256 fee,
     bytes32 kappa
-  ) external nonReentrant() whenNotPaused() {
+  )
+    external
+    nonReentrant
+    whenNotPaused
+  {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
     require(!kappaMap[kappa], 'Kappa is already present');
@@ -273,7 +311,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 deadline
-  ) external nonReentrant() whenNotPaused() {
+  )
+    external
+    nonReentrant
+    whenNotPaused
+  {
      emit TokenDepositAndSwap(
       to,
       chainId,
@@ -307,7 +349,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint8 tokenIndexTo,
     uint256 minDy,
     uint256 deadline
-  ) external nonReentrant() whenNotPaused() {
+  )
+    external
+    nonReentrant
+    whenNotPaused
+  {
     emit TokenRedeemAndSwap(
       to,
       chainId,
@@ -339,7 +385,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint8 swapTokenIndex,
     uint256 swapMinAmount,
     uint256 swapDeadline
-  ) external nonReentrant() whenNotPaused() {
+  )
+    external
+    nonReentrant
+    whenNotPaused
+  {
       emit TokenRedeemAndRemove(
       to,
       chainId,
@@ -377,7 +427,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 minDy,
     uint256 deadline,
     bytes32 kappa
-  ) external nonReentrant() whenNotPaused() {
+  )
+    external
+    nonReentrant
+    whenNotPaused
+  {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
     require(!kappaMap[kappa], 'Kappa is already present');
@@ -451,7 +505,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 swapMinAmount,
     uint256 swapDeadline,
     bytes32 kappa
-  ) external nonReentrant() whenNotPaused() {
+  )
+    external
+    nonReentrant
+    whenNotPaused
+  {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
     require(amount > fee, 'Amount must be greater than fee');
     require(!kappaMap[kappa], 'Kappa is already present');
