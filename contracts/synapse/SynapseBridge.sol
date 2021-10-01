@@ -399,7 +399,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       token.mint(address(this), amount);
       token.safeIncreaseAllowance(address(pool), amount);
       try
-        IMetaSwapDeposit(pool).swap(
+        pool.swap(
           tokenIndexFrom,
           tokenIndexTo,
           amount.sub(fee),
