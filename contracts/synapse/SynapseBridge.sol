@@ -388,7 +388,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       to.transfer(chainGasAmount);
     }
     // first check to make sure more will be given than min amount required
-    uint256 expectedOutput = IMetaSwapDeposit(pool).calculateSwap(
+    uint256 expectedOutput = pool.calculateSwap(
       tokenIndexFrom,
       tokenIndexTo,
       amount.sub(fee)
@@ -408,7 +408,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         )
       returns (uint256 finalSwappedAmount) {
         // Swap succeeded, transfer swapped asset
-        IERC20 swappedTokenTo = IMetaSwapDeposit(pool).getToken(tokenIndexTo);
+        IERC20 swappedTokenTo = pool.getToken(tokenIndexTo);
         if (address(swappedTokenTo) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
           IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
           (bool success, ) = to.call{value: finalSwappedAmount}("");
@@ -458,7 +458,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     kappaMap[kappa] = true;
     fees[address(token)] = fees[address(token)].add(fee);
     // first check to make sure more will be given than min amount required
-    uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
+    uint256 expectedOutput = pool.calculateRemoveLiquidityOneToken(
       amount.sub(fee),
       swapTokenIndex
     );
@@ -466,7 +466,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     if (expectedOutput >= swapMinAmount) {
       token.safeIncreaseAllowance(address(pool), amount.sub(fee));
       try
-        ISwap(pool).removeLiquidityOneToken(
+        pool.removeLiquidityOneToken(
           amount.sub(fee),
           swapTokenIndex,
           swapMinAmount,
@@ -474,7 +474,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         )
       returns (uint256 finalSwappedAmount) {
         // Swap succeeded, transfer swapped asset
-        IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
+        IERC20 swappedTokenTo = pool.getToken(swapTokenIndex);
         swappedTokenTo.safeTransfer(to, finalSwappedAmount);
         emit TokenWithdrawAndRemove(to, token, finalSwappedAmount, fee, swapTokenIndex, swapMinAmount, swapDeadline, true, kappa);
       } catch {
