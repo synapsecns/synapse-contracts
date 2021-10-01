@@ -30,8 +30,11 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   mapping(address => uint256) private fees;
 
   uint256 public startBlockNumber;
+
   uint256 public constant bridgeVersion = 5;
+
   uint256 public chainGasAmount;
+
   address payable public WETH_ADDRESS;
 
   mapping(bytes32 => bool) private kappaMap;
@@ -67,8 +70,22 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     IERC20 token,
     uint256 amount
   );
-  event TokenRedeem(address indexed to, uint256 chainId, IERC20 token, uint256 amount);
-  event TokenWithdraw(address indexed to, IERC20 token, uint256 amount, uint256 fee, bytes32 indexed kappa);
+
+  event TokenRedeem(
+    address indexed to,
+    uint256 chainId,
+    IERC20 token,
+    uint256 amount
+  );
+
+  event TokenWithdraw(
+    address indexed to,
+    IERC20 token,
+    uint256 amount,
+    uint256 fee,
+    bytes32 indexed kappa
+  );
+
   event TokenMint(
     address indexed to,
     IERC20Mintable token,
@@ -76,6 +93,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 fee,
     bytes32 indexed kappa
   );
+
   event TokenDepositAndSwap(
     address indexed to,
     uint256 chainId,
@@ -86,6 +104,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 minDy,
     uint256 deadline
   );
+
   event TokenMintAndSwap(
     address indexed to,
     IERC20Mintable token,
@@ -98,6 +117,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     bool swapSuccess,
     bytes32 indexed kappa
   );
+
   event TokenRedeemAndSwap(
     address indexed to,
     uint256 chainId,
@@ -108,6 +128,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 minDy,
     uint256 deadline
   );
+
   event TokenRedeemAndRemove(
     address indexed to,
     uint256 chainId,
@@ -117,6 +138,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 swapMinAmount,
     uint256 swapDeadline
   );
+
   event TokenWithdrawAndRemove(
     address indexed to,
     IERC20 token,
@@ -158,8 +180,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   {
     require(hasRole(GOVERNANCE_ROLE, msg.sender));
     require(to != address(0), "Address is 0x000");
+
     if (fees[address(token)] != 0) {
       token.safeTransfer(to, fees[address(token)]);
+
       fees[address(token)] = 0;
     }
   }
@@ -197,7 +221,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     nonReentrant
     whenNotPaused
   {
-    emit TokenDeposit(to, chainId, token, amount);
+    emit TokenDeposit(
+      to,
+      chainId,
+      token,
+      amount
+    );
+
     token.safeTransferFrom(msg.sender, address(this), amount);
   }
 
@@ -218,7 +248,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     nonReentrant
     whenNotPaused
   {
-    emit TokenRedeem(to, chainId, token, amount);
+    emit TokenRedeem(
+      to,
+      chainId,
+      token,
+      amount
+    );
+
     token.burnFrom(msg.sender, amount);
   }
 
@@ -245,14 +281,31 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     require(amount > fee, 'Amount must be greater than fee');
     require(!kappaMap[kappa], 'Kappa is already present');
     kappaMap[kappa] = true;
+
     fees[address(token)] = fees[address(token)].add(fee);
+
     if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
       IWETH9(WETH_ADDRESS).withdraw(amount.sub(fee));
+
       (bool success, ) = to.call{value: amount.sub(fee)}("");
       require(success, "ETH_TRANSFER_FAILED");
-      emit TokenWithdraw(to, token, amount, fee, kappa);
+
+      emit TokenWithdraw(
+        to,
+        token,
+        amount,
+        fee,
+        kappa
+      );
     } else {
-      emit TokenWithdraw(to, token, amount, fee, kappa);
+      emit TokenWithdraw(
+        to,
+        token,
+        amount,
+        fee,
+        kappa
+      );
+
       token.safeTransfer(to, amount.sub(fee));
     }
   }
@@ -283,9 +336,19 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     require(!kappaMap[kappa], 'Kappa is already present');
     kappaMap[kappa] = true;
     fees[address(token)] = fees[address(token)].add(fee);
-    emit TokenMint(to, token, amount.sub(fee), fee, kappa);
+
+    emit TokenMint(
+      to,
+      token,
+      amount.sub(fee),
+      fee,
+      kappa
+    );
+
     token.mint(address(this), amount);
+
     IERC20(token).safeTransfer(to, amount.sub(fee));
+
     if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
       to.transfer(chainGasAmount);
     }
@@ -326,6 +389,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       minDy,
       deadline
     );
+
     token.safeTransferFrom(msg.sender, address(this), amount);
   }
 
@@ -364,6 +428,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       minDy,
       deadline
     );
+
     token.burnFrom(msg.sender, amount);
   }
 
@@ -391,14 +456,15 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     whenNotPaused
   {
       emit TokenRedeemAndRemove(
-      to,
-      chainId,
-      token,
-      amount,
-      swapTokenIndex,
-      swapMinAmount,
-      swapDeadline
-    );
+        to,
+        chainId,
+        token,
+        amount,
+        swapTokenIndex,
+        swapMinAmount,
+        swapDeadline
+      );
+
     token.burnFrom(msg.sender, amount);
   }
 
@@ -465,21 +531,71 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         IERC20 swappedTokenTo = IMetaSwapDeposit(pool).getToken(tokenIndexTo);
         if (address(swappedTokenTo) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
           IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
+
           (bool success, ) = to.call{value: finalSwappedAmount}("");
           require(success, "ETH_TRANSFER_FAILED");
-          emit TokenMintAndSwap(to, token, finalSwappedAmount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, true, kappa);
+
+          emit TokenMintAndSwap(
+            to,
+            token,
+            finalSwappedAmount,
+            fee,
+            tokenIndexFrom,
+            tokenIndexTo,
+            minDy,
+            deadline,
+            true,
+            kappa
+          );
         } else {
           swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-          emit TokenMintAndSwap(to, token, finalSwappedAmount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, true, kappa);
+
+          emit TokenMintAndSwap(
+            to,
+            token,
+            finalSwappedAmount,
+            fee,
+            tokenIndexFrom,
+            tokenIndexTo,
+            minDy,
+            deadline,
+            true,
+            kappa
+          );
         }
       } catch {
         IERC20(token).safeTransfer(to, amount.sub(fee));
-        emit TokenMintAndSwap(to, token, amount.sub(fee), fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
+
+        emit TokenMintAndSwap(
+          to,
+          token,
+          amount.sub(fee),
+          fee,
+          tokenIndexFrom,
+          tokenIndexTo,
+          minDy,
+          deadline,
+          false,
+          kappa
+        );
       }
     } else {
       token.mint(address(this), amount);
+
       IERC20(token).safeTransfer(to, amount.sub(fee));
-      emit TokenMintAndSwap(to, token, amount.sub(fee), fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
+
+      emit TokenMintAndSwap(
+        to,
+        token,
+        amount.sub(fee),
+        fee,
+        tokenIndexFrom,
+        tokenIndexTo,
+        minDy,
+        deadline,
+        false,
+        kappa
+      );
     }
   }
 
@@ -514,7 +630,9 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     require(amount > fee, 'Amount must be greater than fee');
     require(!kappaMap[kappa], 'Kappa is already present');
     kappaMap[kappa] = true;
+
     fees[address(token)] = fees[address(token)].add(fee);
+
     // first check to make sure more will be given than min amount required
     uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
       amount.sub(fee),
@@ -523,6 +641,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
 
     if (expectedOutput >= swapMinAmount) {
       token.safeIncreaseAllowance(address(pool), amount.sub(fee));
+
       try
         ISwap(pool).removeLiquidityOneToken(
           amount.sub(fee),
@@ -534,14 +653,47 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         // Swap succeeded, transfer swapped asset
         IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
         swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-        emit TokenWithdrawAndRemove(to, token, finalSwappedAmount, fee, swapTokenIndex, swapMinAmount, swapDeadline, true, kappa);
+
+        emit TokenWithdrawAndRemove(
+          to,
+          token,
+          finalSwappedAmount,
+          fee,
+          swapTokenIndex,
+          swapMinAmount,
+          swapDeadline,
+          true,
+          kappa
+        );
       } catch {
         IERC20(token).safeTransfer(to, amount.sub(fee));
-        emit TokenWithdrawAndRemove(to, token, amount.sub(fee), fee, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
+
+        emit TokenWithdrawAndRemove(
+          to,
+          token,
+          amount.sub(fee),
+          fee,
+          swapTokenIndex,
+          swapMinAmount,
+          swapDeadline,
+          false,
+          kappa
+        );
       }
     } else {
       token.safeTransfer(to, amount.sub(fee));
-      emit TokenWithdrawAndRemove(to, token, amount.sub(fee), fee, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
+
+      emit TokenWithdrawAndRemove(
+        to,
+          token,
+          amount.sub(fee),
+          fee,
+          swapTokenIndex,
+          swapMinAmount,
+          swapDeadline,
+          false,
+          kappa
+      );
     }
   }
 }
