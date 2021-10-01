@@ -284,7 +284,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
 
     fees[address(token)] = fees[address(token)].add(fee);
 
-    if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
+    if (checkWETHAddress(address(token))) {
       IWETH9(WETH_ADDRESS).withdraw(amount.sub(fee));
 
       (bool success, ) = to.call{value: amount.sub(fee)}("");
@@ -529,7 +529,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       returns (uint256 finalSwappedAmount) {
         // Swap succeeded, transfer swapped asset
         IERC20 swappedTokenTo = IMetaSwapDeposit(pool).getToken(tokenIndexTo);
-        if (address(swappedTokenTo) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
+
+        if (checkWETHAddress(address(swappedTokenTo))) {
           IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
 
           (bool success, ) = to.call{value: finalSwappedAmount}("");
@@ -695,5 +696,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
           kappa
       );
     }
+  }
+
+  function checkWETHAddress(address _addr)
+    private
+    view
+    returns (bool)
+  {
+    return addr_ == WETH_ADDRESS && WETH_ADDRESS != address(0);
   }
 }
