@@ -12,11 +12,16 @@ contract TokenDistributor is Ownable {
     using SafeMath for uint256;
 
     IERC20 public immutable token;
+    bool isClaimable = false;
 
     mapping(address => uint256) public claimBalances;
 
     constructor(IERC20 _token) public {
         token = _token;
+    }
+
+    function enableClaim() external onlyOwner {
+        isClaimable = true;
     }
 
     function setClaimBalances(address[] calldata addresses, uint256[] calldata amounts) external onlyOwner {
@@ -26,6 +31,7 @@ contract TokenDistributor is Ownable {
     }
 
     function claim(address sender) external {
+        require(isClaimable, "Claim not enabled");
         require(msg.sender == sender, "Sender is trying to claim for someoen else");
         uint256 claimAmount = claimBalances[msg.sender];
         require(claimAmount != 0, "Claim can't be zero");
