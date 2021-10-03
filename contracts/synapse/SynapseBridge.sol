@@ -54,6 +54,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     WETH_ADDRESS = _wethAddress;
   }
 
+  function addKappas(bytes32[] calldata kappas) external {
+    require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+    for (uint256 i = 0; i < kappas.length; ++i) {
+      kappaMap[kappas[i]] = true;
+    }
+  }
+
   event TokenDeposit(
     address indexed to,
     uint256 chainId,
@@ -138,7 +145,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
    * * @param to Address to send the fees to
    */
   function withdrawFees(IERC20 token, address to) external whenNotPaused() {
-    require(hasRole(GOVERNANCE_ROLE, msg.sender));
+    require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
     require(to != address(0), "Address is 0x000");
     if (fees[address(token)] != 0) {
       token.safeTransfer(to, fees[address(token)]);
