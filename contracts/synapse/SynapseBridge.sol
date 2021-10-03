@@ -30,7 +30,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   mapping(address => uint256) private fees;
 
   uint256 public startBlockNumber;
-  uint256 public constant bridgeVersion = 5;
+  uint256 public constant bridgeVersion = 6;
   uint256 public chainGasAmount;
   address payable public WETH_ADDRESS;
 
