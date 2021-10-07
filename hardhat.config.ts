@@ -39,7 +39,6 @@ let config: HardhatUserConfig = {
     },
     fantom: {
       url: "https://rpc.ftm.tools/",
-      gas: 1000000000,
     },
     polygonprodtest: {
       url: "https://polygon-mainnet.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55",
