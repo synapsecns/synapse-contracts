@@ -21,7 +21,7 @@ let config: HardhatUserConfig = {
       url: 'http://127.0.0.1:8555',
     },
     arbitrum: {
-      url: "https://arb1.arbitrum.io/rpc",
+      url: 'https://arb1.arbitrum.io/rpc',
       gasPrice: 2 * 1000000000,
       // gas: 100000000
     },
@@ -50,11 +50,11 @@ let config: HardhatUserConfig = {
       gasPrice: 6 * 1000000000,
     },
     avalanche: {
-      url: "https://api.avax.network/ext/bc/C/rpc",
+      url: 'https://api.avax.network/ext/bc/C/rpc',
       gasPrice: 225 * 1000000000,
     },
     mainnet: {
-      url: process.env.ALCHEMY_API
+      url: process.env.ALCHEMY_API,
     },
   },
   paths: {
@@ -86,15 +86,15 @@ let config: HardhatUserConfig = {
         version: '0.8.3',
       },
       {
-        version: '0.4.24'
-      }
+        version: '0.4.24',
+      },
     ],
   },
   namedAccounts: {
     deployer: {
       default: 3, // here this will by default take the first account as deployer
       1: 0, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
-      42161: 0
+      42161: 0,
     },
     libraryDeployer: {
       default: 1, // use a different account for deploying libraries on the hardhat network
@@ -104,7 +104,7 @@ let config: HardhatUserConfig = {
       1: '0x67F60b0891EBD842Ebe55E4CCcA1098d7Aac1A55',
       56: '0xA316d83e67EEfD136f4C077de1cD4163A681F8A8',
       137: '0xBdD38B2eaae34C9FCe187909e81e75CBec0dAA7A',
-    }
+    },
   },
   gasReporter: {
     currency: 'USD',
@@ -203,7 +203,6 @@ if (process.env.ACCOUNT_PRIVATE_KEYS) {
   }
 }
 
-
 if (process.env.ARBITRUM_PRIVATE_KEYS) {
   config.networks = {
     ...config.networks,
@@ -213,6 +212,5 @@ if (process.env.ARBITRUM_PRIVATE_KEYS) {
     },
   }
 }
-
 
 module.exports = config
