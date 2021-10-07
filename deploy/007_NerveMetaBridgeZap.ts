@@ -11,9 +11,13 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       log: true,
       skipIfAlreadyDeployed: true,
       args: [
+        '0x0000000000000000000000000000000000000000',
         (await get('BSCNerveNUSDMetaPoolDeposit')).address,
+        (await get('nUSD')).address,
+        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000',
         (await get('SynapseBridge')).address,
-      ],
+      ]
     })
   }
 
@@ -23,7 +27,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       log: true,
       skipIfAlreadyDeployed: true,
       args: [
+        '0x0000000000000000000000000000000000000000',
         (await get('PolygonNerveNUSDMetaPoolDeposit')).address,
+        (await get('nUSD')).address,
+        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000',
         (await get('SynapseBridge')).address,
       ],
     })
@@ -35,13 +43,17 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       log: true,
       skipIfAlreadyDeployed: true,
       args: [
+        '0x0000000000000000000000000000000000000000',
         (await get('AvalancheNerveNUSDMetaPoolDeposit')).address,
+        (await get('nUSD')).address,
+        '0x0000000000000000000000000000000000000000',
+        '0x0000000000000000000000000000000000000000',
         (await get('SynapseBridge')).address,
       ],
     })
   }
 
-    if ((await getChainId()) === '42161') {
+  if ((await getChainId()) === '42161') {
     await deploy('NerveMetaBridgeZap', {
       from: deployer,
       log: true,
@@ -49,6 +61,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       args: [
         (await get('WETH')).address,
         (await get('BaseSwapDeposit')).address,
+        (await get('nETH')).address,
+        (await get('ArbitrumNervenUSDMetaPoolDeposit')).address,
+        (await get('nUSD')).address,
         (await get('SynapseBridge')).address,
       ],
     })
