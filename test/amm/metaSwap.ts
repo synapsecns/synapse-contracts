@@ -1268,7 +1268,7 @@ describe("Meta-Swap", async () => {
           1,
           String(1e17),
         )
-        expect(calculatedSwapReturn).to.eq(BigNumber.from("99682616104034773"))
+        expect(calculatedSwapReturn).to.eq(BigNumber.from("99682665521916558"))
 
         const [tokenFromBalanceBefore, tokenToBalanceBefore] =
           await getUserTokenBalances(user1, [susd, dai])
@@ -1296,7 +1296,7 @@ describe("Meta-Swap", async () => {
           0,
           String(1e5),
         )
-        expect(calculatedSwapReturn).to.eq(BigNumber.from("99702556568987205"))
+        expect(calculatedSwapReturn).to.eq(BigNumber.from("99702606038472742"))
 
         // Calculating swapping from a base token to a meta level token
         // does not account for base pool's swap fees
@@ -1325,7 +1325,7 @@ describe("Meta-Swap", async () => {
           BigNumber.from(String(1e5)),
         )
         expect(tokenToBalanceAfter.sub(tokenToBalanceBefore)).to.eq(
-          "99683651227847339",
+          "99683700689458101",
         )
       })
 
@@ -1393,7 +1393,7 @@ describe("Meta-Swap", async () => {
         1,
         String(1e17),
       )
-      expect(calculatedSwapReturn).to.eq(BigNumber.from("99682616104034773"))
+      expect(calculatedSwapReturn).to.eq(BigNumber.from("99682665521916558"))
 
       // User 2 swaps before User 1 does
       await metaSwap
@@ -1421,7 +1421,7 @@ describe("Meta-Swap", async () => {
         1,
         String(1e17),
       )
-      expect(calculatedSwapReturn).to.eq(BigNumber.from("99682616104034773"))
+      expect(calculatedSwapReturn).to.eq(BigNumber.from("99682665521916558"))
 
       const [tokenFromBalanceBefore, tokenToBalanceBefore] =
         await getUserTokenBalances(user1, [susd, dai])
@@ -1454,7 +1454,7 @@ describe("Meta-Swap", async () => {
 
       const actualReceivedAmount = tokenToBalanceAfter.sub(tokenToBalanceBefore)
 
-      expect(actualReceivedAmount).to.eq(BigNumber.from("99266340636749675"))
+      expect(actualReceivedAmount).to.eq(BigNumber.from("99266389642716477"))
       expect(actualReceivedAmount).to.gt(
         calculatedSwapReturnWithNegativeSlippage,
       )
@@ -1469,7 +1469,7 @@ describe("Meta-Swap", async () => {
         0,
         MAX_UINT256,
       )
-      expect(swapReturnAmount).to.eq("99682616104034773")
+      expect(swapReturnAmount).to.eq("99682665521916558")
     })
 
     it("Reverts when block is mined after deadline", async () => {
@@ -1737,7 +1737,7 @@ describe("Meta-Swap", async () => {
         .connect(user1)
         .swapUnderlying(1, 0, String(1e17), 0, MAX_UINT256)
 
-      expect(await metaSwap.getAdminBalance(0)).to.eq(String(1001774294135))
+      expect(await metaSwap.getAdminBalance(0)).to.eq(String(1001773813220))
       expect(await metaSwap.getAdminBalance(1)).to.eq(String(998024139765))
 
       const [firstTokenBefore, secondTokenBefore] = await getUserTokenBalances(
@@ -1752,7 +1752,7 @@ describe("Meta-Swap", async () => {
         [susd, baseLPToken],
       )
 
-      expect(firstTokenAfter.sub(firstTokenBefore)).to.eq(String(1001774294135))
+      expect(firstTokenAfter.sub(firstTokenBefore)).to.eq(String(1001773813220))
       expect(secondTokenAfter.sub(secondTokenBefore)).to.eq(
         String(998024139765),
       )

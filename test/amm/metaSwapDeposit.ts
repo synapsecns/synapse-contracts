@@ -227,7 +227,7 @@ describe("Meta-Swap Deposit Contract", async () => {
         1,
         String(1e17),
       )
-      expect(calculatedSwapReturn).to.eq(BigNumber.from("99878006452940184"))
+      expect(calculatedSwapReturn).to.eq(BigNumber.from("99878056064760201"))
 
       const [tokenFromBalanceBefore, tokenToBalanceBefore] =
         await getUserTokenBalances(user1, [susd, dai])
@@ -255,7 +255,7 @@ describe("Meta-Swap Deposit Contract", async () => {
         0,
         String(1e5),
       )
-      expect(calculatedSwapReturn).to.eq(BigNumber.from("99897986001503096"))
+      expect(calculatedSwapReturn).to.eq(BigNumber.from("99898035667013493"))
 
       // Calculating swapping from a base token to a meta level token
       // does not account for base pool's swap fees
@@ -278,7 +278,7 @@ describe("Meta-Swap Deposit Contract", async () => {
         BigNumber.from(String(1e5)),
       )
       expect(tokenToBalanceAfter.sub(tokenToBalanceBefore)).to.eq(
-        "99879005754596734",
+        "99879055412162421",
       )
     })
 
@@ -412,7 +412,7 @@ describe("Meta-Swap Deposit Contract", async () => {
         tokenDepositAmounts,
         true,
       )
-      expect(minToMint).to.eq(String("2999946184458068855"))
+      expect(minToMint).to.eq(String("2999951149277191084"))
 
       const balanceBefore = await getUserTokenBalance(ownerAddress, metaLPToken)
       const returnValue = await metaSwapDeposit.callStatic.addLiquidity(
@@ -428,11 +428,11 @@ describe("Meta-Swap Deposit Contract", async () => {
       const balanceAfter = await getUserTokenBalance(ownerAddress, metaLPToken)
 
       // Due to inaccurate fee calculations on imbalanced deposits/withdraws, there is some slippage
-      // 2999247304956561646 / 2999946184458068855 = 0.99976703598 (-0.024% of expected)
+      // 2999252268028841201 / 2999951149277191084 = 0.99976703598 (-0.024% of expected)
       expect(balanceAfter.sub(balanceBefore)).to.eq(
-        String("2999247304956561646"),
+        String("2999252268028841201"),
       )
-      expect(returnValue).to.eq("2999247304956561646")
+      expect(returnValue).to.eq("2999252268028841201")
     })
 
     it("Succeeds when depositing single token (meta swap level)", async () => {
@@ -539,8 +539,8 @@ describe("Meta-Swap Deposit Contract", async () => {
       const minAmounts = await metaSwapDeposit.calculateRemoveLiquidity(
         String(1e18),
       )
-      expect(minAmounts[0]).to.eq("504905415701427558")
-      expect(minAmounts[1]).to.eq("165399847850034521")
+      expect(minAmounts[0]).to.eq("504905403408763500")
+      expect(minAmounts[1]).to.eq("165399818069810691")
       expect(minAmounts[2]).to.eq("164850")
       expect(minAmounts[3]).to.eq("164850")
 
@@ -559,13 +559,13 @@ describe("Meta-Swap Deposit Contract", async () => {
 
       // Check the return value of the function matches the actual amounts that are withdrawn from the pool
       expect(balancesAfter[0].sub(balancesBefore[0])).to.eq(
-        "504905415701427558",
+        "504905403408763500",
       )
-      expect(returnValues[0]).to.eq("504905415701427558")
+      expect(returnValues[0]).to.eq("504905403408763500")
       expect(balancesAfter[1].sub(balancesBefore[1])).to.eq(
-        "165399847850034521",
+        "165399818069810691",
       )
-      expect(returnValues[1]).to.eq("165399847850034521")
+      expect(returnValues[1]).to.eq("165399818069810691")
       expect(balancesAfter[2].sub(balancesBefore[2])).to.eq("164850")
       expect(returnValues[2]).to.eq("164850")
       expect(balancesAfter[3].sub(balancesBefore[3])).to.eq("164850")
@@ -640,8 +640,8 @@ describe("Meta-Swap Deposit Contract", async () => {
       const balanceAfter = await getUserTokenBalance(ownerAddress, susd)
 
       // Check the return value matches the amount withdrawn
-      expect(balanceAfter.sub(balanceBefore)).to.eq("999653672043835285")
-      expect(returnValue).to.eq("999653672043835285")
+      expect(balanceAfter.sub(balanceBefore)).to.eq("999653671541279835")
+      expect(returnValue).to.eq("999653671541279835")
     })
 
     it("Succeeds when withdrawing via a base level token", async () => {
@@ -667,8 +667,8 @@ describe("Meta-Swap Deposit Contract", async () => {
       const balanceAfter = await getUserTokenBalance(ownerAddress, usdc)
 
       // Check the return value matches the amount withdrawn
-      expect(balanceAfter.sub(balanceBefore)).to.eq("999047")
-      expect(returnValue).to.eq("999047")
+      expect(balanceAfter.sub(balanceBefore)).to.eq("999056")
+      expect(returnValue).to.eq("999056")
     })
   })
 
@@ -740,7 +740,7 @@ describe("Meta-Swap Deposit Contract", async () => {
       )
         .mul(1001)
         .div(1000)
-      expect(maxBurnAmount).to.eq("1000850974361804682")
+      expect(maxBurnAmount).to.eq("1000850974852926461")
 
       // Balances before the call
       const tokens = [susd, dai, usdc, usdt, metaLPToken]
@@ -763,9 +763,9 @@ describe("Meta-Swap Deposit Contract", async () => {
       const balancesAfter = await getUserTokenBalances(ownerAddress, tokens)
 
       // The return value matches the amount of meta LP token burned
-      expect(returnValues).to.eq("1000346219159013725")
+      expect(returnValues).to.eq("1000346219661929705")
       expect(balancesBefore[4].sub(balancesAfter[4])).to.eq(
-        "1000346219159013725",
+        "1000346219661929705",
       )
 
       // Check user's balances increased in desired amounts
@@ -784,7 +784,7 @@ describe("Meta-Swap Deposit Contract", async () => {
       )
         .mul(1002)
         .div(1000)
-      expect(maxBurnAmount).to.eq("2004575554630608590")
+      expect(maxBurnAmount).to.eq("2004575797776447634")
 
       // Balances before the call
       const tokens = [susd, dai, usdc, usdt, metaLPToken]
@@ -807,9 +807,9 @@ describe("Meta-Swap Deposit Contract", async () => {
       const balancesAfter = await getUserTokenBalances(ownerAddress, tokens)
 
       // The return value matches the amount of meta LP token burned
-      expect(returnValues).to.eq("2001783984441028029")
+      expect(returnValues).to.eq("2001784227476244931")
       expect(balancesBefore[4].sub(balancesAfter[4])).to.eq(
-        "2001783984441028029",
+        "2001784227476244931",
       )
 
       // Check the user's balances increased in desired amounts
@@ -828,7 +828,7 @@ describe("Meta-Swap Deposit Contract", async () => {
       )
         .mul(1002)
         .div(1000)
-      expect(maxBurnAmount).to.eq("3006248784691339641")
+      expect(maxBurnAmount).to.eq("3006234092570322430")
 
       // Balances before the call
       const tokens = [susd, dai, usdc, usdt, metaLPToken]
@@ -851,9 +851,9 @@ describe("Meta-Swap Deposit Contract", async () => {
       const balancesAfter = await getUserTokenBalances(ownerAddress, tokens)
 
       // The return value matches the amount of meta LP token burned
-      expect(returnValues).to.eq("3000964196014187933")
+      expect(returnValues).to.eq("3000949526037631237")
       expect(balancesBefore[4].sub(balancesAfter[4])).to.eq(
-        "3000964196014187933",
+        "3000949526037631237",
       )
 
       // Check the user's balances increased in desired amounts
