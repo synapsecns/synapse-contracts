@@ -1,24 +1,24 @@
-import '@tenderly/hardhat-tenderly'
-import '@nomiclabs/hardhat-ethers'
-import '@nomiclabs/hardhat-waffle'
-import '@nomiclabs/hardhat-web3'
-import '@nomiclabs/hardhat-etherscan'
-import '@typechain/hardhat'
-import 'hardhat-gas-reporter'
-import 'solidity-coverage'
-import 'hardhat-deploy'
-import 'hardhat-spdx-license-identifier'
+import "@tenderly/hardhat-tenderly"
+import "@nomiclabs/hardhat-ethers"
+import "@nomiclabs/hardhat-waffle"
+import "@nomiclabs/hardhat-web3"
+import "@nomiclabs/hardhat-etherscan"
+import "@typechain/hardhat"
+import "hardhat-gas-reporter"
+import "solidity-coverage"
+import "hardhat-deploy"
+import "hardhat-spdx-license-identifier"
 
-import { HardhatUserConfig } from 'hardhat/config'
-import dotenv from 'dotenv'
+import { HardhatUserConfig } from "hardhat/config"
+import dotenv from "dotenv"
 
 dotenv.config()
 
 let config: HardhatUserConfig = {
-  defaultNetwork: 'hardhat',
+  defaultNetwork: "hardhat",
   networks: {
     coverage: {
-      url: 'http://127.0.0.1:8555',
+      url: "http://127.0.0.1:8555",
     },
     arbitrum: {
       url: "https://arb1.arbitrum.io/rpc",
@@ -26,27 +26,27 @@ let config: HardhatUserConfig = {
       // gas: 100000000
     },
     mumbai: {
-      url: 'https://polygon-mumbai.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55',
+      url: "https://polygon-mumbai.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55",
       gasPrice: 2 * 1000000000,
     },
     bsctestnet: {
-      url: 'https://data-seed-prebsc-1-s1.binance.org:8545',
+      url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       gasPrice: 10 * 1000000000,
     },
     testnet: {
-      url: 'https://eth-ropsten.alchemyapi.io/v2/tmEmzPXw-YAGzFPxNjcYACSGIY8stGs0',
+      url: "https://eth-ropsten.alchemyapi.io/v2/tmEmzPXw-YAGzFPxNjcYACSGIY8stGs0",
       gasPrice: 2 * 1000000000,
     },
     polygonprodtest: {
-      url: 'https://polygon-mainnet.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55',
+      url: "https://polygon-mainnet.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55",
       gasPrice: 6 * 1000000000,
     },
     polygon: {
-      url: 'https://polygon-mainnet.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55',
+      url: "https://polygon-mainnet.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55",
       gasPrice: 10 * 1000000000,
     },
     bsc: {
-      url: 'https://bsc-dataseed1.defibit.io',
+      url: "https://bsc-dataseed1.defibit.io",
       gasPrice: 6 * 1000000000,
     },
     avalanche: {
@@ -54,21 +54,21 @@ let config: HardhatUserConfig = {
       gasPrice: 225 * 1000000000,
     },
     mainnet: {
-      url: process.env.ALCHEMY_API
+      url: process.env.ALCHEMY_API,
     },
   },
   paths: {
-    artifacts: './build/artifacts',
-    cache: './build/cache',
+    artifacts: "./build/artifacts",
+    cache: "./build/cache",
   },
   typechain: {
-    outDir: './build/typechain/',
-    target: 'ethers-v5',
+    outDir: "./build/typechain/",
+    target: "ethers-v5",
   },
   solidity: {
     compilers: [
       {
-        version: '0.6.12',
+        version: "0.6.12",
         settings: {
           optimizer: {
             enabled: true,
@@ -77,37 +77,32 @@ let config: HardhatUserConfig = {
         },
       },
       {
-        version: '0.8.0',
+        version: "0.8.0",
       },
       {
-        version: '0.8.2',
+        version: "0.8.2",
       },
       {
-        version: '0.8.3',
+        version: "0.8.3",
       },
       {
-        version: '0.4.24'
-      }
+        version: "0.4.24",
+      },
     ],
   },
   namedAccounts: {
     deployer: {
-      default: 3, // here this will by default take the first account as deployer
+      default: 0, // here this will by default take the first account as deployer
       1: 0, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
-      42161: 0
+      42161: 0,
     },
     libraryDeployer: {
       default: 1, // use a different account for deploying libraries on the hardhat network
       1: 0, // use the same address as the main deployer on mainnet
     },
-    devMultisig: {
-      1: '0x67F60b0891EBD842Ebe55E4CCcA1098d7Aac1A55',
-      56: '0xA316d83e67EEfD136f4C077de1cD4163A681F8A8',
-      137: '0xBdD38B2eaae34C9FCe187909e81e75CBec0dAA7A',
-    }
   },
   gasReporter: {
-    currency: 'USD',
+    currency: "USD",
     gasPrice: 21,
   },
   mocha: {
@@ -203,7 +198,6 @@ if (process.env.ACCOUNT_PRIVATE_KEYS) {
   }
 }
 
-
 if (process.env.ARBITRUM_PRIVATE_KEYS) {
   config.networks = {
     ...config.networks,
@@ -213,6 +207,5 @@ if (process.env.ARBITRUM_PRIVATE_KEYS) {
     },
   }
 }
-
 
 module.exports = config
