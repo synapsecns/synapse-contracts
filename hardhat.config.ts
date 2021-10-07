@@ -118,94 +118,19 @@ if (process.env.ETHERSCAN_API) {
   config = { ...config, etherscan: { apiKey: process.env.ETHERSCAN_API } }
 }
 
-if (process.env.ROPSTEN_PRIVATE_KEYS) {
-  config.networks = {
-    ...config.networks,
-    testnet: {
-      ...config.networks?.testnet,
-      accounts: JSON.parse(process.env.ROPSTEN_PRIVATE_KEYS),
-    },
-  }
-}
-
-if (process.env.BSC_PRIVATE_KEYS) {
-  config.networks = {
-    ...config.networks,
-    bsctestnet: {
-      ...config.networks?.bsctestnet,
-      accounts: JSON.parse(process.env.BSC_PRIVATE_KEYS),
-    },
-  }
-}
-
-if (process.env.MUMBAI_PRIVATE_KEYS) {
-  config.networks = {
-    ...config.networks,
-    mumbai: {
-      ...config.networks?.bsctestnet,
-      accounts: JSON.parse(process.env.MUMBAI_PRIVATE_KEYS),
-    },
-  }
-}
-
-if (process.env.POLYGONPRODTEST_PRIVATE_KEYS) {
-  config.networks = {
-    ...config.networks,
-    polygonprodtest: {
-      ...config.networks?.polygonprodtest,
-      accounts: JSON.parse(process.env.POLYGONPRODTEST_PRIVATE_KEYS),
-    },
-  }
-}
-
-if (process.env.AVALANCHE_PRIVATE_KEYS) {
-  config.networks = {
-    ...config.networks,
-    avalanche: {
-      ...config.networks?.avalanche,
-      accounts: JSON.parse(process.env.AVALANCHE_PRIVATE_KEYS),
-    },
-  }
-}
-
-if (process.env.POLYGON_PRIVATE_KEYS) {
-  config.networks = {
-    ...config.networks,
-    polygon: {
-      ...config.networks?.polygon,
-      accounts: JSON.parse(process.env.POLYGON_PRIVATE_KEYS),
-    },
-  }
-}
-
-if (process.env.BSC_PRIVATE_KEYS) {
-  config.networks = {
-    ...config.networks,
-    bsc: {
-      ...config.networks?.bsc,
-      accounts: JSON.parse(process.env.BSC_PRIVATE_KEYS),
-    },
-  }
-}
-
-if (process.env.ACCOUNT_PRIVATE_KEYS) {
-  config.networks = {
-    ...config.networks,
-    mainnet: {
-      ...config.networks?.mainnet,
-      accounts: JSON.parse(process.env.ACCOUNT_PRIVATE_KEYS),
-    },
-  }
-}
-
-if (process.env.ARBITRUM_PRIVATE_KEYS) {
-  config.networks = {
-    ...config.networks,
-    arbitrum: {
-      ...config.networks?.arbitrum,
-      accounts: JSON.parse(process.env.ARBITRUM_PRIVATE_KEYS),
-    },
-  }
+if (process.env.PRIVATE_KEYS) {
+  let PROD_NETWORKS = ["arbitrum", "bsc", "poylgon", "avalanche", "mainnet"]
+  Object.keys(config.networks).forEach((network) => {
+    if (PROD_NETWORKS.includes(network)) {
+      config.networks = {
+        ...config.networks,
+        [network]: {
+          ...config.networks?.[network],
+          accounts: JSON.parse(process.env.PRIVATE_KEYS),
+        },
+      }
+    }
+  })
 }
 
 module.exports = config
