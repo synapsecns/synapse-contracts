@@ -37,6 +37,9 @@ let config: HardhatUserConfig = {
       url: "https://eth-ropsten.alchemyapi.io/v2/tmEmzPXw-YAGzFPxNjcYACSGIY8stGs0",
       gasPrice: 2 * 1000000000,
     },
+    fantom: {
+      url: "https://rpc.ftm.tools/",
+    },
     polygonprodtest: {
       url: "https://polygon-mainnet.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55",
       gasPrice: 6 * 1000000000,
@@ -52,6 +55,10 @@ let config: HardhatUserConfig = {
     avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
       gasPrice: 225 * 1000000000,
+    },
+    harmony: {
+      url: "https://harmony-0-rpc.gateway.pokt.network/",
+      gasPrice: 6 * 1000000000,
     },
     mainnet: {
       url: process.env.ALCHEMY_API,
@@ -98,7 +105,8 @@ let config: HardhatUserConfig = {
     },
     libraryDeployer: {
       default: 1, // use a different account for deploying libraries on the hardhat network
-      1: 0, // use the same address as the main deployer on mainnet
+      1: 0, // use the same address as the main deployer on mainnet,
+      250: 0,
     },
   },
   gasReporter: {
@@ -119,7 +127,15 @@ if (process.env.ETHERSCAN_API) {
 }
 
 if (process.env.PRIVATE_KEYS) {
-  let PROD_NETWORKS = ["arbitrum", "bsc", "poylgon", "avalanche", "mainnet"]
+  let PROD_NETWORKS = [
+    "arbitrum",
+    "bsc",
+    "poylgon",
+    "avalanche",
+    "mainnet",
+    "fantom",
+    "harmony",
+  ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
       config.networks = {
