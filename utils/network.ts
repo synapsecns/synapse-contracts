@@ -3,7 +3,8 @@ export const CHAIN_ID = {
   KOVAN: "42",
   BSC: "56",
   POLYGON: "137",
+  FANTOM: "250",
   HARDHAT: "31337",
   AVALANCHE: "43114",
-  ARBITRUM: "42161"
+  ARBITRUM: "42161",
 }
