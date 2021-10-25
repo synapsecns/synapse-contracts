@@ -104,7 +104,7 @@ let config: HardhatUserConfig = {
       42161: 0,
     },
     libraryDeployer: {
-      default: 1, // use a different account for deploying libraries on the hardhat network
+      default: 0, // use a different account for deploying libraries on the hardhat network
       1: 0, // use the same address as the main deployer on mainnet,
       250: 0,
     },
