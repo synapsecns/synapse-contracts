@@ -4,7 +4,8 @@ import { ethers, network } from "hardhat"
 import { Artifact } from "hardhat/types"
 import { BytesLike } from "@ethersproject/bytes"
 import { Contract } from "@ethersproject/contracts"
-import { ERC20 } from "../build/typechain/ERC20"
+import { ERC20 } from "../../build/typechain/ERC20"
+import { Swap } from "../../build/typechain/Swap"
 
 export const MAX_UINT256 = ethers.constants.MaxUint256
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
@@ -44,8 +45,65 @@ export function linkBytecode(
   return bytecode
 }
 
+export async function deployContractWithLibraries(
+  signer: Signer,
+  artifact: Artifact,
+  libraries: Record<string, string>,
+  args?: Array<unknown>,
+): Promise<Contract> {
+  const swapFactory = (await ethers.getContractFactory(
+    artifact.abi,
+    linkBytecode(artifact, libraries),
+    signer,
+  )) as ContractFactory
 
+  if (args) {
+    return swapFactory.deploy(...args)
+  } else {
+    return swapFactory.deploy()
+  }
+}
 
+// Contract calls
+
+export async function getPoolBalances(
+  swap: Swap,
+  numOfTokens: number,
+): Promise<BigNumber[]> {
+  const balances: BigNumber[] = []
+
+  for (let i = 0; i < numOfTokens; i++) {
+    balances.push(await swap.getTokenBalance(i))
+  }
+  return balances
+}
+
+export async function getUserTokenBalances(
+  address: string | Signer,
+  tokens: ERC20[],
+): Promise<BigNumber[]> {
+  const balanceArray: BigNumber[] = []
+
+  if (address instanceof Signer) {
+    address = await address.getAddress()
+  }
+
+  for (const token of tokens) {
+    balanceArray.push(await token.balanceOf(address))
+  }
+
+  return balanceArray
+}
+
+export async function getUserTokenBalance(
+  address: string | Signer,
+  token: ERC20,
+): Promise<BigNumber> {
+  if (address instanceof Signer) {
+    address = await address.getAddress()
+  }
+  return token.balanceOf(address)
+}
 
 // EVM methods
 
