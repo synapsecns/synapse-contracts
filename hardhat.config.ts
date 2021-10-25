@@ -56,6 +56,10 @@ let config: HardhatUserConfig = {
       url: "https://api.avax.network/ext/bc/C/rpc",
       gasPrice: 225 * 1000000000,
     },
+    harmony: {
+      url: "https://harmony-0-rpc.gateway.pokt.network/",
+      gasPrice: 6 * 1000000000,
+    },
     mainnet: {
       url: process.env.ALCHEMY_API,
     },
@@ -130,6 +134,7 @@ if (process.env.PRIVATE_KEYS) {
     "avalanche",
     "mainnet",
     "fantom",
+    "harmony",
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
