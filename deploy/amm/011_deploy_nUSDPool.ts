@@ -21,7 +21,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       (await getChainId()) === CHAIN_ID.ARBITRUM ||
       (await getChainId()) === CHAIN_ID.BSC ||
       (await getChainId()) === CHAIN_ID.HARDHAT ||
-      (await getChainId()) === CHAIN_ID.FANTOM
+      (await getChainId()) === CHAIN_ID.FANTOM ||
+      (await getChainId()) === CHAIN_ID.HARMONY
     ) {
       TOKEN_ADDRESSES = [
         (await get("nUSD")).address,
@@ -33,7 +34,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const LP_TOKEN_NAME = "nUSD LP"
     const LP_TOKEN_SYMBOL = "nUSD-LP"
 
-    const INITIAL_A = 200
+    const INITIAL_A = 600
     const SWAP_FEE = 4e6 // 4bps
     const ADMIN_FEE = 6000000000
 

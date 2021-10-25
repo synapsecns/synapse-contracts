@@ -7,4 +7,5 @@ export const CHAIN_ID = {
   HARDHAT: "31337",
   AVALANCHE: "43114",
   ARBITRUM: "42161",
+  HARMONY: "1666600000",
 }
