@@ -36,6 +36,14 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
     // solium-disable-next-line zeppelin/no-arithmetic-operations
     uint256 constant public HALF_Q = (Q >> 1) + 1;
 
+    // here we define the event types that prefix the arguments in each
+    // hashing operation. These prevent signatures with the same arguments
+    // from being used cross event
+    uint constant WITHDRAW_EVENT_TYPE = 5;
+    uint constant MINT_EVENT_TYPE = 6;
+    uint constant MNINT_AND_SWAP_TYPE = 7;
+    uint constant WITHDRAW_AND_REMOVE_TYPE = 8;
+
     // schnorr_pubkey contains the public key schnorr signatures are verified against.
     address schnorr_pubkey;
 
@@ -102,43 +110,6 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
     }
 
     /**
-     * @notice Relays to nodes to transfers an ERC20 token cross-chain
-   * @param to address on other chain to bridge assets to
-   * @param chainId which chain to bridge assets onto
-   * @param token ERC20 compatible token to deposit into the bridge
-   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   **/
-    function deposit(
-        address to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount,
-        uint256 signature
-    ) external  {
-        hash = keccak256(abi.encodePacked(to, chainId, token, amount));
-        require(verifySignature(signature, hash));
-        BRIDGE.deposit(to, chainId, token, amount, signature);
-    }
-
-    /**
-     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
-   * @param to address on other chain to redeem underlying assets to
-   * @param chainId which underlying chain to bridge assets onto
-   * @param token ERC20 compatible token to deposit into the bridge
-   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   **/
-    function redeem(
-        address to,
-        uint256 chainId,
-        ERC20Burnable token,
-        uint256 amount
-    ) external {
-        hash = keccak256(abi.encodePacked(to, chainId, token, amount));
-        require(verifySignature(signature, hash));
-        BRIDGE.redeem(to, chainId, token, amount);
-    }
-
-    /**
      * @notice Function to be called by the node group to withdraw the underlying assets from the contract
    * @param to address on chain to send underlying assets to
    * @param token ERC20 compatible token to withdraw from the bridge
@@ -153,7 +124,7 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 fee,
         bytes32 kappa
     ) external  {
-        hash = keccak256(abi.encodePacked(to, token, amount, fee, kappa));
+        hash = keccak256(abi.encodePacked(WITHDRAW_EVENT_TYPE, to, token, amount, fee, kappa));
         require(verifySignature(signature, hash));
         BRIDGE.withdraw(to, token, amount, fee, kappa);
     }
@@ -175,85 +146,9 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 fee,
         bytes32 kappa
     ) external  {
-        hash = keccak256(abi.encodePacked(to, token, amount, fee, kappa));
+        hash = keccak256(abi.encodePacked(MINT_EVENT_TYPE, to, token, amount, fee, kappa));
         require(verifySignature(signature, hash));
         BRIDGE.mint(to, token, amount, fee, kappa);
-    }
-
-    /**
-     * @notice Relays to nodes to both transfer an ERC20 token cross-chain, and then have the nodes execute a swap through a liquidity pool on behalf of the user.
-   * @param to address on other chain to bridge assets to
-   * @param chainId which chain to bridge assets onto
-   * @param token ERC20 compatible token to deposit into the bridge
-   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   * @param tokenIndexFrom the token the user wants to swap from
-   * @param tokenIndexTo the token the user wants to swap to
-   * @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
-   * @param deadline latest timestamp to accept this transaction
-   **/
-    function depositAndSwap(
-        address to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount,
-        uint8 tokenIndexFrom,
-        uint8 tokenIndexTo,
-        uint256 minDy,
-        uint256 deadline
-    ) external  {
-        hash = keccak256(abi.encodePacked(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline));
-        require(verifySignature(signature, hash));
-        BRIDGE.depositAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
-    }
-
-    /**
-     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
-   * @param to address on other chain to redeem underlying assets to
-   * @param chainId which underlying chain to bridge assets onto
-   * @param token ERC20 compatible token to deposit into the bridge
-   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   * @param tokenIndexFrom the token the user wants to swap from
-   * @param tokenIndexTo the token the user wants to swap to
-   * @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
-   * @param deadline latest timestamp to accept this transaction
-   **/
-    function redeemAndSwap(
-        address to,
-        uint256 chainId,
-        ERC20Burnable token,
-        uint256 amount,
-        uint8 tokenIndexFrom,
-        uint8 tokenIndexTo,
-        uint256 minDy,
-        uint256 deadline
-    ) external  {
-        hash = keccak256(abi.encodePacked(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline));
-        require(verifySignature(signature, hash));
-        BRIDGE.redeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
-    }
-
-    /**
-     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
-   * @param to address on other chain to redeem underlying assets to
-   * @param chainId which underlying chain to bridge assets onto
-   * @param token ERC20 compatible token to deposit into the bridge
-   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
-   * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
-   * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
-   **/
-    function redeemAndRemove(
-        address to,
-        uint256 chainId,
-        ERC20Burnable token,
-        uint256 amount,
-        uint8 swapTokenIndex,
-        uint256 swapMinAmount,
-        uint256 swapDeadline
-    ) external  {
-        hash = keccak256(abi.encodePacked(to, chainId, token, amount, swapTokenIndex, swapMinAmount, swapDeadline));
-        require(verifySignature(signature, hash));
-        BRIDGE.redeemAndRemove(to, chainId, token, amount, swapTokenIndex, swapMinAmount, swapDeadline);
     }
 
     /**
@@ -282,7 +177,7 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 deadline,
         bytes32 kappa
     ) external  {
-        hash = keccak256(abi.encodePacked(to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa));
+        hash = keccak256(abi.encodePacked(MINT_EVENT_TYPE, to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa));
         require(verifySignature(signature, hash));
         BRIDGE.mintAndSwap(to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa);
     }
@@ -310,7 +205,7 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 swapDeadline,
         bytes32 kappa
     ) external  {
-        hash = keccak256(abi.encodePacked(to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa));
+        hash = keccak256(abi.encodePacked(WITHDRAW_AND_REMOVE_TYPE, to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa));
         require(verifySignature(signature, hash));
         BRIDGE.mintAndSwap(to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa);
     }
