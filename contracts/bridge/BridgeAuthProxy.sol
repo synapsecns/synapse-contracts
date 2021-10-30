@@ -29,14 +29,71 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
 
     bytes32 public constant GOVERNANCE_ROLE = keccak256('GOVERNANCE_ROLE');
 
-    receive() external payable {
-        // TODO: pass payments to synapse bridge
-    }
+    // See https://en.bitcoin.it/wiki/Secp256k1 for this constant.
+    uint256 constant public Q = // Group order of secp256k1
+    // solium-disable-next-line indentation
+    0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
+    // solium-disable-next-line zeppelin/no-arithmetic-operations
+    uint256 constant public HALF_Q = (Q >> 1) + 1;
+
+    // schnorr_pubkey contains the public key schnorr signatures are verified against.
+    address schnorr_pubkey;
 
     function initialize() external initializer {
         // initialize initializes the auth proxy
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         __AccessControl_init();
+    }
+
+    function setSchnorrPubKey(address pubkey){
+        schnorr_pubkey = pubkey;
+    }
+
+    function verifySignature(
+        uint256 signingPubKeyX,
+        uint8 pubKeyYParity,
+        uint256 signature,
+        uint256 msgHash,
+        address nonceTimesGeneratorAddress) external pure returns (bool) {
+        require(signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
+        // Avoid signature malleability from multiple representations for ℤ/Qℤ elts
+        require(signature < Q, "signature must be reduced modulo Q");
+
+        // Forbid trivial inputs, to avoid ecrecover edge cases. The main thing to
+        // avoid is something which causes ecrecover to return 0x0: then trivial
+        // signatures could be constructed with the nonceTimesGeneratorAddress input
+        // set to 0x0.
+        //
+        // solium-disable-next-line indentation
+        require(nonceTimesGeneratorAddress != address(0) && signingPubKeyX > 0 &&
+        signature > 0 && msgHash > 0, "no zero inputs allowed");
+
+        // solium-disable-next-line indentation
+        uint256 msgChallenge = // "e"
+        // solium-disable-next-line indentation
+        uint256(keccak256(abi.encodePacked(signingPubKeyX, pubKeyYParity,
+            msgHash, nonceTimesGeneratorAddress))
+        );
+
+        // Verify msgChallenge * signingPubKey + signature * generator ==
+        //        nonce * generator
+        //
+        // https://ethresear.ch/t/you-can-kinda-abuse-ecrecover-to-do-ecmul-in-secp256k1-today/2384/9
+        // The point corresponding to the address returned by
+        // ecrecover(-s*r,v,r,e*r) is (r⁻¹ mod Q)*(e*r*R-(-s)*r*g)=e*R+s*g, where R
+        // is the (v,r) point. See https://crypto.stackexchange.com/a/18106
+        //
+        // solium-disable-next-line indentation
+        address recoveredAddress = ecrecover(
+        // solium-disable-next-line zeppelin/no-arithmetic-operations
+            bytes32(Q - mulmod(signingPubKeyX, signature, Q)),
+        // https://ethereum.github.io/yellowpaper/paper.pdf p. 24, "The
+        // value 27 represents an even y value and 28 represents an odd
+        // y value."
+            (pubKeyYParity == 0) ? 27 : 28,
+            bytes32(signingPubKeyX),
+            bytes32(mulmod(msgChallenge, signingPubKeyX, Q)));
+        return nonceTimesGeneratorAddress == recoveredAddress;
     }
 
     function setBridgeAddress(address payable _bridgeAddress){
@@ -57,8 +114,9 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         IERC20 token,
         uint256 amount,
         uint256 signature
-    ) external nonReentrant() whenNotPaused() {
-        require(verifySignature(signature));
+    ) external  {
+        hash = keccak256(abi.encodePacked(to, chainId, token, amount));
+        require(verifySignature(signature, hash));
         BRIDGE.deposit(to, chainId, token, amount, signature);
     }
 
@@ -74,9 +132,10 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 chainId,
         ERC20Burnable token,
         uint256 amount
-    ) external nonReentrant() whenNotPaused() {
-        emit TokenRedeem(to, chainId, token, amount);
-        token.burnFrom(msg.sender, amount);
+    ) external {
+        hash = keccak256(abi.encodePacked(to, chainId, token, amount));
+        require(verifySignature(signature, hash));
+        BRIDGE.redeem(to, chainId, token, amount);
     }
 
     /**
@@ -93,21 +152,10 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 amount,
         uint256 fee,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
-        require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
-        require(amount > fee, 'Amount must be greater than fee');
-        require(!kappaMap[kappa], 'Kappa is already present');
-        kappaMap[kappa] = true;
-        fees[address(token)] = fees[address(token)].add(fee);
-        if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
-            IWETH9(WETH_ADDRESS).withdraw(amount.sub(fee));
-            (bool success, ) = to.call{value: amount.sub(fee)}("");
-            require(success, "ETH_TRANSFER_FAILED");
-            emit TokenWithdraw(to, token, amount, fee, kappa);
-        } else {
-            emit TokenWithdraw(to, token, amount, fee, kappa);
-            token.safeTransfer(to, amount.sub(fee));
-        }
+    ) external  {
+        hash = keccak256(abi.encodePacked(to, token, amount, fee, kappa));
+        require(verifySignature(signature, hash));
+        BRIDGE.withdraw(to, token, amount, fee, kappa);
     }
 
 
@@ -126,18 +174,10 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 amount,
         uint256 fee,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
-        require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
-        require(amount > fee, 'Amount must be greater than fee');
-        require(!kappaMap[kappa], 'Kappa is already present');
-        kappaMap[kappa] = true;
-        fees[address(token)] = fees[address(token)].add(fee);
-        emit TokenMint(to, token, amount.sub(fee), fee, kappa);
-        token.mint(address(this), amount);
-        IERC20(token).safeTransfer(to, amount.sub(fee));
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.transfer(chainGasAmount);
-        }
+    ) external  {
+        hash = keccak256(abi.encodePacked(to, token, amount, fee, kappa));
+        require(verifySignature(signature, hash));
+        BRIDGE.mint(to, token, amount, fee, kappa);
     }
 
     /**
@@ -160,18 +200,10 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint8 tokenIndexTo,
         uint256 minDy,
         uint256 deadline
-    ) external nonReentrant() whenNotPaused() {
-        emit TokenDepositAndSwap(
-            to,
-            chainId,
-            token,
-            amount,
-            tokenIndexFrom,
-            tokenIndexTo,
-            minDy,
-            deadline
-        );
-        token.safeTransferFrom(msg.sender, address(this), amount);
+    ) external  {
+        hash = keccak256(abi.encodePacked(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline));
+        require(verifySignature(signature, hash));
+        BRIDGE.depositAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
     }
 
     /**
@@ -194,18 +226,10 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint8 tokenIndexTo,
         uint256 minDy,
         uint256 deadline
-    ) external nonReentrant() whenNotPaused() {
-        emit TokenRedeemAndSwap(
-            to,
-            chainId,
-            token,
-            amount,
-            tokenIndexFrom,
-            tokenIndexTo,
-            minDy,
-            deadline
-        );
-        token.burnFrom(msg.sender, amount);
+    ) external  {
+        hash = keccak256(abi.encodePacked(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline));
+        require(verifySignature(signature, hash));
+        BRIDGE.redeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
     }
 
     /**
@@ -226,17 +250,10 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint8 swapTokenIndex,
         uint256 swapMinAmount,
         uint256 swapDeadline
-    ) external nonReentrant() whenNotPaused() {
-        emit TokenRedeemAndRemove(
-            to,
-            chainId,
-            token,
-            amount,
-            swapTokenIndex,
-            swapMinAmount,
-            swapDeadline
-        );
-        token.burnFrom(msg.sender, amount);
+    ) external  {
+        hash = keccak256(abi.encodePacked(to, chainId, token, amount, swapTokenIndex, swapMinAmount, swapDeadline));
+        require(verifySignature(signature, hash));
+        BRIDGE.redeemAndRemove(to, chainId, token, amount, swapTokenIndex, swapMinAmount, swapDeadline);
     }
 
     /**
@@ -264,56 +281,10 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 minDy,
         uint256 deadline,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
-        require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
-        require(amount > fee, 'Amount must be greater than fee');
-        require(!kappaMap[kappa], 'Kappa is already present');
-        kappaMap[kappa] = true;
-        fees[address(token)] = fees[address(token)].add(fee);
-        // Transfer gas airdrop
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.transfer(chainGasAmount);
-        }
-        // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = IMetaSwapDeposit(pool).calculateSwap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            amount.sub(fee)
-        );
-
-        if (expectedOutput >= minDy) {
-            // proceed with swap
-            token.mint(address(this), amount);
-            token.safeIncreaseAllowance(address(pool), amount);
-            try
-            IMetaSwapDeposit(pool).swap(
-                tokenIndexFrom,
-                tokenIndexTo,
-                amount.sub(fee),
-                minDy,
-                deadline
-            )
-            returns (uint256 finalSwappedAmount) {
-                // Swap succeeded, transfer swapped asset
-                IERC20 swappedTokenTo = IMetaSwapDeposit(pool).getToken(tokenIndexTo);
-                if (address(swappedTokenTo) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
-                    IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
-                    (bool success, ) = to.call{value: finalSwappedAmount}("");
-                    require(success, "ETH_TRANSFER_FAILED");
-                    emit TokenMintAndSwap(to, token, finalSwappedAmount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, true, kappa);
-                } else {
-                    swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-                    emit TokenMintAndSwap(to, token, finalSwappedAmount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, true, kappa);
-                }
-            } catch {
-                IERC20(token).safeTransfer(to, amount.sub(fee));
-                emit TokenMintAndSwap(to, token, amount.sub(fee), fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
-            }
-        } else {
-            token.mint(address(this), amount);
-            IERC20(token).safeTransfer(to, amount.sub(fee));
-            emit TokenMintAndSwap(to, token, amount.sub(fee), fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
-        }
+    ) external  {
+        hash = keccak256(abi.encodePacked(to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa));
+        require(verifySignature(signature, hash));
+        BRIDGE.mintAndSwap(to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa);
     }
 
     /**
@@ -338,39 +309,9 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 swapMinAmount,
         uint256 swapDeadline,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
-        require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
-        require(amount > fee, 'Amount must be greater than fee');
-        require(!kappaMap[kappa], 'Kappa is already present');
-        kappaMap[kappa] = true;
-        fees[address(token)] = fees[address(token)].add(fee);
-        // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
-            amount.sub(fee),
-            swapTokenIndex
-        );
-
-        if (expectedOutput >= swapMinAmount) {
-            token.safeIncreaseAllowance(address(pool), amount.sub(fee));
-            try
-            ISwap(pool).removeLiquidityOneToken(
-                amount.sub(fee),
-                swapTokenIndex,
-                swapMinAmount,
-                swapDeadline
-            )
-            returns (uint256 finalSwappedAmount) {
-                // Swap succeeded, transfer swapped asset
-                IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
-                swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-                emit TokenWithdrawAndRemove(to, token, finalSwappedAmount, fee, swapTokenIndex, swapMinAmount, swapDeadline, true, kappa);
-            } catch {
-                IERC20(token).safeTransfer(to, amount.sub(fee));
-                emit TokenWithdrawAndRemove(to, token, amount.sub(fee), fee, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
-            }
-        } else {
-            token.safeTransfer(to, amount.sub(fee));
-            emit TokenWithdrawAndRemove(to, token, amount.sub(fee), fee, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
-        }
+    ) external  {
+        hash = keccak256(abi.encodePacked(to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa));
+        require(verifySignature(signature, hash));
+        BRIDGE.mintAndSwap(to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa);
     }
 }
