@@ -37,7 +37,7 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
     // from being used cross event
     uint constant WITHDRAW_EVENT_TYPE = 5;
     uint constant MINT_EVENT_TYPE = 6;
-    uint constant MNINT_AND_SWAP_TYPE = 7;
+    uint constant MINT_AND_SWAP_TYPE = 7;
     uint constant WITHDRAW_AND_REMOVE_TYPE = 8;
 
     // schnorr_pubkey contains the public key schnorr signatures are verified against.
@@ -247,7 +247,7 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         bytes32 kappa,
         uint256 signature
     ) external  {
-        uint256 hash = uint256(keccak256(abi.encodePacked(MINT_EVENT_TYPE, to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa)));
+        uint256 hash = uint256(keccak256(abi.encodePacked(MINT_AND_SWAP_TYPE, to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa)));
         require(verifySignature(signature, hash));
         BRIDGE.mintAndSwap(to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa);
     }
