@@ -69,7 +69,7 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
     }
 
     /** **************************************************************************
-@notice verifySignature returns true iff passed a valid Schnorr signature.
+    @notice verifySignature returns true iff passed a valid Schnorr signature.
       @dev See https://en.wikipedia.org/wiki/Schnorr_signature for reference.
       @dev In what follows, let d be your secret key, PK be your public key,
       PKx be the x ordinate of your public key, and PKyp be the parity bit for
