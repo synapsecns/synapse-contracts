@@ -16,10 +16,6 @@ import './interfaces/ISwap.sol';
 import './interfaces/IWETH9.sol';
 import "./interfaces/ISynapseBridge.sol";
 
-interface IERC20Mintable is IERC20 {
-    function mint(address to, uint256 amount) external;
-}
-
 contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Mintable;
@@ -46,6 +42,8 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
 
     // schnorr_pubkey contains the public key schnorr signatures are verified against.
     address schnorr_pubkey;
+    uint256 signingPubKeyX;
+    uint8 pubKeyYParity;
 
     function initialize() external initializer {
         // initialize initializes the auth proxy
@@ -53,19 +51,9 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         __AccessControl_init();
     }
 
-    function setSchnorrPubKey(address pubkey){
-        schnorr_pubkey = pubkey;
-    }
-
-    function verifySignature(
-        uint256 signingPubKeyX,
-        uint8 pubKeyYParity,
-        uint256 signature,
-        uint256 msgHash,
-        address nonceTimesGeneratorAddress) external pure returns (bool) {
-        require(signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
-        // Avoid signature malleability from multiple representations for ℤ/Qℤ elts
-        require(signature < Q, "signature must be reduced modulo Q");
+    function setSchnorrPubKey(uint256 _signingPubKeyX, uint8 _pubKeyYParity, address _schnorr_pubkey) external {
+        require(hasRole(GOVERNANCE_ROLE, msg.sender));
+        require(_signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
 
         // Forbid trivial inputs, to avoid ecrecover edge cases. The main thing to
         // avoid is something which causes ecrecover to return 0x0: then trivial
@@ -73,14 +61,93 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         // set to 0x0.
         //
         // solium-disable-next-line indentation
-        require(nonceTimesGeneratorAddress != address(0) && signingPubKeyX > 0 &&
-        signature > 0 && msgHash > 0, "no zero inputs allowed");
+        require(_schnorr_pubkey != address(0) && _signingPubKeyX > 0);
+
+        signingPubKeyX =  _signingPubKeyX;
+        schnorr_pubkey = _schnorr_pubkey;
+        pubKeyYParity = _pubKeyYParity;
+    }
+
+    /** **************************************************************************
+@notice verifySignature returns true iff passed a valid Schnorr signature.
+      @dev See https://en.wikipedia.org/wiki/Schnorr_signature for reference.
+      @dev In what follows, let d be your secret key, PK be your public key,
+      PKx be the x ordinate of your public key, and PKyp be the parity bit for
+      the y ordinate (i.e., 0 if PKy is even, 1 if odd.)
+      **************************************************************************
+      @dev TO CREATE A VALID SIGNATURE FOR THIS METHOD
+      @dev First PKx must be less than HALF_Q. Then follow these instructions
+           (see evm/test/schnorr_test.js, for an example of carrying them out):
+      @dev 1. Hash the target message to a uint256, called _msgHash here, using
+              keccak256
+      @dev 2. Pick k uniformly and cryptographically securely randomly from
+              {0,...,Q-1}. It is critical that k remains confidential, as your
+              private key can be reconstructed from k and the signature.
+      @dev 3. Compute k*g in the secp256k1 group, where g is the group
+              generator. (This is the same as computing the public key from the
+              secret key k. But it's OK if k*g's x ordinate is greater than
+              HALF_Q.)
+      @dev 4. Compute the ethereum address for k*g. This is the lower 160 bits
+              of the keccak hash of the concatenated affine coordinates of k*g,
+              as 32-byte big-endians. (For instance, you could pass k to
+              ethereumjs-utils's privateToAddress to compute this, though that
+              should be strictly a development convenience, not for handling
+              live secrets, unless you've locked your javascript environment
+              down very carefully.) Call this address
+              nonceTimesGeneratorAddress.
+      @dev 5. Compute e=uint256(keccak256(PKx as a 32-byte big-endian
+                                        ‖ PKyp as a single byte
+                                        ‖ _msgHash
+                                        ‖ nonceTimesGeneratorAddress))
+              This value e is called "msgChallenge" in verifySignature's source
+              code below. Here "‖" means concatenation of the listed byte
+              arrays.
+      @dev 6. Let x be your secret key. Compute s = (k - d * e) % Q. Add Q to
+              it, if it's negative. This is your _signature. (d is your secret
+              key.)
+      **************************************************************************
+      @dev TO VERIFY A SIGNATURE
+      @dev Given a signature (s, e) of _msgHash, constructed as above, compute
+      S=e*PK+s*generator in the secp256k1 group law, and then the ethereum
+      address of S, as described in step 4. Call that
+      _nonceTimesGeneratorAddress. Then call the verifySignature method as:
+      @dev    verifySignature(PKx, PKyp, s, _msgHash,
+                              _nonceTimesGeneratorAddress)
+      **************************************************************************
+      @dev This signging scheme deviates slightly from the classical Schnorr
+      signature, in that the address of k*g is used in place of k*g itself,
+      both when calculating e and when verifying sum S as described in the
+      verification paragraph above. This reduces the difficulty of
+      brute-forcing a signature by trying random secp256k1 points in place of
+      k*g in the signature verification process from 256 bits to 160 bits.
+      However, the difficulty of cracking the public key using "baby-step,
+      giant-step" is only 128 bits, so this weakening constitutes no compromise
+      in the security of the signatures or the key.
+      @dev The constraint _signingPubKeyX < HALF_Q comes from Eq. (281), p. 24
+      of Yellow Paper version 78d7b9a. ecrecover only accepts "s" inputs less
+      than HALF_Q, to protect against a signature- malleability vulnerability in
+      ECDSA. Schnorr does not have this vulnerability, but we must account for
+      ecrecover's defense anyway. And since we are abusing ecrecover by putting
+      _signingPubKeyX in ecrecover's "s" argument the constraint applies to
+      _signingPubKeyX, even though it represents a value in the base field, and
+      has no natural relationship to the order of the curve's cyclic group.
+      **************************************************************************
+      @param signature to validate against schnorr pub key
+      @param msgHash hash of the signed message.
+      **************************************************************************
+      @return True if passed a valid signature, false otherwise. */
+    function verifySignature(
+        uint256 signature,
+        uint256 msgHash) internal returns (bool) {
+        // ignore trivial inputs
+        require(signature > 0 && msgHash > 0, "no zero inputs allowed");
+        require(signature < Q, "signature must be reduced modulo Q");
 
         // solium-disable-next-line indentation
         uint256 msgChallenge = // "e"
         // solium-disable-next-line indentation
         uint256(keccak256(abi.encodePacked(signingPubKeyX, pubKeyYParity,
-            msgHash, nonceTimesGeneratorAddress))
+            msgHash, schnorr_pubkey))
         );
 
         // Verify msgChallenge * signingPubKey + signature * generator ==
@@ -101,10 +168,10 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
             (pubKeyYParity == 0) ? 27 : 28,
             bytes32(signingPubKeyX),
             bytes32(mulmod(msgChallenge, signingPubKeyX, Q)));
-        return nonceTimesGeneratorAddress == recoveredAddress;
+        return schnorr_pubkey == recoveredAddress;
     }
 
-    function setBridgeAddress(address payable _bridgeAddress){
+    function setBridgeAddress(address payable _bridgeAddress) external {
         require(hasRole(GOVERNANCE_ROLE, msg.sender));
         BRIDGE = ISynapseBridge(_bridgeAddress);
     }
@@ -122,9 +189,10 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         IERC20 token,
         uint256 amount,
         uint256 fee,
-        bytes32 kappa
+        bytes32 kappa,
+        uint256 signature
     ) external  {
-        hash = keccak256(abi.encodePacked(WITHDRAW_EVENT_TYPE, to, token, amount, fee, kappa));
+        uint256 hash = uint256(keccak256(abi.encodePacked(WITHDRAW_EVENT_TYPE, to, token, amount, fee, kappa)));
         require(verifySignature(signature, hash));
         BRIDGE.withdraw(to, token, amount, fee, kappa);
     }
@@ -144,9 +212,10 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         IERC20Mintable token,
         uint256 amount,
         uint256 fee,
-        bytes32 kappa
+        bytes32 kappa,
+        uint256 signature
     ) external  {
-        hash = keccak256(abi.encodePacked(MINT_EVENT_TYPE, to, token, amount, fee, kappa));
+        uint256 hash = uint256(keccak256(abi.encodePacked(MINT_EVENT_TYPE, to, token, amount, fee, kappa)));
         require(verifySignature(signature, hash));
         BRIDGE.mint(to, token, amount, fee, kappa);
     }
@@ -175,9 +244,10 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint8 tokenIndexTo,
         uint256 minDy,
         uint256 deadline,
-        bytes32 kappa
+        bytes32 kappa,
+        uint256 signature
     ) external  {
-        hash = keccak256(abi.encodePacked(MINT_EVENT_TYPE, to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa));
+        uint256 hash = uint256(keccak256(abi.encodePacked(MINT_EVENT_TYPE, to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa)));
         require(verifySignature(signature, hash));
         BRIDGE.mintAndSwap(to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa);
     }
@@ -203,10 +273,11 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint8 swapTokenIndex,
         uint256 swapMinAmount,
         uint256 swapDeadline,
-        bytes32 kappa
+        bytes32 kappa,
+        uint256 signature
     ) external  {
-        hash = keccak256(abi.encodePacked(WITHDRAW_AND_REMOVE_TYPE, to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa));
+        uint256 hash = uint256(keccak256(abi.encodePacked(WITHDRAW_AND_REMOVE_TYPE, to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa)));
         require(verifySignature(signature, hash));
-        BRIDGE.mintAndSwap(to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa);
+        BRIDGE.withdrawAndRemove(to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa);
     }
 }
