@@ -14,12 +14,13 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 import './interfaces/IMetaSwapDeposit.sol';
 import './interfaces/ISwap.sol';
 import './interfaces/IWETH9.sol';
+import {ISynapseBridge} from './interfaces/ISynapseBridge.sol';
 
 interface IERC20Mintable is IERC20 {
   function mint(address to, uint256 amount) external;
 }
 
-contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
+contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable, ISynapseBridge {
   using SafeERC20 for IERC20;
   using SafeERC20 for IERC20Mintable;
   using SafeMath for uint256;
