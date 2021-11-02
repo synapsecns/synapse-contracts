@@ -405,6 +405,8 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 signature,
         address commitmentAddress
     ) external  {
+        // TODO: https://ethereum.stackexchange.com/questions/56749/retrieve-chain-id-of-the-executing-chain-from-a-solidity-contract
+        // each of these need to add a chainid() for replay protection.
         uint256 hash = uint256(keccak256(abi.encode(MINT_EVENT_TYPE, to, token, amount, fee, kappa)));
         require(verifySignature(signature, hash, commitmentAddress));
         BRIDGE.mint(to, token, amount, fee, kappa);
