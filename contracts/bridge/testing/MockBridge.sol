@@ -6,7 +6,6 @@ import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
 import "../interfaces/IMetaSwapDeposit.sol";
 import "../interfaces/ISwap.sol";
-import {ISynapseBridge} from '../interfaces/ISynapseBridge.sol';
 
 
 interface IERC20Mintable is IERC20 {
@@ -14,7 +13,7 @@ interface IERC20Mintable is IERC20 {
 }
 
 // MockBridge is a bridge which does nothing and is used to test the auth proxy
-contract MockBridge is ISynapseBridge {
+contract MockBridge {
     using SafeERC20 for IERC20;
 
     function deposit(

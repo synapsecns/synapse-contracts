@@ -42,7 +42,6 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
     uint constant public WITHDRAW_AND_REMOVE_TYPE = 8;
 
     // schnorr_pubkey contains the public key schnorr signatures are verified against.
-    address public schnorr_pubkey;
     uint256 public signingPubKeyX;
     uint8 public pubKeyYParity;
 
@@ -52,20 +51,13 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         __AccessControl_init();
     }
 
-    function setSchnorrPubKey(uint256 _signingPubKeyX, uint8 _pubKeyYParity, address _schnorr_pubkey) external {
+    // TODO: this needs to be callable by a schnorr sig function
+    function setSchnorrPubKey(uint256 _signingPubKeyX, uint8 _pubKeyYParity) external {
         require(hasRole(GOVERNANCE_ROLE, msg.sender));
         require(_signingPubKeyX < HALF_Q, "Public-key x >= HALF_Q");
-
-        // Forbid trivial inputs, to avoid ecrecover edge cases. The main thing to
-        // avoid is something which causes ecrecover to return 0x0: then trivial
-        // signatures could be constructed with the nonceTimesGeneratorAddress input
-        // set to 0x0.
-        //
-        // solium-disable-next-line indentation
-        require(_schnorr_pubkey != address(0) && _signingPubKeyX > 0);
+        require(_signingPubKeyX > 0);
 
         signingPubKeyX =  _signingPubKeyX;
-        schnorr_pubkey = _schnorr_pubkey;
         pubKeyYParity = _pubKeyYParity;
     }
 
@@ -135,20 +127,30 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
       **************************************************************************
       @param signature to validate against schnorr pub key
       @param msgHash hash of the signed message.
+      @param nonceTimesGeneratorAddress is the ethereum address of k*g in the
+             above instructions
       **************************************************************************
       @return True if passed a valid signature, false otherwise. */
     function verifySignature(
         uint256 signature,
-        uint256 msgHash) internal returns (bool) {
+        uint256 msgHash, address nonceTimesGeneratorAddress) internal returns (bool) {
         // ignore trivial inputs
         require(signature > 0 && msgHash > 0, "no zero inputs allowed");
         require(signature < Q, "signature must be reduced modulo Q");
 
+        // Forbid trivial inputs, to avoid ecrecover edge cases. The main thing to
+        // avoid is something which causes ecrecover to return 0x0: then trivial
+        // signatures could be constructed with the nonceTimesGeneratorAddress input
+        // set to 0x0.
+        //
+        // solium-disable-next-line indentation
+        require(nonceTimesGeneratorAddress != address(0));
+
         // solium-disable-next-line indentation
         uint256 msgChallenge = // "e"
         // solium-disable-next-line indentation
-        uint256(keccak256(abi.encodePacked(signingPubKeyX, pubKeyYParity,
-            msgHash, schnorr_pubkey))
+        uint256(keccak256(abi.encode(signingPubKeyX, pubKeyYParity,
+            msgHash, nonceTimesGeneratorAddress))
         );
 
         // Verify msgChallenge * signingPubKey + signature * generator ==
@@ -169,7 +171,7 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
             (pubKeyYParity == 0) ? 27 : 28,
             bytes32(signingPubKeyX),
             bytes32(mulmod(msgChallenge, signingPubKeyX, Q)));
-        return schnorr_pubkey == recoveredAddress;
+        return nonceTimesGeneratorAddress == recoveredAddress;
     }
 
     function setBridgeAddress(address payable _bridgeAddress) external {
@@ -191,10 +193,11 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 amount,
         uint256 fee,
         bytes32 kappa,
-        uint256 signature
+        uint256 signature,
+        address commitmentAddress
     ) external  {
-        uint256 hash = uint256(keccak256(abi.encodePacked(WITHDRAW_EVENT_TYPE, to, token, amount, fee, kappa)));
-        require(verifySignature(signature, hash));
+        uint256 hash = uint256(keccak256(abi.encode(WITHDRAW_EVENT_TYPE, to, token, amount, fee, kappa)));
+        require(verifySignature(signature, hash, commitmentAddress));
         BRIDGE.withdraw(to, token, amount, fee, kappa);
     }
 
@@ -214,10 +217,11 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 amount,
         uint256 fee,
         bytes32 kappa,
-        uint256 signature
+        uint256 signature,
+        address commitmentAddress
     ) external  {
-        uint256 hash = uint256(keccak256(abi.encodePacked(MINT_EVENT_TYPE, to, token, amount, fee, kappa)));
-        require(verifySignature(signature, hash));
+        uint256 hash = uint256(keccak256(abi.encode(MINT_EVENT_TYPE, to, token, amount, fee, kappa)));
+        require(verifySignature(signature, hash, commitmentAddress));
         BRIDGE.mint(to, token, amount, fee, kappa);
     }
 
@@ -246,10 +250,11 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 minDy,
         uint256 deadline,
         bytes32 kappa,
-        uint256 signature
+        uint256 signature,
+        address commitmentAddress
     ) external  {
-        uint256 hash = uint256(keccak256(abi.encodePacked(MINT_AND_SWAP_TYPE, to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa)));
-        require(verifySignature(signature, hash));
+        uint256 hash = uint256(keccak256(abi.encode(MINT_AND_SWAP_TYPE, to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa)));
+        require(verifySignature(signature, hash, commitmentAddress));
         BRIDGE.mintAndSwap(to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa);
     }
 
@@ -275,10 +280,11 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
         uint256 swapMinAmount,
         uint256 swapDeadline,
         bytes32 kappa,
-        uint256 signature
+        uint256 signature,
+        address commitmentAddress
     ) external  {
-        uint256 hash = uint256(keccak256(abi.encodePacked(WITHDRAW_AND_REMOVE_TYPE, to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa)));
-        require(verifySignature(signature, hash));
+        uint256 hash = uint256(keccak256(abi.encode(WITHDRAW_AND_REMOVE_TYPE, to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa)));
+        require(verifySignature(signature, hash, commitmentAddress));
         BRIDGE.withdrawAndRemove(to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa);
     }
 }
