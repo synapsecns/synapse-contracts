@@ -14,7 +14,7 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 import './interfaces/IMetaSwapDeposit.sol';
 import './interfaces/ISwap.sol';
 import './interfaces/IWETH9.sol';
-import "./interfaces/ISynapseBridge.sol";
+import './interfaces/ISynapseBridge.sol';
 
 contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
     using SafeERC20 for IERC20;
@@ -35,15 +35,16 @@ contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
     // here we define the event types that prefix the arguments in each
     // hashing operation. These prevent signatures with the same arguments
     // from being used cross event
-    uint constant WITHDRAW_EVENT_TYPE = 5;
-    uint constant MINT_EVENT_TYPE = 6;
-    uint constant MINT_AND_SWAP_TYPE = 7;
-    uint constant WITHDRAW_AND_REMOVE_TYPE = 8;
+    // @dev if these are modified, they should be updated in contracts/bridgeauth/bridgeauth_test.go
+    uint constant public WITHDRAW_EVENT_TYPE = 5;
+    uint constant public MINT_EVENT_TYPE = 6;
+    uint constant public MINT_AND_SWAP_TYPE = 7;
+    uint constant public WITHDRAW_AND_REMOVE_TYPE = 8;
 
     // schnorr_pubkey contains the public key schnorr signatures are verified against.
-    address schnorr_pubkey;
-    uint256 signingPubKeyX;
-    uint8 pubKeyYParity;
+    address public schnorr_pubkey;
+    uint256 public signingPubKeyX;
+    uint8 public pubKeyYParity;
 
     function initialize() external initializer {
         // initialize initializes the auth proxy
