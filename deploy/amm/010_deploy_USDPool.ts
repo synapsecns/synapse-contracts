@@ -20,7 +20,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       (await getChainId()) === CHAIN_ID.POLYGON ||
       (await getChainId()) === CHAIN_ID.AVALANCHE ||
       (await getChainId()) === CHAIN_ID.ARBITRUM ||
-      (await getChainId()) === CHAIN_ID.HARDHAT
+      (await getChainId()) === CHAIN_ID.HARDHAT ||
+      (await getChainId()) === CHAIN_ID.HARMONY
     ) {
       TOKEN_ADDRESSES = [
         (await get("DAI")).address,

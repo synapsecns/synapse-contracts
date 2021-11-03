@@ -37,7 +37,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
-  if ((await getChainId()) === "250") {
+  if ((await getChainId()) === "1666600000") {
     await deploy("NerveMetaBridgeZap", {
       from: deployer,
       log: true,
