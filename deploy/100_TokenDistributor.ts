@@ -6,11 +6,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get } = deployments
   const { deployer } = await getNamedAccounts()
   if ((await getChainId()) === '56') {
-    await deploy('TokenDistributor', {
+    await deploy('VestTokenDistributor', {
+      contract: "TokenDistributor",
       from: deployer,
       log: true,
       skipIfAlreadyDeployed: true,
-      args: [(await get('SynapseToken')).address],
+      args: ["0x42F6f551ae042cBe50C739158b4f0CAC0Edb9096"],
     })
   }
 }
