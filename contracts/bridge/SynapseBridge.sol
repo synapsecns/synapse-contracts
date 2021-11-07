@@ -30,7 +30,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   mapping(address => uint256) private fees;
 
   uint256 public startBlockNumber;
-  uint256 public constant bridgeVersion = 5;
+  uint256 public constant bridgeVersion = 6;
   uint256 public chainGasAmount;
   address payable public WETH_ADDRESS;
 
@@ -52,6 +52,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
   function setWethAddress(address payable _wethAddress) external {
     require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
     WETH_ADDRESS = _wethAddress;
+  }
+
+    function addKappas(bytes32[] calldata kappas) external {
+    require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+    for (uint256 i = 0; i < kappas.length; ++i) {
+      kappaMap[kappas[i]] = true;
+    }
   }
 
   event TokenDeposit(
