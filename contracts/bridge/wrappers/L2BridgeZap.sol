@@ -3,66 +3,66 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "../interfaces/IMetaSwapDeposit.sol";
+import "../interfaces/ISwap.sol";
 import "../interfaces/ISynapseBridge.sol";
 import "../interfaces/IWETH9.sol";
 
-contract NerveMetaBridgeZap {
+contract L2BridgeZap {
     using SafeERC20 for IERC20;
 
     ISynapseBridge synapseBridge;
     address payable public immutable WETH_ADDRESS;
 
-    mapping(address => address) public metaSwapMap;
-    mapping(address => IERC20[]) public metaSwapTokensMap;
+    mapping(address => address) public swapMap;
+    mapping(address => IERC20[]) public swapTokensMap;
 
     uint256 constant MAX_UINT256 = 2**256 - 1;
 
     constructor(
         address payable _wethAddress,
-        address _metaSwapOne,
+        address _swapOne,
         address tokenOne,
-        address _metaSwapTwo,
+        address _swapTwo,
         address tokenTwo,
         ISynapseBridge _synapseBridge
     ) public {
         WETH_ADDRESS = _wethAddress;
         synapseBridge = _synapseBridge;
-        metaSwapMap[tokenOne] = _metaSwapOne;
-        metaSwapMap[tokenTwo] = _metaSwapTwo;
+        swapMap[tokenOne] = _swapOne;
+        swapMap[tokenTwo] = _swapTwo;
 
-        if (address(_metaSwapOne) != address(0)) {
+        if (address(_swapOne) != address(0)) {
             {
                 uint8 i;
                 for (; i < 32; i++) {
-                    try IMetaSwapDeposit(_metaSwapOne).getToken(i) returns (
+                    try ISwap(_swapOne).getToken(i) returns (
                         IERC20 token
                     ) {
-                        metaSwapTokensMap[_metaSwapOne].push(token);
-                        token.safeApprove(address(_metaSwapOne), MAX_UINT256);
+                        swapTokensMap[_swapOne].push(token);
+                        token.safeApprove(address(_swapOne), MAX_UINT256);
                         token.safeApprove(address(synapseBridge), MAX_UINT256);
                     } catch {
                         break;
                     }
                 }
-                require(i > 1, "metaSwap must have at least 2 tokens");
+                require(i > 1, "swap must have at least 2 tokens");
             }
         }
-        if (address(_metaSwapTwo) != address(0)) {
+        if (address(_swapTwo) != address(0)) {
             {
                 uint8 i;
                 for (; i < 32; i++) {
-                    try IMetaSwapDeposit(_metaSwapTwo).getToken(i) returns (
+                    try ISwap(_swapTwo).getToken(i) returns (
                         IERC20 token
                     ) {
-                        metaSwapTokensMap[_metaSwapTwo].push(token);
-                        token.safeApprove(address(_metaSwapTwo), MAX_UINT256);
+                        swapTokensMap[_swapTwo].push(token);
+                        token.safeApprove(address(_swapTwo), MAX_UINT256);
                         token.safeApprove(address(synapseBridge), MAX_UINT256);
                     } catch {
                         break;
                     }
                 }
-                require(i > 1, "metaSwap must have at least 2 tokens");
+                require(i > 1, "swap must have at least 2 tokens");
             }
         }
     }
@@ -81,10 +81,10 @@ contract NerveMetaBridgeZap {
         uint8 tokenIndexTo,
         uint256 dx
     ) external view virtual returns (uint256) {
-        IMetaSwapDeposit metaSwap = IMetaSwapDeposit(
-            metaSwapMap[address(token)]
+        ISwap swap = ISwap(
+            swapMap[address(token)]
         );
-        return metaSwap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+        return swap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
     }
 
     function swapAndRedeem(
@@ -97,19 +97,17 @@ contract NerveMetaBridgeZap {
         uint256 minDy,
         uint256 deadline
     ) external {
-        IMetaSwapDeposit metaSwap = IMetaSwapDeposit(
-            metaSwapMap[address(token)]
-        );
-        require(address(metaSwap) != address(0), "Metaswap is 0x00");
-        IERC20[] memory metaTokens = metaSwapTokensMap[address(metaSwap)];
-        metaTokens[tokenIndexFrom].safeTransferFrom(
+        ISwap swap = ISwap(swapMap[address(token)]);
+        require(address(swap) != address(0), "Swap is 0x00");
+        IERC20[] memory tokens = swapTokensMap[address(swap)];
+        tokens[tokenIndexFrom].safeTransferFrom(
             msg.sender,
             address(this),
             dx
         );
         // swap
 
-        uint256 swappedAmount = metaSwap.swap(
+        uint256 swappedAmount = swap.swap(
             tokenIndexFrom,
             tokenIndexTo,
             dx,
@@ -141,21 +139,20 @@ contract NerveMetaBridgeZap {
         uint256 swapDeadline
     ) external {
         require(
-            address(metaSwapMap[address(token)]) != address(0),
-            "Metaswap is 0x00"
+            address(swapMap[address(token)]) != address(0),
+            "Swap is 0x00"
         );
-        IERC20[] memory metaTokens = metaSwapTokensMap[
-            metaSwapMap[address(token)]
+        IERC20[] memory tokens = swapTokensMap[
+            swapMap[address(token)]
         ];
-        metaTokens[tokenIndexFrom].safeTransferFrom(
+        tokens[tokenIndexFrom].safeTransferFrom(
             msg.sender,
             address(this),
             dx
         );
         // swap
 
-        uint256 swappedAmount = IMetaSwapDeposit(metaSwapMap[address(token)])
-        .swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
+        uint256 swappedAmount = ISwap(swapMap[address(token)]).swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // deposit into bridge, gets nUSD
         if (
             token.allowance(address(this), address(synapseBridge)) <
@@ -188,19 +185,17 @@ contract NerveMetaBridgeZap {
         uint256 liqMinAmount,
         uint256 liqDeadline
     ) external {
-        IMetaSwapDeposit metaSwap = IMetaSwapDeposit(
-            metaSwapMap[address(token)]
-        );
-        require(address(metaSwap) != address(0), "Metaswap is 0x00");
-        IERC20[] memory metaTokens = metaSwapTokensMap[address(metaSwap)];
-        metaTokens[tokenIndexFrom].safeTransferFrom(
+        ISwap swap = ISwap(swapMap[address(token)]);
+        require(address(swap) != address(0), "Swap is 0x00");
+        IERC20[] memory tokens = swapTokensMap[address(swap)];
+        tokens[tokenIndexFrom].safeTransferFrom(
             msg.sender,
             address(this),
             dx
         );
         // swap
 
-        uint256 swappedAmount = metaSwap.swap(
+        uint256 swappedAmount = swap.swap(
             tokenIndexFrom,
             tokenIndexTo,
             dx,
@@ -277,14 +272,12 @@ contract NerveMetaBridgeZap {
     ) external payable {
         require(WETH_ADDRESS != address(0), "WETH 0");
         require(msg.value > 0 && msg.value == dx, "INCORRECT MSG VALUE");
-        IMetaSwapDeposit metaSwap = IMetaSwapDeposit(
-            metaSwapMap[address(token)]
-        );
-        require(address(metaSwap) != address(0), "Metaswap is 0x00");
+        ISwap swap = ISwap(swapMap[address(token)]);
+        require(address(swap) != address(0), "Swap is 0x00");
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
 
         // swap
-        uint256 swappedAmount = metaSwap.swap(
+        uint256 swappedAmount = swap.swap(
             tokenIndexFrom,
             tokenIndexTo,
             dx,
