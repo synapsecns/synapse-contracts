@@ -23,7 +23,7 @@ async function main() {
     params: [
       {
         forking: {
-          network: "https://mainnet.boba.network",
+          jsonRpcUrl: "https://mainnet.boba.network",
           blockNumber: 18856,
         },
       },
