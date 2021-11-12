@@ -128,6 +128,9 @@ let config: HardhatUserConfig = {
     overwrite: false,
     runOnCompile: true,
   },
+  ovm: {
+    solcVersion: '0.6.12'
+  }
 }
 
 if (process.env.ETHERSCAN_API) {
