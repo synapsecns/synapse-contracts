@@ -66,7 +66,8 @@ let config: HardhatUserConfig = {
       gasPrice: 20 * 1000000000
     },
     moonriver: {
-      url: "https://rpc.moonriver.moonbeam.network"
+      url: "https://rpc.moonriver.moonbeam.network",
+      gasPrice: 10 * 1000000000
     },
     mainnet: {
       url: process.env.ALCHEMY_API,
