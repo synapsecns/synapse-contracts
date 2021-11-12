@@ -10,6 +10,7 @@ import "hardhat-deploy"
 import "hardhat-spdx-license-identifier"
 
 import { HardhatUserConfig } from "hardhat/config"
+require('@eth-optimism/hardhat-ovm')
 import dotenv from "dotenv"
 
 dotenv.config()
@@ -63,7 +64,9 @@ let config: HardhatUserConfig = {
     boba: {
       url: "https://mainnet.boba.network",
       gas: 10000000,
-      gasPrice: 20 * 1000000000
+      gasPrice: 20 * 1000000000,
+      // @ts-ignore
+      ovm: true,
     },
     mainnet: {
       url: process.env.ALCHEMY_API,

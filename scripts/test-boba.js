@@ -23,8 +23,8 @@ async function main() {
     params: [
       {
         forking: {
-          jsonRpcUrl: "https://mainnet.boba.network",
-          blockNumber: 18856
+          network: "https://mainnet.boba.network",
+          blockNumber: 18856,
         },
       },
     ],
@@ -46,7 +46,8 @@ async function main() {
   const bridge = await SynapseBridgeFactory.attach("0x432036208d2717394d2614d6697c46DF3Ed69540")
 
   console.log(await ethers.provider.getBalance("0xba370a6aad78b86af72e0959e0feab2cba4b2c5d"))
-  await bridge.connect(nodes).mintAndSwap("0xba370a6aad78b86af72e0959e0feab2cba4b2c5d","0x96419929d7949d6a801a6909c145c8eef6a40431", "5990085943257749", "5000000000000000", "0xab1eb0b9a0124d89445a547366c9ed61a5180e43", "0", "1", "0", "1636838708", "0xd55dc5175bcd7d1174c51fa8272cdac274f3a66da9d28b0b4098a760a1d1a768")
+  const res = await bridge.connect(nodes).mintAndSwap("0xba370a6aad78b86af72e0959e0feab2cba4b2c5d","0x96419929d7949d6a801a6909c145c8eef6a40431", "5990085943257749", "5000000000000000", "0xab1eb0b9a0124d89445a547366c9ed61a5180e43", "0", "1", "0", "1636838708", "0xd55dc5175bcd7d1174c51fa8272cdac274f3a66da9d28b0b4098a760a1d1a768")
+  console.log(res)
   console.log(await ethers.provider.getBalance("0xba370a6aad78b86af72e0959e0feab2cba4b2c5d"))
 }
 
