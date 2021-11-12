@@ -65,6 +65,9 @@ let config: HardhatUserConfig = {
       gas: 10000000,
       gasPrice: 20 * 1000000000
     },
+    moonriver: {
+      url: "https://rpc.moonriver.moonbeam.network"
+    },
     mainnet: {
       url: process.env.ALCHEMY_API,
     },
@@ -140,7 +143,8 @@ if (process.env.PRIVATE_KEYS) {
     "mainnet",
     "fantom",
     "harmony",
-    "boba"
+    "boba",
+    "moonriver"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
