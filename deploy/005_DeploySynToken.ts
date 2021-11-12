@@ -36,4 +36,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 }
 
 export default func
-func.tags = ["SynapseERC20Factory"]
+func.tags = ["SynapseToken"]
