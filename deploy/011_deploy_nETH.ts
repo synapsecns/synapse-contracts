@@ -9,7 +9,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   if (
     (await getChainId()) === CHAIN_ID.ARBITRUM ||
-    (await getChainId()) === CHAIN_ID.HARDHAT
+    (await getChainId()) === CHAIN_ID.HARDHAT || 
+    (await getChainId()) === CHAIN_ID.BOBA
   ) {
     if ((await getOrNull("nETH")) == null) {
       const receipt = await execute(
