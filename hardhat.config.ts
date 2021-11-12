@@ -60,6 +60,11 @@ let config: HardhatUserConfig = {
       url: "https://harmony-0-rpc.gateway.pokt.network/",
       gasPrice: 6 * 1000000000,
     },
+    boba: {
+      url: "https://mainnet.boba.network",
+      gas: 10000000,
+      gasPrice: 20 * 1000000000
+    },
     mainnet: {
       url: process.env.ALCHEMY_API,
     },
@@ -135,6 +140,7 @@ if (process.env.PRIVATE_KEYS) {
     "mainnet",
     "fantom",
     "harmony",
+    "boba"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {

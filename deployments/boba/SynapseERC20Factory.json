@@ -1,0 +1,114 @@
+{
+  "address": "0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "contractAddress",
+          "type": "address"
+        }
+      ],
+      "name": "SynapseERC20Created",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "synapseERC20Address",
+          "type": "address"
+        },
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "symbol",
+          "type": "string"
+        },
+        {
+          "internalType": "uint8",
+          "name": "decimals",
+          "type": "uint8"
+        },
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "deploy",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0xb4caebef66d07556b104621663e78ab6aa06e221e89d79b93d80693faa656cc8",
+  "receipt": {
+    "to": null,
+    "from": "0x0AF91FA049A7e1894F480bFE5bBa20142C6c29a9",
+    "contractAddress": "0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9",
+    "transactionIndex": 0,
+    "gasUsed": "307419",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0xaf1e73898d4c2e523c7908f181199711f675008926d76d898ef2b3f9b9a5f9fc",
+    "transactionHash": "0xb4caebef66d07556b104621663e78ab6aa06e221e89d79b93d80693faa656cc8",
+    "logs": [],
+    "blockNumber": 16190,
+    "cumulativeGasUsed": "307419",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "solcInputHash": "34af51e06b411724ade75ba7e05d0c1b",
+  "metadata": "{\"compiler\":{\"version\":\"0.6.12+commit.27d51765\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"contractAddress\",\"type\":\"address\"}],\"name\":\"SynapseERC20Created\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"synapseERC20Address\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"string\",\"name\":\"symbol\",\"type\":\"string\"},{\"internalType\":\"uint8\",\"name\":\"decimals\",\"type\":\"uint8\"},{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"}],\"name\":\"deploy\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"deploy(address,string,string,uint8,address)\":{\"params\":{\"decimals\":\"Token name\",\"name\":\"Token name\",\"owner\":\"admin address to be initialized with\",\"symbol\":\"Token symbol\",\"synapseERC20Address\":\"address of the synapseERC20Address contract to initialize with\"},\"returns\":{\"_0\":\"Address of the newest node management contract created*\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"deploy(address,string,string,uint8,address)\":{\"notice\":\"Deploys a new node\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/bridge/SynapseERC20Factory.sol\":\"SynapseERC20Factory\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":10000},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/access/Ownable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.6.0 <0.8.0;\\n\\nimport \\\"../utils/Context.sol\\\";\\n/**\\n * @dev Contract module which provides a basic access control mechanism, where\\n * there is an account (an owner) that can be granted exclusive access to\\n * specific functions.\\n *\\n * By default, the owner account will be the one that deploys the contract. This\\n * can later be changed with {transferOwnership}.\\n *\\n * This module is used through inheritance. It will make available the modifier\\n * `onlyOwner`, which can be applied to your functions to restrict their use to\\n * the owner.\\n */\\nabstract contract Ownable is Context {\\n    address private _owner;\\n\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /**\\n     * @dev Initializes the contract setting the deployer as the initial owner.\\n     */\\n    constructor () internal {\\n        address msgSender = _msgSender();\\n        _owner = msgSender;\\n        emit OwnershipTransferred(address(0), msgSender);\\n    }\\n\\n    /**\\n     * @dev Returns the address of the current owner.\\n     */\\n    function owner() public view virtual returns (address) {\\n        return _owner;\\n    }\\n\\n    /**\\n     * @dev Throws if called by any account other than the owner.\\n     */\\n    modifier onlyOwner() {\\n        require(owner() == _msgSender(), \\\"Ownable: caller is not the owner\\\");\\n        _;\\n    }\\n\\n    /**\\n     * @dev Leaves the contract without owner. It will not be possible to call\\n     * `onlyOwner` functions anymore. Can only be called by the current owner.\\n     *\\n     * NOTE: Renouncing ownership will leave the contract without an owner,\\n     * thereby removing any functionality that is only available to the owner.\\n     */\\n    function renounceOwnership() public virtual onlyOwner {\\n        emit OwnershipTransferred(_owner, address(0));\\n        _owner = address(0);\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Can only be called by the current owner.\\n     */\\n    function transferOwnership(address newOwner) public virtual onlyOwner {\\n        require(newOwner != address(0), \\\"Ownable: new owner is the zero address\\\");\\n        emit OwnershipTransferred(_owner, newOwner);\\n        _owner = newOwner;\\n    }\\n}\\n\",\"keccak256\":\"0x15e2d5bd4c28a88548074c54d220e8086f638a71ed07e6b3ba5a70066fcf458d\",\"license\":\"MIT\"},\"@openzeppelin/contracts/proxy/Clones.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.6.0 <0.8.0;\\n\\n/**\\n * @dev https://eips.ethereum.org/EIPS/eip-1167[EIP 1167] is a standard for\\n * deploying minimal proxy contracts, also known as \\\"clones\\\".\\n *\\n * > To simply and cheaply clone contract functionality in an immutable way, this standard specifies\\n * > a minimal bytecode implementation that delegates all calls to a known, fixed address.\\n *\\n * The library includes functions to deploy a proxy using either `create` (traditional deployment) or `create2`\\n * (salted deterministic deployment). It also includes functions to predict the addresses of clones deployed using the\\n * deterministic method.\\n *\\n * _Available since v3.4._\\n */\\nlibrary Clones {\\n    /**\\n     * @dev Deploys and returns the address of a clone that mimics the behaviour of `master`.\\n     *\\n     * This function uses the create opcode, which should never revert.\\n     */\\n    function clone(address master) internal returns (address instance) {\\n        // solhint-disable-next-line no-inline-assembly\\n        assembly {\\n            let ptr := mload(0x40)\\n            mstore(ptr, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\\n            mstore(add(ptr, 0x14), shl(0x60, master))\\n            mstore(add(ptr, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)\\n            instance := create(0, ptr, 0x37)\\n        }\\n        require(instance != address(0), \\\"ERC1167: create failed\\\");\\n    }\\n\\n    /**\\n     * @dev Deploys and returns the address of a clone that mimics the behaviour of `master`.\\n     *\\n     * This function uses the create2 opcode and a `salt` to deterministically deploy\\n     * the clone. Using the same `master` and `salt` multiple time will revert, since\\n     * the clones cannot be deployed twice at the same address.\\n     */\\n    function cloneDeterministic(address master, bytes32 salt) internal returns (address instance) {\\n        // solhint-disable-next-line no-inline-assembly\\n        assembly {\\n            let ptr := mload(0x40)\\n            mstore(ptr, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\\n            mstore(add(ptr, 0x14), shl(0x60, master))\\n            mstore(add(ptr, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)\\n            instance := create2(0, ptr, 0x37, salt)\\n        }\\n        require(instance != address(0), \\\"ERC1167: create2 failed\\\");\\n    }\\n\\n    /**\\n     * @dev Computes the address of a clone deployed using {Clones-cloneDeterministic}.\\n     */\\n    function predictDeterministicAddress(address master, bytes32 salt, address deployer) internal pure returns (address predicted) {\\n        // solhint-disable-next-line no-inline-assembly\\n        assembly {\\n            let ptr := mload(0x40)\\n            mstore(ptr, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\\n            mstore(add(ptr, 0x14), shl(0x60, master))\\n            mstore(add(ptr, 0x28), 0x5af43d82803e903d91602b57fd5bf3ff00000000000000000000000000000000)\\n            mstore(add(ptr, 0x38), shl(0x60, deployer))\\n            mstore(add(ptr, 0x4c), salt)\\n            mstore(add(ptr, 0x6c), keccak256(ptr, 0x37))\\n            predicted := keccak256(add(ptr, 0x37), 0x55)\\n        }\\n    }\\n\\n    /**\\n     * @dev Computes the address of a clone deployed using {Clones-cloneDeterministic}.\\n     */\\n    function predictDeterministicAddress(address master, bytes32 salt) internal view returns (address predicted) {\\n        return predictDeterministicAddress(master, salt, address(this));\\n    }\\n}\\n\",\"keccak256\":\"0x0d24348f536f928d8b42789737bf34762faee065667ab530ea20969a9d9920d1\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Context.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.6.0 <0.8.0;\\n\\n/*\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with GSN meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract Context {\\n    function _msgSender() internal view virtual returns (address payable) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes memory) {\\n        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691\\n        return msg.data;\\n    }\\n}\\n\",\"keccak256\":\"0x8d3cb350f04ff49cfb10aef08d87f19dcbaecc8027b0bed12f3275cd12f38cf0\",\"license\":\"MIT\"},\"contracts/bridge/SynapseERC20Factory.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.6.12;\\n\\nimport \\\"@openzeppelin/contracts/access/Ownable.sol\\\";\\nimport \\\"@openzeppelin/contracts/proxy/Clones.sol\\\";\\nimport \\\"./interfaces/ISynapseERC20.sol\\\";\\n\\ncontract SynapseERC20Factory {\\n    constructor() public {}\\n\\n    event SynapseERC20Created(address contractAddress);\\n\\n    /**\\n     * @notice Deploys a new node\\n     * @param synapseERC20Address address of the synapseERC20Address contract to initialize with\\n     * @param name Token name\\n     * @param symbol Token symbol\\n     * @param decimals Token name\\n     * @param owner admin address to be initialized with\\n     * @return Address of the newest node management contract created\\n     **/\\n    function deploy(\\n        address synapseERC20Address,\\n        string memory name,\\n        string memory symbol,   \\n        uint8 decimals,\\n        address owner\\n    ) external returns (address) {\\n        address synERC20Clone = Clones.clone(synapseERC20Address);\\n        ISynapseERC20(synERC20Clone).initialize(\\n            name,\\n            symbol,\\n            decimals,\\n            owner\\n        );\\n\\n        emit SynapseERC20Created(synERC20Clone);\\n\\n        return synERC20Clone;\\n    }\\n}\\n\",\"keccak256\":\"0xbefb38869cef3611d3fbe86620e7cc6e10a1439462db68c606f6000925cacdaa\",\"license\":\"MIT\"},\"contracts/bridge/interfaces/ISynapseERC20.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\n\\npragma solidity 0.6.12;\\n\\ninterface ISynapseERC20 {    \\n    function initialize(\\n        string memory _name, string memory _symbol, uint8 _decimals, address owner) external;\\n\\n    function mint(address to, uint256 amount) external;\\n}\\n\\n\",\"keccak256\":\"0xb5a7988713578e514edcee9dd1cd9466c64f9e8cf80509b3c9a7f3be3949fcc8\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b5061049d806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c80635d58ce2414610030575b600080fd5b610198600480360360a081101561004657600080fd5b73ffffffffffffffffffffffffffffffffffffffff823516919081019060408101602082013564010000000081111561007e57600080fd5b82018360208201111561009057600080fd5b803590602001918460018302840111640100000000831117156100b257600080fd5b91908080601f016020809104026020016040519081016040528093929190818152602001838380828437600092019190915250929594936020810193503591505064010000000081111561010557600080fd5b82018360208201111561011757600080fd5b8035906020019184600183028401116401000000008311171561013957600080fd5b91908080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152509295505050813560ff169250506020013573ffffffffffffffffffffffffffffffffffffffff166101c1565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b6000806101cd87610380565b90508073ffffffffffffffffffffffffffffffffffffffff1663de7ea79d878787876040518563ffffffff1660e01b81526004018080602001806020018560ff1681526020018473ffffffffffffffffffffffffffffffffffffffff168152602001838103835287818151815260200191508051906020019080838360005b8381101561026457818101518382015260200161024c565b50505050905090810190601f1680156102915780820380516001836020036101000a031916815260200191505b50838103825286518152865160209182019188019080838360005b838110156102c45781810151838201526020016102ac565b50505050905090810190601f1680156102f15780820380516001836020036101000a031916815260200191505b509650505050505050600060405180830381600087803b15801561031457600080fd5b505af1158015610328573d6000803e3d6000fd5b50506040805173ffffffffffffffffffffffffffffffffffffffff8516815290517f3f53e2db82c60058131913739ee1bca25955b597586645b6043f9902e9bdf0dd9350908190036020019150a19695505050505050565b60006040517f3d602d80600a3d3981f3363d3d373d3d3d363d7300000000000000000000000081528260601b60148201527f5af43d82803e903d91602b57fd5bf3000000000000000000000000000000000060288201526037816000f091505073ffffffffffffffffffffffffffffffffffffffff811661046257604080517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601660248201527f455243313136373a20637265617465206661696c656400000000000000000000604482015290519081900360640190fd5b91905056fea264697066735822122081dd63997968f56e4b57af900f83ceba4d10ac08f678cf3c9369c34ebdec71d164736f6c634300060c0033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061002b5760003560e01c80635d58ce2414610030575b600080fd5b610198600480360360a081101561004657600080fd5b73ffffffffffffffffffffffffffffffffffffffff823516919081019060408101602082013564010000000081111561007e57600080fd5b82018360208201111561009057600080fd5b803590602001918460018302840111640100000000831117156100b257600080fd5b91908080601f016020809104026020016040519081016040528093929190818152602001838380828437600092019190915250929594936020810193503591505064010000000081111561010557600080fd5b82018360208201111561011757600080fd5b8035906020019184600183028401116401000000008311171561013957600080fd5b91908080601f0160208091040260200160405190810160405280939291908181526020018383808284376000920191909152509295505050813560ff169250506020013573ffffffffffffffffffffffffffffffffffffffff166101c1565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b6000806101cd87610380565b90508073ffffffffffffffffffffffffffffffffffffffff1663de7ea79d878787876040518563ffffffff1660e01b81526004018080602001806020018560ff1681526020018473ffffffffffffffffffffffffffffffffffffffff168152602001838103835287818151815260200191508051906020019080838360005b8381101561026457818101518382015260200161024c565b50505050905090810190601f1680156102915780820380516001836020036101000a031916815260200191505b50838103825286518152865160209182019188019080838360005b838110156102c45781810151838201526020016102ac565b50505050905090810190601f1680156102f15780820380516001836020036101000a031916815260200191505b509650505050505050600060405180830381600087803b15801561031457600080fd5b505af1158015610328573d6000803e3d6000fd5b50506040805173ffffffffffffffffffffffffffffffffffffffff8516815290517f3f53e2db82c60058131913739ee1bca25955b597586645b6043f9902e9bdf0dd9350908190036020019150a19695505050505050565b60006040517f3d602d80600a3d3981f3363d3d373d3d3d363d7300000000000000000000000081528260601b60148201527f5af43d82803e903d91602b57fd5bf3000000000000000000000000000000000060288201526037816000f091505073ffffffffffffffffffffffffffffffffffffffff811661046257604080517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601660248201527f455243313136373a20637265617465206661696c656400000000000000000000604482015290519081900360640190fd5b91905056fea264697066735822122081dd63997968f56e4b57af900f83ceba4d10ac08f678cf3c9369c34ebdec71d164736f6c634300060c0033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "deploy(address,string,string,uint8,address)": {
+        "params": {
+          "decimals": "Token name",
+          "name": "Token name",
+          "owner": "admin address to be initialized with",
+          "symbol": "Token symbol",
+          "synapseERC20Address": "address of the synapseERC20Address contract to initialize with"
+        },
+        "returns": {
+          "_0": "Address of the newest node management contract created*"
+        }
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "deploy(address,string,string,uint8,address)": {
+        "notice": "Deploys a new node"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  }
+}

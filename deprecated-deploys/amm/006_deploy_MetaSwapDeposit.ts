@@ -4,13 +4,15 @@ import { DeployFunction } from "hardhat-deploy/types"
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts } = hre
   const { deploy, get } = deployments
-  const { libraryDeployer } = await getNamedAccounts()
+  const { deployer } = await getNamedAccounts()
 
-  await deploy("MetaSwapUtils", {
-    from: libraryDeployer,
-    log: true,
-    skipIfAlreadyDeployed: true,
-  })
+  // await deploy("MetaSwapDeposit", {
+  //   from: deployer,
+  //   log: true,
+  //   contract: "MetaSwapDeposit",
+  //   skipIfAlreadyDeployed: true,
+  // })
 }
+
 export default func
-func.tags = ["MetaSwapUtils"]
+func.tags = ["MetaSwapDeposit"]

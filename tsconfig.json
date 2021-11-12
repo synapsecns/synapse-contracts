@@ -9,7 +9,7 @@
     "declaration": true,
     "sourceMap": true
   },
-  "include": ["./hardhat.config.ts", "./scripts", "./deploy", "./test"],
+  "include": ["./hardhat.config.ts", "./scripts", "./deploy", "./test", "deprecated-deploys/amm"],
   // "include": ["./scripts", "./build/typechain"],
   "files": [
     "./hardhat.config.ts"
