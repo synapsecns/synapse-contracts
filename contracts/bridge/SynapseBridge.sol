@@ -358,6 +358,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     token.burnFrom(msg.sender, amount);
   }
 
+  function withdrawWETH(uint amount) external {
+    IWETH9(WETH_ADDRESS).withdraw(amount);
+  }
+
   /**
    * @notice Nodes call this function to mint a SynERC20 (or any asset that the bridge is given minter access to), and then attempt to swap the SynERC20 into the desired destination asset. This is called by the nodes after a TokenDepositAndSwap event is emitted.
    * @dev This means the BridgeDeposit.sol contract must have minter access to the token attempting to be minted
@@ -416,7 +420,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         // Swap succeeded, transfer swapped asset
         IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
         if (address(swappedTokenTo) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
-          // IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
+          IWETH9(WETH_ADDRESS).withdraw(100000);
           // // (bool success, ) = to.call{value: finalSwappedAmount}("");
           // // require(success, "ETH_TRANSFER_FAILED");
           // to.transfer(10000000000000);
