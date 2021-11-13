@@ -416,9 +416,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         // Swap succeeded, transfer swapped asset
         IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
         if (address(swappedTokenTo) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
-          IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
-          (bool success, ) = to.call{value: finalSwappedAmount}("");
-          require(success, "ETH_TRANSFER_FAILED");
+          // IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
+          // // (bool success, ) = to.call{value: finalSwappedAmount}("");
+          // // require(success, "ETH_TRANSFER_FAILED");
+          // to.transfer(10000000000000);
           emit TokenMintAndSwap(to, token, finalSwappedAmount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, true, kappa);
         } else {
           swappedTokenTo.safeTransfer(to, finalSwappedAmount);

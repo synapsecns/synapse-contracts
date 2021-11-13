@@ -12,7 +12,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       log: true,
       skipIfAlreadyDeployed: true,
       proxy: {
-        owner: (await get("TimelockController")).address,
+        owner: (await get("DevMultisig")).address,
         proxyContract: "OpenZeppelinTransparentProxy",
       },
     }),
