@@ -71,6 +71,11 @@ let config: HardhatUserConfig = {
     mainnet: {
       url: process.env.ALCHEMY_API,
     },
+    optimism: {
+      url: "https://mainnet.optimism.io",
+      gas: 10000000,
+      // gasPrice: 1 * 1000000000,
+    },
   },
   paths: {
     artifacts: "./build/artifacts",
@@ -146,7 +151,8 @@ if (process.env.PRIVATE_KEYS) {
     "mainnet",
     "fantom",
     "harmony",
-    "boba"
+    "boba",
+    "optimism"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
