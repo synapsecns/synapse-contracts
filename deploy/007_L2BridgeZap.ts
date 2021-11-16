@@ -53,6 +53,25 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
+
+  if ((await getChainId()) === "1285") {
+    await deploy("L2BridgeZap", {
+      contract: "MoonriverBridgeZap",
+      from: deployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+      args: [
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        (await get("SynapseBridge")).address,
+      ],
+    })
+  }
+
+
   if ((await getChainId()) === "1666600000") {
     await deploy("L2BridgeZap", {
       from: deployer,
