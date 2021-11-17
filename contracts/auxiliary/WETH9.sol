@@ -19,7 +19,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// @unsupported: ovm
 pragma solidity ^0.4.18;
 
 contract WETH9 {
@@ -45,7 +44,8 @@ contract WETH9 {
     function withdraw(uint wad) public {
         require(balanceOf[msg.sender] >= wad);
         balanceOf[msg.sender] -= wad;
-        msg.sender.transfer(wad);
+        (bool success, ) = msg.sender.call.value(wad).gas(4600)("");
+        require(success, "Transfer failed");
         Withdrawal(msg.sender, wad);
     }
 
