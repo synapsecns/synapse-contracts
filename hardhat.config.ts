@@ -65,8 +65,6 @@ let config: HardhatUserConfig = {
       url: "https://mainnet.boba.network",
       gas: 10000000,
       gasPrice: 20 * 1000000000,
-      // @ts-ignore
-      ovm: true,
     },
     mainnet: {
       url: process.env.ALCHEMY_API,
@@ -132,9 +130,6 @@ let config: HardhatUserConfig = {
   spdxLicenseIdentifier: {
     overwrite: false,
     runOnCompile: true,
-  },
-  ovm: {
-    solcVersion: '0.6.12'
   }
 }
 
