@@ -54,5 +54,7 @@ contract DummyWethProxy is Initializable, OwnableUpgradeable {
         WETH.transfer(owner(), amount);
     }
 
+    receive() external payable {}
+    
     fallback() external payable {}
 }
