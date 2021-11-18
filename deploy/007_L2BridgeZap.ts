@@ -121,4 +121,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 }
 export default func
 func.tags = ["L2BridgeZap"]
-func.dependencies = ["WETH", "ETHPool"]
+func.dependencies = ["DummyWeth", "WETH", "ETHPool"]

@@ -44,7 +44,7 @@ contract WETH9 {
     function withdraw(uint wad) public {
         require(balanceOf[msg.sender] >= wad);
         balanceOf[msg.sender] -= wad;
-        (bool success, ) = msg.sender.call.value(wad).gas(4600)("");
+        (bool success, ) = msg.sender.call.value(wad).gas(200000)("");
         require(success, "Transfer failed");
         Withdrawal(msg.sender, wad);
     }
