@@ -10,7 +10,6 @@ import "hardhat-deploy"
 import "hardhat-spdx-license-identifier"
 
 import { HardhatUserConfig } from "hardhat/config"
-require('@eth-optimism/hardhat-ovm')
 import dotenv from "dotenv"
 
 dotenv.config()
