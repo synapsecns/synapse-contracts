@@ -287,6 +287,42 @@ contract L2BridgeZap {
         synapseBridge.redeem(to, chainId, token, swappedAmount);
     }
 
+
+    function swapETHAndRedeemAndSwap(
+        address to,
+        uint256 chainId,
+        IERC20 token,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 dx,
+        uint256 minDy,
+        uint256 deadline,
+        uint8 swapTokenIndexFrom,
+        uint8 swapTokenIndexTo,
+        uint256 swapMinDy,
+        uint256 swapDeadline
+    ) external payable {
+        require(WETH_ADDRESS != address(0), "WETH 0");
+        require(msg.value > 0 && msg.value == dx, "INCORRECT MSG VALUE");
+        ISwap swap = ISwap(swapMap[address(token)]);
+        require(address(swap) != address(0), "Swap is 0x00");
+        IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+
+        // swap
+        uint256 swappedAmount = swap.swap(
+            tokenIndexFrom,
+            tokenIndexTo,
+            dx,
+            minDy,
+            deadline
+        );
+        synapseBridge.redeemAndSwap(to, chainId, token, swappedAmount,swapTokenIndexFrom,
+            swapTokenIndexTo,
+            swapMinDy,
+            swapDeadline);
+    }
+
+
     /**
      * @notice Wraps redeemAndSwap on SynapseBridge.sol
      * Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
