@@ -25,17 +25,17 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       ).address,
     )
 
-    const newTokenEvent = receipt?.events?.find(
-      (e: any) => e["event"] == "SynapseERC20Created",
-    )
-    const tokenAddress = newTokenEvent["args"]["contractAddress"]
-    log(`deployed nUSD token at ${tokenAddress}`)
+  //   const newTokenEvent = receipt?.events?.find(
+  //     (e: any) => e["event"] == "SynapseERC20Created",
+  //   )
+  //   const tokenAddress = newTokenEvent["args"]["contractAddress"]
+  //   log(`deployed nUSD token at ${tokenAddress}`)
 
-    await save("nUSD", {
-      abi: (await get("SynapseToken")).abi, // Generic ERC20 ABI
-      address: tokenAddress,
-    })
-  }
+  //   await save("nUSD", {
+  //     abi: (await get("SynapseToken")).abi, // Generic ERC20 ABI
+  //     address: tokenAddress,
+  //   })
+  // }
 }
 }
 
