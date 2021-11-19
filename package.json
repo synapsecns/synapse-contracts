@@ -35,6 +35,7 @@
   },
   "devDependencies": {
     "@boringcrypto/boring-solidity": "boringcrypto/BoringSolidity#e06e943",
+    "@eth-optimism/hardhat-ovm": "^0.2.4",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-etherscan": "^2.1.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
@@ -54,7 +55,7 @@
     "ethers": "^5.3.0",
     "ethlint": "^1.2.5",
     "hardhat": "^2.6.0",
-    "hardhat-deploy": "^0.9.1",
+    "hardhat-deploy": "^0.9.6",
     "hardhat-gas-reporter": "^1.0.4",
     "hardhat-spdx-license-identifier": "^2.0.3",
     "husky": "^6.0.0",

@@ -60,8 +60,22 @@ let config: HardhatUserConfig = {
       url: "https://harmony-0-rpc.gateway.pokt.network/",
       gasPrice: 6 * 1000000000,
     },
+    boba: {
+      url: "https://mainnet.boba.network",
+      gas: 10000000,
+      gasPrice: 20 * 1000000000,
+    },
+    moonriver: {
+      url: "https://rpc.moonriver.moonbeam.network",
+      gasPrice: 10 * 1000000000
+    },
     mainnet: {
       url: process.env.ALCHEMY_API,
+    },
+    optimism: {
+      url: "https://mainnet.optimism.io",
+      gas: 10000000,
+      // gasPrice: 1 * 1000000000,
     },
   },
   paths: {
@@ -119,7 +133,7 @@ let config: HardhatUserConfig = {
   spdxLicenseIdentifier: {
     overwrite: false,
     runOnCompile: true,
-  },
+  }
 }
 
 if (process.env.ETHERSCAN_API) {
@@ -135,6 +149,9 @@ if (process.env.PRIVATE_KEYS) {
     "mainnet",
     "fantom",
     "harmony",
+    "boba",
+    "moonriver",
+    "optimism"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
