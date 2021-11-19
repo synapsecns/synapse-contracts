@@ -53,6 +53,42 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
+
+
+  if ((await getChainId()) === "288") {
+    await deploy("L2BridgeZap", {
+      from: deployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+      args: [
+        (await get("WETH")).address,
+        (await get("ETHPool")).address,
+        (await get("nETH")).address,
+        (await get("nUSDPoolV2")).address,
+        (await get("nUSD")).address,
+        (await get("SynapseBridge")).address,
+      ],
+    })
+  }
+
+
+  if ((await getChainId()) === "10") {
+    await deploy("L2BridgeZap", {
+      from: deployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+      args: [
+        (await get("WETH")).address,
+        (await get("ETHPool")).address,
+        (await get("nETH")).address,
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        (await get("SynapseBridge")).address,
+      ],
+    })
+  }
+
+
   if ((await getChainId()) === "1666600000") {
     await deploy("L2BridgeZap", {
       from: deployer,
@@ -103,3 +139,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 }
 export default func
 func.tags = ["L2BridgeZap"]
+// func.dependencies = ["DummyWeth", "WETH", "ETHPool"]

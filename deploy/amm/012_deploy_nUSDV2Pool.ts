@@ -9,8 +9,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // Manually check if the pool is already deployed
   let nUSDPoolV2 = await getOrNull("nUSDPoolV2")
-  if (nUSDPoolV2) {
-    log(`reusing "nUSDPoolV2" at ${nUSDPoolV2.address}`)
+  if (nUSDPoolV2 || (await getChainId()) === CHAIN_ID.OPTIMISM) {
+    // log(`reusing "nUSDPoolV2" at ${nUSDPoolV2}`)
   } else {
     // Constructor arguments
     let TOKEN_ADDRESSES = []
@@ -53,6 +53,31 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     }
 
 
+    if (await getChainId() === CHAIN_ID.BOBA) {
+      TOKEN_ADDRESSES = [
+        (await get("nUSD")).address,
+        (await get("DAI")).address,
+        (await get("USDC")).address,
+        (await get("USDT")).address,
+      ]
+      TOKEN_DECIMALS = [18, 18, 6, 6]
+      INITIAL_A = 200
+    }
+
+
+
+    // if (await getChainId() === CHAIN_ID.OPTIMISM) {
+    //   TOKEN_ADDRESSES = [
+    //     (await get("nUSD")).address,
+    //     (await get("DAI")).address,
+    //     (await get("USDC")).address,
+    //     (await get("USDT")).address,
+    //   ]
+    //   TOKEN_DECIMALS = [18, 18, 6, 6]
+    //   INITIAL_A = 200
+    // }
+
+
     if ((await getChainId()) === CHAIN_ID.FANTOM || await getChainId() === CHAIN_ID.ARBITRUM) {
       TOKEN_ADDRESSES = [
         (await get("nUSD")).address,
@@ -69,7 +94,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const ADMIN_FEE = 6000000000
 
     const receipt = await execute(
-      "SwapDeployer",
+      "SwapDeployer", 
       { from: deployer, log: true },
       "deploy",
       (
