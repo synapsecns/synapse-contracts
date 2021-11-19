@@ -18,6 +18,10 @@ interface IERC20Mintable is IERC20 {
   function mint(address to, uint256 amount) external;
 }
 
+interface IFrax {
+  function exchangeOldForCanonical(address bridge_token_address, uint256 token_amount) external returns(uint256);
+}
+
 contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
   using SafeERC20 for IERC20;
   using SafeERC20 for IERC20Mintable;
@@ -253,7 +257,17 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     fees[address(token)] = fees[address(token)].add(fee);
     emit TokenMint(to, token, amount.sub(fee), fee, kappa);
     token.mint(address(this), amount);
-    IERC20(token).safeTransfer(to, amount.sub(fee));
+    // checks if synFRAX
+    if (address(token) == 0xE96AC70907ffF3Efee79f502C985A7A21Bce407d) {
+      token.safeIncreaseAllowance(0x1A93B23281CC1CDE4C4741353F3064709A16197d, amount.sub(fee));
+        try IFrax(0x1A93B23281CC1CDE4C4741353F3064709A16197d).exchangeOldForCanonical(address(token), amount.sub(fee)) returns (uint256 canolical_tokens_out) {
+          IERC20(0x1A93B23281CC1CDE4C4741353F3064709A16197d).safeTransfer(to, canolical_tokens_out);
+        } catch {
+          IERC20(token).safeTransfer(to, amount.sub(fee));
+        }
+    } else {
+        IERC20(token).safeTransfer(to, amount.sub(fee));
+    }
     if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
       to.call.value(chainGasAmount)("");
     }
