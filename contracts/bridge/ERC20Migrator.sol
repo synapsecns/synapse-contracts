@@ -2,9 +2,11 @@
 
 pragma solidity ^0.6.12;
 
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
-import '@openzeppelin/contracts/math/SafeMath.sol';
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
+import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import {SafeMath} from '@openzeppelin/contracts/math/SafeMath.sol';
+
+import {IERC20Mintable} from './interfaces/IERC20Mintable.sol';
 
 /**
  * @title ERC20Migrator
@@ -18,10 +20,6 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
  * ```
  */
 
-
-interface IERC20Mintable is IERC20 {
-  function mint(address to, uint256 amount) external;
-}
 
 contract ERC20Migrator {
   using SafeERC20 for IERC20;

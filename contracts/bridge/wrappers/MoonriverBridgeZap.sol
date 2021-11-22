@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "../interfaces/ISwap.sol";
-import "../interfaces/ISynapseBridge.sol";
-import "../interfaces/IWETH9.sol";
+import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 
-interface IFrax {
-    function exchangeCanonicalForOld(address bridge_token_address, uint256 token_amount) external returns (uint256);
-}
+import {ISwap} from '../interfaces/ISwap.sol';
+import {IWETH9} from '../interfaces/IWETH9.sol';
+import {IFrax} from '../interfaces/IFrax.sol';
+
+import {ISynapseBridge} from '../interfaces/ISynapseBridge.sol';
+
 
 contract MoonriverBridgeZap {
     using SafeERC20 for IERC20;
