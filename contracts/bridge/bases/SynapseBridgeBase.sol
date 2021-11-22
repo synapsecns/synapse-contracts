@@ -5,24 +5,22 @@ import {Initializable} from '@openzeppelin/contracts-upgradeable/proxy/Initializ
 import {AccessControlUpgradeable} from '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
 import {ReentrancyGuardUpgradeable} from '@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol';
 import {PausableUpgradeable} from '@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol';
-import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
-import {ERC20Burnable} from '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
+
 import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 import {SafeMath} from '@openzeppelin/contracts/math/SafeMath.sol';
+import {ERC20Burnable} from '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
 
 import {ISwap} from '../interfaces/ISwap.sol';
 import {IWETH9} from '../interfaces/IWETH9.sol';
 import {IERC20Mintable} from '../interfaces/IERC20Mintable.sol';
-
-import {ISynapseBridge} from '../interfaces/ISynapseBridge.sol';
 
 
 abstract contract SynapseBridgeBase is
     Initializable,
     AccessControlUpgradeable,
     ReentrancyGuardUpgradeable,
-    PausableUpgradeable,
-    ISynapseBridge
+    PausableUpgradeable
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Mintable;
@@ -82,6 +80,112 @@ abstract contract SynapseBridgeBase is
 
         _;
     }
+
+    modifier validOutTxn(
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    )
+    {
+        require(
+            amount > fee,
+            'Amount must be greater than fee'
+        );
+
+        require(
+            !kappaMap[kappa],
+            'Kappa is already present'
+        );
+
+        _;
+    }
+
+    event TokenDeposit(
+        address indexed to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    );
+
+    event TokenRedeem(
+        address indexed to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    );
+
+    event TokenWithdraw(
+        address indexed to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 indexed kappa
+    );
+
+    event TokenMint(
+        address indexed to,
+        IERC20Mintable token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 indexed kappa
+    );
+
+    event TokenDepositAndSwap(
+        address indexed to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline
+    );
+
+    event TokenMintAndSwap(
+        address indexed to,
+        IERC20Mintable token,
+        uint256 amount,
+        uint256 fee,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline,
+        bool swapSuccess,
+        bytes32 indexed kappa
+    );
+
+    event TokenRedeemAndSwap(
+        address indexed to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline
+    );
+
+    event TokenRedeemAndRemove(
+        address indexed to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount,
+        uint8 swapTokenIndex,
+        uint256 swapMinAmount,
+        uint256 swapDeadline
+    );
+
+    event TokenWithdrawAndRemove(
+        address indexed to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        uint8 swapTokenIndex,
+        uint256 swapMinAmount,
+        uint256 swapDeadline,
+        bool swapSuccess,
+        bytes32 indexed kappa
+    );
 
     receive() external payable {}
 
@@ -226,8 +330,8 @@ abstract contract SynapseBridgeBase is
         nonReentrant
         whenNotPaused
         onlyNodeGroup
+        validOutTxn(amount, fee, kappa)
     {
-        _validateOutTxn(amount, fee, kappa);
         (address _tokenAddress, uint256 _amt) = _preOutTxn(token, amount, fee, kappa);
 
         if (_validWETHAddress(_tokenAddress))
@@ -262,6 +366,7 @@ abstract contract SynapseBridgeBase is
         nonReentrant
         whenNotPaused
         onlyNodeGroup
+        validOutTxn(amount, fee, kappa)
     {
         _mint(to, token, amount, fee, kappa);
     }
@@ -353,15 +458,15 @@ abstract contract SynapseBridgeBase is
     }
 
     /**
- * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
-   * @param to address on other chain to redeem underlying assets to
-   * @param chainId which underlying chain to bridge assets onto
-   * @param token ERC20 compatible token to deposit into the bridge
-   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
-   * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
-   * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
-   **/
+     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
+     * @param to address on other chain to redeem underlying assets to
+     * @param chainId which underlying chain to bridge assets onto
+     * @param token ERC20 compatible token to deposit into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+     * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
+     * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
+     * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
+     **/
     function redeemAndRemove(
         address to,
         uint256 chainId,
@@ -418,8 +523,8 @@ abstract contract SynapseBridgeBase is
         nonReentrant
         whenNotPaused
         onlyNodeGroup
+        validOutTxn(amount, fee, kappa)
     {
-        _validateOutTxn(amount, fee, kappa);
         (,uint256 _amt) = _preOutTxn(token, amount, fee, kappa);
 
         _gasDrop(to);
@@ -568,8 +673,8 @@ abstract contract SynapseBridgeBase is
         nonReentrant
         whenNotPaused
         onlyNodeGroup
+        validOutTxn(amount, fee, kappa)
     {
-        _validateOutTxn(amount, fee, kappa);
         (address _tokenAddress, uint256 _amt) = _preOutTxn(token, amount, fee, kappa);
 
         // first check to make sure more will be given than min amount required
@@ -676,17 +781,6 @@ abstract contract SynapseBridgeBase is
         require(success, "ETH_TRANSFER_FAILED");
     }
 
-    function _validateOutTxn(
-        uint256 amount,
-        uint256 fee,
-        bytes32 kappa
-    )
-        internal
-    {
-        require(amount > fee, 'Amount must be greater than fee');
-        require(!kappaMap[kappa], 'Kappa is already present');
-    }
-
     /**
      * @notice Called by functions which are sending tokens or ETH to an address.
      * @dev _preOutTxn will add the transaction's kappa to kappaMap, and add the fee amount to our fee map.
@@ -731,5 +825,13 @@ abstract contract SynapseBridgeBase is
         returns (bool)
     {
         return WETH_ADDRESS != address(0) && _addr == WETH_ADDRESS;
+    }
+
+    function _makeBurnableERC20(IERC20 token)
+        internal
+        pure
+        returns (ERC20Burnable)
+    {
+        return ERC20Burnable(address(token));
     }
 }

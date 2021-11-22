@@ -29,7 +29,6 @@ contract SynapseBridge is Initializable, SynapseBridgeBase {
     internal
     override
   {
-    _validateOutTxn(amount, fee, kappa);
     (,uint256 _amt) = _preOutTxn(token, amount, fee, kappa);
 
     emit TokenMint(to, token, _amt, fee, kappa);
