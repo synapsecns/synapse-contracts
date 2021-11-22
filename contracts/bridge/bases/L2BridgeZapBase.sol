@@ -107,7 +107,7 @@ contract L2BridgeZapBase {
     )
         external
     {
-        uint256 swappedAmount = _swap(
+        uint256 swappedAmount = _swapOut(
             token,
             tokenIndexFrom,
             tokenIndexTo,
@@ -135,7 +135,7 @@ contract L2BridgeZapBase {
     )
         external
     {
-        uint256 swappedAmount = _swap(
+        uint256 swappedAmount = _swapOut(
             token,
             tokenIndexFrom,
             tokenIndexTo,
@@ -171,7 +171,7 @@ contract L2BridgeZapBase {
     )
         external
     {
-        uint256 swappedAmount = _swap(
+        uint256 swappedAmount = _swapOut(
             token,
             tokenIndexFrom,
             tokenIndexTo,
@@ -224,7 +224,7 @@ contract L2BridgeZapBase {
         external
         payable
     {
-        uint256 swappedAmount = _swapETH(
+        uint256 swappedAmount = _swapETHOut(
             token,
             tokenIndexFrom,
             tokenIndexTo,
@@ -253,7 +253,7 @@ contract L2BridgeZapBase {
         external
         payable
     {
-        uint256 swappedAmount = _swapETH(
+        uint256 swappedAmount = _swapETHOut(
             token,
             tokenIndexFrom,
             tokenIndexTo,
@@ -372,7 +372,7 @@ contract L2BridgeZapBase {
         _redeem(to, chainId, token, amount);
     }
 
-    function _swap(
+    function _swapOut(
         IERC20 token,
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
@@ -383,12 +383,7 @@ contract L2BridgeZapBase {
         internal
         returns (uint256)
     {
-        address _tokenAddress = address(token);
-        address _swapAddress = swapMap[_tokenAddress];
-
-        require(_swapAddress != address(0), "Swap is 0x00");
-
-        ISwap swap = ISwap(_swapAddress);
+        (address _swapAddress, ISwap swap) = _getSwapFromParams(token);
         IERC20[] memory tokens = swapTokensMap[_swapAddress];
 
         tokens[tokenIndexFrom].safeTransferFrom(
@@ -410,7 +405,7 @@ contract L2BridgeZapBase {
         return swappedAmount;
     }
 
-    function _swapETH(
+    function _swapETHOut(
         IERC20 token,
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
@@ -430,9 +425,7 @@ contract L2BridgeZapBase {
             "INCORRECT MSG VALUE"
         );
 
-        address _swapAddress = swapMap[address(token)];
-        ISwap swap = ISwap(_swapAddress);
-        require(_swapAddress != address(0), "Swap is 0x00");
+        (,ISwap swap) = _getSwapFromParams(token);
 
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
 
@@ -474,6 +467,19 @@ contract L2BridgeZapBase {
         {
             token.safeApprove(_bridgeAddress, MAX_UINT256);
         }
+    }
 
+    function _getSwapFromParams(IERC20 token)
+        internal
+        returns (address, ISwap)
+    {
+        address _tokenAddress = address(token);
+        address _swapAddress = swapMap[_tokenAddress];
+
+        require(_swapAddress != address(0), "Swap is 0x00");
+
+        ISwap swap = ISwap(_swapAddress);
+
+        return (_swapAddress, swap);
     }
 }
