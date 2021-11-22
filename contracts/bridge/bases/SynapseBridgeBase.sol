@@ -826,12 +826,4 @@ abstract contract SynapseBridgeBase is
     {
         return WETH_ADDRESS != address(0) && _addr == WETH_ADDRESS;
     }
-
-    function _makeBurnableERC20(IERC20 token)
-        internal
-        pure
-        returns (ERC20Burnable)
-    {
-        return ERC20Burnable(address(token));
-    }
 }
