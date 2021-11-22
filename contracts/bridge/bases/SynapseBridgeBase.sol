@@ -155,9 +155,10 @@ abstract contract SynapseBridgeBase is
     {
         require(to != address(0), "Address is 0x000");
 
+        uint256 _tokenFees = fees[_tokenAddress];
+
         if (_tokenFees != 0) {
             address _tokenAddress = address(token);
-            uint256 _tokenFees = fees[_tokenAddress];
 
             token.safeTransfer(to, _tokenFees);
             fees[_tokenAddress] = 0;
