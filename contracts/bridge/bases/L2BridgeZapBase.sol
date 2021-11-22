@@ -15,7 +15,7 @@ contract L2BridgeZapBase {
     ISynapseBridge synapseBridge;
     address payable public immutable WETH_ADDRESS;
 
-    mapping(address => address) public swapMap;
+    mapping(address => address)  public swapMap;
     mapping(address => IERC20[]) public swapTokensMap;
 
     uint256 constant MAX_UINT256 = 2**256 - 1;
@@ -88,9 +88,7 @@ contract L2BridgeZapBase {
         view
         returns (uint256)
     {
-        ISwap swap = ISwap(
-            swapMap[address(token)]
-        );
+        ISwap swap = _getSwapFromToken(token);
 
         return swap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
     }
@@ -383,8 +381,8 @@ contract L2BridgeZapBase {
         internal
         returns (uint256)
     {
-        (address _swapAddress, ISwap swap) = _getSwapFromParams(token);
-        IERC20[] memory tokens = swapTokensMap[_swapAddress];
+        ISwap swap = _getSwapFromToken(token);
+        IERC20[] memory tokens = swapTokensMap[address(swap)];
 
         tokens[tokenIndexFrom].safeTransferFrom(
             msg.sender,
@@ -425,7 +423,7 @@ contract L2BridgeZapBase {
             "INCORRECT MSG VALUE"
         );
 
-        (,ISwap swap) = _getSwapFromParams(token);
+        ISwap swap = _getSwapFromToken(token);
 
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
 
@@ -469,17 +467,15 @@ contract L2BridgeZapBase {
         }
     }
 
-    function _getSwapFromParams(IERC20 token)
+    function _getSwapFromToken(IERC20 token)
         internal
-        returns (address, ISwap)
+        returns (ISwap)
     {
         address _tokenAddress = address(token);
         address _swapAddress = swapMap[_tokenAddress];
 
         require(_swapAddress != address(0), "Swap is 0x00");
 
-        ISwap swap = ISwap(_swapAddress);
-
-        return (_swapAddress, swap);
+        return ISwap(_swapAddress);
     }
 }
