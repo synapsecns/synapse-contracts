@@ -11,6 +11,7 @@ import {IFrax} from './interfaces/IFrax.sol';
 
 import {SynapseBridgeBase} from './bases/SynapseBridgeBase.sol';
 
+import {LibFrax} from './libraries/LibFrax.sol';
 
 contract SynapseBridge is Initializable, SynapseBridgeBase {
   using SafeERC20 for IERC20;
@@ -20,9 +21,6 @@ contract SynapseBridge is Initializable, SynapseBridgeBase {
   function initialize() external initializer {
     __SynapseBridgeBase_init();
   }
-
-  address internal constant FRAX    = 0x1A93B23281CC1CDE4C4741353F3064709A16197d;
-  address internal constant SYNFRAX = 0xE96AC70907ffF3Efee79f502C985A7A21Bce407d;
 
   function _mint(
     address payable to,
@@ -42,13 +40,13 @@ contract SynapseBridge is Initializable, SynapseBridgeBase {
     token.mint(address(this), amount);
 
     // checks if synFRAX
-    if (_tokenAddress == SYNFRAX)
+    if (_tokenAddress == LibFrax.SYNFRAX)
     {
-      token.safeIncreaseAllowance(FRAX, _amt);
+      token.safeIncreaseAllowance(LibFrax.FRAX, _amt);
 
-      try IFrax(FRAX).exchangeOldForCanonical(_tokenAddress, _amt) returns (uint256 canolical_tokens_out)
+      try IFrax(LibFrax.FRAX).exchangeOldForCanonical(_tokenAddress, _amt) returns (uint256 canolical_tokens_out)
       {
-        IERC20(FRAX).safeTransfer(to, canolical_tokens_out);
+        IERC20(LibFrax.FRAX).safeTransfer(to, canolical_tokens_out);
       } catch
       {
         IERC20(token).safeTransfer(to, _amt);
