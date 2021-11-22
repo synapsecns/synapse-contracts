@@ -47,13 +47,22 @@ contract MoonriverBridgeZap is L2BridgeZapBase {
         if (address(token) == LibFrax.FRAX) {
             uint256 swappedAmount = CANOLICAL_FRAX.exchangeCanonicalForOld(LibFrax.SYNFRAX, amount);
 
-            _reapproveMax(SYN_FRAX, swappedAmount);
-
-            synapseBridge.redeem(to, chainId, SYN_FRAX, swappedAmount);
+            _doRedeem(to, chainId, SYN_FRAX, swappedAmount);
         } else {
-            _reapproveMax(token, amount);
-
-            synapseBridge.redeem(to, chainId, token, amount);
+            _doRedeem(to, chainId, token, amount);
         }
+    }
+
+    function _doRedeem(
+        address to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    )
+        internal
+    {
+        _reapproveMax(token, amount);
+
+        synapseBridge.redeem(to, chainId, token, amount);
     }
 }
