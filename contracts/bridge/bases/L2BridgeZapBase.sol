@@ -469,6 +469,7 @@ contract L2BridgeZapBase {
 
     function _getSwapFromToken(IERC20 token)
         internal
+        view
         returns (ISwap)
     {
         address _tokenAddress = address(token);
