@@ -6,15 +6,16 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get } = deployments
   const { deployer } = await getNamedAccounts()
   if ((await getChainId()) === '1') {
-    await deploy('NerveBridgeZap', {
+    await deploy('L1BridgeZap', {
       from: deployer,
       log: true,
       skipIfAlreadyDeployed: true,
       args: [
         (await get('WETH')).address,
-        (await get('NerveUSDPool')).address,
+        (await get('USDPool')).address,
         (await get('SynapseBridge')).address,
       ],
+      gasLimit: 5000000
     })
   }
 }
