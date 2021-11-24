@@ -9,14 +9,14 @@ import "../interfaces/IWETH9.sol";
 
 
 /**
- * @title NerveBridgeZap
+ * @title L1BridgeZap
  * @notice This contract is responsible for handling user Zaps into the SynapseBridge contract, through the Synapse Swap contracts. It does so
  * It does so by combining the action of addLiquidity() to the base swap pool, and then calling either deposit() or depositAndSwap() on the bridge.
  * This is done in hopes of automating portions of the bridge user experience to users, while keeping the SynapseBridge contract logic small.
  *
  * @dev This contract should be deployed with a base Swap.sol address and a SynapseBridge.sol address, otherwise, it will not function.
  */
-contract NerveBridgeZap {
+contract L1BridgeZap {
   using SafeERC20 for IERC20;
 
   uint256 constant MAX_UINT256 = 2**256 - 1;
@@ -112,6 +112,22 @@ contract NerveBridgeZap {
   {
     return baseSwap.calculateTokenAmount(amounts, deposit);
   }
+
+      /**
+     * @notice Calculate the amount of underlying token available to withdraw
+     * when withdrawing via only single token
+     * @param tokenAmount the amount of LP token to burn
+     * @param tokenIndex index of which token will be withdrawn
+     * @return availableTokenAmount calculated amount of underlying token
+     * available to withdraw
+     */
+    function calculateRemoveLiquidityOneToken(
+        uint256 tokenAmount,
+        uint8 tokenIndex
+    ) external view virtual returns (uint256 availableTokenAmount) {
+        return baseSwap.calculateRemoveLiquidityOneToken(tokenAmount, tokenIndex);
+    }
+
 
   /**
    * @notice Combines adding liquidity to the given Swap, and calls deposit() on the bridge using that LP token
