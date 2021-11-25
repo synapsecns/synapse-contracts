@@ -8,11 +8,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await getNamedAccounts()
 
   if (
-    (await getChainId()) === CHAIN_ID.MOONRIVER 
-    // (await getChainId()) === CHAIN_ID.HARDHAT || 
+    (await getChainId()) === CHAIN_ID.FANTOM ||
+    (await getChainId()) === CHAIN_ID.POLYGON ||
+    (await getChainId()) === CHAIN_ID.ARBITRUM ||
+    (await getChainId()) === CHAIN_ID.AVALANCHE || 
+    (await getChainId()) === CHAIN_ID.MOONRIVER
     // (await getChainId()) === CHAIN_ID.BOBA
   ) {
-    if ((await getOrNull("nETH")) == null) {
+    if ((await getOrNull("synFRAX")) == null) {
       const receipt = await execute(
         "SynapseERC20Factory",
         { from: deployer, log: true },
@@ -20,24 +23,53 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (
           await get("SynapseERC20")
         ).address,
-        "Synapse Frax",
+        "Synapse FRAX",
         "synFRAX",
         "18",
-        (
-          await get("DevMultisig")
-        ).address,
+        deployer,
+        // (
+        //   await get("DevMultisig")
+        // ).address,
       )
 
       const newTokenEvent = receipt?.events?.find(
         (e: any) => e["event"] == "SynapseERC20Created",
       )
       const tokenAddress = newTokenEvent["args"]["contractAddress"]
-      log(`deployed nETH token at ${tokenAddress}`)
+      log(`deployed synFRAX token at ${tokenAddress}`)
 
       await save("synFRAX", {
-        abi: (await get("SynapseToken")).abi, // Generic ERC20 ABI
+        abi: (await get("SynapseERC20")).abi, // Generic ERC20 ABI
         address: tokenAddress,
       })
+
+      await execute(
+        "synFRAX",
+        { from: deployer, log: true },
+        "grantRole",
+        "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6",
+        (
+          await get("SynapseBridge")
+        ).address,
+      )
+
+      await execute(
+        "synFRAX",
+        { from: deployer, log: true },
+        "grantRole",
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        (
+          await get("DevMultisig")
+        ).address,
+      )
+
+      await execute(
+        "synFRAX",
+        { from: deployer, log: true },
+        "renounceRole",
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        deployer,
+      )
     }
   }
 }
