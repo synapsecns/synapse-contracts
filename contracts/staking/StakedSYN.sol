@@ -28,7 +28,6 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN"){
     // Tracks when SYN can be unstaked, along with amounts at time of launch
     mapping(address => uint256) public undelegateTimestamps;
     mapping(address => uint256) public undelegateUnderlyingAmounts;
-    mapping(address => uint256) public undelegateStakedAmounts;
 
     // Define the Synapse token contract
     constructor(IERC20 _synapse) public {
@@ -77,25 +76,23 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN"){
         // Calculates the amount of SYN the sSYN is worth at the time of undelegate
         uint256 underlyingUnderlyingAmount = _amount.mul(activeSYN).div(activeStaked);
         undelegateUnderlyingAmounts[msg.sender] = underlyingUnderlyingAmount;
-        undelegateStakedAmounts[msg.sender] = _amount;
         // locks SYN for given undelegated amount, reduces active staking
         activeSYN = activeSYN.sub(underlyingUnderlyingAmount);
         // simulates 'burn' of sSYN shares
         activeStaked = activeStaked.sub(_amount);
+        _burn(msg.sender, _amount);
     }
 
     // Unlocks SYN after 7d undelegate period, and burns sSYN
     function unstake() external {
         distribute();
         require(block.timestamp > undelegateTimestamps[msg.sender], 'Undelegate period not reached');
-        uint256 undelegateStakedAmount = undelegateStakedAmounts[msg.sender];
         uint256 undelegateUnderlyingAmount = undelegateUnderlyingAmounts[msg.sender];
         // resets undelegate state
         undelegateTimestamps[msg.sender] = 0;
-        undelegateStakedAmounts[msg.sender] = 0;
         undelegateUnderlyingAmounts[msg.sender] = 0;
         // burn undelegated sSYN, transfer underlying SYN from time of undelegate
-        _burn(msg.sender, undelegateStakedAmount);
+        
         synapse.safeTransfer(msg.sender, undelegateUnderlyingAmount);
     }
 }
