@@ -110,7 +110,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         // resets undelegate state
         undelegateTimestamps[msg.sender] = 0;
         undelegateUnderlyingAmounts[msg.sender] = 0;
-        // burn undelegated sSYN, transfer underlying SYN from time of undelegate
+        // transfer underlying SYN from time of undelegate
         synapse.safeTransfer(msg.sender, undelegateUnderlyingAmount);
     }
 }
