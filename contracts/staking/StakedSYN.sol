@@ -31,9 +31,8 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN"){
     mapping(address => uint256) public undelegateStakedAmounts;
 
     // Define the Synapse token contract
-    constructor(IERC20 _synapse, address _minter) public {
+    constructor(IERC20 _synapse) public {
         synapse = _synapse;
-        STAKING_MINTER = IMinter(_minter);
     }
 
     function setStakingMinter(address _minter) external onlyOwner {
