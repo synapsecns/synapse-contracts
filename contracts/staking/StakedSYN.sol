@@ -32,12 +32,22 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN"){
     // Define the Synapse token contract
     constructor(IERC20 _synapse) public {
         synapse = _synapse;
-    }
+    } 
+
+    /*** RESTRICTED FUNCTIONS ***/
 
     function setStakingMinter(address _minter) external onlyOwner {
         STAKING_MINTER = IMinter(_minter);
     }
-    
+
+    /*** VIEW FUNCTIONS ***/
+
+    function undelegatedSynapse(address user) external view returns(uint256 amount, uint256 timestamp) {
+        return (undelegateUnderlyingAmounts[user], undelegateTimestamps[user]);
+    }
+
+
+
     function distribute() public {
         uint256 lastMint = lastSynMint;
         if (block.timestamp.add(1 hours) > lastMint) {
@@ -67,7 +77,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN"){
         synapse.safeTransferFrom(msg.sender, address(this), _amount);        
     }
 
-    // Initiate 7d undelegation period, locks amount of SYN / sSYN at time of undelegatation request
+    // Initiate 7d undelegation period, locks amount of SYN at time of undelegatation request, burn sSYN
     function undelegate(uint256 _amount) external {
         distribute();
         require(balanceOf(msg.sender) >= _amount, "Balance not met");
@@ -78,7 +88,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN"){
         undelegateUnderlyingAmounts[msg.sender] = underlyingUnderlyingAmount;
         // locks SYN for given undelegated amount, reduces active staking
         activeSYN = activeSYN.sub(underlyingUnderlyingAmount);
-        // simulates 'burn' of sSYN shares
+        // burns sSYN shares
         activeStaked = activeStaked.sub(_amount);
         _burn(msg.sender, _amount);
     }
@@ -92,7 +102,6 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN"){
         undelegateTimestamps[msg.sender] = 0;
         undelegateUnderlyingAmounts[msg.sender] = 0;
         // burn undelegated sSYN, transfer underlying SYN from time of undelegate
-        
         synapse.safeTransfer(msg.sender, undelegateUnderlyingAmount);
     }
 }
