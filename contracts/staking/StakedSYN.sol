@@ -9,10 +9,10 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
 interface IMinter {
-    function stakingMint(uint256 lastMint) external;
+    function stakingMint(uint256 lastMint) external returns(uint256);
 }
 
-contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN"){
+contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     IERC20 public synapse;
@@ -30,8 +30,9 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN"){
     mapping(address => uint256) public undelegateUnderlyingAmounts;
 
     // Define the Synapse token contract
-    constructor(IERC20 _synapse) public {
+    constructor(IERC20 _synapse, uint256 _stakingStart) public {
         synapse = _synapse;
+        lastSynMint = _stakingStart;
     } 
 
     /*** RESTRICTED FUNCTIONS ***/
@@ -46,13 +47,20 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN"){
         return (undelegateUnderlyingAmounts[user], undelegateTimestamps[user]);
     }
 
-
+    function underlyingBalanceOf(address user) external view returns(uint256) {
+        if (undelegateTimestamps[user] != 0) {
+            return undelegateUnderlyingAmounts[user];
+        } else {
+            return balanceOf(user).mul(activeSYN).div(totalSupply());
+        }
+    }
 
     function distribute() public {
         uint256 lastMint = lastSynMint;
-        if (block.timestamp.add(1 hours) > lastMint) {
+        if (block.timestamp >= lastMint.add(1 hours)) {
             lastSynMint = block.timestamp;
-            STAKING_MINTER.stakingMint(lastMint);
+            uint256 mintAmount = STAKING_MINTER.stakingMint(lastMint);
+            activeSYN = activeSYN.add(mintAmount);
         }
     }
 
@@ -61,15 +69,15 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN"){
     function stake(uint256 _amount) external {
         // Catch up on 
         distribute();
+
+        uint256 totalStaked = totalSupply();
         // If no sSYN exists, mint it 1:1 to the amount put in
-        if (activeStaked == 0 || activeSYN == 0) {
-            activeStaked = activeStaked.add(_amount);
+        if (totalStaked == 0 || activeSYN == 0) {
             _mint(msg.sender, _amount);
         } 
         // Calculate and mint the amount of sSYN the SYN is worth. The ratio will change overtime, as sSYN is burned/minted and more SYN is added.
         else {
-            uint256 stakedAmount = _amount.mul(activeStaked).div(activeSYN);
-            activeStaked = activeStaked.add(stakedAmount);
+            uint256 stakedAmount = _amount.mul(totalStaked).div(activeSYN);
             _mint(msg.sender, stakedAmount);
         }
         // Lock the sSYN in the contract
@@ -79,17 +87,18 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN"){
 
     // Initiate 7d undelegation period, locks amount of SYN at time of undelegatation request, burn sSYN
     function undelegate(uint256 _amount) external {
-        distribute();
         require(balanceOf(msg.sender) >= _amount, "Balance not met");
+        distribute();
         // Undelegate 
         undelegateTimestamps[msg.sender] = block.timestamp.add(7 days);
         // Calculates the amount of SYN the sSYN is worth at the time of undelegate
-        uint256 underlyingUnderlyingAmount = _amount.mul(activeSYN).div(activeStaked);
-        undelegateUnderlyingAmounts[msg.sender] = underlyingUnderlyingAmount;
+        uint256 totalStaked = totalSupply();
+        uint256 underlyingUnderlyingAmount = _amount.mul(activeSYN).div(totalStaked);
+        // If undelegate was called previously within past 7days, add amount to previous. Replace timestap fully.
+        undelegateUnderlyingAmounts[msg.sender] += underlyingUnderlyingAmount;
         // locks SYN for given undelegated amount, reduces active staking
         activeSYN = activeSYN.sub(underlyingUnderlyingAmount);
         // burns sSYN shares
-        activeStaked = activeStaked.sub(_amount);
         _burn(msg.sender, _amount);
     }
 
