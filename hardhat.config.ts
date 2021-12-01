@@ -46,7 +46,7 @@ let config: HardhatUserConfig = {
     },
     polygon: {
       url: "https://polygon-mainnet.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55",
-      gasPrice: 40 * 1000000000,
+      // gasPrice: 40 * 1000000000,
     },
     bsc: {
       url: "https://bsc-dataseed1.defibit.io",
