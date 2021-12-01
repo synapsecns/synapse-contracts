@@ -61,12 +61,12 @@ contract AaveSwapWrapper {
     LPToken public immutable LP_TOKEN;
     address public immutable OWNER;
     IERC20[] public POOLED_TOKENS;
-    address[] public UNDERLYING_TOKENS;
+    IERC20[] public UNDERLYING_TOKENS;
     ILendingPool public LENDING_POOL;
 
     constructor(
         Swap swap,
-        address[] memory underlyingTokens,
+        IERC20[] memory underlyingTokens,
         address lendingPool,
         address owner
     ) public {
@@ -82,11 +82,11 @@ contract AaveSwapWrapper {
         }
 
         for (uint8 i = 0; i < POOLED_TOKENS.length; i++) {
-            if (address(POOLED_TOKENS[i]) == underlyingTokens[i]) {
+            if (POOLED_TOKENS[i] == underlyingTokens[i]) {
                 isUnderlyingIndex[i] = true;
             } else {
                 isUnderlyingIndex[i] = false;
-                IERC20(underlyingTokens[i]).approve(
+                underlyingTokens[i].approve(
                     lendingPool,
                     MAX_UINT256
                 );
@@ -103,6 +103,8 @@ contract AaveSwapWrapper {
         // Approve LPToken to be used by Swap
         lpToken.approve(address(swap), MAX_UINT256);
     }
+
+
 
     /**
      * @notice Add liquidity to the pool with the given amounts of tokens.
@@ -121,14 +123,14 @@ contract AaveSwapWrapper {
         for (uint8 i = 0; i < amounts.length; i++) {
             uint256 amount = amounts[i];
             if (amount > 0) {
-                IERC20(UNDERLYING_TOKENS[i]).safeTransferFrom(
+                UNDERLYING_TOKENS[i].safeTransferFrom(
                     msg.sender,
                     address(this),
                     amount
                 );
                 if (isUnderlyingIndex[i] == false) {
                     LENDING_POOL.deposit(
-                        UNDERLYING_TOKENS[i],
+                        address(UNDERLYING_TOKENS[i]),
                         amount,
                         address(this),
                         0
@@ -174,10 +176,10 @@ contract AaveSwapWrapper {
         // Send the tokens back to the user
         for (uint8 i = 0; i < amounts.length; i++) {
             if (isUnderlyingIndex[i] == true) {
-                IERC20(UNDERLYING_TOKENS[i]).safeTransfer(msg.sender, amounts[i]);
+                UNDERLYING_TOKENS[i].safeTransfer(msg.sender, amounts[i]);
             } else {
                 LENDING_POOL.withdraw(
-                    UNDERLYING_TOKENS[i],
+                    address(UNDERLYING_TOKENS[i]),
                     amounts[i],
                     msg.sender
                 );
@@ -217,10 +219,10 @@ contract AaveSwapWrapper {
         );
         // Transfer the token to msg.sender accordingly
         if (isUnderlyingIndex[tokenIndex] == true) {
-            IERC20(UNDERLYING_TOKENS[tokenIndex]).safeTransfer(msg.sender, amount);
+            UNDERLYING_TOKENS[tokenIndex].safeTransfer(msg.sender, amount);
         } else {
             LENDING_POOL.withdraw(
-                UNDERLYING_TOKENS[tokenIndex],
+                address(UNDERLYING_TOKENS[tokenIndex]),
                 amount,
                 msg.sender
             );
@@ -246,13 +248,13 @@ contract AaveSwapWrapper {
         uint256 deadline
     ) external returns (uint256) {
         // Transfer tokens from msg.sender to this contract
-        IERC20(UNDERLYING_TOKENS[tokenIndexFrom]).safeTransferFrom(
+        UNDERLYING_TOKENS[tokenIndexFrom].safeTransferFrom(
             msg.sender,
             address(this),
             dx
         );
         if (isUnderlyingIndex[tokenIndexFrom] == false) {
-            LENDING_POOL.deposit(UNDERLYING_TOKENS[tokenIndexFrom], dx, address(this), 0);
+            LENDING_POOL.deposit(address(UNDERLYING_TOKENS[tokenIndexFrom]), dx, address(this), 0);
         }
         // Execute swap
         uint256 dy = SWAP.swap(
@@ -265,12 +267,12 @@ contract AaveSwapWrapper {
         // Transfer the swapped tokens to msg.sender
         if (isUnderlyingIndex[tokenIndexTo] == false) {
             LENDING_POOL.withdraw(
-                UNDERLYING_TOKENS[tokenIndexTo],
+                address(UNDERLYING_TOKENS[tokenIndexTo]),
                 dy,
                 msg.sender
             );
         } else {
-            IERC20(UNDERLYING_TOKENS[tokenIndexTo]).safeTransfer(msg.sender, dy);
+            UNDERLYING_TOKENS[tokenIndexTo].safeTransfer(msg.sender, dy);
         }
         return dy;
     }
@@ -291,9 +293,9 @@ contract AaveSwapWrapper {
         }
 
         for (uint256 i = 0; i < UNDERLYING_TOKENS.length; i++) {
-            IERC20(UNDERLYING_TOKENS[i]).safeTransfer(
+            UNDERLYING_TOKENS[i].safeTransfer(
                 msg.sender,
-                IERC20(UNDERLYING_TOKENS[i]).balanceOf(address(this))
+                UNDERLYING_TOKENS[i].balanceOf(address(this))
             );
         }
 
@@ -304,6 +306,22 @@ contract AaveSwapWrapper {
 
     // VIEW FUNCTIONS
 
+
+    /**
+     * @notice Calculate amount of tokens you receive on swap
+     * @param tokenIndexFrom the token the user wants to sell
+     * @param tokenIndexTo the token the user wants to buy
+     * @param dx the amount of tokens the user wants to sell. If the token charges
+     * a fee on transfers, use the amount that gets transferred after the fee.
+     * @return amount of tokens the user will receive
+     */
+    function calculateSwap(
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 dx
+    ) external view virtual returns (uint256) {
+        return SWAP.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+    }
 
     /**
      * @notice A simple method to calculate prices from deposits or
@@ -344,6 +362,19 @@ contract AaveSwapWrapper {
      */
     function calculateRemoveLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex) external view  returns (uint256 availableTokenAmount) {
         return SWAP.calculateRemoveLiquidityOneToken(tokenAmount, tokenIndex);
+    }
+
+    /**
+     * @notice Return address of the pooled token at given index. Reverts if tokenIndex is out of range.
+     * @param index the index of the token
+     * @return address of the token at given index
+     */
+    function getToken(uint8 index) public view virtual returns (IERC20) {
+        if (index < UNDERLYING_TOKENS.length) {
+            return UNDERLYING_TOKENS[index];
+        } else {
+            revert();
+        }
     }
 
 }
