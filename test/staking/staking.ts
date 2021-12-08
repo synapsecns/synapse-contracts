@@ -199,22 +199,30 @@ describe("StakedSYN", async () => {
 
             let user2UndelegateBalance = (await stakedSYN.underlyingBalanceOf(user2Address))
             let user1UndelegateBalance = (await stakedSYN.underlyingBalanceOf(user1Address))
+            let ownerUndelegateBalance = (await stakedSYN.underlyingBalanceOf(ownerAddress))
             await (stakedSYN.connect(user2).undelegate((await stakedSYN.balanceOf(user2Address))))
             await (stakedSYN.connect(user1).undelegate((await stakedSYN.balanceOf(user1Address))))
+            await (stakedSYN.connect(owner).undelegate((await stakedSYN.balanceOf(ownerAddress))))
 
             // user3 can now unstake
             await increaseTimestamp(604800)
             await stakedSYN.connect(user2).unstake()
             await stakedSYN.connect(user1).unstake()
+            await stakedSYN.connect(owner).unstake()
 
             await expect((await SYN.balanceOf(user2Address))).to.eq(BigNumber.from(10).pow(18).mul(99900).add(user2UndelegateBalance))
 
             await expect((await SYN.balanceOf(user1Address))).to.eq(BigNumber.from(10).pow(18).mul(99900).add(user1UndelegateBalance).add(BigNumber.from(1)))
 
+            await expect((await SYN.balanceOf(ownerAddress))).to.eq("409056767735142957514913")
+
             await expect (await stakedSYN.balanceOf(user3Address)).to.eq(0)
             await expect (await stakedSYN.balanceOf(user2Address)).to.eq(0)
             await expect (await stakedSYN.balanceOf(user1Address)).to.eq(0)
+            await expect (await stakedSYN.balanceOf(ownerAddress)).to.eq(0)
 
+            await expect(await SYN.balanceOf(stakedSYN.address)).to.be.eq(0)
+            await expect (await stakedSYN.totalSupply()).to.eq(0)
 
         })
     })
