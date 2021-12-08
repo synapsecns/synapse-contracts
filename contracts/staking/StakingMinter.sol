@@ -10,6 +10,10 @@ interface IERC20Mintable is IERC20 {
   function mint(address to, uint256 amount) external;
 }
 
+interface SSYN {
+    function distribute() external;
+}
+
 contract StakingMinter is Ownable {
     using SafeMath for uint256;
     IERC20Mintable public synapse;
@@ -22,7 +26,7 @@ contract StakingMinter is Ownable {
     }
 
     function setSynapsePerSecond(uint256 _rate) external onlyOwner {
-        sSYN.distribute();
+        SSYN(address(sSYN)).distribute();
         synapsePerSecond = _rate;
     }
 
