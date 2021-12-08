@@ -17,8 +17,8 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
     using SafeERC20 for IERC20;
     IERC20 public synapse;
     IMinter public STAKING_MINTER;
-    // Tracks actively staked sSYN. This amounts to totalSupply() - requested unstake total
-    uint256 internal activeStaked;
+    // Tracks active delegated SYN backing sSYN
+    uint256 internal activeSYN;
     // Last timestamp of SYN distributed to contract
     uint256 internal lastSynMint;
     
@@ -53,11 +53,13 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
     }
 
     function distribute() public {
-        uint256 lastMint = lastSynMint;
-        if (block.timestamp >= lastMint.add(1 hours)) {
-            lastSynMint = block.timestamp;
-            uint256 mintAmount = STAKING_MINTER.stakingMint(lastMint);
-            activeSYN = activeSYN.add(mintAmount);
+        if (totalSupply() != 0) {
+            uint256 lastMint = lastSynMint;
+            if (block.timestamp >= lastMint.add(1 hours)) {
+                lastSynMint = block.timestamp;
+                uint256 mintAmount = STAKING_MINTER.stakingMint(lastMint);
+                activeSYN = activeSYN.add(mintAmount);
+            }
         }
     }
 
