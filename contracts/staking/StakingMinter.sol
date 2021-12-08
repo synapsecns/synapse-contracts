@@ -22,6 +22,7 @@ contract StakingMinter is Ownable {
     }
 
     function setSynapsePerSecond(uint256 _rate) external onlyOwner {
+        sSYN.distribute();
         synapsePerSecond = _rate;
     }
 

@@ -19,9 +19,6 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
     IMinter public STAKING_MINTER;
     // Tracks actively staked sSYN. This amounts to totalSupply() - requested unstake total
     uint256 internal activeStaked;
-    // Tracks active delegated SYN backing sSYN
-    uint256 internal activeSYN;
-
     // Last timestamp of SYN distributed to contract
     uint256 internal lastSynMint;
     
@@ -93,18 +90,19 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         undelegateTimestamps[msg.sender] = block.timestamp.add(7 days);
         // Calculates the amount of SYN the sSYN is worth at the time of undelegate
         uint256 totalStaked = totalSupply();
-        uint256 underlyingUnderlyingAmount = _amount.mul(activeSYN).div(totalStaked);
+        uint256 underlyingSynapseAmount = _amount.mul(activeSYN).div(totalStaked);
         // If undelegate was called previously within past 7days, add amount to previous. Replace timestap fully.
-        undelegateUnderlyingAmounts[msg.sender] += underlyingUnderlyingAmount;
+        undelegateUnderlyingAmounts[msg.sender] += underlyingSynapseAmount;
         // locks SYN for given undelegated amount, reduces active staking
-        activeSYN = activeSYN.sub(underlyingUnderlyingAmount);
+        activeSYN = activeSYN.sub(underlyingSynapseAmount);
         // burns sSYN shares
         _burn(msg.sender, _amount);
     }
 
-    // Unlocks SYN after 7d undelegate period, and burns sSYN
+    // Unlocks SYN after 7d undelegate period
     function unstake() external {
         distribute();
+        require(undelegateTimestamps[msg.sender] > 0, 'Nothing to unstake');
         require(block.timestamp > undelegateTimestamps[msg.sender], 'Undelegate period not reached');
         uint256 undelegateUnderlyingAmount = undelegateUnderlyingAmounts[msg.sender];
         // resets undelegate state
