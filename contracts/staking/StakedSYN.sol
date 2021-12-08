@@ -22,7 +22,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
     // Last timestamp of SYN distributed to contract
     uint256 internal lastSynMint;
     
-    // Tracks when SYN can be unstaked, along with amounts at time of launch
+    // Tracks when SYN can be unstaked, along with amounts at time of unstake
     mapping(address => uint256) public undelegateTimestamps;
     mapping(address => uint256) public undelegateUnderlyingAmounts;
 
@@ -44,12 +44,13 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         return (undelegateUnderlyingAmounts[user], undelegateTimestamps[user]);
     }
 
+    function _getUnderlyingSynapseAmount(uint256 _amount) internal view returns(uint256) {
+        uint256 totalStaked = totalSupply();
+        return totalStaked > 0 ? _amount.mul(activeSYN).div(totalStaked) : 0;
+    }
+
     function underlyingBalanceOf(address user) external view returns(uint256) {
-        if (undelegateTimestamps[user] != 0) {
-            return undelegateUnderlyingAmounts[user];
-        } else {
-            return balanceOf(user).mul(activeSYN).div(totalSupply());
-        }
+        return _getUnderlyingSynapseAmount(balanceOf(user)) + undelegateUnderlyingAmounts[user];
     }
 
     function distribute() public {
@@ -92,7 +93,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         undelegateTimestamps[msg.sender] = block.timestamp.add(7 days);
         // Calculates the amount of SYN the sSYN is worth at the time of undelegate
         uint256 totalStaked = totalSupply();
-        uint256 underlyingSynapseAmount = _amount.mul(activeSYN).div(totalStaked);
+        uint256 underlyingSynapseAmount = _getUnderlyingSynapseAmount(_amount);
         // If undelegate was called previously within past 7days, add amount to previous. Replace timestap fully.
         undelegateUnderlyingAmounts[msg.sender] += underlyingSynapseAmount;
         // locks SYN for given undelegated amount, reduces active staking
