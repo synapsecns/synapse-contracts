@@ -26,13 +26,14 @@ contract StakingMinter is Ownable {
     }
 
     function setSynapsePerSecond(uint256 _rate) external onlyOwner {
+        require(_rate <= 1e18, 'Minting rate too high');
         SSYN(address(sSYN)).distribute();
         synapsePerSecond = _rate;
     }
 
     function stakingMint(uint256 lastMint) external returns (uint256) {
         require(msg.sender == address(sSYN), 'not sSYN');
-        uint256 secondsElapsed = block.timestamp - lastMint;
+        uint256 secondsElapsed = block.timestamp.sub(lastMint);
         uint256 mintAmount = secondsElapsed.mul(synapsePerSecond);
         synapse.mint(address(sSYN), mintAmount);
         return mintAmount;
