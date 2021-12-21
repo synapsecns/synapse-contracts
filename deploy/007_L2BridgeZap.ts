@@ -91,6 +91,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   if ((await getChainId()) === "1666600000") {
     await deploy("L2BridgeZap", {
+      contract: 'HarmonyBridgeZap',
       from: deployer,
       log: true,
       skipIfAlreadyDeployed: true,

@@ -12,7 +12,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     (await getChainId()) === CHAIN_ID.POLYGON ||
     (await getChainId()) === CHAIN_ID.ARBITRUM ||
     (await getChainId()) === CHAIN_ID.AVALANCHE || 
-    (await getChainId()) === CHAIN_ID.MOONRIVER
+    (await getChainId()) === CHAIN_ID.MOONRIVER || 
+    (await getChainId()) === CHAIN_ID.HARMONY
     // (await getChainId()) === CHAIN_ID.BOBA
   ) {
     if ((await getOrNull("synFRAX")) == null) {
