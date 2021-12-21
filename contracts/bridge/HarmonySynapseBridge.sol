@@ -259,9 +259,12 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     token.mint(address(this), amount);
     // checks if synFRAX
     if (address(token) == 0x1852F70512298d56e9c8FDd905e02581E04ddb2a) {
-      token.safeIncreaseAllowance(0x1852F70512298d56e9c8FDd905e02581E04ddb2a, amount.sub(fee));
+      if (token.allowance(address(this), 0xFa7191D292d5633f702B0bd7E3E3BcCC0e633200) < amount.sub(fee)) {
+          token.safeApprove(address(0xFa7191D292d5633f702B0bd7E3E3BcCC0e633200), 0);
+          token.safeApprove(address(0xFa7191D292d5633f702B0bd7E3E3BcCC0e633200), type(uint256).max);
+      }
         try IFrax(0xFa7191D292d5633f702B0bd7E3E3BcCC0e633200).exchangeOldForCanonical(address(token), amount.sub(fee)) returns (uint256 canolical_tokens_out) {
-          IERC20(0x1852F70512298d56e9c8FDd905e02581E04ddb2a).safeTransfer(to, canolical_tokens_out);
+          IERC20(0xFa7191D292d5633f702B0bd7E3E3BcCC0e633200).safeTransfer(to, canolical_tokens_out);
         } catch {
           IERC20(token).safeTransfer(to, amount.sub(fee));
         }

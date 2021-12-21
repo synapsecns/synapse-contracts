@@ -16,7 +16,7 @@ contract HarmonyBridgeZap {
 
     ISynapseBridge synapseBridge;
     address payable public immutable WETH_ADDRESS;
-    IFrax private  constant CANOLICAL_FRAX = IFrax(0x1852F70512298d56e9c8FDd905e02581E04ddb2a);
+    IFrax private  constant CANOLICAL_FRAX = IFrax(0xFa7191D292d5633f702B0bd7E3E3BcCC0e633200);
     IERC20 private constant SYN_FRAX = IERC20(0x1852F70512298d56e9c8FDd905e02581E04ddb2a);
 
     mapping(address => address) public swapMap;
