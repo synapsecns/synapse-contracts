@@ -9,35 +9,64 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   if (
     (await getChainId()) != CHAIN_ID.MOONRIVER) {
-  if ((await getOrNull("nUSD")) == null) {
-    const receipt = await execute(
-      "SynapseERC20Factory",
-      { from: deployer, log: true },
-      "deploy",
-      (
-        await get("SynapseERC20")
-      ).address,
-      "nUSD",
-      "nUSD",
-      "18",
-      (
-        await get("DevMultisig")
-      ).address,
-    )
+    if ((await getOrNull("nUSD")) == null) {
+      const receipt = await execute(
+        "SynapseERC20Factory",
+        { from: deployer, log: true },
+        "deploy",
+        (
+          await get("SynapseERC20")
+        ).address,
+        "nUSD",
+        "nUSD",
+        "18",
+        deployer,
+        // (
+        //   await get("DevMultisig")
+        // ).address,
+      )
 
-  //   const newTokenEvent = receipt?.events?.find(
-  //     (e: any) => e["event"] == "SynapseERC20Created",
-  //   )
-  //   const tokenAddress = newTokenEvent["args"]["contractAddress"]
-  //   log(`deployed nUSD token at ${tokenAddress}`)
+      const newTokenEvent = receipt?.events?.find(
+        (e: any) => e["event"] == "SynapseERC20Created",
+      )
+      const tokenAddress = newTokenEvent["args"]["contractAddress"]
+      log(`deployed nUSD token at ${tokenAddress}`)
 
-  //   await save("nUSD", {
-  //     abi: (await get("SynapseToken")).abi, // Generic ERC20 ABI
-  //     address: tokenAddress,
-  //   })
+      await save("nUSD", {
+        abi: (await get("SynapseERC20")).abi, // Generic ERC20 ABI
+        address: tokenAddress,
+      })
+
+      await execute(
+        "nUSD",
+        { from: deployer, log: true },
+        "grantRole",
+        "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6",
+        (
+          await get("SynapseBridge")
+        ).address,
+      )
+
+      await execute(
+        "nUSD",
+        { from: deployer, log: true },
+        "grantRole",
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        (
+          await get("DevMultisig")
+        ).address,
+      )
+
+      await execute(
+        "nUSD",
+        { from: deployer, log: true },
+        "renounceRole",
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        deployer,
+      )
+    }
   }
-}
 }
 
 export default func
-func.tags = ["SynapseERC20Factory"]
+func.tags = ["nUSD"]

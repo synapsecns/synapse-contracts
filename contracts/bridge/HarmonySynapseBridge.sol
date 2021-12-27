@@ -22,7 +22,7 @@ interface IFrax {
   function exchangeOldForCanonical(address bridge_token_address, uint256 token_amount) external returns(uint256);
 }
 
-contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
+contract HarmonySynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
   using SafeERC20 for IERC20;
   using SafeERC20 for IERC20Mintable;
   using SafeMath for uint256;
