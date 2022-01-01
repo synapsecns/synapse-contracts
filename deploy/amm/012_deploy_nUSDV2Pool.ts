@@ -15,7 +15,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     // Constructor arguments
     let TOKEN_ADDRESSES = []
     let TOKEN_DECIMALS = []
-    let INITIAL_A = 500
+    let INITIAL_A = 800
     if (
       (await getChainId()) === CHAIN_ID.POLYGON ||
       (await getChainId()) === CHAIN_ID.AVALANCHE ||
@@ -39,6 +39,15 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (await get("USDT")).address,
       ]
       TOKEN_DECIMALS = [18, 18, 18, 18]
+    }
+
+    if ((await getChainId()) === CHAIN_ID.AURORA) {
+      TOKEN_ADDRESSES = [
+        (await get("nUSD")).address,
+        (await get("USDC")).address,
+        (await get("USDT")).address,
+      ]
+      TOKEN_DECIMALS = [18, 18, 18]
     }
 
     if (await getChainId() === CHAIN_ID.ARBITRUM) {
