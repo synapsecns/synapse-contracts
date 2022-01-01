@@ -47,7 +47,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (await get("USDC")).address,
         (await get("USDT")).address,
       ]
-      TOKEN_DECIMALS = [18, 18, 18]
+      TOKEN_DECIMALS = [18, 6, 6]
     }
 
     if (await getChainId() === CHAIN_ID.ARBITRUM) {
