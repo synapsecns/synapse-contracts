@@ -71,7 +71,7 @@ let config: HardhatUserConfig = {
     },
     aurora: {
       url: "https://mainnet.aurora.dev",
-      gasPrice: 1 * 1000000000
+      gasPrice: 0
     },
     mainnet: {
       url: process.env.ALCHEMY_API,
