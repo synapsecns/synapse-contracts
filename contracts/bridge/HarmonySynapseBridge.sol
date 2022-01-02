@@ -13,10 +13,7 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 
 import './interfaces/ISwap.sol';
 import './interfaces/IWETH9.sol';
-
-interface IERC20Mintable is IERC20 {
-  function mint(address to, uint256 amount) external;
-}
+import './interfaces/IERC20Mintable.sol';
 
 interface IFrax {
   function exchangeOldForCanonical(address bridge_token_address, uint256 token_amount) external returns(uint256);

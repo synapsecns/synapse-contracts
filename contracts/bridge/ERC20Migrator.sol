@@ -6,6 +6,8 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 
+import './interfaces/IERC20Mintable.sol';
+
 /**
  * @title ERC20Migrator
  * @dev This contract can be used to migrate an ERC20 token from one
@@ -18,10 +20,6 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
  * ```
  */
 
-
-interface IERC20Mintable is IERC20 {
-  function mint(address to, uint256 amount) external;
-}
 
 contract ERC20Migrator {
   using SafeERC20 for IERC20;
