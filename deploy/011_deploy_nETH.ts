@@ -12,7 +12,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     (await getChainId()) === CHAIN_ID.HARDHAT || 
     (await getChainId()) === CHAIN_ID.BOBA ||
     (await getChainId()) === CHAIN_ID.OPTIMISM || 
-    (await getChainId()) === CHAIN_ID.AVALANCHE
+    (await getChainId()) === CHAIN_ID.AVALANCHE ||
+    (await getChainId()) === CHAIN_ID.HARMONY
   ) {
     if ((await getOrNull("nETH")) == null) {
       const receipt = await execute(
@@ -35,7 +36,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       log(`deployed nETH token at ${tokenAddress}`)
 
       await save("nETH", {
-        abi: (await get("SynapseToken")).abi, // Generic ERC20 ABI
+        abi: (await get("SynapseERC20")).abi, // Generic ERC20 ABI
         address: tokenAddress,
       })
 
@@ -48,12 +49,23 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         ).address,
       )
 
-      await execute("nETH", 
-        {from: deployer, log: true },
-        "transferOwnership", 
+
+      await execute(
+        "nETH",
+        { from: deployer, log: true },
+        "grantRole",
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
         (
           await get("DevMultisig")
         ).address,
+      )
+
+      await execute(
+        "nETH",
+        { from: deployer, log: true },
+        "renounceRole",
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        deployer,
       )
     }
   }
