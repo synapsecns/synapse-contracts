@@ -2,19 +2,19 @@
 
 pragma solidity 0.6.12;
 
-import '@openzeppelin/contracts-upgradeable/proxy/Initializable.sol';
-import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol';
-import '@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol';
-import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
-import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import '@openzeppelin/contracts/math/SafeMath.sol';
+import {Initializable} from '@openzeppelin/contracts-upgradeable/proxy/Initializable.sol';
+import {AccessControlUpgradeable} from '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
+import {ReentrancyGuardUpgradeable} from '@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol';
+import {PausableUpgradeable} from '@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol';
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
+import {ERC20Burnable} from '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
+import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import {SafeMath} from '@openzeppelin/contracts/math/SafeMath.sol';
 
-import './interfaces/IMetaSwapDeposit.sol';
-import './interfaces/ISwap.sol';
-import './interfaces/IWETH9.sol';
-import './interfaces/ISynapseBridge.sol';
+import {IMetaSwapDeposit} from './interfaces/IMetaSwapDeposit.sol';
+import {ISwap} from './interfaces/ISwap.sol';
+import {IWETH9} from './interfaces/IWETH9.sol';
+import {ISynapseBridge} from './interfaces/ISynapseBridge.sol';
 
 contract BridgeAuthProxy is Initializable, AccessControlUpgradeable {
     using SafeERC20 for IERC20;
