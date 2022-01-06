@@ -8,6 +8,7 @@ import "hardhat-gas-reporter"
 import "solidity-coverage"
 import "hardhat-deploy"
 import "hardhat-spdx-license-identifier"
+import "hardhat-interface-generator";
 
 import { HardhatUserConfig } from "hardhat/config"
 import dotenv from "dotenv"
