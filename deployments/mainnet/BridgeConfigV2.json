@@ -1,0 +1,992 @@
+{
+  "address": "0xAE908bb4905bcA9BdE0656CC869d0F23e77875E7",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "previousAdminRole",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "newAdminRole",
+          "type": "bytes32"
+        }
+      ],
+      "name": "RoleAdminChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        }
+      ],
+      "name": "RoleGranted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        }
+      ],
+      "name": "RoleRevoked",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "BRIDGECONFIG_V1",
+      "outputs": [
+        {
+          "internalType": "contract BridgeConfig",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "BRIDGEMANAGER_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "DEFAULT_ADMIN_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "POOLCONFIG_V1",
+      "outputs": [
+        {
+          "internalType": "contract PoolConfig",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "tokenAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "chainID",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "calculateSwapFee",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "getAllTokenIDs",
+      "outputs": [
+        {
+          "internalType": "string[]",
+          "name": "result",
+          "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "chainID",
+          "type": "uint256"
+        }
+      ],
+      "name": "getMaxGasPrice",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "tokenAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "chainID",
+          "type": "uint256"
+        }
+      ],
+      "name": "getPoolConfig",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "tokenAddress",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "chainId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "poolAddress",
+              "type": "address"
+            },
+            {
+              "internalType": "bool",
+              "name": "metaswap",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct PoolConfig.Pool",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getRoleAdmin",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "index",
+          "type": "uint256"
+        }
+      ],
+      "name": "getRoleMember",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getRoleMemberCount",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tokenID",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "chainID",
+          "type": "uint256"
+        }
+      ],
+      "name": "getToken",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "chainId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "tokenAddress",
+              "type": "address"
+            },
+            {
+              "internalType": "uint8",
+              "name": "tokenDecimals",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxSwap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "minSwap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "swapFee",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxSwapFee",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "minSwapFee",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "hasUnderlying",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "isUnderlying",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct BridgeConfig.Token",
+          "name": "token",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "tokenAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "chainID",
+          "type": "uint256"
+        }
+      ],
+      "name": "getToken",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "chainId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "tokenAddress",
+              "type": "address"
+            },
+            {
+              "internalType": "uint8",
+              "name": "tokenDecimals",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxSwap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "minSwap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "swapFee",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxSwapFee",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "minSwapFee",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "hasUnderlying",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "isUnderlying",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct BridgeConfig.Token",
+          "name": "token",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "tokenAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "chainID",
+          "type": "uint256"
+        }
+      ],
+      "name": "getTokenID",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tokenID",
+          "type": "string"
+        }
+      ],
+      "name": "getUnderlyingToken",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "chainId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "tokenAddress",
+              "type": "address"
+            },
+            {
+              "internalType": "uint8",
+              "name": "tokenDecimals",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxSwap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "minSwap",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "swapFee",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "maxSwapFee",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "minSwapFee",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "hasUnderlying",
+              "type": "bool"
+            },
+            {
+              "internalType": "bool",
+              "name": "isUnderlying",
+              "type": "bool"
+            }
+          ],
+          "internalType": "struct BridgeConfig.Token",
+          "name": "token",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "grantRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "hasRole",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tokenID",
+          "type": "string"
+        }
+      ],
+      "name": "hasUnderlyingToken",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "tokenID",
+          "type": "string"
+        }
+      ],
+      "name": "isTokenIDExist",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "renounceRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "revokeRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "contract BridgeConfig",
+          "name": "bridgeconfig",
+          "type": "address"
+        },
+        {
+          "internalType": "contract PoolConfig",
+          "name": "poolconfig",
+          "type": "address"
+        }
+      ],
+      "name": "setBridgeConfig",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "chainID",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "maxPrice",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMaxGasPrice",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x92779d511a96dc4ac3c28cd671e648d019f775a151c7228bfba78393f92f47b9",
+  "receipt": {
+    "to": null,
+    "from": "0x0AF91FA049A7e1894F480bFE5bBa20142C6c29a9",
+    "contractAddress": "0xAE908bb4905bcA9BdE0656CC869d0F23e77875E7",
+    "transactionIndex": 205,
+    "gasUsed": "1526102",
+    "logsBloom": "0x00000004000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010000000000000000000020000000000000000000800000000000000000000000000000000000000000000000001000000000040000000000000000000000000000000000000000000000000000000000080000000000000000000000000001000000000000000400000000000000000000000000000000100000000000100000000000020000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0xcfa16ef59e59ef62488cfa883c0dd34b0c8096cf4ed2c736fd4cc883c7cd094c",
+    "transactionHash": "0x92779d511a96dc4ac3c28cd671e648d019f775a151c7228bfba78393f92f47b9",
+    "logs": [
+      {
+        "transactionIndex": 205,
+        "blockNumber": 13949327,
+        "transactionHash": "0x92779d511a96dc4ac3c28cd671e648d019f775a151c7228bfba78393f92f47b9",
+        "address": "0xAE908bb4905bcA9BdE0656CC869d0F23e77875E7",
+        "topics": [
+          "0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x0000000000000000000000000af91fa049a7e1894f480bfe5bba20142c6c29a9",
+          "0x0000000000000000000000000af91fa049a7e1894f480bfe5bba20142c6c29a9"
+        ],
+        "data": "0x",
+        "logIndex": 145,
+        "blockHash": "0xcfa16ef59e59ef62488cfa883c0dd34b0c8096cf4ed2c736fd4cc883c7cd094c"
+      }
+    ],
+    "blockNumber": 13949327,
+    "cumulativeGasUsed": "10972519",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "solcInputHash": "e1a9ac08dcded7f9f20f2aad5f914862",
+  "metadata": "{\"compiler\":{\"version\":\"0.6.12+commit.27d51765\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"previousAdminRole\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"newAdminRole\",\"type\":\"bytes32\"}],\"name\":\"RoleAdminChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"RoleGranted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"RoleRevoked\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"BRIDGECONFIG_V1\",\"outputs\":[{\"internalType\":\"contract BridgeConfig\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"BRIDGEMANAGER_ROLE\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"DEFAULT_ADMIN_ROLE\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"POOLCONFIG_V1\",\"outputs\":[{\"internalType\":\"contract PoolConfig\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"chainID\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"calculateSwapFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"getAllTokenIDs\",\"outputs\":[{\"internalType\":\"string[]\",\"name\":\"result\",\"type\":\"string[]\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainID\",\"type\":\"uint256\"}],\"name\":\"getMaxGasPrice\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"chainID\",\"type\":\"uint256\"}],\"name\":\"getPoolConfig\",\"outputs\":[{\"components\":[{\"internalType\":\"address\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"poolAddress\",\"type\":\"address\"},{\"internalType\":\"bool\",\"name\":\"metaswap\",\"type\":\"bool\"}],\"internalType\":\"struct PoolConfig.Pool\",\"name\":\"\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"}],\"name\":\"getRoleAdmin\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"index\",\"type\":\"uint256\"}],\"name\":\"getRoleMember\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"}],\"name\":\"getRoleMemberCount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"tokenID\",\"type\":\"string\"},{\"internalType\":\"uint256\",\"name\":\"chainID\",\"type\":\"uint256\"}],\"name\":\"getToken\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"internalType\":\"uint8\",\"name\":\"tokenDecimals\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"maxSwap\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"minSwap\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"swapFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"maxSwapFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"minSwapFee\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"hasUnderlying\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"isUnderlying\",\"type\":\"bool\"}],\"internalType\":\"struct BridgeConfig.Token\",\"name\":\"token\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"chainID\",\"type\":\"uint256\"}],\"name\":\"getToken\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"internalType\":\"uint8\",\"name\":\"tokenDecimals\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"maxSwap\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"minSwap\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"swapFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"maxSwapFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"minSwapFee\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"hasUnderlying\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"isUnderlying\",\"type\":\"bool\"}],\"internalType\":\"struct BridgeConfig.Token\",\"name\":\"token\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"chainID\",\"type\":\"uint256\"}],\"name\":\"getTokenID\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"tokenID\",\"type\":\"string\"}],\"name\":\"getUnderlyingToken\",\"outputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"chainId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"tokenAddress\",\"type\":\"address\"},{\"internalType\":\"uint8\",\"name\":\"tokenDecimals\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"maxSwap\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"minSwap\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"swapFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"maxSwapFee\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"minSwapFee\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"hasUnderlying\",\"type\":\"bool\"},{\"internalType\":\"bool\",\"name\":\"isUnderlying\",\"type\":\"bool\"}],\"internalType\":\"struct BridgeConfig.Token\",\"name\":\"token\",\"type\":\"tuple\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"grantRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"hasRole\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"tokenID\",\"type\":\"string\"}],\"name\":\"hasUnderlyingToken\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"tokenID\",\"type\":\"string\"}],\"name\":\"isTokenIDExist\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"renounceRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"revokeRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"contract BridgeConfig\",\"name\":\"bridgeconfig\",\"type\":\"address\"},{\"internalType\":\"contract PoolConfig\",\"name\":\"poolconfig\",\"type\":\"address\"}],\"name\":\"setBridgeConfig\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"chainID\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"maxPrice\",\"type\":\"uint256\"}],\"name\":\"setMaxGasPrice\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"calculateSwapFee(address,uint256,uint256)\":{\"details\":\"This means the fee should be calculated based on the chain that the nodes emit a tx on\",\"params\":{\"amount\":\"in native token decimals\",\"chainID\":\"destination chain ID to query the token config for\",\"tokenAddress\":\"address of the destination token to query token config for\"},\"returns\":{\"_0\":\"Fee calculated in token decimals\"}},\"getRoleAdmin(bytes32)\":{\"details\":\"Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role's admin, use {_setRoleAdmin}.\"},\"getRoleMember(bytes32,uint256)\":{\"details\":\"Returns one of the accounts that have `role`. `index` must be a value between 0 and {getRoleMemberCount}, non-inclusive. Role bearers are not sorted in any particular way, and their ordering may change at any point. WARNING: When using {getRoleMember} and {getRoleMemberCount}, make sure you perform all queries on the same block. See the following https://forum.openzeppelin.com/t/iterating-over-elements-on-enumerableset-in-openzeppelin-contracts/2296[forum post] for more information.\"},\"getRoleMemberCount(bytes32)\":{\"details\":\"Returns the number of accounts that have `role`. Can be used together with {getRoleMember} to enumerate all bearers of a role.\"},\"getToken(address,uint256)\":{\"params\":{\"chainID\":\"Chain ID of which token to get config for\",\"tokenAddress\":\"Matches the token ID by using a combo of address + chain ID\"}},\"getToken(string,uint256)\":{\"params\":{\"chainID\":\"Chain ID of which token address + config to get\",\"tokenID\":\"String input of the token ID for the token\"}},\"getTokenID(address,uint256)\":{\"params\":{\"chainID\":\"chainID of which to get token ID for\",\"tokenAddress\":\"address of token to get ID for\"}},\"getUnderlyingToken(string)\":{\"params\":{\"tokenID\":\"string token ID\"}},\"grantRole(bytes32,address)\":{\"details\":\"Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have ``role``'s admin role.\"},\"hasRole(bytes32,address)\":{\"details\":\"Returns `true` if `account` has been granted `role`.\"},\"hasUnderlyingToken(string)\":{\"params\":{\"tokenID\":\"String to check if it is a withdraw/underlying token\"}},\"renounceRole(bytes32,address)\":{\"details\":\"Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function's purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `account`.\"},\"revokeRole(bytes32,address)\":{\"details\":\"Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have ``role``'s admin role.\"}},\"title\":\"BridgeConfigV2 contract\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"calculateSwapFee(address,uint256,uint256)\":{\"notice\":\"Calculates bridge swap fee based on the destination chain's token transfer.\"},\"getAllTokenIDs()\":{\"notice\":\"Returns a list of all existing token IDs converted to strings\"},\"getMaxGasPrice(uint256)\":{\"notice\":\"gets the max gas price for a chain\"},\"getToken(address,uint256)\":{\"notice\":\"Returns token config struct, given an address and chainID\"},\"getToken(string,uint256)\":{\"notice\":\"Returns the full token config struct\"},\"getTokenID(address,uint256)\":{\"notice\":\"Returns the token ID (string) of the cross-chain token inputted\"},\"getUnderlyingToken(string)\":{\"notice\":\"Returns which token is the underlying token to withdraw\"},\"hasUnderlyingToken(string)\":{\"notice\":\"Returns true if the token has an underlying token -- meaning the token is deposited into the bridge\"},\"isTokenIDExist(string)\":{\"notice\":\"Public function returning if token ID exists given a string\"},\"setMaxGasPrice(uint256,uint256)\":{\"notice\":\"sets the max gas price for a chain\"}},\"notice\":\"This token is used for configuring different tokens on the bridge and mapping them across chains. It wraps bridge config for data storage*\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/bridge/BridgeConfigV2.sol\":\"BridgeConfigV2\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":10000},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts/access/AccessControl.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.6.0 <0.8.0;\\n\\nimport \\\"../utils/EnumerableSet.sol\\\";\\nimport \\\"../utils/Address.sol\\\";\\nimport \\\"../utils/Context.sol\\\";\\n\\n/**\\n * @dev Contract module that allows children to implement role-based access\\n * control mechanisms.\\n *\\n * Roles are referred to by their `bytes32` identifier. These should be exposed\\n * in the external API and be unique. The best way to achieve this is by\\n * using `public constant` hash digests:\\n *\\n * ```\\n * bytes32 public constant MY_ROLE = keccak256(\\\"MY_ROLE\\\");\\n * ```\\n *\\n * Roles can be used to represent a set of permissions. To restrict access to a\\n * function call, use {hasRole}:\\n *\\n * ```\\n * function foo() public {\\n *     require(hasRole(MY_ROLE, msg.sender));\\n *     ...\\n * }\\n * ```\\n *\\n * Roles can be granted and revoked dynamically via the {grantRole} and\\n * {revokeRole} functions. Each role has an associated admin role, and only\\n * accounts that have a role's admin role can call {grantRole} and {revokeRole}.\\n *\\n * By default, the admin role for all roles is `DEFAULT_ADMIN_ROLE`, which means\\n * that only accounts with this role will be able to grant or revoke other\\n * roles. More complex role relationships can be created by using\\n * {_setRoleAdmin}.\\n *\\n * WARNING: The `DEFAULT_ADMIN_ROLE` is also its own admin: it has permission to\\n * grant and revoke this role. Extra precautions should be taken to secure\\n * accounts that have been granted it.\\n */\\nabstract contract AccessControl is Context {\\n    using EnumerableSet for EnumerableSet.AddressSet;\\n    using Address for address;\\n\\n    struct RoleData {\\n        EnumerableSet.AddressSet members;\\n        bytes32 adminRole;\\n    }\\n\\n    mapping (bytes32 => RoleData) private _roles;\\n\\n    bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;\\n\\n    /**\\n     * @dev Emitted when `newAdminRole` is set as ``role``'s admin role, replacing `previousAdminRole`\\n     *\\n     * `DEFAULT_ADMIN_ROLE` is the starting admin for all roles, despite\\n     * {RoleAdminChanged} not being emitted signaling this.\\n     *\\n     * _Available since v3.1._\\n     */\\n    event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole);\\n\\n    /**\\n     * @dev Emitted when `account` is granted `role`.\\n     *\\n     * `sender` is the account that originated the contract call, an admin role\\n     * bearer except when using {_setupRole}.\\n     */\\n    event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender);\\n\\n    /**\\n     * @dev Emitted when `account` is revoked `role`.\\n     *\\n     * `sender` is the account that originated the contract call:\\n     *   - if using `revokeRole`, it is the admin role bearer\\n     *   - if using `renounceRole`, it is the role bearer (i.e. `account`)\\n     */\\n    event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender);\\n\\n    /**\\n     * @dev Returns `true` if `account` has been granted `role`.\\n     */\\n    function hasRole(bytes32 role, address account) public view returns (bool) {\\n        return _roles[role].members.contains(account);\\n    }\\n\\n    /**\\n     * @dev Returns the number of accounts that have `role`. Can be used\\n     * together with {getRoleMember} to enumerate all bearers of a role.\\n     */\\n    function getRoleMemberCount(bytes32 role) public view returns (uint256) {\\n        return _roles[role].members.length();\\n    }\\n\\n    /**\\n     * @dev Returns one of the accounts that have `role`. `index` must be a\\n     * value between 0 and {getRoleMemberCount}, non-inclusive.\\n     *\\n     * Role bearers are not sorted in any particular way, and their ordering may\\n     * change at any point.\\n     *\\n     * WARNING: When using {getRoleMember} and {getRoleMemberCount}, make sure\\n     * you perform all queries on the same block. See the following\\n     * https://forum.openzeppelin.com/t/iterating-over-elements-on-enumerableset-in-openzeppelin-contracts/2296[forum post]\\n     * for more information.\\n     */\\n    function getRoleMember(bytes32 role, uint256 index) public view returns (address) {\\n        return _roles[role].members.at(index);\\n    }\\n\\n    /**\\n     * @dev Returns the admin role that controls `role`. See {grantRole} and\\n     * {revokeRole}.\\n     *\\n     * To change a role's admin, use {_setRoleAdmin}.\\n     */\\n    function getRoleAdmin(bytes32 role) public view returns (bytes32) {\\n        return _roles[role].adminRole;\\n    }\\n\\n    /**\\n     * @dev Grants `role` to `account`.\\n     *\\n     * If `account` had not been already granted `role`, emits a {RoleGranted}\\n     * event.\\n     *\\n     * Requirements:\\n     *\\n     * - the caller must have ``role``'s admin role.\\n     */\\n    function grantRole(bytes32 role, address account) public virtual {\\n        require(hasRole(_roles[role].adminRole, _msgSender()), \\\"AccessControl: sender must be an admin to grant\\\");\\n\\n        _grantRole(role, account);\\n    }\\n\\n    /**\\n     * @dev Revokes `role` from `account`.\\n     *\\n     * If `account` had been granted `role`, emits a {RoleRevoked} event.\\n     *\\n     * Requirements:\\n     *\\n     * - the caller must have ``role``'s admin role.\\n     */\\n    function revokeRole(bytes32 role, address account) public virtual {\\n        require(hasRole(_roles[role].adminRole, _msgSender()), \\\"AccessControl: sender must be an admin to revoke\\\");\\n\\n        _revokeRole(role, account);\\n    }\\n\\n    /**\\n     * @dev Revokes `role` from the calling account.\\n     *\\n     * Roles are often managed via {grantRole} and {revokeRole}: this function's\\n     * purpose is to provide a mechanism for accounts to lose their privileges\\n     * if they are compromised (such as when a trusted device is misplaced).\\n     *\\n     * If the calling account had been granted `role`, emits a {RoleRevoked}\\n     * event.\\n     *\\n     * Requirements:\\n     *\\n     * - the caller must be `account`.\\n     */\\n    function renounceRole(bytes32 role, address account) public virtual {\\n        require(account == _msgSender(), \\\"AccessControl: can only renounce roles for self\\\");\\n\\n        _revokeRole(role, account);\\n    }\\n\\n    /**\\n     * @dev Grants `role` to `account`.\\n     *\\n     * If `account` had not been already granted `role`, emits a {RoleGranted}\\n     * event. Note that unlike {grantRole}, this function doesn't perform any\\n     * checks on the calling account.\\n     *\\n     * [WARNING]\\n     * ====\\n     * This function should only be called from the constructor when setting\\n     * up the initial roles for the system.\\n     *\\n     * Using this function in any other way is effectively circumventing the admin\\n     * system imposed by {AccessControl}.\\n     * ====\\n     */\\n    function _setupRole(bytes32 role, address account) internal virtual {\\n        _grantRole(role, account);\\n    }\\n\\n    /**\\n     * @dev Sets `adminRole` as ``role``'s admin role.\\n     *\\n     * Emits a {RoleAdminChanged} event.\\n     */\\n    function _setRoleAdmin(bytes32 role, bytes32 adminRole) internal virtual {\\n        emit RoleAdminChanged(role, _roles[role].adminRole, adminRole);\\n        _roles[role].adminRole = adminRole;\\n    }\\n\\n    function _grantRole(bytes32 role, address account) private {\\n        if (_roles[role].members.add(account)) {\\n            emit RoleGranted(role, account, _msgSender());\\n        }\\n    }\\n\\n    function _revokeRole(bytes32 role, address account) private {\\n        if (_roles[role].members.remove(account)) {\\n            emit RoleRevoked(role, account, _msgSender());\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0x4fc155a2f7837603d69a13cfa481eb5e7f5e02cb77e2ec9edbac30986db37988\",\"license\":\"MIT\"},\"@openzeppelin/contracts/math/SafeMath.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.6.0 <0.8.0;\\n\\n/**\\n * @dev Wrappers over Solidity's arithmetic operations with added overflow\\n * checks.\\n *\\n * Arithmetic operations in Solidity wrap on overflow. This can easily result\\n * in bugs, because programmers usually assume that an overflow raises an\\n * error, which is the standard behavior in high level programming languages.\\n * `SafeMath` restores this intuition by reverting the transaction when an\\n * operation overflows.\\n *\\n * Using this library instead of the unchecked operations eliminates an entire\\n * class of bugs, so it's recommended to use it always.\\n */\\nlibrary SafeMath {\\n    /**\\n     * @dev Returns the addition of two unsigned integers, with an overflow flag.\\n     *\\n     * _Available since v3.4._\\n     */\\n    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {\\n        uint256 c = a + b;\\n        if (c < a) return (false, 0);\\n        return (true, c);\\n    }\\n\\n    /**\\n     * @dev Returns the substraction of two unsigned integers, with an overflow flag.\\n     *\\n     * _Available since v3.4._\\n     */\\n    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {\\n        if (b > a) return (false, 0);\\n        return (true, a - b);\\n    }\\n\\n    /**\\n     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.\\n     *\\n     * _Available since v3.4._\\n     */\\n    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {\\n        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the\\n        // benefit is lost if 'b' is also tested.\\n        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522\\n        if (a == 0) return (true, 0);\\n        uint256 c = a * b;\\n        if (c / a != b) return (false, 0);\\n        return (true, c);\\n    }\\n\\n    /**\\n     * @dev Returns the division of two unsigned integers, with a division by zero flag.\\n     *\\n     * _Available since v3.4._\\n     */\\n    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {\\n        if (b == 0) return (false, 0);\\n        return (true, a / b);\\n    }\\n\\n    /**\\n     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.\\n     *\\n     * _Available since v3.4._\\n     */\\n    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {\\n        if (b == 0) return (false, 0);\\n        return (true, a % b);\\n    }\\n\\n    /**\\n     * @dev Returns the addition of two unsigned integers, reverting on\\n     * overflow.\\n     *\\n     * Counterpart to Solidity's `+` operator.\\n     *\\n     * Requirements:\\n     *\\n     * - Addition cannot overflow.\\n     */\\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\\n        uint256 c = a + b;\\n        require(c >= a, \\\"SafeMath: addition overflow\\\");\\n        return c;\\n    }\\n\\n    /**\\n     * @dev Returns the subtraction of two unsigned integers, reverting on\\n     * overflow (when the result is negative).\\n     *\\n     * Counterpart to Solidity's `-` operator.\\n     *\\n     * Requirements:\\n     *\\n     * - Subtraction cannot overflow.\\n     */\\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\\n        require(b <= a, \\\"SafeMath: subtraction overflow\\\");\\n        return a - b;\\n    }\\n\\n    /**\\n     * @dev Returns the multiplication of two unsigned integers, reverting on\\n     * overflow.\\n     *\\n     * Counterpart to Solidity's `*` operator.\\n     *\\n     * Requirements:\\n     *\\n     * - Multiplication cannot overflow.\\n     */\\n    function mul(uint256 a, uint256 b) internal pure returns (uint256) {\\n        if (a == 0) return 0;\\n        uint256 c = a * b;\\n        require(c / a == b, \\\"SafeMath: multiplication overflow\\\");\\n        return c;\\n    }\\n\\n    /**\\n     * @dev Returns the integer division of two unsigned integers, reverting on\\n     * division by zero. The result is rounded towards zero.\\n     *\\n     * Counterpart to Solidity's `/` operator. Note: this function uses a\\n     * `revert` opcode (which leaves remaining gas untouched) while Solidity\\n     * uses an invalid opcode to revert (consuming all remaining gas).\\n     *\\n     * Requirements:\\n     *\\n     * - The divisor cannot be zero.\\n     */\\n    function div(uint256 a, uint256 b) internal pure returns (uint256) {\\n        require(b > 0, \\\"SafeMath: division by zero\\\");\\n        return a / b;\\n    }\\n\\n    /**\\n     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),\\n     * reverting when dividing by zero.\\n     *\\n     * Counterpart to Solidity's `%` operator. This function uses a `revert`\\n     * opcode (which leaves remaining gas untouched) while Solidity uses an\\n     * invalid opcode to revert (consuming all remaining gas).\\n     *\\n     * Requirements:\\n     *\\n     * - The divisor cannot be zero.\\n     */\\n    function mod(uint256 a, uint256 b) internal pure returns (uint256) {\\n        require(b > 0, \\\"SafeMath: modulo by zero\\\");\\n        return a % b;\\n    }\\n\\n    /**\\n     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on\\n     * overflow (when the result is negative).\\n     *\\n     * CAUTION: This function is deprecated because it requires allocating memory for the error\\n     * message unnecessarily. For custom revert reasons use {trySub}.\\n     *\\n     * Counterpart to Solidity's `-` operator.\\n     *\\n     * Requirements:\\n     *\\n     * - Subtraction cannot overflow.\\n     */\\n    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\\n        require(b <= a, errorMessage);\\n        return a - b;\\n    }\\n\\n    /**\\n     * @dev Returns the integer division of two unsigned integers, reverting with custom message on\\n     * division by zero. The result is rounded towards zero.\\n     *\\n     * CAUTION: This function is deprecated because it requires allocating memory for the error\\n     * message unnecessarily. For custom revert reasons use {tryDiv}.\\n     *\\n     * Counterpart to Solidity's `/` operator. Note: this function uses a\\n     * `revert` opcode (which leaves remaining gas untouched) while Solidity\\n     * uses an invalid opcode to revert (consuming all remaining gas).\\n     *\\n     * Requirements:\\n     *\\n     * - The divisor cannot be zero.\\n     */\\n    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\\n        require(b > 0, errorMessage);\\n        return a / b;\\n    }\\n\\n    /**\\n     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),\\n     * reverting with custom message when dividing by zero.\\n     *\\n     * CAUTION: This function is deprecated because it requires allocating memory for the error\\n     * message unnecessarily. For custom revert reasons use {tryMod}.\\n     *\\n     * Counterpart to Solidity's `%` operator. This function uses a `revert`\\n     * opcode (which leaves remaining gas untouched) while Solidity uses an\\n     * invalid opcode to revert (consuming all remaining gas).\\n     *\\n     * Requirements:\\n     *\\n     * - The divisor cannot be zero.\\n     */\\n    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\\n        require(b > 0, errorMessage);\\n        return a % b;\\n    }\\n}\\n\",\"keccak256\":\"0xcc78a17dd88fa5a2edc60c8489e2f405c0913b377216a5b26b35656b2d0dab52\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Address.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.6.2 <0.8.0;\\n\\n/**\\n * @dev Collection of functions related to the address type\\n */\\nlibrary Address {\\n    /**\\n     * @dev Returns true if `account` is a contract.\\n     *\\n     * [IMPORTANT]\\n     * ====\\n     * It is unsafe to assume that an address for which this function returns\\n     * false is an externally-owned account (EOA) and not a contract.\\n     *\\n     * Among others, `isContract` will return false for the following\\n     * types of addresses:\\n     *\\n     *  - an externally-owned account\\n     *  - a contract in construction\\n     *  - an address where a contract will be created\\n     *  - an address where a contract lived, but was destroyed\\n     * ====\\n     */\\n    function isContract(address account) internal view returns (bool) {\\n        // This method relies on extcodesize, which returns 0 for contracts in\\n        // construction, since the code is only stored at the end of the\\n        // constructor execution.\\n\\n        uint256 size;\\n        // solhint-disable-next-line no-inline-assembly\\n        assembly { size := extcodesize(account) }\\n        return size > 0;\\n    }\\n\\n    /**\\n     * @dev Replacement for Solidity's `transfer`: sends `amount` wei to\\n     * `recipient`, forwarding all available gas and reverting on errors.\\n     *\\n     * https://eips.ethereum.org/EIPS/eip-1884[EIP1884] increases the gas cost\\n     * of certain opcodes, possibly making contracts go over the 2300 gas limit\\n     * imposed by `transfer`, making them unable to receive funds via\\n     * `transfer`. {sendValue} removes this limitation.\\n     *\\n     * https://diligence.consensys.net/posts/2019/09/stop-using-soliditys-transfer-now/[Learn more].\\n     *\\n     * IMPORTANT: because control is transferred to `recipient`, care must be\\n     * taken to not create reentrancy vulnerabilities. Consider using\\n     * {ReentrancyGuard} or the\\n     * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].\\n     */\\n    function sendValue(address payable recipient, uint256 amount) internal {\\n        require(address(this).balance >= amount, \\\"Address: insufficient balance\\\");\\n\\n        // solhint-disable-next-line avoid-low-level-calls, avoid-call-value\\n        (bool success, ) = recipient.call{ value: amount }(\\\"\\\");\\n        require(success, \\\"Address: unable to send value, recipient may have reverted\\\");\\n    }\\n\\n    /**\\n     * @dev Performs a Solidity function call using a low level `call`. A\\n     * plain`call` is an unsafe replacement for a function call: use this\\n     * function instead.\\n     *\\n     * If `target` reverts with a revert reason, it is bubbled up by this\\n     * function (like regular Solidity function calls).\\n     *\\n     * Returns the raw returned data. To convert to the expected return value,\\n     * use https://solidity.readthedocs.io/en/latest/units-and-global-variables.html?highlight=abi.decode#abi-encoding-and-decoding-functions[`abi.decode`].\\n     *\\n     * Requirements:\\n     *\\n     * - `target` must be a contract.\\n     * - calling `target` with `data` must not revert.\\n     *\\n     * _Available since v3.1._\\n     */\\n    function functionCall(address target, bytes memory data) internal returns (bytes memory) {\\n      return functionCall(target, data, \\\"Address: low-level call failed\\\");\\n    }\\n\\n    /**\\n     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`], but with\\n     * `errorMessage` as a fallback revert reason when `target` reverts.\\n     *\\n     * _Available since v3.1._\\n     */\\n    function functionCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {\\n        return functionCallWithValue(target, data, 0, errorMessage);\\n    }\\n\\n    /**\\n     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],\\n     * but also transferring `value` wei to `target`.\\n     *\\n     * Requirements:\\n     *\\n     * - the calling contract must have an ETH balance of at least `value`.\\n     * - the called Solidity function must be `payable`.\\n     *\\n     * _Available since v3.1._\\n     */\\n    function functionCallWithValue(address target, bytes memory data, uint256 value) internal returns (bytes memory) {\\n        return functionCallWithValue(target, data, value, \\\"Address: low-level call with value failed\\\");\\n    }\\n\\n    /**\\n     * @dev Same as {xref-Address-functionCallWithValue-address-bytes-uint256-}[`functionCallWithValue`], but\\n     * with `errorMessage` as a fallback revert reason when `target` reverts.\\n     *\\n     * _Available since v3.1._\\n     */\\n    function functionCallWithValue(address target, bytes memory data, uint256 value, string memory errorMessage) internal returns (bytes memory) {\\n        require(address(this).balance >= value, \\\"Address: insufficient balance for call\\\");\\n        require(isContract(target), \\\"Address: call to non-contract\\\");\\n\\n        // solhint-disable-next-line avoid-low-level-calls\\n        (bool success, bytes memory returndata) = target.call{ value: value }(data);\\n        return _verifyCallResult(success, returndata, errorMessage);\\n    }\\n\\n    /**\\n     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],\\n     * but performing a static call.\\n     *\\n     * _Available since v3.3._\\n     */\\n    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {\\n        return functionStaticCall(target, data, \\\"Address: low-level static call failed\\\");\\n    }\\n\\n    /**\\n     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],\\n     * but performing a static call.\\n     *\\n     * _Available since v3.3._\\n     */\\n    function functionStaticCall(address target, bytes memory data, string memory errorMessage) internal view returns (bytes memory) {\\n        require(isContract(target), \\\"Address: static call to non-contract\\\");\\n\\n        // solhint-disable-next-line avoid-low-level-calls\\n        (bool success, bytes memory returndata) = target.staticcall(data);\\n        return _verifyCallResult(success, returndata, errorMessage);\\n    }\\n\\n    /**\\n     * @dev Same as {xref-Address-functionCall-address-bytes-}[`functionCall`],\\n     * but performing a delegate call.\\n     *\\n     * _Available since v3.4._\\n     */\\n    function functionDelegateCall(address target, bytes memory data) internal returns (bytes memory) {\\n        return functionDelegateCall(target, data, \\\"Address: low-level delegate call failed\\\");\\n    }\\n\\n    /**\\n     * @dev Same as {xref-Address-functionCall-address-bytes-string-}[`functionCall`],\\n     * but performing a delegate call.\\n     *\\n     * _Available since v3.4._\\n     */\\n    function functionDelegateCall(address target, bytes memory data, string memory errorMessage) internal returns (bytes memory) {\\n        require(isContract(target), \\\"Address: delegate call to non-contract\\\");\\n\\n        // solhint-disable-next-line avoid-low-level-calls\\n        (bool success, bytes memory returndata) = target.delegatecall(data);\\n        return _verifyCallResult(success, returndata, errorMessage);\\n    }\\n\\n    function _verifyCallResult(bool success, bytes memory returndata, string memory errorMessage) private pure returns(bytes memory) {\\n        if (success) {\\n            return returndata;\\n        } else {\\n            // Look for revert reason and bubble it up if present\\n            if (returndata.length > 0) {\\n                // The easiest way to bubble the revert reason is using memory via assembly\\n\\n                // solhint-disable-next-line no-inline-assembly\\n                assembly {\\n                    let returndata_size := mload(returndata)\\n                    revert(add(32, returndata), returndata_size)\\n                }\\n            } else {\\n                revert(errorMessage);\\n            }\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0x28911e614500ae7c607a432a709d35da25f3bc5ddc8bd12b278b66358070c0ea\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/Context.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.6.0 <0.8.0;\\n\\n/*\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with GSN meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract Context {\\n    function _msgSender() internal view virtual returns (address payable) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes memory) {\\n        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691\\n        return msg.data;\\n    }\\n}\\n\",\"keccak256\":\"0x8d3cb350f04ff49cfb10aef08d87f19dcbaecc8027b0bed12f3275cd12f38cf0\",\"license\":\"MIT\"},\"@openzeppelin/contracts/utils/EnumerableSet.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.6.0 <0.8.0;\\n\\n/**\\n * @dev Library for managing\\n * https://en.wikipedia.org/wiki/Set_(abstract_data_type)[sets] of primitive\\n * types.\\n *\\n * Sets have the following properties:\\n *\\n * - Elements are added, removed, and checked for existence in constant time\\n * (O(1)).\\n * - Elements are enumerated in O(n). No guarantees are made on the ordering.\\n *\\n * ```\\n * contract Example {\\n *     // Add the library methods\\n *     using EnumerableSet for EnumerableSet.AddressSet;\\n *\\n *     // Declare a set state variable\\n *     EnumerableSet.AddressSet private mySet;\\n * }\\n * ```\\n *\\n * As of v3.3.0, sets of type `bytes32` (`Bytes32Set`), `address` (`AddressSet`)\\n * and `uint256` (`UintSet`) are supported.\\n */\\nlibrary EnumerableSet {\\n    // To implement this library for multiple types with as little code\\n    // repetition as possible, we write it in terms of a generic Set type with\\n    // bytes32 values.\\n    // The Set implementation uses private functions, and user-facing\\n    // implementations (such as AddressSet) are just wrappers around the\\n    // underlying Set.\\n    // This means that we can only create new EnumerableSets for types that fit\\n    // in bytes32.\\n\\n    struct Set {\\n        // Storage of set values\\n        bytes32[] _values;\\n\\n        // Position of the value in the `values` array, plus 1 because index 0\\n        // means a value is not in the set.\\n        mapping (bytes32 => uint256) _indexes;\\n    }\\n\\n    /**\\n     * @dev Add a value to a set. O(1).\\n     *\\n     * Returns true if the value was added to the set, that is if it was not\\n     * already present.\\n     */\\n    function _add(Set storage set, bytes32 value) private returns (bool) {\\n        if (!_contains(set, value)) {\\n            set._values.push(value);\\n            // The value is stored at length-1, but we add 1 to all indexes\\n            // and use 0 as a sentinel value\\n            set._indexes[value] = set._values.length;\\n            return true;\\n        } else {\\n            return false;\\n        }\\n    }\\n\\n    /**\\n     * @dev Removes a value from a set. O(1).\\n     *\\n     * Returns true if the value was removed from the set, that is if it was\\n     * present.\\n     */\\n    function _remove(Set storage set, bytes32 value) private returns (bool) {\\n        // We read and store the value's index to prevent multiple reads from the same storage slot\\n        uint256 valueIndex = set._indexes[value];\\n\\n        if (valueIndex != 0) { // Equivalent to contains(set, value)\\n            // To delete an element from the _values array in O(1), we swap the element to delete with the last one in\\n            // the array, and then remove the last element (sometimes called as 'swap and pop').\\n            // This modifies the order of the array, as noted in {at}.\\n\\n            uint256 toDeleteIndex = valueIndex - 1;\\n            uint256 lastIndex = set._values.length - 1;\\n\\n            // When the value to delete is the last one, the swap operation is unnecessary. However, since this occurs\\n            // so rarely, we still do the swap anyway to avoid the gas cost of adding an 'if' statement.\\n\\n            bytes32 lastvalue = set._values[lastIndex];\\n\\n            // Move the last value to the index where the value to delete is\\n            set._values[toDeleteIndex] = lastvalue;\\n            // Update the index for the moved value\\n            set._indexes[lastvalue] = toDeleteIndex + 1; // All indexes are 1-based\\n\\n            // Delete the slot where the moved value was stored\\n            set._values.pop();\\n\\n            // Delete the index for the deleted slot\\n            delete set._indexes[value];\\n\\n            return true;\\n        } else {\\n            return false;\\n        }\\n    }\\n\\n    /**\\n     * @dev Returns true if the value is in the set. O(1).\\n     */\\n    function _contains(Set storage set, bytes32 value) private view returns (bool) {\\n        return set._indexes[value] != 0;\\n    }\\n\\n    /**\\n     * @dev Returns the number of values on the set. O(1).\\n     */\\n    function _length(Set storage set) private view returns (uint256) {\\n        return set._values.length;\\n    }\\n\\n   /**\\n    * @dev Returns the value stored at position `index` in the set. O(1).\\n    *\\n    * Note that there are no guarantees on the ordering of values inside the\\n    * array, and it may change when more values are added or removed.\\n    *\\n    * Requirements:\\n    *\\n    * - `index` must be strictly less than {length}.\\n    */\\n    function _at(Set storage set, uint256 index) private view returns (bytes32) {\\n        require(set._values.length > index, \\\"EnumerableSet: index out of bounds\\\");\\n        return set._values[index];\\n    }\\n\\n    // Bytes32Set\\n\\n    struct Bytes32Set {\\n        Set _inner;\\n    }\\n\\n    /**\\n     * @dev Add a value to a set. O(1).\\n     *\\n     * Returns true if the value was added to the set, that is if it was not\\n     * already present.\\n     */\\n    function add(Bytes32Set storage set, bytes32 value) internal returns (bool) {\\n        return _add(set._inner, value);\\n    }\\n\\n    /**\\n     * @dev Removes a value from a set. O(1).\\n     *\\n     * Returns true if the value was removed from the set, that is if it was\\n     * present.\\n     */\\n    function remove(Bytes32Set storage set, bytes32 value) internal returns (bool) {\\n        return _remove(set._inner, value);\\n    }\\n\\n    /**\\n     * @dev Returns true if the value is in the set. O(1).\\n     */\\n    function contains(Bytes32Set storage set, bytes32 value) internal view returns (bool) {\\n        return _contains(set._inner, value);\\n    }\\n\\n    /**\\n     * @dev Returns the number of values in the set. O(1).\\n     */\\n    function length(Bytes32Set storage set) internal view returns (uint256) {\\n        return _length(set._inner);\\n    }\\n\\n   /**\\n    * @dev Returns the value stored at position `index` in the set. O(1).\\n    *\\n    * Note that there are no guarantees on the ordering of values inside the\\n    * array, and it may change when more values are added or removed.\\n    *\\n    * Requirements:\\n    *\\n    * - `index` must be strictly less than {length}.\\n    */\\n    function at(Bytes32Set storage set, uint256 index) internal view returns (bytes32) {\\n        return _at(set._inner, index);\\n    }\\n\\n    // AddressSet\\n\\n    struct AddressSet {\\n        Set _inner;\\n    }\\n\\n    /**\\n     * @dev Add a value to a set. O(1).\\n     *\\n     * Returns true if the value was added to the set, that is if it was not\\n     * already present.\\n     */\\n    function add(AddressSet storage set, address value) internal returns (bool) {\\n        return _add(set._inner, bytes32(uint256(uint160(value))));\\n    }\\n\\n    /**\\n     * @dev Removes a value from a set. O(1).\\n     *\\n     * Returns true if the value was removed from the set, that is if it was\\n     * present.\\n     */\\n    function remove(AddressSet storage set, address value) internal returns (bool) {\\n        return _remove(set._inner, bytes32(uint256(uint160(value))));\\n    }\\n\\n    /**\\n     * @dev Returns true if the value is in the set. O(1).\\n     */\\n    function contains(AddressSet storage set, address value) internal view returns (bool) {\\n        return _contains(set._inner, bytes32(uint256(uint160(value))));\\n    }\\n\\n    /**\\n     * @dev Returns the number of values in the set. O(1).\\n     */\\n    function length(AddressSet storage set) internal view returns (uint256) {\\n        return _length(set._inner);\\n    }\\n\\n   /**\\n    * @dev Returns the value stored at position `index` in the set. O(1).\\n    *\\n    * Note that there are no guarantees on the ordering of values inside the\\n    * array, and it may change when more values are added or removed.\\n    *\\n    * Requirements:\\n    *\\n    * - `index` must be strictly less than {length}.\\n    */\\n    function at(AddressSet storage set, uint256 index) internal view returns (address) {\\n        return address(uint160(uint256(_at(set._inner, index))));\\n    }\\n\\n\\n    // UintSet\\n\\n    struct UintSet {\\n        Set _inner;\\n    }\\n\\n    /**\\n     * @dev Add a value to a set. O(1).\\n     *\\n     * Returns true if the value was added to the set, that is if it was not\\n     * already present.\\n     */\\n    function add(UintSet storage set, uint256 value) internal returns (bool) {\\n        return _add(set._inner, bytes32(value));\\n    }\\n\\n    /**\\n     * @dev Removes a value from a set. O(1).\\n     *\\n     * Returns true if the value was removed from the set, that is if it was\\n     * present.\\n     */\\n    function remove(UintSet storage set, uint256 value) internal returns (bool) {\\n        return _remove(set._inner, bytes32(value));\\n    }\\n\\n    /**\\n     * @dev Returns true if the value is in the set. O(1).\\n     */\\n    function contains(UintSet storage set, uint256 value) internal view returns (bool) {\\n        return _contains(set._inner, bytes32(value));\\n    }\\n\\n    /**\\n     * @dev Returns the number of values on the set. O(1).\\n     */\\n    function length(UintSet storage set) internal view returns (uint256) {\\n        return _length(set._inner);\\n    }\\n\\n   /**\\n    * @dev Returns the value stored at position `index` in the set. O(1).\\n    *\\n    * Note that there are no guarantees on the ordering of values inside the\\n    * array, and it may change when more values are added or removed.\\n    *\\n    * Requirements:\\n    *\\n    * - `index` must be strictly less than {length}.\\n    */\\n    function at(UintSet storage set, uint256 index) internal view returns (uint256) {\\n        return uint256(_at(set._inner, index));\\n    }\\n}\\n\",\"keccak256\":\"0x1562cd9922fbf739edfb979f506809e2743789cbde3177515542161c3d04b164\",\"license\":\"MIT\"},\"contracts/bridge/BridgeConfig.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.6.12;\\npragma experimental ABIEncoderV2;\\n\\nimport '@openzeppelin/contracts/access/AccessControl.sol';\\nimport '@openzeppelin/contracts/math/SafeMath.sol';\\n\\n/**\\n * @title BridgeConfig contract\\n * @notice This token is used for configuring different tokens on the bridge and mapping them across chains.\\n**/\\n\\ncontract BridgeConfig is AccessControl {\\n    using SafeMath for uint256;\\n    bytes32 public constant BRIDGEMANAGER_ROLE = keccak256('BRIDGEMANAGER_ROLE');\\n    bytes32[] private _allTokenIDs;\\n    mapping(bytes32 => Token[]) private _allTokens; // key is tokenID\\n    mapping(uint256 => mapping(address => bytes32)) private _tokenIDMap; // key is chainID,tokenAddress\\n    mapping(bytes32 => mapping(uint256 => Token)) private _tokens; // key is tokenID,chainID\\n\\n    // the denominator used to calculate fees. For example, an\\n    // LP fee might be something like tradeAmount.mul(fee).div(FEE_DENOMINATOR)\\n    uint256 private constant FEE_DENOMINATOR = 10**10;\\n\\n    // this struct must be initialized using setTokenConfig for each token that directly interacts with the bridge\\n    struct Token {\\n        uint256 chainId;\\n        address tokenAddress;\\n        uint8 tokenDecimals;\\n        uint256 maxSwap;\\n        uint256 minSwap;\\n        uint256 swapFee;\\n        uint256 maxSwapFee;\\n        uint256 minSwapFee;\\n        bool hasUnderlying;\\n        bool isUnderlying;\\n    }\\n\\n\\n    constructor() public {\\n        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);\\n    }\\n\\n    /**\\n     * @notice Returns a list of all existing token IDs converted to strings\\n     */\\n    function getAllTokenIDs() public view returns (string[] memory result) {\\n        uint256 length = _allTokenIDs.length;\\n        result = new string[](length);\\n        for (uint256 i = 0; i < length; ++i) {\\n            result[i] = bytes32ToString(_allTokenIDs[i]);\\n        }\\n    }\\n\\n    /**\\n     * @notice Returns the token ID (string) of the cross-chain token inputted\\n     * @param tokenAddress address of token to get ID for\\n     * @param chainID chainID of which to get token ID for\\n     */\\n    function getTokenID(address tokenAddress, uint256 chainID) public view returns (string memory)  {\\n        return bytes32ToString(_tokenIDMap[chainID][tokenAddress]);\\n    }\\n\\n    /**\\n     * @notice Returns the full token config struct \\n     * @param tokenID String input of the token ID for the token\\n     * @param chainID Chain ID of which token address + config to get\\n     */\\n    function getToken(string calldata tokenID, uint256 chainID) public view returns (Token memory token) {\\n        return _tokens[stringToBytes32(tokenID)][chainID];\\n    }\\n\\n    /**\\n     * @notice Returns token config struct, given an address and chainID\\n     * @param tokenAddress Matches the token ID by using a combo of address + chain ID\\n     * @param chainID Chain ID of which token to get config for\\n     */\\n    function getToken(address tokenAddress, uint256 chainID) public view returns (Token memory token) {\\n        string memory tokenID = getTokenID(tokenAddress, chainID);\\n        return _tokens[stringToBytes32(tokenID)][chainID];\\n    }\\n\\n    /**\\n     * @notice Returns true if the token has an underlying token -- meaning the token is deposited into the bridge\\n     * @param tokenID String to check if it is a withdraw/underlying token\\n     */\\n    function hasUnderlyingToken(string calldata tokenID) public view returns (bool) {\\n        bytes32 bytesTokenID = stringToBytes32(tokenID);\\n        Token[] memory _mcTokens = _allTokens[bytesTokenID];\\n        for (uint256 i = 0; i < _mcTokens.length; ++i) {\\n            if (_mcTokens[i].hasUnderlying) {\\n                return true;\\n            }\\n        }\\n        return false;\\n    }\\n\\n    /**\\n     * @notice Returns which token is the underlying token to withdraw\\n     * @param tokenID string token ID\\n     */\\n    function getUnderlyingToken(string calldata tokenID) public view returns (Token memory token) {\\n        bytes32 bytesTokenID = stringToBytes32(tokenID);\\n        Token[] memory _mcTokens = _allTokens[bytesTokenID];\\n        for (uint256 i = 0; i < _mcTokens.length; ++i) {\\n            if (_mcTokens[i].isUnderlying) {\\n                return _mcTokens[i];\\n            }\\n        }\\n    }\\n    \\n    /**\\n     @notice Public function returning if token ID exists given a string\\n     */\\n    function isTokenIDExist(string calldata tokenID) public view returns (bool) {\\n        return _isTokenIDExist(stringToBytes32(tokenID));\\n    }\\n\\n    /**\\n     @notice Internal function returning if token ID exists given bytes32 version of the ID\\n     */\\n    function _isTokenIDExist(bytes32 tokenID) internal view returns(bool) {\\n        for (uint256 i = 0; i < _allTokenIDs.length; ++i) {\\n            if (_allTokenIDs[i] == tokenID) {\\n                return true;\\n            }\\n        }\\n        return false;\\n    }\\n\\n    /**\\n     * @notice Internal function which handles logic of setting token ID and dealing with mappings\\n     * @param tokenID bytes32 version of ID\\n     * @param chainID which chain to set the token config for\\n     * @param tokenToAdd Token object to set the mapping to\\n     */\\n    function _setTokenConfig(bytes32 tokenID, uint256 chainID, Token memory tokenToAdd) internal returns(bool) {\\n        _tokens[tokenID][chainID] = tokenToAdd;\\n         if (!_isTokenIDExist(tokenID)) {\\n            _allTokenIDs.push(tokenID);\\n        }\\n\\n        Token[] storage _mcTokens = _allTokens[tokenID];\\n        for (uint256 i = 0; i < _mcTokens.length; ++i) {\\n            if (_mcTokens[i].chainId == chainID) {\\n                address oldToken = _mcTokens[i].tokenAddress;\\n                if (tokenToAdd.tokenAddress != oldToken) {\\n                _mcTokens[i].tokenAddress = tokenToAdd.tokenAddress ;\\n                _tokenIDMap[chainID][oldToken] = keccak256('');\\n                _tokenIDMap[chainID][tokenToAdd.tokenAddress] = tokenID;\\n                }\\n            }\\n        }\\n        _mcTokens.push(tokenToAdd);\\n        _tokenIDMap[chainID][tokenToAdd.tokenAddress] = tokenID;\\n        return true;\\n    }\\n\\n    /**\\n     * @notice Main write function of this contract - Handles creating the struct and passing it to the internal logic function\\n     * @param tokenID string ID to set the token config object form\\n     * @param chainID chain ID to use for the token config object\\n     * @param tokenAddress token address of the token on the given chain\\n     * @param tokenDecimals decimals of token \\n     * @param maxSwap maximum amount of token allowed to be transferred at once - in native token decimals\\n     * @param minSwap minimum amount of token needed to be transferred at once - in native token decimals\\n     * @param swapFee percent based swap fee -- 10e6 == 10bps\\n     * @param maxSwapFee max swap fee to be charged - in native token decimals\\n     * @param minSwapFee min swap fee to be charged - in native token decimals - especially useful for mainnet ETH\\n     * @param hasUnderlying bool which represents whether this is a global mint token or one to withdraw()\\n     * @param isUnderlying bool which represents if this token is the one to withdraw on the given chain\\n     */\\n    function setTokenConfig(\\n        string calldata tokenID,\\n        uint256 chainID,\\n        address tokenAddress,\\n        uint8 tokenDecimals,\\n        uint256 maxSwap,\\n        uint256 minSwap,\\n        uint256 swapFee,\\n        uint256 maxSwapFee,\\n        uint256 minSwapFee,\\n        bool hasUnderlying,\\n        bool isUnderlying\\n    ) public returns (bool) {\\n        require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));\\n        Token memory tokenToAdd;\\n        tokenToAdd.tokenAddress = tokenAddress;\\n        tokenToAdd.tokenDecimals = tokenDecimals;\\n        tokenToAdd.maxSwap = maxSwap;\\n        tokenToAdd.minSwap = minSwap;\\n        tokenToAdd.swapFee = swapFee;\\n        tokenToAdd.maxSwapFee = maxSwapFee;\\n        tokenToAdd.minSwapFee = minSwapFee;\\n        tokenToAdd.hasUnderlying = hasUnderlying;\\n        tokenToAdd.isUnderlying = isUnderlying;\\n\\n        return _setTokenConfig(stringToBytes32(tokenID), chainID, tokenToAdd);\\n    }\\n\\n    /** \\n     * @notice Calculates bridge swap fee based on the destination chain's token transfer.\\n     * @dev This means the fee should be calculated based on the chain that the nodes emit a tx on\\n     * @param tokenAddress address of the destination token to query token config for\\n     * @param chainID destination chain ID to query the token config for\\n     * @param amount in native token decimals\\n     * @return Fee calculated in token decimals\\n     */\\n    function calculateSwapFee(\\n        address tokenAddress,\\n        uint256 chainID,\\n        uint256 amount\\n    ) external view returns (uint256) {\\n        Token memory token = getToken(tokenAddress, chainID);\\n        uint256 calculatedSwapFee = amount.mul(token.swapFee).div(FEE_DENOMINATOR);\\n        if (calculatedSwapFee > token.minSwapFee && calculatedSwapFee < token.maxSwapFee) {\\n            return calculatedSwapFee;\\n        } else if (calculatedSwapFee > token.maxSwapFee) {\\n            return token.maxSwapFee;\\n        } else {\\n            return token.minSwapFee;\\n        }\\n    }\\n    \\n    function stringToBytes32(string memory str) internal pure returns (bytes32 result) {\\n        assembly {\\n            result := mload(add(str, 32))\\n        }\\n    }\\n\\n    function bytes32ToString(bytes32 data) internal pure returns (string memory) {\\n        uint8 i = 0;\\n        while (i < 32 && data[i] != 0) {\\n            ++i;\\n        }\\n        bytes memory bs = new bytes(i);\\n        for (uint8 j = 0; j < i; ++j) {\\n            bs[j] = data[j];\\n        }\\n        return string(bs);\\n    }\\n}\",\"keccak256\":\"0x793ac6987570600d170a0496409adb973c9d6e0fe5e05610f807ab9aec124c14\",\"license\":\"MIT\"},\"contracts/bridge/BridgeConfigV2.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.6.12;\\npragma experimental ABIEncoderV2;\\n\\nimport {BridgeConfig} from './BridgeConfig.sol';\\nimport {AccessControl} from './BridgeConfig.sol';\\nimport {SafeMath} from './BridgeConfig.sol';\\nimport {PoolConfig} from './PoolConfig.sol';\\n\\n/**\\n * @title BridgeConfigV2 contract\\n * @notice This token is used for configuring different tokens on the bridge and mapping them across chains.\\n * It wraps bridge config for data storage\\n**/\\n\\ncontract BridgeConfigV2 is AccessControl {\\n    using SafeMath for uint256;\\n    bytes32 public constant BRIDGEMANAGER_ROLE = keccak256('BRIDGEMANAGER_ROLE');\\n    BridgeConfig public BRIDGECONFIG_V1;\\n    PoolConfig public POOLCONFIG_V1;\\n    mapping(uint256 => uint256) private _maxGasPrice; // key is tokenID,chainID\\n\\n    constructor() public {\\n        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);\\n    }\\n\\n    function setBridgeConfig(BridgeConfig bridgeconfig, PoolConfig poolconfig) public {\\n        require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));\\n        BRIDGECONFIG_V1 = bridgeconfig;\\n        POOLCONFIG_V1 = poolconfig;\\n    }\\n\\n    /**\\n     * @notice Returns a list of all existing token IDs converted to strings\\n     */\\n    function getAllTokenIDs() public view returns (string[] memory result) {\\n        return BRIDGECONFIG_V1.getAllTokenIDs();\\n    }\\n\\n    /**\\n     * @notice Returns the token ID (string) of the cross-chain token inputted\\n     * @param tokenAddress address of token to get ID for\\n     * @param chainID chainID of which to get token ID for\\n     */\\n    function getTokenID(address tokenAddress, uint256 chainID) public view returns (string memory)  {\\n        return BRIDGECONFIG_V1.getTokenID(tokenAddress, chainID);\\n    }\\n\\n    /**\\n     * @notice Returns the full token config struct\\n     * @param tokenID String input of the token ID for the token\\n     * @param chainID Chain ID of which token address + config to get\\n     */\\n    function getToken(string calldata tokenID, uint256 chainID) public view returns (BridgeConfig.Token memory token) {\\n        return BRIDGECONFIG_V1.getToken(tokenID, chainID);\\n    }\\n\\n    /**\\n     * @notice Returns token config struct, given an address and chainID\\n     * @param tokenAddress Matches the token ID by using a combo of address + chain ID\\n     * @param chainID Chain ID of which token to get config for\\n     */\\n    function getToken(address tokenAddress, uint256 chainID) public view returns (BridgeConfig.Token memory token) {\\n        return BRIDGECONFIG_V1.getToken(tokenAddress, chainID);\\n    }\\n\\n    /**\\n     * @notice Returns true if the token has an underlying token -- meaning the token is deposited into the bridge\\n     * @param tokenID String to check if it is a withdraw/underlying token\\n     */\\n    function hasUnderlyingToken(string calldata tokenID) public view returns (bool) {\\n        return BRIDGECONFIG_V1.hasUnderlyingToken(tokenID);\\n    }\\n\\n    /**\\n     * @notice Returns which token is the underlying token to withdraw\\n     * @param tokenID string token ID\\n     */\\n    function getUnderlyingToken(string calldata tokenID) public view returns (BridgeConfig.Token memory token) {\\n        return BRIDGECONFIG_V1.getUnderlyingToken(tokenID);\\n    }\\n\\n    /**\\n     @notice Public function returning if token ID exists given a string\\n     */\\n    function isTokenIDExist(string calldata tokenID) public view returns (bool) {\\n        return BRIDGECONFIG_V1.isTokenIDExist(tokenID);\\n    }\\n\\n    /**\\n     * @notice Calculates bridge swap fee based on the destination chain's token transfer.\\n     * @dev This means the fee should be calculated based on the chain that the nodes emit a tx on\\n     * @param tokenAddress address of the destination token to query token config for\\n     * @param chainID destination chain ID to query the token config for\\n     * @param amount in native token decimals\\n     * @return Fee calculated in token decimals\\n     */\\n    function calculateSwapFee(\\n        address tokenAddress,\\n        uint256 chainID,\\n        uint256 amount\\n    ) external view returns (uint256) {\\n        return BRIDGECONFIG_V1.calculateSwapFee(tokenAddress, chainID, amount);\\n    }\\n\\n    function getPoolConfig(address tokenAddress, uint256 chainID) external view\\n    returns (PoolConfig.Pool memory) {\\n        return POOLCONFIG_V1.getPoolConfig(tokenAddress, chainID);\\n    }\\n\\n    /**\\n    * @notice sets the max gas price for a chain\\n    */\\n    function setMaxGasPrice(uint256 chainID, uint256 maxPrice) public {\\n        require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));\\n        _maxGasPrice[chainID] = maxPrice;\\n    }\\n\\n    /**\\n    * @notice gets the max gas price for a chain\\n    */\\n    function getMaxGasPrice(uint256 chainID) public view returns (uint256){\\n        return _maxGasPrice[chainID];\\n    }\\n}\",\"keccak256\":\"0x120688f34d59afbd49ad9bbfda9d9f3c36e5b9aa91de620524eab4b381fa1f92\",\"license\":\"MIT\"},\"contracts/bridge/PoolConfig.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.6.12;\\npragma experimental ABIEncoderV2;\\n\\nimport '@openzeppelin/contracts/access/AccessControl.sol';\\n\\ncontract PoolConfig is AccessControl {\\n  bytes32 public constant BRIDGEMANAGER_ROLE = keccak256('BRIDGEMANAGER_ROLE');\\n  mapping(address => mapping(uint256 => Pool)) private _pool; // key is tokenAddress,chainID\\n\\n  struct Pool {\\n    address tokenAddress;\\n    uint256 chainId;\\n    address poolAddress;\\n    bool metaswap;\\n  }\\n\\n  constructor() public {\\n    _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);\\n    _setupRole(BRIDGEMANAGER_ROLE, msg.sender);\\n  }\\n\\n  function getPoolConfig(address tokenAddress, uint256 chainID)\\n    external\\n    view\\n    returns (Pool memory)\\n  {\\n    return _pool[tokenAddress][chainID];\\n  }\\n\\n  function setPoolConfig(\\n    address tokenAddress,\\n    uint256 chainID,\\n    address poolAddress,\\n    bool metaswap\\n  ) external returns (Pool memory) {\\n    require(\\n      hasRole(BRIDGEMANAGER_ROLE, msg.sender),\\n      'Caller is not Bridge Manager'\\n    );\\n    Pool memory newPool = Pool(tokenAddress, chainID, poolAddress, metaswap);\\n    _pool[tokenAddress][chainID] = newPool;\\n    return newPool;\\n  }\\n}\\n\",\"keccak256\":\"0x9245e3dca42c44bf23b8ba567b24fe21bbef93ba22f903a73eea2d3981785120\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x60806040523480156200001157600080fd5b506200001f60003362000025565b62000139565b62000031828262000035565b5050565b6000828152602081815260409091206200005a91839062000c0c620000ae821b17901c565b1562000031576200006a620000ce565b6001600160a01b0316816001600160a01b0316837f2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d60405160405180910390a45050565b6000620000c5836001600160a01b038416620000d2565b90505b92915050565b3390565b6000620000e0838362000121565b6200011857508154600181810184556000848152602080822090930184905584548482528286019093526040902091909155620000c8565b506000620000c8565b60009081526001919091016020526040902054151590565b61196980620001496000396000f3fe608060405234801561001057600080fd5b506004361061018d5760003560e01c80639010d07c116100e3578063ca15c8731161008c578063fc7cc4cb11610066578063fc7cc4cb14610348578063fd534b331461035b578063ff9106c71461036e5761018d565b8063ca15c8731461030f578063d547741f14610322578063f5cdb446146103355761018d565b8063abaac008116100bd578063abaac008146102e1578063af611ca0146102f4578063bd59cdd1146103075761018d565b80639010d07c146102b357806391d14854146102c6578063a217fddf146102d95761018d565b80633cc1c7e011610145578063684a10b31161011f578063684a10b31461026957806372fb43d91461027e57806387f2c6e31461029e5761018d565b80633cc1c7e01461022357806343d7cce61461024357806358dfe6f1146102565761018d565b80632f2ff15d116101765780632f2ff15d146101db578063324980b5146101f057806336568abe146102105761018d565b8063074b7e9714610192578063248a9ca3146101bb575b600080fd5b6101a56101a0366004611282565b610376565b6040516101b29190611606565b60405180910390f35b6101ce6101c93660046111ed565b610428565b6040516101b29190611611565b6101ee6101e9366004611205565b61043d565b005b6102036101fe3660046112c2565b6104a8565b6040516101b29190611825565b6101ee61021e366004611205565b610563565b6102366102313660046110cc565b6105d9565b6040516101b29190611652565b6102036102513660046110cc565b6106a4565b610203610264366004611282565b610755565b6102716107b5565b6040516101b29190611588565b61029161028c3660046110cc565b61087f565b6040516101b291906117d9565b6102a661092f565b6040516101b29190611513565b6102a66102c1366004611234565b61094b565b6101a56102d4366004611205565b610963565b6101ce61097b565b6101ee6102ef366004611234565b610980565b6101a5610302366004611282565b6109c5565b6102a6610a1e565b6101ce61031d3660046111ed565b610a3a565b6101ee610330366004611205565b610a51565b6101ee610343366004611255565b610aa5565b6101ce6103563660046110f7565b610b2b565b6101ce6103693660046111ed565b610bd6565b6101ce610be8565b6001546040517f074b7e9700000000000000000000000000000000000000000000000000000000815260009173ffffffffffffffffffffffffffffffffffffffff169063074b7e97906103cf908690869060040161161a565b60206040518083038186803b1580156103e757600080fd5b505afa1580156103fb573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061041f91906111c6565b90505b92915050565b60009081526020819052604090206002015490565b60008281526020819052604090206002015461045b906102d4610c2e565b61049a576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401610491906116c2565b60405180910390fd5b6104a48282610c32565b5050565b6104b0610f43565b6001546040517f324980b500000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff9091169063324980b59061050a9087908790879060040161162e565b6101406040518083038186803b15801561052357600080fd5b505afa158015610537573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061055b919061139d565b949350505050565b61056b610c2e565b73ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff16146105cf576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016104919061177c565b6104a48282610cb5565b6001546040517f3cc1c7e000000000000000000000000000000000000000000000000000000000815260609173ffffffffffffffffffffffffffffffffffffffff1690633cc1c7e0906106329086908690600401611534565b60006040518083038186803b15801561064a57600080fd5b505afa15801561065e573d6000803e3d6000fd5b505050506040513d6000823e601f3d9081017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe016820160405261041f919081019061130c565b6106ac610f43565b6001546040517f43d7cce600000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff909116906343d7cce6906107049086908690600401611534565b6101406040518083038186803b15801561071d57600080fd5b505afa158015610731573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061041f919061139d565b61075d610f43565b6001546040517f58dfe6f100000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff909116906358dfe6f190610704908690869060040161161a565b600154604080517f684a10b3000000000000000000000000000000000000000000000000000000008152905160609273ffffffffffffffffffffffffffffffffffffffff169163684a10b3916004808301926000929190829003018186803b15801561082057600080fd5b505afa158015610834573d6000803e3d6000fd5b505050506040513d6000823e601f3d9081017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe016820160405261087a919081019061112b565b905090565b610887610fb3565b6002546040517f72fb43d900000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff909116906372fb43d9906108df9086908690600401611534565b60806040518083038186803b1580156108f757600080fd5b505afa15801561090b573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061041f919061133f565b60025473ffffffffffffffffffffffffffffffffffffffff1681565b600082815260208190526040812061041f9083610d38565b600082815260208190526040812061041f9083610d44565b600081565b6109aa7f4370dcf3e42e4d5b773a451bb8390ee8e7308f47681d1414cff87c2ad0512c8533610963565b6109b357600080fd5b60009182526003602052604090912055565b6001546040517faf611ca000000000000000000000000000000000000000000000000000000000815260009173ffffffffffffffffffffffffffffffffffffffff169063af611ca0906103cf908690869060040161161a565b60015473ffffffffffffffffffffffffffffffffffffffff1681565b600081815260208190526040812061042290610d66565b600082815260208190526040902060020154610a6f906102d4610c2e565b6105cf576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016104919061171f565b610acf7f4370dcf3e42e4d5b773a451bb8390ee8e7308f47681d1414cff87c2ad0512c8533610963565b610ad857600080fd5b6001805473ffffffffffffffffffffffffffffffffffffffff9384167fffffffffffffffffffffffff00000000000000000000000000000000000000009182161790915560028054929093169116179055565b6001546040517ffc7cc4cb00000000000000000000000000000000000000000000000000000000815260009173ffffffffffffffffffffffffffffffffffffffff169063fc7cc4cb90610b869087908790879060040161155a565b60206040518083038186803b158015610b9e57600080fd5b505afa158015610bb2573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061055b9190611442565b60009081526003602052604090205490565b7f4370dcf3e42e4d5b773a451bb8390ee8e7308f47681d1414cff87c2ad0512c8581565b600061041f8373ffffffffffffffffffffffffffffffffffffffff8416610d71565b3390565b6000828152602081905260409020610c4a9082610c0c565b156104a457610c57610c2e565b73ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff16837f2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d60405160405180910390a45050565b6000828152602081905260409020610ccd9082610dbb565b156104a457610cda610c2e565b73ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff16837ff6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b60405160405180910390a45050565b600061041f8383610ddd565b600061041f8373ffffffffffffffffffffffffffffffffffffffff8416610e3c565b600061042282610e54565b6000610d7d8383610e3c565b610db357508154600181810184556000848152602080822090930184905584548482528286019093526040902091909155610422565b506000610422565b600061041f8373ffffffffffffffffffffffffffffffffffffffff8416610e58565b81546000908210610e1a576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161049190611665565b826000018281548110610e2957fe5b9060005260206000200154905092915050565b60009081526001919091016020526040902054151590565b5490565b60008181526001830160205260408120548015610f325783547fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8083019190810190600090879083908110610ea957fe5b9060005260206000200154905080876000018481548110610ec657fe5b600091825260208083209091019290925582815260018981019092526040902090840190558654879080610ef657fe5b60019003818190600052602060002001600090559055866001016000878152602001908152602001600020600090556001945050505050610422565b6000915050610422565b5092915050565b60405180610140016040528060008152602001600073ffffffffffffffffffffffffffffffffffffffff168152602001600060ff16815260200160008152602001600081526020016000815260200160008152602001600081526020016000151581526020016000151581525090565b60408051608081018252600080825260208201819052918101829052606081019190915290565b80516104228161190e565b8051801515811461042257600080fd5b60008083601f840112611006578182fd5b50813567ffffffffffffffff81111561101d578182fd5b60208301915083602082850101111561103557600080fd5b9250929050565b600082601f83011261104c578081fd5b815167ffffffffffffffff811115611062578182fd5b61109360207fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0601f840116016118b7565b91508082528360208285010111156110aa57600080fd5b610f3c8160208401602086016118de565b805160ff8116811461042257600080fd5b600080604083850312156110de578182fd5b82356110e98161190e565b946020939093013593505050565b60008060006060848603121561110b578081fd5b83356111168161190e565b95602085013595506040909401359392505050565b6000602080838503121561113d578182fd5b825167ffffffffffffffff80821115611154578384fd5b818501915085601f830112611167578384fd5b815181811115611175578485fd5b61118284858302016118b7565b8181528481019250838501865b838110156111b8576111a68a88845189010161103c565b8552938601939086019060010161118f565b509098975050505050505050565b6000602082840312156111d7578081fd5b815180151581146111e6578182fd5b9392505050565b6000602082840312156111fe578081fd5b5035919050565b60008060408385031215611217578182fd5b8235915060208301356112298161190e565b809150509250929050565b60008060408385031215611246578182fd5b50508035926020909101359150565b60008060408385031215611267578182fd5b82356112728161190e565b915060208301356112298161190e565b60008060208385031215611294578182fd5b823567ffffffffffffffff8111156112aa578283fd5b6112b685828601610ff5565b90969095509350505050565b6000806000604084860312156112d6578081fd5b833567ffffffffffffffff8111156112ec578182fd5b6112f886828701610ff5565b909790965060209590950135949350505050565b60006020828403121561131d578081fd5b815167ffffffffffffffff811115611333578182fd5b61055b8482850161103c565b600060808284031215611350578081fd5b61135a60806118b7565b82516113658161190e565b815260208381015190820152604083015161137f8161190e565b60408201526113918460608501610fe5565b60608201529392505050565b60006101408083850312156113b0578182fd5b6113b9816118b7565b9050825181526113cc8460208501610fda565b60208201526113de84604085016110bb565b6040820152606083015160608201526080830151608082015260a083015160a082015260c083015160c082015260e083015160e082015261010061142485828601610fe5565b9082015261012061143785858301610fe5565b908201529392505050565b600060208284031215611453578081fd5b5051919050565b73ffffffffffffffffffffffffffffffffffffffff169052565b15159052565b600082845282826020860137806020848601015260207fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0601f85011685010190509392505050565b600081518084526114da8160208601602086016118de565b601f017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0169290920160200192915050565b60ff169052565b73ffffffffffffffffffffffffffffffffffffffff91909116815260200190565b73ffffffffffffffffffffffffffffffffffffffff929092168252602082015260400190565b73ffffffffffffffffffffffffffffffffffffffff9390931683526020830191909152604082015260600190565b6000602080830181845280855180835260408601915060408482028701019250838701855b828110156115f9577fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc08886030184526115e78583516114c2565b945092850192908501906001016115ad565b5092979650505050505050565b901515815260200190565b90815260200190565b60006020825261055b60208301848661147a565b60006040825261164260408301858761147a565b9050826020830152949350505050565b60006020825261041f60208301846114c2565b60208082526022908201527f456e756d657261626c655365743a20696e646578206f7574206f6620626f756e60408201527f6473000000000000000000000000000000000000000000000000000000000000606082015260800190565b6020808252602f908201527f416363657373436f6e74726f6c3a2073656e646572206d75737420626520616e60408201527f2061646d696e20746f206772616e740000000000000000000000000000000000606082015260800190565b60208082526030908201527f416363657373436f6e74726f6c3a2073656e646572206d75737420626520616e60408201527f2061646d696e20746f207265766f6b6500000000000000000000000000000000606082015260800190565b6020808252602f908201527f416363657373436f6e74726f6c3a2063616e206f6e6c792072656e6f756e636560408201527f20726f6c657320666f722073656c660000000000000000000000000000000000606082015260800190565b600060808201905073ffffffffffffffffffffffffffffffffffffffff808451168352602084015160208401528060408501511660408401525060608301511515606083015292915050565b815181526020808301516101408301916118419084018261145a565b506040830151611854604084018261150c565b50606083015160608301526080830151608083015260a083015160a083015260c083015160c083015260e083015160e08301526101008084015161189a82850182611474565b5050610120808401516118af82850182611474565b505092915050565b60405181810167ffffffffffffffff811182821017156118d657600080fd5b604052919050565b60005b838110156118f95781810151838201526020016118e1565b83811115611908576000848401525b50505050565b73ffffffffffffffffffffffffffffffffffffffff8116811461193057600080fd5b5056fea2646970667358221220fba89d88dfb7ee47491a4a37573d46781d299c7ea24b6571d6862e40ed4fd84a64736f6c634300060c0033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061018d5760003560e01c80639010d07c116100e3578063ca15c8731161008c578063fc7cc4cb11610066578063fc7cc4cb14610348578063fd534b331461035b578063ff9106c71461036e5761018d565b8063ca15c8731461030f578063d547741f14610322578063f5cdb446146103355761018d565b8063abaac008116100bd578063abaac008146102e1578063af611ca0146102f4578063bd59cdd1146103075761018d565b80639010d07c146102b357806391d14854146102c6578063a217fddf146102d95761018d565b80633cc1c7e011610145578063684a10b31161011f578063684a10b31461026957806372fb43d91461027e57806387f2c6e31461029e5761018d565b80633cc1c7e01461022357806343d7cce61461024357806358dfe6f1146102565761018d565b80632f2ff15d116101765780632f2ff15d146101db578063324980b5146101f057806336568abe146102105761018d565b8063074b7e9714610192578063248a9ca3146101bb575b600080fd5b6101a56101a0366004611282565b610376565b6040516101b29190611606565b60405180910390f35b6101ce6101c93660046111ed565b610428565b6040516101b29190611611565b6101ee6101e9366004611205565b61043d565b005b6102036101fe3660046112c2565b6104a8565b6040516101b29190611825565b6101ee61021e366004611205565b610563565b6102366102313660046110cc565b6105d9565b6040516101b29190611652565b6102036102513660046110cc565b6106a4565b610203610264366004611282565b610755565b6102716107b5565b6040516101b29190611588565b61029161028c3660046110cc565b61087f565b6040516101b291906117d9565b6102a661092f565b6040516101b29190611513565b6102a66102c1366004611234565b61094b565b6101a56102d4366004611205565b610963565b6101ce61097b565b6101ee6102ef366004611234565b610980565b6101a5610302366004611282565b6109c5565b6102a6610a1e565b6101ce61031d3660046111ed565b610a3a565b6101ee610330366004611205565b610a51565b6101ee610343366004611255565b610aa5565b6101ce6103563660046110f7565b610b2b565b6101ce6103693660046111ed565b610bd6565b6101ce610be8565b6001546040517f074b7e9700000000000000000000000000000000000000000000000000000000815260009173ffffffffffffffffffffffffffffffffffffffff169063074b7e97906103cf908690869060040161161a565b60206040518083038186803b1580156103e757600080fd5b505afa1580156103fb573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061041f91906111c6565b90505b92915050565b60009081526020819052604090206002015490565b60008281526020819052604090206002015461045b906102d4610c2e565b61049a576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401610491906116c2565b60405180910390fd5b6104a48282610c32565b5050565b6104b0610f43565b6001546040517f324980b500000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff9091169063324980b59061050a9087908790879060040161162e565b6101406040518083038186803b15801561052357600080fd5b505afa158015610537573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061055b919061139d565b949350505050565b61056b610c2e565b73ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff16146105cf576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016104919061177c565b6104a48282610cb5565b6001546040517f3cc1c7e000000000000000000000000000000000000000000000000000000000815260609173ffffffffffffffffffffffffffffffffffffffff1690633cc1c7e0906106329086908690600401611534565b60006040518083038186803b15801561064a57600080fd5b505afa15801561065e573d6000803e3d6000fd5b505050506040513d6000823e601f3d9081017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe016820160405261041f919081019061130c565b6106ac610f43565b6001546040517f43d7cce600000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff909116906343d7cce6906107049086908690600401611534565b6101406040518083038186803b15801561071d57600080fd5b505afa158015610731573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061041f919061139d565b61075d610f43565b6001546040517f58dfe6f100000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff909116906358dfe6f190610704908690869060040161161a565b600154604080517f684a10b3000000000000000000000000000000000000000000000000000000008152905160609273ffffffffffffffffffffffffffffffffffffffff169163684a10b3916004808301926000929190829003018186803b15801561082057600080fd5b505afa158015610834573d6000803e3d6000fd5b505050506040513d6000823e601f3d9081017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe016820160405261087a919081019061112b565b905090565b610887610fb3565b6002546040517f72fb43d900000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff909116906372fb43d9906108df9086908690600401611534565b60806040518083038186803b1580156108f757600080fd5b505afa15801561090b573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061041f919061133f565b60025473ffffffffffffffffffffffffffffffffffffffff1681565b600082815260208190526040812061041f9083610d38565b600082815260208190526040812061041f9083610d44565b600081565b6109aa7f4370dcf3e42e4d5b773a451bb8390ee8e7308f47681d1414cff87c2ad0512c8533610963565b6109b357600080fd5b60009182526003602052604090912055565b6001546040517faf611ca000000000000000000000000000000000000000000000000000000000815260009173ffffffffffffffffffffffffffffffffffffffff169063af611ca0906103cf908690869060040161161a565b60015473ffffffffffffffffffffffffffffffffffffffff1681565b600081815260208190526040812061042290610d66565b600082815260208190526040902060020154610a6f906102d4610c2e565b6105cf576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016104919061171f565b610acf7f4370dcf3e42e4d5b773a451bb8390ee8e7308f47681d1414cff87c2ad0512c8533610963565b610ad857600080fd5b6001805473ffffffffffffffffffffffffffffffffffffffff9384167fffffffffffffffffffffffff00000000000000000000000000000000000000009182161790915560028054929093169116179055565b6001546040517ffc7cc4cb00000000000000000000000000000000000000000000000000000000815260009173ffffffffffffffffffffffffffffffffffffffff169063fc7cc4cb90610b869087908790879060040161155a565b60206040518083038186803b158015610b9e57600080fd5b505afa158015610bb2573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061055b9190611442565b60009081526003602052604090205490565b7f4370dcf3e42e4d5b773a451bb8390ee8e7308f47681d1414cff87c2ad0512c8581565b600061041f8373ffffffffffffffffffffffffffffffffffffffff8416610d71565b3390565b6000828152602081905260409020610c4a9082610c0c565b156104a457610c57610c2e565b73ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff16837f2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d60405160405180910390a45050565b6000828152602081905260409020610ccd9082610dbb565b156104a457610cda610c2e565b73ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff16837ff6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b60405160405180910390a45050565b600061041f8383610ddd565b600061041f8373ffffffffffffffffffffffffffffffffffffffff8416610e3c565b600061042282610e54565b6000610d7d8383610e3c565b610db357508154600181810184556000848152602080822090930184905584548482528286019093526040902091909155610422565b506000610422565b600061041f8373ffffffffffffffffffffffffffffffffffffffff8416610e58565b81546000908210610e1a576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161049190611665565b826000018281548110610e2957fe5b9060005260206000200154905092915050565b60009081526001919091016020526040902054151590565b5490565b60008181526001830160205260408120548015610f325783547fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8083019190810190600090879083908110610ea957fe5b9060005260206000200154905080876000018481548110610ec657fe5b600091825260208083209091019290925582815260018981019092526040902090840190558654879080610ef657fe5b60019003818190600052602060002001600090559055866001016000878152602001908152602001600020600090556001945050505050610422565b6000915050610422565b5092915050565b60405180610140016040528060008152602001600073ffffffffffffffffffffffffffffffffffffffff168152602001600060ff16815260200160008152602001600081526020016000815260200160008152602001600081526020016000151581526020016000151581525090565b60408051608081018252600080825260208201819052918101829052606081019190915290565b80516104228161190e565b8051801515811461042257600080fd5b60008083601f840112611006578182fd5b50813567ffffffffffffffff81111561101d578182fd5b60208301915083602082850101111561103557600080fd5b9250929050565b600082601f83011261104c578081fd5b815167ffffffffffffffff811115611062578182fd5b61109360207fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0601f840116016118b7565b91508082528360208285010111156110aa57600080fd5b610f3c8160208401602086016118de565b805160ff8116811461042257600080fd5b600080604083850312156110de578182fd5b82356110e98161190e565b946020939093013593505050565b60008060006060848603121561110b578081fd5b83356111168161190e565b95602085013595506040909401359392505050565b6000602080838503121561113d578182fd5b825167ffffffffffffffff80821115611154578384fd5b818501915085601f830112611167578384fd5b815181811115611175578485fd5b61118284858302016118b7565b8181528481019250838501865b838110156111b8576111a68a88845189010161103c565b8552938601939086019060010161118f565b509098975050505050505050565b6000602082840312156111d7578081fd5b815180151581146111e6578182fd5b9392505050565b6000602082840312156111fe578081fd5b5035919050565b60008060408385031215611217578182fd5b8235915060208301356112298161190e565b809150509250929050565b60008060408385031215611246578182fd5b50508035926020909101359150565b60008060408385031215611267578182fd5b82356112728161190e565b915060208301356112298161190e565b60008060208385031215611294578182fd5b823567ffffffffffffffff8111156112aa578283fd5b6112b685828601610ff5565b90969095509350505050565b6000806000604084860312156112d6578081fd5b833567ffffffffffffffff8111156112ec578182fd5b6112f886828701610ff5565b909790965060209590950135949350505050565b60006020828403121561131d578081fd5b815167ffffffffffffffff811115611333578182fd5b61055b8482850161103c565b600060808284031215611350578081fd5b61135a60806118b7565b82516113658161190e565b815260208381015190820152604083015161137f8161190e565b60408201526113918460608501610fe5565b60608201529392505050565b60006101408083850312156113b0578182fd5b6113b9816118b7565b9050825181526113cc8460208501610fda565b60208201526113de84604085016110bb565b6040820152606083015160608201526080830151608082015260a083015160a082015260c083015160c082015260e083015160e082015261010061142485828601610fe5565b9082015261012061143785858301610fe5565b908201529392505050565b600060208284031215611453578081fd5b5051919050565b73ffffffffffffffffffffffffffffffffffffffff169052565b15159052565b600082845282826020860137806020848601015260207fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0601f85011685010190509392505050565b600081518084526114da8160208601602086016118de565b601f017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0169290920160200192915050565b60ff169052565b73ffffffffffffffffffffffffffffffffffffffff91909116815260200190565b73ffffffffffffffffffffffffffffffffffffffff929092168252602082015260400190565b73ffffffffffffffffffffffffffffffffffffffff9390931683526020830191909152604082015260600190565b6000602080830181845280855180835260408601915060408482028701019250838701855b828110156115f9577fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffc08886030184526115e78583516114c2565b945092850192908501906001016115ad565b5092979650505050505050565b901515815260200190565b90815260200190565b60006020825261055b60208301848661147a565b60006040825261164260408301858761147a565b9050826020830152949350505050565b60006020825261041f60208301846114c2565b60208082526022908201527f456e756d657261626c655365743a20696e646578206f7574206f6620626f756e60408201527f6473000000000000000000000000000000000000000000000000000000000000606082015260800190565b6020808252602f908201527f416363657373436f6e74726f6c3a2073656e646572206d75737420626520616e60408201527f2061646d696e20746f206772616e740000000000000000000000000000000000606082015260800190565b60208082526030908201527f416363657373436f6e74726f6c3a2073656e646572206d75737420626520616e60408201527f2061646d696e20746f207265766f6b6500000000000000000000000000000000606082015260800190565b6020808252602f908201527f416363657373436f6e74726f6c3a2063616e206f6e6c792072656e6f756e636560408201527f20726f6c657320666f722073656c660000000000000000000000000000000000606082015260800190565b600060808201905073ffffffffffffffffffffffffffffffffffffffff808451168352602084015160208401528060408501511660408401525060608301511515606083015292915050565b815181526020808301516101408301916118419084018261145a565b506040830151611854604084018261150c565b50606083015160608301526080830151608083015260a083015160a083015260c083015160c083015260e083015160e08301526101008084015161189a82850182611474565b5050610120808401516118af82850182611474565b505092915050565b60405181810167ffffffffffffffff811182821017156118d657600080fd5b604052919050565b60005b838110156118f95781810151838201526020016118e1565b83811115611908576000848401525b50505050565b73ffffffffffffffffffffffffffffffffffffffff8116811461193057600080fd5b5056fea2646970667358221220fba89d88dfb7ee47491a4a37573d46781d299c7ea24b6571d6862e40ed4fd84a64736f6c634300060c0033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "calculateSwapFee(address,uint256,uint256)": {
+        "details": "This means the fee should be calculated based on the chain that the nodes emit a tx on",
+        "params": {
+          "amount": "in native token decimals",
+          "chainID": "destination chain ID to query the token config for",
+          "tokenAddress": "address of the destination token to query token config for"
+        },
+        "returns": {
+          "_0": "Fee calculated in token decimals"
+        }
+      },
+      "getRoleAdmin(bytes32)": {
+        "details": "Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role's admin, use {_setRoleAdmin}."
+      },
+      "getRoleMember(bytes32,uint256)": {
+        "details": "Returns one of the accounts that have `role`. `index` must be a value between 0 and {getRoleMemberCount}, non-inclusive. Role bearers are not sorted in any particular way, and their ordering may change at any point. WARNING: When using {getRoleMember} and {getRoleMemberCount}, make sure you perform all queries on the same block. See the following https://forum.openzeppelin.com/t/iterating-over-elements-on-enumerableset-in-openzeppelin-contracts/2296[forum post] for more information."
+      },
+      "getRoleMemberCount(bytes32)": {
+        "details": "Returns the number of accounts that have `role`. Can be used together with {getRoleMember} to enumerate all bearers of a role."
+      },
+      "getToken(address,uint256)": {
+        "params": {
+          "chainID": "Chain ID of which token to get config for",
+          "tokenAddress": "Matches the token ID by using a combo of address + chain ID"
+        }
+      },
+      "getToken(string,uint256)": {
+        "params": {
+          "chainID": "Chain ID of which token address + config to get",
+          "tokenID": "String input of the token ID for the token"
+        }
+      },
+      "getTokenID(address,uint256)": {
+        "params": {
+          "chainID": "chainID of which to get token ID for",
+          "tokenAddress": "address of token to get ID for"
+        }
+      },
+      "getUnderlyingToken(string)": {
+        "params": {
+          "tokenID": "string token ID"
+        }
+      },
+      "grantRole(bytes32,address)": {
+        "details": "Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have ``role``'s admin role."
+      },
+      "hasRole(bytes32,address)": {
+        "details": "Returns `true` if `account` has been granted `role`."
+      },
+      "hasUnderlyingToken(string)": {
+        "params": {
+          "tokenID": "String to check if it is a withdraw/underlying token"
+        }
+      },
+      "renounceRole(bytes32,address)": {
+        "details": "Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function's purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `account`."
+      },
+      "revokeRole(bytes32,address)": {
+        "details": "Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have ``role``'s admin role."
+      }
+    },
+    "title": "BridgeConfigV2 contract",
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "calculateSwapFee(address,uint256,uint256)": {
+        "notice": "Calculates bridge swap fee based on the destination chain's token transfer."
+      },
+      "getAllTokenIDs()": {
+        "notice": "Returns a list of all existing token IDs converted to strings"
+      },
+      "getMaxGasPrice(uint256)": {
+        "notice": "gets the max gas price for a chain"
+      },
+      "getToken(address,uint256)": {
+        "notice": "Returns token config struct, given an address and chainID"
+      },
+      "getToken(string,uint256)": {
+        "notice": "Returns the full token config struct"
+      },
+      "getTokenID(address,uint256)": {
+        "notice": "Returns the token ID (string) of the cross-chain token inputted"
+      },
+      "getUnderlyingToken(string)": {
+        "notice": "Returns which token is the underlying token to withdraw"
+      },
+      "hasUnderlyingToken(string)": {
+        "notice": "Returns true if the token has an underlying token -- meaning the token is deposited into the bridge"
+      },
+      "isTokenIDExist(string)": {
+        "notice": "Public function returning if token ID exists given a string"
+      },
+      "setMaxGasPrice(uint256,uint256)": {
+        "notice": "sets the max gas price for a chain"
+      }
+    },
+    "notice": "This token is used for configuring different tokens on the bridge and mapping them across chains. It wraps bridge config for data storage*",
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 3062,
+        "contract": "contracts/bridge/BridgeConfigV2.sol:BridgeConfigV2",
+        "label": "_roles",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_mapping(t_bytes32,t_struct(RoleData)3058_storage)"
+      },
+      {
+        "astId": 19872,
+        "contract": "contracts/bridge/BridgeConfigV2.sol:BridgeConfigV2",
+        "label": "BRIDGECONFIG_V1",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_contract(BridgeConfig)19848"
+      },
+      {
+        "astId": 19874,
+        "contract": "contracts/bridge/BridgeConfigV2.sol:BridgeConfigV2",
+        "label": "POOLCONFIG_V1",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_contract(PoolConfig)23745"
+      },
+      {
+        "astId": 19878,
+        "contract": "contracts/bridge/BridgeConfigV2.sol:BridgeConfigV2",
+        "label": "_maxGasPrice",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_mapping(t_uint256,t_uint256)"
+      }
+    ],
+    "types": {
+      "t_array(t_bytes32)dyn_storage": {
+        "base": "t_bytes32",
+        "encoding": "dynamic_array",
+        "label": "bytes32[]",
+        "numberOfBytes": "32"
+      },
+      "t_bytes32": {
+        "encoding": "inplace",
+        "label": "bytes32",
+        "numberOfBytes": "32"
+      },
+      "t_contract(BridgeConfig)19848": {
+        "encoding": "inplace",
+        "label": "contract BridgeConfig",
+        "numberOfBytes": "20"
+      },
+      "t_contract(PoolConfig)23745": {
+        "encoding": "inplace",
+        "label": "contract PoolConfig",
+        "numberOfBytes": "20"
+      },
+      "t_mapping(t_bytes32,t_struct(RoleData)3058_storage)": {
+        "encoding": "mapping",
+        "key": "t_bytes32",
+        "label": "mapping(bytes32 => struct AccessControl.RoleData)",
+        "numberOfBytes": "32",
+        "value": "t_struct(RoleData)3058_storage"
+      },
+      "t_mapping(t_bytes32,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_bytes32",
+        "label": "mapping(bytes32 => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_mapping(t_uint256,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_uint256",
+        "label": "mapping(uint256 => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_struct(AddressSet)5812_storage": {
+        "encoding": "inplace",
+        "label": "struct EnumerableSet.AddressSet",
+        "members": [
+          {
+            "astId": 5811,
+            "contract": "contracts/bridge/BridgeConfigV2.sol:BridgeConfigV2",
+            "label": "_inner",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_struct(Set)5547_storage"
+          }
+        ],
+        "numberOfBytes": "64"
+      },
+      "t_struct(RoleData)3058_storage": {
+        "encoding": "inplace",
+        "label": "struct AccessControl.RoleData",
+        "members": [
+          {
+            "astId": 3055,
+            "contract": "contracts/bridge/BridgeConfigV2.sol:BridgeConfigV2",
+            "label": "members",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_struct(AddressSet)5812_storage"
+          },
+          {
+            "astId": 3057,
+            "contract": "contracts/bridge/BridgeConfigV2.sol:BridgeConfigV2",
+            "label": "adminRole",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_bytes32"
+          }
+        ],
+        "numberOfBytes": "96"
+      },
+      "t_struct(Set)5547_storage": {
+        "encoding": "inplace",
+        "label": "struct EnumerableSet.Set",
+        "members": [
+          {
+            "astId": 5542,
+            "contract": "contracts/bridge/BridgeConfigV2.sol:BridgeConfigV2",
+            "label": "_values",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_array(t_bytes32)dyn_storage"
+          },
+          {
+            "astId": 5546,
+            "contract": "contracts/bridge/BridgeConfigV2.sol:BridgeConfigV2",
+            "label": "_indexes",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_mapping(t_bytes32,t_uint256)"
+          }
+        ],
+        "numberOfBytes": "64"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  }
+}

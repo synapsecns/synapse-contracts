@@ -3,9 +3,9 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin/contracts/access/AccessControl.sol';
-import '@openzeppelin/contracts/math/SafeMath.sol';
 import {BridgeConfig} from './BridgeConfig.sol';
+import {AccessControl} from './BridgeConfig.sol';
+import {SafeMath} from './BridgeConfig.sol';
 import {PoolConfig} from './PoolConfig.sol';
 
 /**
