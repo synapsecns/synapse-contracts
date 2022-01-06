@@ -57,6 +57,7 @@
     "hardhat": "^2.6.0",
     "hardhat-deploy": "^0.9.6",
     "hardhat-gas-reporter": "^1.0.4",
+    "hardhat-interface-generator": "0.0.6",
     "hardhat-spdx-license-identifier": "^2.0.3",
     "husky": "^6.0.0",
     "lint-staged": "^11.0.0",
