@@ -6,6 +6,7 @@ pragma experimental ABIEncoderV2;
 import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 import {BridgeConfig} from './BridgeConfig.sol';
+import {PoolConfig} from './PoolConfig.sol';
 
 /**
  * @title BridgeConfigV2 contract
@@ -17,15 +18,17 @@ contract BridgeConfigV2 is AccessControl {
     using SafeMath for uint256;
     bytes32 public constant BRIDGEMANAGER_ROLE = keccak256('BRIDGEMANAGER_ROLE');
     BridgeConfig public BRIDGECONFIG_V1;
-     mapping(uint256 => uint256) private _maxGasPrice; // key is tokenID,chainID
+    PoolConfig public POOLCONFIG_V1;
+    mapping(uint256 => uint256) private _maxGasPrice; // key is tokenID,chainID
 
     constructor() public {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function setBridgeConfig(BridgeConfig config) public {
+    function setBridgeConfig(BridgeConfig bridgeconfig, PoolConfig poolconfig) public {
         require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));
-        BRIDGECONFIG_V1 = config;
+        BRIDGECONFIG_V1 = bridgeconfig;
+        POOLCONFIG_V1 = poolconfig;
     }
 
     /**
@@ -99,6 +102,11 @@ contract BridgeConfigV2 is AccessControl {
         uint256 amount
     ) external view returns (uint256) {
         return BRIDGECONFIG_V1.calculateSwapFee(tokenAddress, chainID, amount);
+    }
+
+    function getPoolConfig(address tokenAddress, uint256 chainID) external view
+    returns (PoolConfig.Pool memory) {
+        return POOLCONFIG_V1.getPoolConfig(tokenAddress, chainID);
     }
 
     /**
