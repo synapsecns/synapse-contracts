@@ -10,6 +10,7 @@ import "hardhat-deploy"
 import "hardhat-spdx-license-identifier"
 import "hardhat-interface-generator";
 
+
 import { HardhatUserConfig } from "hardhat/config"
 import dotenv from "dotenv"
 
@@ -82,6 +83,24 @@ let config: HardhatUserConfig = {
       gas: 10000000,
       // gasPrice: 1 * 1000000000,
     },
+    tenderly_prepmainnet: {
+      url: process.env.ALCHEMY_API,
+    },
+    tenderly_mainnet: {
+      url: "https://rpc.tenderly.co/fork/8a1fb06a-1926-4b7f-9f01-35d8dcb3d3a2"
+    },
+    tenderly_avalanche: {
+      url: "https://rpc.tenderly.co/fork/58adc3b9-17eb-4c96-aa40-8eb52717dcad"
+    },
+    tenderly_arbitrum: {
+      url: "https://rpc.tenderly.co/fork/f817917b-2e58-49d0-bac6-c2f04f8b6442"
+    },
+    tenderly_prepavalanche: {
+      url: "https://api.avax.network/ext/bc/C/rpc",
+    },
+    tenderly_preparbi: {
+      url: "https://arb1.arbitrum.io/rpc",
+    }
   },
   paths: {
     artifacts: "./build/artifacts",
@@ -157,7 +176,10 @@ if (process.env.PRIVATE_KEYS) {
     "boba",
     "moonriver",
     "optimism",
-    "aurora"
+    "aurora",
+    "tenderly_prepmainnet",
+    "tenderly_prepavalanche",
+    "tenderly_preparbi"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
