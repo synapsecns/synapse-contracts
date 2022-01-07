@@ -11,7 +11,6 @@ import '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
 import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
 
-import './interfaces/IMetaSwapDeposit.sol';
 import './interfaces/ISwap.sol';
 import './interfaces/IWETH9.sol';
 
@@ -461,7 +460,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     IERC20Mintable token,
     uint256 amount,
     uint256 fee,
-    IMetaSwapDeposit pool,
+    ISwap pool,
     uint8 tokenIndexFrom,
     uint8 tokenIndexTo,
     uint256 minDy,
@@ -475,10 +474,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     fees[address(token)] = fees[address(token)].add(fee);
     // Transfer gas airdrop
     if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-      to.transfer(chainGasAmount);
+      to.call.value(chainGasAmount)("");
     }
     // first check to make sure more will be given than min amount required
-    uint256 expectedOutput = IMetaSwapDeposit(pool).calculateSwap(
+    uint256 expectedOutput = ISwap(pool).calculateSwap(
       tokenIndexFrom,
       tokenIndexTo,
       amount.sub(fee)
@@ -489,7 +488,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       token.mint(address(this), amount);
       token.safeIncreaseAllowance(address(pool), amount);
       try
-        IMetaSwapDeposit(pool).swap(
+        ISwap(pool).swap(
           tokenIndexFrom,
           tokenIndexTo,
           amount.sub(fee),
@@ -498,7 +497,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         )
       returns (uint256 finalSwappedAmount) {
         // Swap succeeded, transfer swapped asset
-        IERC20 swappedTokenTo = IMetaSwapDeposit(pool).getToken(tokenIndexTo);
+        IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
         if (address(swappedTokenTo) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
           IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
           (bool success, ) = to.call{value: finalSwappedAmount}("");
