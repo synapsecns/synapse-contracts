@@ -97,6 +97,9 @@ let config: HardhatUserConfig = {
     },
     tenderly_prepavalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
+    },
+    tenderly_preparbi: {
+      url: "https://arb1.arbitrum.io/rpc",
     }
   },
   paths: {
@@ -175,7 +178,8 @@ if (process.env.PRIVATE_KEYS) {
     "optimism",
     "aurora",
     "tenderly_prepmainnet",
-    "tenderly_prepavalanche"
+    "tenderly_prepavalanche",
+    "tenderly_preparbi"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
