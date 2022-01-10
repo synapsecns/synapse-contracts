@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
 
 import '@openzeppelin/contracts-upgradeable/proxy/Initializable.sol';
 import '@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol';
@@ -14,7 +13,22 @@ import '@openzeppelin/contracts/math/SafeMath.sol';
 
 import './interfaces/ISwap.sol';
 import './interfaces/IWETH9.sol';
-import './interfaces/IRouter.sol';
+
+// interface IRouter { 
+
+//   struct Trade {
+//         uint256 amountIn;
+//         uint256 amountOut;
+//         address[] path;
+//         address[] adapters;
+//   }
+
+//   function selfSwap(
+//         Trade calldata _trade,
+//         address _to,
+//         uint256 _fee
+//     ) external returns (uint256);
+// }
 
 interface IERC20Mintable is IERC20 {
   function mint(address to, uint256 amount) external;
@@ -141,14 +155,14 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 chainId,
     IERC20 token,
     uint256 amount,
-    IRouter.Trade trade
+    bytes routeraction
   );
   event TokenMintAndSwapV2(
     address indexed to,
     IERC20Mintable token,
     uint256 amount,
     uint256 fee,
-    IRouter.Trade trade,
+    bytes routeraction,
     bool swapSuccess,
     bytes32 indexed kappa
   );
@@ -157,14 +171,14 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     uint256 chainId,
     IERC20 token,
     uint256 amount,
-    IRouter.Trade trade
+    bytes routeraction
   );
   event TokenWithdrawAndSwapV2(
     address indexed to,
     IERC20 token,
     uint256 amount,
     uint256 fee,
-    IRouter.Trade trade,
+    bytes routeraction,
     bool swapSuccess,
     bytes32 indexed kappa
   );
@@ -585,13 +599,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
    * @param to address on other chain to bridge assets to
    * @param chainId which chain to bridge assets onto
    * @param token ERC20 compatible token to deposit into the bridge
-   * @param _trade trade data to call router with on dest chain
+   
    **/
   function depositMaxAndSwapV2(
     address to,
     uint256 chainId,
     IERC20 token,
-    IRouter.Trade calldata _trade
+    bytes calldata routeraction
   ) external nonReentrant() whenNotPaused() {
     uint256 allowance = token.allowance(msg.sender, address(this));
     uint256 tokenBalance = token.balanceOf(msg.sender);
@@ -601,7 +615,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       chainId,
       token,
       amount,
-      _trade
+      routeraction
     );
     token.safeTransferFrom(msg.sender, address(this), amount);
   }
@@ -613,18 +627,18 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
    * @param to address on other chain to redeem underlying assets to
    * @param chainId which underlying chain to bridge assets onto
    * @param token ERC20 compatible token to deposit into the bridge
-   * @param _trade trade data to call router with on dest chain
+   
    **/
     function redeemMaxAndSwapV2(
     address to,
     uint256 chainId,
     ERC20Burnable token,
-    IRouter.Trade calldata _trade
+    bytes calldata routeraction
   ) external nonReentrant() whenNotPaused() {
     uint256 allowance = token.allowance(msg.sender, address(this));
     uint256 tokenBalance = token.balanceOf(msg.sender);
     uint256 amount = (allowance > tokenBalance) ? tokenBalance : allowance;
-    emit TokenRedeemAndSwapV2(to, chainId, token, amount, _trade);
+    emit TokenRedeemAndSwapV2(to, chainId, token, amount, routeraction);
     token.burnFrom(msg.sender, amount);
   }
 
@@ -637,7 +651,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
    * @param token ERC20 compatible token to deposit into the bridge
    * @param amount Amount in native token decimals to transfer cross-chain post-fees
    * @param fee Amount in native token decimals to save to the contract as fees
-   * @param _trade trade data to call router with on dest chain 
+    
    * @param kappa kappa
    **/
   function mintAndSwapV2(
@@ -645,7 +659,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     IERC20Mintable token,
     uint256 amount,
     uint256 fee,
-    IRouter.Trade calldata _trade,
+    bytes calldata routeraction,
     bytes32 kappa
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
@@ -658,13 +672,20 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       to.call.value(chainGasAmount)("");
     }
     token.mint(ROUTER, amount);
-    
-    try IRouter(ROUTER).selfSwap(_trade, to, 0) {
-      emit TokenMintAndSwapV2(to, token, amount.sub(fee), fee, _trade, true, kappa);
-    } catch {
+    (bool success, bytes memory result) = ROUTER.call(routeraction);
+    if (success) {  
+      // Swap successful
+      emit TokenMintAndSwapV2(to, token, amount.sub(fee), fee, routeraction, true, kappa);
+    } else {
       IERC20(token).safeTransferFrom(ROUTER, to, amount.sub(fee));
-      emit TokenMintAndSwapV2(to, token, amount.sub(fee), fee, _trade, false, kappa);
+      emit TokenMintAndSwapV2(to, token, amount.sub(fee), fee, routeraction, false, kappa);
     }
+    // try IRouter(ROUTER).selfSwap(_trade, to, 0) {
+    //   emit TokenMintAndSwapV2(to, token, amount.sub(fee), fee, _trade, true, kappa);
+    // } catch {
+    //   IERC20(token).safeTransferFrom(ROUTER, to, amount.sub(fee));
+    //   emit TokenMintAndSwapV2(to, token, amount.sub(fee), fee, _trade, false, kappa);
+    // }
   }
 
   /**
@@ -673,7 +694,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
    * @param token ERC20 compatible token to withdraw from the bridge
    * @param amount Amount in native token decimals to withdraw
    * @param fee Amount in native token decimals to save to the contract as fees
-   * @param _trade trade data to call router with on dest chain
+   
    * @param kappa kappa
    **/
   function withdrawAndSwapV2(
@@ -681,7 +702,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     IERC20 token,
     uint256 amount,
     uint256 fee,
-    IRouter.Trade calldata _trade,
+    bytes calldata routeraction,
     bytes32 kappa
   ) external nonReentrant() whenNotPaused() {
     require(hasRole(NODEGROUP_ROLE, msg.sender), 'Caller is not a node group');
@@ -691,11 +712,19 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     fees[address(token)] = fees[address(token)].add(fee);
 
     IERC20(token).safeTransfer(ROUTER, amount.sub(fee));
-    try IRouter(ROUTER).selfSwap(_trade, to, 0) {
-      emit TokenWithdrawAndSwapV2(to, token, amount.sub(fee), fee, _trade, true, kappa);
-    } catch {
-      IERC20(token).safeTransferFrom(ROUTER, to, amount.sub(fee));
-      emit TokenWithdrawAndSwapV2(to, token, amount.sub(fee), fee, _trade, false, kappa);
+    (bool success, bytes memory result) = ROUTER.call(routeraction);
+     if (success) { 
+      // Swap successful
+      emit TokenWithdrawAndSwapV2(to, token, amount.sub(fee), fee, routeraction, true, kappa);
+    } else {
+        IERC20(token).safeTransferFrom(ROUTER, to, amount.sub(fee));
+        emit TokenWithdrawAndSwapV2(to, token, amount.sub(fee), fee, routeraction, false, kappa);
     }
+    // try IRouter(ROUTER).selfSwap(_trade, to, 0) {
+    //   emit TokenWithdrawAndSwapV2(to, token, amount.sub(fee), fee, _trade, true, kappa);
+    // } catch {
+    //   IERC20(token).safeTransferFrom(ROUTER, to, amount.sub(fee));
+    //   emit TokenWithdrawAndSwapV2(to, token, amount.sub(fee), fee, _trade, false, kappa);
+    // }
   }
 }
