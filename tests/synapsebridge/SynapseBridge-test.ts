@@ -2,9 +2,7 @@ import "@nomiclabs/hardhat-ethers";
 import "@openzeppelin/hardhat-upgrades";
 import "hardhat-deploy";
 
-import {default as hre} from "hardhat";
-
-import {ethers} from "hardhat";
+import {default as hre, ethers} from "hardhat";
 
 import {Context, Done} from "mocha";
 
@@ -13,13 +11,13 @@ import {step} from "mocha-steps";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 
-import type {SynapseBridge, TimelockController} from "../../build/typechain";
+import type {SynapseBridge, TimelockController, SynapseERC20} from "../../build/typechain";
 
 import {TestUtils, ZeroAddress} from "../util";
 
 import {BytesLike, hexZeroPad} from "@ethersproject/bytes";
-import {ContractReceipt, ContractTransaction} from "@ethersproject/contracts";
-import {BigNumberish} from "ethers";
+import {ContractReceipt, ContractTransaction, PopulatedTransaction} from "@ethersproject/contracts";
+import {BigNumber, BigNumberish} from "@ethersproject/bignumber";
 
 chai.use(chaiAsPromised);
 
@@ -37,12 +35,16 @@ describe("SynapseBridge", function(this: Mocha.Suite) {
 
     describe("Basic Tests", function(this: Mocha.Suite) {
         step("setup", async function(this: Context, done: Done) {
-            this.timeout(30*1000);
+            this.timeout(65*1000);
 
             await deployments.fixture([
                 'DevMultisig',
+                'Multicall2',
                 'TimelockController',
                 'SynapseBridge',
+                'SynapseERC20Factory',
+                'SynapseERC20',
+                'SynapseToken',
             ])
 
             synapseBridge = (await TestUtils.contractInstanceFromDeployment('SynapseBridge', hre)) as SynapseBridge;
@@ -77,7 +79,7 @@ describe("SynapseBridge", function(this: Mocha.Suite) {
                 schedulerSalt = ethers.utils.randomBytes(32),
                 schedulerDelay = 181;
 
-            describe("TimelockController testing I guess", function(this: Mocha.Suite) {
+            describe.skip("TimelockController testing I guess", function(this: Mocha.Suite) {
                 step(`schedule up a grantRole call for me`, function(this: Context, done: Done) {
                     this.timeout(13*1000);
 
@@ -119,25 +121,10 @@ describe("SynapseBridge", function(this: Mocha.Suite) {
                         .notify(done);
                 })
 
-                step(`guess we're waiting 181 blocks...`, async function(this: Context, done: Done) {
+                step(`guess we're waiting 181 blocks...`, function(this: Context, done: Done) {
                     this.timeout(240*1000);
 
-                    const intervalSeconds = 10;
-
-                    let
-                        intervalCount = 0,
-                        isReady = await timelockController.isOperationReady(scheduledGrantRoleId);
-
-                    let interval = setInterval(async () => {
-                        isReady = await timelockController.isOperationReady(scheduledGrantRoleId);
-                        if (isReady) {
-                            clearInterval(interval);
-                            done();
-                        } else {
-                            intervalCount++;
-                            console.log(`interval count: ${intervalCount}. Seconds waited: ${intervalSeconds*intervalCount}`);
-                        }
-                    }, intervalSeconds*1000);
+                    TestUtils.pollContract(timelockController.isOperationReady, 10, done, scheduledGrantRoleId);
                 })
 
                 step("execute grantRole(DEFAULT_ADMIN_ROLE) action", function(this: Context, done: Done) {
@@ -157,66 +144,53 @@ describe("SynapseBridge", function(this: Mocha.Suite) {
 
                     expect(txnProm)
                         .to.eventually.have
-                        .property("status").that.equals(1);
+                        .property("status").that.equals(1)
+                        .notify(done);
+                })
+
+                step("ensure I have DEFAULT_ADMIN_ROLE on the Bridge contract", function(this: Context, done: Done) {
+                    this.timeout(240*1000);
 
                     expect(timelockController.isOperationDone(scheduledGrantRoleId))
                         .to.eventually.be.true.notify(done);
-                })
 
-                step("ensure I have DEFAULT_ADMIN_ROLE on the Bridge contract", async function(this: Context, done: Done) {
-                    this.timeout(240*1000);
-
-                    const intervalSeconds = 5;
-
-                    let
-                        intervalCount = 0,
-                        isReady = await synapseBridge.hasRole(adminRole, deployerAddr);
-
-                    let interval = setInterval(async () => {
-                        isReady = await synapseBridge.hasRole(adminRole, deployerAddr);
-                        if (isReady) {
-                            clearInterval(interval);
-                            done();
-                        } else {
-                            intervalCount++;
-                            console.log(`interval count: ${intervalCount}. Seconds waited: ${intervalSeconds*intervalCount}`);
-                        }
-                    }, intervalSeconds*1000);
+                    TestUtils.pollContract(synapseBridge.hasRole, 5, done, adminRole, deployerAddr, { from: deployerAddr });
                 })
             })
         }
 
-        describe("WETH_ADDRESS whackery", function(this: Mocha.Suite) {
-            step(`should have a WETH_ADDRESS equal to ${ZeroAddress}`, function(this: Context, done: Done) {
-                this.timeout(10*1000);
+        it("should be able to fetch the chain gas amount", function(this: Context, done: Done) {
+            expect(synapseBridge.chainGasAmount())
+                .to.eventually.be.fulfilled.notify(done);
+        })
 
-                expect(synapseBridge.WETH_ADDRESS())
-                    .to.eventually.equal(ZeroAddress)
-                    .notify(done);
+        describe("do some weird stuff with SynapseToken", function(this: Mocha.Suite) {
+            const { deployments: {get, execute} } = hre;
+
+            step("give meself mint privileges for SYN", function(this: Context, done: Done) {
+                get("DevMultisig")
+                    .then((dm) => {
+                        execute(
+                            "SynapseToken",
+                            { from: dm.address, log: true },
+                            "grantRole",
+                            "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6",
+                            dm.address
+                        ).then(() => done())
+                    })
             })
 
-            const TestWETHAddress: string = "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab"; // AVAX WETH address
-
-            step(`should set WETH_ADDRESS to ${TestWETHAddress}`, function(this: Context, done: Done) {
-                this.timeout(10*1000);
-
-                let setWETHTxn: Promise<ContractReceipt> = synapseBridge.setWethAddress(TestWETHAddress)
-                    .then((r): Promise<ContractReceipt> =>
-                        r.wait(1).then((receipt) => receipt)
-                    )
-
-                expect(setWETHTxn)
-                    .to.eventually.have
-                    .property("status").that.equals(1)
-                    .notify(done);
-            })
-
-            step(`should have a WETH_ADDRESS equal to ${TestWETHAddress}`, function(this: Context, done: Done) {
-                this.timeout(10*1000);
-
-                expect(synapseBridge.WETH_ADDRESS())
-                    .to.eventually.equal(TestWETHAddress)
-                    .notify(done);
+            step("mint some shiz", function(this: Context, done: Done) {
+                TestUtils.contractInstanceFromDeployment("SynapseToken", hre)
+                    .then((tok) => {
+                        let t = (tok as SynapseERC20);
+                        t.mint(deployerAddr, ethers.utils.parseEther('20'))
+                            .then(() => {
+                                t.balanceOf(deployerAddr).then((bal) => {
+                                    expect(bal.eq(ethers.utils.parseEther('20'))).to.be.true.notify(done);
+                                })
+                            })
+                    })
             })
         })
     })

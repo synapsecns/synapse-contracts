@@ -27,7 +27,8 @@ let config: HardhatUserConfig = {
       ],
       mining: {
         interval: [250, 750]
-      }
+      },
+      chainId: 31337,
     },
     coverage: {
       url: "http://127.0.0.1:8555",
