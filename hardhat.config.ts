@@ -18,6 +18,17 @@ dotenv.config()
 let config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
+    hardhat: {
+      accounts: [
+        {
+          privateKey: process.env.HARDHAT_PRIVATE_KEY,
+          balance:   "10000000000000000000000"
+        },
+      ],
+      mining: {
+        interval: [250, 750]
+      }
+    },
     coverage: {
       url: "http://127.0.0.1:8555",
     },
@@ -89,6 +100,7 @@ let config: HardhatUserConfig = {
   paths: {
     artifacts: "./build/artifacts",
     cache: "./build/cache",
+    tests: "./tests"
   },
   typechain: {
     outDir: "./build/typechain/",

@@ -7,9 +7,14 @@
     "outDir": "dist",
     "resolveJsonModule": true,
     "declaration": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "types": [
+      "mocha",
+      "chai",
+      "chai-as-promised",
+    ]
   },
-  "include": ["./hardhat.config.ts", "./scripts", "./deploy", "./test", "deprecated-deploys/amm"],
+  "include": ["./hardhat.config.ts", "./scripts", "./deploy", "./tests", "deprecated-deploys/amm"],
   // "include": ["./scripts", "./build/typechain"],
   "files": [
     "./hardhat.config.ts"
