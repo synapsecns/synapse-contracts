@@ -8,7 +8,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await getNamedAccounts()
 
   if (
-    (await getChainId()) != CHAIN_ID.MOONRIVER) {
+    (await getChainId()) != CHAIN_ID.MOONBEAM) {
     if ((await getOrNull("nUSD")) == null) {
       const receipt = await execute(
         "SynapseERC20Factory",
