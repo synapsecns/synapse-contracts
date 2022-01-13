@@ -5,8 +5,8 @@ import "./chaisetup";
 import {expect} from "chai";
 
 import {BigNumber, BigNumberish} from "ethers";
-import {ContractReceipt, ContractTransaction} from "@ethersproject/contracts";
-import {Done} from "mocha";
+import {ContractTransaction} from "@ethersproject/contracts";
+
 
 export namespace Birdies {
     export type KindaPromise<T> = T|Promise<T>
