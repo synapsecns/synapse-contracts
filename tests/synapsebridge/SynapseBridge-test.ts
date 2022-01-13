@@ -212,7 +212,7 @@ describe("SynapseBridge", function(this: Mocha.Suite) {
                 .then((lastNonce) => {
                     expect(Promise.resolve(
                         tokenNames.map((tName, idx): Promise<void> =>
-                            minterFunc(tName, lastNonce+(idx+1)))
+                            minterFunc(tName, lastNonce++))
                     )).to.eventually.be.fulfilled.notify(done);
                 })
         })
@@ -267,10 +267,8 @@ describe("SynapseBridge", function(this: Mocha.Suite) {
 
                 const f = txnReceipt => Birdies.expectTxnReceiptSuccess(txnReceipt);
 
-                lastNonce += (idx + 1);
-
                 let populated = await instance.populateTransaction.approve(synapseBridge.address, tc.amt, {from:deployerAddr});
-                populated.nonce = lastNonce;
+                populated.nonce = lastNonce++;
 
                 let r = await (await TestUtils.signer(hre)).sendTransaction(populated);
                 await f(r.wait(2));
@@ -304,8 +302,6 @@ describe("SynapseBridge", function(this: Mocha.Suite) {
                     Birdies.expectBigNumber(instance.balanceOf(deployerAddr), startBal);
                 }
 
-                lastNonce++;
-
                 let populated = await synapseBridge.populateTransaction.deposit(
                     deployerAddr,
                     tc.toChain,
@@ -313,7 +309,7 @@ describe("SynapseBridge", function(this: Mocha.Suite) {
                     tc.amt,
                     { from: deployerAddr }
                 );
-                populated.nonce = lastNonce;
+                populated.nonce = lastNonce++;
 
                 let txn = await (await TestUtils.signer(hre)).sendTransaction(populated);
                 await f(txn.wait(2));
