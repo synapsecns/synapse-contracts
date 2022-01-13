@@ -85,8 +85,21 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
-
-
+  if ((await getChainId()) === "1285") {
+    await deploy("L2BridgeZap", {
+      from: deployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+      args: [
+        (await get("WMOVR")).address,
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        (await get("SynapseBridge")).address,
+      ],
+    })
+  }
 
   if ((await getChainId()) === "288") {
     await deploy("L2BridgeZap", {
@@ -145,7 +158,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       log: true,
       skipIfAlreadyDeployed: true,
       args: [
-        "0x0000000000000000000000000000000000000000",
+        (await get("WAVAX")).address,
         (await get("AaveSwapWrapper")).address,
         (await get("nETH")).address,
         (await get("nUSDPoolV2")).address,
