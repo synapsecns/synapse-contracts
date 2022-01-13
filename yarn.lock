@@ -1193,7 +1193,14 @@
   dependencies:
     "@types/chai" "*"
 
-"@types/chai@*", "@types/chai@^4.2.18":
+"@types/chai-things@^0.0.35":
+  version "0.0.35"
+  resolved "https://registry.yarnpkg.com/@types/chai-things/-/chai-things-0.0.35.tgz#4b5d9ec032067faa62b3bf7bb40dc0bec941945f"
+  integrity sha512-BC8FwMf9FHj87XT4dgTwbdb8dNRilGqYWGmwLPdJ54YNk6K2PlcFTt68NGHjgPDnms8zIYcOtmPePd0mPNTo/Q==
+  dependencies:
+    "@types/chai" "*"
+
+"@types/chai@*", "@types/chai@^4.3.0":
   version "4.3.0"
   resolved "https://registry.yarnpkg.com/@types/chai/-/chai-4.3.0.tgz#23509ebc1fa32f1b4d50d6a66c4032d5b8eaabdc"
   integrity sha512-/ceqdqeRraGolFTcfoXNiqjyQhZzbINDngeoAq9GoHa8PPK1yNzTaxWjA6BFWp5Ua9JpXEMSS4s5i9tS0hOJtw==
@@ -2979,6 +2986,11 @@ chai-as-promised@^7.1.1:
   integrity sha512-azL6xMoi+uxu6z4rhWQ1jbdUhOMhis2PvscD/xjLqNMkv3BPPp2JyyuTHOrf9BOosGpNQ11v6BKv/g57RXbiaA==
   dependencies:
     check-error "^1.0.2"
+
+chai-things@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/chai-things/-/chai-things-0.2.0.tgz#c55128378f9bb399e994f00052151984ed6ebe70"
+  integrity sha1-xVEoN4+bs5nplPAAUhUZhO1uvnA=
 
 chai@^4.3.4:
   version "4.3.4"

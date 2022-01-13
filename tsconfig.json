@@ -12,6 +12,8 @@
       "mocha",
       "chai",
       "chai-as-promised",
+      "@ethereum-waffle/chai",
+      "chai-things",
     ]
   },
   "include": ["./hardhat.config.ts", "./scripts", "./deploy", "./tests", "deprecated-deploys/amm"],
