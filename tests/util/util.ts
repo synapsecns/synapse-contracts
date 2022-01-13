@@ -84,6 +84,14 @@ export namespace TestUtils {
         }, seconds*1000);
     }
 
+    export async function getLastNonce(hre: HardhatRuntimeEnvironment): Promise<number> {
+        const
+            {deployer} = await hre.getNamedAccounts(),
+            signer = await ethers.getSigner(deployer);
+
+        return signer.getTransactionCount('pending');
+    }
+
     export async function checkWalletBalance(hre: HardhatRuntimeEnvironment): Promise<BigNumber> {
         return (await signer(hre)).getBalance()
     }
