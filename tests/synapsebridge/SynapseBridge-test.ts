@@ -163,39 +163,62 @@ describe("SynapseBridge", function(this: Mocha.Suite) {
 
         const tokenNames = ["SynapseToken", "nUSD", "gOHM"];
 
-        step("give meself mint privileges", function(this: Context, done: Done) {
-            tokenNames.forEach((tokenName: string) => {
-                expect(get("DevMultisig").then((dm) =>
-                    Birdies.expectTxnReceiptSuccess(execute(
-                        tokenName,
-                        { from: dm.address, log: true },
-                        "grantRole",
-                        DeployUtils.Roles.SynapseERC20MinterRole,
-                        dm.address
-                    ))
-                )).to.eventually.be.fulfilled;
-            })
+        step("give meself mint privileges", async function(this: Context, done: Done) {
+            this.timeout(30*1000);
+
+            const devMS = await get("DevMultisig");
+
+            const execFunc = async (tokenName: string) => {
+                let txn = await execute(
+                    tokenName,
+                    { from: devMS.address, log: true },
+                    "grantRole",
+                    DeployUtils.Roles.SynapseERC20MinterRole,
+                    devMS.address
+                );
+
+                Birdies.expectTxnReceiptSuccess(txn);
+
+                let txn2 = await (await TestUtils.signer(hre)).provider.getTransaction(txn.transactionHash);
+                await txn2.wait(2);
+
+                return;
+            }
+
+            for (const tName of tokenNames) {
+                await execFunc(tName);
+            }
 
             done();
         })
 
         step("mint some shiz", function(this: Context, done: Done) {
+            this.timeout(30*1000);
+
             const desiredBalance: BigNumber = ethers.utils.parseEther('2000');
 
-            const f = (tok): ((r: ContractReceipt) => Chai.PromisedAssertion) =>
-                (r => Birdies.expectBigNumber(tok.balanceOf(deployerAddr), desiredBalance))
+            const minterFunc = async (tokenName: string, nonce: number) => {
+                const instance = await TestUtils.SynapseERC20Instance(tokenName, hre);
 
-            tokenNames.forEach((tokenName) => {
-                expect(TestUtils.SynapseERC20Instance(tokenName, hre).then(t =>
-                    t.mint(deployerAddr, desiredBalance).then(TestUtils.waitForConfirmations(2, f(t))))
-                ).to.eventually.be.fulfilled;
-            })
+                let populated = await instance.populateTransaction.mint(deployerAddr, desiredBalance);
+                populated.nonce = nonce;
 
-            done();
+                let txn = await (await TestUtils.signer(hre)).sendTransaction(populated);
+                await txn.wait(2);
+                Birdies.expectBigNumber((await instance.balanceOf(deployerAddr)), desiredBalance);
+            }
+
+            TestUtils.getLastNonce(hre)
+                .then((lastNonce) => {
+                    expect(Promise.resolve(
+                        tokenNames.map((tName, idx): Promise<void> =>
+                            minterFunc(tName, lastNonce+(idx+1)))
+                    )).to.eventually.be.fulfilled.notify(done);
+                })
         })
     })
 
-    describe("test SynapseBridge.deposit()", function(this: Mocha.Suite) {
+    describe("test SynapseBridge.deposit()", async function(this: Mocha.Suite) {
         interface testCase {
             amt:         BigNumber,
             token:       string,
@@ -224,56 +247,69 @@ describe("SynapseBridge", function(this: Mocha.Suite) {
             }
         ]
 
+        let lastNonce: number = await TestUtils.getLastNonce(hre);
+
         testCases.forEach((tc) => {
             let instance: Promise<SynapseERC20|ERC20>;
 
-            step("approve transfer", function(this: Context, done: Done) {
+            step("approve transfer", async function(this: Context, done: Done) {
                 instance = (tc.deployment ?? false)
                     ? TestUtils.SynapseERC20Instance(tc.token, hre)
                     : TestUtils.ERC20Instance(tc.token, hre)
 
                 this.timeout(10*1000);
 
-                const f = txnReceipt => Birdies.expectTxnReceiptSuccess(txnReceipt).notify(done);
+                const f = txnReceipt => Birdies.expectTxnReceiptSuccess(txnReceipt);
 
-                instance.then(tok =>
-                    tok.approve(synapseBridge.address, tc.amt, {from:deployerAddr})
-                        .then(TestUtils.waitForConfirmations(2, f))
-                ).catch(TestUtils.catchError(done))
+                const tok = await instance;
+                lastNonce++;
+
+                let populated = await tok.populateTransaction.approve(synapseBridge.address, tc.amt, {from:deployerAddr});
+                populated.nonce = lastNonce;
+
+                let r = await (await TestUtils.signer(hre)).sendTransaction(populated);
+                await f(r.wait(2));
+
+                done();
             })
 
-            step(`should deposit ${ethers.utils.formatEther(tc.amt)} of token into the Bridge`, function(this: Context, done: Done) {
+            step(`should deposit ${ethers.utils.formatEther(tc.amt)} of token into the Bridge`, async function(this: Context, done: Done) {
                 this.timeout(10*1000);
 
-                instance.then((tok) => {
-                    let startBal: Promise<BigNumber> = tok.balanceOf(deployerAddr).then(b => b.sub(tc.amt));
+                const tok = await instance;
 
-                    const f = txnReceipt => {
-                        Birdies.expectTxnReceiptSuccess(txnReceipt);
+                let startBal: BigNumber = await tok.balanceOf(deployerAddr).then(b => b.sub(tc.amt));
 
-                        Birdies.expectArrayObject(txnReceipt.events, "event", "TokenDeposit");
+                const f = async txnReceipt => {
+                    Birdies.expectTxnReceiptSuccess(txnReceipt);
 
-                        const eventLog: ContractEvent = txnReceipt.events.find((e) => e.event === "TokenDeposit");
+                    txnReceipt = await txnReceipt;
+                    Birdies.expectArrayObject(txnReceipt.events, "event", "TokenDeposit");
 
-                        expect(eventLog.args).to.have.a.lengthOf(4);
+                    const eventLog: ContractEvent = txnReceipt.events.find((e) => e.event === "TokenDeposit");
 
-                        Birdies.expectString(eventLog.args[0], deployerAddr)
+                    expect(eventLog.args).to.have.a.lengthOf(4);
 
-                        Birdies.expectBigNumber(eventLog.args[1], tc.toChain)
+                    Birdies.expectString(eventLog.args[0], deployerAddr)
 
-                        Birdies.expectString(eventLog.args[2], tok.address)
+                    Birdies.expectBigNumber(eventLog.args[1], tc.toChain)
 
-                        Birdies.expectBigNumber(eventLog.args[3], tc.amt)
+                    Birdies.expectString(eventLog.args[2], tok.address)
 
-                        startBal.then(wantBal =>
-                            Birdies.expectBigNumber(tok.balanceOf(deployerAddr), wantBal).notify(done)
-                        )
-                    }
+                    Birdies.expectBigNumber(eventLog.args[3], tc.amt)
 
-                    synapseBridge.deposit(deployerAddr, tc.toChain, tok.address, tc.amt, { from: deployerAddr })
-                    .then(TestUtils.waitForConfirmations(2, f))
-                    .catch(TestUtils.catchError(done))
-                })
+                    Birdies.expectBigNumber(tok.balanceOf(deployerAddr), startBal);
+                }
+
+                lastNonce++;
+
+                let populated = await synapseBridge.populateTransaction.deposit(deployerAddr, tc.toChain, tok.address, tc.amt, { from: deployerAddr });
+                populated.nonce = lastNonce;
+
+                let txn = await (await TestUtils.signer(hre)).sendTransaction(populated);
+                await f(txn.wait(2));
+
+                done();
             })
         })
     })
