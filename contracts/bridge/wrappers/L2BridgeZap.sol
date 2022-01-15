@@ -30,7 +30,7 @@ contract L2BridgeZap {
         synapseBridge = _synapseBridge;
         swapMap[tokenOne] = _swapOne;
         swapMap[tokenTwo] = _swapTwo;
-
+        IERC20(_wethAddress).safeIncreaseAllowance(address(_synapseBridge), MAX_UINT256);
         if (address(_swapOne) != address(0)) {
             {
                 uint8 i;
