@@ -87,6 +87,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   if ((await getChainId()) === "1285") {
     await deploy("L2BridgeZap", {
+      contract: "MoonriverBridgeZap",
       from: deployer,
       log: true,
       skipIfAlreadyDeployed: true,
