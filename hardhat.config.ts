@@ -70,6 +70,9 @@ let config: HardhatUserConfig = {
       url: "https://rpc.moonriver.moonbeam.network",
       gasPrice: 10 * 1000000000
     },
+    moonbeam: {
+      url: "https://rpc.api.moonbeam.network",
+    },
     aurora: {
       url: "https://mainnet.aurora.dev",
       gasPrice: 0
@@ -156,6 +159,7 @@ if (process.env.PRIVATE_KEYS) {
     "harmony",
     "boba",
     "moonriver",
+    "moonbeam",
     "optimism",
     "aurora"
   ]
