@@ -30,7 +30,7 @@ contract L2BridgeZap {
         synapseBridge = _synapseBridge;
         swapMap[tokenOne] = _swapOne;
         swapMap[tokenTwo] = _swapTwo;
-
+        IERC20(_wethAddress).safeIncreaseAllowance(address(_synapseBridge), MAX_UINT256);
         if (address(_swapOne) != address(0)) {
             {
                 uint8 i;
@@ -259,6 +259,23 @@ contract L2BridgeZap {
         }
         synapseBridge.deposit(to, chainId, token, amount);
     }
+
+    /**
+   * @notice Wraps SynapseBridge deposit() function to make it compatible w/ ETH -> WETH conversions
+   * @param to address on other chain to bridge assets to
+   * @param chainId which chain to bridge assets onto
+   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+   **/
+  function depositETH(
+    address to,
+    uint256 chainId,
+    uint256 amount
+    ) external payable {
+      require(msg.value > 0 && msg.value == amount, 'INCORRECT MSG VALUE');
+      IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+      synapseBridge.deposit(to, chainId, IERC20(WETH_ADDRESS), amount);
+    }
+
 
     function swapETHAndRedeem(
         address to,
