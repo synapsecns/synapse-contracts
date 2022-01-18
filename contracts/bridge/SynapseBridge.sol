@@ -15,9 +15,7 @@ import './interfaces/IMetaSwapDeposit.sol';
 import './interfaces/ISwap.sol';
 import './interfaces/IWETH9.sol';
 
-interface IERC20Mintable is IERC20 {
-  function mint(address to, uint256 amount) external;
-}
+import {IERC20Mintable} from "./interfaces/IERC20Mintable.sol";
 
 contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
   using SafeERC20 for IERC20;

@@ -7,9 +7,7 @@ import '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
 import "./IMetaSwapDeposit.sol";
 import "./ISwap.sol";
 
-interface IERC20Mintable is IERC20 {
-  function mint(address to, uint256 amount) external;
-}
+import {IERC20Mintable} from "./IERC20Mintable.sol";
 
 interface ISynapseBridge {
   using SafeERC20 for IERC20;
