@@ -1,20 +1,19 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity 0.8.11;
 
-import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable-4.4.2/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable-4.4.2/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable-4.4.2/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable-4.4.2/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-4.4.2/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-4.4.2/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts-4.4.2/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-4.4.2/utils/math/SafeMath.sol";
 
-import "./interfaces/ISwap.sol";
+import "./interfaces-8/ISwap.sol";
 import "./interfaces/IWETH9.sol";
-import "./interfaces/IRouter.sol";
+import "./interfaces-8/IRouter.sol";
 
 interface IERC20Mintable is IERC20 {
     function mint(address to, uint256 amount) external;
@@ -388,7 +387,7 @@ contract SynapseBridge is
         token.mint(address(this), amount);
         IERC20(token).safeTransfer(to, amount.sub(fee));
         if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call.value(chainGasAmount)("");
+            to.call{value: chainGasAmount}("");
         }
     }
 
@@ -529,7 +528,7 @@ contract SynapseBridge is
         fees[address(token)] = fees[address(token)].add(fee);
         // Transfer gas airdrop
         if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call.value(chainGasAmount)("");
+            to.call{value: chainGasAmount}("");
         }
         // first check to make sure more will be given than min amount required
         uint256 expectedOutput = ISwap(pool).calculateSwap(
@@ -560,7 +559,7 @@ contract SynapseBridge is
                     IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
                     (bool success, ) = to.call{value: finalSwappedAmount}("");
                     require(success, "ETH_TRANSFER_FAILED");
-                    emit TokenMintAndSwap(
+                    emit TokenMintAndSwap( 
                         to,
                         token,
                         finalSwappedAmount,
@@ -778,22 +777,11 @@ contract SynapseBridge is
         uint256 fee,
         RouterTrade calldata _trade
     ) private returns (bool) {
-        {
-            try
-                IRouter(ROUTER).selfSwap(
-                    amount.sub(fee),
-                    0,
-                    _trade.path,
-                    _trade.adapters,
-                    to,
-                    0
-                )
-            {
+            try IRouter(ROUTER).selfSwap(amount.sub(fee),0,_trade.path,_trade.adapters,to,0) {
                 return true;
             } catch {
                 return false;
             }
-        }
     }
 
     /**
@@ -819,7 +807,7 @@ contract SynapseBridge is
 
         // Transfer gas airdrop
         if (checkChainGasAmount()) {
-            to.call.value(chainGasAmount)("");
+            to.call{value: chainGasAmount}("");
         }
         token.mint(ROUTER, amount);
         token.mint(address(this), fee);
@@ -871,7 +859,7 @@ contract SynapseBridge is
     ) external nonReentrant() whenNotPaused() {
         validateBridgeFunction(amount, fee, kappa);
         if (checkChainGasAmount()) {
-            to.call.value(chainGasAmount)("");
+            to.call{value: chainGasAmount}("");
         }
         fees[address(token)] = fees[address(token)].add(fee);
         uint256 amountSubFee = amount.sub(fee);
