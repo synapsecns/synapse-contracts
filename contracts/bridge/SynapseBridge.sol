@@ -551,7 +551,7 @@ contract SynapseBridge is
                 );
         } catch {
             // Swap failed, transfer minted token instead
-            IERC20(token).safeTransfer(to, amountSubFee);
+            token.safeTransfer(to, amountSubFee);
             emit TokenMintAndSwap(
                 to,
                 token,
@@ -760,7 +760,7 @@ contract SynapseBridge is
                 kappa
             );
         } else {
-            IERC20(token).safeTransferFrom(ROUTER, to, amountSubFee);
+            token.safeTransferFrom(ROUTER, to, amountSubFee);
             emit TokenMintAndSwapV2(
                 to,
                 token,
@@ -801,7 +801,7 @@ contract SynapseBridge is
             require(success, "GAS_AIRDROP_FAILED");
         }
 
-        IERC20(token).safeTransfer(ROUTER, amountSubFee);
+        token.safeTransfer(ROUTER, amountSubFee);
         // (bool success, bytes memory result) = ROUTER.call(routeraction);
         //  if (success) {
         //   // Swap successful
@@ -824,7 +824,7 @@ contract SynapseBridge is
                 kappa
             );
         } else {
-            IERC20(token).safeTransferFrom(ROUTER, to, amountSubFee);
+            token.safeTransferFrom(ROUTER, to, amountSubFee);
             emit TokenWithdrawAndSwapV2(
                 to,
                 token,
