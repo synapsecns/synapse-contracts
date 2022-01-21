@@ -1,20 +1,38 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.11;
+pragma solidity 0.6.12;
+pragma experimental ABIEncoderV2;
 
-import {Initializable} from "@openzeppelin/contracts-upgradeable-4.4.2/proxy/utils/Initializable.sol";
-import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable-4.4.2/access/AccessControlUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable-4.4.2/security/ReentrancyGuardUpgradeable.sol";
-import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable-4.4.2/security/PausableUpgradeable.sol";
-import {SafeERC20} from "@openzeppelin/contracts-4.4.2/token/ERC20/utils/SafeERC20.sol";
-import {ERC20Burnable} from "@openzeppelin/contracts-4.4.2/token/ERC20/extensions/ERC20Burnable.sol";
-import {IERC20} from "@openzeppelin/contracts-4.4.2/token/ERC20/IERC20.sol";
-import {SafeMath} from "@openzeppelin/contracts-4.4.2/utils/math/SafeMath.sol";
+// solc 0.8.11 imports
+//import {Initializable} from "@openzeppelin/contracts-upgradeable-4.4.2/proxy/utils/Initializable.sol";
+//import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable-4.4.2/access/AccessControlUpgradeable.sol";
+//import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable-4.4.2/security/ReentrancyGuardUpgradeable.sol";
+//import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable-4.4.2/security/PausableUpgradeable.sol";
+//import {SafeERC20} from "@openzeppelin/contracts-4.4.2/token/ERC20/utils/SafeERC20.sol";
+//import {ERC20Burnable} from "@openzeppelin/contracts-4.4.2/token/ERC20/extensions/ERC20Burnable.sol";
+//import {IERC20} from "@openzeppelin/contracts-4.4.2/token/ERC20/IERC20.sol";
+//import {SafeMath} from "@openzeppelin/contracts-4.4.2/utils/math/SafeMath.sol";
 
-import {ISwap} from "./interfaces-8/ISwap.sol";
+//import {ISwap} from "./interfaces-8/ISwap.sol";
+//import {IWETH9} from "./interfaces/IWETH9.sol";
+//import {IRouter} from "./interfaces-8/IRouter.sol";
+
+// solc 0.6.12 imports
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+
+import {ISwap} from "./interfaces/ISwap.sol";
 import {IWETH9} from "./interfaces/IWETH9.sol";
-import {IRouter} from "./interfaces-8/IRouter.sol";
+import {IRouter} from "./interfaces/IRouter.sol";
 
+
+// leave this one alone, it _should_ compile regardless of 0.6.12 or 0.8.11
 import {Types} from "./types/Types.sol";
 
 interface IERC20Mintable is IERC20 {
