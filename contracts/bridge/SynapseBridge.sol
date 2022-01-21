@@ -833,7 +833,7 @@ contract SynapseBridge is
                 _trade.path,
                 _trade.adapters,
                 _trade.maxBridgeSlippage,
-                true,
+                false,
                 kappa
             );
         }
