@@ -380,9 +380,8 @@ contract SynapseBridge is
         }
 
         emit TokenMint(to, token, amountSubFee, fee, kappa);
-        token.mint(address(this), amount);
-        IERC20(token).safeTransfer(to, amountSubFee);
-        
+        token.mint(to, amountSubFee);
+        token.mint(address(this), fee);
     }
 
     // ******* V1 FUNCTIONS
