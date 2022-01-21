@@ -374,7 +374,7 @@ contract SynapseBridge is
         emit TokenMint(to, token, amount.sub(fee), fee, kappa);
         token.mint(address(this), amount);
         IERC20(token).safeTransfer(to, amount.sub(fee));
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
+        if (checkChainGasAmount()) {
             to.call{value: chainGasAmount}("");
         }
     }
@@ -509,7 +509,7 @@ contract SynapseBridge is
         validateBridgeFunction(amount, fee, kappa);
         fees[address(token)] = fees[address(token)].add(fee);
         // Transfer gas airdrop
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
+        if (checkChainGasAmount()) {
             to.call{value: chainGasAmount}("");
         }
         // first check to make sure more will be given than min amount required
