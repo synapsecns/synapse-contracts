@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build-go": "sol-merger \"./contracts/bridge/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/wrappers/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/testing/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/meta/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin",
-    "post-install": "build-go"
+    "post-install": "build-go",
+    "build": "hardhat compile"
   },
   "repository": {
     "type": "git",

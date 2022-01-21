@@ -2,18 +2,20 @@
 
 pragma solidity 0.8.11;
 
-import "@openzeppelin/contracts-upgradeable-4.4.2/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable-4.4.2/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable-4.4.2/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable-4.4.2/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-4.4.2/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts-4.4.2/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts-4.4.2/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts-4.4.2/utils/math/SafeMath.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable-4.4.2/proxy/utils/Initializable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable-4.4.2/access/AccessControlUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable-4.4.2/security/ReentrancyGuardUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable-4.4.2/security/PausableUpgradeable.sol";
+import {SafeERC20} from "@openzeppelin/contracts-4.4.2/token/ERC20/utils/SafeERC20.sol";
+import {ERC20Burnable} from "@openzeppelin/contracts-4.4.2/token/ERC20/extensions/ERC20Burnable.sol";
+import {IERC20} from "@openzeppelin/contracts-4.4.2/token/ERC20/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts-4.4.2/utils/math/SafeMath.sol";
 
-import "./interfaces-8/ISwap.sol";
-import "./interfaces/IWETH9.sol";
-import "./interfaces-8/IRouter.sol";
+import {ISwap} from "./interfaces-8/ISwap.sol";
+import {IWETH9} from "./interfaces/IWETH9.sol";
+import {IRouter} from "./interfaces-8/IRouter.sol";
+
+import {Types} from "./types/Types.sol";
 
 interface IERC20Mintable is IERC20 {
     function mint(address to, uint256 amount) external;
@@ -28,6 +30,8 @@ contract SynapseBridge is
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Mintable;
     using SafeMath for uint256;
+
+    using Types for Types.RouterTrade;
 
     bytes32 public constant NODEGROUP_ROLE = keccak256("NODEGROUP_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
@@ -206,12 +210,6 @@ contract SynapseBridge is
         require(!kappaMap[kappa], "Kappa is already present");
 
         kappaMap[kappa] = true;
-    }
-
-    struct RouterTrade {
-        address[] path;
-        address[] adapters;
-        uint256 maxBridgeSlippage;
     }
 
     // VIEW FUNCTIONS ***/
@@ -775,7 +773,7 @@ contract SynapseBridge is
         address to,
         uint256 amount,
         uint256 fee,
-        RouterTrade calldata _trade
+        Types.RouterTrade calldata _trade
     ) private returns (bool) {
             try IRouter(ROUTER).selfSwap(amount.sub(fee),0,_trade.path,_trade.adapters,to,0) {
                 return true;
@@ -799,46 +797,38 @@ contract SynapseBridge is
         IERC20Mintable token,
         uint256 amount,
         uint256 fee,
-        RouterTrade calldata _trade,
+        Types.RouterTrade calldata _trade,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
-        validateBridgeFunction(amount, fee, kappa);
-        fees[address(token)] = fees[address(token)].add(fee);
+    )
+        external
+        nonReentrant
+        whenNotPaused
+    {
+        require(
+            validateAndGasDrop(to, amount, fee, kappa, token),
+            "Pre-validation failed"
+        );
 
-        // Transfer gas airdrop
-        if (checkChainGasAmount()) {
-            to.call{value: chainGasAmount}("");
-        }
+
         token.mint(ROUTER, amount);
         token.mint(address(this), fee);
 
         bool swapSuccess = handleRouterSwap(to, amount, fee, _trade);
         if (swapSuccess) {
-            emit TokenMintAndSwapV2(
-                to,
-                token,
-                amount.sub(fee),
-                fee,
-                _trade.path,
-                _trade.adapters,
-                _trade.maxBridgeSlippage,
-                true,
-                kappa
-            );
-        } else {
             IERC20(token).safeTransferFrom(ROUTER, to, amount.sub(fee));
-            emit TokenMintAndSwapV2(
-                to,
-                token,
-                amount.sub(fee),
-                fee,
-                _trade.path,
-                _trade.adapters,
-                _trade.maxBridgeSlippage,
-                false,
-                kappa
-            );
         }
+
+        emit TokenMintAndSwapV2(
+            to,
+            token,
+            amount.sub(fee),
+            fee,
+            _trade.path,
+            _trade.adapters,
+            _trade.maxBridgeSlippage,
+            swapSuccess,
+            kappa
+        );
     }
 
     /**
@@ -854,16 +844,21 @@ contract SynapseBridge is
         IERC20 token,
         uint256 amount,
         uint256 fee,
-        RouterTrade calldata _trade,
+        Types.RouterTrade calldata _trade,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
-        validateBridgeFunction(amount, fee, kappa);
-        if (checkChainGasAmount()) {
-            to.call{value: chainGasAmount}("");
-        }
-        fees[address(token)] = fees[address(token)].add(fee);
+    )
+        external
+        nonReentrant
+        whenNotPaused
+    {
+        require(
+            validateAndGasDrop(to, amount, fee, kappa, token),
+            "Pre-validation failed"
+        );
+
         uint256 amountSubFee = amount.sub(fee);
-        IERC20(token).safeTransfer(ROUTER, amountSubFee);
+        token.safeTransfer(ROUTER, amountSubFee);
+
         // (bool success, bytes memory result) = ROUTER.call(routeraction);
         //  if (success) {
         //   // Swap successful
@@ -872,33 +867,23 @@ contract SynapseBridge is
         //     IERC20(token).safeTransferFrom(ROUTER, to, amount.sub(fee));
         //     emit TokenWithdrawAndSwapV2(to, token, amount.sub(fee), fee, routeraction, false, kappa);
         // }
+
         bool swapSuccess = handleRouterSwap(to, amount, fee, _trade);
         if (swapSuccess) {
-            emit TokenWithdrawAndSwapV2(
-                to,
-                token,
-                amount.sub(fee),
-                fee,
-                _trade.path,
-                _trade.adapters,
-                _trade.maxBridgeSlippage,
-                true,
-                kappa
-            );
-        } else {
-            IERC20(token).safeTransferFrom(ROUTER, to, amount.sub(fee));
-            emit TokenWithdrawAndSwapV2(
-                to,
-                token,
-                amount.sub(fee),
-                fee,
-                _trade.path,
-                _trade.adapters,
-                _trade.maxBridgeSlippage,
-                true,
-                kappa
-            );
+            token.safeTransferFrom(ROUTER, to, amount.sub(fee));
         }
+
+        emit TokenWithdrawAndSwapV2(
+            to,
+            token,
+            amount.sub(fee),
+            fee,
+            _trade.path,
+            _trade.adapters,
+            _trade.maxBridgeSlippage,
+            swapSuccess,
+            kappa
+        );
         // try IRouter(ROUTER).selfSwap(amountSubFee, 0, path, adapters, to, 0) {
         //   emit TokenWithdrawAndSwapV2(to, token, amountSubFee, fee, path, adapters, maxBridgeSlippage, true, kappa);
         // } catch {
@@ -909,5 +894,36 @@ contract SynapseBridge is
 
     function checkChainGasAmount() private view returns (bool) {
         return chainGasAmount != 0 && address(this).balance > chainGasAmount;
+    }
+
+    function validateAndGasDrop(
+        address to,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa,
+        IERC20  token
+    )
+        private
+        returns (bool)
+    {
+        validateBridgeFunction(amount, fee, kappa);
+
+        if (checkChainGasAmount()) {
+            to.call{value: chainGasAmount}("");
+        }
+
+        addFee(token, fee);
+
+        return true;
+    }
+
+    function addFee(IERC20 token, uint256 fee)
+        private
+    {
+        address _token = address(token);
+
+        uint256 newFee = fees[_token].add(fee);
+
+        fees[_token] = newFee;
     }
 }
