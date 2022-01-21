@@ -775,11 +775,11 @@ contract SynapseBridge is
         uint256 fee,
         Types.RouterTrade calldata _trade
     ) private returns (bool) {
-            try IRouter(ROUTER).selfSwap(amount.sub(fee),0,_trade.path,_trade.adapters,to,0) {
-                return true;
-            } catch {
-                return false;
-            }
+        try IRouter(ROUTER).selfSwap(amount.sub(fee),0,_trade.path,_trade.adapters,to,0) {
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     /**
@@ -817,7 +817,7 @@ contract SynapseBridge is
 
         bool swapSuccess = handleRouterSwap(to, amount, fee, _trade);
         if (swapSuccess) {
-            IERC20(token).safeTransferFrom(ROUTER, to, amountSubFee);
+            token.safeTransferFrom(ROUTER, to, amountSubFee);
         }
 
         emit TokenMintAndSwapV2(
@@ -911,7 +911,8 @@ contract SynapseBridge is
         validateBridgeFunction(amount, fee, kappa);
 
         if (checkChainGasAmount()) {
-            to.call{value: chainGasAmount}("");
+            (bool success,) = to.call{value: chainGasAmount}("");
+            require(success, "GasDrop transfer failed");
         }
 
         addFee(token, fee);
