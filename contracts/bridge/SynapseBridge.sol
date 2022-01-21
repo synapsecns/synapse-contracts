@@ -813,15 +813,17 @@ contract SynapseBridge is
         token.mint(ROUTER, amount);
         token.mint(address(this), fee);
 
+        uint256 amountSubFee = amount.sub(fee);
+
         bool swapSuccess = handleRouterSwap(to, amount, fee, _trade);
         if (swapSuccess) {
-            IERC20(token).safeTransferFrom(ROUTER, to, amount.sub(fee));
+            IERC20(token).safeTransferFrom(ROUTER, to, amountSubFee);
         }
 
         emit TokenMintAndSwapV2(
             to,
             token,
-            amount.sub(fee),
+            amountSubFee,
             fee,
             _trade.path,
             _trade.adapters,
@@ -870,13 +872,13 @@ contract SynapseBridge is
 
         bool swapSuccess = handleRouterSwap(to, amount, fee, _trade);
         if (swapSuccess) {
-            token.safeTransferFrom(ROUTER, to, amount.sub(fee));
+            token.safeTransferFrom(ROUTER, to, amountSubFee);
         }
 
         emit TokenWithdrawAndSwapV2(
             to,
             token,
-            amount.sub(fee),
+            amountSubFee,
             fee,
             _trade.path,
             _trade.adapters,
