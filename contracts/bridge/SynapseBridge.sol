@@ -380,13 +380,17 @@ contract SynapseBridge is
         validateBridgeFunction(amount, fee, kappa);
         uint256 amountSubFee = amount.sub(fee);
         fees[address(token)] = fees[address(token)].add(fee);
-        emit TokenMint(to, token, amountSubFee, fee, kappa);
-        token.mint(address(this), amount);
-        IERC20(token).safeTransfer(to, amountSubFee);
+
+        // Transfer gas airdrop
         if (checkChainGasAmount()) {
             (bool success, ) = to.call{value: chainGasAmount}("");
             require(success, "GAS_AIRDROP_FAILED");
         }
+
+        emit TokenMint(to, token, amountSubFee, fee, kappa);
+        token.mint(address(this), amount);
+        IERC20(token).safeTransfer(to, amountSubFee);
+        
     }
 
     // ******* V1 FUNCTIONS
@@ -519,11 +523,13 @@ contract SynapseBridge is
         validateBridgeFunction(amount, fee, kappa);
         uint256 amountSubFee = amount.sub(fee);
         fees[address(token)] = fees[address(token)].add(fee);
+
         // Transfer gas airdrop
         if (checkChainGasAmount()) {
             (bool success, ) = to.call{value: chainGasAmount}("");
             require(success, "GAS_AIRDROP_FAILED");
         }
+
         // first check to make sure more will be given than min amount required
         uint256 expectedOutput = ISwap(pool).calculateSwap(
             tokenIndexFrom,
@@ -806,6 +812,7 @@ contract SynapseBridge is
             (bool success, ) = to.call{value: chainGasAmount}("");
             require(success, "GAS_AIRDROP_FAILED");
         }
+
         token.mint(ROUTER, amountSubFee);
         token.mint(address(this), fee);
 
@@ -857,10 +864,13 @@ contract SynapseBridge is
         validateBridgeFunction(amount, fee, kappa);
         uint256 amountSubFee = amount.sub(fee);
         fees[address(token)] = fees[address(token)].add(fee);
+
+        // Transfer gas airdrop
         if (checkChainGasAmount()) {
             (bool success, ) = to.call{value: chainGasAmount}("");
             require(success, "GAS_AIRDROP_FAILED");
         }
+
         IERC20(token).safeTransfer(ROUTER, amountSubFee);
         // (bool success, bytes memory result) = ROUTER.call(routeraction);
         //  if (success) {
