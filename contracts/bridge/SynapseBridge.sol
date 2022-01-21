@@ -349,16 +349,8 @@ contract SynapseBridge is
             (bool success, ) = to.call{value: chainGasAmount}("");
             require(success, "GAS_AIRDROP_FAILED");
         }
-
-        if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
-            IWETH9(WETH_ADDRESS).withdraw(amountSubFee);
-            (bool success, ) = to.call{value: amountSubFee}("");
-            require(success, "ETH_TRANSFER_FAILED");
-            emit TokenWithdraw(to, token, amount, fee, kappa);
-        } else {
-            emit TokenWithdraw(to, token, amount, fee, kappa);
-            token.safeTransfer(to, amountSubFee);
-        }
+        transferToken(to, token, amountSubFee);
+        emit TokenWithdraw(to, token, amount, fee, kappa);
     }
 
     /**
@@ -552,16 +544,7 @@ contract SynapseBridge is
             returns (uint256 finalSwappedAmount) {
                 // Swap succeeded, transfer swapped asset
                 IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
-                if (
-                    address(swappedTokenTo) == WETH_ADDRESS &&
-                    WETH_ADDRESS != address(0)
-                ) {
-                    IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
-                    (bool success, ) = to.call{value: finalSwappedAmount}("");
-                    require(success, "ETH_TRANSFER_FAILED");
-                } else {
-                    swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-                }
+                transferToken(to, swappedTokenTo, finalSwappedAmount);
                 emit TokenMintAndSwap( 
                         to,
                         token,
@@ -905,5 +888,15 @@ contract SynapseBridge is
 
     function checkChainGasAmount() private view returns (bool) {
         return chainGasAmount != 0 && address(this).balance >= chainGasAmount;
+    }
+
+    function transferToken(address to, IERC20 token, uint256 amount) private {
+        if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
+            IWETH9(WETH_ADDRESS).withdraw(amount);
+            (bool success, ) = to.call{value: amount}("");
+            require(success, "ETH_TRANSFER_FAILED");
+        } else {
+            token.safeTransfer(to, amount);
+        }
     }
 }
