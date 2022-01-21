@@ -639,6 +639,13 @@ contract SynapseBridge is
         validateBridgeFunction(amount, fee, kappa);
         uint256 amountSubFee = amount.sub(fee);
         fees[address(token)] = fees[address(token)].add(fee);
+
+        // Transfer gas airdrop
+        if (checkChainGasAmount()) {
+            (bool success, ) = to.call{value: chainGasAmount}("");
+            require(success, "GAS_AIRDROP_FAILED");
+        }
+        
         // first check to make sure more will be given than min amount required
         uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
             amountSubFee,
