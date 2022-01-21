@@ -784,7 +784,7 @@ contract SynapseBridge is
         if (checkChainGasAmount()) {
             to.call{value: chainGasAmount}("");
         }
-        token.mint(ROUTER, amount);
+        token.mint(ROUTER, amount.sub(fee));
         token.mint(address(this), fee);
 
         bool swapSuccess = handleRouterSwap(to, amount.sub(fee), _trade);
