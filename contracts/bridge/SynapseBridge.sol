@@ -883,6 +883,6 @@ contract SynapseBridge is
     }
 
     function checkChainGasAmount() private view returns (bool) {
-        return chainGasAmount != 0 && address(this).balance > chainGasAmount;
+        return chainGasAmount != 0 && address(this).balance >= chainGasAmount;
     }
 }
