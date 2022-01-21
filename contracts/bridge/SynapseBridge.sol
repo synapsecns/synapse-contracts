@@ -522,58 +522,36 @@ contract SynapseBridge is
             require(success, "GAS_AIRDROP_FAILED");
         }
 
-        // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = ISwap(pool).calculateSwap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            amountSubFee
-        );
-
-        if (expectedOutput >= minDy) {
-            // proceed with swap
-            token.mint(address(this), amount);
-            token.safeIncreaseAllowance(address(pool), amount);
-            try
-                ISwap(pool).swap(
-                    tokenIndexFrom,
-                    tokenIndexTo,
-                    amountSubFee,
-                    minDy,
-                    deadline
-                )
-            returns (uint256 finalSwappedAmount) {
-                // Swap succeeded, transfer swapped asset
-                IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
-                transferToken(to, swappedTokenTo, finalSwappedAmount);
-                emit TokenMintAndSwap( 
-                        to,
-                        token,
-                        finalSwappedAmount,
-                        fee,
-                        tokenIndexFrom,
-                        tokenIndexTo,
-                        minDy,
-                        deadline,
-                        true,
-                        kappa
-                    );
-            } catch {
-                IERC20(token).safeTransfer(to, amountSubFee);
-                emit TokenMintAndSwap(
+        // We don't need to check expected output amount,
+        // as swap() will revert if the output amount is too small
+        token.mint(address(this), amount);
+        token.safeIncreaseAllowance(address(pool), amount);
+        try
+            ISwap(pool).swap(
+                tokenIndexFrom,
+                tokenIndexTo,
+                amountSubFee,
+                minDy,
+                deadline
+            )
+        returns (uint256 finalSwappedAmount) {
+            // Swap succeeded, transfer swapped asset
+            IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
+            transferToken(to, swappedTokenTo, finalSwappedAmount);
+            emit TokenMintAndSwap( 
                     to,
                     token,
-                    amountSubFee,
+                    finalSwappedAmount,
                     fee,
                     tokenIndexFrom,
                     tokenIndexTo,
                     minDy,
                     deadline,
-                    false,
+                    true,
                     kappa
                 );
-            }
-        } else {
-            token.mint(address(this), amount);
+        } catch {
+            // Swap failed, transfer minted token instead
             IERC20(token).safeTransfer(to, amountSubFee);
             emit TokenMintAndSwap(
                 to,
@@ -623,51 +601,33 @@ contract SynapseBridge is
             require(success, "GAS_AIRDROP_FAILED");
         }
         
-        // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
-            amountSubFee,
-            swapTokenIndex
-        );
-
-        if (expectedOutput >= swapMinAmount) {
-            token.safeIncreaseAllowance(address(pool), amountSubFee);
-            try
-                ISwap(pool).removeLiquidityOneToken(
-                    amountSubFee,
-                    swapTokenIndex,
-                    swapMinAmount,
-                    swapDeadline
-                )
-            returns (uint256 finalSwappedAmount) {
-                // Swap succeeded, transfer swapped asset
-                IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
-                swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-                emit TokenWithdrawAndRemove(
-                    to,
-                    token,
-                    finalSwappedAmount,
-                    fee,
-                    swapTokenIndex,
-                    swapMinAmount,
-                    swapDeadline,
-                    true,
-                    kappa
-                );
-            } catch {
-                IERC20(token).safeTransfer(to, amountSubFee);
-                emit TokenWithdrawAndRemove(
-                    to,
-                    token,
-                    amountSubFee,
-                    fee,
-                    swapTokenIndex,
-                    swapMinAmount,
-                    swapDeadline,
-                    false,
-                    kappa
-                );
-            }
-        } else {
+        // We don't need to check expected output, as
+        // removeLiquidityOneToken()  will revert if the output amount is too small
+        token.safeIncreaseAllowance(address(pool), amountSubFee);
+        try
+            ISwap(pool).removeLiquidityOneToken(
+                amountSubFee,
+                swapTokenIndex,
+                swapMinAmount,
+                swapDeadline
+            )
+        returns (uint256 finalSwappedAmount) {
+            // Swap succeeded, transfer swapped asset
+            IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
+            swappedTokenTo.safeTransfer(to, finalSwappedAmount);
+            emit TokenWithdrawAndRemove(
+                to,
+                token,
+                finalSwappedAmount,
+                fee,
+                swapTokenIndex,
+                swapMinAmount,
+                swapDeadline,
+                true,
+                kappa
+            );
+        } catch {
+            // Swap failed, transfer minted token instead
             token.safeTransfer(to, amountSubFee);
             emit TokenWithdrawAndRemove(
                 to,
