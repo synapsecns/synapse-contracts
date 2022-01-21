@@ -375,7 +375,8 @@ contract SynapseBridge is
         token.mint(address(this), amount);
         IERC20(token).safeTransfer(to, amount.sub(fee));
         if (checkChainGasAmount()) {
-            to.call{value: chainGasAmount}("");
+            (bool success, ) = to.call{value: chainGasAmount}("");
+            require(success, "GAS_AIRDROP_FAILED");
         }
     }
 
@@ -510,7 +511,8 @@ contract SynapseBridge is
         fees[address(token)] = fees[address(token)].add(fee);
         // Transfer gas airdrop
         if (checkChainGasAmount()) {
-            to.call{value: chainGasAmount}("");
+            (bool success, ) = to.call{value: chainGasAmount}("");
+            require(success, "GAS_AIRDROP_FAILED");
         }
         // first check to make sure more will be given than min amount required
         uint256 expectedOutput = ISwap(pool).calculateSwap(
@@ -782,7 +784,8 @@ contract SynapseBridge is
 
         // Transfer gas airdrop
         if (checkChainGasAmount()) {
-            to.call{value: chainGasAmount}("");
+            (bool success, ) = to.call{value: chainGasAmount}("");
+            require(success, "GAS_AIRDROP_FAILED");
         }
         token.mint(ROUTER, amount.sub(fee));
         token.mint(address(this), fee);
@@ -834,7 +837,8 @@ contract SynapseBridge is
     ) external nonReentrant() whenNotPaused() {
         validateBridgeFunction(amount, fee, kappa);
         if (checkChainGasAmount()) {
-            to.call{value: chainGasAmount}("");
+            (bool success, ) = to.call{value: chainGasAmount}("");
+            require(success, "GAS_AIRDROP_FAILED");
         }
         fees[address(token)] = fees[address(token)].add(fee);
         uint256 amountSubFee = amount.sub(fee);
