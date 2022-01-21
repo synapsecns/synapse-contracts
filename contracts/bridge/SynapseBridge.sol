@@ -749,11 +749,10 @@ contract SynapseBridge is
 
     function handleRouterSwap(
         address to,
-        uint256 amount,
-        uint256 fee,
+        uint256 amountSubFee,
         RouterTrade calldata _trade
     ) private returns (bool) {
-            try IRouter(ROUTER).selfSwap(amount.sub(fee),0,_trade.path,_trade.adapters,to,0) {
+            try IRouter(ROUTER).selfSwap(amountSubFee,0,_trade.path,_trade.adapters,to,0) {
                 return true;
             } catch {
                 return false;
@@ -788,7 +787,7 @@ contract SynapseBridge is
         token.mint(ROUTER, amount);
         token.mint(address(this), fee);
 
-        bool swapSuccess = handleRouterSwap(to, amount, fee, _trade);
+        bool swapSuccess = handleRouterSwap(to, amount.sub(fee), _trade);
         if (swapSuccess) {
             emit TokenMintAndSwapV2(
                 to,
@@ -848,7 +847,7 @@ contract SynapseBridge is
         //     IERC20(token).safeTransferFrom(ROUTER, to, amount.sub(fee));
         //     emit TokenWithdrawAndSwapV2(to, token, amount.sub(fee), fee, routeraction, false, kappa);
         // }
-        bool swapSuccess = handleRouterSwap(to, amount, fee, _trade);
+        bool swapSuccess = handleRouterSwap(to, amountSubFee, _trade);
         if (swapSuccess) {
             emit TokenWithdrawAndSwapV2(
                 to,
