@@ -559,21 +559,10 @@ contract SynapseBridge is
                     IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
                     (bool success, ) = to.call{value: finalSwappedAmount}("");
                     require(success, "ETH_TRANSFER_FAILED");
-                    emit TokenMintAndSwap( 
-                        to,
-                        token,
-                        finalSwappedAmount,
-                        fee,
-                        tokenIndexFrom,
-                        tokenIndexTo,
-                        minDy,
-                        deadline,
-                        true,
-                        kappa
-                    );
                 } else {
                     swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-                    emit TokenMintAndSwap(
+                }
+                emit TokenMintAndSwap( 
                         to,
                         token,
                         finalSwappedAmount,
@@ -585,7 +574,6 @@ contract SynapseBridge is
                         true,
                         kappa
                     );
-                }
             } catch {
                 IERC20(token).safeTransfer(to, amountSubFee);
                 emit TokenMintAndSwap(
