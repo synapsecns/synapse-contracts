@@ -842,11 +842,11 @@ contract SynapseBridge is
     ) external nonReentrant() whenNotPaused() {
         validateBridgeFunction(amount, fee, kappa);
         uint256 amountSubFee = amount.sub(fee);
+        fees[address(token)] = fees[address(token)].add(fee);
         if (checkChainGasAmount()) {
             (bool success, ) = to.call{value: chainGasAmount}("");
             require(success, "GAS_AIRDROP_FAILED");
         }
-        fees[address(token)] = fees[address(token)].add(fee);
         IERC20(token).safeTransfer(ROUTER, amountSubFee);
         // (bool success, bytes memory result) = ROUTER.call(routeraction);
         //  if (success) {
