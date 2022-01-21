@@ -524,7 +524,7 @@ contract SynapseBridge is
         // We don't need to check expected output amount,
         // as swap() will revert if the output amount is too small
         token.mint(address(this), amount);
-        token.safeIncreaseAllowance(address(pool), amount);
+        token.safeIncreaseAllowance(address(pool), amountSubFee);
         try
             ISwap(pool).swap(
                 tokenIndexFrom,
