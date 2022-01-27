@@ -9,7 +9,6 @@ import "@openzeppelin/contracts-upgradeable-4.4.2/security/PausableUpgradeable.s
 import "@openzeppelin/contracts-4.4.2/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-4.4.2/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts-4.4.2/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts-4.4.2/utils/math/SafeMath.sol";
 
 import "./interfaces-8/ISwap.sol";
 import "./interfaces/IWETH9.sol";
@@ -27,7 +26,6 @@ contract SynapseBridge is
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Mintable;
-    using SafeMath for uint256;
 
     bytes32 public constant NODEGROUP_ROLE = keccak256("NODEGROUP_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
@@ -341,8 +339,8 @@ contract SynapseBridge is
         bytes32 kappa
     ) external nonReentrant() whenNotPaused() {
         validateBridgeFunction(amount, fee, kappa);
-        uint256 amountSubFee = amount.sub(fee);
-        fees[address(token)] = fees[address(token)].add(fee);
+        uint256 amountSubFee = amount- fee;
+        fees[address(token)] = fees[address(token)] + fee;
 
         // Transfer gas airdrop
         if (checkChainGasAmount()) {
@@ -370,8 +368,8 @@ contract SynapseBridge is
         bytes32 kappa
     ) external nonReentrant() whenNotPaused() {
         validateBridgeFunction(amount, fee, kappa);
-        uint256 amountSubFee = amount.sub(fee);
-        fees[address(token)] = fees[address(token)].add(fee);
+        uint256 amountSubFee = amount - fee;
+        fees[address(token)] = fees[address(token)] + fee;
 
         // Transfer gas airdrop
         if (checkChainGasAmount()) {
@@ -512,8 +510,8 @@ contract SynapseBridge is
         bytes32 kappa
     ) external nonReentrant() whenNotPaused() {
         validateBridgeFunction(amount, fee, kappa);
-        uint256 amountSubFee = amount.sub(fee);
-        fees[address(token)] = fees[address(token)].add(fee);
+        uint256 amountSubFee = amount - fee;
+        fees[address(token)] = fees[address(token)] + fee;
 
         // Transfer gas airdrop
         if (checkChainGasAmount()) {
@@ -591,8 +589,8 @@ contract SynapseBridge is
         bytes32 kappa
     ) external nonReentrant() whenNotPaused() {
         validateBridgeFunction(amount, fee, kappa);
-        uint256 amountSubFee = amount.sub(fee);
-        fees[address(token)] = fees[address(token)].add(fee);
+        uint256 amountSubFee = amount - fee;
+        fees[address(token)] = fees[address(token)] + fee;
 
         // Transfer gas airdrop
         if (checkChainGasAmount()) {
@@ -734,8 +732,8 @@ contract SynapseBridge is
         bytes32 kappa
     ) external nonReentrant() whenNotPaused() {
         validateBridgeFunction(amount, fee, kappa);
-        uint256 amountSubFee = amount.sub(fee);
-        fees[address(token)] = fees[address(token)].add(fee);
+        uint256 amountSubFee = amount - fee;
+        fees[address(token)] = fees[address(token)] + fee;
 
         // Transfer gas airdrop
         if (checkChainGasAmount()) {
@@ -792,8 +790,8 @@ contract SynapseBridge is
         bytes32 kappa
     ) external nonReentrant() whenNotPaused() {
         validateBridgeFunction(amount, fee, kappa);
-        uint256 amountSubFee = amount.sub(fee);
-        fees[address(token)] = fees[address(token)].add(fee);
+        uint256 amountSubFee = amount - fee;
+        fees[address(token)] = fees[address(token)] + fee;
 
         // Transfer gas airdrop
         if (checkChainGasAmount()) {
