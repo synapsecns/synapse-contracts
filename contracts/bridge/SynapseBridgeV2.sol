@@ -12,11 +12,12 @@ import {SafeMath} from "@openzeppelin/contracts-4.4.2/utils/math/SafeMath.sol";
 
 import {IWETH9} from "./interfaces/IWETH9.sol";
 
-
 import {ISynapseBridge} from "./interfaces-8/ISynapseBridge.sol";
 import {IERC20Mintable} from "./interfaces-8/IERC20Mintable.sol";
 import {ISwap} from "./interfaces-8/ISwap.sol";
 import {IRouter} from "./interfaces-8/IRouter.sol";
+
+import {WETHUtils} from "./utils/WETHUtils.sol";
 
 contract SynapseBridgeV2 is
     Initializable,
@@ -403,8 +404,8 @@ contract SynapseBridgeV2 is
     )
         internal
     {
-        if (_validWETHAddress(token)) {
-            _transferWETH(to, amount);
+        if (WETHUtils.validWETHAddress(WETH_ADDRESS, address(token))) {
+            WETHUtils.transferWETH(WETH_ADDRESS, to, amount);
             return;
         }
 
@@ -445,26 +446,7 @@ contract SynapseBridgeV2 is
         return amountSubFee;
     }
 
-    function _validWETHAddress(IERC20 token)
-        internal
-        view
-        returns (bool)
-    {
-        return address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0);
-    }
-
-    function _transferWETH(address to, uint256 amount)
-        internal
-    {
-        IWETH9(WETH_ADDRESS).withdraw(amount);
-        (bool success,) = to.call{value: amount}("");
-        require(
-            success,
-            "ETH transfer failed"
-        );
-    }
-
-    function _doGasDrop(address to)
+    function _doGasDrop(address payable to)
         internal
     {
         // Transfer gas airdrop

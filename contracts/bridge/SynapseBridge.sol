@@ -18,6 +18,9 @@ import {IERC20Mintable} from "./interfaces/IERC20Mintable.sol";
 import {ISwap} from "./interfaces/ISwap.sol";
 import {IRouter} from "./interfaces/IRouter.sol";
 
+import {WETHUtils} from "./utils/WETHUtils.sol";
+
+
 contract SynapseBridge is
     Initializable,
     AccessControlUpgradeable,
@@ -682,8 +685,8 @@ contract SynapseBridge is
     )
         internal
     {
-        if (_validWETHAddress(token)) {
-            _transferWETH(to, amount);
+        if (WETHUtils.validWETHAddress(WETH_ADDRESS, address(token))) {
+            WETHUtils.transferWETH(WETH_ADDRESS, to, amount);
             return;
         }
 
@@ -711,25 +714,6 @@ contract SynapseBridge is
         _doGasDrop(to);
 
         return amountSubFee;
-    }
-
-    function _validWETHAddress(IERC20 token)
-        internal
-        view
-        returns (bool)
-    {
-        return address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0);
-    }
-
-    function _transferWETH(address to, uint256 amount)
-        internal
-    {
-        IWETH9(WETH_ADDRESS).withdraw(amount);
-        (bool success,) = payable(to).call{value: amount}("");
-        require(
-            success,
-            "ETH transfer failed"
-        );
     }
 
     function _mintToken(
