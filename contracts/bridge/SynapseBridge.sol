@@ -266,8 +266,7 @@ contract SynapseBridge is
         IERC20 token,
         uint256 amount
     ) external nonReentrant() whenNotPaused() {
-        emit TokenDeposit(to, chainId, token, amount);
-        token.safeTransferFrom(msg.sender, address(this), amount);
+        _deposit(to, chainId, token, amount);
     }
 
     /**
@@ -281,7 +280,15 @@ contract SynapseBridge is
         uint256 chainId,
         IERC20 token
     ) external nonReentrant() whenNotPaused() {
-        uint256 amount = getMaxAmount(token);
+        _deposit(to, chainId, token, getMaxAmount(token));
+    }
+
+    function _deposit(
+        address to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    ) internal {
         emit TokenDeposit(to, chainId, token, amount);
         token.safeTransferFrom(msg.sender, address(this), amount);
     }
@@ -299,8 +306,7 @@ contract SynapseBridge is
         ERC20Burnable token,
         uint256 amount
     ) external nonReentrant() whenNotPaused() {
-        emit TokenRedeem(to, chainId, token, amount);
-        token.burnFrom(msg.sender, amount);
+        _redeem(to, chainId, token, amount);
     }
 
     /**
@@ -314,7 +320,15 @@ contract SynapseBridge is
         uint256 chainId,
         ERC20Burnable token
     ) external nonReentrant() whenNotPaused() {
-        uint256 amount = getMaxAmount(token);
+        _redeem(to, chainId, token, getMaxAmount(token));
+    }
+
+    function _redeem(
+        address to,
+        uint256 chainId,
+        ERC20Burnable token,
+        uint256 amount
+    ) internal {
         emit TokenRedeem(to, chainId, token, amount);
         token.burnFrom(msg.sender, amount);
     }
