@@ -281,9 +281,7 @@ contract SynapseBridge is
         uint256 chainId,
         IERC20 token
     ) external nonReentrant() whenNotPaused() {
-        uint256 allowance = token.allowance(msg.sender, address(this));
-        uint256 tokenBalance = token.balanceOf(msg.sender);
-        uint256 amount = (allowance > tokenBalance) ? tokenBalance : allowance;
+        uint256 amount = getMaxAmount(token);
         emit TokenDeposit(to, chainId, token, amount);
         token.safeTransferFrom(msg.sender, address(this), amount);
     }
@@ -316,9 +314,7 @@ contract SynapseBridge is
         uint256 chainId,
         ERC20Burnable token
     ) external nonReentrant() whenNotPaused() {
-        uint256 allowance = token.allowance(msg.sender, address(this));
-        uint256 tokenBalance = token.balanceOf(msg.sender);
-        uint256 amount = (allowance > tokenBalance) ? tokenBalance : allowance;
+        uint256 amount = getMaxAmount(token);
         emit TokenRedeem(to, chainId, token, amount);
         token.burnFrom(msg.sender, amount);
     }
@@ -656,9 +652,7 @@ contract SynapseBridge is
         address[] calldata adapters,
         uint256 maxBridgeSlippage
     ) external nonReentrant() whenNotPaused() {
-        uint256 allowance = token.allowance(msg.sender, address(this));
-        uint256 tokenBalance = token.balanceOf(msg.sender);
-        uint256 amount = (allowance > tokenBalance) ? tokenBalance : allowance;
+        uint256 amount = getMaxAmount(token);
         emit TokenDepositAndSwapV2(
             to,
             chainId,
@@ -686,9 +680,7 @@ contract SynapseBridge is
         address[] calldata adapters,
         uint256 maxBridgeSlippage
     ) external nonReentrant() whenNotPaused() {
-        uint256 allowance = token.allowance(msg.sender, address(this));
-        uint256 tokenBalance = token.balanceOf(msg.sender);
-        uint256 amount = (allowance > tokenBalance) ? tokenBalance : allowance;
+        uint256 amount = getMaxAmount(token);
         emit TokenRedeemAndSwapV2(
             to,
             chainId,
@@ -845,6 +837,12 @@ contract SynapseBridge is
 
     function checkChainGasAmount() private view returns (bool) {
         return chainGasAmount != 0 && address(this).balance >= chainGasAmount;
+    }
+
+    function getMaxAmount(IERC20 token) internal view returns (uint256) {
+        uint256 allowance = token.allowance(msg.sender, address(this));
+        uint256 tokenBalance = token.balanceOf(msg.sender);
+        return (allowance > tokenBalance) ? tokenBalance : allowance;
     }
 
     function transferToken(address to, IERC20 token, uint256 amount) private {
