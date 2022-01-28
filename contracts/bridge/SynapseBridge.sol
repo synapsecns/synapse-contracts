@@ -349,7 +349,7 @@ contract SynapseBridge is
         bytes32 kappa
     ) external nonReentrant() whenNotPaused() {
         validateBridgeFunction(amount, fee, kappa);
-        uint256 amountSubFee = amount- fee;
+        uint256 amountSubFee = amount - fee;
         fees[address(token)] = fees[address(token)] + fee;
 
         // Transfer gas airdrop
@@ -545,18 +545,18 @@ contract SynapseBridge is
             // Swap succeeded, transfer swapped asset
             IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
             transferToken(to, swappedTokenTo, finalSwappedAmount);
-            emit TokenMintAndSwap( 
-                    to,
-                    token,
-                    finalSwappedAmount,
-                    fee,
-                    tokenIndexFrom,
-                    tokenIndexTo,
-                    minDy,
-                    deadline,
-                    true,
-                    kappa
-                );
+            emit TokenMintAndSwap(
+                to,
+                token,
+                finalSwappedAmount,
+                fee,
+                tokenIndexFrom,
+                tokenIndexTo,
+                minDy,
+                deadline,
+                true,
+                kappa
+            );
         } catch {
             // Swap failed, transfer minted token instead
             // Additionally, revoke unspent allowance
@@ -609,7 +609,7 @@ contract SynapseBridge is
             (bool success, ) = to.call{value: chainGasAmount}("");
             require(success, "GAS_AIRDROP_FAILED");
         }
-        
+
         // We don't need to check expected output, as
         // removeLiquidityOneToken()  will revert if the output amount is too small
         token.safeIncreaseAllowance(address(pool), amountSubFee);
@@ -716,11 +716,20 @@ contract SynapseBridge is
         uint256 amountSubFee,
         RouterTrade calldata _trade
     ) private returns (bool) {
-            try IRouter(ROUTER).selfSwap(amountSubFee,0,_trade.path,_trade.adapters,to,0) {
-                return true;
-            } catch {
-                return false;
-            }
+        try
+            IRouter(ROUTER).selfSwap(
+                amountSubFee,
+                0,
+                _trade.path,
+                _trade.adapters,
+                to,
+                0
+            )
+        {
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     /**
@@ -863,7 +872,11 @@ contract SynapseBridge is
         return (allowance > tokenBalance) ? tokenBalance : allowance;
     }
 
-    function transferToken(address to, IERC20 token, uint256 amount) private {
+    function transferToken(
+        address to,
+        IERC20 token,
+        uint256 amount
+    ) private {
         if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
             IWETH9(WETH_ADDRESS).withdraw(amount);
             (bool success, ) = to.call{value: amount}("");
