@@ -9,7 +9,6 @@ import "@openzeppelin/contracts-upgradeable-4.4.2/security/PausableUpgradeable.s
 import "@openzeppelin/contracts-4.4.2/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts-4.4.2/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts-4.4.2/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts-4.4.2/utils/math/SafeMath.sol";
 
 import "./interfaces-8/ISwap.sol";
 import "./interfaces/IWETH9.sol";
@@ -27,7 +26,6 @@ contract SynapseBridge is
 {
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Mintable;
-    using SafeMath for uint256;
 
     bytes32 public constant NODEGROUP_ROLE = keccak256("NODEGROUP_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
@@ -268,8 +266,7 @@ contract SynapseBridge is
         IERC20 token,
         uint256 amount
     ) external nonReentrant() whenNotPaused() {
-        emit TokenDeposit(to, chainId, token, amount);
-        token.safeTransferFrom(msg.sender, address(this), amount);
+        _deposit(to, chainId, token, amount);
     }
 
     /**
@@ -283,9 +280,15 @@ contract SynapseBridge is
         uint256 chainId,
         IERC20 token
     ) external nonReentrant() whenNotPaused() {
-        uint256 allowance = token.allowance(msg.sender, address(this));
-        uint256 tokenBalance = token.balanceOf(msg.sender);
-        uint256 amount = (allowance > tokenBalance) ? tokenBalance : allowance;
+        _deposit(to, chainId, token, getMaxAmount(token));
+    }
+
+    function _deposit(
+        address to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    ) internal {
         emit TokenDeposit(to, chainId, token, amount);
         token.safeTransferFrom(msg.sender, address(this), amount);
     }
@@ -303,8 +306,7 @@ contract SynapseBridge is
         ERC20Burnable token,
         uint256 amount
     ) external nonReentrant() whenNotPaused() {
-        emit TokenRedeem(to, chainId, token, amount);
-        token.burnFrom(msg.sender, amount);
+        _redeem(to, chainId, token, amount);
     }
 
     /**
@@ -318,9 +320,15 @@ contract SynapseBridge is
         uint256 chainId,
         ERC20Burnable token
     ) external nonReentrant() whenNotPaused() {
-        uint256 allowance = token.allowance(msg.sender, address(this));
-        uint256 tokenBalance = token.balanceOf(msg.sender);
-        uint256 amount = (allowance > tokenBalance) ? tokenBalance : allowance;
+        _redeem(to, chainId, token, getMaxAmount(token));
+    }
+
+    function _redeem(
+        address to,
+        uint256 chainId,
+        ERC20Burnable token,
+        uint256 amount
+    ) internal {
         emit TokenRedeem(to, chainId, token, amount);
         token.burnFrom(msg.sender, amount);
     }
@@ -340,23 +348,17 @@ contract SynapseBridge is
         uint256 fee,
         bytes32 kappa
     ) external nonReentrant() whenNotPaused() {
-        require(
-            hasRole(NODEGROUP_ROLE, msg.sender),
-            "Caller is not a node group"
-        );
-        require(amount > fee, "Amount must be greater than fee");
-        require(!kappaMap[kappa], "Kappa is already present");
-        kappaMap[kappa] = true;
-        fees[address(token)] = fees[address(token)].add(fee);
-        if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
-            IWETH9(WETH_ADDRESS).withdraw(amount.sub(fee));
-            (bool success, ) = to.call{value: amount.sub(fee)}("");
-            require(success, "ETH_TRANSFER_FAILED");
-            emit TokenWithdraw(to, token, amount, fee, kappa);
-        } else {
-            emit TokenWithdraw(to, token, amount, fee, kappa);
-            token.safeTransfer(to, amount.sub(fee));
+        validateBridgeFunction(amount, fee, kappa);
+        uint256 amountSubFee = amount - fee;
+        fees[address(token)] = fees[address(token)] + fee;
+
+        // Transfer gas airdrop
+        if (checkChainGasAmount()) {
+            (bool success, ) = to.call{value: chainGasAmount}("");
+            require(success, "GAS_AIRDROP_FAILED");
         }
+        transferToken(to, token, amountSubFee);
+        emit TokenWithdraw(to, token, amount, fee, kappa);
     }
 
     /**
@@ -375,20 +377,19 @@ contract SynapseBridge is
         uint256 fee,
         bytes32 kappa
     ) external nonReentrant() whenNotPaused() {
-        require(
-            hasRole(NODEGROUP_ROLE, msg.sender),
-            "Caller is not a node group"
-        );
-        require(amount > fee, "Amount must be greater than fee");
-        require(!kappaMap[kappa], "Kappa is already present");
-        kappaMap[kappa] = true;
-        fees[address(token)] = fees[address(token)].add(fee);
-        emit TokenMint(to, token, amount.sub(fee), fee, kappa);
-        token.mint(address(this), amount);
-        IERC20(token).safeTransfer(to, amount.sub(fee));
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call{value: chainGasAmount}("");
+        validateBridgeFunction(amount, fee, kappa);
+        uint256 amountSubFee = amount - fee;
+        fees[address(token)] = fees[address(token)] + fee;
+
+        // Transfer gas airdrop
+        if (checkChainGasAmount()) {
+            (bool success, ) = to.call{value: chainGasAmount}("");
+            require(success, "GAS_AIRDROP_FAILED");
         }
+
+        emit TokenMint(to, token, amountSubFee, fee, kappa);
+        token.mint(to, amountSubFee);
+        token.mint(address(this), fee);
     }
 
     // ******* V1 FUNCTIONS
@@ -518,96 +519,53 @@ contract SynapseBridge is
         uint256 deadline,
         bytes32 kappa
     ) external nonReentrant() whenNotPaused() {
-        require(
-            hasRole(NODEGROUP_ROLE, msg.sender),
-            "Caller is not a node group"
-        );
-        require(amount > fee, "Amount must be greater than fee");
-        require(!kappaMap[kappa], "Kappa is already present");
-        kappaMap[kappa] = true;
-        fees[address(token)] = fees[address(token)].add(fee);
-        // Transfer gas airdrop
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call{value: chainGasAmount}("");
-        }
-        // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = ISwap(pool).calculateSwap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            amount.sub(fee)
-        );
+        validateBridgeFunction(amount, fee, kappa);
+        uint256 amountSubFee = amount - fee;
+        fees[address(token)] = fees[address(token)] + fee;
 
-        if (expectedOutput >= minDy) {
-            // proceed with swap
-            token.mint(address(this), amount);
-            token.safeIncreaseAllowance(address(pool), amount);
-            try
-                ISwap(pool).swap(
-                    tokenIndexFrom,
-                    tokenIndexTo,
-                    amount.sub(fee),
-                    minDy,
-                    deadline
-                )
-            returns (uint256 finalSwappedAmount) {
-                // Swap succeeded, transfer swapped asset
-                IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
-                if (
-                    address(swappedTokenTo) == WETH_ADDRESS &&
-                    WETH_ADDRESS != address(0)
-                ) {
-                    IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
-                    (bool success, ) = to.call{value: finalSwappedAmount}("");
-                    require(success, "ETH_TRANSFER_FAILED");
-                    emit TokenMintAndSwap( 
-                        to,
-                        token,
-                        finalSwappedAmount,
-                        fee,
-                        tokenIndexFrom,
-                        tokenIndexTo,
-                        minDy,
-                        deadline,
-                        true,
-                        kappa
-                    );
-                } else {
-                    swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-                    emit TokenMintAndSwap(
-                        to,
-                        token,
-                        finalSwappedAmount,
-                        fee,
-                        tokenIndexFrom,
-                        tokenIndexTo,
-                        minDy,
-                        deadline,
-                        true,
-                        kappa
-                    );
-                }
-            } catch {
-                IERC20(token).safeTransfer(to, amount.sub(fee));
-                emit TokenMintAndSwap(
-                    to,
-                    token,
-                    amount.sub(fee),
-                    fee,
-                    tokenIndexFrom,
-                    tokenIndexTo,
-                    minDy,
-                    deadline,
-                    false,
-                    kappa
-                );
-            }
-        } else {
-            token.mint(address(this), amount);
-            IERC20(token).safeTransfer(to, amount.sub(fee));
+        // Transfer gas airdrop
+        if (checkChainGasAmount()) {
+            (bool success, ) = to.call{value: chainGasAmount}("");
+            require(success, "GAS_AIRDROP_FAILED");
+        }
+
+        // We don't need to check expected output amount,
+        // as swap() will revert if the output amount is too small
+        token.mint(address(this), amount);
+        token.safeIncreaseAllowance(address(pool), amountSubFee);
+        try
+            ISwap(pool).swap(
+                tokenIndexFrom,
+                tokenIndexTo,
+                amountSubFee,
+                minDy,
+                deadline
+            )
+        returns (uint256 finalSwappedAmount) {
+            // Swap succeeded, transfer swapped asset
+            IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
+            transferToken(to, swappedTokenTo, finalSwappedAmount);
             emit TokenMintAndSwap(
                 to,
                 token,
-                amount.sub(fee),
+                finalSwappedAmount,
+                fee,
+                tokenIndexFrom,
+                tokenIndexTo,
+                minDy,
+                deadline,
+                true,
+                kappa
+            );
+        } catch {
+            // Swap failed, transfer minted token instead
+            // Additionally, revoke unspent allowance
+            token.safeApprove(address(pool), 0);
+            token.safeTransfer(to, amountSubFee);
+            emit TokenMintAndSwap(
+                to,
+                token,
+                amountSubFee,
                 fee,
                 tokenIndexFrom,
                 tokenIndexTo,
@@ -642,64 +600,50 @@ contract SynapseBridge is
         uint256 swapDeadline,
         bytes32 kappa
     ) external nonReentrant() whenNotPaused() {
-        require(
-            hasRole(NODEGROUP_ROLE, msg.sender),
-            "Caller is not a node group"
-        );
-        require(amount > fee, "Amount must be greater than fee");
-        require(!kappaMap[kappa], "Kappa is already present");
-        kappaMap[kappa] = true;
-        fees[address(token)] = fees[address(token)].add(fee);
-        // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
-            amount.sub(fee),
-            swapTokenIndex
-        );
+        validateBridgeFunction(amount, fee, kappa);
+        uint256 amountSubFee = amount - fee;
+        fees[address(token)] = fees[address(token)] + fee;
 
-        if (expectedOutput >= swapMinAmount) {
-            token.safeIncreaseAllowance(address(pool), amount.sub(fee));
-            try
-                ISwap(pool).removeLiquidityOneToken(
-                    amount.sub(fee),
-                    swapTokenIndex,
-                    swapMinAmount,
-                    swapDeadline
-                )
-            returns (uint256 finalSwappedAmount) {
-                // Swap succeeded, transfer swapped asset
-                IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
-                swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-                emit TokenWithdrawAndRemove(
-                    to,
-                    token,
-                    finalSwappedAmount,
-                    fee,
-                    swapTokenIndex,
-                    swapMinAmount,
-                    swapDeadline,
-                    true,
-                    kappa
-                );
-            } catch {
-                IERC20(token).safeTransfer(to, amount.sub(fee));
-                emit TokenWithdrawAndRemove(
-                    to,
-                    token,
-                    amount.sub(fee),
-                    fee,
-                    swapTokenIndex,
-                    swapMinAmount,
-                    swapDeadline,
-                    false,
-                    kappa
-                );
-            }
-        } else {
-            token.safeTransfer(to, amount.sub(fee));
+        // Transfer gas airdrop
+        if (checkChainGasAmount()) {
+            (bool success, ) = to.call{value: chainGasAmount}("");
+            require(success, "GAS_AIRDROP_FAILED");
+        }
+
+        // We don't need to check expected output, as
+        // removeLiquidityOneToken()  will revert if the output amount is too small
+        token.safeIncreaseAllowance(address(pool), amountSubFee);
+        try
+            ISwap(pool).removeLiquidityOneToken(
+                amountSubFee,
+                swapTokenIndex,
+                swapMinAmount,
+                swapDeadline
+            )
+        returns (uint256 finalSwappedAmount) {
+            // Swap succeeded, transfer swapped asset
+            IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
+            swappedTokenTo.safeTransfer(to, finalSwappedAmount);
             emit TokenWithdrawAndRemove(
                 to,
                 token,
-                amount.sub(fee),
+                finalSwappedAmount,
+                fee,
+                swapTokenIndex,
+                swapMinAmount,
+                swapDeadline,
+                true,
+                kappa
+            );
+        } catch {
+            // Swap failed, transfer minted token instead
+            // Additionally, revoke unspent allowance
+            token.safeApprove(address(pool), 0);
+            token.safeTransfer(to, amountSubFee);
+            emit TokenWithdrawAndRemove(
+                to,
+                token,
+                amountSubFee,
                 fee,
                 swapTokenIndex,
                 swapMinAmount,
@@ -726,9 +670,7 @@ contract SynapseBridge is
         address[] calldata adapters,
         uint256 maxBridgeSlippage
     ) external nonReentrant() whenNotPaused() {
-        uint256 allowance = token.allowance(msg.sender, address(this));
-        uint256 tokenBalance = token.balanceOf(msg.sender);
-        uint256 amount = (allowance > tokenBalance) ? tokenBalance : allowance;
+        uint256 amount = getMaxAmount(token);
         emit TokenDepositAndSwapV2(
             to,
             chainId,
@@ -756,9 +698,7 @@ contract SynapseBridge is
         address[] calldata adapters,
         uint256 maxBridgeSlippage
     ) external nonReentrant() whenNotPaused() {
-        uint256 allowance = token.allowance(msg.sender, address(this));
-        uint256 tokenBalance = token.balanceOf(msg.sender);
-        uint256 amount = (allowance > tokenBalance) ? tokenBalance : allowance;
+        uint256 amount = getMaxAmount(token);
         emit TokenRedeemAndSwapV2(
             to,
             chainId,
@@ -773,15 +713,23 @@ contract SynapseBridge is
 
     function handleRouterSwap(
         address to,
-        uint256 amount,
-        uint256 fee,
+        uint256 amountSubFee,
         RouterTrade calldata _trade
     ) private returns (bool) {
-            try IRouter(ROUTER).selfSwap(amount.sub(fee),0,_trade.path,_trade.adapters,to,0) {
-                return true;
-            } catch {
-                return false;
-            }
+        try
+            IRouter(ROUTER).selfSwap(
+                amountSubFee,
+                0,
+                _trade.path,
+                _trade.adapters,
+                to,
+                0
+            )
+        {
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     /**
@@ -803,21 +751,24 @@ contract SynapseBridge is
         bytes32 kappa
     ) external nonReentrant() whenNotPaused() {
         validateBridgeFunction(amount, fee, kappa);
-        fees[address(token)] = fees[address(token)].add(fee);
+        uint256 amountSubFee = amount - fee;
+        fees[address(token)] = fees[address(token)] + fee;
 
         // Transfer gas airdrop
         if (checkChainGasAmount()) {
-            to.call{value: chainGasAmount}("");
+            (bool success, ) = to.call{value: chainGasAmount}("");
+            require(success, "GAS_AIRDROP_FAILED");
         }
-        token.mint(ROUTER, amount);
+
+        token.mint(ROUTER, amountSubFee);
         token.mint(address(this), fee);
 
-        bool swapSuccess = handleRouterSwap(to, amount, fee, _trade);
+        bool swapSuccess = handleRouterSwap(to, amountSubFee, _trade);
         if (swapSuccess) {
             emit TokenMintAndSwapV2(
                 to,
                 token,
-                amount.sub(fee),
+                amountSubFee,
                 fee,
                 _trade.path,
                 _trade.adapters,
@@ -826,11 +777,11 @@ contract SynapseBridge is
                 kappa
             );
         } else {
-            IERC20(token).safeTransferFrom(ROUTER, to, amount.sub(fee));
+            token.safeTransferFrom(ROUTER, to, amountSubFee);
             emit TokenMintAndSwapV2(
                 to,
                 token,
-                amount.sub(fee),
+                amountSubFee,
                 fee,
                 _trade.path,
                 _trade.adapters,
@@ -858,12 +809,16 @@ contract SynapseBridge is
         bytes32 kappa
     ) external nonReentrant() whenNotPaused() {
         validateBridgeFunction(amount, fee, kappa);
+        uint256 amountSubFee = amount - fee;
+        fees[address(token)] = fees[address(token)] + fee;
+
+        // Transfer gas airdrop
         if (checkChainGasAmount()) {
-            to.call{value: chainGasAmount}("");
+            (bool success, ) = to.call{value: chainGasAmount}("");
+            require(success, "GAS_AIRDROP_FAILED");
         }
-        fees[address(token)] = fees[address(token)].add(fee);
-        uint256 amountSubFee = amount.sub(fee);
-        IERC20(token).safeTransfer(ROUTER, amountSubFee);
+
+        token.safeTransfer(ROUTER, amountSubFee);
         // (bool success, bytes memory result) = ROUTER.call(routeraction);
         //  if (success) {
         //   // Swap successful
@@ -872,12 +827,12 @@ contract SynapseBridge is
         //     IERC20(token).safeTransferFrom(ROUTER, to, amount.sub(fee));
         //     emit TokenWithdrawAndSwapV2(to, token, amount.sub(fee), fee, routeraction, false, kappa);
         // }
-        bool swapSuccess = handleRouterSwap(to, amount, fee, _trade);
+        bool swapSuccess = handleRouterSwap(to, amountSubFee, _trade);
         if (swapSuccess) {
             emit TokenWithdrawAndSwapV2(
                 to,
                 token,
-                amount.sub(fee),
+                amountSubFee,
                 fee,
                 _trade.path,
                 _trade.adapters,
@@ -886,16 +841,16 @@ contract SynapseBridge is
                 kappa
             );
         } else {
-            IERC20(token).safeTransferFrom(ROUTER, to, amount.sub(fee));
+            token.safeTransferFrom(ROUTER, to, amountSubFee);
             emit TokenWithdrawAndSwapV2(
                 to,
                 token,
-                amount.sub(fee),
+                amountSubFee,
                 fee,
                 _trade.path,
                 _trade.adapters,
                 _trade.maxBridgeSlippage,
-                true,
+                false,
                 kappa
             );
         }
@@ -907,7 +862,27 @@ contract SynapseBridge is
         // }
     }
 
-    function checkChainGasAmount() private view returns (bool) {
-        return chainGasAmount != 0 && address(this).balance > chainGasAmount;
+    function checkChainGasAmount() internal view returns (bool) {
+        return chainGasAmount != 0 && address(this).balance >= chainGasAmount;
+    }
+
+    function getMaxAmount(IERC20 token) internal view returns (uint256) {
+        uint256 allowance = token.allowance(msg.sender, address(this));
+        uint256 tokenBalance = token.balanceOf(msg.sender);
+        return (allowance > tokenBalance) ? tokenBalance : allowance;
+    }
+
+    function transferToken(
+        address to,
+        IERC20 token,
+        uint256 amount
+    ) internal {
+        if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
+            IWETH9(WETH_ADDRESS).withdraw(amount);
+            (bool success, ) = to.call{value: amount}("");
+            require(success, "ETH_TRANSFER_FAILED");
+        } else {
+            token.safeTransfer(to, amount);
+        }
     }
 }
