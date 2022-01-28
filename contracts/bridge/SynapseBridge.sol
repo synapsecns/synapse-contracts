@@ -862,7 +862,7 @@ contract SynapseBridge is
         // }
     }
 
-    function checkChainGasAmount() private view returns (bool) {
+    function checkChainGasAmount() internal view returns (bool) {
         return chainGasAmount != 0 && address(this).balance >= chainGasAmount;
     }
 
@@ -876,7 +876,7 @@ contract SynapseBridge is
         address to,
         IERC20 token,
         uint256 amount
-    ) private {
+    ) internal {
         if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
             IWETH9(WETH_ADDRESS).withdraw(amount);
             (bool success, ) = to.call{value: amount}("");
