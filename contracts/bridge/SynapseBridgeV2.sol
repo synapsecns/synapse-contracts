@@ -262,7 +262,7 @@ contract SynapseBridgeV2 is
         RouterTrade calldata _trade
     )
         private
-        returns (bool)
+        returns (bool _ok)
     {
         try IRouter(ROUTER).selfSwap(
             amountSubFee,
@@ -272,9 +272,9 @@ contract SynapseBridgeV2 is
             to,
             0
         ) {
-            return true;
+            _ok = true;
         } catch {
-            return false;
+            _ok = false;
         }
     }
 
