@@ -2,21 +2,21 @@
 
 pragma solidity ^0.6.12;
 
-import "@openzeppelin/contracts-upgradeable-4.4.2/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable-4.4.2/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable-4.4.2/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable-4.4.2/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-4.4.2/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts-4.4.2/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin/contracts-4.4.2/token/ERC20/IERC20.sol";
 
-import "./interfaces-8/ISwap.sol";
-import "./interfaces/IWETH9.sol";
-import "./interfaces-8/IRouter.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import {ERC20Burnable} from "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
-interface IERC20Mintable is IERC20 {
-    function mint(address to, uint256 amount) external;
-}
+import {IWETH9} from "./interfaces/IWETH9.sol";
+import {IERC20Mintable} from "./interfaces/IERC20Mintable.sol";
+
+import {ISwap} from "./interfaces/ISwap.sol";
+import {IRouter} from "./interfaces/IRouter.sol";
 
 contract SynapseBridge is
     Initializable,
@@ -36,7 +36,6 @@ contract SynapseBridge is
     uint256 public constant bridgeVersion = 6;
     uint256 public chainGasAmount;
     address payable public WETH_ADDRESS;
-    address public ROUTER;
 
     mapping(bytes32 => bool) private kappaMap;
 
@@ -48,26 +47,54 @@ contract SynapseBridge is
         __AccessControl_init();
     }
 
-    function setChainGasAmount(uint256 amount) external {
-        require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+    modifier adminOnly() {
+        require(
+            hasRole(DEFAULT_ADMIN_ROLE, msg.sender),
+            "Not admin"
+        );
+
+        _;
+    }
+
+    modifier governanceOnly() {
+        require(
+            hasRole(GOVERNANCE_ROLE, msg.sender),
+            "Not governance"
+        );
+
+        _;
+    }
+
+    modifier nodegroupOnly() {
+        require(
+            hasRole(NODEGROUP_ROLE, msg.sender),
+            "Caller is not a node group"
+        );
+
+        _;
+    }
+
+    function setChainGasAmount(uint256 amount)
+        governanceOnly
+        external
+    {
         chainGasAmount = amount;
     }
 
-    function setWethAddress(address payable _wethAddress) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
+    function setWethAddress(address payable _wethAddress)
+        adminOnly
+        external
+    {
         WETH_ADDRESS = _wethAddress;
     }
 
-    function addKappas(bytes32[] calldata kappas) external {
-        require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+    function addKappas(bytes32[] calldata kappas)
+        governanceOnly
+        external
+    {
         for (uint256 i = 0; i < kappas.length; ++i) {
             kappaMap[kappas[i]] = true;
         }
-    }
-
-    function setRouterAddress(address _router) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
-        ROUTER = _router;
     }
 
     event TokenDeposit(
@@ -150,27 +177,17 @@ contract SynapseBridge is
     );
 
 
-    function validateBridgeFunction(
+    modifier validateBridgeFunction(
         uint256 amount,
         uint256 fee,
         bytes32 kappa
-    ) private {
-        require(
-            hasRole(NODEGROUP_ROLE, msg.sender),
-            "Caller is not a node group"
-        );
-
+    )
+    {
         require(amount > fee, "Amount must be greater than fee");
 
         require(!kappaMap[kappa], "Kappa is already present");
 
-        kappaMap[kappa] = true;
-    }
-
-    struct RouterTrade {
-        address[] path;
-        address[] adapters;
-        uint256 maxBridgeSlippage;
+        _;
     }
 
     // VIEW FUNCTIONS ***/
@@ -182,7 +199,11 @@ contract SynapseBridge is
         return fees[tokenAddress];
     }
 
-    function kappaExists(bytes32 kappa) external view returns (bool) {
+    function kappaExists(bytes32 kappa)
+        external
+        view
+        returns (bool)
+    {
         return kappaMap[kappa];
     }
 
@@ -226,7 +247,11 @@ contract SynapseBridge is
         uint256 chainId,
         IERC20 token,
         uint256 amount
-    ) external nonReentrant() whenNotPaused() {
+    )
+        external
+        nonReentrant
+        whenNotPaused
+    {
         _deposit(to, chainId, token, amount);
     }
 
@@ -240,7 +265,11 @@ contract SynapseBridge is
         address to,
         uint256 chainId,
         IERC20 token
-    ) external nonReentrant() whenNotPaused() {
+    )
+        external
+        nonReentrant
+        whenNotPaused
+    {
         _deposit(to, chainId, token, getMaxAmount(token));
     }
 
@@ -266,7 +295,11 @@ contract SynapseBridge is
         uint256 chainId,
         ERC20Burnable token,
         uint256 amount
-    ) external nonReentrant() whenNotPaused() {
+    )
+        external
+        nonReentrant
+        whenNotPaused
+    {
         _redeem(to, chainId, token, amount);
     }
 
@@ -280,7 +313,11 @@ contract SynapseBridge is
         address to,
         uint256 chainId,
         ERC20Burnable token
-    ) external nonReentrant() whenNotPaused() {
+    )
+        external
+        nonReentrant
+        whenNotPaused
+    {
         _redeem(to, chainId, token, getMaxAmount(token));
     }
 
@@ -308,8 +345,13 @@ contract SynapseBridge is
         uint256 amount,
         uint256 fee,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
-        validateBridgeFunction(amount, fee, kappa);
+    )
+        external
+        nodegroupOnly
+        nonReentrant
+        whenNotPaused
+        validateBridgeFunction(amount, fee, kappa)
+    {
         uint256 amountSubFee = amount - fee;
         fees[address(token)] = fees[address(token)] + fee;
 
@@ -318,8 +360,11 @@ contract SynapseBridge is
             (bool success, ) = to.call{value: chainGasAmount}("");
             require(success, "GAS_AIRDROP_FAILED");
         }
+
         transferToken(to, token, amountSubFee);
         emit TokenWithdraw(to, token, amount, fee, kappa);
+
+        kappaMap[kappa] = true;
     }
 
     /**
@@ -337,8 +382,13 @@ contract SynapseBridge is
         uint256 amount,
         uint256 fee,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
-        validateBridgeFunction(amount, fee, kappa);
+    )
+        external
+        nodegroupOnly
+        nonReentrant
+        whenNotPaused
+        validateBridgeFunction(amount, fee, kappa)
+    {
         uint256 amountSubFee = amount - fee;
         fees[address(token)] = fees[address(token)] + fee;
 
@@ -351,6 +401,8 @@ contract SynapseBridge is
         emit TokenMint(to, token, amountSubFee, fee, kappa);
         token.mint(to, amountSubFee);
         token.mint(address(this), fee);
+
+        kappaMap[kappa] = true;
     }
 
     // ******* V1 FUNCTIONS
@@ -375,7 +427,11 @@ contract SynapseBridge is
         uint8 tokenIndexTo,
         uint256 minDy,
         uint256 deadline
-    ) external nonReentrant() whenNotPaused() {
+    )
+        external
+        nonReentrant
+        whenNotPaused
+    {
         emit TokenDepositAndSwap(
             to,
             chainId,
@@ -409,7 +465,11 @@ contract SynapseBridge is
         uint8 tokenIndexTo,
         uint256 minDy,
         uint256 deadline
-    ) external nonReentrant() whenNotPaused() {
+    )
+        external
+        nonReentrant
+        whenNotPaused
+    {
         emit TokenRedeemAndSwap(
             to,
             chainId,
@@ -441,7 +501,11 @@ contract SynapseBridge is
         uint8 swapTokenIndex,
         uint256 swapMinAmount,
         uint256 swapDeadline
-    ) external nonReentrant() whenNotPaused() {
+    )
+        external
+        nonReentrant
+        whenNotPaused
+    {
         emit TokenRedeemAndRemove(
             to,
             chainId,
@@ -479,8 +543,13 @@ contract SynapseBridge is
         uint256 minDy,
         uint256 deadline,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
-        validateBridgeFunction(amount, fee, kappa);
+    )
+        external
+        nodegroupOnly
+        nonReentrant
+        whenNotPaused
+        validateBridgeFunction(amount, fee, kappa)
+    {
         uint256 amountSubFee = amount - fee;
         fees[address(token)] = fees[address(token)] + fee;
 
@@ -536,6 +605,8 @@ contract SynapseBridge is
                 kappa
             );
         }
+
+        kappaMap[kappa] = true;
     }
 
     /**
@@ -560,8 +631,13 @@ contract SynapseBridge is
         uint256 swapMinAmount,
         uint256 swapDeadline,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
-        validateBridgeFunction(amount, fee, kappa);
+    )
+        external
+        nodegroupOnly
+        nonReentrant
+        whenNotPaused
+        validateBridgeFunction(amount, fee, kappa)
+    {
         uint256 amountSubFee = amount - fee;
         fees[address(token)] = fees[address(token)] + fee;
 
@@ -613,5 +689,7 @@ contract SynapseBridge is
                 kappa
             );
         }
+
+        kappaMap[kappa] = true;
     }
 }

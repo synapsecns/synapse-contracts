@@ -2,11 +2,9 @@
 
 pragma solidity >= 0.6.12;
 
-import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
+import {ERC20Burnable} from '@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol';
 
 interface ISynapseBridge {
-  using SafeERC20 for IERC20;
 
   function deposit(
     address to,
@@ -53,4 +51,8 @@ interface ISynapseBridge {
     uint256 liqMinAmount,
     uint256 liqDeadline
   ) external;
+
+  function kappaExists(bytes32 kappa) external view returns (bool);
+
+  function getFeeBalance(address tokenAddress) external view returns (uint256);
 }
