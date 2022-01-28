@@ -559,6 +559,8 @@ contract SynapseBridge is
                 );
         } catch {
             // Swap failed, transfer minted token instead
+            // Additionally, revoke unspent allowance
+            token.safeApprove(address(pool), 0);
             token.safeTransfer(to, amountSubFee);
             emit TokenMintAndSwap(
                 to,
@@ -635,6 +637,8 @@ contract SynapseBridge is
             );
         } catch {
             // Swap failed, transfer minted token instead
+            // Additionally, revoke unspent allowance
+            token.safeApprove(address(pool), 0);
             token.safeTransfer(to, amountSubFee);
             emit TokenWithdrawAndRemove(
                 to,
