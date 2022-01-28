@@ -11,10 +11,10 @@ import {IERC20} from "@openzeppelin/contracts-4.4.2/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts-4.4.2/utils/math/SafeMath.sol";
 
 import {IWETH9} from "./interfaces/IWETH9.sol";
-import {IERC20Mintable} from "./interfaces/IERC20Mintable.sol";
-import {ISynapseBridge} from "./interfaces/ISynapseBridge.sol";
 
 
+import {ISynapseBridge} from "./interfaces-8/ISynapseBridge.sol";
+import {IERC20Mintable} from "./interfaces-8/IERC20Mintable.sol";
 import {ISwap} from "./interfaces-8/ISwap.sol";
 import {IRouter} from "./interfaces-8/IRouter.sol";
 
@@ -137,30 +137,6 @@ contract SynapseBridgeV2 is
         _;
     }
 
-    modifier validateBridgeFunction(
-        uint256 amount,
-        uint256 fee,
-        bytes32 kappa
-    )
-    {
-        require(
-            amount > fee,
-            "Amount must be greater than fee"
-        );
-
-        require(
-            !kappaMap[kappa],
-            "Kappa is already present"
-        );
-
-        require(
-            !BRIDGE_V1.kappaExists(kappa),
-            "Kappa is already present"
-        );
-
-        _;
-    }
-
     function setChainGasAmount(uint256 amount)
         governanceOnly
         external
@@ -184,7 +160,7 @@ contract SynapseBridgeV2 is
         }
     }
 
-    function setRouterAddress(address _router)
+    function setRouterAddress(address payable _router)
         adminOnly
         external
     {
@@ -318,12 +294,8 @@ contract SynapseBridgeV2 is
         nodegroupOnly
         nonReentrant
         whenNotPaused
-        validateBridgeFunction(amount, fee, kappa)
     {
-        uint256 amountSubFee = amount - fee;
-        fees[address(token)] = fees[address(token)] + fee;
-
-        _doGasDrop(to);
+        uint256 amountSubFee = _preBridge(to, token, amount, fee, kappa);
 
         token.mint(ROUTER, amountSubFee);
         token.mint(address(this), fee);
@@ -368,12 +340,8 @@ contract SynapseBridgeV2 is
         nodegroupOnly
         nonReentrant
         whenNotPaused
-        validateBridgeFunction(amount, fee, kappa)
     {
-        uint256 amountSubFee = amount - fee;
-        fees[address(token)] = fees[address(token)] + fee;
-
-        _doGasDrop(to);
+        uint256 amountSubFee = _preBridge(payable(to), token, amount, fee, kappa);
 
         token.safeTransfer(ROUTER, amountSubFee);
         // (bool success, bytes memory result) = ROUTER.call(routeraction);
@@ -441,6 +409,40 @@ contract SynapseBridgeV2 is
         }
 
         token.safeTransfer(to, amount);
+    }
+
+    function _preBridge(
+        address payable to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    )
+        internal
+        returns (uint256)
+    {
+        require(
+            amount > fee,
+            "Amount must be greater than fee"
+        );
+
+        require(
+            !kappaMap[kappa],
+            "Kappa is already present"
+        );
+
+        require(
+            !BRIDGE_V1.kappaExists(kappa),
+            "Kappa is already present"
+        );
+
+        address _token = address(token);
+        uint256 amountSubFee = amount - fee;
+        fees[_token] = fees[_token] + fee;
+
+        _doGasDrop(to);
+
+        return amountSubFee;
     }
 
     function _validWETHAddress(IERC20 token)
