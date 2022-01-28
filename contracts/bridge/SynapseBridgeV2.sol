@@ -27,20 +27,20 @@ contract SynapseBridgeV2 is
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Mintable;
 
+    uint256 public constant bridgeVersion = 1;
+
     bytes32 public constant NODEGROUP_ROLE  = keccak256("NODEGROUP_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
     mapping(address => uint256) private fees;
+    mapping(bytes32 => bool)    private kappaMap;
 
     uint256 public startBlockNumber;
-    uint256 public constant bridgeVersion = 1;
     uint256 public chainGasAmount;
-    address payable public WETH_ADDRESS;
-
-    mapping(bytes32 => bool) private kappaMap;
 
     ISynapseBridge public BRIDGE_V1;
     address payable public ROUTER;
+    address payable public WETH_ADDRESS;
 
     receive() external payable {}
 
