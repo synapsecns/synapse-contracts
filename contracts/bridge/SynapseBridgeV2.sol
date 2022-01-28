@@ -191,6 +191,24 @@ contract SynapseBridgeV2 is
         ROUTER = _router;
     }
 
+    // VIEW FUNCTIONS ***/
+    function getFeeBalance(address tokenAddress)
+        external
+        view
+        returns (uint256)
+    {
+        return fees[tokenAddress];
+    }
+
+    function kappaExists(bytes32 kappa)
+        external
+        view
+        returns (bool)
+    {
+        bool _v1KappaExists = BRIDGE_V1.kappaExists(kappa);
+        return kappaMap[kappa] || _v1KappaExists;
+    }
+
     // ******* V2 FUNCTIONS
     /**
    * @notice Relays to nodes to both transfer an ERC20 token cross-chain, and then have the nodes execute a swap through a liquidity pool on behalf of the user.
