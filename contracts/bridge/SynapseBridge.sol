@@ -127,6 +127,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     bool swapSuccess,
     bytes32 indexed kappa
   );
+  event TokenRedeemV2(bytes32 indexed to, uint256 chainId, IERC20 token, uint256 amount);
 
   // VIEW FUNCTIONS ***/
   function getFeeBalance(address tokenAddress) external view returns (uint256) {
@@ -492,4 +493,24 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
       emit TokenWithdrawAndRemove(to, token, amount.sub(fee), fee, swapTokenIndex, swapMinAmount, swapDeadline, false, kappa);
     }
   }
+
+
+  // BRIDGE FUNCTIONS TO HANDLE DIFF ADDRESSES
+    /**
+   * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+   * @param to address on other chain to redeem underlying assets to
+   * @param chainId which underlying chain to bridge assets onto
+   * @param token ERC20 compatible token to deposit into the bridge
+   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+   **/
+  function redeemV2(
+    bytes32 to,
+    uint256 chainId,
+    ERC20Burnable token,
+    uint256 amount
+  ) external nonReentrant() whenNotPaused() {
+    emit TokenRedeemV2(to, chainId, token, amount);
+    token.burnFrom(msg.sender, amount);
+  }
+
 }
