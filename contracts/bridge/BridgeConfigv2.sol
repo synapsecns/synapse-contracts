@@ -104,8 +104,7 @@ contract BridgeConfigV2 is AccessControl {
         return BRIDGECONFIG_V1.calculateSwapFee(tokenAddress, chainID, amount);
     }
 
-    function getPoolConfig(address tokenAddress, uint256 chainID) external view
-    returns (PoolConfig.Pool memory) {
+    function getPoolConfig(address tokenAddress, uint256 chainID) external view returns (PoolConfig.Pool memory) {
         return POOLCONFIG_V1.getPoolConfig(tokenAddress, chainID);
     }
 
