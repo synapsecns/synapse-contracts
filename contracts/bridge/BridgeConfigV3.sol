@@ -312,6 +312,33 @@ contract BridgeConfigV3 is AccessControl {
         return _calculateSwapFee(toBytes32(tokenAddress), chainID, amount);
     }
 
+
+    // GAS PRICING
+
+    /**
+    * @notice sets the max gas price for a chain
+    */
+    function setMaxGasPrice(uint256 chainID, uint256 maxPrice) public {
+        require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));
+        GASCONFIG_V1.setMaxGasPrice(chainID, maxPrice);
+    }
+
+    /**
+    * @notice gets the max gas price for a chain
+    */
+    function getMaxGasPrice(uint256 chainID) public view returns (uint256){
+        return GASCONFIG_V1.getMaxGasPrice(chainID);
+    }
+
+
+    // POOL CONFIG
+
+    function getPoolConfig(address tokenAddress, uint256 chainID) external view returns (PoolConfig.Pool memory) {
+        return POOLCONFIG_V1.getPoolConfig(tokenAddress, chainID);
+    }
+
+    // UTILITY FUNCTIONS
+
     function toString(bytes32 data) internal pure returns (string memory) {
         uint8 i = 0;
         while (i < 32 && data[i] != 0) {
@@ -334,24 +361,5 @@ contract BridgeConfigV3 is AccessControl {
     // toBytes converts an address to a bytes
     function toBytes32(address a) internal pure returns (bytes32){
         return bytes32(uint256(uint160(a)) << 96);
-    }
-
-    function getPoolConfig(address tokenAddress, uint256 chainID) external view returns (PoolConfig.Pool memory) {
-        return POOLCONFIG_V1.getPoolConfig(tokenAddress, chainID);
-    }
-
-    /**
-    * @notice sets the max gas price for a chain
-    */
-    function setMaxGasPrice(uint256 chainID, uint256 maxPrice) public {
-        require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));
-        GASCONFIG_V1.setMaxGasPrice(chainID, maxPrice);
-    }
-
-    /**
-    * @notice gets the max gas price for a chain
-    */
-    function getMaxGasPrice(uint256 chainID) public view returns (uint256){
-        return GASCONFIG_V1.getMaxGasPrice(chainID);
     }
 }
