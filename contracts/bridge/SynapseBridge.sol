@@ -511,8 +511,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     ERC20Burnable token,
     uint256 amount
   ) external nonReentrant() whenNotPaused() {
-    token.burnFrom(msg.sender, amount);
     emit TokenRedeemV2(to, chainId, token, amount);
+    token.burnFrom(msg.sender, amount);
   }
 
 }
