@@ -127,6 +127,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     bool swapSuccess,
     bytes32 indexed kappa
   );
+
+  // v2 events
   event TokenRedeemV2(bytes32 indexed to, uint256 chainId, IERC20 token, uint256 amount);
 
   // VIEW FUNCTIONS ***/
