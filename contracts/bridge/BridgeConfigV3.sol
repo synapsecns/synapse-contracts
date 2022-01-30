@@ -369,8 +369,6 @@ contract BridgeConfigV3 is AccessControl {
     }
 
 
-    // <------------------------------->
-    // FOR DEBUGGNIG: WILL REMOVE LATER
     function toString(address x)
     internal
     pure
