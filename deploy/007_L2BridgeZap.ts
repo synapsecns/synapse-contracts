@@ -60,7 +60,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       skipIfAlreadyDeployed: true,
       args: [
         "0x0000000000000000000000000000000000000000",
-        (await get("nUSDPoolV2")).address,
+        (await get("nUSDPoolV3")).address,
         (await get("nUSD")).address,
         "0x0000000000000000000000000000000000000000",
         "0x0000000000000000000000000000000000000000",
@@ -179,7 +179,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (await get("WETH")).address,
         (await get("nETHPool")).address,
         (await get("nETH")).address,
-        (await get("nUSDPoolV2")).address,
+        (await get("nUSDPoolV3")).address,
         (await get("nUSD")).address,
         (await get("SynapseBridge")).address,
       ],
