@@ -93,6 +93,15 @@ contract BridgeConfigV3 is AccessControl {
     }
 
     /**
+    * @notice Returns the full token config struct
+     * @param tokenID String input of the token ID for the token
+     * @param chainID Chain ID of which token address + config to get
+     */
+    function getTokenByID(string memory tokenID, uint256 chainID) public view returns (Token memory token) {
+        return _tokens[toBytes32(tokenID)][chainID];
+    }
+
+    /**
      * @notice Returns token config struct, given an address and chainID
      * @param tokenAddress Matches the token ID by using a combo of address + chain ID
      * @param chainID Chain ID of which token to get config for
@@ -102,7 +111,7 @@ contract BridgeConfigV3 is AccessControl {
         return _tokens[toBytes32(tokenID)][chainID];
     }
 
-    function getToken(address tokenAddress, uint256 chainID) public view returns (Token memory token) {
+    function getTokenByEVMAddress(address tokenAddress, uint256 chainID) public view returns (Token memory token) {
         return getToken(toString(tokenAddress), chainID);
     }
 
