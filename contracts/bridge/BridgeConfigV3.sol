@@ -342,6 +342,19 @@ contract BridgeConfigV3 is AccessControl {
         return POOLCONFIG_V1.getPoolConfig(tokenAddress, chainID);
     }
 
+
+    function setPoolConfig(
+        address tokenAddress,
+        uint256 chainID,
+        address poolAddress,
+        bool metaswap
+    ) external returns (PoolConfig.Pool memory) {
+        require(
+            hasRole(BRIDGEMANAGER_ROLE, msg.sender),
+            'Caller is not Bridge Manager'
+        );
+        return POOLCONFIG_V1.setPoolConfig(tokenAddress, chainID, poolAddress, metaswap);
+    }
     // UTILITY FUNCTIONS
 
     function toString(bytes32 data) internal pure returns (string memory) {
@@ -369,6 +382,8 @@ contract BridgeConfigV3 is AccessControl {
     }
 
 
+    // <------------------------------->
+    // FOR DEBUGGNIG: WILL REMOVE LATER
     function toString(address x)
     internal
     pure
@@ -398,7 +413,7 @@ contract BridgeConfigV3 is AccessControl {
         }
     }
 
-    function compareStrings(string memory a, string memory b) internal view returns (bool) {
+    function compareStrings(string memory a, string memory b) internal  view returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
 }
