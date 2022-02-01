@@ -7,8 +7,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get, execute, getOrNull, log, save } = deployments
   const { deployer } = await getNamedAccounts()
 
-  if (
-    (await getChainId()) != CHAIN_ID.MOONBEAM) {
+  const chainId = await getChainId();
+
+  if (chainId !== CHAIN_ID.MOONRIVER) {
     if ((await getOrNull("nUSD")) == null) {
       const receipt = await execute(
         "SynapseERC20Factory",
@@ -57,13 +58,15 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         ).address,
       )
 
-      await execute(
-        "nUSD",
-        { from: deployer, log: true },
-        "renounceRole",
-        "0x0000000000000000000000000000000000000000000000000000000000000000",
-        deployer,
-      )
+      if (chainId !== CHAIN_ID.HARDHAT) {
+        await execute(
+            "nUSD",
+            { from: deployer, log: true },
+            "renounceRole",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            deployer,
+        )
+      }
     }
   }
 }
