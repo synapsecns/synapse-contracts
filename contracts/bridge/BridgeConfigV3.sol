@@ -20,6 +20,7 @@ contract BridgeConfigV3 is AccessControl {
     mapping(bytes32 => mapping(uint256 => Token)) private _tokens; // key is tokenID,chainID
     mapping(address => mapping(uint256 => Pool)) private _pool; // key is tokenAddress,chainID
     mapping(uint256 => uint256) private _maxGasPrice; // key is tokenID,chainID
+    uint256 public constant bridgeConfigVersion = 3;
 
     // the denominator used to calculate fees. For example, an
     // LP fee might be something like tradeAmount.mul(fee).div(FEE_DENOMINATOR)
@@ -347,7 +348,6 @@ contract BridgeConfigV3 is AccessControl {
     function getPoolConfig(address tokenAddress, uint256 chainID) external view returns (Pool memory) {
         return _pool[tokenAddress][chainID];
     }
-
 
     function setPoolConfig(
         address tokenAddress,
