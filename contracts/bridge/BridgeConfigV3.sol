@@ -5,8 +5,6 @@ pragma experimental ABIEncoderV2;
 
 import '@openzeppelin/contracts/access/AccessControl.sol';
 import '@openzeppelin/contracts/math/SafeMath.sol';
-import {PoolConfig} from './PoolConfig.sol';
-import {IGasConfig} from "./interfaces/IGasConfig.sol";
 
 /**
  * @title BridgeConfig contract
@@ -20,10 +18,8 @@ contract BridgeConfigV3 is AccessControl {
     mapping(bytes32 => Token[]) private _allTokens; // key is tokenID
     mapping(uint256 => mapping(string => bytes32)) private _tokenIDMap; // key is chainID,tokenAddress
     mapping(bytes32 => mapping(uint256 => Token)) private _tokens; // key is tokenID,chainID
-
-
-    PoolConfig public POOLCONFIG_V1;
-    IGasConfig public GASCONFIG_V1;
+    mapping(address => mapping(uint256 => Pool)) private _pool; // key is tokenAddress,chainID
+    mapping(uint256 => uint256) private _maxGasPrice; // key is tokenID,chainID
 
     // the denominator used to calculate fees. For example, an
     // LP fee might be something like tradeAmount.mul(fee).div(FEE_DENOMINATOR)
@@ -44,16 +40,17 @@ contract BridgeConfigV3 is AccessControl {
     }
 
 
+    struct Pool {
+        address tokenAddress;
+        uint256 chainId;
+        address poolAddress;
+        bool metaswap;
+    }
+
+
     constructor() public {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
-
-    function set_configs(IGasConfig gasConfig, PoolConfig poolconfig) public {
-        require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));
-        GASCONFIG_V1 = gasConfig;
-        POOLCONFIG_V1 = poolconfig;
-    }
-
 
     /**
      * @notice Returns a list of all existing token IDs converted to strings
@@ -334,21 +331,21 @@ contract BridgeConfigV3 is AccessControl {
     */
     function setMaxGasPrice(uint256 chainID, uint256 maxPrice) public {
         require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));
-        GASCONFIG_V1.setMaxGasPrice(chainID, maxPrice);
+        _maxGasPrice[chainID] = maxPrice;
     }
 
     /**
     * @notice gets the max gas price for a chain
     */
     function getMaxGasPrice(uint256 chainID) public view returns (uint256){
-        return GASCONFIG_V1.getMaxGasPrice(chainID);
+        return _maxGasPrice[chainID];
     }
 
 
     // POOL CONFIG
 
-    function getPoolConfig(address tokenAddress, uint256 chainID) external view returns (PoolConfig.Pool memory) {
-        return POOLCONFIG_V1.getPoolConfig(tokenAddress, chainID);
+    function getPoolConfig(address tokenAddress, uint256 chainID) external view returns (Pool memory) {
+        return _pool[tokenAddress][chainID];
     }
 
 
@@ -357,13 +354,16 @@ contract BridgeConfigV3 is AccessControl {
         uint256 chainID,
         address poolAddress,
         bool metaswap
-    ) external returns (PoolConfig.Pool memory) {
+    ) external returns (Pool memory) {
         require(
             hasRole(BRIDGEMANAGER_ROLE, msg.sender),
             'Caller is not Bridge Manager'
         );
-        return POOLCONFIG_V1.setPoolConfig(tokenAddress, chainID, poolAddress, metaswap);
+        Pool memory newPool = Pool(tokenAddress, chainID, poolAddress, metaswap);
+        _pool[tokenAddress][chainID] = newPool;
+        return newPool;
     }
+
     // UTILITY FUNCTIONS
 
     function toString(bytes32 data) internal pure returns (string memory) {
