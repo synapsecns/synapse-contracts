@@ -4,6 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import {IWETH9} from "../interfaces/IWETH9.sol";
 
+
 library WETHUtils {
     function transferWETH(
         address payable WETH_ADDRESS,
@@ -27,7 +28,7 @@ library WETHUtils {
         address token
     )
         internal
-        view
+        pure
         returns (bool)
     {
         return token == WETH_ADDRESS && WETH_ADDRESS != address(0);

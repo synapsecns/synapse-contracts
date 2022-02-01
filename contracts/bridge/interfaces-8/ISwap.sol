@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-pragma solidity 0.8.11;
-
-import '@openzeppelin/contracts-4.4.2/token/ERC20/ERC20.sol';
+import {IERC20} from '@openzeppelin/contracts-4.4.2/token/ERC20/IERC20.sol';
 
 interface ISwap {
   // pool data view functions

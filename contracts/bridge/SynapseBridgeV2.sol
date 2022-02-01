@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8;
+pragma solidity ^0.8.0;
 
 import {Initializable} from "@openzeppelin/contracts-upgradeable-4.4.2/proxy/utils/Initializable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable-4.4.2/access/AccessControlUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable-4.4.2/security/ReentrancyGuardUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable-4.4.2/security/PausableUpgradeable.sol";
+
+import {IERC20} from "@openzeppelin/contracts-4.4.2/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts-4.4.2/token/ERC20/utils/SafeERC20.sol";
 import {ERC20Burnable} from "@openzeppelin/contracts-4.4.2/token/ERC20/extensions/ERC20Burnable.sol";
-import {IERC20} from "@openzeppelin/contracts-4.4.2/token/ERC20/IERC20.sol";
-import {SafeMath} from "@openzeppelin/contracts-4.4.2/utils/math/SafeMath.sol";
 
 import {IWETH9} from "./interfaces/IWETH9.sol";
+
+import {ISynapseBridgeV2} from "./interfaces-8/ISynapseBridgeV2.sol";
 
 import {ISynapseBridge} from "./interfaces-8/ISynapseBridge.sol";
 import {IERC20Mintable} from "./interfaces-8/IERC20Mintable.sol";
@@ -19,97 +21,20 @@ import {IRouter} from "./interfaces-8/IRouter.sol";
 
 import {WETHUtils} from "./utils/WETHUtils.sol";
 
-contract SynapseBridgeV2 is
+abstract contract Modifiers is
     Initializable,
-    AccessControlUpgradeable,
-    ReentrancyGuardUpgradeable,
-    PausableUpgradeable
+    AccessControlUpgradeable
 {
-    using SafeERC20 for IERC20;
-    using SafeERC20 for IERC20Mintable;
-
-    uint256 public constant bridgeVersion = 1;
-
     bytes32 public constant NODEGROUP_ROLE  = keccak256("NODEGROUP_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
-    mapping(address => uint256) private fees;
-    mapping(bytes32 => bool)    private kappaMap;
-
-    uint256 public startBlockNumber;
-    uint256 public chainGasAmount;
-
-    ISynapseBridge public BRIDGE_V1;
-    address payable public ROUTER;
-    address payable public WETH_ADDRESS;
-
-    receive() external payable {}
-
-    function initialize(
-        ISynapseBridge _bridgeV1,
-        address payable _router
-    )
-        external
-        initializer
+    function __Modifiers_init()
+        internal
+        onlyInitializing
     {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         __AccessControl_init();
-
-        startBlockNumber = block.number;
-
-        BRIDGE_V1 = _bridgeV1;
-        ROUTER = _router;
     }
-
-    struct RouterTrade {
-        address[] path;
-        address[] adapters;
-        uint256 maxBridgeSlippage;
-    }
-
-    event TokenDepositAndSwapV2(
-        address indexed to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount,
-        address[] path,
-        address[] adapters,
-        uint256 maxBridgeSlippage
-    );
-
-    event TokenMintAndSwapV2(
-        address indexed to,
-        IERC20Mintable token,
-        uint256 amount,
-        uint256 fee,
-        address[] path,
-        address[] adapters,
-        uint256 maxBridgeSlippage,
-        bool swapSuccess,
-        bytes32 indexed kappa
-    );
-
-    event TokenRedeemAndSwapV2(
-        address indexed to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount,
-        address[] path,
-        address[] adapters,
-        uint256 maxBridgeSlippage
-    );
-
-    event TokenWithdrawAndSwapV2(
-        address indexed to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        address[] path,
-        address[] adapters,
-        uint256 maxBridgeSlippage,
-        bool swapSuccess,
-        bytes32 indexed kappa
-    );
 
     modifier adminOnly() {
         require(
@@ -137,12 +62,54 @@ contract SynapseBridgeV2 is
 
         _;
     }
+}
+
+contract SynapseBridgeV2 is
+    Modifiers,
+    ReentrancyGuardUpgradeable,
+    PausableUpgradeable,
+    ISynapseBridgeV2
+{
+    using SafeERC20 for IERC20;
+    using SafeERC20 for IERC20Mintable;
+
+    uint256 public constant BRIDGE_VERSION = 1;
+
+    mapping(address => uint256) private FEES;
+    mapping(bytes32 => bool)    private KAPPA_MAP;
+
+    uint256 public START_BLOCK_NUMBER;
+    uint256 public CHAIN_GAS_AMOUNT;
+
+    ISynapseBridge  public BRIDGE_V1;
+    IRouter         public ROUTER;
+    IWETH9          public WETH;
+
+    address payable internal BRIDGE_V1_ADDRESS;
+    address payable internal ROUTER_ADDRESS;
+    address payable internal WETH_ADDRESS;
+
+    receive() external payable {}
+
+    function initialize(address payable _router)
+        external
+        initializer
+    {
+        __Modifiers_init();
+
+        START_BLOCK_NUMBER = block.number;
+
+        ROUTER_ADDRESS = _router;
+        ROUTER = IRouter(_router);
+    }
+
+    // admin-only functions
 
     function setChainGasAmount(uint256 amount)
         governanceOnly
         external
     {
-        chainGasAmount = amount;
+        CHAIN_GAS_AMOUNT = amount;
     }
 
     function setWethAddress(address payable _wethAddress)
@@ -150,31 +117,44 @@ contract SynapseBridgeV2 is
         external
     {
         WETH_ADDRESS = _wethAddress;
-    }
-
-    function addKappas(bytes32[] calldata kappas)
-        governanceOnly
-        external
-    {
-        for (uint256 i = 0; i < kappas.length; ++i) {
-            kappaMap[kappas[i]] = true;
-        }
+        WETH = IWETH9(_wethAddress);
     }
 
     function setRouterAddress(address payable _router)
         adminOnly
         external
     {
-        ROUTER = _router;
+        ROUTER_ADDRESS = _router;
+        ROUTER = IRouter(_router);
+    }
+
+    function setBridgeV1Address(address payable _bridgeV1)
+        adminOnly
+        external
+    {
+        BRIDGE_V1_ADDRESS = _bridgeV1;
+        BRIDGE_V1 = ISynapseBridge(_bridgeV1);
+    }
+
+    // governance-only
+
+    function addKappas(bytes32[] calldata kappas)
+        governanceOnly
+        external
+    {
+        for (uint256 i = 0; i < kappas.length; ++i) {
+            KAPPA_MAP[kappas[i]] = true;
+        }
     }
 
     // VIEW FUNCTIONS ***/
+
     function getFeeBalance(address tokenAddress)
         external
         view
         returns (uint256)
     {
-        return fees[tokenAddress];
+        return FEES[tokenAddress];
     }
 
     function kappaExists(bytes32 kappa)
@@ -182,18 +162,17 @@ contract SynapseBridgeV2 is
         view
         returns (bool)
     {
-        bool _v1KappaExists = BRIDGE_V1.kappaExists(kappa);
-        return kappaMap[kappa] || _v1KappaExists;
+        return KAPPA_MAP[kappa];
     }
 
     // ******* V2 FUNCTIONS
-    /**
-   * @notice Relays to nodes to both transfer an ERC20 token cross-chain, and then have the nodes execute a swap through a liquidity pool on behalf of the user.
-   * @param to address on other chain to bridge assets to
-   * @param chainId which chain to bridge assets onto
-   * @param token ERC20 compatible token to deposit into the bridge
 
-   **/
+    /**
+     * @notice Relays to nodes to both transfer an ERC20 token cross-chain, and then have the nodes execute a swap through a liquidity pool on behalf of the user.
+     * @param to address on other chain to bridge assets to
+     * @param chainId which chain to bridge assets onto
+     * @param token ERC20 compatible token to deposit into the bridge
+     **/
     function depositMaxAndSwap(
         address to,
         uint256 chainId,
@@ -220,12 +199,11 @@ contract SynapseBridgeV2 is
     }
 
     /**
-   * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
-   * @param to address on other chain to redeem underlying assets to
-   * @param chainId which underlying chain to bridge assets onto
-   * @param token ERC20 compatible token to deposit into the bridge
-
-   **/
+     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+     * @param to address on other chain to redeem underlying assets to
+     * @param chainId which underlying chain to bridge assets onto
+     * @param token ERC20 compatible token to deposit into the bridge
+     **/
     function redeemMaxAndSwap(
         address to,
         uint256 chainId,
@@ -259,7 +237,7 @@ contract SynapseBridgeV2 is
         private
         returns (bool _ok)
     {
-        try IRouter(ROUTER).selfSwap(
+        try ROUTER.selfSwap(
             amountSubFee,
             0,
             _trade.path,
@@ -274,15 +252,14 @@ contract SynapseBridgeV2 is
     }
 
     /**
-   * @notice Nodes call this function to mint a SynERC20 (or any asset that the bridge is given minter access to), and then attempt to swap the SynERC20 into the desired destination asset. This is called by the nodes after a TokenDepositAndSwapV2 event is emitted.
-   * @dev This means the BridgeDeposit.sol contract must have minter access to the token attempting to be minted
-   * @param to address on other chain to redeem underlying assets to
-   * @param token ERC20 compatible token to deposit into the bridge
-   * @param amount Amount in native token decimals to transfer cross-chain post-fees
-   * @param fee Amount in native token decimals to save to the contract as fees
-
-   * @param kappa kappa
-   **/
+     * @notice Nodes call this function to mint a SynERC20 (or any asset that the bridge is given minter access to), and then attempt to swap the SynERC20 into the desired destination asset. This is called by the nodes after a TokenDepositAndSwapV2 event is emitted.
+     * @dev This means the BridgeDeposit.sol contract must have minter access to the token attempting to be minted
+     * @param to address on other chain to redeem underlying assets to
+     * @param token ERC20 compatible token to deposit into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain post-fees
+     * @param fee Amount in native token decimals to save to the contract as fees
+     * @param kappa kappa
+     **/
     function mintAndSwap(
         address payable to,
         IERC20Mintable token,
@@ -298,12 +275,12 @@ contract SynapseBridgeV2 is
     {
         uint256 amountSubFee = _preBridge(to, token, amount, fee, kappa);
 
-        token.mint(ROUTER, amountSubFee);
+        token.mint(ROUTER_ADDRESS, amountSubFee);
         token.mint(address(this), fee);
 
         bool swapSuccess = handleRouterSwap(to, amountSubFee, _trade);
         if (!swapSuccess) {
-            token.safeTransferFrom(ROUTER, to, amountSubFee);
+            token.safeTransferFrom(ROUTER_ADDRESS, to, amountSubFee);
         }
 
         emit TokenMintAndSwapV2(
@@ -318,7 +295,7 @@ contract SynapseBridgeV2 is
             kappa
         );
 
-        kappaMap[kappa] = true;
+        KAPPA_MAP[kappa] = true;
     }
 
     /**
@@ -344,7 +321,7 @@ contract SynapseBridgeV2 is
     {
         uint256 amountSubFee = _preBridge(payable(to), token, amount, fee, kappa);
 
-        token.safeTransfer(ROUTER, amountSubFee);
+        token.safeTransfer(ROUTER_ADDRESS, amountSubFee);
         // (bool success, bytes memory result) = ROUTER.call(routeraction);
         //  if (success) {
         //   // Swap successful
@@ -355,7 +332,7 @@ contract SynapseBridgeV2 is
         // }
         bool swapSuccess = handleRouterSwap(to, amountSubFee, _trade);
         if (!swapSuccess) {
-            token.safeTransferFrom(ROUTER, to, amountSubFee);
+            token.safeTransferFrom(ROUTER_ADDRESS, to, amountSubFee);
         }
 
         emit TokenWithdrawAndSwapV2(
@@ -376,7 +353,7 @@ contract SynapseBridgeV2 is
         //   emit TokenWithdrawAndSwapV2(to, token, amountSubFee, fee, path, adapters, maxBridgeSlippage, false, kappa);
         // }
 
-        kappaMap[kappa] = true;
+        KAPPA_MAP[kappa] = true;
     }
 
     function checkChainGasAmount()
@@ -384,7 +361,7 @@ contract SynapseBridgeV2 is
         view
         returns (bool)
     {
-        return chainGasAmount != 0 && address(this).balance >= chainGasAmount;
+        return CHAIN_GAS_AMOUNT != 0 && address(this).balance >= CHAIN_GAS_AMOUNT;
     }
 
     function getMaxAmount(IERC20 token)
@@ -428,18 +405,20 @@ contract SynapseBridgeV2 is
         );
 
         require(
-            !kappaMap[kappa],
+            !KAPPA_MAP[kappa],
             "Kappa is already present"
         );
 
-        require(
-            !BRIDGE_V1.kappaExists(kappa),
-            "Kappa is already present"
-        );
+        if (_hasV1Bridge()) {
+            require(
+                !BRIDGE_V1.kappaExists(kappa),
+                "Kappa is already present"
+            );
+        }
 
         address _token = address(token);
         uint256 amountSubFee = amount - fee;
-        fees[_token] = fees[_token] + fee;
+        FEES[_token] = FEES[_token] + fee;
 
         _doGasDrop(to);
 
@@ -451,8 +430,12 @@ contract SynapseBridgeV2 is
     {
         // Transfer gas airdrop
         if (checkChainGasAmount()) {
-            (bool success, ) = to.call{value: chainGasAmount}("");
+            (bool success, ) = to.call{value: CHAIN_GAS_AMOUNT}("");
             require(success, "GAS_AIRDROP_FAILED");
         }
+    }
+
+    function _hasV1Bridge() internal view returns (bool) {
+        return address(BRIDGE_V1_ADDRESS) != address(0);
     }
 }
