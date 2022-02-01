@@ -99,8 +99,7 @@ contract SynapseBridgeV2 is
 
         START_BLOCK_NUMBER = block.number;
 
-        ROUTER_ADDRESS = _router;
-        ROUTER = IRouter(_router);
+        _setRouterAddress(_router);
     }
 
     // admin-only functions
@@ -109,12 +108,24 @@ contract SynapseBridgeV2 is
         governanceOnly
         external
     {
+        _setChainGasAmount(amount);
+    }
+
+    function _setChainGasAmount(uint256 amount)
+        internal
+    {
         CHAIN_GAS_AMOUNT = amount;
     }
 
     function setWethAddress(address payable _wethAddress)
         adminOnly
         external
+    {
+        _setWethAddress(_wethAddress);
+    }
+
+    function _setWethAddress(address payable _wethAddress)
+        internal
     {
         WETH_ADDRESS = _wethAddress;
         WETH = IWETH9(_wethAddress);
@@ -124,6 +135,12 @@ contract SynapseBridgeV2 is
         adminOnly
         external
     {
+        _setRouterAddress(_router);
+    }
+
+    function _setRouterAddress(address payable _router)
+        internal
+    {
         ROUTER_ADDRESS = _router;
         ROUTER = IRouter(_router);
     }
@@ -132,9 +149,16 @@ contract SynapseBridgeV2 is
         adminOnly
         external
     {
+        _setBridgeV1Address(_bridgeV1);
+    }
+
+    function _setBridgeV1Address(address payable _bridgeV1)
+        internal
+    {
         BRIDGE_V1_ADDRESS = _bridgeV1;
         BRIDGE_V1 = ISynapseBridge(_bridgeV1);
     }
+
 
     // governance-only
 
