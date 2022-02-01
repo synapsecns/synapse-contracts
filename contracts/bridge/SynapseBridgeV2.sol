@@ -460,6 +460,6 @@ contract SynapseBridgeV2 is
     }
 
     function _hasV1Bridge() internal view returns (bool) {
-        return address(BRIDGE_V1_ADDRESS) != address(0);
+        return BRIDGE_V1_ADDRESS != address(0);
     }
 }
