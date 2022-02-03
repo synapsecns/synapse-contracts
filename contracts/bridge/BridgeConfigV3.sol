@@ -105,7 +105,7 @@ contract BridgeConfigV3 is AccessControl {
      * @param chainID Chain ID of which token to get config for
      */
     function getTokenByAddress(string memory tokenAddress, uint256 chainID) public view returns (Token memory token) {
-        string memory tokenID = getTokenID(tokenAddress, chainID);
+        string memory tokenID = getTokenID(_toLower(tokenAddress), chainID);
         return _tokens[toBytes32(tokenID)][chainID];
     }
 
@@ -261,7 +261,7 @@ contract BridgeConfigV3 is AccessControl {
     ) public returns (bool) {
         require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));
         Token memory tokenToAdd;
-        tokenToAdd.tokenAddress = tokenAddress;
+        tokenToAdd.tokenAddress = _toLower(tokenAddress);
         tokenToAdd.tokenDecimals = tokenDecimals;
         tokenToAdd.maxSwap = maxSwap;
         tokenToAdd.minSwap = minSwap;
@@ -280,7 +280,7 @@ contract BridgeConfigV3 is AccessControl {
         uint256 chainID,
         uint256 amount
     ) internal view returns (uint256) {
-        Token memory token = getToken(tokenAddress, chainID);
+        Token memory token = getToken(_toLower(tokenAddress), chainID);
         uint256 calculatedSwapFee = amount.mul(token.swapFee).div(FEE_DENOMINATOR);
         if (calculatedSwapFee > token.minSwapFee && calculatedSwapFee < token.maxSwapFee) {
             return calculatedSwapFee;
@@ -391,8 +391,6 @@ contract BridgeConfigV3 is AccessControl {
     }
 
 
-    // <------------------------------->
-    // FOR DEBUGGNIG: WILL REMOVE LATER
     function toString(address x)
     internal
     pure
@@ -447,5 +445,20 @@ contract BridgeConfigV3 is AccessControl {
 
     function compareStrings(string memory a, string memory b) internal  view returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    }
+
+    function _toLower(string memory str) internal pure returns (string memory) {
+        bytes memory bStr = bytes(str);
+        bytes memory bLower = new bytes(bStr.length);
+        for (uint i = 0; i < bStr.length; i++) {
+            // Uppercase character...
+            if ((uint8(bStr[i]) >= 65) && (uint8(bStr[i]) <= 90)) {
+                // So we add 32 to make it lowercase
+                bLower[i] = bytes1(uint8(bStr[i]) + 32);
+            } else {
+                bLower[i] = bStr[i];
+            }
+        }
+        return string(bLower);
     }
 }
