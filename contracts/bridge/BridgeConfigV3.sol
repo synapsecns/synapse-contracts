@@ -69,7 +69,7 @@ contract BridgeConfigV3 is AccessControl {
     }
 
     function getTokenID(string memory tokenAddress, uint256 chainID) public view returns (string memory)  {
-        return _getTokenID(tokenAddress, chainID);
+        return _getTokenID(_toLower(tokenAddress), chainID);
     }
 
     /**
