@@ -47,7 +47,9 @@ let config: HardhatUserConfig = {
     },
     polygon: {
       url: "https://polygon-mainnet.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55",
-      gasPrice: 40 * 1000000000,
+    },
+    test_polygon: {
+      url: "https://polygon-mainnet.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55",
     },
     bsc: {
       url: "https://bsc-dataseed1.defibit.io",
@@ -161,7 +163,8 @@ if (process.env.PRIVATE_KEYS) {
     "moonriver",
     "moonbeam",
     "optimism",
-    "aurora"
+    "aurora",
+    "test_polygon"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {

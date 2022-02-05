@@ -6,17 +6,18 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get, catchUnknownSigner } = deployments
   const { deployer, devMultisig } = await getNamedAccounts()
 
-  // await catchUnknownSigner(
-  //   deploy("SynapseBridge", {
-  //     from: deployer,
-  //     log: true,
-  //     skipIfAlreadyDeployed: true,
-  //     proxy: {
-  //       owner: (await get("TimelockController")).address,
-  //       proxyContract: "OpenZeppelinTransparentProxy",
-  //     },
-  //   }),
-  // )
+  await catchUnknownSigner(
+    deploy("SynapseBridgeV2", {
+      contract: "SynapseBridge",
+      from: deployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+      proxy: {
+        owner: deployer,
+        proxyContract: "OpenZeppelinTransparentProxy",
+      },
+    }),
+  )
 }
 export default func
 func.tags = ["SynapseBridge"]
