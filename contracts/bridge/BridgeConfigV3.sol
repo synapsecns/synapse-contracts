@@ -388,11 +388,6 @@ contract BridgeConfigV3 is AccessControl {
         }
     }
 
-    // toBytes converts an address to a bytes
-    function toBytes32(address a) public view returns (bytes32){
-        return bytes32(uint256(uint160(a)) << 96);
-    }
-
 
     function toString(address x)
     public view
