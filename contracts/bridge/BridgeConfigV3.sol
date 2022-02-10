@@ -16,9 +16,9 @@ contract BridgeConfigV3 is AccessControl {
     bytes32 public constant BRIDGEMANAGER_ROLE = keccak256('BRIDGEMANAGER_ROLE');
     bytes32[] private _allTokenIDs;
     mapping(bytes32 => Token[]) private _allTokens; // key is tokenID
-    mapping(uint256 => mapping(string => bytes32)) private _tokenIDMap; // key is chainID,tokenAddress
-    mapping(bytes32 => mapping(uint256 => Token)) private _tokens; // key is tokenID,chainID
-    mapping(address => mapping(uint256 => Pool)) private _pool; // key is tokenAddress,chainID
+    mapping(uint256 => mapping(string => bytes32)) public _tokenIDMap; // key is chainID,tokenAddress
+    mapping(bytes32 => mapping(uint256 => Token)) public _tokens; // key is tokenID,chainID
+    mapping(address => mapping(uint256 => Pool)) public _pool; // key is tokenAddress,chainID
     mapping(uint256 => uint256) private _maxGasPrice; // key is tokenID,chainID
     uint256 public constant bridgeConfigVersion = 3;
 
@@ -106,12 +106,14 @@ contract BridgeConfigV3 is AccessControl {
      */
     function getTokenByAddress(string memory tokenAddress, uint256 chainID) public view returns (Token memory token) {
         string memory tokenID = getTokenID(_toLower(tokenAddress), chainID);
-        return getToken(tokenID, chainID);
+        token = getToken(tokenID, chainID);
+        return token;
     }
 
     function getTokenByEVMAddress(address tokenAddress, uint256 chainID) public view returns (Token memory token) {
         string memory tokenAddress = _toLower(toString(tokenAddress));
-        return getTokenByAddress(tokenAddress, chainID);
+        token = getTokenByAddress(tokenAddress, chainID);
+        return token;
     }
 
     /**
@@ -380,21 +382,20 @@ contract BridgeConfigV3 is AccessControl {
     }
 
     // toBytes32 converts a string to a bytes 32
-    function toBytes32(string memory str) internal pure returns (bytes32 result) {
+    function toBytes32(string memory str) public view returns (bytes32 result) {
         assembly {
             result := mload(add(str, 32))
         }
     }
 
     // toBytes converts an address to a bytes
-    function toBytes32(address a) internal pure returns (bytes32){
+    function toBytes32(address a) public view returns (bytes32){
         return bytes32(uint256(uint160(a)) << 96);
     }
 
 
     function toString(address x)
-    internal
-    pure
+    public view
     returns (string memory)
     {
         bytes memory s = new bytes(40);
@@ -411,7 +412,7 @@ contract BridgeConfigV3 is AccessControl {
         return concat(addrPrefix, string(s));
     }
 
-    function concat(string memory _x, string memory _y) pure internal returns (string memory) {
+    function concat(string memory _x, string memory _y) public view returns (string memory) {
         bytes memory _xBytes = bytes(_x);
         bytes memory _yBytes = bytes(_y);
 
@@ -433,8 +434,7 @@ contract BridgeConfigV3 is AccessControl {
     }
 
     function char(bytes1 b)
-    internal
-    pure
+    public view
     returns (bytes1 c)
     {
         if (uint8(b) < 10) {
@@ -444,11 +444,11 @@ contract BridgeConfigV3 is AccessControl {
         }
     }
 
-    function compareStrings(string memory a, string memory b) internal  view returns (bool) {
+    function compareStrings(string memory a, string memory b) public view returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
 
-    function _toLower(string memory str) internal pure returns (string memory) {
+    function _toLower(string memory str) public view returns (string memory) {
         bytes memory bStr = bytes(str);
         bytes memory bLower = new bytes(bStr.length);
         for (uint i = 0; i < bStr.length; i++) {
