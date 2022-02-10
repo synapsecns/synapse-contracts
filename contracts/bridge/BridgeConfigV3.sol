@@ -280,7 +280,7 @@ contract BridgeConfigV3 is AccessControl {
         uint256 chainID,
         uint256 amount
     ) internal view returns (uint256) {
-        Token memory token = getToken(_toLower(tokenAddress), chainID);
+        Token memory token = getTokenByAddress(_toLower(tokenAddress), chainID);
         uint256 calculatedSwapFee = amount.mul(token.swapFee).div(FEE_DENOMINATOR);
         if (calculatedSwapFee > token.minSwapFee && calculatedSwapFee < token.maxSwapFee) {
             return calculatedSwapFee;
