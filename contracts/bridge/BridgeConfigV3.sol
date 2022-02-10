@@ -105,14 +105,7 @@ contract BridgeConfigV3 is AccessControl {
      * @param chainID Chain ID of which token to get config for
      */
     function getTokenByAddress(string memory tokenAddress, uint256 chainID) public view returns (Token memory token) {
-        string memory tokenID = toString(_tokenIDMap[chainID][tokenAddress]);
-        return _tokens[toBytes32(tokenID)][chainID];
-    }
-
-    function getTokenByEVMAddress(address tokenAddress, uint256 chainID) public view returns (Token memory token) {
-        string memory stringAddress = _toLower(toString(tokenAddress));
-        string memory tokenID = toString(_tokenIDMap[chainID][tokenAddress]);
-        return _tokens[toBytes32(tokenID)][chainID];
+        return _tokens[_tokenIDMap[chainID][tokenAddress]][chainID];
     }
 
     /**
@@ -382,6 +375,7 @@ contract BridgeConfigV3 is AccessControl {
 
     // toBytes32 converts a string to a bytes 32
     function toBytes32(string memory str) public view returns (bytes32 result) {
+        require(bytes(str).length <= 32);
         assembly {
             result := mload(add(str, 32))
         }
