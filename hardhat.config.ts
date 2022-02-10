@@ -76,7 +76,7 @@ let config: HardhatUserConfig = {
     boba: {
       url: "https://mainnet.boba.network",
       gas: 10000000,
-      gasPrice: 20 * 1000000000,
+      gasPrice: 1000000000,
     },
     moonriver: {
       url: "https://rpc.moonriver.moonbeam.network",
