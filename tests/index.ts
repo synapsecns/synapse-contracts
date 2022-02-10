@@ -1,1 +1,1 @@
-import "./synapsebridge/SynapseBridge-test";
+import "./synapsebridge/SynapseBridge.test";
