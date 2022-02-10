@@ -13,6 +13,8 @@ import "hardhat-interface-generator";
 import { HardhatUserConfig } from "hardhat/config"
 import dotenv from "dotenv"
 
+require("@nomiclabs/hardhat-waffle");
+
 dotenv.config()
 
 let config: HardhatUserConfig = {
