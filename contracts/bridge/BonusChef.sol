@@ -6,7 +6,7 @@ import '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import "./BaseRewardV2.sol";
 import "./interfaces/IMiniChefV2.sol";
 // A farm contract to distribute rewards based on user balance of parent farm.
-contract BonusFarmV2 is BaseRewardV2 {
+contract BonusChef is BaseRewardV2 {
 
     /* ========== STATES ========== */
     address public governance;
