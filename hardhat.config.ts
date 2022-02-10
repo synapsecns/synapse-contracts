@@ -20,10 +20,10 @@ let config: HardhatUserConfig = {
   networks: {
     hardhat: {
       accounts: [
-        {
-          privateKey: process.env.HARDHAT_PRIVATE_KEY,
-          balance:   "10000000000000000000000"
-        },
+        // {
+        //   privateKey: process.env.HARDHAT_PRIVATE_KEY,
+        //   balance:   "10000000000000000000000"
+        // },
       ],
       mining: {
         interval: [250, 750]
