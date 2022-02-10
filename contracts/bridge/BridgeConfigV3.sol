@@ -106,14 +106,13 @@ contract BridgeConfigV3 is AccessControl {
      */
     function getTokenByAddress(string memory tokenAddress, uint256 chainID) public view returns (Token memory token) {
         string memory tokenID = getTokenID(_toLower(tokenAddress), chainID);
-        token = getToken(tokenID, chainID);
-        return token;
+        return _tokens[toBytes32(tokenID)][chainID];
     }
 
     function getTokenByEVMAddress(address tokenAddress, uint256 chainID) public view returns (Token memory token) {
-        string memory tokenAddress = _toLower(toString(tokenAddress));
-        token = getTokenByAddress(tokenAddress, chainID);
-        return token;
+        string memory stringAddress = _toLower(toString(tokenAddress));
+        string memory tokenID = getTokenID(_toLower(stringAddress), chainID);
+        return _tokens[toBytes32(tokenID)][chainID];
     }
 
     /**
