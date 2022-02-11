@@ -2,8 +2,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
 import { CHAIN_ID } from "../utils/network"
 
-import {DeployUtils} from "./utils";
-
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, getChainId } = hre
   const { deploy, get, execute, getOrNull, log, save } = deployments
@@ -41,7 +39,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         "SynapseToken",
         { from: deployer, log: true },
         "grantRole",
-          DeployUtils.Roles.SynapseERC20MinterRole,
+        "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6",
         (
           await get("SynapseBridge")
         ).address,
@@ -51,21 +49,19 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         "SynapseToken",
         { from: deployer, log: true },
         "grantRole",
-        DeployUtils.Roles.DefaultAdminRole,
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
         (
           await get("DevMultisig")
         ).address,
       )
 
-      if ((await getChainId()) !== CHAIN_ID.HARDHAT) {
-        await execute(
-            "SynapseToken",
-            { from: deployer, log: true },
-            "renounceRole",
-            DeployUtils.Roles.DefaultAdminRole,
-            deployer,
-        )
-      }
+      await execute(
+        "SynapseToken",
+        { from: deployer, log: true },
+        "renounceRole",
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        deployer,
+      )
     }
 }
 
