@@ -20,18 +20,6 @@ dotenv.config()
 let config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
-    hardhat: {
-      accounts: [
-        // {
-        //   privateKey: process.env.HARDHAT_PRIVATE_KEY,
-        //   balance:   "10000000000000000000000"
-        // },
-      ],
-      mining: {
-        interval: [250, 750]
-      },
-      chainId: 31337,
-    },
     coverage: {
       url: "http://127.0.0.1:8555",
     },
