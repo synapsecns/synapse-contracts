@@ -1,1 +1,1 @@
-import "./synapsebridge/SynapseBridge-test";
+import "./synapsebridge/MiniChefV2.test";
