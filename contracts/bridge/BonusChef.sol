@@ -55,8 +55,9 @@ contract BonusChef is IRewarder, ReentrancyGuard {
     address public governance;
 
     IMiniChefV2 private immutable miniChef;
-    uint256 private immutable chefPoolID;
-    IERC20 private immutable chefStakingToken;
+    bool private chefLinked;
+    uint256 private chefPoolID;
+    IERC20 private chefStakingToken;
 
     mapping(address => RewardPool) public rewardPools; // reward token to reward pool mapping
     address[] public activeRewardPools; // list of reward tokens that are distributing rewards
@@ -65,13 +66,9 @@ contract BonusChef is IRewarder, ReentrancyGuard {
 
     constructor(
         IMiniChefV2 _miniChef,
-        uint256 _chefPoolID,
         address _rewardsDistribution
     ) public {
         miniChef = _miniChef;
-        chefPoolID = _chefPoolID;
-        chefStakingToken = _miniChef.lpToken(_chefPoolID);
-
         rewardsDistribution = _rewardsDistribution;
         governance = msg.sender;
     }
@@ -276,6 +273,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
     }
 
     // Add new reward pool to list.
+    // This can only be done once the Bonus Chef is linked to a pool on MiniChef contract
     // This can also be used to add inactive pool, make sure
     // to rescue() all the remaining tokens from previous round beforehand
     function addRewardPool(address _rewardToken, uint256 _rewardsDuration)
@@ -284,6 +282,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
     {
         require(rewardPools[_rewardToken].isActive == false, "Pool is active");
         require(_rewardsDuration != 0, "Duration is null");
+        require(chefLinked, "BonusChef is not linked to any pool");
         rewardPools[_rewardToken] = RewardPool({
             rewardToken: IERC20(_rewardToken),
             periodFinish: 0,
@@ -340,6 +339,10 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         IERC20(_rewardToken).safeTransfer(governance, _balance);
     }
 
+    function linkToPool(uint256 _chefPoolID) external onlyGov {
+        _setPoolID(_chefPoolID);        
+    }
+
     function setRewardsDistribution(address _rewardsDistribution)
         external
         onlyGov
@@ -353,6 +356,15 @@ contract BonusChef is IRewarder, ReentrancyGuard {
 
     /* ========== INTERNAL FUNCTIONS ========== */
 
+    function _setPoolID(uint256 _chefPoolID) internal {
+        require(!chefLinked, "BonusChef is already linked to pool");
+        chefPoolID = _chefPoolID;
+        chefStakingToken = miniChef.lpToken(_chefPoolID);
+        chefLinked = true;
+    }
+
+    // This will do nothing, if no pools are added, so
+    // we don't need to check if BonusChef is linked or not
     function _getAllActiveRewardsFor(address _account, address _recipient)
         internal
         updateActiveRewards(_account)
