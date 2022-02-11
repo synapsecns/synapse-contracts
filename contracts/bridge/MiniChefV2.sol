@@ -165,13 +165,14 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
         UserInfo storage user = userInfo[pid][to];
 
         // Effects
+        uint256 oldAmount = user.amount;
         user.amount = user.amount.add(amount);
         user.rewardDebt = user.rewardDebt.add(int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION));
 
         // Interactions
         IRewarder _rewarder = rewarder[pid];
         if (address(_rewarder) != address(0)) {
-            _rewarder.onSynapseReward(pid, to, to, 0, user.amount);
+            _rewarder.onSynapseReward(pid, to, to, 0, oldAmount);
         }
 
         lpToken[pid].safeTransferFrom(msg.sender, address(this), amount);
@@ -189,12 +190,13 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
 
         // Effects
         user.rewardDebt = user.rewardDebt.sub(int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION));
+        uint256 oldAmount = user.amount;
         user.amount = user.amount.sub(amount);
 
         // Interactions
         IRewarder _rewarder = rewarder[pid];
         if (address(_rewarder) != address(0)) {
-            _rewarder.onSynapseReward(pid, msg.sender, to, 0, user.amount);
+            _rewarder.onSynapseReward(pid, msg.sender, to, 0, oldAmount);
         }
         
         lpToken[pid].safeTransfer(to, amount);
@@ -239,14 +241,16 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
 
         // Effects
         user.rewardDebt = accumulatedSynapse.sub(int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION));
+        uint256 oldAmount = user.amount;
         user.amount = user.amount.sub(amount);
+        
         
         // Interactions
         SYNAPSE.safeTransfer(to, _pendingSynapse);
 
         IRewarder _rewarder = rewarder[pid];
         if (address(_rewarder) != address(0)) {
-            _rewarder.onSynapseReward(pid, msg.sender, to, _pendingSynapse, user.amount);
+            _rewarder.onSynapseReward(pid, msg.sender, to, _pendingSynapse, oldAmount);
         }
 
         lpToken[pid].safeTransfer(to, amount);

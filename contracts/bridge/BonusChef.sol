@@ -108,14 +108,22 @@ contract BonusChef is IRewarder, ReentrancyGuard {
             );
     }
 
-    function earned(address _rewardToken, address _account)
+    function earned2(address _rewardToken, address _account)
+        public
+        view
+        returns (uint256)
+    {
+        return earned(_rewardToken, _account, balanceOf(_account));
+    }
+
+    function earned(address _rewardToken, address _account, uint256 _oldAmount)
         public
         view
         returns (uint256)
     {
         RewardPool storage pool = rewardPools[_rewardToken];
         return
-            balanceOf(_account)
+            _oldAmount
                 .mul(
                 rewardPerToken(_rewardToken).sub(
                     pool.userRewardPerTokenPaid[_account]
@@ -209,7 +217,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         for (uint8 i = 0; i < _activePoolsAmount; i++) {
             address _rewardToken = activeRewardPools[i];
             _rewardTokens[i] = IERC20(_rewardToken);
-            _rewardAmounts[i] = earned(_rewardToken, _user);
+            _rewardAmounts[i] = earned(_rewardToken, _user, balanceOf(_user));
         }
 
         return (_rewardTokens, _rewardAmounts);
@@ -223,9 +231,9 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         address _user,
         address _recipient,
         uint256,
-        uint256
+        uint256 oldAmount
     ) external override onlyMiniChef {
-        _getAllActiveRewardsFor(_user, _recipient);
+        _getAllActiveRewardsFor(_user, _recipient, oldAmount);
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
@@ -243,7 +251,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
     function notifyRewardAmount(address _rewardToken, uint256 _amount)
         external
         onlyRewardsDistribution
-        updateReward(_rewardToken, address(0))
+        updateReward(_rewardToken, address(0), 0)
     {
         require(_amount != 0, "Zero reward provided");
         RewardPool storage pool = rewardPools[_rewardToken];
@@ -367,9 +375,9 @@ contract BonusChef is IRewarder, ReentrancyGuard {
 
     // This will do nothing, if no pools are added, so
     // we don't need to check if BonusChef is linked or not
-    function _getAllActiveRewardsFor(address _account, address _recipient)
+    function _getAllActiveRewardsFor(address _account, address _recipient, uint256 _oldAmount)
         internal
-        updateActiveRewards(_account)
+        updateActiveRewards(_account, _oldAmount)
     {
         for (uint256 i = 0; i < activeRewardPools.length; i++) {
             _getReward(activeRewardPools[i], _account, _recipient);
@@ -399,7 +407,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
 
     /* ========== MODIFIERS ========== */
 
-    modifier updateActiveRewards(address _account) {
+    modifier updateActiveRewards(address _account, uint256 _oldAmount) {
         for (uint256 i = 0; i < activeRewardPools.length; i++) {
             RewardPool storage pool = rewardPools[activeRewardPools[i]];
 
@@ -412,7 +420,8 @@ contract BonusChef is IRewarder, ReentrancyGuard {
             if (_account != address(0)) {
                 pool.rewards[_account] = earned(
                     address(pool.rewardToken),
-                    _account
+                    _account,
+                    _oldAmount
                 );
                 pool.userRewardPerTokenPaid[_account] = pool
                 .rewardPerTokenStored;
@@ -421,7 +430,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         _;
     }
 
-    modifier updateReward(address _rewardToken, address _account) {
+    modifier updateReward(address _rewardToken, address _account, uint256 _oldAmount) {
         RewardPool storage pool = rewardPools[_rewardToken];
 
         pool.rewardPerTokenStored = rewardPerToken(address(pool.rewardToken));
@@ -431,7 +440,8 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         if (_account != address(0)) {
             pool.rewards[_account] = earned(
                 address(pool.rewardToken),
-                _account
+                _account,
+                _oldAmount
             );
             pool.userRewardPerTokenPaid[_account] = pool.rewardPerTokenStored;
         }
