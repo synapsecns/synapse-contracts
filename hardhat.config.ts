@@ -1,3 +1,4 @@
+//@ts-nocheck
 import "@tenderly/hardhat-tenderly"
 import "@nomiclabs/hardhat-ethers"
 import "@nomiclabs/hardhat-waffle"
@@ -20,6 +21,18 @@ dotenv.config()
 let config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
+    hardhat: {
+      accounts: 
+        {
+          mnemonic: process.env.MNEMONIC || "test test test test test test test test test test test junk",
+          accountsBalance:   "10000000000000000000000"
+        },
+      
+      // mining: {
+      //   interval: [250, 750]
+      // },
+      // chainId: 31337,
+    },
     coverage: {
       url: "http://127.0.0.1:8555",
     },
