@@ -1,5 +1,5 @@
 {
-  "extends": "solhint:default",
+  "extends": "solhint:recommended",
   "plugins": ["prettier"],
   "rules": {
     "avoid-suicide": "error",
@@ -9,7 +9,6 @@
     "max-states-count": ["error", 18],
     "max-line-length": ["warn", 145],
     "not-rely-on-time": "warn",
-    "quotes": ["warn", "double"],
-    "prettier/prettier": "off"
+    "quotes": ["warn", "double"]
   }
 }
