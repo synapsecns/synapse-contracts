@@ -9,5 +9,5 @@ Fixes # (issue)
 ## Checklist
 
 - [ ] New Contracts have been tested
-- [ ] Lint has been ran
+- [ ] Lint has been run
 - [ ] I have checked my code and corrected any misspellings
