@@ -3,7 +3,6 @@
 ci: true
 confirm: true
 analyze:
-  mode: quick
   async: true
   create-group: true
   solc: 0.6.12
