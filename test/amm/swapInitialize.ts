@@ -226,7 +226,7 @@ describe("Swap", () => {
           0,
           ZERO_ADDRESS,
         ),
-      ).to.be.revertedWith("function returned an unexpected amount of data")
+      ).to.be.reverted
     })
   })
 })

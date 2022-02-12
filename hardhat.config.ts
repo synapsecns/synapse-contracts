@@ -18,6 +18,9 @@ dotenv.config()
 let config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
+    hardhat: {
+      chainId: 31337,
+    },
     coverage: {
       url: "http://127.0.0.1:8555",
     },
