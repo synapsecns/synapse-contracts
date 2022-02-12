@@ -73,7 +73,7 @@
     "sol-merger": "^3.1.0",
     "solhint": "^3.3.6",
     "solhint-plugin-prettier": "0.0.5",
-    "solidity-coverage": "^0.7.16",
+    "solidity-coverage": "^0.7.19",
     "solidity-docgen": "^0.5.13",
     "ts-generator": "^0.1.1",
     "ts-node": "^10.0.0",
