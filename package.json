@@ -12,7 +12,8 @@
     "prepublishOnly": "npm run build",
     "lint": "npm run prettier && solhint -c .solhint.json contracts/**/*.sol",
     "prettier": "prettier --write test/**/*.ts contracts/**/*.sol",
-    "hardhat:clean": "hardhat clean"
+    "hardhat:clean": "hardhat clean",
+    "prepare": "husky install"
   },
   "repository": {
     "type": "git",
