@@ -18,12 +18,24 @@ jobs:
         run: echo "##[set-output name=NVMRC;]$(cat .nvmrc)"
         id: nvm
 
+      - name: Use Node.js (.nvmrc)
+        uses: actions/setup-node@v1
+        with:
+          node-version: "${{ steps.nvm.outputs.NVMRC }}"
+
+
+      - name: Install and Compile
+        run: |
+          npm install
+          npm run build
+
       - name: Run Slither
         uses: crytic/slither-action@v0.1.0
         continue-on-error: true
         id: slither
         with:
-          node-version: "${{ steps.nvm.outputs.NVMRC }}"
+          target: .
+          ignore-compile: true
           sarif: results.sarif
 
       - name: Upload SARIF file
