@@ -34,7 +34,7 @@ jobs:
         continue-on-error: true
         id: slither
         with:
-          target: .
+          target: ./build
           ignore-compile: true
           sarif: results.sarif
 
