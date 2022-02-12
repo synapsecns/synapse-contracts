@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "hardhat compile && hardhat test",
+    "build": "hardhat compile && npm run build-go",
     "build-go": "sol-merger \"./contracts/bridge/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/wrappers/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/testing/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/meta/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin",
     "post-install": "build-go"
   },

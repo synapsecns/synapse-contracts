@@ -24,12 +24,12 @@ jobs:
 
       - name: Install and Compile
         run: |
-          yarn install
-          yarn build
+          npm install
+          npm run build
 
       - name: Test and Coverage
         run: |
-          yarn test
+          npm run test
 
   mythx:
     runs-on: ubuntu-latest
@@ -64,7 +64,7 @@ jobs:
           repository: ${{github.event.pull_request.head.repo.full_name}}
 
       - name: Install dependencies
-        run: yarn install
+        run: npm install
 
       - name: Submit contracts
         run: mythx analyze
