@@ -11,7 +11,7 @@
     "test:coverage": "cross-env NODE_OPTIONS=\"--max-old-space-size=2048\" hardhat coverage",
     "prepublishOnly": "npm run build",
     "lint": "npm run prettier && solhint -c .solhint.json contracts/**/*.sol",
-    "prettier": "prettier --write test/**/*.ts && prettier --write contracts/**/*.sol",
+    "prettier": "prettier --write test/**/*.ts contracts/**/*.sol",
     "hardhat:clean": "hardhat clean"
   },
   "repository": {
