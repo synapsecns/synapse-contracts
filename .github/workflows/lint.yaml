@@ -1,5 +1,5 @@
 #  workflow pipeline
-name: Test
+name: Lint
 
 on: ["push", "pull_request"]
 
