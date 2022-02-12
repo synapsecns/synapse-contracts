@@ -86,10 +86,7 @@ contract AaveSwapWrapper {
                 isUnderlyingIndex[i] = true;
             } else {
                 isUnderlyingIndex[i] = false;
-                underlyingTokens[i].approve(
-                    lendingPool,
-                    MAX_UINT256
-                );
+                underlyingTokens[i].approve(lendingPool, MAX_UINT256);
             }
         }
 
@@ -103,8 +100,6 @@ contract AaveSwapWrapper {
         // Approve LPToken to be used by Swap
         lpToken.approve(address(swap), MAX_UINT256);
     }
-
-
 
     /**
      * @notice Add liquidity to the pool with the given amounts of tokens.
@@ -254,7 +249,12 @@ contract AaveSwapWrapper {
             dx
         );
         if (isUnderlyingIndex[tokenIndexFrom] == false) {
-            LENDING_POOL.deposit(address(UNDERLYING_TOKENS[tokenIndexFrom]), dx, address(this), 0);
+            LENDING_POOL.deposit(
+                address(UNDERLYING_TOKENS[tokenIndexFrom]),
+                dx,
+                address(this),
+                0
+            );
         }
         // Execute swap
         uint256 dy = SWAP.swap(
@@ -277,8 +277,7 @@ contract AaveSwapWrapper {
         return dy;
     }
 
-
-      /**
+    /**
      * @notice Rescues any of the ETH, the pooled tokens, or the LPToken that may be stuck
      * in this contract. Only the OWNER can call this function.
      */
@@ -303,9 +302,7 @@ contract AaveSwapWrapper {
         lpToken_.safeTransfer(msg.sender, lpToken_.balanceOf(address(this)));
     }
 
-
     // VIEW FUNCTIONS
-
 
     /**
      * @notice Calculate amount of tokens you receive on swap
@@ -338,7 +335,11 @@ contract AaveSwapWrapper {
      * @param deposit whether this is a deposit or a withdrawal
      * @return token amount the user will receive
      */
-    function calculateTokenAmount(uint256[] calldata amounts, bool deposit) external view returns (uint256) {
+    function calculateTokenAmount(uint256[] calldata amounts, bool deposit)
+        external
+        view
+        returns (uint256)
+    {
         return SWAP.calculateTokenAmount(amounts, deposit);
     }
 
@@ -348,7 +349,11 @@ contract AaveSwapWrapper {
      * @param amount the amount of LP tokens that would be burned on withdrawal
      * @return array of token balances that the user will receive
      */
-    function calculateRemoveLiquidity(uint256 amount) external view returns (uint256[] memory) {
+    function calculateRemoveLiquidity(uint256 amount)
+        external
+        view
+        returns (uint256[] memory)
+    {
         return SWAP.calculateRemoveLiquidity(amount);
     }
 
@@ -360,7 +365,10 @@ contract AaveSwapWrapper {
      * @return availableTokenAmount calculated amount of underlying token
      * available to withdraw
      */
-    function calculateRemoveLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex) external view  returns (uint256 availableTokenAmount) {
+    function calculateRemoveLiquidityOneToken(
+        uint256 tokenAmount,
+        uint8 tokenIndex
+    ) external view returns (uint256 availableTokenAmount) {
         return SWAP.calculateRemoveLiquidityOneToken(tokenAmount, tokenIndex);
     }
 
@@ -376,5 +384,4 @@ contract AaveSwapWrapper {
             revert();
         }
     }
-
 }
