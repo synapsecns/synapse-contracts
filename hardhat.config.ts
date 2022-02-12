@@ -9,6 +9,7 @@ import "solidity-coverage"
 import "hardhat-deploy"
 import "hardhat-spdx-license-identifier"
 import "hardhat-interface-generator";
+import "hardhat-docgen";
 
 import { HardhatUserConfig } from "hardhat/config"
 import dotenv from "dotenv"
@@ -144,6 +145,11 @@ let config: HardhatUserConfig = {
   spdxLicenseIdentifier: {
     overwrite: false,
     runOnCompile: true,
+  },
+  docgen: {
+      path: './docs',
+      clear: true,
+      runOnCompile: true,
   }
 }
 
