@@ -4,14 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "hardhat compile && hardhat test",
+    "test": "hardhat test",
     "build": "hardhat compile && npm run build-go",
     "build-go": "sol-merger \"./contracts/bridge/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/wrappers/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/testing/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/meta/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin",
     "post-install": "build-go",
     "test:coverage": "cross-env NODE_OPTIONS=\"--max-old-space-size=2048\" hardhat coverage",
     "prepublishOnly": "npm run build",
     "lint": "npm run prettier && solhint -c .solhint.json contracts/**/*.sol",
-    "prettier": "prettier --write test/**/*.ts && prettier --write contracts/**/*.sol"
+    "prettier": "prettier --write test/**/*.ts && prettier --write contracts/**/*.sol",
+    "hardhat:clean": "hardhat clean"
   },
   "repository": {
     "type": "git",

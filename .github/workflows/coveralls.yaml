@@ -4,7 +4,7 @@ name: Coveralls
 on: ["push", "pull_request"]
 
 jobs:
-  build:
+  coverage:
     name: Build
     runs-on: ubuntu-18.04
 
@@ -36,7 +36,10 @@ jobs:
       - name: Installing dependencies
         run: npm install
 
-      - name: yarn test:coverage
+      - name: build
+        run: npm run build
+
+      - name: run test:coverage
         run: npm run test:coverage
 
       - name: Coveralls
