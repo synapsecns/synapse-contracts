@@ -90,7 +90,7 @@ let config: HardhatUserConfig = {
     },
   },
   paths: {
-    // artifacts: "./build/artifacts",
+    artifacts: "./build/artifacts",
     cache: "./build/cache",
   },
   typechain: {
