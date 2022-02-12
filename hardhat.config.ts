@@ -78,7 +78,7 @@ let config: HardhatUserConfig = {
       gasPrice: 0
     },
     mainnet: {
-      url: process.env.ALCHEMY_API,
+      url: process.env.ALCHEMY_API || "https://main-light.eth.linkpool.io/",
     },
     optimism: {
       url: "https://mainnet.optimism.io",
