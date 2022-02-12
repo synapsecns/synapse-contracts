@@ -16,7 +16,11 @@ contract ECDSANodeManagement {
     // Active means the keep is active.
     // Closed means the keep was closed happily.
     // Terminated means the keep was closed due to misbehavior.
-    enum Status {Active, Closed, Terminated}
+    enum Status {
+        Active,
+        Closed,
+        Terminated
+    }
 
     // Address of the keep's owner.
     address public owner;
@@ -35,7 +39,7 @@ contract ECDSANodeManagement {
     // started.
     uint256 internal keyGenerationStartTimestamp;
 
-     // Map stores public key by member addresses. All members should submit the
+    // Map stores public key by member addresses. All members should submit the
     // same public key.
     mapping(address => bytes) internal submittedPublicKeys;
 
@@ -45,7 +49,6 @@ contract ECDSANodeManagement {
     // If the owner decides to close the keep the flag is set to Closed.
     // If the owner seizes member bonds the flag is set to Terminated.
     Status internal status;
-
 
     // Flags execution of contract initialization.
     bool internal isInitialized;
@@ -69,7 +72,6 @@ contract ECDSANodeManagement {
     // Notification that the keep has been terminated by the owner.
     // Members no longer need to support this keep.
     event KeepTerminated();
-
 
     /// @notice Returns keep's ECDSA public key.
     /// @return Keep's ECDSA public key.
@@ -123,14 +125,13 @@ contract ECDSANodeManagement {
         emit PublicKeyPublished(_publicKey);
     }
 
-
     /// @notice Gets the owner of the keep.
     /// @return Address of the keep owner.
     function getOwner() external view returns (address) {
         return owner;
     }
 
-   /// @notice Gets the timestamp the keep was opened at.
+    /// @notice Gets the timestamp the keep was opened at.
     /// @return Timestamp the keep was opened at.
     function getOpenedTimestamp() external view returns (uint256) {
         return keyGenerationStartTimestamp;
@@ -198,7 +199,6 @@ contract ECDSANodeManagement {
         keyGenerationStartTimestamp = block.timestamp;
     }
 
-
     /// @notice Checks if the member already submitted a public key.
     /// @param _member Address of the member.
     /// @return True if member already submitted a public key, else false.
@@ -209,7 +209,6 @@ contract ECDSANodeManagement {
     {
         return submittedPublicKeys[_member].length != 0;
     }
-
 
     /// @notice Marks the keep as closed.
     /// Keep can be marked as closed only when there is no signing in progress
@@ -227,7 +226,6 @@ contract ECDSANodeManagement {
         emit KeepTerminated();
     }
 
-
     /// @notice Coverts a public key to an ethereum address.
     /// @param _publicKey Public key provided as 64-bytes concatenation of
     /// X and Y coordinates (32-bytes each).
@@ -241,7 +239,6 @@ contract ECDSANodeManagement {
         // which is the ethereum address.
         return address(uint160(uint256(keccak256(_publicKey))));
     }
-
 
     /// @notice Terminates the keep.
     function terminateKeep() internal {
@@ -268,5 +265,4 @@ contract ECDSANodeManagement {
         require(isActive(), "Keep is not active");
         _;
     }
-
 }
