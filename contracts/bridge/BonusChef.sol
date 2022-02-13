@@ -64,10 +64,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
 
     /* ========== CONSTRUCTOR ========== */
 
-    constructor(
-        IMiniChefV2 _miniChef,
-        address _rewardsDistribution
-    ) public {
+    constructor(IMiniChefV2 _miniChef, address _rewardsDistribution) public {
         miniChef = _miniChef;
         rewardsDistribution = _rewardsDistribution;
         governance = msg.sender;
@@ -116,11 +113,11 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         return earned(_rewardToken, _account, balanceOf(_account));
     }
 
-    function earned(address _rewardToken, address _account, uint256 _oldAmount)
-        public
-        view
-        returns (uint256)
-    {
+    function earned(
+        address _rewardToken,
+        address _account,
+        uint256 _oldAmount
+    ) public view returns (uint256) {
         RewardPool storage pool = rewardPools[_rewardToken];
         return
             _oldAmount
@@ -350,7 +347,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
     }
 
     function linkToPool(uint256 _chefPoolID) external onlyGov {
-        _setPoolID(_chefPoolID);        
+        _setPoolID(_chefPoolID);
     }
 
     function setRewardsDistribution(address _rewardsDistribution)
@@ -375,10 +372,11 @@ contract BonusChef is IRewarder, ReentrancyGuard {
 
     // This will do nothing, if no pools are added, so
     // we don't need to check if BonusChef is linked or not
-    function _getAllActiveRewardsFor(address _account, address _recipient, uint256 _oldAmount)
-        internal
-        updateActiveRewards(_account, _oldAmount)
-    {
+    function _getAllActiveRewardsFor(
+        address _account,
+        address _recipient,
+        uint256 _oldAmount
+    ) internal updateActiveRewards(_account, _oldAmount) {
         for (uint256 i = 0; i < activeRewardPools.length; i++) {
             _getReward(activeRewardPools[i], _account, _recipient);
         }
@@ -430,7 +428,11 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         _;
     }
 
-    modifier updateReward(address _rewardToken, address _account, uint256 _oldAmount) {
+    modifier updateReward(
+        address _rewardToken,
+        address _account,
+        uint256 _oldAmount
+    ) {
         RewardPool storage pool = rewardPools[_rewardToken];
 
         pool.rewardPerTokenStored = rewardPerToken(address(pool.rewardToken));
