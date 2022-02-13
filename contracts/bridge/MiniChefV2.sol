@@ -86,9 +86,9 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
         rewarder.push(_rewarder);
 
         poolInfo.push(PoolInfo({
-            allocPoint: allocPoint.to64(),
-            lastRewardTime: block.timestamp.to64(),
-            accSynapsePerShare: 0
+        allocPoint: allocPoint.to64(),
+        lastRewardTime: block.timestamp.to64(),
+        accSynapsePerShare: 0
         }));
         emit LogPoolAddition(lpToken.length.sub(1), allocPoint, _lpToken, _rewarder);
     }
@@ -198,7 +198,7 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
         if (address(_rewarder) != address(0)) {
             _rewarder.onSynapseReward(pid, msg.sender, to, 0, oldAmount);
         }
-        
+
         lpToken[pid].safeTransfer(to, amount);
 
         emit Withdraw(msg.sender, pid, amount, to);
@@ -220,7 +220,7 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
         if (_pendingSynapse != 0) {
             SYNAPSE.safeTransfer(to, _pendingSynapse);
         }
-        
+
         IRewarder _rewarder = rewarder[pid];
         if (address(_rewarder) != address(0)) {
             _rewarder.onSynapseReward( pid, msg.sender, to, _pendingSynapse, user.amount);
@@ -228,7 +228,7 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
 
         emit Harvest(msg.sender, pid, _pendingSynapse);
     }
-    
+
     /// @notice Withdraw LP tokens from MCV2 and harvest proceeds for transaction sender to `to`.
     /// @param pid The index of the pool. See `poolInfo`.
     /// @param amount LP token amount to withdraw.
@@ -243,8 +243,8 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
         user.rewardDebt = accumulatedSynapse.sub(int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION));
         uint256 oldAmount = user.amount;
         user.amount = user.amount.sub(amount);
-        
-        
+
+
         // Interactions
         SYNAPSE.safeTransfer(to, _pendingSynapse);
 
