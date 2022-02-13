@@ -35,7 +35,6 @@
 //     let user1Address: string
 //     let user2Address: string
 
-
 //     const setupTest = deployments.createFixture(
 //         async ({ deployments, ethers }) => {
 //             const { get } = deployments;
@@ -47,17 +46,15 @@
 //             user2 = signers[2]
 //             ownerAddress = await owner.getAddress()
 //             user1Address = await user1.getAddress()
-//             user2Address = await user2.getAddress() 
+//             user2Address = await user2.getAddress()
 
 //             const ERC20MigratorContract = await ethers.getContractFactory("ERC20Migrator")
 //             const synapseERC20Contract = await ethers.getContractFactory("SynapseERC20")
 
-            
 //             legacyERC20 = (await synapseERC20Contract.deploy())
 //             newERC20 = (await synapseERC20Contract.deploy())
 //             erc20Migrator = (await ERC20MigratorContract.deploy((await legacyERC20.address), (await newERC20.address)))
 
-            
 //             await legacyERC20.initialize(
 //                 "Nerve",
 //                 "NRV",
@@ -71,7 +68,6 @@
 //                 18,
 //                 await owner.getAddress()
 //             )
-
 
 //             // Set approvals
 //             await asyncForEach([owner, user1, user2], async (signer) => {

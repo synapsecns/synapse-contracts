@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.12;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import '@openzeppelin/contracts-upgradeable/proxy/Initializable.sol';
+import "@openzeppelin/contracts-upgradeable/proxy/Initializable.sol";
 
 interface IWETH9 {
     function name() external view returns (string memory);
@@ -35,14 +35,13 @@ interface IWETH9 {
 }
 
 contract DummyWethProxy is Initializable, OwnableUpgradeable {
-    
     function initialize() external initializer {
         __Ownable_init();
     }
 
+    IWETH9 public WETH;
 
-    IWETH9 public  WETH;
-    function setWETHAddress(address payable _weth) onlyOwner external{
+    function setWETHAddress(address payable _weth) external onlyOwner {
         WETH = IWETH9(_weth);
     }
 
@@ -50,11 +49,11 @@ contract DummyWethProxy is Initializable, OwnableUpgradeable {
         WETH.withdraw(amount);
     }
 
-    function rescue(uint256 amount) onlyOwner external {
+    function rescue(uint256 amount) external onlyOwner {
         WETH.transfer(owner(), amount);
     }
 
     receive() external payable {}
-    
+
     fallback() external payable {}
 }
