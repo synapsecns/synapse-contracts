@@ -131,8 +131,11 @@ contract SwapEthWrapper {
             amount
         );
         // Remove liquidity
-        uint256[] memory amounts =
-            SWAP.removeLiquidity(amount, minAmounts, deadline);
+        uint256[] memory amounts = SWAP.removeLiquidity(
+            amount,
+            minAmounts,
+            deadline
+        );
         // Send the tokens back to the user
         for (uint256 i = 0; i < amounts.length; i++) {
             if (i != WETH_INDEX) {
@@ -169,13 +172,12 @@ contract SwapEthWrapper {
             tokenAmount
         );
         // Withdraw via single token
-        uint256 amount =
-            SWAP.removeLiquidityOneToken(
-                tokenAmount,
-                tokenIndex,
-                minAmount,
-                deadline
-            );
+        uint256 amount = SWAP.removeLiquidityOneToken(
+            tokenAmount,
+            tokenIndex,
+            minAmount,
+            deadline
+        );
         // Transfer the token to msg.sender accordingly
         if (tokenIndex != WETH_INDEX) {
             pooledTokens[tokenIndex].safeTransfer(msg.sender, amount);
@@ -210,8 +212,11 @@ contract SwapEthWrapper {
             maxBurnAmount
         );
         // Withdraw in imbalanced ratio
-        uint256 burnedLpTokenAmount =
-            SWAP.removeLiquidityImbalance(amounts, maxBurnAmount, deadline);
+        uint256 burnedLpTokenAmount = SWAP.removeLiquidityImbalance(
+            amounts,
+            maxBurnAmount,
+            deadline
+        );
         // Send the tokens back to the user
         for (uint256 i = 0; i < amounts.length; i++) {
             if (i != WETH_INDEX) {
@@ -263,8 +268,13 @@ contract SwapEthWrapper {
             IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
         }
         // Execute swap
-        uint256 dy =
-            SWAP.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
+        uint256 dy = SWAP.swap(
+            tokenIndexFrom,
+            tokenIndexTo,
+            dx,
+            minDy,
+            deadline
+        );
         // Transfer the swapped tokens to msg.sender
         if (tokenIndexTo != WETH_INDEX) {
             IERC20(pooledTokens[tokenIndexTo]).safeTransfer(msg.sender, dy);
@@ -299,9 +309,7 @@ contract SwapEthWrapper {
 
     receive() external payable {}
 
-
     // VIEW FUNCTIONS
-
 
     /**
      * @notice A simple method to calculate prices from deposits or
@@ -318,7 +326,11 @@ contract SwapEthWrapper {
      * @param deposit whether this is a deposit or a withdrawal
      * @return token amount the user will receive
      */
-    function calculateTokenAmount(uint256[] calldata amounts, bool deposit) external view returns (uint256) {
+    function calculateTokenAmount(uint256[] calldata amounts, bool deposit)
+        external
+        view
+        returns (uint256)
+    {
         return SWAP.calculateTokenAmount(amounts, deposit);
     }
 
@@ -328,7 +340,11 @@ contract SwapEthWrapper {
      * @param amount the amount of LP tokens that would be burned on withdrawal
      * @return array of token balances that the user will receive
      */
-    function calculateRemoveLiquidity(uint256 amount) external view returns (uint256[] memory) {
+    function calculateRemoveLiquidity(uint256 amount)
+        external
+        view
+        returns (uint256[] memory)
+    {
         return SWAP.calculateRemoveLiquidity(amount);
     }
 
@@ -340,7 +356,10 @@ contract SwapEthWrapper {
      * @return availableTokenAmount calculated amount of underlying token
      * available to withdraw
      */
-    function calculateRemoveLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex) external view  returns (uint256 availableTokenAmount) {
+    function calculateRemoveLiquidityOneToken(
+        uint256 tokenAmount,
+        uint8 tokenIndex
+    ) external view returns (uint256 availableTokenAmount) {
         return SWAP.calculateRemoveLiquidityOneToken(tokenAmount, tokenIndex);
     }
 }

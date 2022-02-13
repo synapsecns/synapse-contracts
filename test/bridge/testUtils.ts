@@ -44,9 +44,6 @@ export function linkBytecode(
   return bytecode
 }
 
-
-
-
 // EVM methods
 
 export async function forceAdvanceOneBlock(timestamp?: number): Promise<any> {
