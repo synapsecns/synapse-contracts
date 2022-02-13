@@ -5,8 +5,23 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 interface ISwap {
+    function swapStorage()
+        external
+        view
+        returns (
+            uint256 initialA,
+            uint256 futureA,
+            uint256 initialATime,
+            uint256 futureATime,
+            uint256 swapFee,
+            uint256 adminFee,
+            address lpToken
+        );
+
     // pool data view functions
     function getA() external view returns (uint256);
+
+    function getAPrecise() external view returns (uint256);
 
     function getToken(uint8 index) external view returns (IERC20);
 
