@@ -19,17 +19,16 @@ contract SwapCalculator {
     struct ManageLiquidityInfo {
         uint256 d0;
         uint256 d1;
-        uint256 d2;
         uint256 preciseA;
         uint256 totalSupply;
         uint256[] balances;
         uint256[] multipliers;
     }
 
-    ISwap private immutable pool;
-    IERC20 private immutable lpToken;
-    uint256 private immutable numTokens;
-    uint256 private swapFee;
+    ISwap public immutable pool;
+    IERC20 public immutable lpToken;
+    uint256 public immutable numTokens;
+    uint256 public swapFee;
 
     uint256[] private tokenPrecisionMultipliers;
 
@@ -64,7 +63,6 @@ contract SwapCalculator {
         ManageLiquidityInfo memory v = ManageLiquidityInfo(
             0,
             0,
-            0,
             pool.getAPrecise(),
             lpToken.totalSupply(),
             new uint256[](_numTokens),
@@ -80,6 +78,11 @@ contract SwapCalculator {
 
         if (v.totalSupply != 0) {
             v.d0 = _getD(_xp(v.balances, v.multipliers), v.preciseA);
+        } else {
+            // pool is empty => all amounts must be >0
+            for (uint8 i = 0; i < _numTokens; i++) {
+                require(_amounts[i] > 0, "Must supply all tokens in pool");
+            }
         }
 
         // invariant after change
@@ -97,8 +100,8 @@ contract SwapCalculator {
                 .div(FEE_DENOMINATOR);
                 newBalances[i] = newBalances[i].sub(fees);
             }
-            v.d2 = _getD(_xp(newBalances, v.multipliers), v.preciseA);
-            return v.d2.sub(v.d0).mul(v.totalSupply).div(v.d0);
+            v.d1 = _getD(_xp(newBalances, v.multipliers), v.preciseA);
+            return v.d1.sub(v.d0).mul(v.totalSupply).div(v.d0);
         }
     }
 
