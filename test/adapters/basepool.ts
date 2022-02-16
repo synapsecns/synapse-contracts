@@ -34,6 +34,8 @@ describe("Base Pool Adapter", async () => {
   let swapToken: LPToken
   let owner: Signer
   let ownerAddress: string
+  let dude: Signer
+  let dudeAddress: string
 
   let basePoolAdapter: SynapseBasePoolAdapter
 
@@ -54,43 +56,61 @@ describe("Base Pool Adapter", async () => {
   const LP_TOKEN_SYMBOL = "TESTLP"
   const TOKENS: GenericERC20[] = []
   const TOKENS_DECIMALS = [18, 6, 6, 18]
-  const AMOUNTS = [5, 42, 96]
+  const AMOUNTS = [2, 13, 42, 108, 420]
 
   async function testAdapter(
-    adapter: Adapter,
+    adapter: SynapseBasePoolAdapter,
     tokensFrom: Array<number>,
     tokensTo: Array<number>,
+    times = 1,
   ) {
-    for (let i in tokensFrom) {
-      let tokenFrom = TOKENS[tokensFrom[i]]
-      let decimalsFrom = TOKENS_DECIMALS[tokensFrom[i]]
-      for (let j in tokensTo) {
-        let tokenTo = TOKENS[tokensTo[j]]
-        let depositAddress = await adapter.depositAddress(
-          tokenFrom.address,
-          tokenTo.address,
-        )
-        for (let k in AMOUNTS) {
-          let amount = getBigNumber(AMOUNTS[k], decimalsFrom)
-          await tokenFrom.transfer(depositAddress, amount)
-          let swapQuote = await adapter.query(
-            amount,
+    let swapsAmount = 0
+    for (var k = 0; k < times; k++)
+      for (let i in tokensFrom) {
+        let tokenFrom = TOKENS[tokensFrom[i]]
+        let decimalsFrom = TOKENS_DECIMALS[tokensFrom[i]]
+        for (let j in tokensTo) {
+          if (tokensFrom[i] == tokensFrom[j]) {
+            continue
+          }
+          let tokenTo = TOKENS[tokensTo[j]]
+          let depositAddress = await adapter.depositAddress(
             tokenFrom.address,
             tokenTo.address,
           )
-          let balanceBefore = await getUserTokenBalance(owner, tokenTo)
-          let swappedAmount = adapter.swap(
-            amount,
-            tokenFrom.address,
-            tokenTo.address,
-          )
-          expect(swappedAmount).to.eq(swapQuote)
-          expect(await getUserTokenBalance(owner, tokenTo)).to.eq(
-            balanceBefore.add(swapQuote),
-          )
+          for (let k in AMOUNTS) {
+            let amount = getBigNumber(AMOUNTS[k], decimalsFrom)
+            await tokenFrom.transfer(depositAddress, amount)
+            let swapQuote = await adapter.query(
+              amount,
+              tokenFrom.address,
+              tokenTo.address,
+            )
+            let balanceBefore = await getUserTokenBalance(owner, tokenTo)
+            let swappedAmount = await adapter.callStatic.swap(
+              amount,
+              tokenFrom.address,
+              tokenTo.address,
+              ownerAddress,
+            )
+            await adapter.swap(
+              amount,
+              tokenFrom.address,
+              tokenTo.address,
+              ownerAddress,
+            )
+            // console.log('%s -> %s: %s', tokensFrom[i], tokensTo[j], amount.toString())
+            // console.log(swapQuote.toString())
+            // console.log(swappedAmount.toString())
+            expect(swappedAmount).to.eq(swapQuote)
+            expect(await getUserTokenBalance(owner, tokenTo)).to.eq(
+              balanceBefore.add(swapQuote),
+            )
+            swapsAmount++
+          }
         }
       }
-    }
+    console.log("Swaps: %d", swapsAmount)
   }
 
   const setupTest = deployments.createFixture(
@@ -102,6 +122,8 @@ describe("Base Pool Adapter", async () => {
       signers = await ethers.getSigners()
       owner = signers[0]
       ownerAddress = await owner.getAddress()
+      dude = signers[1]
+      dudeAddress = await dude.getAddress()
 
       // Deploy dummy tokens
       const erc20Factory = await ethers.getContractFactory("GenericERC20")
@@ -164,9 +186,9 @@ describe("Base Pool Adapter", async () => {
       )) as SynapseBasePoolAdapter
 
       let amounts = [
-        getBigNumber(500, TOKENS_DECIMALS[0]),
-        getBigNumber(500, TOKENS_DECIMALS[1]),
-        getBigNumber(500, TOKENS_DECIMALS[2]),
+        getBigNumber(1000, TOKENS_DECIMALS[0]),
+        getBigNumber(1000, TOKENS_DECIMALS[1]),
+        getBigNumber(1000, TOKENS_DECIMALS[2]),
       ]
 
       // Populate the pool with initial liquidity
@@ -177,7 +199,7 @@ describe("Base Pool Adapter", async () => {
       }
 
       expect(await getUserTokenBalance(owner, swapToken)).to.be.eq(
-        getBigNumber(1500),
+        getBigNumber(3000),
       )
     },
   )
@@ -197,6 +219,110 @@ describe("Base Pool Adapter", async () => {
         expect(await basePoolAdapter.isPoolToken(TOKENS[i].address))
         expect(await basePoolAdapter.tokenIndex(TOKENS[i].address)).to.eq(+i)
       }
+    })
+  })
+
+  describe("Adapter Swaps", () => {
+    it("Swaps between tokens", async () => {
+      await testAdapter(basePoolAdapter, [0, 1, 2], [0, 1, 2])
+    })
+
+    it("Zap into LP token", async () => {
+      await testAdapter(basePoolAdapter, [0, 1, 2], [3])
+    })
+
+    it("Withdraw from LP token", async () => {
+      await testAdapter(basePoolAdapter, [3], [0, 1, 2])
+    })
+
+    it("Swap stress test", async () => {
+      await testAdapter(basePoolAdapter, [0, 1, 2, 3], [0, 1, 2, 3], 2)
+    })
+  })
+
+  describe("Wrong amount trasnferred", () => {
+    it("Swap fails if transfer amount is too little", async () => {
+      let amount = getBigNumber(10, TOKENS_DECIMALS[0])
+      let depositAddress = await basePoolAdapter.depositAddress(
+        TOKENS[0].address,
+        TOKENS[1].address,
+      )
+      TOKENS[0].transfer(depositAddress, amount.sub(1))
+      await expect(
+        basePoolAdapter.swap(
+          amount,
+          TOKENS[0].address,
+          TOKENS[1].address,
+          ownerAddress,
+        ),
+      ).to.be.reverted
+    })
+
+    it("Only Owner can rescue overprovided swap tokens", async () => {
+      let amount = getBigNumber(10, TOKENS_DECIMALS[0])
+      let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
+      let depositAddress = await basePoolAdapter.depositAddress(
+        TOKENS[0].address,
+        TOKENS[1].address,
+      )
+      TOKENS[0].transfer(depositAddress, amount.add(extra))
+      await basePoolAdapter.swap(
+        amount,
+        TOKENS[0].address,
+        TOKENS[1].address,
+        ownerAddress,
+      )
+
+      await expect(
+        basePoolAdapter.connect(dude).recoverERC20(TOKENS[0].address, extra),
+      ).to.be.revertedWith("Ownable: caller is not the owner")
+
+      await expect(() =>
+        basePoolAdapter.recoverERC20(TOKENS[0].address, extra),
+      ).to.changeTokenBalance(TOKENS[0], owner, extra)
+    })
+
+    it("Anyone can take advantage of overprovided swap tokens", async () => {
+      let amount = getBigNumber(10, TOKENS_DECIMALS[0])
+      let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
+      let depositAddress = await basePoolAdapter.depositAddress(
+        TOKENS[0].address,
+        TOKENS[1].address,
+      )
+      TOKENS[0].transfer(depositAddress, amount.add(extra))
+      await basePoolAdapter.swap(
+        amount,
+        TOKENS[0].address,
+        TOKENS[1].address,
+        ownerAddress,
+      )
+
+      let swapQuote = await basePoolAdapter.query(
+        extra,
+        TOKENS[0].address,
+        TOKENS[1].address,
+      )
+
+      await expect(() =>
+        basePoolAdapter
+          .connect(dude)
+          .swap(extra, TOKENS[0].address, TOKENS[1].address, dudeAddress),
+      ).to.changeTokenBalance(TOKENS[1], dude, swapQuote)
+    })
+
+    it("Only Owner can rescue GAS from Adapter", async () => {
+      let amount = 42690
+      await expect(() =>
+        owner.sendTransaction({ to: basePoolAdapter.address, value: amount }),
+      ).to.changeEtherBalance(basePoolAdapter, amount)
+
+      await expect(
+        basePoolAdapter.connect(dude).recoverGAS(amount),
+      ).to.be.revertedWith("Ownable: caller is not the owner")
+
+      await expect(() =>
+        basePoolAdapter.recoverGAS(amount),
+      ).to.changeEtherBalances([basePoolAdapter, owner], [-amount, amount])
     })
   })
 })
