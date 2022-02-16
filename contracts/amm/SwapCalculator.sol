@@ -124,7 +124,7 @@ contract SwapCalculator {
         tokenPrecisionMultipliers.push(
             10**uint256(POOL_PRECISION_DECIMALS - _token.decimals())
         );
-        pooledTokens.push(token);
+        poolTokens.push(token);
     }
 
     /**
