@@ -24,7 +24,7 @@ contract SwapAddCalculator {
     IERC20 public immutable lpToken;
     uint256 public immutable numTokens;
     uint256 public swapFee;
-	uint256 private swapFeePerToken;
+    uint256 private swapFeePerToken;
 
     uint256[] private tokenPrecisionMultipliers;
 
@@ -36,9 +36,9 @@ contract SwapAddCalculator {
         pool = _pool;
         (, , , , uint256 _swapFee, , address _lpToken) = _pool.swapStorage();
         lpToken = IERC20(_lpToken);
-		// set numTokens prior to swapFee
+        // set numTokens prior to swapFee
         numTokens = _setPoolTokens(_pool);
-		_setSwapFee(_swapFee);
+        _setSwapFee(_swapFee);
     }
 
     function updateSwapFee() external {
@@ -47,7 +47,7 @@ contract SwapAddCalculator {
     }
 
     function calculateAddLiquidity(uint256[] memory _amounts)
-        external
+        public
         view
         returns (uint256)
     {
@@ -90,22 +90,20 @@ contract SwapAddCalculator {
             return v.d1;
         } else {
             for (uint256 _i = 0; _i < _numTokens; _i++) {
-                uint256 idealBalance = v.d1 * v.balances[_i] / v.d0;
-                uint256 fees = swapFeePerToken * _diff(newBalances[_i], idealBalance) / FEE_DENOMINATOR;
+                uint256 idealBalance = (v.d1 * v.balances[_i]) / v.d0;
+                uint256 fees = (swapFeePerToken *
+                    _diff(newBalances[_i], idealBalance)) / FEE_DENOMINATOR;
                 newBalances[_i] = newBalances[_i] - fees;
             }
             v.d1 = _getD(_xp(newBalances, v.multipliers), v.preciseA);
-            return (v.d1 - v.d0) * v.totalSupply / v.d0;
+            return ((v.d1 - v.d0) * v.totalSupply) / v.d0;
         }
     }
 
     function _setPoolTokens(ISynapse _pool) internal returns (uint256) {
         for (uint8 i = 0; true; i++) {
             try _pool.getToken(i) returns (IERC20 token) {
-                IERC20Decimals _token = IERC20Decimals(address(token));
-                tokenPrecisionMultipliers.push(
-                    10**uint256(POOL_PRECISION_DECIMALS - _token.decimals())
-                );
+                _addPoolToken(token, i);
             } catch {
                 break;
             }
@@ -113,25 +111,23 @@ contract SwapAddCalculator {
         return tokenPrecisionMultipliers.length;
     }
 
-	function _setSwapFee(uint256 _swapFee) internal {
-		swapFee = _swapFee;
-		swapFeePerToken = swapFee * numTokens / (
-            (numTokens - 1) * 4
+    function _addPoolToken(IERC20 token, uint8) internal virtual {
+        IERC20Decimals _token = IERC20Decimals(address(token));
+        tokenPrecisionMultipliers.push(
+            10**uint256(POOL_PRECISION_DECIMALS - _token.decimals())
         );
-	}
+    }
 
-	/**
+    function _setSwapFee(uint256 _swapFee) internal {
+        swapFee = _swapFee;
+        swapFeePerToken = (swapFee * numTokens) / ((numTokens - 1) * 4);
+    }
+
+    /**
      * @notice Get absolute difference between two values
      * @return abs(_a - _b)
      */
-    function _diff(
-        uint256 _a,
-        uint256 _b
-    )
-        internal
-        pure
-        returns (uint256)
-    {
+    function _diff(uint256 _a, uint256 _b) internal pure returns (uint256) {
         if (_a > _b) {
             return _a - _b;
         } else {
@@ -139,7 +135,7 @@ contract SwapAddCalculator {
         }
     }
 
- 	/**
+    /**
      * @notice Get pool balances adjusted, as if all tokens had 18 decimals
      */
     function _xp(
@@ -188,10 +184,13 @@ contract SwapAddCalculator {
                 // dP = dP * D * D * D * ... overflow!
             }
             prevD = d;
-            d = (nA * s / A_PRECISION + dP * _numTokens) * d / (
-                (nA - A_PRECISION) * d / A_PRECISION + (_numTokens + 1) * dP
-            );
-            
+            d =
+                (((nA * s) / A_PRECISION + dP * _numTokens) * d) /
+                (((nA - A_PRECISION) * d) /
+                    A_PRECISION +
+                    (_numTokens + 1) *
+                    dP);
+
             if (_diff(d, prevD) <= 1) {
                 return d;
             }
