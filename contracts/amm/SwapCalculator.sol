@@ -30,6 +30,7 @@ contract SwapCalculator {
     uint256 public immutable numTokens;
     uint256 public swapFee;
 
+    IERC20[] internal poolTokens;
     uint256[] private tokenPrecisionMultipliers;
 
     uint8 private constant POOL_PRECISION_DECIMALS = 18;
@@ -108,15 +109,20 @@ contract SwapCalculator {
     function _setPoolTokens(ISwap _pool) internal returns (uint256) {
         for (uint8 i = 0; true; i++) {
             try _pool.getToken(i) returns (IERC20 token) {
-                IERC20Decimals _token = IERC20Decimals(address(token));
-                tokenPrecisionMultipliers.push(
-                    10**uint256(POOL_PRECISION_DECIMALS - _token.decimals())
-                );
+                _addPoolToken(token, i);
             } catch {
                 break;
             }
         }
         return tokenPrecisionMultipliers.length;
+    }
+
+    function _addPoolToken(IERC20 token, uint8) internal virtual {
+        IERC20Decimals _token = IERC20Decimals(address(token));
+        tokenPrecisionMultipliers.push(
+            10**uint256(POOL_PRECISION_DECIMALS - _token.decimals())
+        );
+        poolTokens.push(token);
     }
 
     /**
