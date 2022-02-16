@@ -30,6 +30,7 @@ contract SwapCalculator {
     uint256 public immutable numTokens;
     uint256 public swapFee;
 
+    IERC20[] internal poolTokens;
     uint256[] private tokenPrecisionMultipliers;
 
     uint8 private constant POOL_PRECISION_DECIMALS = 18;
@@ -123,6 +124,7 @@ contract SwapCalculator {
         tokenPrecisionMultipliers.push(
             10**uint256(POOL_PRECISION_DECIMALS - _token.decimals())
         );
+        pooledTokens.push(token);
     }
 
     /**
