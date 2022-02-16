@@ -50,7 +50,7 @@ contract SwapCalculator {
     }
 
     function calculateAddLiquidity(uint256[] memory _amounts)
-        external
+        public
         view
         returns (uint256)
     {
@@ -108,15 +108,21 @@ contract SwapCalculator {
     function _setPoolTokens(ISwap _pool) internal returns (uint256) {
         for (uint8 i = 0; true; i++) {
             try _pool.getToken(i) returns (IERC20 token) {
-                IERC20Decimals _token = IERC20Decimals(address(token));
-                tokenPrecisionMultipliers.push(
-                    10**uint256(POOL_PRECISION_DECIMALS - _token.decimals())
-                );
+                _addPoolToken(token, i);
             } catch {
                 break;
             }
         }
         return tokenPrecisionMultipliers.length;
+    }
+
+    /// @dev add custom logic in child contracts,
+    /// if they need to store more info on the tokens
+    function _addPoolToken(IERC20 token, uint8) internal virtual {
+        IERC20Decimals _token = IERC20Decimals(address(token));
+        tokenPrecisionMultipliers.push(
+            10**uint256(POOL_PRECISION_DECIMALS - _token.decimals())
+        );
     }
 
     /**
