@@ -1,9 +1,6 @@
 //@ts-nocheck
 import { BigNumber, Signer } from "ethers"
-import {
-  MAX_UINT256,
-  getUserTokenBalance,
-} from "../amm/testUtils"
+import { MAX_UINT256, getUserTokenBalance } from "../amm/testUtils"
 import { solidity } from "ethereum-waffle"
 import { deployments } from "hardhat"
 
@@ -25,6 +22,7 @@ const { expect } = chai
 describe("Aave Pool Adapter", async () => {
   let signers: Array<Signer>
   let swap: Swap
+  let swapETH: Swap
 
   let swapToken: LPToken
   let owner: Signer
@@ -33,6 +31,7 @@ describe("Aave Pool Adapter", async () => {
   let dudeAddress: string
 
   let aavePoolAdapter: SynapseAavePoolAdapter
+  let aaveEthPoolAdapter: SynapseAavePoolAdapter
   let aaveLendingPool: ILendingPool
 
   let testAdapterSwap: TestAdapterSwap
@@ -53,7 +52,9 @@ describe("Aave Pool Adapter", async () => {
   const LP_TOKEN_NAME = "Test LP Token Name"
   const LP_TOKEN_SYMBOL = "TESTLP"
   const TOKENS: GenericERC20[] = []
+  const TOKENS_ETH: GenericERC20[] = []
   const TOKENS_DECIMALS = [18, 18, 6, 6]
+  const DECIMALS_ETH = [18, 18]
   const AMOUNTS = [1, 7, 13, 42]
   const AMOUNTS_BIG = [137, 304, 555]
   const CHECK_UNDERQUOTING = true
@@ -64,17 +65,19 @@ describe("Aave Pool Adapter", async () => {
     tokensTo: Array<number>,
     times = 1,
     amounts = AMOUNTS,
+    tokens = TOKENS,
+    decimals = TOKENS_DECIMALS,
   ) {
     let swapsAmount = 0
     for (var k = 0; k < times; k++)
       for (let i of tokensFrom) {
-        let tokenFrom = TOKENS[i]
-        let decimalsFrom = TOKENS_DECIMALS[i]
+        let tokenFrom = tokens[i]
+        let decimalsFrom = decimals[i]
         for (let j of tokensTo) {
           if (i == j) {
             continue
           }
-          let tokenTo = TOKENS[j]
+          let tokenTo = tokens[j]
           for (let amount of amounts) {
             swapsAmount++
             await testAdapterSwap.testSwap(
@@ -83,12 +86,11 @@ describe("Aave Pool Adapter", async () => {
               tokenFrom.address,
               tokenTo.address,
               CHECK_UNDERQUOTING,
-              swapsAmount
+              swapsAmount,
             )
           }
         }
       }
-    // console.log("Swaps: %d", swapsAmount)
   }
 
   const setupTest = deployments.createFixture(
@@ -117,6 +119,13 @@ describe("Aave Pool Adapter", async () => {
       )) as GenericERC20
       await NUSD.mint(ownerAddress, getBigNumber(100000, TOKENS_DECIMALS[0]))
 
+      let NETH = (await erc20Factory.deploy(
+        "nETH",
+        "nETH",
+        "18",
+      )) as GenericERC20
+      await NETH.mint(ownerAddress, getBigNumber(100000))
+
       let poolTokens = [
         NUSD.address,
         config[43114].assets.avDAI,
@@ -131,6 +140,10 @@ describe("Aave Pool Adapter", async () => {
         config[43114].assets.USDTe,
       ]
 
+      let ethPoolTokens = [NETH.address, config[43114].assets.avWETH]
+
+      let ethUnderlyingTokens = [NETH.address, config[43114].assets.WETHe]
+
       for (var i = 1; i < underlyingTokens.length; i++) {
         await setBalance(
           ownerAddress,
@@ -138,6 +151,12 @@ describe("Aave Pool Adapter", async () => {
           getBigNumber(100000, TOKENS_DECIMALS[i]),
         )
       }
+
+      await setBalance(
+        ownerAddress,
+        ethUnderlyingTokens[1],
+        getBigNumber(100000),
+      )
 
       // Deploy Swap with SwapUtils library
       const swapFactory = await ethers.getContractFactory("Swap", {
@@ -163,12 +182,20 @@ describe("Aave Pool Adapter", async () => {
 
       expect(await swap.getVirtualPrice()).to.be.eq(0)
 
-      swapStorage = await swap.swapStorage()
+      swapETH = (await swapFactory.deploy()) as Swap
 
-      swapToken = (await ethers.getContractAt(
-        "LPToken",
-        swapStorage.lpToken,
-      )) as LPToken
+      await swapETH.initialize(
+        ethPoolTokens,
+        [18, 18],
+        "nETH LP token",
+        "nETH-LP",
+        INITIAL_A_VALUE,
+        SWAP_FEE,
+        0,
+        (
+          await get("LPToken")
+        ).address,
+      )
 
       TOKENS.push(
         NUSD,
@@ -186,6 +213,14 @@ describe("Aave Pool Adapter", async () => {
         ),
       )
 
+      TOKENS_ETH.push(
+        NETH,
+        await ethers.getContractAt(
+          "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol:IERC20",
+          config[43114].assets.WETHe,
+        ),
+      )
+
       const aavePoolAdapterFactory = await ethers.getContractFactory(
         "SynapseAavePoolAdapter",
       )
@@ -196,6 +231,14 @@ describe("Aave Pool Adapter", async () => {
         160000,
         config[43114].aave.lendingpool,
         underlyingTokens,
+      )) as SynapseAavePoolAdapter
+
+      aaveEthPoolAdapter = (await aavePoolAdapterFactory.deploy(
+        "aaveEthPoolAdapter",
+        swapETH.address,
+        160000,
+        config[43114].aave.lendingpool,
+        ethUnderlyingTokens,
       )) as SynapseAavePoolAdapter
 
       aaveLendingPool = (await ethers.getContractAt(
@@ -215,6 +258,15 @@ describe("Aave Pool Adapter", async () => {
         )
       }
 
+      let amountETH = getBigNumber(1000)
+      await TOKENS_ETH[1].approve(config[43114].aave.lendingpool, amountETH)
+      await aaveLendingPool.deposit(
+        ethUnderlyingTokens[1],
+        amountETH,
+        ownerAddress,
+        0,
+      )
+
       let amounts = [
         getBigNumber(1000, TOKENS_DECIMALS[0]),
         getBigNumber(1000, TOKENS_DECIMALS[1]),
@@ -230,7 +282,19 @@ describe("Aave Pool Adapter", async () => {
         await token.approve(swap.address, amounts[i])
       }
 
+      for (let tokenName of ethPoolTokens) {
+        let token = await ethers.getContractAt(
+          "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol:IERC20",
+          tokenName,
+        )
+        await token.approve(swapETH.address, amountETH)
+      }
+
       for (let token of TOKENS) {
+        await token.approve(testAdapterSwap.address, MAX_UINT256)
+      }
+
+      for (let token of TOKENS_ETH) {
         await token.approve(testAdapterSwap.address, MAX_UINT256)
       }
 
@@ -241,11 +305,33 @@ describe("Aave Pool Adapter", async () => {
         expect(await swap.getTokenBalance(i)).to.be.eq(amounts[i])
       }
 
-      expect(await getUserTokenBalance(owner, swapToken)).to.be.eq(
-        getBigNumber(4000),
-      )
+      await swapETH.addLiquidity([amountETH, amountETH], 0, MAX_UINT256)
+      for (let i in TOKENS_ETH) {
+        expect(await swapETH.getTokenBalance(i)).to.be.eq(amountETH)
+      }
     },
   )
+
+  async function checkPool(adapter, pool, tokens) {
+    expect(await adapter.pool()).to.be.eq(pool.address)
+    expect(await adapter.numTokens()).to.be.eq(tokens.length)
+    expect(await adapter.swapFee()).to.be.eq(SWAP_FEE)
+
+    for (let i in tokens) {
+      let token = tokens[i].address
+      let isPool = await adapter.isPoolToken(token)
+      if (isPool) {
+        expect(+i).to.eq(0)
+        expect(await adapter.tokenIndex(token)).to.eq(+i)
+      } else {
+        expect(+i).to.gt(0)
+        expect(await adapter.isUnderlying(token))
+        let aaveToken = await adapter.aaveToken(token)
+        expect(await adapter.isPoolToken(aaveToken))
+        expect(await adapter.tokenIndex(aaveToken)).to.eq(+i)
+      }
+    }
+  }
 
   before(async () => {
     await network.provider.request({
@@ -267,29 +353,38 @@ describe("Aave Pool Adapter", async () => {
 
   describe("Setup", () => {
     it("AavePool Adapter is properly set up", async () => {
-      expect(await aavePoolAdapter.pool()).to.be.eq(swap.address)
-      expect(await aavePoolAdapter.lpToken()).to.be.eq(swapToken.address)
-      expect(await aavePoolAdapter.numTokens()).to.be.eq(TOKENS.length)
-      expect(await aavePoolAdapter.swapFee()).to.be.eq(SWAP_FEE)
-
-      for (let i in TOKENS) {
-        let token = TOKENS[i].address
-        let isPool = await aavePoolAdapter.isPoolToken(token)
-        if (isPool) {
-          expect(+i).to.eq(0)
-          expect(await aavePoolAdapter.tokenIndex(token)).to.eq(+i)
-        } else {
-          expect(+i).to.gt(0)
-          expect(await aavePoolAdapter.isUnderlying(token))
-          let aaveToken = await aavePoolAdapter.aaveToken(token)
-          expect(await aavePoolAdapter.isPoolToken(aaveToken))
-          expect(await aavePoolAdapter.tokenIndex(aaveToken)).to.eq(+i)
-        }
-      }
+      await checkPool(aavePoolAdapter, swap, TOKENS)
+      await checkPool(aaveEthPoolAdapter, swapETH, TOKENS_ETH)
     })
   })
 
-  describe("Adapter Swaps", () => {
+  describe("Adapter Swaps: 2 token pool", () => {
+    it("Swap stress test [240 small-medium sized swaps]", async () => {
+      await testAdapter(
+        aaveEthPoolAdapter,
+        [0, 1],
+        [0, 1],
+        30,
+        AMOUNTS,
+        TOKENS_ETH,
+        DECIMALS_ETH,
+      )
+    })
+
+    it("Swap stress test [180 big sized swaps]", async () => {
+      await testAdapter(
+        aaveEthPoolAdapter,
+        [0, 1],
+        [0, 1],
+        30,
+        AMOUNTS_BIG,
+        TOKENS_ETH,
+        DECIMALS_ETH,
+      )
+    })
+  })
+
+  describe("Adapter Swaps: 4 token pool", () => {
     it("Swaps between underlying tokens [48 small-medium sized swaps]", async () => {
       await testAdapter(aavePoolAdapter, [1, 2, 3], [1, 2, 3], 2)
     })
