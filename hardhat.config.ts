@@ -59,12 +59,9 @@ let config: HardhatUserConfig = {
     },
     harmony: {
       url: "https://harmony-0-rpc.gateway.pokt.network/",
-      gasPrice: 6 * 1000000000,
     },
     boba: {
       url: "https://mainnet.boba.network",
-      gas: 10000000,
-      gasPrice: 20 * 1000000000,
     },
     moonriver: {
       url: "https://rpc.moonriver.moonbeam.network",
@@ -75,7 +72,6 @@ let config: HardhatUserConfig = {
     },
     aurora: {
       url: "https://mainnet.aurora.dev",
-      gasPrice: 0
     },
     mainnet: {
       url: process.env.ALCHEMY_API,
