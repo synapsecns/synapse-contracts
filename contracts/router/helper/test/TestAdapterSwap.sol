@@ -17,16 +17,19 @@ contract TestAdapterSwap {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
-        bool _checkUnderQuoting
+        bool _checkUnderQuoting,
+        uint256 _iteration
     ) external {
         IAdapter adapter = IAdapter(_adapterAddress);
-        uint256 amountQuoted = adapter.query(_amountIn, _tokenIn, _tokenOut);
+        
         address depositAddress = adapter.depositAddress(_tokenIn, _tokenOut);
         IERC20(_tokenIn).safeTransferFrom(
             msg.sender,
             depositAddress,
             _amountIn
         );
+
+        uint256 amountQuoted = adapter.query(_amountIn, _tokenIn, _tokenOut);
 
         uint256 amountSwapped = adapter.swap(
             _amountIn,
@@ -37,6 +40,7 @@ contract TestAdapterSwap {
         uint256 amountReceived = IERC20(_tokenOut).balanceOf(address(this));
 
         if (amountSwapped != amountReceived) {
+            console.log("Swap # %s", _iteration);
             console.log(
                 "swap: Expected %s, got %s",
                 amountSwapped,
@@ -49,6 +53,7 @@ contract TestAdapterSwap {
             amountQuoted > amountReceived ||
             (amountQuoted < amountReceived && _checkUnderQuoting)
         ) {
+            console.log("Swap # %s", _iteration);
             if (amountQuoted > amountReceived) {
                 console.log(
                     "swap: (over)Quoted %s, got %s (diff: %s)",
