@@ -2,16 +2,10 @@
 import { BigNumber, Signer } from "ethers"
 import {
   MAX_UINT256,
-  TIME,
-  asyncForEach,
-  getCurrentBlockTimestamp,
-  getPoolBalances,
   getUserTokenBalance,
-  getUserTokenBalances,
-  setTimestamp,
 } from "../amm/testUtils"
 import { solidity } from "ethereum-waffle"
-import { deployments, ethers } from "hardhat"
+import { deployments } from "hardhat"
 
 import { TestAdapterSwap } from "../build/typechain/TestAdapterSwap"
 import { ILendingPool } from "../build/typechain/ILendingPool"
@@ -24,9 +18,6 @@ import { getBigNumber } from "../bridge/utilities"
 import { setBalance } from "./utils/helpers"
 
 import config from "../config.json"
-import { boolean } from "hardhat/internal/core/params/argumentTypes"
-
-import { step } from "mocha-steps"
 
 chai.use(solidity)
 const { expect } = chai
@@ -64,6 +55,7 @@ describe("Aave Pool Adapter", async () => {
   const TOKENS: GenericERC20[] = []
   const TOKENS_DECIMALS = [18, 18, 6, 6]
   const AMOUNTS = [1, 7, 13, 42]
+  const AMOUNTS_BIG = [137, 304, 555]
   const CHECK_UNDERQUOTING = true
 
   async function testAdapter(
@@ -71,61 +63,32 @@ describe("Aave Pool Adapter", async () => {
     tokensFrom: Array<number>,
     tokensTo: Array<number>,
     times = 1,
+    amounts = AMOUNTS,
   ) {
     let swapsAmount = 0
     for (var k = 0; k < times; k++)
-      for (let i in tokensFrom) {
-        let tokenFrom = TOKENS[tokensFrom[i]]
-        let decimalsFrom = TOKENS_DECIMALS[tokensFrom[i]]
-        for (let j in tokensTo) {
-          if (tokensFrom[i] == tokensFrom[j]) {
+      for (let i of tokensFrom) {
+        let tokenFrom = TOKENS[i]
+        let decimalsFrom = TOKENS_DECIMALS[i]
+        for (let j of tokensTo) {
+          if (i == j) {
             continue
           }
-          let tokenTo = TOKENS[tokensTo[j]]
-          // let depositAddress = await adapter.depositAddress(
-          //   tokenFrom.address,
-          //   tokenTo.address,
-          // )
-          for (let k in AMOUNTS) {
-            let amount = getBigNumber(AMOUNTS[k], decimalsFrom)
+          let tokenTo = TOKENS[j]
+          for (let amount of amounts) {
+            swapsAmount++
             await testAdapterSwap.testSwap(
               adapter.address,
-              amount,
+              getBigNumber(amount, decimalsFrom),
               tokenFrom.address,
               tokenTo.address,
               CHECK_UNDERQUOTING,
+              swapsAmount
             )
-            // await tokenFrom.transfer(depositAddress, amount)
-            // let swapQuote = await adapter.query(
-            //   amount,
-            //   tokenFrom.address,
-            //   tokenTo.address,
-            // )
-            // let balanceBefore = await getUserTokenBalance(owner, tokenTo)
-            // // let swappedAmount = await adapter.callStatic.swap(
-            // //   amount,
-            // //   tokenFrom.address,
-            // //   tokenTo.address,
-            // //   ownerAddress,
-            // // )
-            // await adapter.swap(
-            //   amount,
-            //   tokenFrom.address,
-            //   tokenTo.address,
-            //   ownerAddress,
-            // )
-            // // console.log('%s -> %s: %s', tokensFrom[i], tokensTo[j], amount.toString())
-            // // console.log(swapQuote.toString())
-            // // console.log(swappedAmount.toString())
-            // // expect(swappedAmount).to.gte(swapQuote)
-            // expect(await getUserTokenBalance(owner, tokenTo)).to.gte(
-            //   balanceBefore.add(swapQuote),
-            // )
-            swapsAmount++
           }
         }
       }
-    console.log("Swaps: %d", swapsAmount)
+    // console.log("Swaps: %d", swapsAmount)
   }
 
   const setupTest = deployments.createFixture(
@@ -327,20 +290,30 @@ describe("Aave Pool Adapter", async () => {
   })
 
   describe("Adapter Swaps", () => {
-    it("Swaps between underlying tokens", async () => {
-      await testAdapter(aavePoolAdapter, [1, 2, 3], [1, 2, 3], 10)
+    it("Swaps between underlying tokens [48 small-medium sized swaps]", async () => {
+      await testAdapter(aavePoolAdapter, [1, 2, 3], [1, 2, 3], 2)
     })
 
-    it("Swaps from nUSD to underlying Token", async () => {
-      await testAdapter(aavePoolAdapter, [0], [1, 2, 3], 30)
+    it("Swaps from nUSD to underlying Token [48 small-medium sized swaps]", async () => {
+      await testAdapter(aavePoolAdapter, [0], [1, 2, 3], 4)
     })
 
-    it("Swaps from underlying Tokens to nUSD", async () => {
-      await testAdapter(aavePoolAdapter, [1, 2, 3], [0], 30)
+    it("Swaps from underlying Tokens to nUSD [48 small-medium sized swaps]", async () => {
+      await testAdapter(aavePoolAdapter, [1, 2, 3], [0], 4)
     })
 
-    it("Swap stress test", async () => {
+    it("Swap stress test [240 small-medium sized swaps]", async () => {
       await testAdapter(aavePoolAdapter, [0, 1, 2, 3], [0, 1, 2, 3], 5)
+    })
+
+    it("Swap stress test [180 big sized swaps]", async () => {
+      await testAdapter(
+        aavePoolAdapter,
+        [0, 1, 2, 3],
+        [0, 1, 2, 3],
+        5,
+        AMOUNTS_BIG,
+      )
     })
   })
 
