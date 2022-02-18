@@ -7,7 +7,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await getNamedAccounts()
 
   if ((await getChainId()) === '1') { 
-      const deployResult = await deploy('BridgeConfigV2', {
+      const deployResult = await deploy('BridgeConfigV3', {
       from: deployer,
       log: true,
       skipIfAlreadyDeployed: true,
@@ -15,7 +15,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     if (deployResult.newlyDeployed) {
       await execute(
-        "BridgeConfig",
+        "BridgeConfigV3",
         { from: deployer, log: true },
         "grantRole",
         "0x4370dcf3e42e4d5b773a451bb8390ee8e7308f47681d1414cff87c2ad0512c85",
@@ -23,7 +23,16 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       )
 
       await execute(
-        "BridgeConfig",
+        "BridgeConfigV3",
+        { from: deployer, log: true },
+        "grantRole",
+        "0x4370dcf3e42e4d5b773a451bb8390ee8e7308f47681d1414cff87c2ad0512c85",
+        "0x19EB7D50E97bb8BFFC1Fb60964c29BFA3a706aee",
+      )
+
+
+      await execute(
+        "BridgeConfigV3",
         { from: deployer, log: true },
         "grantRole",
         "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -31,7 +40,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       )
 
       await execute(
-        "BridgeConfig",
+        "BridgeConfigV3",
         { from: deployer, log: true },
         "renounceRole",
         "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -44,4 +53,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 }
 
 export default func
-func.tags = ['BridgeConfig']
+func.tags = ['BridgeConfigV3']
