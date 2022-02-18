@@ -26,7 +26,7 @@ contract SwapAddCalculator {
     uint256 public swapFee;
     uint256 private swapFeePerToken;
 
-    IERC20[] internal poolTokens;
+    IERC20[] public poolTokens;
     uint256[] private tokenPrecisionMultipliers;
 
     uint8 private constant POOL_PRECISION_DECIMALS = 18;
