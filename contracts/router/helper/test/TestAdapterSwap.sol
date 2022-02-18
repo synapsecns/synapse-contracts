@@ -12,6 +12,12 @@ import "hardhat/console.sol";
 contract TestAdapterSwap {
     using SafeERC20 for IERC20;
 
+    uint256 maxUnderQuote;
+
+    constructor(uint256 _maxUnderQuote) {
+        maxUnderQuote = _maxUnderQuote;
+    }
+        
     function testSwap(
         address _adapterAddress,
         uint256 _amountIn,
@@ -51,7 +57,7 @@ contract TestAdapterSwap {
 
         if (
             amountQuoted > amountReceived ||
-            (amountQuoted < amountReceived && _checkUnderQuoting)
+            (amountQuoted + maxUnderQuote < amountReceived && _checkUnderQuoting)
         ) {
             console.log("Swap # %s", _iteration);
             if (amountQuoted > amountReceived) {
