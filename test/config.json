@@ -38,7 +38,8 @@
       "JOE": "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd",
       "WBTCe": "0x50b7545627a5162F82A992c33b87aDc75187B218",
       "MIM": "0x130966628846BFd36ff31a822705796e8cb8C18D",
-      "LINKe": "0x5947BB275c521040051D82396192181b413227A3"
+      "LINKe": "0x5947BB275c521040051D82396192181b413227A3",
+      "USDC": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"
     },
     "slot": {
       "WAVAX": 3,
@@ -46,12 +47,19 @@
       "USDTe": 0,
       "USDCe": 0,
       "WETHe": 0,
+      "JOE": 0,
       "WBTCe": 0,
+      "MIM": 2,
       "LINKe": 0,
-      "JOE": 0
+      "USDC": 9
     },
     "aave": {
       "lendingpool": "0x4F01AeD16D97E3aB5ab2B501154DC9bb0F1A5A2C"
+    },
+    "curve": {
+      "aave": "0x7f90122BF0700F9E7e1F688fe926940E8839F353",
+      "mim": "0xAEA2E71b631fA93683BCF256A8689dFa0e094fcD",
+      "usdc": "0x3a43A5851A3e3E0e25A3c1089670269786be1577"
     },
     "traderjoe": {
       "factory": "0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10",
