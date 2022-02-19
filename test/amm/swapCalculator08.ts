@@ -23,7 +23,7 @@ import { getBigNumber } from "../bridge/utilities"
 chai.use(solidity)
 const { expect } = chai
 
-describe("SwapCalculator", async () => {
+describe("SwapCalculator 0.8", async () => {
   let signers: Array<Signer>
   let swap: Swap
   let swapCalculator: SwapCalculator
@@ -161,11 +161,11 @@ describe("SwapCalculator", async () => {
       await USDT.approve(swap.address, MAX_UINT256)
       await SUSD.approve(swap.address, MAX_UINT256)
 
-      const swapCalculatorFactory = await ethers.getContractFactory(
-        "SwapCalculator",
+      const swapAddCalculatorFactory = await ethers.getContractFactory(
+        "contracts/router/helper/SwapCalculator.sol:SwapCalculator",
       )
 
-      swapCalculator = (await swapCalculatorFactory.deploy(
+      swapCalculator = (await swapAddCalculatorFactory.deploy(
         swap.address,
       )) as SwapCalculator
     },
