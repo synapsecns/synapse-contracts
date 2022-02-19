@@ -15,11 +15,22 @@ contract UniswapV2Adapter is Adapter {
     // storage for already known pairs
     mapping(address => mapping(address => address)) private pairs;
 
+    // in base points
+    uint256 internal immutable MULTIPLIER_WITH_FEE;
+    uint256 internal constant MULTIPLIER = 10000;
+
+    /**
+     * @dev Default UniSwap fee is 0.3% = 30bp
+     * @param _fee swap fee, in base points
+     */
     constructor(
         string memory _name,
         address _uniswapV2FactoryAddress,
-        uint256 _swapGasEstimate
+        uint256 _swapGasEstimate,
+        uint256 _fee
     ) Adapter(_name, _swapGasEstimate) {
+        require(_fee < MULTIPLIER, "Fee is damn too high");
+        MULTIPLIER_WITH_FEE = MULTIPLIER - _fee;
         uniswapV2Factory = IUniswapV2Factory(_uniswapV2FactoryAddress);
     }
 
@@ -115,12 +126,12 @@ contract UniswapV2Adapter is Adapter {
         uint256 _amountIn,
         uint256 _reserveIn,
         uint256 _reserveOut
-    ) internal pure returns (uint256 _amountOut) {
+    ) internal view returns (uint256 _amountOut) {
         require(_amountIn > 0, "INSUFFICIENT_INPUT_AMOUNT");
         require(_reserveIn > 0 && _reserveOut > 0, "INSUFFICIENT_LIQUIDITY");
-        uint256 amountInWithFee = _amountIn * 997;
+        uint256 amountInWithFee = _amountIn * MULTIPLIER_WITH_FEE;
         uint256 numerator = amountInWithFee * _reserveOut;
-        uint256 denominator = _reserveIn * 1000 + amountInWithFee;
+        uint256 denominator = _reserveIn * MULTIPLIER + amountInWithFee;
 
         _amountOut = numerator / denominator;
     }

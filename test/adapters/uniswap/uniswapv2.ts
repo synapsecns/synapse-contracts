@@ -93,6 +93,7 @@ describe("UniswapV2 Adapter", async () => {
         "UniswapV2Adapter",
         config[43114].traderjoe.factory,
         160000,
+        30 // 0.3% = 30bp
       )) as UniswapV2Adapter
 
       const testFactory = await ethers.getContractFactory("TestUniswapAdapter")
