@@ -99,6 +99,9 @@ abstract contract Adapter is Ownable, IAdapter {
         address _tokenIn,
         address _tokenOut
     ) external view returns (uint256) {
+        if (_amountIn == 0 || !_checkTokens(_tokenIn, _tokenOut)) {
+            return 0;
+        }
         return _query(_amountIn, _tokenIn, _tokenOut);
     }
 
@@ -119,6 +122,9 @@ abstract contract Adapter is Ownable, IAdapter {
         address _tokenOut,
         address _to
     ) external returns (uint256 _amountOut) {
+        require(_amountIn != 0, "Adapter: Insufficient input amount");
+        require(_to != address(0), "Adapter: Null address receiver");
+        require(_checkTokens(_tokenIn, _tokenOut), "Adapter: unknown tokens");
         _approveIfNeeded(_tokenIn, _amountIn);
         _amountOut = _swap(_amountIn, _tokenIn, _tokenOut, _to);
         emit AdapterSwap(_tokenIn, _tokenOut, _amountIn, _amountOut);
@@ -180,6 +186,17 @@ abstract contract Adapter is Ownable, IAdapter {
         virtual;
 
     /**
+     * @notice Checks if a swap between two tokens is supported by adapter
+     * @param _tokenIn ERC20 token to check
+     * @param _tokenOut ERC20 token to check
+     */
+    function _checkTokens(address _tokenIn, address _tokenOut)
+        internal
+        view
+        virtual
+        returns (bool);
+
+    /**
      * @notice Internal implementation for depositAddress
      *
      * @dev This aims to reduce the amount of extra token transfers:
@@ -196,9 +213,10 @@ abstract contract Adapter is Ownable, IAdapter {
     /**
      * @notice Internal implementation of a swap
      *
-     * @dev use _returnTo(_tokenOut, _amountOut, _to) to return tokens,
-     *      only if underneath swapper can't send swapped tokens to arbitrary address.
-     *      Wrapping is handled external to this function
+     * @dev 1. All variables are already checked
+     *      2. Use _returnTo(_tokenOut, _amountOut, _to) to return tokens, only if
+     *         underneath swapper can't send swapped tokens to arbitrary address.
+     *      3. Wrapping is handled external to this function
      *
      * @param _amountIn amount being sold
      * @param _tokenIn ERC20 token being sold
@@ -217,7 +235,8 @@ abstract contract Adapter is Ownable, IAdapter {
     /**
      * @notice Internal implementation of query
      *
-     * @dev This should AWLAYS return _amountOut such as: the swapper underneath
+     * @dev All variables are already checked.
+     *      This should AWLAYS return _amountOut such as: the swapper underneath
      *      is able to produce AT LEAST _amountOut in exchange for EXACTLY _amountIn
      *      For efficiency reasons, returning the exact quote is preferrable,
      *      however, if the swapper doesn't have a reliable quoting method,
