@@ -20,8 +20,16 @@ contract CurveMetaPoolAdapter is CurveLendingPoolAdapter {
         string memory _name,
         address _pool,
         uint256 _swapGasEstimate,
+        bool _directSwapSupported,
         address _basePool
-    ) CurveLendingPoolAdapter(_name, _pool, _swapGasEstimate) {
+    )
+        CurveLendingPoolAdapter(
+            _name,
+            _pool,
+            _swapGasEstimate,
+            _directSwapSupported
+        )
+    {
         _addBasePoolTokens(_basePool);
     }
 
@@ -61,11 +69,6 @@ contract CurveMetaPoolAdapter is CurveLendingPoolAdapter {
         address _tokenIn,
         address _tokenOut
     ) internal view virtual override returns (uint256 _amountOut) {
-        if (
-            _amountIn == 0 || !isPoolToken[_tokenIn] || !isPoolToken[_tokenOut]
-        ) {
-            return 0;
-        }
         // -1 to account for rounding errors.
         // This will underquote by 1 wei sometimes, but that's life
         _amountOut =

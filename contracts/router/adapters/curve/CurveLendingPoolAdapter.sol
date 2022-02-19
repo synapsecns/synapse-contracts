@@ -9,8 +9,16 @@ contract CurveLendingPoolAdapter is CurveBasePoolAdapter {
     constructor(
         string memory _name,
         address _pool,
-        uint256 _swapGasEstimate
-    ) CurveBasePoolAdapter(_name, _pool, _swapGasEstimate) {
+        uint256 _swapGasEstimate,
+        bool _directSwapSupported
+    )
+        CurveBasePoolAdapter(
+            _name,
+            _pool,
+            _swapGasEstimate,
+            _directSwapSupported
+        )
+    {
         this;
     }
 
@@ -24,24 +32,32 @@ contract CurveLendingPoolAdapter is CurveBasePoolAdapter {
         }
     }
 
-    function _swap(
+    function _doDirectSwap(
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
         address _to
-    ) internal virtual override returns (uint256 _amountOut) {
-        require(_amountIn != 0, "Curve: Insufficient input amount");
-        require(
-            isPoolToken[_tokenIn] && isPoolToken[_tokenOut],
-            "Curve: unknown tokens"
+    ) internal virtual override {
+        pool.exchange_underlying(
+            tokenIndex[_tokenIn],
+            tokenIndex[_tokenOut],
+            _amountIn,
+            0,
+            _to
         );
+    }
+
+    function _doIndirectSwap(
+        uint256 _amountIn,
+        address _tokenIn,
+        address _tokenOut
+    ) internal virtual override returns (uint256 _amountOut) {
         _amountOut = pool.exchange_underlying(
             tokenIndex[_tokenIn],
             tokenIndex[_tokenOut],
             _amountIn,
             0
         );
-        _returnTo(_tokenOut, _amountOut, _to);
     }
 
     function _query(
@@ -49,11 +65,6 @@ contract CurveLendingPoolAdapter is CurveBasePoolAdapter {
         address _tokenIn,
         address _tokenOut
     ) internal view virtual override returns (uint256) {
-        if (
-            _amountIn == 0 || !isPoolToken[_tokenIn] || !isPoolToken[_tokenOut]
-        ) {
-            return 0;
-        }
         // -1 to account for rounding errors.
         // This will underquote by 1 wei sometimes, but that's life
         return

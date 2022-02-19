@@ -10,14 +10,21 @@ import {CurveAbstractAdapter} from "./CurveAbstractAdapter.sol";
 import {SafeCast} from "@openzeppelin/contracts-4.4.2/utils/math/SafeCast.sol";
 
 contract CurveTriCryptoAdapter is CurveAbstractAdapter {
-    mapping(address => bool) public isPoolToken;
     mapping(address => uint256) public tokenIndex;
 
     constructor(
         string memory _name,
         address _pool,
-        uint256 _swapGasEstimate
-    ) CurveAbstractAdapter(_name, _pool, _swapGasEstimate) {
+        uint256 _swapGasEstimate,
+        bool _directSwapSupported
+    )
+        CurveAbstractAdapter(
+            _name,
+            _pool,
+            _swapGasEstimate,
+            _directSwapSupported
+        )
+    {
         this;
     }
 
@@ -30,17 +37,26 @@ contract CurveTriCryptoAdapter is CurveAbstractAdapter {
         tokenIndex[_tokenAddress] = _index;
     }
 
-    function _swap(
+    function _doDirectSwap(
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
         address _to
-    ) internal virtual override returns (uint256 _amountOut) {
-        require(_amountIn != 0, "Curve: Insufficient input amount");
-        require(
-            isPoolToken[_tokenIn] && isPoolToken[_tokenOut],
-            "Curve: unknown tokens"
+    ) internal virtual override {
+        pool.exchange(
+            tokenIndex[_tokenIn],
+            tokenIndex[_tokenOut],
+            _amountIn,
+            0,
+            _to
         );
+    }
+
+    function _doIndirectSwap(
+        uint256 _amountIn,
+        address _tokenIn,
+        address _tokenOut
+    ) internal virtual override returns (uint256 _amountOut) {
         pool.exchange(
             tokenIndex[_tokenIn],
             tokenIndex[_tokenOut],
@@ -49,7 +65,6 @@ contract CurveTriCryptoAdapter is CurveAbstractAdapter {
         );
         // Imagine not returning amount of swapped tokens
         _amountOut = IERC20(_tokenOut).balanceOf(address(this));
-        _returnTo(_tokenOut, _amountOut, _to);
     }
 
     function _query(
@@ -57,11 +72,6 @@ contract CurveTriCryptoAdapter is CurveAbstractAdapter {
         address _tokenIn,
         address _tokenOut
     ) internal view virtual override returns (uint256) {
-        if (
-            _amountIn == 0 || !isPoolToken[_tokenIn] || !isPoolToken[_tokenOut]
-        ) {
-            return 0;
-        }
         // -1 to account for rounding errors.
         // This will underquote by 1 wei sometimes, but that's life
         return
