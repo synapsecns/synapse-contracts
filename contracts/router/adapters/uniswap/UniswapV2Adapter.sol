@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ISynapse} from "../interfaces/ISynapse.sol";
-import {IUniswapV2Factory} from "../interfaces/IUniswapV2Factory.sol";
-import {IUniswapV2Pair} from "../interfaces/IUniswapV2Pair.sol";
+import {ISynapse} from "../../interfaces/ISynapse.sol";
+import {IUniswapV2Factory} from "../../interfaces/IUniswapV2Factory.sol";
+import {IUniswapV2Pair} from "../../interfaces/IUniswapV2Pair.sol";
 
-import {Adapter} from "../Adapter.sol";
+import {Adapter} from "../../Adapter.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 
-contract UniswapAdapter is Adapter {
+contract UniswapV2Adapter is Adapter {
     IUniswapV2Factory public uniswapV2Factory;
 
     // storage for already known pairs
