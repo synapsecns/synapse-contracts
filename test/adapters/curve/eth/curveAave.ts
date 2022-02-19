@@ -1,22 +1,22 @@
 //@ts-nocheck
 import { BigNumber, Signer } from "ethers"
-import { MAX_UINT256, getUserTokenBalance } from "../../amm/testUtils"
+import { MAX_UINT256, getUserTokenBalance } from "../../../amm/testUtils"
 import { solidity } from "ethereum-waffle"
 import { deployments } from "hardhat"
 
 import { TestAdapterSwap } from "../build/typechain/TestAdapterSwap"
-import { IERC20 } from "../../../build/typechain/IERC20"
-import { CurveBasePoolAdapter } from "../../../build/typechain/CurveBasePoolAdapter"
+import { IERC20 } from "../../../../build/typechain/IERC20"
+import { CurveLendingPoolAdapter } from "../../../../build/typechain/CurveLendingPoolAdapter"
 import chai from "chai"
-import { getBigNumber } from "../../bridge/utilities"
-import { setBalance } from "../utils/helpers"
+import { getBigNumber } from "../../../bridge/utilities"
+import { setBalance } from "../../utils/helpers"
 
-import config from "../../config.json"
+import config from "../../../config.json"
 
 chai.use(solidity)
 const { expect } = chai
 
-describe("Curve BasePool Adapter", async () => {
+describe("Curve AavePool (ETH) Adapter", async () => {
   let signers: Array<Signer>
 
   let owner: Signer
@@ -24,19 +24,24 @@ describe("Curve BasePool Adapter", async () => {
   let dude: Signer
   let dudeAddress: string
 
-  let curveBasePoolAdapter: CurveBasePoolAdapter
+  let curveLendingPoolAdapter: CurveLendingPoolAdapter
 
   let testAdapterSwap: TestAdapterSwap
 
   // Test Values
   const TOKENS: IERC20[] = []
 
-  // DAI, USDC, USDT
-  const TOKENS_DECIMALS = [18, 6, 6]
-  const STORAGE = [2, 9, 2]
+  const CHAIN = 1
+  const DEX = "curve"
+
+  const TOKENS_DECIMALS = []
+  const tokenSymbols = ["DAI", "USDC", "USDT"]
+
+  const range = (n) => Array.from({ length: n }, (value, key) => key)
+  const ALL_TOKENS = range(tokenSymbols.length)
 
   const AMOUNTS = [8, 1001, 96420, 1337000]
-  const AMOUNTS_BIG = [10200300, 200300400, 100900800700]
+  const AMOUNTS_BIG = [4500600, 10200300]
   const CHECK_UNDERQUOTING = true
 
   async function testAdapter(
@@ -90,33 +95,30 @@ describe("Curve BasePool Adapter", async () => {
       // we expect the quory to underQuote by 1 at maximum
       testAdapterSwap = (await testFactory.deploy(1)) as TestAdapterSwap
 
-      let poolTokens = [
-        config[1].assets.DAI,
-        config[1].assets.USDC,
-        config[1].assets.USDT,
-      ]
-
-      for (var i = 0; i < poolTokens.length; i++) {
+      for (let symbol of tokenSymbols) {
+        let tokenAddress = config[CHAIN].assets[symbol]
+        let storageSlot = config[CHAIN].slot[symbol]
         let token = (await ethers.getContractAt(
-          "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol:IERC20",
-          poolTokens[i],
-        )) as IERC20
+          "contracts/amm/SwapCalculator.sol:IERC20Decimals",
+          tokenAddress,
+        )) as IERC20Decimals
         TOKENS.push(token)
-
-        let amount = getBigNumber(1e12, TOKENS_DECIMALS[i])
-        await setBalance(ownerAddress, poolTokens[i], amount, STORAGE[i])
+        let decimals = await token.decimals()
+        TOKENS_DECIMALS.push(decimals)
+        let amount = getBigNumber(1e12, decimals)
+        await setBalance(ownerAddress, tokenAddress, amount, storageSlot)
         expect(await getUserTokenBalance(ownerAddress, token)).to.eq(amount)
       }
 
       const curveAdapterFactory = await ethers.getContractFactory(
-        "CurveBasePoolAdapter",
+        "CurveLendingPoolAdapter",
       )
 
-      curveBasePoolAdapter = (await curveAdapterFactory.deploy(
+      curveLendingPoolAdapter = (await curveAdapterFactory.deploy(
         "CurveBaseAdapter",
-        config[1].curve.basepool,
+        config[CHAIN][DEX].aave,
         160000,
-      )) as CurveBasePoolAdapter
+      )) as CurveLendingPoolAdapter
 
       for (let token of TOKENS) {
         await token.approve(testAdapterSwap.address, MAX_UINT256)
@@ -144,24 +146,24 @@ describe("Curve BasePool Adapter", async () => {
 
   describe("Sanity checks", () => {
     it("Curve Adapter is properly set up", async () => {
-      expect(await curveBasePoolAdapter.pool()).to.eq(config[1].curve.basepool)
+      expect(await curveLendingPoolAdapter.pool()).to.eq(config[CHAIN][DEX].aave)
 
       for (let i in TOKENS) {
         let token = TOKENS[i].address
-        expect(await curveBasePoolAdapter.isPoolToken(token))
-        expect(await curveBasePoolAdapter.tokenIndex(token)).to.eq(+i)
+        expect(await curveLendingPoolAdapter.isPoolToken(token))
+        expect(await curveLendingPoolAdapter.tokenIndex(token)).to.eq(+i)
       }
     })
 
     it("Swap fails if transfer amount is too little", async () => {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
-      let depositAddress = await curveBasePoolAdapter.depositAddress(
+      let depositAddress = await curveLendingPoolAdapter.depositAddress(
         TOKENS[0].address,
         TOKENS[1].address,
       )
       TOKENS[0].transfer(depositAddress, amount.sub(1))
       await expect(
-        curveBasePoolAdapter.swap(
+        curveLendingPoolAdapter.swap(
           amount,
           TOKENS[0].address,
           TOKENS[1].address,
@@ -173,12 +175,12 @@ describe("Curve BasePool Adapter", async () => {
     it("Only Owner can rescue overprovided swap tokens", async () => {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
-      let depositAddress = await curveBasePoolAdapter.depositAddress(
+      let depositAddress = await curveLendingPoolAdapter.depositAddress(
         TOKENS[0].address,
         TOKENS[1].address,
       )
       TOKENS[0].transfer(depositAddress, amount.add(extra))
-      await curveBasePoolAdapter.swap(
+      await curveLendingPoolAdapter.swap(
         amount,
         TOKENS[0].address,
         TOKENS[1].address,
@@ -186,32 +188,32 @@ describe("Curve BasePool Adapter", async () => {
       )
 
       await expect(
-        curveBasePoolAdapter
+        curveLendingPoolAdapter
           .connect(dude)
           .recoverERC20(TOKENS[0].address, extra),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        curveBasePoolAdapter.recoverERC20(TOKENS[0].address, extra),
+        curveLendingPoolAdapter.recoverERC20(TOKENS[0].address, extra),
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
     it("Anyone can take advantage of overprovided swap tokens", async () => {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
-      let depositAddress = await curveBasePoolAdapter.depositAddress(
+      let depositAddress = await curveLendingPoolAdapter.depositAddress(
         TOKENS[0].address,
         TOKENS[1].address,
       )
       TOKENS[0].transfer(depositAddress, amount.add(extra))
-      await curveBasePoolAdapter.swap(
+      await curveLendingPoolAdapter.swap(
         amount,
         TOKENS[0].address,
         TOKENS[1].address,
         ownerAddress,
       )
 
-      let swapQuote = await curveBasePoolAdapter.query(
+      let swapQuote = await curveLendingPoolAdapter.query(
         extra,
         TOKENS[0].address,
         TOKENS[1].address,
@@ -219,7 +221,7 @@ describe("Curve BasePool Adapter", async () => {
 
       // .add(1) to reflect underquoting by 1
       await expect(() =>
-        curveBasePoolAdapter
+        curveLendingPoolAdapter
           .connect(dude)
           .swap(extra, TOKENS[0].address, TOKENS[1].address, dudeAddress),
       ).to.changeTokenBalance(TOKENS[1], dude, swapQuote.add(1))
@@ -229,32 +231,35 @@ describe("Curve BasePool Adapter", async () => {
       let amount = 42690
       await expect(() =>
         owner.sendTransaction({
-          to: curveBasePoolAdapter.address,
+          to: curveLendingPoolAdapter.address,
           value: amount,
         }),
-      ).to.changeEtherBalance(curveBasePoolAdapter, amount)
+      ).to.changeEtherBalance(curveLendingPoolAdapter, amount)
 
       await expect(
-        curveBasePoolAdapter.connect(dude).recoverGAS(amount),
+        curveLendingPoolAdapter.connect(dude).recoverGAS(amount),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        curveBasePoolAdapter.recoverGAS(amount),
-      ).to.changeEtherBalances([curveBasePoolAdapter, owner], [-amount, amount])
+        curveLendingPoolAdapter.recoverGAS(amount),
+      ).to.changeEtherBalances(
+        [curveLendingPoolAdapter, owner],
+        [-amount, amount],
+      )
     })
   })
 
   describe("Adapter Swaps", () => {
     it("Swaps between tokens [120 small-medium swaps]", async () => {
-      await testAdapter(curveBasePoolAdapter, [0, 1, 2], [0, 1, 2], 5)
+      await testAdapter(curveLendingPoolAdapter, ALL_TOKENS, ALL_TOKENS, 5)
     })
 
-    it("Swaps between tokens [90 big-ass swaps]", async () => {
+    it("Swaps between tokens [120 big-ass swaps]", async () => {
       await testAdapter(
-        curveBasePoolAdapter,
-        [0, 1, 2],
-        [0, 1, 2],
-        5,
+        curveLendingPoolAdapter,
+        ALL_TOKENS,
+        ALL_TOKENS,
+        10,
         AMOUNTS_BIG,
       )
     })
