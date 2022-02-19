@@ -37,6 +37,8 @@ describe("Curve 3pool (ETH) Adapter", async () => {
   const TOKENS_DECIMALS = []
   const tokenSymbols = ["DAI", "USDC", "USDT"]
 
+  const DIRECT_SWAP_SUPPORTED = false
+  
   const range = (n) => Array.from({ length: n }, (value, key) => key)
   const ALL_TOKENS = range(tokenSymbols.length)
 
@@ -118,6 +120,7 @@ describe("Curve 3pool (ETH) Adapter", async () => {
         "CurveBaseAdapter",
         config[CHAIN][DEX].basepool,
         160000,
+        DIRECT_SWAP_SUPPORTED
       )) as CurveBasePoolAdapter
 
       for (let token of TOKENS) {
@@ -127,6 +130,7 @@ describe("Curve 3pool (ETH) Adapter", async () => {
   )
 
   before(async () => {
+    console.log("Direct swaps = %s", DIRECT_SWAP_SUPPORTED)
     await network.provider.request({
       method: "hardhat_reset",
       params: [

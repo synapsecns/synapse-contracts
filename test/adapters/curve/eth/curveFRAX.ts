@@ -36,6 +36,8 @@ describe("Curve FRAX MetaPool (ETH) Adapter", async () => {
   const TOKENS_DECIMALS = []
   const tokenSymbols = ["FRAX", "DAI", "USDC", "USDT"]
 
+  const DIRECT_SWAP_SUPPORTED = true
+
   const range = (n) => Array.from({ length: n }, (value, key) => key)
   const ALL_TOKENS = range(tokenSymbols.length)
 
@@ -114,9 +116,10 @@ describe("Curve FRAX MetaPool (ETH) Adapter", async () => {
       )
 
       curveMetaPoolAdapter = (await curveAdapterFactory.deploy(
-        "CurveBaseAdapter",
+        "CurveMetaPoolAdapter",
         config[CHAIN][DEX].frax,
         160000,
+        DIRECT_SWAP_SUPPORTED,
         config[CHAIN][DEX].basepool,
       )) as CurveMetaPoolAdapter
 
@@ -127,6 +130,7 @@ describe("Curve FRAX MetaPool (ETH) Adapter", async () => {
   )
 
   before(async () => {
+    console.log("Direct swaps = %s", DIRECT_SWAP_SUPPORTED)
     await network.provider.request({
       method: "hardhat_reset",
       params: [

@@ -37,6 +37,8 @@ describe("Curve AavePool (ETH) Adapter", async () => {
   const TOKENS_DECIMALS = []
   const tokenSymbols = ["DAI", "USDC", "USDT"]
 
+  const DIRECT_SWAP_SUPPORTED = false
+
   const range = (n) => Array.from({ length: n }, (value, key) => key)
   const ALL_TOKENS = range(tokenSymbols.length)
 
@@ -115,9 +117,10 @@ describe("Curve AavePool (ETH) Adapter", async () => {
       )
 
       curveLendingPoolAdapter = (await curveAdapterFactory.deploy(
-        "CurveBaseAdapter",
+        "CurveLendingPoolAdapter",
         config[CHAIN][DEX].aave,
         160000,
+        DIRECT_SWAP_SUPPORTED
       )) as CurveLendingPoolAdapter
 
       for (let token of TOKENS) {
@@ -127,6 +130,7 @@ describe("Curve AavePool (ETH) Adapter", async () => {
   )
 
   before(async () => {
+    console.log("Direct swaps = %s", DIRECT_SWAP_SUPPORTED)
     await network.provider.request({
       method: "hardhat_reset",
       params: [
