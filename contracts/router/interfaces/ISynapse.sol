@@ -1,23 +1,9 @@
 // SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
-pragma solidity 0.6.12;
+import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-
-interface ISwap {
-    function swapStorage()
-        external
-        view
-        returns (
-            uint256 initialA,
-            uint256 futureA,
-            uint256 initialATime,
-            uint256 futureATime,
-            uint256 swapFee,
-            uint256 adminFee,
-            address lpToken
-        );
-
+interface ISynapse {
     // pool data view functions
     function getA() external view returns (uint256);
 
@@ -30,6 +16,8 @@ interface ISwap {
     function getTokenBalance(uint8 index) external view returns (uint256);
 
     function getVirtualPrice() external view returns (uint256);
+
+    function paused() external view returns (bool);
 
     // min return calculation functions
     function calculateSwap(
@@ -52,18 +40,6 @@ interface ISwap {
         uint256 tokenAmount,
         uint8 tokenIndex
     ) external view returns (uint256 availableTokenAmount);
-
-    // state modifying functions
-    function initialize(
-        IERC20[] memory pooledTokens,
-        uint8[] memory decimals,
-        string memory lpTokenName,
-        string memory lpTokenSymbol,
-        uint256 a,
-        uint256 fee,
-        uint256 adminFee,
-        address lpTokenTargetAddress
-    ) external;
 
     function swap(
         uint8 tokenIndexFrom,
@@ -97,4 +73,17 @@ interface ISwap {
         uint256 maxBurnAmount,
         uint256 deadline
     ) external returns (uint256);
+
+    function swapStorage()
+        external
+        view
+        returns (
+            uint256 initialA,
+            uint256 futureA,
+            uint256 initialATime,
+            uint256 futureATime,
+            uint256 swapFee,
+            uint256 adminFee,
+            address lpToken
+        );
 }

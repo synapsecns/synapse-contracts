@@ -118,6 +118,9 @@ let config: HardhatUserConfig = {
         version: "0.8.3",
       },
       {
+        version: "0.8.11",
+      },
+      {
         version: "0.4.24"
       },
     ],
