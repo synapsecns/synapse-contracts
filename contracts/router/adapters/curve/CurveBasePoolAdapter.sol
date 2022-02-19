@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Adapter} from "../../Adapter.sol";
+import {CurveAbstractAdapter} from "./CurveAbstractAdapter.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 import {ICurvePool} from "../../interfaces/ICurvePool.sol";
 
 import {SafeCast} from "@openzeppelin/contracts-4.4.2/utils/math/SafeCast.sol";
 
-contract CurveBasePoolAdapter is Adapter {
-    ICurvePool public pool;
-
+contract CurveBasePoolAdapter is CurveAbstractAdapter {
     mapping(address => bool) public isPoolToken;
     mapping(address => int128) public tokenIndex;
 
@@ -18,47 +16,19 @@ contract CurveBasePoolAdapter is Adapter {
         string memory _name,
         address _pool,
         uint256 _swapGasEstimate
-    ) Adapter(_name, _swapGasEstimate) {
-        pool = ICurvePool(_pool);
-        _setPoolTokens();
-    }
-
-    function _setPoolTokens() internal virtual {
-        for (uint8 i = 0; true; i++) {
-            try pool.coins(i) returns (address _tokenAddress) {
-                _addPoolToken(_tokenAddress, i);
-            } catch {
-                break;
-            }
-        }
+    ) CurveAbstractAdapter(_name, _pool, _swapGasEstimate) {
+        this;
     }
 
     function _addPoolToken(address _tokenAddress, uint8 _index)
         internal
         virtual
+        override
     {
         isPoolToken[_tokenAddress] = true;
         tokenIndex[_tokenAddress] = SafeCast.toInt128(
             SafeCast.toInt256(_index)
         );
-    }
-
-    function _approveIfNeeded(address _tokenIn, uint256 _amount)
-        internal
-        virtual
-        override
-    {
-        _checkAllowance(IERC20(_tokenIn), _amount, address(pool));
-    }
-
-    function _depositAddress(address, address)
-        internal
-        view
-        virtual
-        override
-        returns (address)
-    {
-        return address(this);
     }
 
     function _swap(
