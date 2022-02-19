@@ -37,6 +37,8 @@ describe("Curve MIM pool (AVAX) Adapter", async () => {
   const TOKENS_DECIMALS = []
   const tokenSymbols = ["MIM", "USDTe", "USDCe"]
 
+  const DIRECT_SWAP_SUPPORTED = true
+
   const range = (n) => Array.from({ length: n }, (value, key) => key)
   const ALL_TOKENS = range(tokenSymbols.length)
 
@@ -117,6 +119,7 @@ describe("Curve MIM pool (AVAX) Adapter", async () => {
         "CurveBaseAdapter",
         config[CHAIN][DEX].mim,
         160000,
+        DIRECT_SWAP_SUPPORTED
       )) as CurveBasePoolAdapter
 
       for (let token of TOKENS) {
@@ -126,6 +129,7 @@ describe("Curve MIM pool (AVAX) Adapter", async () => {
   )
 
   before(async () => {
+    console.log("Direct swaps = %s", DIRECT_SWAP_SUPPORTED)
     await network.provider.request({
       method: "hardhat_reset",
       params: [

@@ -38,6 +38,8 @@ describe("Curve TriCrypto (ETH) Adapter", async () => {
   const TOKENS_DECIMALS = [6, 4, 14]
   const tokenSymbols = ["USDT", "WBTC", "WETH"]
 
+  const DIRECT_SWAP_SUPPORTED = false
+
   const range = (n) => Array.from({ length: n }, (value, key) => key)
   const ALL_TOKENS = range(tokenSymbols.length)
 
@@ -123,9 +125,10 @@ describe("Curve TriCrypto (ETH) Adapter", async () => {
       )
 
       curveTriCryptoAdapter = (await curveAdapterFactory.deploy(
-        "CurveBaseAdapter",
+        "CurveTriCryptoAdapter",
         config[CHAIN][DEX].tricrypto,
         160000,
+        DIRECT_SWAP_SUPPORTED
       )) as CurveTriCryptoAdapter
 
       for (let token of TOKENS) {
@@ -135,6 +138,7 @@ describe("Curve TriCrypto (ETH) Adapter", async () => {
   )
 
   before(async () => {
+    console.log("Direct swaps = %s", DIRECT_SWAP_SUPPORTED)
     await network.provider.request({
       method: "hardhat_reset",
       params: [
