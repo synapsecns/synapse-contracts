@@ -8,7 +8,7 @@ interface IERC20Decimals is IERC20 {
     function decimals() external view returns (uint8);
 }
 
-contract SwapAddCalculator {
+contract SwapCalculator {
     // Struct storing variables used in calculations in the
     // {add,remove}Liquidity functions to avoid stack too deep errors
     struct ManageLiquidityInfo {

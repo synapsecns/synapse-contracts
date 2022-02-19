@@ -16,17 +16,17 @@ import { deployments, ethers } from "hardhat"
 import { GenericERC20 } from "../../build/typechain/GenericERC20"
 import { LPToken } from "../../build/typechain/LPToken"
 import { Swap } from "../../build/typechain/Swap"
-import { SwapAddCalculator } from "../../build/typechain/SwapAddCalculator"
+import { SwapCalculator } from "../../build/typechain/SwapCalculator"
 import chai from "chai"
 import { getBigNumber } from "../bridge/utilities"
 
 chai.use(solidity)
 const { expect } = chai
 
-describe("SwapAddCalculator", async () => {
+describe("SwapCalculator 0.6", async () => {
   let signers: Array<Signer>
   let swap: Swap
-  let swapAddCalculator: SwapAddCalculator
+  let swapCalculator: SwapCalculator
   let DAI: GenericERC20
   let USDC: GenericERC20
   let USDT: GenericERC20
@@ -84,7 +84,7 @@ describe("SwapAddCalculator", async () => {
           ),
         ]
 
-        let quotedDeposit = await swapAddCalculator.calculateAddLiquidity(
+        let quotedDeposit = await swapCalculator.calculateAddLiquidity(
           depositAmounts,
         )
 
@@ -161,13 +161,13 @@ describe("SwapAddCalculator", async () => {
       await USDT.approve(swap.address, MAX_UINT256)
       await SUSD.approve(swap.address, MAX_UINT256)
 
-      const swapAddCalculatorFactory = await ethers.getContractFactory(
-        "SwapAddCalculator",
+      const swapCalculatorFactory = await ethers.getContractFactory(
+        "contracts/amm/SwapCalculator.sol:SwapCalculator",
       )
 
-      swapAddCalculator = (await swapAddCalculatorFactory.deploy(
+      swapCalculator = (await swapCalculatorFactory.deploy(
         swap.address,
-      )) as SwapAddCalculator
+      )) as SwapCalculator
     },
   )
 
@@ -176,11 +176,11 @@ describe("SwapAddCalculator", async () => {
   })
 
   describe("Setup", () => {
-    it("SwapAddCalculator is properly set up", async () => {
-      expect(await swapAddCalculator.pool()).to.be.eq(swap.address)
-      expect(await swapAddCalculator.lpToken()).to.be.eq(swapToken.address)
-      expect(await swapAddCalculator.numTokens()).to.be.eq(TOKENS.length)
-      expect(await swapAddCalculator.swapFee()).to.be.eq(SWAP_FEE)
+    it("SwapCalculator is properly set up", async () => {
+      expect(await swapCalculator.pool()).to.be.eq(swap.address)
+      expect(await swapCalculator.lpToken()).to.be.eq(swapToken.address)
+      expect(await swapCalculator.numTokens()).to.be.eq(TOKENS.length)
+      expect(await swapCalculator.swapFee()).to.be.eq(SWAP_FEE)
     })
   })
 
@@ -197,7 +197,7 @@ describe("SwapAddCalculator", async () => {
           }
         }
         await expect(
-          swapAddCalculator.calculateAddLiquidity(depositAmounts),
+          swapCalculator.calculateAddLiquidity(depositAmounts),
         ).to.be.revertedWith("Must supply all tokens in pool")
       }
     })
@@ -212,7 +212,7 @@ describe("SwapAddCalculator", async () => {
           getBigNumber(AMOUNTS[i], TOKENS_DECIMALS[3]),
         ]
         expect(
-          await swapAddCalculator.calculateAddLiquidity(depositAmounts),
+          await swapCalculator.calculateAddLiquidity(depositAmounts),
         ).to.be.eq(getBigNumber(total))
       }
     })
@@ -238,7 +238,7 @@ describe("SwapAddCalculator", async () => {
 
     it("Reverts when quoting empty deposit", async () => {
       await expect(
-        swapAddCalculator.calculateAddLiquidity([0, 0, 0, 0]),
+        swapCalculator.calculateAddLiquidity([0, 0, 0, 0]),
       ).to.be.revertedWith("D should increase")
     })
 
@@ -263,15 +263,15 @@ describe("SwapAddCalculator", async () => {
     })
 
     it("updateSwapFee on unchanged swap fee doesn't change anything", async () => {
-      await swapAddCalculator.updateSwapFee()
-      expect(await swapAddCalculator.swapFee()).to.eq(SWAP_FEE)
+      await swapCalculator.updateSwapFee()
+      expect(await swapCalculator.swapFee()).to.eq(SWAP_FEE)
     })
 
     it("New fee is applied after updateSwapFee", async () => {
       const NEW_FEE = 2 * SWAP_FEE
       await swap.setSwapFee(NEW_FEE)
       let depositAmounts = [String(1e18), "0", "0", "0"]
-      let oldQuotedDeposit = await swapAddCalculator.calculateAddLiquidity(
+      let oldQuotedDeposit = await swapCalculator.calculateAddLiquidity(
         depositAmounts,
       )
       // deposit quote with old fee should be too high
@@ -280,9 +280,9 @@ describe("SwapAddCalculator", async () => {
       ).to.be.revertedWith("Couldn't mint min requested")
 
       // let the calculator know that the fee was updated
-      await swapAddCalculator.updateSwapFee()
+      await swapCalculator.updateSwapFee()
 
-      let quotedDeposit = await swapAddCalculator.calculateAddLiquidity(
+      let quotedDeposit = await swapCalculator.calculateAddLiquidity(
         depositAmounts,
       )
 
@@ -311,8 +311,8 @@ describe("SwapAddCalculator", async () => {
 
       const NEW_FEE = 2 * SWAP_FEE
       await swap.setSwapFee(NEW_FEE)
-      await swapAddCalculator.updateSwapFee()
-      expect(await swapAddCalculator.swapFee()).to.eq(NEW_FEE)
+      await swapCalculator.updateSwapFee()
+      expect(await swapCalculator.swapFee()).to.eq(NEW_FEE)
     })
 
     it("Returns correct value when depositing all tokens in a balanced way", async () => {
