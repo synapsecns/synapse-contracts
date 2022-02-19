@@ -250,8 +250,8 @@ contract Router is Ownable, ReentrancyGuard, IRouter {
         uint256 _amount,
         address _to
     ) external onlyBridge {
-        // reentrancy not an issue here, as _token is
-        // a bridge token here, so it can't be WGAS
+        // reentrancy not an issue here, as _token was
+        // bridged to this chain, so it can't be WGAS
         _returnTokensTo(_token, _amount, _to);
     }
 
@@ -353,6 +353,8 @@ contract Router is Ownable, ReentrancyGuard, IRouter {
 
     /**
      * @notice Pull tokens from user and perform a series of swaps
+     * @dev Use _selfSwap if tokens are already in the contract
+     *      Don't do this: _from = address(this);
      * @return Final amount of tokens swapped
      */
     function _swap(
@@ -363,14 +365,16 @@ contract Router is Ownable, ReentrancyGuard, IRouter {
         address _from,
         address _to
     ) internal nonReentrant returns (uint256) {
-        assert(_from != address(this));
         require(
             _path.length == _adapters.length + 1,
             "Router: wrong amount of _adapters/tokens"
         );
         require(_to != address(0), "Router: incorrect _to address");
-        address _depositAddress = _getDepositAddress(_path, _adapters, 0);
-        IERC20(_path[0]).safeTransferFrom(_from, _depositAddress, _amountIn);
+        IERC20(_path[0]).safeTransferFrom(
+            _from,
+            _getDepositAddress(_path, _adapters, 0),
+            _amountIn
+        );
 
         return _doChainedSwaps(_amountIn, _minAmountOut, _path, _adapters, _to);
     }
@@ -387,9 +391,15 @@ contract Router is Ownable, ReentrancyGuard, IRouter {
         address[] calldata _adapters,
         address _to
     ) internal nonReentrant returns (uint256) {
+        require(
+            _path.length == _adapters.length + 1,
+            "Router: wrong amount of _adapters/tokens"
+        );
         require(_to != address(0), "Router: incorrect _to address");
-        address _depositAddress = _getDepositAddress(_path, _adapters, 0);
-        IERC20(_path[0]).safeTransfer(_depositAddress, _amountIn);
+        IERC20(_path[0]).safeTransfer(
+            _getDepositAddress(_path, _adapters, 0),
+            _amountIn
+        );
 
         return _doChainedSwaps(_amountIn, _minAmountOut, _path, _adapters, _to);
     }
