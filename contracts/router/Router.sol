@@ -312,6 +312,7 @@ contract Router is Ownable, ReentrancyGuard, IRouter {
         address[] calldata _adapters,
         address _to
     ) external payable returns (uint256 _swappedAmount) {
+        require(msg.value == _amountIn, "Router: incorrect amount of GAS");
         require(_path[0] == WGAS, "Router: Path needs to begin with WGAS");
         _wrap(_amountIn);
         // WGAS tokens need to be sent from this contract
