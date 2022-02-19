@@ -1,24 +1,24 @@
 //@ts-nocheck
 import { Signer } from "ethers"
-import { MAX_UINT256, getUserTokenBalance } from "../../amm/testUtils"
+import { MAX_UINT256, getUserTokenBalance } from "../../../amm/testUtils"
 import { solidity } from "ethereum-waffle"
 import { deployments } from "hardhat"
 
 import { TestUniswapAdapter } from "../build/typechain/TestUniswapAdapter"
-import { GenericERC20 } from "../../../build/typechain/GenericERC20"
-import { IERC20Decimals } from "../../../build/typechain/IERC20Decimals"
-import { IWETH9 } from "../../../build/typechain/IWETH9"
+import { GenericERC20 } from "../../../../build/typechain/GenericERC20"
+import { IERC20Decimals } from "../../../../build/typechain/IERC20Decimals"
+import { IWETH9 } from "../../../../build/typechain/IWETH9"
 
 import chai from "chai"
-import { getBigNumber } from "../../bridge/utilities"
-import { setBalance } from "../utils/helpers"
+import { getBigNumber } from "../../../bridge/utilities"
+import { setBalance } from "../../utils/helpers"
 
-import config from "../../config.json"
+import config from "../../../config.json"
 
 chai.use(solidity)
 const { expect } = chai
 
-describe("UniswapV2 Adapter", async () => {
+describe("TraderJoe Adapter", async () => {
   let signers: Array<Signer>
 
   let owner: Signer
@@ -33,11 +33,29 @@ describe("UniswapV2 Adapter", async () => {
   let baseTokens: Array<number>
   let allTokens: Array<number>
 
+  const CHAIN = 43114
+  const DEX = "traderjoe"
+  const FEE = 30 // 0.3%
+
   const TOKENS: GenericERC20[] = []
   const TOKENS_DECIMALS = []
 
   const AMOUNTS = [1, 13, 96]
   const CHECK_UNDERQUOTING = true
+
+  const range = n => Array.from({length: n}, (value, key) => key)
+
+  const tokenSymbols = [
+    "WAVAX",
+    "USDCe",
+    "WETHe",
+    "WBTCe",
+    "LINKe",
+    "JOE"
+  ]
+
+  const baseTokens = [0, 1]
+  const allTokens = range(tokenSymbols.length)
 
   async function testAdapter(
     adapter: UniswapV2Adapter,
@@ -91,30 +109,20 @@ describe("UniswapV2 Adapter", async () => {
 
       uniswapV2Adapter = (await uniswapAdapterFactory.deploy(
         "UniswapV2Adapter",
-        config[43114].traderjoe.factory,
+        config[CHAIN][DEX].factory,
         160000,
-        30 // 0.3% = 30bp
+        FEE
       )) as UniswapV2Adapter
 
       const testFactory = await ethers.getContractFactory("TestUniswapAdapter")
 
       testAdapterSwap = (await testFactory.deploy(
-        config[43114].traderjoe.router,
+        config[CHAIN][DEX].router,
       )) as TestUniswapAdapter
 
-      let tokens = [
-        config[43114].assets.WAVAX,
-        config[43114].assets.USDCe,
-        config[43114].assets.WETHe,
-        config[43114].assets.WBTCe,
-        config[43114].assets.LINKe,
-        config[43114].assets.JOE,
-      ]
-
-      baseTokens = [0, 1]
-      allTokens = [0, 1, 2, 3, 4, 5]
-
-      for (let tokenAddress of tokens) {
+      for (let symbol of tokenSymbols) {
+        let tokenAddress = config[CHAIN].assets[symbol]
+        let storageSlot = config[CHAIN].slot[symbol]
         let token = (await ethers.getContractAt(
           "contracts/router/helper/SwapAddCalculator.sol:IERC20Decimals",
           tokenAddress,
@@ -123,16 +131,7 @@ describe("UniswapV2 Adapter", async () => {
         let decimals = await token.decimals()
         TOKENS_DECIMALS.push(decimals)
         let amount = getBigNumber(5000, decimals)
-
-        if (tokenAddress == config[43114].assets.WAVAX) {
-          token = (await ethers.getContractAt(
-            "@synapseprotocol/sol-lib/contracts/universal/interfaces/IWETH9.sol:IWETH9",
-            tokenAddress,
-          )) as IWETH9
-          token.deposit({ value: amount })
-        } else {
-          await setBalance(ownerAddress, tokenAddress, amount)
-        }
+        await setBalance(ownerAddress, tokenAddress, amount, storageSlot)
         expect(await getUserTokenBalance(owner, token)).to.be.eq(amount)
 
         token.approve(testAdapterSwap.address, MAX_UINT256)
@@ -161,27 +160,29 @@ describe("UniswapV2 Adapter", async () => {
   describe("Sanity checks", () => {
     it("UniswapV2 Adapter is properly set up", async () => {
       expect(await uniswapV2Adapter.uniswapV2Factory()).to.eq(
-        config[43114].traderjoe.factory,
+        config[CHAIN][DEX].factory,
       )
     })
 
     it("Swap fails when there is no direct path between tokens", async () => {
       // WETHe -> LINKe
-      let amount = getBigNumber(10, TOKENS_DECIMALS[2])
+      let tokenFrom = 2
+      let tokenTo = 4
+      let amount = getBigNumber(10, TOKENS_DECIMALS[tokenFrom])
 
       expect(
         await uniswapV2Adapter.query(
           amount,
-          TOKENS[2].address,
-          TOKENS[4].address,
+          TOKENS[tokenFrom].address,
+          TOKENS[tokenTo].address,
         ),
       ).to.eq(0)
 
       await expect(
         uniswapV2Adapter.swap(
           amount,
-          TOKENS[2].address,
-          TOKENS[4].address,
+          TOKENS[tokenFrom].address,
+          TOKENS[tokenTo].address,
           ownerAddress,
         ),
       ).to.be.revertedWith("Swap pool does not exist")

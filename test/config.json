@@ -16,6 +16,16 @@
       "MIM": "0x130966628846BFd36ff31a822705796e8cb8C18D",
       "LINKe": "0x5947BB275c521040051D82396192181b413227A3"
     },
+    "slot": {
+      "WAVAX": 3,
+      "DAIe": 0,
+      "USDTe": 0,
+      "USDCe": 0,
+      "WETHe": 0,
+      "WBTCe": 0,
+      "LINKe": 0,
+      "JOE": 0
+    },
     "aave": {
       "lendingpool": "0x4F01AeD16D97E3aB5ab2B501154DC9bb0F1A5A2C"
     },
