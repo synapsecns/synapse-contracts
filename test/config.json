@@ -59,7 +59,8 @@
     "curve": {
       "aave": "0x7f90122BF0700F9E7e1F688fe926940E8839F353",
       "mim": "0xAEA2E71b631fA93683BCF256A8689dFa0e094fcD",
-      "usdc": "0x3a43A5851A3e3E0e25A3c1089670269786be1577"
+      "usdc": "0x3a43A5851A3e3E0e25A3c1089670269786be1577",
+      "tricrypto": "0x58e57cA18B7A47112b877E31929798Cd3D703b0f"
     },
     "traderjoe": {
       "factory": "0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10",
