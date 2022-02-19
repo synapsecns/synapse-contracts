@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {CurveWrappedPoolAdapter} from "./CurveWrappedPoolAdapter.sol";
+import {CurveLendingPoolAdapter} from "./CurveLendingPoolAdapter.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
-import {ICurvePool} from "../interfaces/ICurvePool.sol";
+import {ICurvePool} from "../../interfaces/ICurvePool.sol";
 
 import {SafeCast} from "@openzeppelin/contracts-4.4.2/utils/math/SafeCast.sol";
 
-contract CurveMetaPoolAdapter is CurveWrappedPoolAdapter {
+contract CurveMetaPoolAdapter is CurveLendingPoolAdapter {
     // (MetaPoolToken, BasePool LP Token)
     // (MetaPoolToken, [BasePoolToken 1, BasePoolToken 2, BasePoolToken 3])
     //                      ^
@@ -21,7 +21,7 @@ contract CurveMetaPoolAdapter is CurveWrappedPoolAdapter {
         address _pool,
         uint256 _swapGasEstimate,
         address _basePool
-    ) CurveWrappedPoolAdapter(_name, _pool, _swapGasEstimate) {
+    ) CurveLendingPoolAdapter(_name, _pool, _swapGasEstimate) {
         _addBasePoolTokens(_basePool);
     }
 

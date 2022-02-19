@@ -1,22 +1,22 @@
 //@ts-nocheck
 import { BigNumber, Signer } from "ethers"
-import { MAX_UINT256, getUserTokenBalance } from "../amm/testUtils"
+import { MAX_UINT256, getUserTokenBalance } from "../../amm/testUtils"
 import { solidity } from "ethereum-waffle"
 import { deployments } from "hardhat"
 
 import { TestAdapterSwap } from "../build/typechain/TestAdapterSwap"
-import { IERC20 } from "../../build/typechain/IERC20"
-import { CurveMetaPoolAdapter } from "../../build/typechain/CurveMetaPoolAdapter"
+import { IERC20 } from "../../../build/typechain/IERC20"
+import { CurveBasePoolAdapter } from "../../../build/typechain/CurveBasePoolAdapter"
 import chai from "chai"
-import { getBigNumber } from "../bridge/utilities"
-import { setBalance } from "./utils/helpers"
+import { getBigNumber } from "../../bridge/utilities"
+import { setBalance } from "../utils/helpers"
 
-import config from "../config.json"
+import config from "../../config.json"
 
 chai.use(solidity)
 const { expect } = chai
 
-describe("Curve Meta Adapter", async () => {
+describe("Curve BasePool Adapter", async () => {
   let signers: Array<Signer>
 
   let owner: Signer
@@ -24,19 +24,20 @@ describe("Curve Meta Adapter", async () => {
   let dude: Signer
   let dudeAddress: string
 
-  let curveMetaPoolAdapter: CurveMetaPoolAdapter
+  let curveBasePoolAdapter: CurveBasePoolAdapter
 
   let testAdapterSwap: TestAdapterSwap
 
   // Test Values
   const TOKENS: IERC20[] = []
-  // FRAX, DAI, USDC, USDT
-  const TOKENS_DECIMALS = [18, 18, 6, 6]
-  const STORAGE = [0, 2, 9, 2]
+
+  // DAI, USDC, USDT
+  const TOKENS_DECIMALS = [18, 6, 6]
+  const STORAGE = [2, 9, 2]
 
   const AMOUNTS = [8, 1001, 96420, 1337000]
-  const AMOUNTS_BIG = [10200300, 100200300, 400500600]
-  const CHECK_UNDERQUOTING = false
+  const AMOUNTS_BIG = [10200300, 200300400, 100900800700]
+  const CHECK_UNDERQUOTING = true
 
   async function testAdapter(
     adapter: Adapter,
@@ -90,7 +91,6 @@ describe("Curve Meta Adapter", async () => {
       testAdapterSwap = (await testFactory.deploy(1)) as TestAdapterSwap
 
       let poolTokens = [
-        config[1].assets.FRAX,
         config[1].assets.DAI,
         config[1].assets.USDC,
         config[1].assets.USDT,
@@ -109,15 +109,14 @@ describe("Curve Meta Adapter", async () => {
       }
 
       const curveAdapterFactory = await ethers.getContractFactory(
-        "CurveMetaPoolAdapter",
+        "CurveBasePoolAdapter",
       )
 
-      curveMetaPoolAdapter = (await curveAdapterFactory.deploy(
+      curveBasePoolAdapter = (await curveAdapterFactory.deploy(
         "CurveBaseAdapter",
-        config[1].curve.frax,
-        160000,
         config[1].curve.basepool,
-      )) as CurveMetaPoolAdapter
+        160000,
+      )) as CurveBasePoolAdapter
 
       for (let token of TOKENS) {
         await token.approve(testAdapterSwap.address, MAX_UINT256)
@@ -145,24 +144,24 @@ describe("Curve Meta Adapter", async () => {
 
   describe("Sanity checks", () => {
     it("Curve Adapter is properly set up", async () => {
-      expect(await curveMetaPoolAdapter.pool()).to.eq(config[1].curve.frax)
+      expect(await curveBasePoolAdapter.pool()).to.eq(config[1].curve.basepool)
 
       for (let i in TOKENS) {
         let token = TOKENS[i].address
-        expect(await curveMetaPoolAdapter.isPoolToken(token))
-        expect(await curveMetaPoolAdapter.tokenIndex(token)).to.eq(+i)
+        expect(await curveBasePoolAdapter.isPoolToken(token))
+        expect(await curveBasePoolAdapter.tokenIndex(token)).to.eq(+i)
       }
     })
 
     it("Swap fails if transfer amount is too little", async () => {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
-      let depositAddress = await curveMetaPoolAdapter.depositAddress(
+      let depositAddress = await curveBasePoolAdapter.depositAddress(
         TOKENS[0].address,
         TOKENS[1].address,
       )
       TOKENS[0].transfer(depositAddress, amount.sub(1))
       await expect(
-        curveMetaPoolAdapter.swap(
+        curveBasePoolAdapter.swap(
           amount,
           TOKENS[0].address,
           TOKENS[1].address,
@@ -174,12 +173,12 @@ describe("Curve Meta Adapter", async () => {
     it("Only Owner can rescue overprovided swap tokens", async () => {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
-      let depositAddress = await curveMetaPoolAdapter.depositAddress(
+      let depositAddress = await curveBasePoolAdapter.depositAddress(
         TOKENS[0].address,
         TOKENS[1].address,
       )
       TOKENS[0].transfer(depositAddress, amount.add(extra))
-      await curveMetaPoolAdapter.swap(
+      await curveBasePoolAdapter.swap(
         amount,
         TOKENS[0].address,
         TOKENS[1].address,
@@ -187,32 +186,32 @@ describe("Curve Meta Adapter", async () => {
       )
 
       await expect(
-        curveMetaPoolAdapter
+        curveBasePoolAdapter
           .connect(dude)
           .recoverERC20(TOKENS[0].address, extra),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        curveMetaPoolAdapter.recoverERC20(TOKENS[0].address, extra),
+        curveBasePoolAdapter.recoverERC20(TOKENS[0].address, extra),
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
     it("Anyone can take advantage of overprovided swap tokens", async () => {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
-      let depositAddress = await curveMetaPoolAdapter.depositAddress(
+      let depositAddress = await curveBasePoolAdapter.depositAddress(
         TOKENS[0].address,
         TOKENS[1].address,
       )
       TOKENS[0].transfer(depositAddress, amount.add(extra))
-      await curveMetaPoolAdapter.swap(
+      await curveBasePoolAdapter.swap(
         amount,
         TOKENS[0].address,
         TOKENS[1].address,
         ownerAddress,
       )
 
-      let swapQuote = await curveMetaPoolAdapter.query(
+      let swapQuote = await curveBasePoolAdapter.query(
         extra,
         TOKENS[0].address,
         TOKENS[1].address,
@@ -220,7 +219,7 @@ describe("Curve Meta Adapter", async () => {
 
       // .add(1) to reflect underquoting by 1
       await expect(() =>
-        curveMetaPoolAdapter
+        curveBasePoolAdapter
           .connect(dude)
           .swap(extra, TOKENS[0].address, TOKENS[1].address, dudeAddress),
       ).to.changeTokenBalance(TOKENS[1], dude, swapQuote.add(1))
@@ -230,32 +229,32 @@ describe("Curve Meta Adapter", async () => {
       let amount = 42690
       await expect(() =>
         owner.sendTransaction({
-          to: curveMetaPoolAdapter.address,
+          to: curveBasePoolAdapter.address,
           value: amount,
         }),
-      ).to.changeEtherBalance(curveMetaPoolAdapter, amount)
+      ).to.changeEtherBalance(curveBasePoolAdapter, amount)
 
       await expect(
-        curveMetaPoolAdapter.connect(dude).recoverGAS(amount),
+        curveBasePoolAdapter.connect(dude).recoverGAS(amount),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        curveMetaPoolAdapter.recoverGAS(amount),
-      ).to.changeEtherBalances([curveMetaPoolAdapter, owner], [-amount, amount])
+        curveBasePoolAdapter.recoverGAS(amount),
+      ).to.changeEtherBalances([curveBasePoolAdapter, owner], [-amount, amount])
     })
   })
 
   describe("Adapter Swaps", () => {
-    it("Swaps between tokens [144 small-medium swaps]", async () => {
-      await testAdapter(curveMetaPoolAdapter, [0, 1, 2, 3], [0, 1, 2, 3], 3)
+    it("Swaps between tokens [120 small-medium swaps]", async () => {
+      await testAdapter(curveBasePoolAdapter, [0, 1, 2], [0, 1, 2], 5)
     })
 
-    it("Swaps between tokens [144 big-ass swaps]", async () => {
+    it("Swaps between tokens [90 big-ass swaps]", async () => {
       await testAdapter(
-        curveMetaPoolAdapter,
-        [0, 1, 2, 3],
-        [0, 1, 2, 3],
-        4,
+        curveBasePoolAdapter,
+        [0, 1, 2],
+        [0, 1, 2],
+        5,
         AMOUNTS_BIG,
       )
     })
