@@ -83,7 +83,8 @@ let config: HardhatUserConfig = {
       // gasPrice: 1 * 1000000000,
     },
     cronos: {
-      url: "https://evm-cronos.crypto.org"
+      url: "https://evm-cronos.crypto.org",
+      gasPrice: 5000 * 1000000000
     }
   },
   paths: {
