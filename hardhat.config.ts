@@ -74,6 +74,9 @@ let config: HardhatUserConfig = {
     aurora: {
       url: "https://mainnet.aurora.dev",
     },
+    metis: {
+      url: 'https://andromeda.metis.io/?owner=1088',
+    },
     mainnet: {
       url: process.env.ALCHEMY_API,
     },
