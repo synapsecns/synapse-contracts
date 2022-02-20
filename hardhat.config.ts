@@ -161,7 +161,8 @@ if (process.env.PRIVATE_KEYS) {
     "moonriver",
     "moonbeam",
     "optimism",
-    "aurora"
+    "aurora",
+    "metis"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
