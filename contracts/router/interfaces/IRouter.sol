@@ -1,21 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-interface IRouter {
-    event Recovered(address indexed _asset, uint256 amount);
+import {IBasicRouter} from "./IBasicRouter.sol";
 
-    event UpdatedBaseTokens(address[] _newBaseTokens);
-
-    event AddedBaseToken(address _newBaseToken);
-
-    event RemovedToken(address _removedToken);
-
-    event UpdatedTrustedAdapters(address[] _newTrustedAdapters);
-
-    event AddedTrustedAdapter(address _newTrustedAdapter);
-
-    event RemovedAdapter(address _removedAdapter);
-
+interface IRouter is IBasicRouter {
     event Swap(
         address indexed _tokenIn,
         address indexed _tokenOut,
@@ -23,19 +11,31 @@ interface IRouter {
         uint256 _amountOut
     );
 
-    function setBaseTokens(address[] memory _baseTokens) external;
+    // Single chain swaps
 
-    function setAdapters(address[] memory _adapters) external;
+    function swap(
+        uint256 _amountIn,
+        uint256 _minAmountOut,
+        address[] calldata _path,
+        address[] calldata _adapters,
+        address _to
+    ) external returns (uint256);
 
-    function baseTokensCount() external view returns (uint256);
+    function swapFromGAS(
+        uint256 _amountIn,
+        uint256 _minAmountOut,
+        address[] calldata _path,
+        address[] calldata _adapters,
+        address _to
+    ) external payable returns (uint256);
 
-    function trustedAdaptersCount() external view returns (uint256);
-
-    function recoverERC20(address _tokenAddress) external;
-
-    function recoverGAS() external;
-
-    receive() external payable;
+    function swapToGAS(
+        uint256 _amountIn,
+        uint256 _minAmountOut,
+        address[] calldata _path,
+        address[] calldata _adapters,
+        address _to
+    ) external returns (uint256);
 
     // Bridge related functions [initial chain]
 
@@ -64,32 +64,6 @@ interface IRouter {
     ) external;
 
     function selfSwap(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        address _to
-    ) external returns (uint256);
-
-    // Single chain swaps
-
-    function swap(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        address _to
-    ) external returns (uint256);
-
-    function swapFromGAS(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        address _to
-    ) external payable returns (uint256);
-
-    function swapToGAS(
         uint256 _amountIn,
         uint256 _minAmountOut,
         address[] calldata _path,
