@@ -34,9 +34,9 @@ interface IWETH9 {
 }
 
 contract DummyWeth is Ownable {
-    
-    IWETH9 public  WETH;
-    function setWETHAddress(address payable _weth) onlyOwner external{
+    IWETH9 public WETH;
+
+    function setWETHAddress(address payable _weth) external onlyOwner {
         WETH = IWETH9(_weth);
     }
 
@@ -44,7 +44,7 @@ contract DummyWeth is Ownable {
         WETH.withdraw(amount);
     }
 
-    function rescue(uint256 amount) onlyOwner external {
+    function rescue(uint256 amount) external onlyOwner {
         WETH.transfer(owner(), amount);
     }
 

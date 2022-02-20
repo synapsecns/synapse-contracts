@@ -3,17 +3,18 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin/contracts/access/AccessControl.sol';
-import '@openzeppelin/contracts/math/SafeMath.sol';
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 /**
  * @title BridgeConfig contract
  * @notice This token is used for configuring different tokens on the bridge and mapping them across chains.
-**/
+ **/
 
 contract BridgeConfigV3 is AccessControl {
     using SafeMath for uint256;
-    bytes32 public constant BRIDGEMANAGER_ROLE = keccak256('BRIDGEMANAGER_ROLE');
+    bytes32 public constant BRIDGEMANAGER_ROLE =
+        keccak256("BRIDGEMANAGER_ROLE");
     bytes32[] private _allTokenIDs;
     mapping(bytes32 => Token[]) private _allTokens; // key is tokenID
     mapping(uint256 => mapping(string => bytes32)) private _tokenIDMap; // key is chainID,tokenAddress
@@ -40,14 +41,12 @@ contract BridgeConfigV3 is AccessControl {
         bool isUnderlying;
     }
 
-
     struct Pool {
         address tokenAddress;
         uint256 chainId;
         address poolAddress;
         bool metaswap;
     }
-
 
     constructor() public {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -64,11 +63,19 @@ contract BridgeConfigV3 is AccessControl {
         }
     }
 
-    function _getTokenID(string memory tokenAddress, uint256 chainID) internal view returns (string memory)  {
+    function _getTokenID(string memory tokenAddress, uint256 chainID)
+        internal
+        view
+        returns (string memory)
+    {
         return toString(_tokenIDMap[chainID][tokenAddress]);
     }
 
-    function getTokenID(string memory tokenAddress, uint256 chainID) public view returns (string memory)  {
+    function getTokenID(string memory tokenAddress, uint256 chainID)
+        public
+        view
+        returns (string memory)
+    {
         return _getTokenID(_toLower(tokenAddress), chainID);
     }
 
@@ -77,7 +84,11 @@ contract BridgeConfigV3 is AccessControl {
      * @param tokenAddress address of token to get ID for
      * @param chainID chainID of which to get token ID for
      */
-    function getTokenID(address tokenAddress, uint256 chainID) public view returns (string memory)  {
+    function getTokenID(address tokenAddress, uint256 chainID)
+        public
+        view
+        returns (string memory)
+    {
         return _getTokenID(toString(tokenAddress), chainID);
     }
 
@@ -86,16 +97,24 @@ contract BridgeConfigV3 is AccessControl {
      * @param tokenID String input of the token ID for the token
      * @param chainID Chain ID of which token address + config to get
      */
-    function getToken(string memory tokenID, uint256 chainID) public view returns (Token memory token) {
+    function getToken(string memory tokenID, uint256 chainID)
+        public
+        view
+        returns (Token memory token)
+    {
         return _tokens[toBytes32(tokenID)][chainID];
     }
 
     /**
-    * @notice Returns the full token config struct
+     * @notice Returns the full token config struct
      * @param tokenID String input of the token ID for the token
      * @param chainID Chain ID of which token address + config to get
      */
-    function getTokenByID(string memory tokenID, uint256 chainID) public view returns (Token memory token) {
+    function getTokenByID(string memory tokenID, uint256 chainID)
+        public
+        view
+        returns (Token memory token)
+    {
         return _tokens[toBytes32(tokenID)][chainID];
     }
 
@@ -104,19 +123,34 @@ contract BridgeConfigV3 is AccessControl {
      * @param tokenAddress Matches the token ID by using a combo of address + chain ID
      * @param chainID Chain ID of which token to get config for
      */
-    function getTokenByAddress(string memory tokenAddress, uint256 chainID) public view returns (Token memory token) {
+    function getTokenByAddress(string memory tokenAddress, uint256 chainID)
+        public
+        view
+        returns (Token memory token)
+    {
         return _tokens[_tokenIDMap[chainID][tokenAddress]][chainID];
     }
 
-    function getTokenByEVMAddress(address tokenAddress, uint256 chainID) public view returns (Token memory token) {
-        return _tokens[_tokenIDMap[chainID][_toLower(toString(tokenAddress))]][chainID];
+    function getTokenByEVMAddress(address tokenAddress, uint256 chainID)
+        public
+        view
+        returns (Token memory token)
+    {
+        return
+            _tokens[_tokenIDMap[chainID][_toLower(toString(tokenAddress))]][
+                chainID
+            ];
     }
 
     /**
      * @notice Returns true if the token has an underlying token -- meaning the token is deposited into the bridge
      * @param tokenID String to check if it is a withdraw/underlying token
      */
-    function hasUnderlyingToken(string memory tokenID) public view returns (bool) {
+    function hasUnderlyingToken(string memory tokenID)
+        public
+        view
+        returns (bool)
+    {
         bytes32 bytesTokenID = toBytes32(tokenID);
         Token[] memory _mcTokens = _allTokens[bytesTokenID];
         for (uint256 i = 0; i < _mcTokens.length; ++i) {
@@ -131,7 +165,11 @@ contract BridgeConfigV3 is AccessControl {
      * @notice Returns which token is the underlying token to withdraw
      * @param tokenID string token ID
      */
-    function getUnderlyingToken(string memory tokenID) public view returns (Token memory token) {
+    function getUnderlyingToken(string memory tokenID)
+        public
+        view
+        returns (Token memory token)
+    {
         bytes32 bytesTokenID = toBytes32(tokenID);
         Token[] memory _mcTokens = _allTokens[bytesTokenID];
         for (uint256 i = 0; i < _mcTokens.length; ++i) {
@@ -151,7 +189,7 @@ contract BridgeConfigV3 is AccessControl {
     /**
      @notice Internal function returning if token ID exists given bytes32 version of the ID
      */
-    function _isTokenIDExist(bytes32 tokenID) internal view returns(bool) {
+    function _isTokenIDExist(bytes32 tokenID) internal view returns (bool) {
         for (uint256 i = 0; i < _allTokenIDs.length; ++i) {
             if (_allTokenIDs[i] == tokenID) {
                 return true;
@@ -166,7 +204,11 @@ contract BridgeConfigV3 is AccessControl {
      * @param chainID which chain to set the token config for
      * @param tokenToAdd Token object to set the mapping to
      */
-    function _setTokenConfig(bytes32 tokenID, uint256 chainID, Token memory tokenToAdd) internal returns(bool) {
+    function _setTokenConfig(
+        bytes32 tokenID,
+        uint256 chainID,
+        Token memory tokenToAdd
+    ) internal returns (bool) {
         _tokens[tokenID][chainID] = tokenToAdd;
         if (!_isTokenIDExist(tokenID)) {
             _allTokenIDs.push(tokenID);
@@ -177,8 +219,8 @@ contract BridgeConfigV3 is AccessControl {
             if (_mcTokens[i].chainId == chainID) {
                 string memory oldToken = _mcTokens[i].tokenAddress;
                 if (compareStrings(tokenToAdd.tokenAddress, oldToken)) {
-                    _mcTokens[i].tokenAddress = tokenToAdd.tokenAddress ;
-                    _tokenIDMap[chainID][oldToken] = keccak256('');
+                    _mcTokens[i].tokenAddress = tokenToAdd.tokenAddress;
+                    _tokenIDMap[chainID][oldToken] = keccak256("");
                     _tokenIDMap[chainID][tokenToAdd.tokenAddress] = tokenID;
                 }
             }
@@ -189,7 +231,7 @@ contract BridgeConfigV3 is AccessControl {
     }
 
     /**
- * @notice Main write function of this contract - Handles creating the struct and passing it to the internal logic function
+     * @notice Main write function of this contract - Handles creating the struct and passing it to the internal logic function
      * @param tokenID string ID to set the token config object form
      * @param chainID chain ID to use for the token config object
      * @param tokenAddress token address of the token on the given chain
@@ -216,19 +258,20 @@ contract BridgeConfigV3 is AccessControl {
         bool isUnderlying
     ) public returns (bool) {
         require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));
-        return setTokenConfig(
-            tokenID,
-            chainID,
-            toString(tokenAddress),
-            tokenDecimals,
-            maxSwap,
-            minSwap,
-            swapFee,
-            maxSwapFee,
-            minSwapFee,
-            hasUnderlying,
-            isUnderlying
-        );
+        return
+            setTokenConfig(
+                tokenID,
+                chainID,
+                toString(tokenAddress),
+                tokenDecimals,
+                maxSwap,
+                minSwap,
+                swapFee,
+                maxSwapFee,
+                minSwapFee,
+                hasUnderlying,
+                isUnderlying
+            );
     }
 
     /**
@@ -279,9 +322,16 @@ contract BridgeConfigV3 is AccessControl {
         uint256 chainID,
         uint256 amount
     ) internal view returns (uint256) {
-        Token memory token = _tokens[_tokenIDMap[chainID][tokenAddress]][chainID];
-        uint256 calculatedSwapFee = amount.mul(token.swapFee).div(FEE_DENOMINATOR);
-        if (calculatedSwapFee > token.minSwapFee && calculatedSwapFee < token.maxSwapFee) {
+        Token memory token = _tokens[_tokenIDMap[chainID][tokenAddress]][
+            chainID
+        ];
+        uint256 calculatedSwapFee = amount.mul(token.swapFee).div(
+            FEE_DENOMINATOR
+        );
+        if (
+            calculatedSwapFee > token.minSwapFee &&
+            calculatedSwapFee < token.maxSwapFee
+        ) {
             return calculatedSwapFee;
         } else if (calculatedSwapFee > token.maxSwapFee) {
             return token.maxSwapFee;
@@ -289,7 +339,6 @@ contract BridgeConfigV3 is AccessControl {
             return token.minSwapFee;
         }
     }
-
 
     /**
      * @notice Calculates bridge swap fee based on the destination chain's token transfer.
@@ -308,7 +357,7 @@ contract BridgeConfigV3 is AccessControl {
     }
 
     /**
-    * @notice Calculates bridge swap fee based on the destination chain's token transfer.
+     * @notice Calculates bridge swap fee based on the destination chain's token transfer.
      * @dev This means the fee should be calculated based on the chain that the nodes emit a tx on
      * @param tokenAddress address of the destination token to query token config for
      * @param chainID destination chain ID to query the token config for
@@ -323,28 +372,30 @@ contract BridgeConfigV3 is AccessControl {
         return _calculateSwapFee(toString(tokenAddress), chainID, amount);
     }
 
-
     // GAS PRICING
 
     /**
-    * @notice sets the max gas price for a chain
-    */
+     * @notice sets the max gas price for a chain
+     */
     function setMaxGasPrice(uint256 chainID, uint256 maxPrice) public {
         require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));
         _maxGasPrice[chainID] = maxPrice;
     }
 
     /**
-    * @notice gets the max gas price for a chain
-    */
-    function getMaxGasPrice(uint256 chainID) public view returns (uint256){
+     * @notice gets the max gas price for a chain
+     */
+    function getMaxGasPrice(uint256 chainID) public view returns (uint256) {
         return _maxGasPrice[chainID];
     }
 
-
     // POOL CONFIG
 
-    function getPoolConfig(address tokenAddress, uint256 chainID) external view returns (Pool memory) {
+    function getPoolConfig(address tokenAddress, uint256 chainID)
+        external
+        view
+        returns (Pool memory)
+    {
         return _pool[tokenAddress][chainID];
     }
 
@@ -356,9 +407,14 @@ contract BridgeConfigV3 is AccessControl {
     ) external returns (Pool memory) {
         require(
             hasRole(BRIDGEMANAGER_ROLE, msg.sender),
-            'Caller is not Bridge Manager'
+            "Caller is not Bridge Manager"
         );
-        Pool memory newPool = Pool(tokenAddress, chainID, poolAddress, metaswap);
+        Pool memory newPool = Pool(
+            tokenAddress,
+            chainID,
+            poolAddress,
+            metaswap
+        );
         _pool[tokenAddress][chainID] = newPool;
         return newPool;
     }
@@ -378,58 +434,58 @@ contract BridgeConfigV3 is AccessControl {
     }
 
     // toBytes32 converts a string to a bytes 32
-    function toBytes32(string memory str) internal pure returns (bytes32 result) {
+    function toBytes32(string memory str)
+        internal
+        pure
+        returns (bytes32 result)
+    {
         require(bytes(str).length <= 32);
         assembly {
             result := mload(add(str, 32))
         }
     }
 
-
-    function toString(address x)
-    internal
-    pure
-    returns (string memory)
-    {
+    function toString(address x) internal pure returns (string memory) {
         bytes memory s = new bytes(40);
-        for (uint i = 0; i < 20; i++) {
-            bytes1 b = bytes1(uint8(uint(uint160(x)) / (2**(8*(19 - i)))));
+        for (uint256 i = 0; i < 20; i++) {
+            bytes1 b = bytes1(uint8(uint256(uint160(x)) / (2**(8 * (19 - i)))));
             bytes1 hi = bytes1(uint8(b) / 16);
             bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
-            s[2*i] = char(hi);
-            s[2*i+1] = char(lo);
+            s[2 * i] = char(hi);
+            s[2 * i + 1] = char(lo);
         }
 
-        string memory addrPrefix = '0x';
+        string memory addrPrefix = "0x";
 
         return concat(addrPrefix, string(s));
     }
 
-    function concat(string memory _x, string memory _y) pure internal returns (string memory) {
+    function concat(string memory _x, string memory _y)
+        internal
+        pure
+        returns (string memory)
+    {
         bytes memory _xBytes = bytes(_x);
         bytes memory _yBytes = bytes(_y);
 
         string memory _tmpValue = new string(_xBytes.length + _yBytes.length);
         bytes memory _newValue = bytes(_tmpValue);
 
-        uint i;
-        uint j;
+        uint256 i;
+        uint256 j;
 
-        for(i=0;i<_xBytes.length;i++) {
+        for (i = 0; i < _xBytes.length; i++) {
             _newValue[j++] = _xBytes[i];
         }
 
-        for(i=0;i<_yBytes.length;i++) {
+        for (i = 0; i < _yBytes.length; i++) {
             _newValue[j++] = _yBytes[i];
         }
 
         return string(_newValue);
     }
 
-    function char(bytes1 b)
-    pure internal
-    returns (bytes1 c)
-    {
+    function char(bytes1 b) internal pure returns (bytes1 c) {
         if (uint8(b) < 10) {
             c = bytes1(uint8(b) + 0x30);
         } else {
@@ -437,14 +493,19 @@ contract BridgeConfigV3 is AccessControl {
         }
     }
 
-    function compareStrings(string memory a, string memory b) pure internal returns (bool) {
-        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    function compareStrings(string memory a, string memory b)
+        internal
+        pure
+        returns (bool)
+    {
+        return (keccak256(abi.encodePacked((a))) ==
+            keccak256(abi.encodePacked((b))));
     }
 
-    function _toLower(string memory str) pure internal returns (string memory) {
+    function _toLower(string memory str) internal pure returns (string memory) {
         bytes memory bStr = bytes(str);
         bytes memory bLower = new bytes(bStr.length);
-        for (uint i = 0; i < bStr.length; i++) {
+        for (uint256 i = 0; i < bStr.length; i++) {
             // Uppercase character...
             if ((uint8(bStr[i]) >= 65) && (uint8(bStr[i]) <= 90)) {
                 // So we add 32 to make it lowercase
