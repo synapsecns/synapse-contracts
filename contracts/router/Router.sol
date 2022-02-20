@@ -18,7 +18,7 @@ contract Router is Ownable, ReentrancyGuard, IRouter {
     address public bridge;
 
     address[] public trustedAdapters;
-    address[] public trustedTokens;
+    address[] public baseTokens;
 
     mapping(address => bool) public isTrustedAdapter;
 
@@ -27,14 +27,14 @@ contract Router is Ownable, ReentrancyGuard, IRouter {
 
     constructor(
         address[] memory _adapters,
-        address[] memory _trustedTokens,
+        address[] memory _baseTokens,
         address payable _wgas,
         address _bridge
     ) {
         WGAS = _wgas;
         bridge = _bridge;
 
-        setTrustedTokens(_trustedTokens);
+        setBaseTokens(_baseTokens);
         setAdapters(_adapters);
     }
 
@@ -46,12 +46,9 @@ contract Router is Ownable, ReentrancyGuard, IRouter {
 
     // -- SETTERS --
 
-    function setTrustedTokens(address[] memory _trustedTokens)
-        public
-        onlyOwner
-    {
-        emit UpdatedTrustedTokens(_trustedTokens);
-        trustedTokens = _trustedTokens;
+    function setBaseTokens(address[] memory _baseTokens) public onlyOwner {
+        emit UpdatedBaseTokens(_baseTokens);
+        baseTokens = _baseTokens;
     }
 
     function setAdapters(address[] memory _adapters) public onlyOwner {
@@ -116,14 +113,14 @@ contract Router is Ownable, ReentrancyGuard, IRouter {
 
     // -- ADD REMOVE TOKENS
 
-    function addTrustedToken(address _token) external onlyOwner {
-        trustedTokens.push(_token);
-        emit AddedTrustedToken(_token);
+    function addBaseToken(address _token) external onlyOwner {
+        baseTokens.push(_token);
+        emit AddedBaseToken(_token);
     }
 
     function removeToken(address _token) external onlyOwner {
-        for (uint256 i = 0; i < trustedTokens.length; i++) {
-            if (trustedTokens[i] == _token) {
+        for (uint256 i = 0; i < baseTokens.length; i++) {
+            if (baseTokens[i] == _token) {
                 _removeTokenByIndex(i);
                 return;
             }
@@ -136,18 +133,18 @@ contract Router is Ownable, ReentrancyGuard, IRouter {
     }
 
     function _removeTokenByIndex(uint256 _index) internal {
-        require(_index < trustedTokens.length, "Index out of range");
-        emit RemovedToken(trustedTokens[_index]);
+        require(_index < baseTokens.length, "Index out of range");
+        emit RemovedToken(baseTokens[_index]);
         // We don't care about tokens order, so we replace the
         // selected token with the last one
-        trustedTokens[_index] = trustedTokens[trustedTokens.length - 1];
-        trustedTokens.pop();
+        baseTokens[_index] = baseTokens[baseTokens.length - 1];
+        baseTokens.pop();
     }
 
     //  -- GENERAL --
 
-    function trustedTokensCount() external view returns (uint256) {
-        return trustedTokens.length;
+    function baseTokensCount() external view returns (uint256) {
+        return baseTokens.length;
     }
 
     function trustedAdaptersCount() external view returns (uint256) {

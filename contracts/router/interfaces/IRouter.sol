@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 interface IRouter {
     event Recovered(address indexed _asset, uint256 amount);
 
-    event UpdatedTrustedTokens(address[] _newTrustedTokens);
+    event UpdatedBaseTokens(address[] _newBaseTokens);
 
-    event AddedTrustedToken(address _newTrustedToken);
+    event AddedBaseToken(address _newBaseToken);
 
     event RemovedToken(address _removedToken);
 
@@ -23,11 +23,11 @@ interface IRouter {
         uint256 _amountOut
     );
 
-    function setTrustedTokens(address[] memory _trustedTokens) external;
+    function setBaseTokens(address[] memory _baseTokens) external;
 
     function setAdapters(address[] memory _adapters) external;
 
-    function trustedTokensCount() external view returns (uint256);
+    function baseTokensCount() external view returns (uint256);
 
     function trustedAdaptersCount() external view returns (uint256);
 
