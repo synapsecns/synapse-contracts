@@ -353,7 +353,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
-  if ((await getChainId()) == CHAIN_ID.MOONBEAM) {
+  if ((await getChainId()) == CHAIN_ID.MOONBEAM || await getChainId() == CHAIN_ID.CRONOS) {
     await deploy("MultiSigWalletFactory", {
       from: deployer,
       log: true,
