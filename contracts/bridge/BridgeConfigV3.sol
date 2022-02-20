@@ -369,7 +369,7 @@ contract BridgeConfigV3 is AccessControl {
         uint256 chainID,
         uint256 amount
     ) external view returns (uint256) {
-        return _calculateSwapFee(toString(tokenAddress), chainID, amount);
+        return _calculateSwapFee(_toLower(toString(tokenAddress)), chainID, amount);
     }
 
     // GAS PRICING
