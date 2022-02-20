@@ -169,7 +169,7 @@ if (process.env.PRIVATE_KEYS) {
     "moonbeam",
     "optimism",
     "aurora",
-    "cronos"
+    "cronos",
     "metis"
   ]
   Object.keys(config.networks).forEach((network) => {
