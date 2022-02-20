@@ -6,7 +6,15 @@ interface IRouter {
 
     event UpdatedTrustedTokens(address[] _newTrustedTokens);
 
-    event UpdatedAdapters(address[] _newAdapters);
+    event AddedTrustedToken(address _newTrustedToken);
+
+    event RemovedToken(address _removedToken);
+
+    event UpdatedTrustedAdapters(address[] _newTrustedAdapters);
+
+    event AddedTrustedAdapter(address _newTrustedAdapter);
+
+    event RemovedAdapter(address _removedAdapter);
 
     event Swap(
         address indexed _tokenIn,

@@ -55,7 +55,7 @@ contract Router is Ownable, ReentrancyGuard, IRouter {
     }
 
     function setAdapters(address[] memory _adapters) public onlyOwner {
-        emit UpdatedAdapters(_adapters);
+        emit UpdatedTrustedAdapters(_adapters);
         _saveAdapters(false);
         trustedAdapters = _adapters;
         _saveAdapters(true);
@@ -78,6 +78,70 @@ contract Router is Ownable, ReentrancyGuard, IRouter {
             _token.safeApprove(bridge, 0);
         }
         _token.safeApprove(bridge, _amount);
+    }
+
+    // -- ADD REMOVE ADAPTERS --
+
+    function addTrustedAdapter(address _adapter) external onlyOwner {
+        trustedAdapters.push(_adapter);
+        isTrustedAdapter[_adapter] = true;
+        emit AddedTrustedAdapter(_adapter);
+    }
+
+    function removeAdapter(address _adapter) external onlyOwner {
+        for (uint256 i = 0; i < trustedAdapters.length; i++) {
+            if (trustedAdapters[i] == _adapter) {
+                _removeAdapterByIndex(i);
+                return;
+            }
+        }
+        revert("Adapter not found");
+    }
+
+    function removeAdapterByIndex(uint256 _index) external onlyOwner {
+        _removeAdapterByIndex(_index);
+    }
+
+    function _removeAdapterByIndex(uint256 _index) internal {
+        require(_index < trustedAdapters.length, "Index out of range");
+        address _removedAdapter = trustedAdapters[_index];
+        emit RemovedAdapter(_removedAdapter);
+        // We don't care about adapters order, so we replace the
+        // selected adapter with the last one
+        trustedAdapters[_index] = trustedAdapters[trustedAdapters.length - 1];
+        trustedAdapters.pop();
+        // mark removed adapter as non-trusted
+        isTrustedAdapter[_removedAdapter] = false;
+    }
+
+    // -- ADD REMOVE TOKENS
+
+    function addTrustedToken(address _token) external onlyOwner {
+        trustedTokens.push(_token);
+        emit AddedTrustedToken(_token);
+    }
+
+    function removeToken(address _token) external onlyOwner {
+        for (uint256 i = 0; i < trustedTokens.length; i++) {
+            if (trustedTokens[i] == _token) {
+                _removeTokenByIndex(i);
+                return;
+            }
+        }
+        revert("Token not found");
+    }
+
+    function removeTokenByIndex(uint256 _index) external onlyOwner {
+        _removeTokenByIndex(_index);
+    }
+
+    function _removeTokenByIndex(uint256 _index) internal {
+        require(_index < trustedTokens.length, "Index out of range");
+        emit RemovedToken(trustedTokens[_index]);
+        // We don't care about tokens order, so we replace the
+        // selected token with the last one
+        trustedTokens[_index] = trustedTokens[trustedTokens.length - 1];
+        trustedTokens.pop();
     }
 
     //  -- GENERAL --
