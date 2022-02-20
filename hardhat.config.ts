@@ -88,6 +88,10 @@ let config: HardhatUserConfig = {
       gas: 10000000,
       // gasPrice: 1 * 1000000000,
     },
+    cronos: {
+      url: "https://evm-cronos.crypto.org",
+      gasPrice: 5000 * 1000000000
+    }
   },
   paths: {
     artifacts: "./build/artifacts",
@@ -165,6 +169,7 @@ if (process.env.PRIVATE_KEYS) {
     "moonbeam",
     "optimism",
     "aurora",
+    "cronos"
     "metis"
   ]
   Object.keys(config.networks).forEach((network) => {
