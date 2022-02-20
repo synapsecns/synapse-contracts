@@ -1,0 +1,32 @@
+#  workflow pipeline
+name: Lint
+
+on: ["push", "pull_request"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+
+      - name: Read .nvmrc
+        run: echo "##[set-output name=NVMRC;]$(cat .nvmrc)"
+        id: nvm
+
+      - name: Use Node.js (.nvmrc)
+        uses: actions/setup-node@v1
+        with:
+          node-version: "${{ steps.nvm.outputs.NVMRC }}"
+
+      - name: Install and Compile
+        run: |
+          npm install
+          npm run build
+
+      - name: Lint
+        run: |
+          npm run lint

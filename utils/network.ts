@@ -7,6 +7,7 @@ export const CHAIN_ID = {
   POLYGON: "137",
   FANTOM: "250",
   BOBA: "288",
+  METIS: "1088",
   MOONBEAM: "1284",
   MOONRIVER: "1285",
   HARDHAT: "31337",

@@ -8,8 +8,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get, getOrNull, execute, log } = deployments
   const { deployer } = await getNamedAccounts()
 
+  if (await getChainId() != CHAIN_ID.MOONBEAM){
+    return
+  }
+
   let synFRAX = await getOrNull("synFRAX")
-  if (synFRAX && (await getChainId() == CHAIN_ID.MOONBEAM)) {
+  if (synFRAX) {
     log(`reusing 'synFRAX' at ${synFRAX.address}`)
   } else {
     await deploy("synFRAX", {
