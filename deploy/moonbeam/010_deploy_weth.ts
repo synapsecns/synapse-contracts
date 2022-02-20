@@ -8,8 +8,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get, getOrNull, execute, log } = deployments
   const { deployer } = await getNamedAccounts()
 
+  if (await getChainId() != CHAIN_ID.MOONBEAM){
+    return
+  }
+
   let WETH = await getOrNull("WETH")
-  if (WETH && (await getChainId() == CHAIN_ID.MOONBEAM)) {
+  if (WETH) {
     log(`reusing 'WETH' at ${WETH.address}`)
   } else {
     await deploy("WETH", {

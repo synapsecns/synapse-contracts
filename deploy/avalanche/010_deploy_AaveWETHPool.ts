@@ -12,8 +12,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   if (ETHPool) {
     log(`reusing "ETHPool" at ${ETHPool.address}`)
   } else if (
-    (await getChainId()) != CHAIN_ID.AVALANCHE &&
-    (await getChainId()) != CHAIN_ID.HARDHAT
+    (await getChainId()) != CHAIN_ID.AVALANCHE
   ) {
     log(`Not Avalanche or Hardhat`)
   } else {

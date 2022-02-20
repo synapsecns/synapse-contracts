@@ -18,6 +18,9 @@ dotenv.config()
 let config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
+    hardhat: {
+      chainId: 31337,
+    },
     coverage: {
       url: "http://127.0.0.1:8555",
     },
@@ -78,7 +81,7 @@ let config: HardhatUserConfig = {
       url: 'https://andromeda.metis.io/?owner=1088',
     },
     mainnet: {
-      url: process.env.ALCHEMY_API,
+      url: process.env.ALCHEMY_API || "https://main-light.eth.linkpool.io/",
     },
     optimism: {
       url: "https://mainnet.optimism.io",
@@ -115,7 +118,7 @@ let config: HardhatUserConfig = {
         version: "0.8.3",
       },
       {
-        version: "0.4.24",
+        version: "0.4.24"
       },
     ],
   },

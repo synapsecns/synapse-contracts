@@ -36,7 +36,6 @@
 //     let user2Address: string
 //     let nodeGroupAddress: string
 
-
 //     const setupTest = deployments.createFixture(
 //         async ({ deployments, ethers }) => {
 //             const { get } = deployments
@@ -57,7 +56,6 @@
 //             synapseBridge = await SynapseBridgeContract.deploy()
 //             syntestERC20 = (await synapseERC20Contract.deploy())
 //             testERC20 = (await synapseERC20Contract.deploy())
-
 
 //             await synapseBridge.initialize()
 //             await syntestERC20.initialize(
@@ -101,7 +99,7 @@
 //             })
 
 //             it("Withdraw - correct balance to user and keep correct fee", async () => {
-//                 //user deposits 1 token 
+//                 //user deposits 1 token
 //                 await synapseBridge.deposit(user1Address, 56, testERC20.address, String(1e18))
 //                 let preWithdraw = await testERC20.balanceOf(user1Address)
 
@@ -126,7 +124,6 @@
 //                 await expect(await synapseBridge.getFeeBalance(syntestERC20.address)).to.be.eq(String(1e17))
 
 //             })
-
 
 //             it("Redeem - correct balance to user and keep correct fee", async () => {
 //                 // user decides to redeem back to base chainId
@@ -173,21 +170,19 @@
 //                 await synapseBridge.depositETH(ownerAddress, 56, String(1e18), {
 //                     value: String(1e18)
 //                 })
-                
+
 //                 // øn a redeem, node group withdraws eth
 //                 let preWithdrawOwner = await ethers.provider.getBalance(ownerAddress)
-                
+
 //                 await synapseBridge.connect(nodeGroup).withdrawETH(ownerAddress, String(9e17), String(1e17))
-                
+
 //                 let preuser1Address = await ethers.provider.getBalance(user1Address)
-                
+
 //                 await synapseBridge.connect(owner).withdrawETHFees(user1Address)
 //                 expect((await ethers.provider.getBalance(user1Address)).sub(preuser1Address)).to.be.eq(String(1e17))
 //             });
 //         })
 
 //     })
-
-
 
 // });

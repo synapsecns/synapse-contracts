@@ -4,7 +4,6 @@ pragma solidity 0.6.12;
 
 import "./Swap.sol";
 
-
 /**
  * @title AaveSwap - A StableSwap implementation in solidity, integrated with Aave.
  * @notice This contract is responsible for custody of closely pegged assets (eg. group of stablecoins)
@@ -23,14 +22,14 @@ import "./Swap.sol";
  * deployment size.
  */
 
- contract AaveSwap is Swap {
-     address internal AAVE_REWARDS;
-     address internal AAVE_LENDING_POOL;
-     address internal REWARD_TOKEN;
-     address internal REWARD_RECEIVER;
-     address[] internal AAVE_ASSETS;
+contract AaveSwap is Swap {
+    address internal AAVE_REWARDS;
+    address internal AAVE_LENDING_POOL;
+    address internal REWARD_TOKEN;
+    address internal REWARD_RECEIVER;
+    address[] internal AAVE_ASSETS;
 
-         /**
+    /**
      * @notice Initializes this Swap contract with the given parameters.
      * This will also clone a LPToken contract that represents users'
      * LP positions. The owner of LPToken will be this contract - which means
@@ -67,7 +66,7 @@ import "./Swap.sol";
             _adminFee,
             lpTokenTargetAddress
         );
-        AAVE_REWARDS = 0x01D83Fe6A10D2f2B7AF17034343746188272cAc9; 
+        AAVE_REWARDS = 0x01D83Fe6A10D2f2B7AF17034343746188272cAc9;
         AAVE_LENDING_POOL = 0x4F01AeD16D97E3aB5ab2B501154DC9bb0F1A5A2C;
         REWARD_TOKEN = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
         AAVE_ASSETS = [0x53f7c5869a859F0AeC3D334ee8B4Cf01E3492f21];
@@ -79,7 +78,13 @@ import "./Swap.sol";
     }
 
     function claimAaveRewards() external {
-        AAVE_REWARDS.call(abi.encodeWithSignature("claimRewards(address[],uint256,address)", AAVE_ASSETS, type(uint256).max, REWARD_RECEIVER));
+        AAVE_REWARDS.call(
+            abi.encodeWithSignature(
+                "claimRewards(address[],uint256,address)",
+                AAVE_ASSETS,
+                type(uint256).max,
+                REWARD_RECEIVER
+            )
+        );
     }
-
- }
+}
