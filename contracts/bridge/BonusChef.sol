@@ -77,10 +77,19 @@ contract BonusChef is IRewarder, ReentrancyGuard {
 
     /* ========== VIEWS ========== */
 
+    /**
+        @notice Get amount of active reward pools.
+        Some of them may be finished or haven't been started yet though.
+     */
     function activeRewardPoolsLength() external view returns (uint256) {
         return activeRewardPools.length;
     }
 
+    /**
+        @notice Get timestamp for the current (not yet processed)
+        batch of rewards
+        @param _rewardToken bonus reward token to check
+     */
     function lastTimeRewardApplicable(address _rewardToken)
         public
         view
@@ -90,6 +99,11 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         return Math.min(block.timestamp, pool.periodFinish);
     }
 
+    /**
+        @notice Get total amount of bonus rewards per 1 LP token
+        in the MiniChef from the start of bonus pool
+        @param _rewardToken bonus reward token to check
+     */
     function rewardPerToken(address _rewardToken)
         public
         view
@@ -110,6 +124,11 @@ contract BonusChef is IRewarder, ReentrancyGuard {
             );
     }
 
+    /**
+        @notice Get amount of pending user bonus rewards
+        @param _rewardToken bonus reward token to check
+        @param _account user address
+     */
     function earned(address _rewardToken, address _account)
         external
         view
@@ -118,15 +137,27 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         return _earned(_rewardToken, _account, balanceOf(_account));
     }
 
+    /**
+        @notice Get total amount of LP tokens locked in the MiniChef pool
+     */
     function totalSupply() public view returns (uint256) {
         return chefStakingToken.balanceOf(address(miniChef));
     }
 
+    /**
+        @notice Get user amount of LP tokens locked in the MiniChef pool
+        @param _account user address
+     */
     function balanceOf(address _account) public view returns (uint256) {
         (uint256 balance, ) = miniChef.userInfo(chefPoolID, _account);
         return balance;
     }
 
+    /**
+        @notice Get total amount of rewards tokens that will be distributed
+        since the last time reward pool was started
+        @param _rewardToken bonus reward token to check
+     */
     function getRewardForDuration(address _rewardToken)
         external
         view
@@ -136,16 +167,30 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         return pool.rewardRate.mul(pool.rewardsDuration);
     }
 
+    /**
+        @notice Get timestamp for bonus rewards to end
+        @param _rewardToken bonus reward token to check
+     */
     function periodFinish(address _rewardToken) public view returns (uint256) {
         RewardPool storage pool = rewardPools[_rewardToken];
         return pool.periodFinish;
     }
 
+    /**
+        @notice Get amount of reward tokens distributed per second
+        @dev APR = rewardRate(_rewardToken) * secondsInYear * usdValue(_rewardToken) / 
+        (totalSupply() * usdValue(chefStakingToken))
+        @param _rewardToken bonus reward token to check
+     */
     function rewardRate(address _rewardToken) public view returns (uint256) {
         RewardPool storage pool = rewardPools[_rewardToken];
         return pool.rewardRate;
     }
 
+    /**
+        @notice Get total duration of a bonus reward pool
+        @param _rewardToken bonus reward token to check
+     */
     function rewardsDuration(address _rewardToken)
         public
         view
@@ -155,6 +200,10 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         return pool.rewardsDuration;
     }
 
+    /**
+        @notice Get timestamp for the last payout in the bonus reward pool
+        @param _rewardToken bonus reward token to check
+     */
     function lastUpdateTime(address _rewardToken)
         public
         view
@@ -164,7 +213,11 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         return pool.lastUpdateTime;
     }
 
-    // useful for UI estimation of pool's APR
+    /**
+        @notice Get total amount of bonus rewards per 1 LP token
+        in the MiniChef from the start of bonus pool until last update
+        @param _rewardToken bonus reward token to check
+     */
     function rewardPerTokenStored(address _rewardToken)
         public
         view
@@ -174,6 +227,11 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         return pool.rewardPerTokenStored;
     }
 
+    /**
+        @notice Get amount of bonus rewards paid to user per 1 LP token
+        @param _rewardToken bonus reward token to check
+        @param _account user address
+     */
     function userRewardPerTokenPaid(address _rewardToken, address _account)
         public
         view
@@ -183,6 +241,11 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         return pool.userRewardPerTokenPaid[_account];
     }
 
+    /**
+        @notice Get last stored amount of user's unpaid bonus rewards
+        @param _rewardToken bonus reward token to check
+        @param _account user address
+     */
     function rewards(address _rewardToken, address _account)
         public
         view
@@ -192,9 +255,13 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         return pool.rewards[_account];
     }
 
+    /**
+        @notice Get all pending bonus rewards for user
+        @param _account user address
+     */
     function pendingTokens(
         uint256,
-        address _user,
+        address _account,
         uint256
     ) external view override returns (IERC20[] memory, uint256[] memory) {
         uint256 _activePoolsAmount = activeRewardPools.length;
@@ -203,7 +270,11 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         for (uint8 i = 0; i < _activePoolsAmount; i++) {
             address _rewardToken = activeRewardPools[i];
             _rewardTokens[i] = IERC20(_rewardToken);
-            _rewardAmounts[i] = _earned(_rewardToken, _user, balanceOf(_user));
+            _rewardAmounts[i] = _earned(
+                _rewardToken,
+                _account,
+                balanceOf(_account)
+            );
         }
 
         return (_rewardTokens, _rewardAmounts);
@@ -211,29 +282,44 @@ contract BonusChef is IRewarder, ReentrancyGuard {
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    // Called by MiniChef reward claim
+    /**
+        @notice Callback to distribute user's bonus rewards
+        @dev Called whenever a user interacts with MiniChef
+        @param _account user address
+        @param _recipient address to sent bonus rewards
+        @param _oldAmount user's LP tokens balance BEFORE the interaction
+     */
     function onSynapseReward(
         uint256,
-        address _user,
+        address _account,
         address _recipient,
         uint256,
-        uint256 oldAmount
+        uint256 _oldAmount
     ) external override onlyMiniChef {
-        _getAllActiveRewardsFor(_user, _recipient, oldAmount);
+        _getAllActiveRewardsFor(_account, _recipient, _oldAmount);
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
 
-    // Called by rewardsDistribution AFTER the pool for _rewardToken is
-    // set up via addRewardPool(_rewardToken, _rewardsDuration)
+    /**
+        @notice Provide bonus rewards
+        @dev
+        Called by rewardsDistribution AFTER the pool for _rewardToken is
+        set up via addRewardPool(_rewardToken, _rewardsDuration)
 
-    // If the pool is running:
-    //      Will add (_amount) to the reward pool
-    //      and extend its duration by pool.rewardsDuration
+        rewardsDistribution has to approve this contract
+        to spend _rewardToken beforehand
+        
+        If the pool is running:
+            Will add (_amount) to the reward pool
+            and extend its duration by pool.rewardsDuration
 
-    // If the pool is NOT running:
-    //      Will set (_amount) as the reward pool capacity and start the pool,
-    //      which will be running for pool.rewardsDuration
+        If the pool is NOT running (finished or hasn't been started once)
+            Will set (_amount) as the reward pool capacity and start the pool
+            IMMEDIATELY. Pool will be running for pool.rewardsDuration
+        @param _rewardToken reward token to supply
+        @param _amount amount of reward token to supply
+     */
     function notifyRewardAmount(address _rewardToken, uint256 _amount)
         external
         onlyRewardsDistribution
@@ -268,9 +354,15 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         emit RewardAdded(_rewardToken, _amount);
     }
 
-    // Add new reward pool to list.
-    // This can also be used to add inactive pool, make sure
-    // to rescue() all the remaining tokens from previous round beforehand
+    /**
+        @notice Add new reward pool to list, but do NOT start it.
+        @dev This can also be used to add inactive pool, make sure
+        to rescue() all the remaining tokens from previous round beforehand.
+        Otherwise, previously unclaimed rewards can be claimed only after
+        the pool is inactive again.
+        @param _rewardToken bonus reward token
+        @param _rewardsDuration duration of the bonus pool, in seconds
+     */
     function addRewardPool(address _rewardToken, uint256 _rewardsDuration)
         external
         onlyGov
@@ -289,8 +381,12 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         activeRewardPools.push(_rewardToken);
     }
 
-    // Remove rewards pool from active list
-    // All rewards from the pool become unclaimable, only rescue() can get them out
+    /**
+        @notice Remove rewards pool from active list
+        @dev All rewards from the pool become unclaimable,
+        only rescue() can get them out after that
+        @param _rewardToken bonus reward token to inactivate
+     */
     function inactivateRewardPool(address _rewardToken) external onlyGov {
         // find the index
         uint256 indexToDelete = 0;
@@ -307,12 +403,21 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         _inactivateRewardPool(indexToDelete);
     }
 
-    // In case the list gets so large and make iteration impossible
-    // All rewards from the pool become unclaimable, only rescue() can get them out
+    /**
+        @notice Remove rewards pool from active list
+        @dev In case the list gets so large and make iteration impossible.
+        All rewards from the pool become unclaimable,
+        only rescue() can get them out after that.
+        @param _index index of bonus pool to inactivate
+     */
     function inactivateRewardPoolByIndex(uint256 _index) external onlyGov {
         _inactivateRewardPool(_index);
     }
 
+    /**
+        @notice Internal implementation for removing a reward pool
+        @param _index index of bonus pool to inactivate
+     */
     function _inactivateRewardPool(uint256 _index) internal {
         RewardPool storage pool = rewardPools[activeRewardPools[_index]];
         pool.isActive = false;
@@ -324,7 +429,11 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         activeRewardPools.pop();
     }
 
-    // Allow governance to rescue unclaimed inactive rewards
+    /**
+        @notice Rescue unclaimed reward tokens from inactive pool
+        @dev Only governance can rescue tokens and only from inactive pools
+        @param _rewardToken bonus reward token to rescue
+     */
     function rescue(address _rewardToken) external onlyGov {
         RewardPool storage pool = rewardPools[_rewardToken];
         require(pool.isActive == false, "Cannot withdraw active reward token");
@@ -333,6 +442,12 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         IERC20(_rewardToken).safeTransfer(governance, _balance);
     }
 
+    /**
+        @notice Change the rewards supplier
+        @dev Make sure that _rewardsDistribution is vetted
+        While this role can't claim/drain tokens, it can prolong the pools at will.
+        @param _rewardsDistribution new reward supplier
+     */
     function setRewardsDistribution(address _rewardsDistribution)
         external
         onlyGov
@@ -340,12 +455,25 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         rewardsDistribution = _rewardsDistribution;
     }
 
+    /**
+        @notice Change the governor
+        @dev Do not transfer this role to untrusted address,
+        or funds might be SIFUed
+        @param _governance new governor
+     */
     function setGovernance(address _governance) external onlyGov {
         governance = _governance;
     }
 
     /* ========== INTERNAL FUNCTIONS ========== */
 
+    /**
+        @notice Claim all pending bonus rewards for a user
+        @dev Called whenever a user interacts with MiniChef
+        @param _account user address
+        @param _recipient address to sent bonus rewards
+        @param _oldAmount user's LP tokens balance BEFORE the interaction
+     */
     function _getAllActiveRewardsFor(
         address _account,
         address _recipient,
@@ -356,6 +484,12 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         }
     }
 
+    /**
+        @notice Claim a pending bonus reward for a user
+        @param _rewardToken bonus reward token to claim
+        @param _account user address
+        @param _recipient address to sent bonus rewards
+     */
     function _getReward(
         address _rewardToken,
         address _account,
@@ -377,6 +511,12 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         }
     }
 
+    /**
+        @notice Get pending bonus reward for a user
+        @param _rewardToken bonus reward token to claim
+        @param _account user address
+        @param _oldAmount user balance of LP tokens at the time of last payout
+     */
     function _earned(
         address _rewardToken,
         address _account,
@@ -395,6 +535,13 @@ contract BonusChef is IRewarder, ReentrancyGuard {
 
     /* ========== MODIFIERS ========== */
 
+    /**
+        @notice Update all pools stored info about the rewards, and also 
+        update the stored info about user's pending rewards.
+        @dev The user update is ignored if address(0) is supplied
+        @param _account user address
+        @param _oldAmount user balance of LP tokens at the time of last payout
+     */
     modifier updateActiveRewards(address _account, uint256 _oldAmount) {
         for (uint256 i = 0; i < activeRewardPools.length; i++) {
             RewardPool storage pool = rewardPools[activeRewardPools[i]];
@@ -418,6 +565,14 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         _;
     }
 
+    /**
+        @notice Update a single pool stored info about the rewards, and also 
+        update the stored info about user's pending rewards.
+        @dev The user update is ignored if address(0) is supplied
+        @param _rewardToken reward token for a pool to update
+        @param _account user address
+        @param _oldAmount user balance of LP tokens at the time of last payout
+     */
     modifier updateReward(
         address _rewardToken,
         address _account,
