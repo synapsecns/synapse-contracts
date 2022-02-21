@@ -10,7 +10,7 @@ import {IERC20, BoringERC20} from "@boringcrypto/boring-solidity/contracts/libra
 import {IMiniChefV2} from "./interfaces/IMiniChefV2.sol";
 import {IRewarder} from "./interfaces/IRewarder.sol";
 
-// A multistakingreward contract that allows stakers to staking a single token and recieve various reward tokens.
+// MultiStakingRewards contract that allows stakers to staking a single token and receive various reward tokens.
 // Modified from Uniswap staking reward contract at https://etherscan.io/address/0x7FBa4B8Dc5E7616e59622806932DBea72537A56b#code
 // with the following changes:
 // - Expand from single reward token to a list of reward tokens
@@ -19,13 +19,13 @@ import {IRewarder} from "./interfaces/IRewarder.sol";
 
 // Modified from AladdinDAO MultiStakingRewards contract at https://github.com/AladdinDAO/aladdin-contracts/blob/main/contracts/reward/MultiStakingRewards.sol
 // with the following changes:
-// 1. To ensure compatibility with existing IRewards interface:
+// 1. To ensure compatibility with existing IRewarder interface:
 //      a. SafeERC20 -> BoringERC20
 //      b. onParentReward() -> onSynapseReward()
 //      c. added pendingTokens(), which returns a list of ALL pending rewards for user
 // 2. To ensure compatibility with deployed MiniChefV2 contract:
 //      a. Sending rewards to custom address is possible to make sure
-//         bonus rewards are always trasnferred to the same address as SYN rewards
+//         bonus rewards are always transferred to the same address as SYN rewards
 // 3. Removed stake and withdraw, as they happen in the MiniChef
 // 4. Read staking balance and total supply from MiniChef
 // 5. notifyRewardAmount updated to transferFrom(msg.sender) instead of using permissioned distributor
@@ -44,7 +44,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         uint256 rewardsDuration; // duration of distribution
         uint256 lastUpdateTime; // timestamp of when reward info was last updated
         uint256 rewardPerTokenStored; // current rewards per token based on total rewards and total staked
-        mapping(address => uint256) userRewardPerTokenPaid; // amount of rewards per token already paided out to user
+        mapping(address => uint256) userRewardPerTokenPaid; // amount of rewards per token already paid out to user
         mapping(address => uint256) rewards; // amount of rewards user has earned
         bool isActive; // mark if the pool is active
     }
