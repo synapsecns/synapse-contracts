@@ -8,13 +8,15 @@ import "@boringcrypto/boring-solidity/contracts/BoringBatchable.sol";
 import "@boringcrypto/boring-solidity/contracts/BoringOwnable.sol";
 import "./libraries/SignedSafeMath.sol";
 import "./interfaces/IRewarder.sol";
-import "./interfaces/IMasterChef.sol";
 
-/// @notice The (older) MasterChef contract gives out a constant number of SYNAPSE tokens per block.
-/// It is the only address with minting rights for SYNAPSE.
-/// The idea for this MasterChef V2 (MCV2) contract is therefore to be the owner of a dummy token
-/// that is deposited into the MasterChef V1 (MCV1) contract.
-/// The allocation point for this pool on MCV1 is the total allocation point for all pools that receive double incentives.
+/// @notice This is a modification of MiniChefV2, a SYN distribution
+/// contract, that doesn't need to have minting rights for SYN token.
+/// List of modifications:
+/// 1. It is no longer possible to add the same LP token twice.
+/// 2. Pools are updated before the new one is added.
+/// 3. IRewarder is now tracking "old user LP token balance in MiniChef"
+///    instead of "new user LP token balance in MiniChef"
+///         [see deposit() for reasoning]
 contract MiniChefV21 is BoringOwnable, BoringBatchable {
     using BoringMath for uint256;
     using BoringMath128 for uint128;
@@ -50,6 +52,10 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
 
     /// @notice Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
+
+    /// @dev Tokens added
+    mapping(address => bool) public addedTokens;
+
     /// @dev Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint;
 
@@ -106,7 +112,7 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
     }
 
     /// @notice Add a new LP to the pool. Can only be called by the owner.
-    /// DO NOT add the same LP token more than once. Rewards will be messed up if you do.
+    /// Pools are updated before adding a new one, so the old rewards don't get messed up
     /// @param allocPoint AP of the new pool.
     /// @param _lpToken Address of the LP ERC-20 token.
     /// @param _rewarder Address of the rewarder delegate.
@@ -115,6 +121,10 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
         IERC20 _lpToken,
         IRewarder _rewarder
     ) public onlyOwner {
+        require(addedTokens[address(_lpToken)] == false, "Token already added");
+        for (uint256 pid = 0; pid < poolInfo.length; ++pid) {
+            updatePool(pid);
+        }
         totalAllocPoint = totalAllocPoint.add(allocPoint);
         lpToken.push(_lpToken);
         rewarder.push(_rewarder);
@@ -126,6 +136,7 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
                 accSynapsePerShare: 0
             })
         );
+        addedTokens[address(_lpToken)] = true;
         emit LogPoolAddition(
             lpToken.length.sub(1),
             allocPoint,
@@ -244,8 +255,20 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][to];
 
-        // Effects
+        // We can't enforce IRewarder knowing everyone's current balance,
+        // as it can be added to already running pool on MiniChef.
+
+        // So instead of notifying IRewarder of the updated amount,
+        // we will use the oldAmount, so IRewarder can use it to calculate
+        // bonus rewards between the user interactions with the pool.
+
+        // This way, when a user interacts with MiniChef first time after
+        // the IRewarder was added, the bonus rewards will be calculated
+        // properly, whether the interaction was before or after bonus
+        // rewards have started dripping.
         uint256 oldAmount = user.amount;
+
+        // Effects
         user.amount = user.amount.add(amount);
         user.rewardDebt = user.rewardDebt.add(
             int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION)
@@ -273,12 +296,12 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
     ) public {
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
+        uint256 oldAmount = user.amount;
 
         // Effects
         user.rewardDebt = user.rewardDebt.sub(
             int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION)
         );
-        uint256 oldAmount = user.amount;
         user.amount = user.amount.sub(amount);
 
         // Interactions
@@ -320,7 +343,7 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
                 msg.sender,
                 to,
                 _pendingSynapse,
-                user.amount
+                user.amount // amount isn't modified in harvest()
             );
         }
 
@@ -338,6 +361,7 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
     ) public {
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
+        uint256 oldAmount = user.amount;
         int256 accumulatedSynapse = int256(
             user.amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION
         );
@@ -349,7 +373,6 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
         user.rewardDebt = accumulatedSynapse.sub(
             int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION)
         );
-        uint256 oldAmount = user.amount;
         user.amount = user.amount.sub(amount);
 
         // Interactions
