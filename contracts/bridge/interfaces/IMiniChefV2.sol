@@ -17,15 +17,45 @@ interface IMiniChefV2 {
         uint64 allocPoint;
     }
 
-    function lpToken(uint) external view returns(IERC20);
-    function poolInfo(uint) external view returns (IMiniChefV2.PoolInfo memory);
+    function lpToken(uint256) external view returns (IERC20);
+
+    function poolInfo(uint256)
+        external
+        view
+        returns (IMiniChefV2.PoolInfo memory);
+
     function poolLength() external view returns (uint256);
-    function rewarder(uint) external view returns (IRewarder);
-    function updatePool(uint256 pid) external returns (IMiniChefV2.PoolInfo memory);
-    function userInfo(uint256 _pid, address _user) external view returns (uint256, uint256);
-    function deposit(uint256 pid, uint256 amount, address to) external;
-    function withdraw(uint256 pid, uint256 amount, address to) external;
+
+    function rewarder(uint256) external view returns (IRewarder);
+
+    function updatePool(uint256 pid)
+        external
+        returns (IMiniChefV2.PoolInfo memory);
+
+    function userInfo(uint256 _pid, address _user)
+        external
+        view
+        returns (uint256, uint256);
+
+    function deposit(
+        uint256 pid,
+        uint256 amount,
+        address to
+    ) external;
+
+    function withdraw(
+        uint256 pid,
+        uint256 amount,
+        address to
+    ) external;
+
     function harvest(uint256 pid, address to) external;
-    function withdrawAndHarvest(uint256 pid, uint256 amount, address to) external;
+
+    function withdrawAndHarvest(
+        uint256 pid,
+        uint256 amount,
+        address to
+    ) external;
+
     function emergencyWithdraw(uint256 pid, address to) external;
 }
