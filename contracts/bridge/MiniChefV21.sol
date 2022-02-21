@@ -156,10 +156,16 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
         IRewarder _rewarder,
         bool overwrite
     ) public onlyOwner {
-        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(
-            _allocPoint
-        );
-        poolInfo[_pid].allocPoint = _allocPoint.to64();
+        if (poolInfo[_pid].allocPoint != _allocPoint) {
+            for (uint256 pid = 0; pid < poolInfo.length; ++pid) {
+                updatePool(pid);
+            }
+            totalAllocPoint = totalAllocPoint
+            .sub(poolInfo[_pid].allocPoint)
+            .add(_allocPoint);
+            poolInfo[_pid].allocPoint = _allocPoint.to64();
+        }
+
         if (overwrite) {
             rewarder[_pid] = _rewarder;
         }
@@ -169,6 +175,14 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
             overwrite ? _rewarder : rewarder[_pid],
             overwrite
         );
+    }
+
+    /// @notice Update the given pool's `IRewarder` contract. Can only be called by the owner.
+    /// @param _pid The index of the pool. See `poolInfo`.
+    /// @param _rewarder Address of the rewarder delegate.
+    function setRewarder(uint256 _pid, IRewarder _rewarder) public onlyOwner {
+        rewarder[_pid] = _rewarder;
+        emit LogSetPool(_pid, poolInfo[_pid].allocPoint, _rewarder, true);
     }
 
     /// @notice Sets the synapse per second to be distributed. Can only be called by the owner.
