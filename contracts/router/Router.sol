@@ -203,9 +203,10 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         address _token,
         uint256 _amount,
         address _to
-    ) external onlyBridge {
-        // reentrancy not an issue here, as _token was
-        // bridged to this chain, so it can't be WGAS
+    ) external onlyBridge nonReentrant {
+        // We check for reentrance in case someone does
+        // Bridge&Swap for GAS back to its native chain.
+        // With a failed swap, this will try to return GAS to user
         _returnTokensTo(_token, _amount, _to);
     }
 
