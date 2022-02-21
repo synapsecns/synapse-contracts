@@ -77,6 +77,9 @@ let config: HardhatUserConfig = {
     aurora: {
       url: "https://mainnet.aurora.dev",
     },
+    metis: {
+      url: 'https://andromeda.metis.io/?owner=1088',
+    },
     mainnet: {
       url: process.env.ALCHEMY_API || "https://main-light.eth.linkpool.io/",
     },
@@ -85,6 +88,10 @@ let config: HardhatUserConfig = {
       gas: 10000000,
       // gasPrice: 1 * 1000000000,
     },
+    cronos: {
+      url: "https://evm-cronos.crypto.org",
+      gasPrice: 5000 * 1000000000
+    }
   },
   paths: {
     artifacts: "./build/artifacts",
@@ -161,7 +168,9 @@ if (process.env.PRIVATE_KEYS) {
     "moonriver",
     "moonbeam",
     "optimism",
-    "aurora"
+    "aurora",
+    "cronos",
+    "metis"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {

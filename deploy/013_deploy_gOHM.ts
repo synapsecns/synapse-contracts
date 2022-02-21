@@ -15,7 +15,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     (await getChainId()) === CHAIN_ID.MOONRIVER ||
     (await getChainId()) === CHAIN_ID.BSC ||
     (await getChainId()) === CHAIN_ID.BOBA ||
-    (await getChainId()) === CHAIN_ID.HARMONY
+    (await getChainId()) === CHAIN_ID.HARMONY || 
+    (await getChainId()) === CHAIN_ID.METIS || 
+    (await getChainId()) === CHAIN_ID.CRONOS || 
+    (await getChainId()) === CHAIN_ID.OPTIMISM
     // (await getChainId()) === CHAIN_ID.MOONBEAM 
   ) {
     if ((await getOrNull("gOHM")) == null) {
