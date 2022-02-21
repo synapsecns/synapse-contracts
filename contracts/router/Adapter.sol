@@ -51,28 +51,20 @@ abstract contract Adapter is Ownable, IAdapter {
         _t.safeApprove(_spender, 0);
     }
 
-    /**
-     * @notice Recover ERC20 from contract
-     * @param _tokenAddress token address
-     * @param _tokenAmount amount to recover
-     */
-    function recoverERC20(address _tokenAddress, uint256 _tokenAmount)
-        external
-        onlyOwner
-    {
-        require(_tokenAmount > 0, "Adapter: Nothing to recover");
-        emit Recovered(_tokenAddress, _tokenAmount);
+    // -- RESTRICTED RECOVER TOKEN FUNCTIONS --
+
+    function recoverERC20(address _tokenAddress) external onlyOwner {
+        uint256 _tokenAmount = IERC20(_tokenAddress).balanceOf(address(this));
+        require(_tokenAmount > 0, "Router: Nothing to recover");
         IERC20(_tokenAddress).safeTransfer(msg.sender, _tokenAmount);
+        emit Recovered(_tokenAddress, _tokenAmount);
     }
 
-    /**
-     * @notice Recover GAS from contract
-     * @param _amount amount
-     */
-    function recoverGAS(uint256 _amount) external onlyOwner {
-        require(_amount > 0, "Adapter: Nothing to recover");
-        emit Recovered(address(0), _amount);
+    function recoverGAS() external onlyOwner {
+        uint256 _amount = address(this).balance;
+        require(_amount > 0, "Router: Nothing to recover");
         payable(msg.sender).transfer(_amount);
+        emit Recovered(address(0), _amount);
     }
 
     /**
@@ -239,7 +231,7 @@ abstract contract Adapter is Ownable, IAdapter {
      * @notice Internal implementation of query
      *
      * @dev All variables are already checked.
-     *      This should AWLAYS return _amountOut such as: the swapper underneath
+     *      This should ALWAYS return _amountOut such as: the swapper underneath
      *      is able to produce AT LEAST _amountOut in exchange for EXACTLY _amountIn
      *      For efficiency reasons, returning the exact quote is preferrable,
      *      however, if the swapper doesn't have a reliable quoting method,
