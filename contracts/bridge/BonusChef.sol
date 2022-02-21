@@ -367,6 +367,10 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         external
         onlyGov
     {
+        require(
+            address(miniChef.rewarder(chefPoolID)) == address(this),
+            "MiniChef pool isn't set up"
+        );
         require(rewardPools[_rewardToken].isActive == false, "Pool is active");
         require(_rewardsDuration != 0, "Duration is null");
         rewardPools[_rewardToken] = RewardPool({
