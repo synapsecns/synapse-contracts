@@ -15,7 +15,7 @@ import "./interfaces/IMasterChef.sol";
 /// The idea for this MasterChef V2 (MCV2) contract is therefore to be the owner of a dummy token
 /// that is deposited into the MasterChef V1 (MCV1) contract.
 /// The allocation point for this pool on MCV1 is the total allocation point for all pools that receive double incentives.
-contract MiniChefV2 is BoringOwnable, BoringBatchable {
+contract MiniChefV21 is BoringOwnable, BoringBatchable {
     using BoringMath for uint256;
     using BoringMath128 for uint128;
     using BoringERC20 for IERC20;
@@ -245,6 +245,7 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
         UserInfo storage user = userInfo[pid][to];
 
         // Effects
+        uint256 oldAmount = user.amount;
         user.amount = user.amount.add(amount);
         user.rewardDebt = user.rewardDebt.add(
             int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION)
@@ -253,7 +254,7 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
         // Interactions
         IRewarder _rewarder = rewarder[pid];
         if (address(_rewarder) != address(0)) {
-            _rewarder.onSynapseReward(pid, to, to, 0, user.amount);
+            _rewarder.onSynapseReward(pid, to, to, 0, oldAmount);
         }
 
         lpToken[pid].safeTransferFrom(msg.sender, address(this), amount);
@@ -277,12 +278,13 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
         user.rewardDebt = user.rewardDebt.sub(
             int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION)
         );
+        uint256 oldAmount = user.amount;
         user.amount = user.amount.sub(amount);
 
         // Interactions
         IRewarder _rewarder = rewarder[pid];
         if (address(_rewarder) != address(0)) {
-            _rewarder.onSynapseReward(pid, msg.sender, to, 0, user.amount);
+            _rewarder.onSynapseReward(pid, msg.sender, to, 0, oldAmount);
         }
 
         lpToken[pid].safeTransfer(to, amount);
@@ -347,6 +349,7 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
         user.rewardDebt = accumulatedSynapse.sub(
             int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION)
         );
+        uint256 oldAmount = user.amount;
         user.amount = user.amount.sub(amount);
 
         // Interactions
@@ -359,7 +362,7 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
                 msg.sender,
                 to,
                 _pendingSynapse,
-                user.amount
+                oldAmount
             );
         }
 
