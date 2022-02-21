@@ -218,7 +218,7 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     ) external onlyBridge returns (uint256 _swappedAmount) {
         if (_path[_path.length - 1] == WGAS) {
             // Path ends with WGAS, and no one wants
-            // to receive WGAS after bridging, right?_amountOutr to unwrap it
+            // to receive WGAS after bridging, right?
             _swappedAmount = _selfSwap(
                 _amountIn,
                 _minAmountOut,

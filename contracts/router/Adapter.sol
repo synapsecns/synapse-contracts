@@ -216,7 +216,7 @@ abstract contract Adapter is Ownable, IAdapter {
      * @param _amountIn amount being sold
      * @param _tokenIn ERC20 token being sold
      * @param _tokenOut ERC20 token being bought
-     * @param _to Where recieved tokens are sent to
+     * @param _to Where received tokens are sent to
      *
      * @return Amount of _tokenOut tokens received in swap
      */
@@ -233,7 +233,7 @@ abstract contract Adapter is Ownable, IAdapter {
      * @dev All variables are already checked.
      *      This should ALWAYS return _amountOut such as: the swapper underneath
      *      is able to produce AT LEAST _amountOut in exchange for EXACTLY _amountIn
-     *      For efficiency reasons, returning the exact quote is preferrable,
+     *      For efficiency reasons, returning the exact quote is preferable,
      *      however, if the swapper doesn't have a reliable quoting method,
      *      it's safe to underquote the swapped amount
      *
