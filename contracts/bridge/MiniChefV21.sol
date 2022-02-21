@@ -120,7 +120,7 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
         uint256 allocPoint,
         IERC20 _lpToken,
         IRewarder _rewarder
-    ) public onlyOwner {
+    ) external onlyOwner {
         require(addedTokens[address(_lpToken)] == false, "Token already added");
         for (uint256 pid = 0; pid < poolInfo.length; ++pid) {
             updatePool(pid);
@@ -155,7 +155,7 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
         uint256 _allocPoint,
         IRewarder _rewarder,
         bool overwrite
-    ) public onlyOwner {
+    ) external onlyOwner {
         if (poolInfo[_pid].allocPoint != _allocPoint) {
             for (uint256 pid = 0; pid < poolInfo.length; ++pid) {
                 updatePool(pid);
@@ -180,14 +180,14 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
     /// @notice Update the given pool's `IRewarder` contract. Can only be called by the owner.
     /// @param _pid The index of the pool. See `poolInfo`.
     /// @param _rewarder Address of the rewarder delegate.
-    function setRewarder(uint256 _pid, IRewarder _rewarder) public onlyOwner {
+    function setRewarder(uint256 _pid, IRewarder _rewarder) external onlyOwner {
         rewarder[_pid] = _rewarder;
         emit LogSetPool(_pid, poolInfo[_pid].allocPoint, _rewarder, true);
     }
 
     /// @notice Sets the synapse per second to be distributed. Can only be called by the owner.
     /// @param _synapsePerSecond The amount of Synapse to be distributed per second.
-    function setSynapsePerSecond(uint256 _synapsePerSecond) public onlyOwner {
+    function setSynapsePerSecond(uint256 _synapsePerSecond) external onlyOwner {
         synapsePerSecond = _synapsePerSecond;
         emit LogSynapsePerSecond(_synapsePerSecond);
     }
@@ -265,7 +265,7 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
         uint256 pid,
         uint256 amount,
         address to
-    ) public {
+    ) external {
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][to];
 
@@ -307,7 +307,7 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
         uint256 pid,
         uint256 amount,
         address to
-    ) public {
+    ) external {
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
         uint256 oldAmount = user.amount;
@@ -332,7 +332,7 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
     /// @notice Harvest proceeds for transaction sender to `to`.
     /// @param pid The index of the pool. See `poolInfo`.
     /// @param to Receiver of SYNAPSE rewards.
-    function harvest(uint256 pid, address to) public {
+    function harvest(uint256 pid, address to) external {
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
         int256 accumulatedSynapse = int256(
@@ -372,7 +372,7 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
         uint256 pid,
         uint256 amount,
         address to
-    ) public {
+    ) external {
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
         uint256 oldAmount = user.amount;
@@ -412,7 +412,7 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
     /// @notice Withdraw without caring about rewards. EMERGENCY ONLY.
     /// @param pid The index of the pool. See `poolInfo`.
     /// @param to Receiver of the LP tokens.
-    function emergencyWithdraw(uint256 pid, address to) public {
+    function emergencyWithdraw(uint256 pid, address to) external {
         UserInfo storage user = userInfo[pid][msg.sender];
         uint256 amount = user.amount;
         user.amount = 0;

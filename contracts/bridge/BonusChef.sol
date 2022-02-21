@@ -171,7 +171,11 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         @notice Get timestamp for bonus rewards to end
         @param _rewardToken bonus reward token to check
      */
-    function periodFinish(address _rewardToken) public view returns (uint256) {
+    function periodFinish(address _rewardToken)
+        external
+        view
+        returns (uint256)
+    {
         RewardPool storage pool = rewardPools[_rewardToken];
         return pool.periodFinish;
     }
@@ -182,7 +186,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         (totalSupply() * usdValue(chefStakingToken))
         @param _rewardToken bonus reward token to check
      */
-    function rewardRate(address _rewardToken) public view returns (uint256) {
+    function rewardRate(address _rewardToken) external view returns (uint256) {
         RewardPool storage pool = rewardPools[_rewardToken];
         return pool.rewardRate;
     }
@@ -192,7 +196,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         @param _rewardToken bonus reward token to check
      */
     function rewardsDuration(address _rewardToken)
-        public
+        external
         view
         returns (uint256)
     {
@@ -205,7 +209,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         @param _rewardToken bonus reward token to check
      */
     function lastUpdateTime(address _rewardToken)
-        public
+        external
         view
         returns (uint256)
     {
@@ -219,7 +223,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         @param _rewardToken bonus reward token to check
      */
     function rewardPerTokenStored(address _rewardToken)
-        public
+        external
         view
         returns (uint256)
     {
@@ -233,7 +237,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         @param _account user address
      */
     function userRewardPerTokenPaid(address _rewardToken, address _account)
-        public
+        external
         view
         returns (uint256)
     {
@@ -247,7 +251,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         @param _account user address
      */
     function rewards(address _rewardToken, address _account)
-        public
+        external
         view
         returns (uint256)
     {
