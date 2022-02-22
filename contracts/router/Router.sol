@@ -196,17 +196,21 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
 
         4. If selfSwap() reverts, bridge is supposed to call 
                 refundToAddress(_path[0], _amountIn, _to);
-            This will return intermediate token (nUSD, nETH, ...) to the user
+            This will return bridged token (nUSD, nETH, ...) to the user
+            (!!!) This will return GAS to user, when bridging WGAS back to its native chain
      */
 
     function refundToAddress(
         address _token,
         uint256 _amount,
         address _to
-    ) external onlyBridge nonReentrant {
-        // We check for reentrance in case someone does
-        // Bridge&Swap for GAS back to its native chain.
-        // With a failed swap, this unwrap WGAS and return GAS to user
+    ) external onlyBridge {
+        // We don't check for reentrancy here as all the work is done
+
+        // BUT Bridge contract might want to check
+        // for reentrancy when calling refundToAddress()
+        // Imagine [Bridge GAS & Swap] back to its native chain.
+        // If swap fails, this unwrap WGAS and return GAS to user
         _returnTokensTo(_token, _amount, _to);
     }
 
