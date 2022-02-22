@@ -18,7 +18,6 @@ contract BasicRouter is Ownable, IBasicRouter {
     mapping(address => bool) public isTrustedAdapter;
 
     uint256 internal constant UINT_MAX = type(uint256).max;
-    address internal constant GAS = address(0);
 
     constructor(address[] memory _adapters, address payable _wgas) {
         WGAS = _wgas;
@@ -93,8 +92,10 @@ contract BasicRouter is Ownable, IBasicRouter {
     /**
      * @notice Return tokens to user
      *
-     * @dev Pass address(0) (const GAS) to return GAS instead of WGAS
-     *      Make sure to return GAS as last operation to avoid reentrancy issues
+     * @dev Pass WGAS address to unwrap it and return GAS to user
+     *      Make sure to either 
+            1. Return WGAS as last operation to avoid reentrancy issues
+            2. Add nonReentrant modifier otherwise
      *
      * @param _token address
      * @param _amount tokens to return
@@ -106,7 +107,8 @@ contract BasicRouter is Ownable, IBasicRouter {
         address _to
     ) internal {
         if (address(this) != _to) {
-            if (_token == GAS) {
+            if (_token == WGAS) {
+                _unwrap(_amount);
                 (bool success, ) = _to.call{value: _amount}("");
                 require(success, "GAS transfer failed");
             } else {
