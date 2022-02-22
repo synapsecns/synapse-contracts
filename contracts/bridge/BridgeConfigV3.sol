@@ -218,7 +218,7 @@ contract BridgeConfigV3 is AccessControl {
         for (uint256 i = 0; i < _mcTokens.length; ++i) {
             if (_mcTokens[i].chainId == chainID) {
                 string memory oldToken = _mcTokens[i].tokenAddress;
-                if (compareStrings(tokenToAdd.tokenAddress, oldToken)) {
+                if (!compareStrings(tokenToAdd.tokenAddress, oldToken)) {
                     _mcTokens[i].tokenAddress = tokenToAdd.tokenAddress;
                     _tokenIDMap[chainID][oldToken] = keccak256("");
                     _tokenIDMap[chainID][tokenToAdd.tokenAddress] = tokenID;
