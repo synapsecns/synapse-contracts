@@ -59,6 +59,9 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
     /// @dev Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint;
 
+    /// @notice Total amount of unpaid SYNAPSE rewards
+    uint256 public totalPendingSynapse;
+
     uint256 public synapsePerSecond;
     uint256 private constant ACC_SYNAPSE_PRECISION = 1e12;
 
@@ -245,6 +248,7 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
                     (synapseReward.mul(ACC_SYNAPSE_PRECISION) / lpSupply)
                     .to128()
                 );
+                totalPendingSynapse = totalPendingSynapse.add(synapseReward);
             }
             pool.lastRewardTime = block.timestamp.to64();
             poolInfo[pid] = pool;
@@ -345,8 +349,9 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
         // Effects
         user.rewardDebt = accumulatedSynapse;
 
-        // Interactions
         if (_pendingSynapse != 0) {
+            totalPendingSynapse = totalPendingSynapse.sub(_pendingSynapse);
+            // Interactions start here
             SYNAPSE.safeTransfer(to, _pendingSynapse);
         }
 
@@ -389,8 +394,11 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
         );
         user.amount = user.amount.sub(amount);
 
-        // Interactions
-        SYNAPSE.safeTransfer(to, _pendingSynapse);
+        if (_pendingSynapse != 0) {
+            totalPendingSynapse = totalPendingSynapse.sub(_pendingSynapse);
+            // Interactions start here
+            SYNAPSE.safeTransfer(to, _pendingSynapse);
+        }
 
         IRewarder _rewarder = rewarder[pid];
         if (address(_rewarder) != address(0)) {
