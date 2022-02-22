@@ -89,9 +89,9 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
             msg.sender,
             address(this)
         );
-        _unwrap(_swappedAmount);
+        // this will unwrap WGAS and return GAS
         // reentrancy not an issue here, as all work is done
-        _returnTokensTo(GAS, _swappedAmount, _to);
+        _returnTokensTo(WGAS, _swappedAmount, _to);
     }
 
     // -- BRIDGE RELATED FUNCTIONS [initial chain] --
@@ -206,7 +206,7 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     ) external onlyBridge nonReentrant {
         // We check for reentrance in case someone does
         // Bridge&Swap for GAS back to its native chain.
-        // With a failed swap, this will try to return GAS to user
+        // With a failed swap, this unwrap WGAS and return GAS to user
         _returnTokensTo(_token, _amount, _to);
     }
 
@@ -227,9 +227,9 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
                 _adapters,
                 address(this)
             );
-            _unwrap(_swappedAmount);
+            // this will unwrap WGAS and return GAS
             // reentrancy not an issue here, as all work is done
-            _returnTokensTo(GAS, _swappedAmount, _to);
+            _returnTokensTo(WGAS, _swappedAmount, _to);
         } else {
             _swappedAmount = _selfSwap(
                 _amountIn,
