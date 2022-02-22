@@ -299,7 +299,9 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         address _recipient,
         uint256,
         uint256 _oldAmount
-    ) external override onlyMiniChef {
+    ) external override onlyMiniChef nonReentrant {
+        // We check for reentrancy here, as this is the only function
+        // that can be called by anyone (interacting with MiniChef)
         _getAllActiveRewardsFor(_account, _recipient, _oldAmount);
     }
 
