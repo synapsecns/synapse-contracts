@@ -96,3 +96,11 @@ export async function testRunAdapter(
 export function range(num: Number): Array<Number> {
   return Array.from({ length: num }, (value, key) => key)
 }
+
+export function getReserves(address: String, tokens) {
+  return tokens.map(function (token) {
+    return await getUserTokenBalance(
+      address, token
+    )
+  })
+}
