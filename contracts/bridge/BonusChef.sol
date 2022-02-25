@@ -297,12 +297,17 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         uint256,
         address _account,
         address _recipient,
-        uint256,
+        uint256 _synapseAmount,
         uint256 _oldAmount
     ) external override onlyMiniChef nonReentrant {
         // We check for reentrancy here, as this is the only function
         // that can be called by anyone (interacting with MiniChef)
-        _getAllActiveRewardsFor(_account, _recipient, _oldAmount);
+        _getAllActiveRewardsFor(
+            _account,
+            _recipient,
+            _oldAmount,
+            _synapseAmount > 0
+        );
     }
 
     /* ========== RESTRICTED FUNCTIONS ========== */
@@ -487,10 +492,13 @@ contract BonusChef is IRewarder, ReentrancyGuard {
     function _getAllActiveRewardsFor(
         address _account,
         address _recipient,
-        uint256 _oldAmount
+        uint256 _oldAmount,
+        bool _claimRewards
     ) internal updateActiveRewards(_account, _oldAmount) {
-        for (uint256 i = 0; i < activeRewardPools.length; i++) {
-            _getReward(activeRewardPools[i], _account, _recipient);
+        if (_claimRewards) {
+            for (uint256 i = 0; i < activeRewardPools.length; i++) {
+                _getReward(activeRewardPools[i], _account, _recipient);
+            }
         }
     }
 
