@@ -4,6 +4,64 @@ import { MAX_UINT256, getUserTokenBalance } from "../../amm/testUtils"
 import { getBigNumber } from "../../bridge/utilities"
 import { IAdapter } from "../../../build/typechain/IAdapter"
 
+export async function prepare(thisObject, contracts) {
+  for (let indexFrom in contracts) {
+    let contract = contracts[indexFrom]
+    thisObject[contract] = await ethers.getContractFactory(contract)
+  }
+  thisObject.signers = await ethers.getSigners()
+  thisObject.owner = thisObject.signers[0]
+  thisObject.dude = thisObject.signers[1]
+  thisObject.ownerAddress = thisObject.owner.address
+  thisObject.dudeAddress = thisObject.dude.address
+}
+
+export async function deploy(thisObject, contracts) {
+  for (let contract of contracts) {
+    // console.log(contract)
+    thisObject[contract[0]] = await contract[1].deploy(...(contract[2] || []))
+    await thisObject[contract[0]].deployed()
+  }
+}
+
+export async function prepareAdapterFactories(thisObject, adapter) {
+  await prepare(thisObject, ["TestAdapterSwap", adapter.contract])
+}
+
+export async function setupAdapterTests(
+  thisObject,
+  config,
+  adapter,
+  tokenSymbols: Array<string>,
+  maxUnderQuote: Number,
+  amount,
+) {
+  await deploy(thisObject, [
+    ["testAdapterSwap", thisObject.TestAdapterSwap, [maxUnderQuote]],
+  ])
+  await deploy(thisObject, [
+    ["adapter", thisObject[adapter.contract], [...adapter.params]],
+  ])
+
+  thisObject.tokenDecimals = await setupTokens(
+    thisObject.ownerAddress,
+    config,
+    tokenSymbols,
+    amount,
+  )
+
+  thisObject.tokens = []
+
+  for (let symbol of tokenSymbols) {
+    let token = await ethers.getContractAt(
+      "contracts/amm/SwapCalculator.sol:IERC20Decimals",
+      config.assets[symbol],
+    )
+    thisObject.tokens.push(token)
+    await token.approve(thisObject.testAdapterSwap.address, MAX_UINT256)
+  }
+}
+
 export async function setBalance(
   userAddress,
   tokenAddress,
@@ -53,36 +111,30 @@ export async function setupTokens(
 }
 
 export async function testRunAdapter(
-  testAdapterSwap,
-  adapter: IAdapter,
+  thisObject,
   tokensFrom: Array<number>,
   tokensTo: Array<number>,
   times: Number,
-  amounts: Array<Number>,
-  tokens,
-  decimals: Array<Number>,
+  amounts,
   checkUnderquoting: Boolean,
-  amounts2D = false,
 ) {
-  let _amounts = amounts
   let swapsAmount = 0
-  for (var k = 0; k < times; k++)
-    for (let i of tokensFrom) {
-      let tokenFrom = tokens[i]
-      let decimalsFrom = decimals[i]
-      for (let j of tokensTo) {
-        if (i == j) {
-          continue
-        }
-        let tokenTo = tokens[j]
-        if (amounts2D) {
-          _amounts = amounts[i]
-        }
-        for (let amount of _amounts) {
+  let amountNum = amounts[0].length
+  let tokens = thisObject.tokens
+  for (let _iter in range(times))
+    for (let indexAmount in range(amountNum))
+      for (let indexTo of tokensTo) {
+        let tokenTo = tokens[indexTo]
+        for (let indexFrom of tokensFrom) {
+          if (indexFrom == indexTo) {
+            continue
+          }
+
+          let tokenFrom = tokens[indexFrom]
           swapsAmount++
-          await testAdapterSwap.testSwap(
-            adapter.address,
-            getBigNumber(amount, decimalsFrom),
+          await thisObject.testAdapterSwap.testSwap(
+            thisObject.adapter.address,
+            amounts[indexFrom][indexAmount],
             tokenFrom.address,
             tokenTo.address,
             checkUnderquoting,
@@ -90,17 +142,81 @@ export async function testRunAdapter(
           )
         }
       }
-    }
+  console.log("Swaps: %s", swapsAmount)
 }
 
 export function range(num: Number): Array<Number> {
   return Array.from({ length: num }, (value, key) => key)
 }
 
-export function getReserves(address: String, tokens) {
-  return tokens.map(function (token) {
-    return await getUserTokenBalance(
-      address, token
+export async function getAmounts(
+  config,
+  address: String,
+  tokensSymbols,
+  percents: Array<Number>,
+) {
+  let balances = {}
+  for (let token of tokensSymbols) {
+    balances[token] = await getUserTokenBalance(
+      address,
+      await ethers.getContractAt(
+        "contracts/amm/SwapCalculator.sol:IERC20Decimals",
+        config.assets[token],
+      ),
     )
+  }
+  return tokensSymbols.map(function (token) {
+    return percents.map(function (percentage) {
+      return balances[token].mul(percentage).div(1000)
+    })
   })
+}
+
+export async function forkChain(apiUrl: String, blockNumber: Number) {
+  await network.provider.request({
+    method: "hardhat_reset",
+    params: [
+      {
+        forking: {
+          jsonRpcUrl: apiUrl,
+          blockNumber: blockNumber,
+        },
+      },
+    ],
+  })
+}
+
+export function getSwapsAmount(len: Number) {
+  return len * (len - 1)
+}
+
+export async function doSwap(
+  thisObject,
+  amount,
+  indexFrom: Number,
+  indexTo: number,
+  extra = 0,
+  user = "owner",
+  doDeposit = true,
+): Promise {
+  let signer = thisObject[user]
+  let depositAddress = await thisObject.adapter.depositAddress(
+    thisObject.tokens[indexFrom].address,
+    thisObject.tokens[indexTo].address,
+  )
+
+  if (doDeposit) {
+    thisObject.tokens[indexFrom]
+      .connect(signer)
+      .transfer(depositAddress, amount.add(extra))
+  }
+
+  return thisObject.adapter
+    .connect(signer)
+    .swap(
+      amount,
+      thisObject.tokens[indexFrom].address,
+      thisObject.tokens[indexTo].address,
+      signer.address,
+    )
 }
