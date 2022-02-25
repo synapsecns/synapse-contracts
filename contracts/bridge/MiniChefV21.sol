@@ -357,11 +357,16 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
 
         IRewarder _rewarder = rewarder[pid];
         if (address(_rewarder) != address(0)) {
+            // We need bonusFarm to recognize that bonusReward needs to be sent.
+            // Rewards are only sent when _pendingSynapse > 0.
+            // So we set _pendingSynapse to 1 wei, if there are no pending rewards.
+            // Now in case the emissions for main pool are shut off before
+            // the bonus period ends, anyone will be able to claim their bonus rewards.
             _rewarder.onSynapseReward(
                 pid,
                 msg.sender,
                 to,
-                _pendingSynapse,
+                _pendingSynapse != 0 ? _pendingSynapse : 1,
                 user.amount // amount isn't modified in harvest()
             );
         }
@@ -402,11 +407,12 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable {
 
         IRewarder _rewarder = rewarder[pid];
         if (address(_rewarder) != address(0)) {
+            // see harvest() for _pendingSynapse explanation
             _rewarder.onSynapseReward(
                 pid,
                 msg.sender,
                 to,
-                _pendingSynapse,
+                _pendingSynapse != 0 ? _pendingSynapse : 1,
                 oldAmount
             );
         }
