@@ -1,5 +1,5 @@
 import { Signer } from "ethers"
-import { ZERO_ADDRESS } from "./testUtils"
+import { ZERO_ADDRESS } from "../utils"
 import { solidity } from "ethereum-waffle"
 import { deployments, ethers } from "hardhat"
 
