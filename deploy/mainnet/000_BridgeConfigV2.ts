@@ -1,12 +1,13 @@
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { DeployFunction } from 'hardhat-deploy/types'
+import {CHAIN_ID} from "../../utils/network";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, getChainId} = hre
   const { execute, deploy, get } = deployments
   const { deployer } = await getNamedAccounts()
 
-  if ((await getChainId()) === '1') { 
+  if ((await getChainId()) === CHAIN_ID.MAINNET) {
       const deployResult = await deploy('BridgeConfigV3', {
       from: deployer,
       log: true,

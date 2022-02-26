@@ -197,7 +197,7 @@ contract BridgeConfigV3 is AccessControl {
         }
         return false;
     }
-    
+
     /**
      * @notice Internal function which handles logic of setting token ID and dealing with mappings
      * @param tokenID bytes32 version of ID
