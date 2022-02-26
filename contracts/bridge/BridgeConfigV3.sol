@@ -197,25 +197,7 @@ contract BridgeConfigV3 is AccessControl {
         }
         return false;
     }
-
-    function removeTokenMapping(string calldata tokenID) external returns(bool) {
-        require(hasRole(BRIDGEMANAGER_ROLE, msg.sender));
-        bytes32 bytesTokenID = toBytes32(tokenID);
-        delete _allTokens[bytesTokenID];
-        Token[] memory tokenIDTokens = _allTokens[bytesTokenID];
-        for (uint256 i = 0; i < _allTokenIDs.length; ++i) {
-            if (_allTokenIDs[i] == bytesTokenID) {
-                delete _allTokenIDs[i];
-            }
-        }
-
-        for (uint256 i = 0; i < tokenIDTokens.length; ++i){
-            Token memory tempToken = tokenIDTokens[i];
-            delete _tokenIDMap[tempToken.chainId][tempToken.tokenAddress];
-            delete _tokens[bytesTokenID][tempToken.chainId];
-        }
-    }
-
+    
     /**
      * @notice Internal function which handles logic of setting token ID and dealing with mappings
      * @param tokenID bytes32 version of ID
@@ -387,7 +369,12 @@ contract BridgeConfigV3 is AccessControl {
         uint256 chainID,
         uint256 amount
     ) external view returns (uint256) {
-        return _calculateSwapFee(_toLower(toString(tokenAddress)), chainID, amount);
+        return
+            _calculateSwapFee(
+                _toLower(toString(tokenAddress)),
+                chainID,
+                amount
+            );
     }
 
     // GAS PRICING

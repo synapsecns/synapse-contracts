@@ -9,7 +9,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // Manually check if the pool is already deployed
   let nUSDPoolV3 = await getOrNull("nUSDPoolV3")
-  if (nUSDPoolV3 || (await getChainId()) === CHAIN_ID.OPTIMISM || (await getChainId()) === CHAIN_ID.MAINNET || (await getChainId()) === CHAIN_ID.MOONBEAM) {
+  if (nUSDPoolV3 || (await getChainId()) === CHAIN_ID.OPTIMISM || (await getChainId()) === CHAIN_ID.MAINNET || (await getChainId()) === CHAIN_ID.MOONBEAM || (await getChainId()) === CHAIN_ID.METIS || (await getChainId()) === CHAIN_ID.CRONOS) {
     // log(`reusing "nUSDPoolV3" at ${nUSDPoolV3}`)
   } else {
     // Constructor arguments
