@@ -15,7 +15,6 @@
     "hardhat:clean": "hardhat clean",
     "prepare": "husky install"
   },
-
   "repository": {
     "type": "git",
     "url": "git+https://github.com/synapsecns/synapse-contracts.git"
@@ -38,6 +37,7 @@
     "dotenv": "^10.0.0",
     "e": "^0.2.0",
     "hardhat-typechain": "^0.3.5",
+    "lodash": "^4.17.21",
     "solium": "^1.2.5",
     "synthetix": "2.45.2"
   },
@@ -51,6 +51,7 @@
     "@typechain/ethers-v5": "^7.0.0",
     "@typechain/hardhat": "^2.0.1",
     "@types/chai": "^4.2.18",
+    "@types/lodash": "^4.14.179",
     "@types/mocha": "^8.2.2",
     "@typescript-eslint/eslint-plugin": "^4.26.0",
     "@typescript-eslint/parser": "^4.26.0",
