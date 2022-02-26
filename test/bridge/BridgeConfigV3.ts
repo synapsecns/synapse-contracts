@@ -267,6 +267,12 @@ describe("Bridge Config V3", () => {
           )
           compareResultToTest(tokenConfigByAddress, config)
 
+          let tokenID = await bridgeConfigV3["getTokenID(string,uint256)"](
+            config.tokenAddress,
+            config.chainID,
+          )
+          expect(tokenID).to.be.eq(config.tokenID)
+
           // test the has underlying
           if (config.hasUnderlying) {
             const hasUnderlying = await bridgeConfigV3.hasUnderlyingToken(
@@ -286,9 +292,36 @@ describe("Bridge Config V3", () => {
                 config.chainID,
               )
             compareResultToTest(tokenConfigByEvmAddress, config)
+
+            let tokenIDByEvmAddress = await bridgeConfigV3[
+              "getTokenID(address,uint256)"
+            ](config.tokenAddress, config.chainID)
+            expect(tokenIDByEvmAddress).to.be.eq(config.tokenID)
           }
         }
       }
+    })
+
+    it("should revert on non-bridge manager setting token config", async function () {
+      const config = getTokenConfigTests()[0]
+
+      expect(
+        bridgeConfigV3[
+          "setTokenConfig(string,uint256,address,uint8,uint256,uint256,uint256,uint256,uint256,bool,bool)"
+        ](
+          config.tokenID,
+          config.chainID,
+          config.tokenAddress,
+          config.tokenDecimals,
+          config.maxSwap,
+          config.minSwap,
+          config.swapFee,
+          config.maxSwapFee,
+          config.minSwapFee,
+          config.hasUnderlying,
+          config.isUnderlying,
+        ),
+      ).to.be.reverted
     })
 
     it("should get underlying token config", async function () {
