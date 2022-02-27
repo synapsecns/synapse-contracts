@@ -104,7 +104,7 @@ describe("Bridge Config V3", () => {
         max: 10000000,
       })
 
-      let tokenAddress = Wallet.generate().getAddressString().toLowerCase()
+      let tokenAddress = Wallet.generate().getAddressString()
 
       if (!evmAddress) {
         tokenAddress = faker.finance.currencySymbol().toLowerCase()
@@ -182,7 +182,7 @@ describe("Bridge Config V3", () => {
       test: TokenConfigTest,
     ) {
       expect(result.chainId).to.be.eq(test.chainID)
-      expect(result.tokenAddress).to.be.eq(test.tokenAddress)
+      expect(result.tokenAddress).to.be.eq(test.tokenAddress.toLowerCase())
       expect(result.tokenDecimals).to.be.eq(test.tokenDecimals)
       expect(result.maxSwap).to.be.eq(test.maxSwap)
       expect(result.minSwap).to.be.eq(test.minSwap)
@@ -355,6 +355,36 @@ describe("Bridge Config V3", () => {
           ),
       ).to.be.reverted
     })
+
+    it('should correctly calculate swap fees', async function () {
+      const testToken = getTokenConfigTest(CHAIN_ID.BSC, true);
+      testToken.swapFee = BigNumber.from(8000000)
+      testToken.minSwapFee = BigNumber.from("1000000000000000000")
+      testToken.maxSwapFee = BigNumber.from("10000000000000000000")
+
+      expect(bridgeConfigV3["setTokenConfig(string,uint256,string,uint8,uint256,uint256,uint256,uint256,uint256,bool,bool)"](
+          testToken.tokenID,
+          testToken.chainID,
+          testToken.tokenAddress,
+          testToken.tokenDecimals,
+          testToken.maxSwap,
+          testToken.minSwap,
+          testToken.swapFee,
+          testToken.maxSwapFee,
+          testToken.minSwapFee,
+          testToken.hasUnderlying,
+          testToken.isUnderlying,
+      )).to.be.not.reverted
+
+      const minFee = await bridgeConfigV3["calculateSwapFee(string,uint256,uint256)"](testToken.tokenAddress, testToken.chainID, BigNumber.from(4))
+      expect(minFee).to.eq(testToken.minSwapFee)
+
+      const testFee = await bridgeConfigV3["calculateSwapFee(address,uint256,uint256)"](testToken.tokenAddress, testToken.chainID, BigNumber.from("9000000000000000000000"))
+      expect(testFee).to.eq(BigNumber.from("7200000000000000000"))
+
+      const maxFee = await bridgeConfigV3["calculateSwapFee(string,uint256,uint256)"](testToken.tokenAddress, testToken.chainID, BigNumber.from("100000000000000000000000000000"))
+      expect(maxFee).to.be.eq(testToken.maxSwapFee)
+    });
 
     it("should get underlying token config", async function () {
       // create the underlying token
