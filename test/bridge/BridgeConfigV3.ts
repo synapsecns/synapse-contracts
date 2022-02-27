@@ -13,6 +13,10 @@ import { includes } from "lodash"
 chai.use(solidity)
 const { expect, assert } = chai
 
+// deterministic tests
+faker.seed(123);
+
+
 describe("Bridge Config V3", () => {
   let signers: Array<Signer>
   let deployer: Signer
