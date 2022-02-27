@@ -285,6 +285,9 @@ describe("Bridge Config V3", () => {
           const allTokenIds = await bridgeConfigV3.getAllTokenIDs()
           expect(includes(allTokenIds, config.tokenID)).to.be.true
 
+          // make sure the token id still exists
+          expect(bridgeConfigV3.isTokenIDExist(config.tokenID)).to.be.true
+
           if (config.evmAddress) {
             let tokenConfigByEvmAddress =
               await bridgeConfigV3.getTokenByEVMAddress(
