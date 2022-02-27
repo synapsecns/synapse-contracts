@@ -190,6 +190,62 @@ describe("Bridge Config V3", () => {
       expect(result.isUnderlying).to.be.eq(test.isUnderlying)
     }
 
+    // verifyTokenConfig verifies a token config against the contract
+    async function veriyTokenConfig(config: TokenConfigTest) {
+      // make sure all get token methods return the token correctly
+      let tokenConfig = await bridgeConfigV3.getToken(
+        config.tokenID,
+        config.chainID,
+      )
+      compareResultToTest(tokenConfig, config)
+
+      let tokenConfigByID = await bridgeConfigV3.getTokenByID(
+        config.tokenID,
+        config.chainID,
+      )
+      compareResultToTest(tokenConfigByID, config)
+
+      let tokenConfigByAddress = await bridgeConfigV3.getTokenByAddress(
+        config.tokenAddress,
+        config.chainID,
+      )
+      compareResultToTest(tokenConfigByAddress, config)
+
+      let tokenID = await bridgeConfigV3["getTokenID(string,uint256)"](
+        config.tokenAddress,
+        config.chainID,
+      )
+      expect(tokenID).to.be.eq(config.tokenID)
+
+      // test the has underlying
+      if (config.hasUnderlying) {
+        const hasUnderlying = await bridgeConfigV3.hasUnderlyingToken(
+          config.tokenID,
+        )
+        expect(hasUnderlying).to.be.eq(config.hasUnderlying)
+      }
+
+      // make sure token id is in get all token ids
+      const allTokenIds = await bridgeConfigV3.getAllTokenIDs()
+      expect(includes(allTokenIds, config.tokenID)).to.be.true
+
+      // make sure the token id still exists
+      expect(await bridgeConfigV3.isTokenIDExist(config.tokenID)).to.be.true
+
+      if (config.evmAddress) {
+        let tokenConfigByEvmAddress = await bridgeConfigV3.getTokenByEVMAddress(
+          config.tokenAddress,
+          config.chainID,
+        )
+        compareResultToTest(tokenConfigByEvmAddress, config)
+
+        let tokenIDByEvmAddress = await bridgeConfigV3[
+          "getTokenID(address,uint256)"
+        ](config.tokenAddress, config.chainID)
+        expect(tokenIDByEvmAddress).to.be.eq(config.tokenID)
+      }
+    }
+
     // this method merely tests set/get token config. We may set isUnderlying/hasUnderlying in places where it doesn't exist
     // so we can't test getUnderlyingToken here
     it("should set token configs correctly", async function () {
@@ -248,59 +304,7 @@ describe("Bridge Config V3", () => {
         }
 
         for (let config of tokenConfigs) {
-          // make sure all get token methods return the token correctly
-          let tokenConfig = await bridgeConfigV3.getToken(
-            config.tokenID,
-            config.chainID,
-          )
-          compareResultToTest(tokenConfig, config)
-
-          let tokenConfigByID = await bridgeConfigV3.getTokenByID(
-            config.tokenID,
-            config.chainID,
-          )
-          compareResultToTest(tokenConfigByID, config)
-
-          let tokenConfigByAddress = await bridgeConfigV3.getTokenByAddress(
-            config.tokenAddress,
-            config.chainID,
-          )
-          compareResultToTest(tokenConfigByAddress, config)
-
-          let tokenID = await bridgeConfigV3["getTokenID(string,uint256)"](
-            config.tokenAddress,
-            config.chainID,
-          )
-          expect(tokenID).to.be.eq(config.tokenID)
-
-          // test the has underlying
-          if (config.hasUnderlying) {
-            const hasUnderlying = await bridgeConfigV3.hasUnderlyingToken(
-              config.tokenID,
-            )
-            expect(hasUnderlying).to.be.eq(config.hasUnderlying)
-          }
-
-          // make sure token id is in get all token ids
-          const allTokenIds = await bridgeConfigV3.getAllTokenIDs()
-          expect(includes(allTokenIds, config.tokenID)).to.be.true
-
-          // make sure the token id still exists
-          expect(bridgeConfigV3.isTokenIDExist(config.tokenID)).to.be.true
-
-          if (config.evmAddress) {
-            let tokenConfigByEvmAddress =
-              await bridgeConfigV3.getTokenByEVMAddress(
-                config.tokenAddress,
-                config.chainID,
-              )
-            compareResultToTest(tokenConfigByEvmAddress, config)
-
-            let tokenIDByEvmAddress = await bridgeConfigV3[
-              "getTokenID(address,uint256)"
-            ](config.tokenAddress, config.chainID)
-            expect(tokenIDByEvmAddress).to.be.eq(config.tokenID)
-          }
+          await veriyTokenConfig(config)
         }
       }
     })
