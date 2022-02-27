@@ -306,36 +306,44 @@ describe("Bridge Config V3", () => {
       const config = getTokenConfigTests()[0]
 
       expect(
-        bridgeConfigV3.connect(attacker)[
-          "setTokenConfig(string,uint256,address,uint8,uint256,uint256,uint256,uint256,uint256,bool,bool)"
-        ](
-          config.tokenID,
-          config.chainID,
-          config.tokenAddress,
-          config.tokenDecimals,
-          config.maxSwap,
-          config.minSwap,
-          config.swapFee,
-          config.maxSwapFee,
-          config.minSwapFee,
-          config.hasUnderlying,
-          config.isUnderlying,
-        ),
+        bridgeConfigV3
+          .connect(attacker)
+          [
+            "setTokenConfig(string,uint256,address,uint8,uint256,uint256,uint256,uint256,uint256,bool,bool)"
+          ](
+            config.tokenID,
+            config.chainID,
+            config.tokenAddress,
+            config.tokenDecimals,
+            config.maxSwap,
+            config.minSwap,
+            config.swapFee,
+            config.maxSwapFee,
+            config.minSwapFee,
+            config.hasUnderlying,
+            config.isUnderlying,
+          ),
       ).to.be.reverted
 
-      expect(bridgeConfigV3.connect(attacker)["setTokenConfig(string,uint256,string,uint8,uint256,uint256,uint256,uint256,uint256,bool,bool)"](
-          config.tokenID,
-          config.chainID,
-          config.tokenAddress,
-          config.tokenDecimals,
-          config.maxSwap,
-          config.minSwap,
-          config.swapFee,
-          config.maxSwapFee,
-          config.minSwapFee,
-          config.hasUnderlying,
-          config.isUnderlying,
-      )).to.be.reverted
+      expect(
+        bridgeConfigV3
+          .connect(attacker)
+          [
+            "setTokenConfig(string,uint256,string,uint8,uint256,uint256,uint256,uint256,uint256,bool,bool)"
+          ](
+            config.tokenID,
+            config.chainID,
+            config.tokenAddress,
+            config.tokenDecimals,
+            config.maxSwap,
+            config.minSwap,
+            config.swapFee,
+            config.maxSwapFee,
+            config.minSwapFee,
+            config.hasUnderlying,
+            config.isUnderlying,
+          ),
+      ).to.be.reverted
     })
 
     it("should get underlying token config", async function () {
