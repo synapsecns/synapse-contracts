@@ -1,6 +1,7 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
 import { CHAIN_ID } from "../utils/network"
+import {includes} from "lodash";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, getChainId } = hre
@@ -353,7 +354,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
-  if ((await getChainId()) == CHAIN_ID.MOONBEAM || await getChainId() == CHAIN_ID.CRONOS) {
+  if ((includes([CHAIN_ID.MOONBEAM, CHAIN_ID.CRONOS], await getChainId()))) {
     await deploy("MultiSigWalletFactory", {
       from: deployer,
       log: true,

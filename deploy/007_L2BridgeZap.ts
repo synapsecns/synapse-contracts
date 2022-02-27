@@ -1,11 +1,12 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
+import {CHAIN_ID} from "../utils/network";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, getChainId } = hre
   const { deploy, get } = deployments
   const { deployer } = await getNamedAccounts()
-  if ((await getChainId()) === "56") {
+  if ((await getChainId()) === CHAIN_ID.BSC) {
     await deploy("L2BridgeZap", {
       from: deployer,
       log: true,
@@ -21,7 +22,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
-  if ((await getChainId()) === "137") {
+  if ((await getChainId()) === CHAIN_ID.POLYGON) {
     await deploy("L2BridgeZap", {
       from: deployer,
       log: true,
@@ -37,7 +38,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
-  if ((await getChainId()) === "1313161554") {
+  if ((await getChainId()) === CHAIN_ID.AURORA) {
     await deploy("L2BridgeZap", {
       from: deployer,
       log: true,
@@ -53,7 +54,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
-  if ((await getChainId()) === "250") {
+  if ((await getChainId()) === CHAIN_ID.FANTOM) {
     await deploy("L2BridgeZap", {
       from: deployer,
       log: true,
@@ -85,7 +86,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
-  if ((await getChainId()) === "1088") {
+  if ((await getChainId()) === CHAIN_ID.METIS) {
     await deploy("L2BridgeZap", {
       from: deployer,
       log: true,
@@ -102,7 +103,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   }
 
 
-  if ((await getChainId()) === "25") {
+  if ((await getChainId()) === CHAIN_ID.CRONOS) {
     await deploy("L2BridgeZap", {
       from: deployer,
       log: true,
@@ -120,7 +121,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
 
 
-  if ((await getChainId()) === "1285") {
+  if ((await getChainId()) === CHAIN_ID.MOONRIVER) {
     await deploy("L2BridgeZap", {
       contract: "MoonriverBridgeZap",
       from: deployer,
@@ -137,7 +138,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
-  if ((await getChainId()) === "288") {
+  if ((await getChainId()) === CHAIN_ID.BOBA) {
     await deploy("L2BridgeZap", {
       from: deployer,
       log: true,
@@ -154,7 +155,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   }
 
 
-  if ((await getChainId()) === "10") {
+  if ((await getChainId()) === CHAIN_ID.OPTIMISM) {
     await deploy("L2BridgeZap", {
       from: deployer,
       log: true,
@@ -171,7 +172,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   }
 
 
-  if ((await getChainId()) === "1666600000") {
+  if ((await getChainId()) === CHAIN_ID.HARMONY) {
     await deploy("L2BridgeZap", {
       contract: 'HarmonyBridgeZap',
       from: deployer,
@@ -188,7 +189,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
-  if ((await getChainId()) === "43114") {
+  if ((await getChainId()) === CHAIN_ID.AVALANCHE) {
     await deploy("L2BridgeZap", {
       from: deployer,
       log: true,
@@ -205,7 +206,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
-  if ((await getChainId()) === "42161") {
+  if ((await getChainId()) === CHAIN_ID.ARBITRUM) {
     await deploy("L2BridgeZap", {
       from: deployer,
       log: true,
@@ -223,4 +224,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 }
 export default func
 func.tags = ["L2BridgeZap"]
-func.dependencies = ["DummyWeth", "WETH", "ETHPool"]
+func.dependencies = ["DummyWeth", "WETH"]
