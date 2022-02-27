@@ -4,7 +4,7 @@ import { DeployFunction } from "hardhat-deploy/types"
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, getChainId } = hre
   const { deploy, get, catchUnknownSigner } = deployments
-  const { deployer, devMultisig } = await getNamedAccounts()
+  const { deployer } = await getNamedAccounts()
 
   await catchUnknownSigner(
     deploy("SynapseBridge", {

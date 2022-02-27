@@ -49,8 +49,9 @@ let config: HardhatUserConfig = {
       gasPrice: 6 * 1000000000,
     },
     polygon: {
-      url: "https://polygon-mainnet.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55",
-      gasPrice: 40 * 1000000000,
+      url: "https://polygon-rpc.com",
+      gasPrice: 400 * 1000000000,
+      gas: 1000000
     },
     bsc: {
       url: "https://bsc-dataseed1.defibit.io",
@@ -62,12 +63,9 @@ let config: HardhatUserConfig = {
     },
     harmony: {
       url: "https://harmony-0-rpc.gateway.pokt.network/",
-      gasPrice: 6 * 1000000000,
     },
     boba: {
       url: "https://mainnet.boba.network",
-      gas: 10000000,
-      gasPrice: 20 * 1000000000,
     },
     moonriver: {
       url: "https://rpc.moonriver.moonbeam.network",
@@ -78,7 +76,9 @@ let config: HardhatUserConfig = {
     },
     aurora: {
       url: "https://mainnet.aurora.dev",
-      gasPrice: 0
+    },
+    metis: {
+      url: 'https://andromeda.metis.io/?owner=1088',
     },
     mainnet: {
       url: process.env.ALCHEMY_API || "https://main-light.eth.linkpool.io/",
@@ -88,6 +88,10 @@ let config: HardhatUserConfig = {
       gas: 10000000,
       // gasPrice: 1 * 1000000000,
     },
+    cronos: {
+      url: "https://evm-cronos.crypto.org",
+      gasPrice: 5000 * 1000000000
+    }
   },
   paths: {
     artifacts: "./build/artifacts",
@@ -164,7 +168,9 @@ if (process.env.PRIVATE_KEYS) {
     "moonriver",
     "moonbeam",
     "optimism",
-    "aurora"
+    "aurora",
+    "cronos",
+    "metis"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
