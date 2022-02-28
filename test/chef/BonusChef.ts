@@ -13,7 +13,7 @@ const { BigNumber } = require("ethers")
 import { ethers } from "hardhat"
 import { solidity } from "ethereum-waffle"
 import chai from "chai"
-import { getUserTokenBalance, ZERO_ADDRESS } from "../amm/testUtils"
+import { getUserTokenBalance, ZERO_ADDRESS } from "../utils"
 chai.use(solidity)
 
 describe("BonusChef", function () {
