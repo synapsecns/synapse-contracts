@@ -8,14 +8,13 @@ import {
   getUserTokenBalance,
   getUserTokenBalances,
   setTimestamp,
-} from "./testUtils"
+} from "../utils"
 import { solidity } from "ethereum-waffle"
 import { deployments, ethers } from "hardhat"
 
 import { GenericERC20 } from "../../build/typechain/GenericERC20"
 import { LPToken } from "../../build/typechain/LPToken"
 import { Swap } from "../../build/typechain/Swap"
-import { SwapUtils } from "../../build/typechain/SwapUtils"
 import chai from "chai"
 
 chai.use(solidity)
@@ -24,7 +23,6 @@ const { expect } = chai
 describe("Swap with 4 tokens", () => {
   let signers: Array<Signer>
   let swap: Swap
-  let swapUtils: SwapUtils
   let DAI: GenericERC20
   let USDC: GenericERC20
   let USDT: GenericERC20

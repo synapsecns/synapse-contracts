@@ -10,7 +10,7 @@ import {
   setNextTimestamp,
   setTimestamp,
   forceAdvanceOneBlock,
-} from "./testUtils"
+} from "../utils"
 import { solidity } from "ethereum-waffle"
 import { deployments, ethers } from "hardhat"
 
