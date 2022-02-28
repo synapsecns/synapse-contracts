@@ -4,13 +4,14 @@ import {
   TIME,
   asyncForEach,
   getCurrentBlockTimestamp,
-  getPoolBalances,
   getUserTokenBalance,
   getUserTokenBalances,
   setTimestamp,
 } from "../utils"
 import { solidity } from "ethereum-waffle"
 import { deployments, ethers } from "hardhat"
+
+import { getPoolBalances } from "./utils"
 
 import { GenericERC20 } from "../../build/typechain/GenericERC20"
 import { LPToken } from "../../build/typechain/LPToken"

@@ -7,9 +7,11 @@ import {
   getUserTokenBalances,
   TIME,
   setTimestamp,
-  getPoolBalances,
   forceAdvanceOneBlock,
 } from "../utils"
+
+import { getPoolBalances } from "./utils"
+
 import { solidity } from "ethereum-waffle"
 
 import { GenericERC20 } from "../../build/typechain/GenericERC20"

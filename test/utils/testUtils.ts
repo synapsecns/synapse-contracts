@@ -16,67 +16,7 @@ export enum TIME {
   WEEKS = 604800,
 }
 
-// DEPLOYMENT helper functions
-
-// Workaround for linking libraries not yet working in buidler-waffle plugin
-// https://github.com/nomiclabs/buidler/issues/611
-export function linkBytecode(
-  artifact: Artifact,
-  libraries: Record<string, string>,
-): string | Bytes {
-  let bytecode = artifact.bytecode
-
-  for (const [, fileReferences] of Object.entries(artifact.linkReferences)) {
-    for (const [libName, fixups] of Object.entries(fileReferences)) {
-      const addr = libraries[libName]
-      if (addr === undefined) {
-        continue
-      }
-
-      for (const fixup of fixups) {
-        bytecode =
-          bytecode.substr(0, 2 + fixup.start * 2) +
-          addr.substr(2) +
-          bytecode.substr(2 + (fixup.start + fixup.length) * 2)
-      }
-    }
-  }
-
-  return bytecode
-}
-
-export async function deployContractWithLibraries(
-  signer: Signer,
-  artifact: Artifact,
-  libraries: Record<string, string>,
-  args?: Array<unknown>,
-): Promise<Contract> {
-  const swapFactory = (await ethers.getContractFactory(
-    artifact.abi,
-    linkBytecode(artifact, libraries),
-    signer,
-  )) as ContractFactory
-
-  if (args) {
-    return swapFactory.deploy(...args)
-  } else {
-    return swapFactory.deploy()
-  }
-}
-
 // Contract calls
-
-export async function getPoolBalances(
-  swap: Swap,
-  numOfTokens: number,
-): Promise<BigNumber[]> {
-  const balances: BigNumber[] = []
-
-  for (let i = 0; i < numOfTokens; i++) {
-    balances.push(await swap.getTokenBalance(i))
-  }
-  return balances
-}
 
 export async function getUserTokenBalances(
   address: string | Signer,
