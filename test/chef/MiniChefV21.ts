@@ -103,6 +103,7 @@ describe("MiniChefV21", function () {
       let pendingSynapse = await this.chef.pendingSynapse(0, this.alice.address)
       expect(pendingSynapse).to.be.equal(expectedSynapse)
     })
+
     it("When time is lastRewardTime", async function () {
       await this.chef.add(10, this.rlp.address, this.rewarder.address)
       await this.rlp.approve(this.chef.address, getBigNumber(10))
@@ -245,6 +246,7 @@ describe("MiniChefV21", function () {
         .to.be.equal(await this.r.balanceOf(this.alice.address))
         .to.be.equal(expectedSynapse)
     })
+
     it("Harvest with empty user balance", async function () {
       await this.chef.add(10, this.rlp.address, this.rewarder.address)
       await this.chef.harvest(0, this.alice.address)

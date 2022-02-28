@@ -477,6 +477,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         @param _governance new governor
      */
     function setGovernance(address _governance) external onlyGov {
+        emit GovernanceChange(_governance);
         governance = _governance;
     }
 
@@ -637,4 +638,5 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         address recipient,
         uint256 reward
     );
+    event GovernanceChange(address governance);
 }
