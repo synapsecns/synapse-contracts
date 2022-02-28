@@ -5,9 +5,9 @@ const { ethers } = require("hardhat")
 const { BigNumber } = ethers
 
 /**
- * advanceBlock advances the block number by one
+ * advanceOneBlock advances the block number by one
  */
-export async function advanceBlock() {
+export async function advanceOneBlock() {
   return ethers.provider.send("evm_mine", [])
 }
 
@@ -18,7 +18,7 @@ export async function advanceBlock() {
  */
 export async function advanceBlockTo(blockNumber) {
   for (let i = await ethers.provider.getBlockNumber(); i < blockNumber; i++) {
-    await advanceBlock()
+    await advanceOneBlock()
   }
 }
 
@@ -28,15 +28,15 @@ export async function advanceBlockTo(blockNumber) {
  */
 export async function increaseTime(amount) {
   await ethers.provider.send("evm_increaseTime", [amount.toNumber()])
-  await advanceBlock()
+  await advanceOneBlock()
 }
 
 /**
- * latestTime returns the latest time
+ * returns the latest timestamp
  */
-export async function latestTime(): Promise<BigNumberish> {
+export async function getCurrentBlockTimestamp(): Promise<number> {
   const block = await ethers.provider.getBlock("latest")
-  return BigNumber.from(block.timestamp)
+  return block.timestamp
 }
 
 /**
@@ -45,7 +45,32 @@ export async function latestTime(): Promise<BigNumberish> {
  */
 export async function advanceTimeAndBlock(time) {
   await advanceTime(time)
-  await advanceBlock()
+  await advanceOneBlock()
+}
+
+/**
+ * setTimestamp sets the timestamp to be used
+ * @param timestamp
+ */
+export async function setTimestamp(timestamp: number): Promise<any> {
+  const params = timestamp ? [timestamp] : []
+  return ethers.provider.send("evm_mine", params)
+}
+
+/**
+ * setNextTimestamp sets the next timestamp
+ * @param timestamp
+ */
+export async function setNextTimestamp(timestamp: number): Promise<any> {
+  const chainId = (await ethers.provider.getNetwork()).chainId
+
+  switch (chainId) {
+    case 31337: // buidler evm
+      return ethers.provider.send("evm_setNextBlockTimestamp", [timestamp])
+    case 1337: // ganache
+    default:
+      return setTimestamp(timestamp)
+  }
 }
 
 /**

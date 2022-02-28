@@ -9,7 +9,7 @@ import {
   getUserTokenBalances,
   setNextTimestamp,
   setTimestamp,
-  forceAdvanceOneBlock,
+  advanceOneBlock,
 } from "../utils"
 import { solidity } from "ethereum-waffle"
 import { deployments, ethers } from "hardhat"
@@ -1443,7 +1443,7 @@ describe("Swap", async () => {
 
   describe("rampA", () => {
     beforeEach(async () => {
-      await forceAdvanceOneBlock()
+      await advanceOneBlock()
     })
 
     it("Emits RampA event", async () => {
@@ -1618,7 +1618,7 @@ describe("Swap", async () => {
 
   describe("Check for timestamp manipulations", () => {
     beforeEach(async () => {
-      await forceAdvanceOneBlock()
+      await advanceOneBlock()
     })
 
     it("Check for maximum differences in A and virtual price when A is increasing", async () => {

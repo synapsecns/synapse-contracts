@@ -7,7 +7,7 @@ import {
   getUserTokenBalances,
   TIME,
   setTimestamp,
-  forceAdvanceOneBlock,
+  advanceOneBlock,
 } from "../utils"
 
 import { getPoolBalances } from "./utils"
@@ -296,7 +296,7 @@ describe("Swap Deployer", () => {
 
   describe("Check for timestamp manipulations", () => {
     beforeEach(async () => {
-      await forceAdvanceOneBlock()
+      await advanceOneBlock()
     })
     it("Check for maximum differences in A and virtual price when increasing", async () => {
       // Create imbalanced pool to measure virtual price change

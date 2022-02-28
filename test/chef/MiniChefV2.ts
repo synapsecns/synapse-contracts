@@ -2,7 +2,7 @@ import { expect, assert } from "chai"
 import {
   advanceTime,
   advanceBlockTo,
-  advanceBlock,
+  advanceOneBlock,
   deploy,
   getBigNumber,
   ZERO_ADDRESS,
@@ -254,7 +254,7 @@ describe("MiniChefV2", function () {
       await this.rlp.approve(this.chef.address, getBigNumber(10))
       expect(await this.chef.lpToken(0)).to.be.equal(this.rlp.address)
       let log = await this.chef.deposit(0, getBigNumber(1), this.alice.address)
-      await advanceBlock()
+      await advanceOneBlock()
       let log2 = await this.chef.withdraw(
         0,
         getBigNumber(1),
