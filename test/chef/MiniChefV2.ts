@@ -8,7 +8,7 @@ import {
   deploy,
   getBigNumber,
   ADDRESS_ZERO,
-} from "./utilities"
+} from "../utils"
 const { BigNumber } = require("ethers")
 import { ethers } from "hardhat"
 import { solidity } from "ethereum-waffle"
