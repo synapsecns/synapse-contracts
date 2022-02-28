@@ -1,14 +1,14 @@
 import { expect, assert } from "chai"
 import {
   advanceTime,
-  advanceTimeAndBlock,
   advanceBlockTo,
   advanceBlock,
-  prepare,
   deploy,
   getBigNumber,
-  ADDRESS_ZERO,
-} from "../bridge/utilities"
+  ZERO_ADDRESS,
+} from "../utils"
+import { prepare } from "./utils"
+
 const { BigNumber } = require("ethers")
 import { ethers } from "hardhat"
 import { solidity } from "ethereum-waffle"
@@ -253,7 +253,7 @@ describe("MiniChefV21", function () {
     })
 
     it("Harvest for SYNAPSE-only pool", async function () {
-      await this.chef.add(10, this.rlp.address, ADDRESS_ZERO)
+      await this.chef.add(10, this.rlp.address, ZERO_ADDRESS)
       await this.rlp.approve(this.chef.address, getBigNumber(10))
       expect(await this.chef.lpToken(0)).to.be.equal(this.rlp.address)
       let log = await this.chef.deposit(0, getBigNumber(1), this.alice.address)

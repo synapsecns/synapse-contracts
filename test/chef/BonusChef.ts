@@ -1,19 +1,11 @@
 import { expect, assert } from "chai"
-import {
-  advanceTime,
-  advanceTimeAndBlock,
-  advanceBlockTo,
-  advanceBlock,
-  prepare,
-  deploy,
-  getBigNumber,
-  ADDRESS_ZERO,
-} from "../bridge/utilities"
+import { advanceTime, deploy, getBigNumber } from "../utils"
 const { BigNumber } = require("ethers")
 import { ethers } from "hardhat"
 import { solidity } from "ethereum-waffle"
 import chai from "chai"
 import { getUserTokenBalance, ZERO_ADDRESS } from "../utils"
+import { prepare } from "./utils"
 chai.use(solidity)
 
 describe("BonusChef", function () {
