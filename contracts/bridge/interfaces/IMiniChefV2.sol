@@ -6,36 +6,41 @@ import {IERC20} from "@boringcrypto/boring-solidity/contracts/libraries/BoringER
 import {IRewarder} from "./IRewarder.sol";
 
 interface IMiniChefV2 {
+    /// @notice Info of each MCV2 user.
+    /// `amount` LP token amount the user has provided.
+    /// `rewardDebt` The amount of SYNAPSE entitled to the user.
     struct UserInfo {
         uint256 amount;
-        uint256 rewardDebt;
+        int256 rewardDebt;
     }
 
+    /// @notice Info of each MCV2 pool.
+    /// `allocPoint` The amount of allocation points assigned to the pool.
+    /// Also known as the amount of SYNAPSE to distribute per block.
     struct PoolInfo {
         uint128 accSynapsePerShare;
         uint64 lastRewardTime;
         uint64 allocPoint;
     }
 
-    function lpToken(uint256) external view returns (IERC20);
-
     function poolInfo(uint256)
         external
         view
-        returns (IMiniChefV2.PoolInfo memory);
+        returns (uint128, uint64, uint64);
 
+    function updatePool(uint256 pid)
+        external
+        returns (PoolInfo memory);
+
+    function lpToken(uint256) external view returns (IERC20);
     function poolLength() external view returns (uint256);
 
     function rewarder(uint256) external view returns (IRewarder);
 
-    function updatePool(uint256 pid)
-        external
-        returns (IMiniChefV2.PoolInfo memory);
-
     function userInfo(uint256 _pid, address _user)
         external
         view
-        returns (uint256, uint256);
+        returns (uint256, int256);
 
     function deposit(
         uint256 pid,

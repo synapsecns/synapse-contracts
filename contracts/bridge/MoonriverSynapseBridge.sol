@@ -303,9 +303,9 @@ contract MRSynapseBridge is
                     .exchangeOldForCanonical(address(token), amount.sub(fee))
             returns (uint256 canolical_tokens_out) {
                 IERC20(0x1A93B23281CC1CDE4C4741353F3064709A16197d).safeTransfer(
-                    to,
-                    canolical_tokens_out
-                );
+                        to,
+                        canolical_tokens_out
+                    );
             } catch {
                 IERC20(token).safeTransfer(to, amount.sub(fee));
             }
