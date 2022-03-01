@@ -523,39 +523,6 @@ contract BridgeConfigV3 is AccessControl {
         return AddressStrings.addressToString(x);
     }
 
-    function concat(string memory _x, string memory _y)
-        internal
-        pure
-        returns (string memory)
-    {
-        bytes memory _xBytes = bytes(_x);
-        bytes memory _yBytes = bytes(_y);
-
-        string memory _tmpValue = new string(_xBytes.length + _yBytes.length);
-        bytes memory _newValue = bytes(_tmpValue);
-
-        uint256 i;
-        uint256 j;
-
-        for (i = 0; i < _xBytes.length; i++) {
-            _newValue[j++] = _xBytes[i];
-        }
-
-        for (i = 0; i < _yBytes.length; i++) {
-            _newValue[j++] = _yBytes[i];
-        }
-
-        return string(_newValue);
-    }
-
-    function char(bytes1 b) internal pure returns (bytes1 c) {
-        if (uint8(b) < 10) {
-            c = bytes1(uint8(b) + 0x30);
-        } else {
-            c = bytes1(uint8(b) + 0x57);
-        }
-    }
-
     function compareStrings(string memory a, string memory b)
         internal
         pure
