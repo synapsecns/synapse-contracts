@@ -6,11 +6,17 @@ import {IERC20} from "@boringcrypto/boring-solidity/contracts/libraries/BoringER
 import {IRewarder} from "./IRewarder.sol";
 
 interface IMiniChefV2 {
+    /// @notice Info of each MCV2 user.
+    /// `amount` LP token amount the user has provided.
+    /// `rewardDebt` The amount of SYNAPSE entitled to the user.
     struct UserInfo {
         uint256 amount;
         int256 rewardDebt;
     }
 
+    /// @notice Info of each MCV2 pool.
+    /// `allocPoint` The amount of allocation points assigned to the pool.
+    /// Also known as the amount of SYNAPSE to distribute per block.
     struct PoolInfo {
         uint128 accSynapsePerShare;
         uint64 lastRewardTime;

@@ -26,22 +26,6 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable, IMiniChefV2 {
     using BoringERC20 for IERC20;
     using SignedSafeMath for int256;
 
-    /// @notice Info of each MCV2 user.
-    /// `amount` LP token amount the user has provided.
-    /// `rewardDebt` The amount of SYNAPSE entitled to the user.
-    //    struct UserInfo {
-    //        uint256 amount;
-    //        int256 rewardDebt;
-    //    }
-
-    /// @notice Info of each MCV2 pool.
-    /// `allocPoint` The amount of allocation points assigned to the pool.
-    /// Also known as the amount of SYNAPSE to distribute per block.
-    //    struct PoolInfo {
-    //        uint128 accSynapsePerShare;
-    //        uint64 lastRewardTime;
-    //        uint64 allocPoint;
-    //    }
 
     /// @notice Address of SYNAPSE contract.
     IERC20 public immutable SYNAPSE;
