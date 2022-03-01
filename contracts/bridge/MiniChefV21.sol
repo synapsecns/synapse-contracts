@@ -162,6 +162,8 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable, IMiniChefV2 {
         IRewarder _rewarder,
         bool overwrite
     ) external onlyOwner {
+        require(_pid < rewarder.length, "poolid out of bounds");
+
         if (poolInfo[_pid].allocPoint != _allocPoint) {
             for (uint256 pid = 0; pid < poolInfo.length; ++pid) {
                 updatePool(pid);
