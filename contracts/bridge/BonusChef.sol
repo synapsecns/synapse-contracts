@@ -545,10 +545,11 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         return
             _oldAmount
                 .mul(
-                rewardPerToken(_rewardToken).sub(
-                    pool.userRewardPerTokenPaid[_account]
+                    rewardPerToken(_rewardToken).sub(
+                        pool.userRewardPerTokenPaid[_account]
+                    )
                 )
-            ).div(1e18)
+                .div(1e18)
                 .add(pool.rewards[_account]);
     }
 
@@ -578,7 +579,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
                     _oldAmount
                 );
                 pool.userRewardPerTokenPaid[_account] = pool
-                .rewardPerTokenStored;
+                    .rewardPerTokenStored;
             }
         }
         _;

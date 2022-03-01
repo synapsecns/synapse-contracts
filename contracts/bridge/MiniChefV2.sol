@@ -191,8 +191,7 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
         }
         pending = int256(
             user.amount.mul(accSynapsePerShare) / ACC_SYNAPSE_PRECISION
-        ).sub(user.rewardDebt)
-        .toUInt256();
+        ).sub(user.rewardDebt).toUInt256();
     }
 
     /// @notice Update reward variables for all pools. Be careful of gas spending!
@@ -218,7 +217,7 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
                 ) / totalAllocPoint;
                 pool.accSynapsePerShare = pool.accSynapsePerShare.add(
                     (synapseReward.mul(ACC_SYNAPSE_PRECISION) / lpSupply)
-                    .to128()
+                        .to128()
                 );
             }
             pool.lastRewardTime = block.timestamp.to64();
@@ -300,8 +299,8 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
             user.amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION
         );
         uint256 _pendingSynapse = accumulatedSynapse
-        .sub(user.rewardDebt)
-        .toUInt256();
+            .sub(user.rewardDebt)
+            .toUInt256();
 
         // Effects
         user.rewardDebt = accumulatedSynapse;
@@ -340,8 +339,8 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
             user.amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION
         );
         uint256 _pendingSynapse = accumulatedSynapse
-        .sub(user.rewardDebt)
-        .toUInt256();
+            .sub(user.rewardDebt)
+            .toUInt256();
 
         // Effects
         user.rewardDebt = accumulatedSynapse.sub(

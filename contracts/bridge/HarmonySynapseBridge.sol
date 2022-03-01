@@ -314,9 +314,9 @@ contract HarmonySynapseBridge is
                     .exchangeOldForCanonical(address(token), amount.sub(fee))
             returns (uint256 canolical_tokens_out) {
                 IERC20(0xFa7191D292d5633f702B0bd7E3E3BcCC0e633200).safeTransfer(
-                    to,
-                    canolical_tokens_out
-                );
+                        to,
+                        canolical_tokens_out
+                    );
             } catch {
                 IERC20(token).safeTransfer(to, amount.sub(fee));
             }
