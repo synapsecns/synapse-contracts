@@ -136,8 +136,8 @@ contract SwapFlashLoan is Swap {
         );
 
         swapStorage.balances[tokenIndex] = availableLiquidityAfter
-        .sub(protocolBalanceBefore)
-        .sub(protocolFee);
+            .sub(protocolBalanceBefore)
+            .sub(protocolFee);
         emit FlashLoan(receiver, tokenIndex, amount, amountFee, protocolFee);
     }
 

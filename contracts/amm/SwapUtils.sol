@@ -172,9 +172,9 @@ library SwapUtils {
         // dy, dy_0 - dy
 
         uint256 dySwapFee = currentY
-        .sub(newY)
-        .div(self.tokenPrecisionMultipliers[tokenIndex])
-        .sub(dy);
+            .sub(newY)
+            .div(self.tokenPrecisionMultipliers[tokenIndex])
+            .sub(dy);
 
         return (dy, dySwapFee);
     }
@@ -206,9 +206,8 @@ library SwapUtils {
 
         require(tokenIndex < xp.length, "Token index out of range");
 
-
-            CalculateWithdrawOneTokenDYInfo memory v
-         = CalculateWithdrawOneTokenDYInfo(0, 0, 0, 0, 0);
+        CalculateWithdrawOneTokenDYInfo
+            memory v = CalculateWithdrawOneTokenDYInfo(0, 0, 0, 0, 0);
         v.preciseA = _getAPrecise(self);
         v.d0 = getD(xp, v.preciseA);
         v.d1 = v.d0.sub(tokenAmount.mul(v.d0).div(totalSupply));
@@ -230,9 +229,7 @@ library SwapUtils {
                     (i == tokenIndex)
                         ? xpi.mul(v.d1).div(v.d0).sub(v.newY)
                         : xpi.sub(xpi.mul(v.d1).div(v.d0))
-                )
-                .mul(v.feePerToken)
-                .div(FEE_DENOMINATOR)
+                ).mul(v.feePerToken).div(FEE_DENOMINATOR)
             );
         }
 
@@ -335,17 +332,17 @@ library SwapUtils {
             }
             prevD = d;
             d = nA
-            .mul(s)
-            .div(AmplificationUtils.A_PRECISION)
-            .add(dP.mul(numTokens))
-            .mul(d)
-            .div(
-                nA
-                .sub(AmplificationUtils.A_PRECISION)
-                .mul(d)
+                .mul(s)
                 .div(AmplificationUtils.A_PRECISION)
-                .add(numTokens.add(1).mul(dP))
-            );
+                .add(dP.mul(numTokens))
+                .mul(d)
+                .div(
+                    nA
+                        .sub(AmplificationUtils.A_PRECISION)
+                        .mul(d)
+                        .div(AmplificationUtils.A_PRECISION)
+                        .add(numTokens.add(1).mul(dP))
+                );
             if (d.within1(prevD)) {
                 return d;
             }
@@ -802,8 +799,8 @@ library SwapUtils {
             for (uint256 i = 0; i < pooledTokens.length; i++) {
                 uint256 idealBalance = v.d1.mul(v.balances[i]).div(v.d0);
                 fees[i] = feePerToken
-                .mul(idealBalance.difference(newBalances[i]))
-                .div(FEE_DENOMINATOR);
+                    .mul(idealBalance.difference(newBalances[i]))
+                    .div(FEE_DENOMINATOR);
                 self.balances[i] = newBalances[i].sub(
                     fees[i].mul(self.adminFee).div(FEE_DENOMINATOR)
                 );
