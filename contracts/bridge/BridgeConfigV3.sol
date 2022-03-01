@@ -6,6 +6,75 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
+library AddressStrings {
+    struct slice {uint _len; uint _ptr;}
+
+    function memcpy(uint dest, uint src, uint len) private pure {
+        for (; len >= 32; len -= 32) {
+            assembly {
+            mstore(dest, mload(src))
+            }
+            dest += 32;
+            src += 32;
+        }
+            uint mask = 256 ** (32 - len) - 1;
+            assembly {
+            let srcpart := and(mload(src), not(mask))
+            let destpart := and(mload(dest), mask)
+            mstore(dest, or(destpart, srcpart))
+        }
+    }
+
+    /*
+     * @dev Returns a slice containing the entire string.
+     * @param self The string to make a slice from.
+     * @return A newly allocated slice containing the entire string.
+     */
+    function toSlice(string memory self) internal pure returns (slice memory) {
+        uint ptr;
+        assembly {
+        ptr := add(self, 0x20)
+        }
+        return slice(bytes(self).length, ptr);
+    }
+
+    /*
+     * @dev Returns a newly allocated string containing the concatenation of `self` and `other`.
+     * @param self The first slice to concatenate.
+     * @param other The second slice to concatenate.
+     * @return The concatenation of the two strings.
+     */
+    function concat(slice memory self, slice memory other) internal pure returns (string memory) {
+        string memory ret = new string(self._len + other._len);
+        uint retptr;
+        assembly {retptr := add(ret, 32)}
+        memcpy(retptr, self._ptr, self._len);
+        memcpy(retptr + self._len, other._ptr, other._len);
+        return ret;
+    }
+
+    function concat(string memory a, string memory b) internal pure returns (string memory) {
+        return concat(toSlice(a), toSlice(b));
+    }
+
+    function char(byte b) internal pure returns (byte c) {
+        if (uint8(b) < 10) return byte(uint8(b) + 0x30);
+        else return byte(uint8(b) + 0x57);
+    }
+
+    function addressToString(address a) internal pure returns (string memory) {
+        bytes memory s = new bytes(40);
+        for (uint i = 0; i < 20; i++) {
+            byte b = byte(uint8(uint(a) / (2 ** (8 * (19 - i)))));
+            byte hi = byte(uint8(b) / 16);
+            byte lo = byte(uint8(b) - 16 * uint8(hi));
+            s[2 * i] = char(hi);
+            s[2 * i + 1] = char(lo);
+        }
+        return concat("0x", string(s));
+    }
+}
+
 /**
  * @title BridgeConfig contract
  * @notice This token is used for configuring different tokens on the bridge and mapping them across chains.
@@ -451,18 +520,7 @@ contract BridgeConfigV3 is AccessControl {
     }
 
     function toString(address x) internal pure returns (string memory) {
-        bytes memory s = new bytes(40);
-        for (uint256 i = 0; i < 20; i++) {
-            bytes1 b = bytes1(uint8(uint256(uint160(x)) / (2**(8 * (19 - i)))));
-            bytes1 hi = bytes1(uint8(b) / 16);
-            bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));
-            s[2 * i] = char(hi);
-            s[2 * i + 1] = char(lo);
-        }
-
-        string memory addrPrefix = "0x";
-
-        return concat(addrPrefix, string(s));
+        return AddressStrings.addressToString(x);
     }
 
     function concat(string memory _x, string memory _y)
