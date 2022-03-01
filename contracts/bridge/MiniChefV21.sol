@@ -26,7 +26,6 @@ contract MiniChefV21 is BoringOwnable, BoringBatchable, IMiniChefV2 {
     using BoringERC20 for IERC20;
     using SignedSafeMath for int256;
 
-
     /// @notice Address of SYNAPSE contract.
     IERC20 public immutable SYNAPSE;
 
