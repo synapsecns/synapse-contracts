@@ -11,7 +11,7 @@ This repository contains smart contracts for Synapse Protocol. The repository us
 Synapse is a cross-chain layer ∞ protocol powering frictionless interoperability between blockchains.
 By providing decentralized, permissionless transactions between any L1, sidechain, or L2 ecosystem, Synapse powers integral blockchain activities such as asset transfers, swaps, and generalized messaging with cross-chain functionality - and in so doing enables new primitives based off of its cross-chain architecture.
 
-
+ 
 
 
 Contains synapse contracts
