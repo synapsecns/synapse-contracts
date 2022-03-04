@@ -1,6 +1,6 @@
 //@ts-nocheck
 import { Signer } from "ethers"
-import { MAX_UINT256, getUserTokenBalance } from "../../../amm/testUtils"
+import { MAX_UINT256, getUserTokenBalance } from "../../../utils"
 import { solidity } from "ethereum-waffle"
 import { deployments } from "hardhat"
 
@@ -12,11 +12,14 @@ import {
   deployAdapter,
   setupTokens,
   testRunAdapter,
-  range,
+  range, forkChain, prepareAdapterFactories, setupAdapterTests, getAmounts,
 } from "../../utils/helpers"
 
 import config from "../../../config.json"
 import adapters from "../adapters.json"
+
+const STORAGE = "tricryptopool"
+
 
 chai.use(solidity)
 const { expect } = chai
@@ -39,26 +42,28 @@ describe(ADAPTER_NAME, async () => {
 
   let testAdapterSwap: TestAdapterSwap
 
-  // Test Values
-  const TOKENS = []
-
   // const TOKENS_DECIMALS = [6, 8, 18]
-  const TOKENS_DECIMALS = [6, 4, 14]
-  const tokenSymbols = ["USDT", "WBTC", "WETH"]
+  const TOKENS_DECIMALS: Array<Number> = [6, 4, 14]
+  const poolTokenSymbols: Array<String> = ["USDT", "WBTC", "WETH"]
 
-  const ALL_TOKENS = range(tokenSymbols.length)
+  const ALL_TOKENS: Array<Number> = range(poolTokenSymbols.length)
 
-  const AMOUNTS = [
+  const SHARE_SMALL: Array<Number> = [1, 12, 29, 42]
+  const SHARE_BIG: Array<Number> = [66, 121]
+
+  const AMOUNTS: Array<Number> = [
     [8, 1001, 96420, 1337000],
     [1, 1000, 20000, 480000],
     [10, 2500, 210000, 4790000],
   ]
-  const AMOUNTS_BIG = [
+  const AMOUNTS_BIG: Array<Number> =  [
     [10200300, 50100200, 100300400],
     [4200000, 20220000, 44000000],
     [42000000, 231450000, 426900000],
   ]
   const CHECK_UNDERQUOTING = true
+  const MAX_UNDERQUOTE = 1
+  const MINT_AMOUNT = getBigNumber("1000000000000000000")
 
   async function testAdapter(
     adapter: IAdapter,
@@ -103,11 +108,11 @@ describe(ADAPTER_NAME, async () => {
       await setupTokens(
         ownerAddress,
         config[CHAIN],
-        tokenSymbols,
+        poolTokenSymbols,
         amount,
       )
 
-      for (let symbol of tokenSymbols) {
+      for (let symbol of poolTokenSymbols) {
         let token = await ethers.getContractAt(
           "contracts/amm/SwapCalculator.sol:IERC20Decimals",
           config[CHAIN].assets[symbol],
@@ -121,22 +126,52 @@ describe(ADAPTER_NAME, async () => {
     },
   )
 
-  before(async () => {
-    await network.provider.request({
-      method: "hardhat_reset",
-      params: [
-        {
-          forking: {
-            jsonRpcUrl: process.env.ALCHEMY_API,
-            blockNumber: 14000000, // 2022-01-13
-          },
-        },
-      ],
-    })
+  before(async function () {
+    await forkChain(process.env.ALCHEMY_API, 14000000)
+    await prepareAdapterFactories(this, ADAPTER)
   })
 
-  beforeEach(async () => {
-    await setupTest()
+  beforeEach(async function ()  {
+    await setupAdapterTests(
+        this,
+        config[CHAIN],
+        ADAPTER,
+        poolTokenSymbols,
+        MAX_UNDERQUOTE,
+        MINT_AMOUNT
+    )
+
+    for (let token of this.tokens) {
+      expect(await getUserTokenBalance(this.ownerAddress, token)).to.eq(
+          MINT_AMOUNT,
+      )
+    }
+
+    AMOUNTS = await getAmounts(
+        config[CHAIN],
+        config[CHAIN][DEX][STORAGE],
+        poolTokenSymbols,
+        SHARE_SMALL,
+    )
+    AMOUNTS_BIG = await getAmounts(
+        config[CHAIN],
+        config[CHAIN][DEX][STORAGE],
+        poolTokenSymbols,
+        SHARE_BIG,
+    )
+
+    // We counted 3CRV balance for all stables, which has 18 decimals
+    let diff = getBigNumber(1, 12)
+    for (let index in poolTokenSymbols) {
+      if (["USDT"].includes(poolTokenSymbols[index])) {
+        for (let j in AMOUNTS[index]) {
+          AMOUNTS[index][j] = AMOUNTS[index][j].div(diff)
+        }
+        for (let j in AMOUNTS_BIG[index]) {
+          AMOUNTS_BIG[index][j] = AMOUNTS_BIG[index][j].div(diff)
+        }
+      }
+    }
   })
 
   describe("Sanity checks", () => {
@@ -242,11 +277,25 @@ describe(ADAPTER_NAME, async () => {
 
   describe("Adapter Swaps", () => {
     it("Swaps between tokens [120 small-medium swaps]", async () => {
-      await testAdapter(adapter, ALL_TOKENS, ALL_TOKENS, 5)
+      await testRunAdapter(
+          this,
+          ALL_TOKENS,
+          ALL_TOKENS,
+          5,
+          AMOUNTS,
+          CHECK_UNDERQUOTING,
+      )
     })
 
     it("Swaps between tokens [90 big-ass swaps]", async () => {
-      await testAdapter(adapter, ALL_TOKENS, ALL_TOKENS, 5, AMOUNTS_BIG)
+      await testRunAdapter(
+          this,
+          ALL_TOKENS,
+          ALL_TOKENS,
+          5,
+          AMOUNTS_BIG,
+          CHECK_UNDERQUOTING,
+      )
     })
   })
 })

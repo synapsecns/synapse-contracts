@@ -29,28 +29,25 @@ const ADAPTER = adapters[CHAIN][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
 describe(ADAPTER_NAME, function () {
-  let timesBig: Number
-  let swapsAmountBig: Number
+  const tokenSymbols: Array<String> = ["DAIe", "USDCe", "USDTe", "WBTCe", "WETHe"]
+  const poolTokenSymbols: Array<String> = ["avCRV", "avCRV", "avCRV", "avWBTC", "avWETH"]
 
-  const tokenSymbols = ["DAIe", "USDCe", "USDTe", "WBTCe", "WETHe"]
-  const poolTokenSymbols = ["avCRV", "avCRV", "avCRV", "avWBTC", "avWETH"]
-
-  const ALL_TOKENS = range(tokenSymbols.length)
+  const ALL_TOKENS: Array<Number> = range(tokenSymbols.length)
 
   // MAX_SHARE = 1000
-  const SHARE_SMALL = [1, 12, 29, 42]
-  const SHARE_BIG = [66, 121]
+  const SHARE_SMALL: Array<Number> = [1, 12, 29, 42]
+  const SHARE_BIG: Array<Number> = [66, 121]
 
-  let swapsPerTime = SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
-  const timesSmall = Math.floor(125 / swapsPerTime) + 1
-  const swapsAmount = timesSmall * swapsPerTime
+  let swapsPerTime: number = SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
+  const timesSmall: number = Math.floor(125 / swapsPerTime) + 1
+  const swapsAmount: number = timesSmall * swapsPerTime
 
   swapsPerTime = SHARE_BIG.length * getSwapsAmount(tokenSymbols.length)
   const timesBig = Math.floor(50 / swapsPerTime) + 1
   const swapsAmountBig = timesBig * swapsPerTime
 
-  const AMOUNTS = []
-  const AMOUNTS_BIG = []
+  const AMOUNTS: Array<Number> = []
+  const AMOUNTS_BIG: Array<Number> = []
 
   const MAX_UNDERQUOTE = 1
   const CHECK_UNDERQUOTING = false
