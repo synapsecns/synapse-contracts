@@ -9,7 +9,7 @@ import {
   setTimestamp,
   getPoolBalances,
   forceAdvanceOneBlock,
-} from "./testUtils"
+} from "../utils"
 import { solidity } from "ethereum-waffle"
 
 import { GenericERC20 } from "../../build/typechain/GenericERC20"

@@ -1,21 +1,14 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
 import { CHAIN_ID } from "../utils/network"
+import {includes} from "lodash";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, getChainId } = hre
   const { deploy, get, execute, getOrNull, log, save } = deployments
   const { deployer } = await getNamedAccounts()
 
-  if (
-    (await getChainId()) === CHAIN_ID.ARBITRUM ||
-    (await getChainId()) === CHAIN_ID.HARDHAT || 
-    (await getChainId()) === CHAIN_ID.BOBA ||
-    (await getChainId()) === CHAIN_ID.OPTIMISM || 
-    (await getChainId()) === CHAIN_ID.AVALANCHE ||
-    (await getChainId()) === CHAIN_ID.HARMONY || 
-    (await getChainId()) === CHAIN_ID.FANTOM
-  ) {
+  if (includes([CHAIN_ID.ARBITRUM, CHAIN_ID.HARDHAT, CHAIN_ID.BOBA, CHAIN_ID.OPTIMISM, CHAIN_ID.AVALANCHE, CHAIN_ID.HARMONY, CHAIN_ID.FANTOM], await getChainId())) {
     if ((await getOrNull("nETH")) == null) {
       const receipt = await execute(
         "SynapseERC20Factory",
