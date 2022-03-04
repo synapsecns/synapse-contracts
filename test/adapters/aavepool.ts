@@ -1,6 +1,6 @@
 //@ts-nocheck
 import { BigNumber, Signer } from "ethers"
-import { MAX_UINT256, getUserTokenBalance } from "../amm/testUtils"
+import { MAX_UINT256 } from "../utils"
 import { solidity } from "ethereum-waffle"
 import { deployments } from "hardhat"
 
