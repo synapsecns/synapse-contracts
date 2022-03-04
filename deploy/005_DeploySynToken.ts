@@ -4,7 +4,7 @@ import { CHAIN_ID } from "../utils/network"
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, getChainId } = hre
-  const { deploy, get, execute, getOrNull, log, save } = deployments
+  const { get, execute, getOrNull, log, save } = deployments
   const { deployer } = await getNamedAccounts()
 
     if ((await getOrNull("SynapseToken")) == null) {
