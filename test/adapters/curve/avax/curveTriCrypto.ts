@@ -2,7 +2,7 @@
 import chai from "chai"
 import { solidity } from "ethereum-waffle"
 
-import { getUserTokenBalance } from "../../../amm/testUtils"
+import { getUserTokenBalance } from "../../../utils"
 import { getBigNumber } from "../../../bridge/utilities"
 import {
   testRunAdapter,
