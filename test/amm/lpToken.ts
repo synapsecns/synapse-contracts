@@ -7,7 +7,7 @@ import { GenericERC20 } from "../../build/typechain/GenericERC20"
 
 import chai from "chai"
 import { deployments, ethers } from "hardhat"
-import { asyncForEach, MAX_UINT256 } from "./testUtils"
+import { asyncForEach, MAX_UINT256 } from "../utils"
 
 chai.use(solidity)
 const { expect } = chai
