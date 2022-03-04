@@ -1,6 +1,6 @@
 //@ts-nocheck
 import { ethers, network } from "hardhat"
-import { MAX_UINT256, getUserTokenBalance } from "../../amm/testUtils"
+import { MAX_UINT256, getUserTokenBalance } from "../../utils"
 import { getBigNumber } from "../../bridge/utilities"
 import { IAdapter } from "../../../build/typechain/IAdapter"
 
