@@ -5,7 +5,7 @@ import { solidity } from "ethereum-waffle"
 import { deployments } from "hardhat"
 
 import { TestAdapterSwap } from "../../../../build/typechain/TestAdapterSwap"
-import { IAdapter } from "../../../../build/typechain/IAdapter"
+import { CurveBasePoolAdapter } from "../../../../build/typechain/CurveBasePoolAdapter"
 import chai from "chai"
 import { getBigNumber } from "../../../bridge/utilities"
 import {
@@ -39,7 +39,7 @@ describe.only(ADAPTER_NAME, function () {
   let dude: Signer
   let dudeAddress: string
 
-  let adapter: IAdapter
+  let adapter: CurveBasePoolAdapter
 
   let testAdapterSwap: TestAdapterSwap
 
