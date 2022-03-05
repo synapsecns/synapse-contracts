@@ -1,5 +1,6 @@
 //@ts-nocheck
 import { ethers, network } from "hardhat"
+import { BigNumber} from "@ethersproject/bignumber";
 import { MAX_UINT256, getUserTokenBalance } from "../../utils"
 import { getBigNumber } from "../../bridge/utilities"
 import { IAdapter } from "../../../build/typechain/IAdapter"
@@ -154,7 +155,7 @@ export async function getAmounts(
   address: String,
   tokensSymbols: Array<string>,
   percents: Array<Number>,
-) {
+): Promise<Array<BigNumber>> {
   let balances = {}
   for (let token of tokensSymbols) {
     balances[token] = await getUserTokenBalance(
