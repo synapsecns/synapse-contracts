@@ -51,6 +51,11 @@ describe(ADAPTER_NAME, function () {
 
   const ALL_TOKENS: Array<Number> = range(tokenSymbols.length)
 
+  // MAX_SHARE = 1000
+  // TODO: ????
+  const SHARE_SMALL: Array<Number> = [1, 12, 29, 42]
+  const SHARE_BIG: Array<Number> = [66, 121]
+
   const AMOUNTS: Array<Number> = []
   const AMOUNTS_BIG: Array<Number> = []
   const MAX_UNDERQUOTE: Number = 1
@@ -104,38 +109,38 @@ describe(ADAPTER_NAME, function () {
 
     AMOUNTS = await getAmounts(
       config[CHAIN],
-      config[CHAIN][DEX][STORAGE],
-      poolTokenSymbols,
+      config[CHAIN][DEX][POOL],
+      tokenSymbols,
       SHARE_SMALL,
     )
     AMOUNTS_BIG = await getAmounts(
       config[CHAIN],
-      config[CHAIN][DEX][STORAGE],
-      poolTokenSymbols,
+      config[CHAIN][DEX][POOL],
+      tokenSymbols,
       SHARE_BIG,
     )
   })
 
   describe("Sanity checks", () => {
-    it("Curve Adapter is properly set up", async () => {
-      expect(await adapter.pool()).to.eq(config[CHAIN][DEX][POOL])
+    it("Curve Adapter is properly set up", async function ()  {
+      expect(await this.adapter.pool()).to.eq(config[CHAIN][DEX][POOL])
 
       for (let i in TOKENS) {
         let token = TOKENS[i].address
-        expect(await adapter.isPoolToken(token))
-        expect(await adapter.tokenIndex(token)).to.eq(+i)
+        expect(await this.adapter.isPoolToken(token))
+        expect(await this.adapter.tokenIndex(token)).to.eq(+i)
       }
     })
 
-    it("Swap fails if transfer amount is too little", async () => {
+    it("Swap fails if transfer amount is too little", async function ()  {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
-      let depositAddress = await adapter.depositAddress(
+      let depositAddress = await this.adapter.depositAddress(
         TOKENS[0].address,
         TOKENS[1].address,
       )
       TOKENS[0].transfer(depositAddress, amount.sub(1))
       await expect(
-        adapter.swap(
+        this.adapter.swap(
           amount,
           TOKENS[0].address,
           TOKENS[1].address,
@@ -144,15 +149,15 @@ describe(ADAPTER_NAME, function () {
       ).to.be.reverted
     })
 
-    it("Only Owner can rescue overprovided swap tokens", async () => {
+    it("Only Owner can rescue overprovided swap tokens", async function ()  {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
-      let depositAddress = await adapter.depositAddress(
+      let depositAddress = await this.adapter.depositAddress(
         TOKENS[0].address,
         TOKENS[1].address,
       )
       TOKENS[0].transfer(depositAddress, amount.add(extra))
-      await adapter.swap(
+      await this.adapter.swap(
         amount,
         TOKENS[0].address,
         TOKENS[1].address,
@@ -160,30 +165,30 @@ describe(ADAPTER_NAME, function () {
       )
 
       await expect(
-        adapter.connect(dude).recoverERC20(TOKENS[0].address, extra),
+        this.adapter.connect(dude).recoverERC20(TOKENS[0].address, extra),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        adapter.recoverERC20(TOKENS[0].address, extra),
+        this.adapter.recoverERC20(TOKENS[0].address, extra),
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
-    it("Anyone can take advantage of overprovided swap tokens", async () => {
+    it("Anyone can take advantage of overprovided swap tokens", async function ()  {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
-      let depositAddress = await adapter.depositAddress(
+      let depositAddress = await this.adapter.depositAddress(
         TOKENS[0].address,
         TOKENS[1].address,
       )
       TOKENS[0].transfer(depositAddress, amount.add(extra))
-      await adapter.swap(
+      await this.adapter.swap(
         amount,
         TOKENS[0].address,
         TOKENS[1].address,
         ownerAddress,
       )
 
-      let swapQuote = await adapter.query(
+      let swapQuote = await this.adapter.query(
         extra,
         TOKENS[0].address,
         TOKENS[1].address,
@@ -197,33 +202,51 @@ describe(ADAPTER_NAME, function () {
       ).to.changeTokenBalance(TOKENS[1], dude, swapQuote.add(1))
     })
 
-    it("Only Owner can rescue GAS from Adapter", async () => {
+    it("Only Owner can rescue GAS from Adapter", async function ()  {
       let amount = 42690
       await expect(() =>
         owner.sendTransaction({
-          to: adapter.address,
+          to: this.adapter.address,
           value: amount,
         }),
       ).to.changeEtherBalance(adapter, amount)
 
-      await expect(adapter.connect(dude).recoverGAS(amount)).to.be.revertedWith(
+      await expect(this.adapter.connect(dude).recoverGAS(amount)).to.be.revertedWith(
         "Ownable: caller is not the owner",
       )
 
-      await expect(() => adapter.recoverGAS(amount)).to.changeEtherBalances(
+      await expect(() => this.adapter.recoverGAS(amount)).to.changeEtherBalances(
         [adapter, owner],
         [-amount, amount],
       )
     })
   })
 
-  describe.only("Adapter Swaps", () => {
-    it("Swaps between tokens [120 small-medium swaps]", async () => {
-      await testAdapter(adapter, ALL_TOKENS, ALL_TOKENS, 5, AMOUNTS)
-    })
+  describe("Adapter Swaps", function () {
+    it(
+      "Swaps between tokens [" + "{numberOfRuns}" + " small-medium swaps]",
+      async function () {
+        await testRunAdapter(
+          this,
+          ALL_TOKENS,
+          ALL_TOKENS,
+          1, // runs set to 1 right now
+          AMOUNTS,
+          CHECK_UNDERQUOTING,
+        )
+      },
+    )
 
-    it("Swaps between tokens [90 big-ass swaps]", async () => {
-      await testAdapter(adapter, ALL_TOKENS, ALL_TOKENS, 5, AMOUNTS_BIG)
+    it("Swaps between tokens [90 big-ass swaps]", async function() {
+      // await testAdapter(adapter, ALL_TOKENS, ALL_TOKENS, 5, AMOUNTS_BIG)
+        await testRunAdapter(
+          this,
+          ALL_TOKENS,
+          ALL_TOKENS,
+          1, // runs set to 1 right now
+          AMOUNTS_BIG,
+          CHECK_UNDERQUOTING,
+        )
     })
   })
 })
