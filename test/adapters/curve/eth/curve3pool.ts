@@ -13,6 +13,10 @@ import {
   setupTokens,
   testRunAdapter,
   range,
+  getAmounts,
+  setupAdapterTests,
+  prepareAdapterFactories,
+  forkChain
 } from "../../utils/helpers"
 
 import config from "../../../config.json"
@@ -27,7 +31,7 @@ const POOL = "basepool"
 const ADAPTER = adapters[CHAIN][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
-describe(ADAPTER_NAME, async () => {
+describe(ADAPTER_NAME, function () {
   let signers: Array<Signer>
 
   let owner: Signer
@@ -42,14 +46,18 @@ describe(ADAPTER_NAME, async () => {
   // Test Values
   const TOKENS = []
 
-  const TOKENS_DECIMALS = []
-  const tokenSymbols = ["DAI", "USDC", "USDT"]
+  const TOKENS_DECIMALS: Array<Number> = [18, 6, 6]
+  const tokenSymbols: Array<string> = ["DAI", "USDC", "USDT"]
 
-  const ALL_TOKENS = range(tokenSymbols.length)
+  const ALL_TOKENS: Array<Number> = range(tokenSymbols.length)
 
-  const AMOUNTS = [8, 1001, 96420, 1337000]
-  const AMOUNTS_BIG = [10200300, 200300400, 100900800700]
-  const CHECK_UNDERQUOTING = true
+  const AMOUNTS: Array<Number> = []
+  const AMOUNTS_BIG: Array<Number> = []
+  const MAX_UNDERQUOTE: Number = 1
+  const CHECK_UNDERQUOTING: Boolean = true
+
+  const MINT_AMOUNT = getBigNumber("1000000000000000000")
+
 
   async function testAdapter(
     adapter: IAdapter,
@@ -71,62 +79,41 @@ describe(ADAPTER_NAME, async () => {
     )
   }
 
-  const setupTest = deployments.createFixture(
-    async ({ deployments, ethers }) => {
-      const { get } = deployments
-      await deployments.fixture() // ensure you start from a fresh deployments
-
-      // TOKENS.length = 0
-      signers = await ethers.getSigners()
-      owner = signers[0]
-      ownerAddress = await owner.getAddress()
-      dude = signers[1]
-      dudeAddress = await dude.getAddress()
-
-      const testFactory = await ethers.getContractFactory("TestAdapterSwap")
-
-      // we expect the query to underQuote by 1 at maximum
-      testAdapterSwap = (await testFactory.deploy(1)) as TestAdapterSwap
-
-      let amount = getBigNumber(1e12)
-
-      TOKENS_DECIMALS = await setupTokens(
-        ownerAddress,
-        config[CHAIN],
-        tokenSymbols,
-        amount,
-      )
-
-      for (let symbol of tokenSymbols) {
-        let token = await ethers.getContractAt(
-          "contracts/amm/SwapCalculator.sol:IERC20Decimals",
-          config[CHAIN].assets[symbol],
-        )
-        TOKENS.push(token)
-        expect(await getUserTokenBalance(ownerAddress, token)).to.eq(amount)
-        await token.approve(testAdapterSwap.address, MAX_UINT256)
-      }
-
-      adapter = await deployAdapter(ADAPTER)
-    },
-  )
-
-  before(async () => {
-    await network.provider.request({
-      method: "hardhat_reset",
-      params: [
-        {
-          forking: {
-            jsonRpcUrl: process.env.ALCHEMY_API,
-            blockNumber: 14000000, // 2022-01-13
-          },
-        },
-      ],
-    })
+  before(async function() {
+    // 2022-01-13
+    await forkChain(process.env.ALCHEMY_API, 14000000)
+    console.log(this)
+    await prepareAdapterFactories(this, ADAPTER)
   })
 
-  beforeEach(async () => {
-    await setupTest()
+  beforeEach(async function() {
+    await setupAdapterTests(
+      this,
+      config[CHAIN],
+      ADAPTER,
+      tokenSymbols,
+      MAX_UNDERQUOTE,
+      MINT_AMOUNT,
+    )
+
+    for (let token of this.tokens) {
+      expect(await getUserTokenBalance(this.ownerAddress, token)).to.eq(
+        MINT_AMOUNT,
+      )
+    }
+
+    AMOUNTS = await getAmounts(
+      config[CHAIN],
+      config[CHAIN][DEX][STORAGE],
+      poolTokenSymbols,
+      SHARE_SMALL,
+    )
+    AMOUNTS_BIG = await getAmounts(
+      config[CHAIN],
+      config[CHAIN][DEX][STORAGE],
+      poolTokenSymbols,
+      SHARE_BIG,
+    )
   })
 
   describe("Sanity checks", () => {
@@ -230,9 +217,9 @@ describe(ADAPTER_NAME, async () => {
     })
   })
 
-  describe("Adapter Swaps", () => {
+  describe.only("Adapter Swaps", () => {
     it("Swaps between tokens [120 small-medium swaps]", async () => {
-      await testAdapter(adapter, ALL_TOKENS, ALL_TOKENS, 5)
+      await testAdapter(adapter, ALL_TOKENS, ALL_TOKENS, 5, AMOUNTS)
     })
 
     it("Swaps between tokens [90 big-ass swaps]", async () => {
