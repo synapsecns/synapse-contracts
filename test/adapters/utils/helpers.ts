@@ -152,7 +152,7 @@ export function range(num: Number): Array<Number> {
 export async function getAmounts(
   config,
   address: String,
-  tokensSymbols,
+  tokensSymbols: Array<string>,
   percents: Array<Number>,
 ) {
   let balances = {}
