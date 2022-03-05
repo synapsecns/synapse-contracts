@@ -17,8 +17,9 @@ import {
 
 import config from "../../../config.json"
 import adapters from "../adapters.json"
+import {CurveBasePoolAdapter} from "../../../../build/typechain";
 
-const STORAGE = "tricryptopool"
+const STORAGE = "tricrypto"
 
 
 chai.use(solidity)
@@ -38,11 +39,12 @@ describe(ADAPTER_NAME, async () => {
   let dude: Signer
   let dudeAddress: string
 
-  let adapter: IAdapter
+  let adapter: CurveBasePoolAdapter
 
   let testAdapterSwap: TestAdapterSwap
 
   // const TOKENS_DECIMALS = [6, 8, 18]
+  const TOKENS = []
   const TOKENS_DECIMALS: Array<Number> = [6, 4, 14]
   const poolTokenSymbols: Array<String> = ["USDT", "WBTC", "WETH"]
 
@@ -172,9 +174,17 @@ describe(ADAPTER_NAME, async () => {
         }
       }
     }
+
+    adapter = this.adapter
+    TOKENS = this.tokens
+    TOKENS_DECIMALS = this.tokenDecimals
+    owner = this.owner
+    dude = this.dude
+    ownerAddress = this.ownerAddress
+    dudeAddress = this.dudeAddress
   })
 
-  describe("Sanity checks", () => {
+  describe.only("Sanity checks", () => {
     it("Curve Adapter is properly set up", async () => {
       expect(await adapter.pool()).to.eq(config[CHAIN][DEX][POOL])
 
