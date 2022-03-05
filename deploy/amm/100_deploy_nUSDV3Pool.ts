@@ -1,6 +1,7 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
 import { CHAIN_ID } from "../../utils/network"
+import {includes} from "lodash";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, getChainId } = hre
@@ -9,7 +10,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // Manually check if the pool is already deployed
   let nUSDPoolV3 = await getOrNull("nUSDPoolV3")
-  if (nUSDPoolV3 || (await getChainId()) === CHAIN_ID.OPTIMISM || (await getChainId()) === CHAIN_ID.MAINNET || (await getChainId()) === CHAIN_ID.MOONBEAM) {
+  if (nUSDPoolV3 || includes([CHAIN_ID.OPTIMISM, CHAIN_ID.MAINNET, CHAIN_ID.MOONBEAM, CHAIN_ID.METIS, CHAIN_ID.CRONOS], await getChainId())) {
     // log(`reusing "nUSDPoolV3" at ${nUSDPoolV3}`)
   } else {
     // Constructor arguments

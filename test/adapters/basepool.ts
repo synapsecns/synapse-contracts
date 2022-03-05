@@ -1,22 +1,14 @@
 //@ts-nocheck
 import { BigNumber, Signer } from "ethers"
-import {
-  MAX_UINT256,
-  TIME,
-  asyncForEach,
-  getCurrentBlockTimestamp,
-  getPoolBalances,
-  getUserTokenBalance,
-  getUserTokenBalances,
-  setTimestamp,
-} from "../amm/testUtils"
+import { MAX_UINT256, getUserTokenBalance } from "../utils"
 import { solidity } from "ethereum-waffle"
-import { deployments, ethers } from "hardhat"
+import { deployments } from "hardhat"
+
+import { TestAdapterSwap } from "../build/typechain/TestAdapterSwap"
 
 import { GenericERC20 } from "../../build/typechain/GenericERC20"
 import { LPToken } from "../../build/typechain/LPToken"
 import { Swap } from "../../build/typechain/Swap"
-import { Adapter } from "../../build/typechain/Adapter"
 import { SynapseBasePoolAdapter } from "../../build/typechain/SynapseBasePoolAdapter"
 import chai from "chai"
 import { getBigNumber } from "../bridge/utilities"
@@ -39,6 +31,8 @@ describe("Base Pool Adapter", async () => {
 
   let basePoolAdapter: SynapseBasePoolAdapter
 
+  let testAdapterSwap: TestAdapterSwap
+
   let swapStorage: {
     initialA: BigNumber
     futureA: BigNumber
@@ -56,61 +50,41 @@ describe("Base Pool Adapter", async () => {
   const LP_TOKEN_SYMBOL = "TESTLP"
   const TOKENS: GenericERC20[] = []
   const TOKENS_DECIMALS = [18, 6, 6, 18]
-  const AMOUNTS = [2, 13, 42, 108, 420]
+
+  const AMOUNTS = [2, 6, 15, 49]
+  const AMOUNTS_BIG = [123, 404, 777]
+  const CHECK_UNDERQUOTING = true
 
   async function testAdapter(
     adapter: SynapseBasePoolAdapter,
     tokensFrom: Array<number>,
     tokensTo: Array<number>,
     times = 1,
+    amounts = AMOUNTS,
   ) {
     let swapsAmount = 0
     for (var k = 0; k < times; k++)
-      for (let i in tokensFrom) {
-        let tokenFrom = TOKENS[tokensFrom[i]]
-        let decimalsFrom = TOKENS_DECIMALS[tokensFrom[i]]
-        for (let j in tokensTo) {
-          if (tokensFrom[i] == tokensFrom[j]) {
+      for (let i of tokensFrom) {
+        let tokenFrom = TOKENS[i]
+        let decimalsFrom = TOKENS_DECIMALS[i]
+        for (let j of tokensTo) {
+          if (i == j) {
             continue
           }
-          let tokenTo = TOKENS[tokensTo[j]]
-          let depositAddress = await adapter.depositAddress(
-            tokenFrom.address,
-            tokenTo.address,
-          )
-          for (let k in AMOUNTS) {
-            let amount = getBigNumber(AMOUNTS[k], decimalsFrom)
-            await tokenFrom.transfer(depositAddress, amount)
-            let swapQuote = await adapter.query(
-              amount,
-              tokenFrom.address,
-              tokenTo.address,
-            )
-            let balanceBefore = await getUserTokenBalance(owner, tokenTo)
-            let swappedAmount = await adapter.callStatic.swap(
-              amount,
-              tokenFrom.address,
-              tokenTo.address,
-              ownerAddress,
-            )
-            await adapter.swap(
-              amount,
-              tokenFrom.address,
-              tokenTo.address,
-              ownerAddress,
-            )
-            // console.log('%s -> %s: %s', tokensFrom[i], tokensTo[j], amount.toString())
-            // console.log(swapQuote.toString())
-            // console.log(swappedAmount.toString())
-            expect(swappedAmount).to.eq(swapQuote)
-            expect(await getUserTokenBalance(owner, tokenTo)).to.eq(
-              balanceBefore.add(swapQuote),
-            )
+          let tokenTo = TOKENS[j]
+          for (let amount of amounts) {
             swapsAmount++
+            await testAdapterSwap.testSwap(
+              adapter.address,
+              getBigNumber(amount, decimalsFrom),
+              tokenFrom.address,
+              tokenTo.address,
+              CHECK_UNDERQUOTING,
+              swapsAmount,
+            )
           }
         }
       }
-    console.log("Swaps: %d", swapsAmount)
   }
 
   const setupTest = deployments.createFixture(
@@ -124,6 +98,9 @@ describe("Base Pool Adapter", async () => {
       ownerAddress = await owner.getAddress()
       dude = signers[1]
       dudeAddress = await dude.getAddress()
+
+      const testFactory = await ethers.getContractFactory("TestAdapterSwap")
+      testAdapterSwap = (await testFactory.deploy()) as TestAdapterSwap
 
       // Deploy dummy tokens
       const erc20Factory = await ethers.getContractFactory("GenericERC20")
@@ -170,10 +147,10 @@ describe("Base Pool Adapter", async () => {
 
       TOKENS.push(DAI, USDC, USDT, swapToken)
 
-      await DAI.approve(swap.address, MAX_UINT256)
-      await USDC.approve(swap.address, MAX_UINT256)
-      await USDT.approve(swap.address, MAX_UINT256)
-      await swapToken.approve(swap.address, MAX_UINT256)
+      for (let token of TOKENS) {
+        await token.approve(swap.address, MAX_UINT256)
+        await token.approve(testAdapterSwap.address, MAX_UINT256)
+      }
 
       const basePoolAdapterFactory = await ethers.getContractFactory(
         "SynapseBasePoolAdapter",
@@ -186,9 +163,9 @@ describe("Base Pool Adapter", async () => {
       )) as SynapseBasePoolAdapter
 
       let amounts = [
-        getBigNumber(1000, TOKENS_DECIMALS[0]),
-        getBigNumber(1000, TOKENS_DECIMALS[1]),
-        getBigNumber(1000, TOKENS_DECIMALS[2]),
+        getBigNumber(2000, TOKENS_DECIMALS[0]),
+        getBigNumber(2000, TOKENS_DECIMALS[1]),
+        getBigNumber(2000, TOKENS_DECIMALS[2]),
       ]
 
       // Populate the pool with initial liquidity
@@ -199,7 +176,7 @@ describe("Base Pool Adapter", async () => {
       }
 
       expect(await getUserTokenBalance(owner, swapToken)).to.be.eq(
-        getBigNumber(3000),
+        getBigNumber(6000),
       )
     },
   )
@@ -223,20 +200,30 @@ describe("Base Pool Adapter", async () => {
   })
 
   describe("Adapter Swaps", () => {
-    it("Swaps between tokens", async () => {
-      await testAdapter(basePoolAdapter, [0, 1, 2], [0, 1, 2])
+    it("Swaps between tokens [48 small-medium sized swaps]", async () => {
+      await testAdapter(basePoolAdapter, [0, 1, 2], [0, 1, 2], 2)
     })
 
-    it("Zap into LP token", async () => {
-      await testAdapter(basePoolAdapter, [0, 1, 2], [3])
+    it("Zap into LP token [48 small-medium sized swaps]", async () => {
+      await testAdapter(basePoolAdapter, [0, 1, 2], [3], 4)
     })
 
-    it("Withdraw from LP token", async () => {
-      await testAdapter(basePoolAdapter, [3], [0, 1, 2])
+    it("Withdraw from LP token [48 small-medium sized swaps]", async () => {
+      await testAdapter(basePoolAdapter, [3], [0, 1, 2], 4)
     })
 
-    it("Swap stress test", async () => {
-      await testAdapter(basePoolAdapter, [0, 1, 2, 3], [0, 1, 2, 3], 2)
+    it("Swap stress test [240 small-medium sized swaps]", async () => {
+      await testAdapter(basePoolAdapter, [0, 1, 2, 3], [0, 1, 2, 3], 5)
+    })
+
+    it("Swap stress test [180 big sized swaps]", async () => {
+      await testAdapter(
+        basePoolAdapter,
+        [0, 1, 2, 3],
+        [0, 1, 2, 3],
+        5,
+        AMOUNTS_BIG,
+      )
     })
   })
 
