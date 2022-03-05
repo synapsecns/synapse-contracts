@@ -31,7 +31,7 @@ const POOL = "basepool"
 const ADAPTER = adapters[CHAIN][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
-describe.only(ADAPTER_NAME, function () {
+describe(ADAPTER_NAME, function () {
   let signers: Array<Signer>
 
   let owner: Signer
