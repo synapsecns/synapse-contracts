@@ -63,27 +63,6 @@ describe(ADAPTER_NAME, function () {
 
   const MINT_AMOUNT = getBigNumber("1000000000000000000")
 
-
-  async function testAdapter(
-    adapter: IAdapter,
-    tokensFrom: Array<number>,
-    tokensTo: Array<number>,
-    times = 1,
-    amounts = AMOUNTS,
-  ) {
-    await testRunAdapter(
-      testAdapterSwap,
-      adapter,
-      tokensFrom,
-      tokensTo,
-      times,
-      amounts,
-      TOKENS,
-      TOKENS_DECIMALS,
-      CHECK_UNDERQUOTING,
-    )
-  }
-
   before(async function() {
     // 2022-01-13
     await forkChain(process.env.ALCHEMY_API, 14000000)
