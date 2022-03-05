@@ -13,6 +13,10 @@ import {
   setupTokens,
   testRunAdapter,
   range,
+  getAmounts,
+  setupAdapterTests,
+  prepareAdapterFactories,
+  forkChain
 } from "../../utils/helpers"
 
 import config from "../../../config.json"
@@ -42,97 +46,73 @@ describe(ADAPTER_NAME, async () => {
   // Test Values
   const TOKENS = []
 
-  const TOKENS_DECIMALS = []
-  const tokenSymbols = ["FRAX", "DAI", "USDC", "USDT"]
+  const TOKENS_DECIMALS: Array<Number> = []
+  const tokenSymbols: Array<string> = ["FRAX", "DAI", "USDC", "USDT"]
 
   const ALL_TOKENS = range(tokenSymbols.length)
 
-  const AMOUNTS = [8, 1001, 96420, 1337000]
-  const AMOUNTS_BIG = [10200300, 100200300, 400500600]
-  const CHECK_UNDERQUOTING = false
+    // MAX_SHARE = 1000
+  // TODO: ????
+  const SHARE_SMALL: Array<Number> = [1, 12, 29, 42]
+  const SHARE_BIG: Array<Number> = [66, 121]
 
-  async function testAdapter(
-    adapter: IAdapter,
-    tokensFrom: Array<number>,
-    tokensTo: Array<number>,
-    times = 1,
-    amounts = AMOUNTS,
-  ) {
-    await testRunAdapter(
-      testAdapterSwap,
-      adapter,
-      tokensFrom,
-      tokensTo,
-      times,
-      amounts,
-      TOKENS,
-      TOKENS_DECIMALS,
-      CHECK_UNDERQUOTING,
-    )
-  }
 
-  const setupTest = deployments.createFixture(
-    async ({ deployments, ethers }) => {
-      const { get } = deployments
-      await deployments.fixture() // ensure you start from a fresh deployments
+  const AMOUNTS: Array<BigNumber>
+  const AMOUNTS_BIG: Array<BigNumber>
+  const MAX_UNDERQUOTE: Number = 1
+  const CHECK_UNDERQUOTING: Boolean = true
 
-      // TOKENS.length = 0
-      signers = await ethers.getSigners()
-      owner = signers[0]
-      ownerAddress = await owner.getAddress()
-      dude = signers[1]
-      dudeAddress = await dude.getAddress()
+  const MINT_AMOUNT = getBigNumber("1000000000000000000")
 
-      const testFactory = await ethers.getContractFactory("TestAdapterSwap")
 
-      // we expect the query to underQuote by 1 at maximum
-      testAdapterSwap = (await testFactory.deploy(1)) as TestAdapterSwap
-
-      let amount = getBigNumber(1e12)
-
-      TOKENS_DECIMALS = await setupTokens(
-        ownerAddress,
-        config[CHAIN],
-        tokenSymbols,
-        amount,
-      )
-
-      for (let symbol of tokenSymbols) {
-        let token = await ethers.getContractAt(
-          "contracts/amm/SwapCalculator.sol:IERC20Decimals",
-          config[CHAIN].assets[symbol],
-        )
-        TOKENS.push(token)
-        expect(await getUserTokenBalance(ownerAddress, token)).to.eq(amount)
-        await token.approve(testAdapterSwap.address, MAX_UINT256)
-      }
-
-      adapter = await deployAdapter(ADAPTER)
-    },
-  )
-
-  before(async () => {
-    await network.provider.request({
-      method: "hardhat_reset",
-      params: [
-        {
-          forking: {
-            jsonRpcUrl: process.env.ALCHEMY_API,
-            blockNumber: 14000000, // 2022-01-13
-          },
-        },
-      ],
-    })
+  before(async function() {
+      // 2022-01-13
+      await forkChain(process.env.ALCHEMY_API, 14000000)
+      await prepareAdapterFactories(this, ADAPTER)
   })
 
-  beforeEach(async () => {
-    await setupTest()
+  beforeEach(async function() {
+    await setupAdapterTests(
+      this,
+      config[CHAIN],
+      ADAPTER,
+      tokenSymbols,
+      MAX_UNDERQUOTE,
+      MINT_AMOUNT,
+    )
+
+    for (let token of this.tokens) {
+      expect(await getUserTokenBalance(this.ownerAddress, token)).to.eq(
+        MINT_AMOUNT,
+      )
+    }
+
+    AMOUNTS = await getAmounts(
+      config[CHAIN],
+      config[CHAIN][DEX][POOL],
+      tokenSymbols,
+      SHARE_SMALL,
+    )
+    AMOUNTS_BIG = await getAmounts(
+      config[CHAIN],
+      config[CHAIN][DEX][POOL],
+      tokenSymbols,
+      SHARE_BIG,
+    )
+    adapter = this.adapter
+    TOKENS = this.tokens
+    TOKENS_DECIMALS = this.tokenDecimals
+    owner = this.owner
+    dude = this.dude
+    ownerAddress = this.ownerAddress
+    dudeAddress = this.dudeAddress
   })
 
   describe("Sanity checks", () => {
     it("Curve Adapter is properly set up", async () => {
       expect(await adapter.pool()).to.eq(config[CHAIN][DEX][POOL])
 
+      expect(TOKENS.length).to.gt(0)
       for (let i in TOKENS) {
         let token = TOKENS[i].address
         expect(await adapter.isPoolToken(token))
@@ -230,13 +210,28 @@ describe(ADAPTER_NAME, async () => {
     })
   })
 
-  describe("Adapter Swaps", () => {
-    it("Swaps between tokens [144 small-medium swaps]", async () => {
-      await testAdapter(adapter, ALL_TOKENS, ALL_TOKENS, 3)
+  describe("Adapter Swaps", function() {
+    it("Swaps between tokens [144 small-medium swaps]", async function() {
+      console.log(AMOUNTS);
+      await testRunAdapter(
+        this,
+        ALL_TOKENS,
+        ALL_TOKENS,
+        3,
+        AMOUNTS,
+        CHECK_UNDERQUOTING,
+      )
     })
 
-    it("Swaps between tokens [144 big-ass swaps]", async () => {
-      await testAdapter(adapter, ALL_TOKENS, ALL_TOKENS, 4, AMOUNTS_BIG)
+    it("Swaps between tokens [144 big-ass swaps]", async function() {
+      await testRunAdapter(
+        this,
+        ALL_TOKENS,
+        ALL_TOKENS,
+        4,
+        AMOUNTS_BIG,
+        CHECK_UNDERQUOTING,
+      )
     })
   })
 })

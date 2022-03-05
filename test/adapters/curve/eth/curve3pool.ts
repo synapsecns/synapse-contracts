@@ -31,7 +31,7 @@ const POOL = "basepool"
 const ADAPTER = adapters[CHAIN][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
-describe(ADAPTER_NAME, function () {
+describe.only(ADAPTER_NAME, function () {
   let signers: Array<Signer>
 
   let owner: Signer
@@ -46,7 +46,7 @@ describe(ADAPTER_NAME, function () {
   // Test Values
   const TOKENS = []
 
-  const TOKENS_DECIMALS: Array<Number> = [18, 6, 6]
+  const TOKENS_DECIMALS: Array<Number>
   const tokenSymbols: Array<string> = ["DAI", "USDC", "USDT"]
 
   const ALL_TOKENS: Array<Number> = range(tokenSymbols.length)
@@ -56,8 +56,8 @@ describe(ADAPTER_NAME, function () {
   const SHARE_SMALL: Array<Number> = [1, 12, 29, 42]
   const SHARE_BIG: Array<Number> = [66, 121]
 
-  const AMOUNTS: Array<Number> = []
-  const AMOUNTS_BIG: Array<Number> = []
+  const AMOUNTS: Array<BigNumber>
+  const AMOUNTS_BIG: Array<BigNumber>
   const MAX_UNDERQUOTE: Number = 1
   const CHECK_UNDERQUOTING: Boolean = true
 
@@ -97,109 +97,111 @@ describe(ADAPTER_NAME, function () {
       tokenSymbols,
       SHARE_BIG,
     )
+    adapter = this.adapter
+    TOKENS = this.tokens
+    TOKENS_DECIMALS = this.tokenDecimals
+    owner = this.owner
+    dude = this.dude
+    ownerAddress = this.ownerAddress
+    dudeAddress = this.dudeAddress
   })
 
   describe("Sanity checks", function () {
     it("Curve Adapter is properly set up", async function ()  {
-      adapter = this.adapter
       expect(await adapter.pool()).to.eq(config[CHAIN][DEX][POOL])
 
-      for (let i in this.tokens) {
-        let token = this.tokens[i].address
+      for (let i in TOKENS) {
+        let token = TOKENS[i].address
         expect(await adapter.isPoolToken(token))
         expect(await adapter.tokenIndex(token)).to.eq(+i)
       }
     })
 
     it("Swap fails if transfer amount is too little", async function ()  {
-      adapter = this.adapter
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let depositAddress = await adapter.depositAddress(
-        this.tokens[0].address,
-        this.tokens[1].address,
+        TOKENS[0].address,
+        TOKENS[1].address,
       )
-      this.tokens[0].transfer(depositAddress, amount.sub(1))
+      TOKENS[0].transfer(depositAddress, amount.sub(1))
       await expect(
         adapter.swap(
           amount,
-          this.tokens[0].address,
-          this.tokens[1].address,
-          this.ownerAddress,
+          TOKENS[0].address,
+          TOKENS[1].address,
+          ownerAddress,
         ),
       ).to.be.reverted
     })
 
     it("Only Owner can rescue overprovided swap tokens", async function ()  {
-      adapter = this.adapter
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await adapter.depositAddress(
-        this.tokens[0].address,
-        this.tokens[1].address,
+        TOKENS[0].address,
+        TOKENS[1].address,
       )
-      this.tokens[0].transfer(depositAddress, amount.add(extra))
+      TOKENS[0].transfer(depositAddress, amount.add(extra))
       await adapter.swap(
         amount,
-        this.tokens[0].address,
-        this.tokens[1].address,
-        this.ownerAddress,
+        TOKENS[0].address,
+        TOKENS[1].address,
+        ownerAddress,
       )
 
       await expect(
-        adapter.connect(this.dude).recoverERC20(this.tokens[0].address, extra),
+        adapter.connect(dude).recoverERC20(TOKENS[0].address, extra),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        adapter.recoverERC20(this.tokens[0].address, extra),
-      ).to.changeTokenBalance(this.tokens[0], this.owner, extra)
+        adapter.recoverERC20(TOKENS[0].address, extra),
+      ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
     it("Anyone can take advantage of overprovided swap tokens", async function ()  {
-      adapter = this.adapter
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await adapter.depositAddress(
-        this.tokens[0].address,
-        this.tokens[1].address,
+        TOKENS[0].address,
+        TOKENS[1].address,
       )
-      this.tokens[0].transfer(depositAddress, amount.add(extra))
+      TOKENS[0].transfer(depositAddress, amount.add(extra))
       await adapter.swap(
         amount,
-        this.tokens[0].address,
-        this.tokens[1].address,
-        this.ownerAddress,
+        TOKENS[0].address,
+        TOKENS[1].address,
+        ownerAddress,
       )
 
       let swapQuote = await adapter.query(
         extra,
-        this.tokens[0].address,
-        this.tokens[1].address,
+        TOKENS[0].address,
+        TOKENS[1].address,
       )
 
       // .add(1) to reflect underquoting by 1
       await expect(() =>
         adapter
-          .connect(this.dude)
-          .swap(extra, this.tokens[0].address, this.tokens[1].address, this.dudeAddress),
-      ).to.changeTokenBalance(this.tokens[1], this.dude, swapQuote.add(1))
+          .connect(dude)
+          .swap(extra, TOKENS[0].address, TOKENS[1].address, dudeAddress),
+      ).to.changeTokenBalance(TOKENS[1], dude, swapQuote.add(1))
     })
 
     it("Only Owner can rescue GAS from Adapter", async function ()  {
-      adapter = this.adapter
       let amount = 42690
       await expect(() =>
-        this.owner.sendTransaction({
+        owner.sendTransaction({
           to: adapter.address,
           value: amount,
         }),
       ).to.changeEtherBalance(adapter, amount)
 
-      await expect(adapter.connect(this.dude).recoverGAS(amount)).to.be.revertedWith(
+      await expect(adapter.connect(dude).recoverGAS(amount)).to.be.revertedWith(
         "Ownable: caller is not the owner",
       )
 
       await expect(() => adapter.recoverGAS(amount)).to.changeEtherBalances(
-        [adapter, this.owner],
+        [adapter, owner],
         [-amount, amount],
       )
     })
@@ -207,6 +209,7 @@ describe(ADAPTER_NAME, function () {
 
   describe("Adapter Swaps", function () {
     it(
+      // TO-DO: Fix Number of Runs
       "Swaps between tokens [" + "{numberOfRuns}" + " small-medium swaps]",
       async function () {
         await testRunAdapter(
