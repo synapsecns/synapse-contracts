@@ -5,14 +5,18 @@ import { solidity } from "ethereum-waffle"
 import { deployments } from "hardhat"
 
 import { TestAdapterSwap } from "../../../../build/typechain/TestAdapterSwap"
-import { IAdapter } from "../../../../build/typechain/IAdapter"
+import { CurveLendingPoolAdapter } from "../../../../build/typechain/CurveLendingPoolAdapter"
 import chai from "chai"
 import { getBigNumber } from "../../../bridge/utilities"
 import {
-  deployAdapter,
-  setupTokens,
   testRunAdapter,
   range,
+  prepareAdapterFactories,
+  setupAdapterTests,
+  forkChain,
+  getAmounts,
+  getSwapsAmount,
+  doSwap,
 } from "../../utils/helpers"
 
 import config from "../../../config.json"
@@ -24,10 +28,11 @@ const { expect } = chai
 const CHAIN = 1
 const DEX = "curve"
 const POOL = "aave"
+const STORAGE = "aave"
 const ADAPTER = adapters[CHAIN][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
-describe(ADAPTER_NAME, async () => {
+describe(ADAPTER_NAME, function () {
   let signers: Array<Signer>
 
   let owner: Signer
@@ -35,7 +40,7 @@ describe(ADAPTER_NAME, async () => {
   let dude: Signer
   let dudeAddress: string
 
-  let adapter: IAdapter
+  let adapter: CurveLendingPoolAdapter
 
   let testAdapterSwap: TestAdapterSwap
 
@@ -44,93 +49,75 @@ describe(ADAPTER_NAME, async () => {
 
   const TOKENS_DECIMALS = []
   const tokenSymbols = ["DAI", "USDC", "USDT"]
-
+  const poolTokenSymbols = ["aDAI", "aUSDC", "aUSDT"]
   const ALL_TOKENS = range(tokenSymbols.length)
 
-  const AMOUNTS = [8, 1001, 96420, 1337000]
-  const AMOUNTS_BIG = [4500600, 10200300]
+  // MAX_SHARE = 1000
+  const SHARE_SMALL = [1, 12, 29, 42]
+  const SHARE_BIG = [66, 121]
+
+  let swapsPerTime = SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
+  const timesSmall = Math.floor(125 / swapsPerTime) + 1
+  const swapsAmount = timesSmall * swapsPerTime
+
+  swapsPerTime = SHARE_BIG.length * getSwapsAmount(tokenSymbols.length)
+  const timesBig = Math.floor(50 / swapsPerTime) + 1
+  const swapsAmountBig = timesBig * swapsPerTime
+
+  const AMOUNTS: Array<BigNumber>
+  const AMOUNTS_BIG: Array<BigNumber>
+
+  const MAX_UNDERQUOTE = 1
   const CHECK_UNDERQUOTING = true
 
-  async function testAdapter(
-    adapter: IAdapter,
-    tokensFrom: Array<number>,
-    tokensTo: Array<number>,
-    times = 1,
-    amounts = AMOUNTS,
-  ) {
-    await testRunAdapter(
-      testAdapterSwap,
-      adapter,
-      tokensFrom,
-      tokensTo,
-      times,
-      amounts,
-      TOKENS,
-      TOKENS_DECIMALS,
-      CHECK_UNDERQUOTING,
+  const MINT_AMOUNT = getBigNumber("1000000000000000000")
+
+  before(async function () {
+    // 2022-01-13
+    await forkChain(process.env.ALCHEMY_API, 14000000)
+    await prepareAdapterFactories(this, ADAPTER)
+  })
+
+  beforeEach(async function() {
+    await setupAdapterTests(
+      this,
+      config[CHAIN],
+      ADAPTER,
+      tokenSymbols,
+      MAX_UNDERQUOTE,
+      MINT_AMOUNT,
     )
-  }
 
-  const setupTest = deployments.createFixture(
-    async ({ deployments, ethers }) => {
-      const { get } = deployments
-      await deployments.fixture() // ensure you start from a fresh deployments
-
-      // TOKENS.length = 0
-      signers = await ethers.getSigners()
-      owner = signers[0]
-      ownerAddress = await owner.getAddress()
-      dude = signers[1]
-      dudeAddress = await dude.getAddress()
-
-      const testFactory = await ethers.getContractFactory("TestAdapterSwap")
-
-      // we expect the query to underQuote by 1 at maximum
-      testAdapterSwap = (await testFactory.deploy(1)) as TestAdapterSwap
-
-      let amount = getBigNumber(1e12)
-
-      TOKENS_DECIMALS = await setupTokens(
-        ownerAddress,
-        config[CHAIN],
-        tokenSymbols,
-        amount,
+    for (let token of this.tokens) {
+      expect(await getUserTokenBalance(this.ownerAddress, token)).to.eq(
+        MINT_AMOUNT,
       )
+    }
 
-      for (let symbol of tokenSymbols) {
-        let token = await ethers.getContractAt(
-          "contracts/amm/SwapCalculator.sol:IERC20Decimals",
-          config[CHAIN].assets[symbol],
-        )
-        TOKENS.push(token)
-        expect(await getUserTokenBalance(ownerAddress, token)).to.eq(amount)
-        await token.approve(testAdapterSwap.address, MAX_UINT256)
-      }
+    AMOUNTS = await getAmounts(
+      config[CHAIN],
+      config[CHAIN][DEX][STORAGE],
+      poolTokenSymbols,
+      SHARE_SMALL,
+    )
+    AMOUNTS_BIG = await getAmounts(
+      config[CHAIN],
+      config[CHAIN][DEX][STORAGE],
+      poolTokenSymbols,
+      SHARE_BIG,
+    )
 
-      adapter = await deployAdapter(ADAPTER)
-    },
-  )
-
-  before(async () => {
-    await network.provider.request({
-      method: "hardhat_reset",
-      params: [
-        {
-          forking: {
-            jsonRpcUrl: process.env.ALCHEMY_API,
-            blockNumber: 14000000, // 2022-01-13
-          },
-        },
-      ],
-    })
+    adapter = this.adapter
+    TOKENS = this.tokens
+    TOKENS_DECIMALS = this.tokenDecimals
+    owner = this.owner
+    dude = this.dude
+    ownerAddress = this.ownerAddress
+    dudeAddress = this.dudeAddress
   })
 
-  beforeEach(async () => {
-    await setupTest()
-  })
-
-  describe("Sanity checks", () => {
-    it("Curve Adapter is properly set up", async () => {
+  describe("Sanity checks", function () {
+    it("Curve Adapter is properly set up", async function () {
       expect(await adapter.pool()).to.eq(config[CHAIN][DEX][POOL])
 
       for (let i in TOKENS) {
@@ -140,7 +127,7 @@ describe(ADAPTER_NAME, async () => {
       }
     })
 
-    it("Swap fails if transfer amount is too little", async () => {
+    it("Swap fails if transfer amount is too little", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let depositAddress = await adapter.depositAddress(
         TOKENS[0].address,
@@ -157,7 +144,7 @@ describe(ADAPTER_NAME, async () => {
       ).to.be.reverted
     })
 
-    it("Only Owner can rescue overprovided swap tokens", async () => {
+    it("Only Owner can rescue overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await adapter.depositAddress(
@@ -181,7 +168,7 @@ describe(ADAPTER_NAME, async () => {
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
-    it("Anyone can take advantage of overprovided swap tokens", async () => {
+    it("Anyone can take advantage of overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await adapter.depositAddress(
@@ -210,7 +197,7 @@ describe(ADAPTER_NAME, async () => {
       ).to.changeTokenBalance(TOKENS[1], dude, swapQuote.add(1))
     })
 
-    it("Only Owner can rescue GAS from Adapter", async () => {
+    it("Only Owner can rescue GAS from Adapter", async function () {
       let amount = 42690
       await expect(() =>
         owner.sendTransaction({
@@ -230,13 +217,34 @@ describe(ADAPTER_NAME, async () => {
     })
   })
 
-  describe("Adapter Swaps", () => {
-    it("Swaps between tokens [120 small-medium swaps]", async () => {
-      await testAdapter(adapter, ALL_TOKENS, ALL_TOKENS, 5)
-    })
+  describe("Adapter Swaps", function () {
+    it(
+      "Swaps between tokens [" + swapsAmount + " small-medium swaps]",
+      async function () {
+        await testRunAdapter(
+          this,
+          ALL_TOKENS,
+          ALL_TOKENS,
+          timesSmall,
+          AMOUNTS,
+          CHECK_UNDERQUOTING,
+        )
+      },
+    )
 
-    it("Swaps between tokens [120 big-ass swaps]", async () => {
-      await testAdapter(adapter, ALL_TOKENS, ALL_TOKENS, 10, AMOUNTS_BIG)
-    })
+    it(
+      "Swaps between tokens [" + swapsAmountBig + " big-ass swaps]",
+      async function () {
+        await testRunAdapter(
+          this,
+          ALL_TOKENS,
+          ALL_TOKENS,
+          timesBig,
+          AMOUNTS_BIG,
+          CHECK_UNDERQUOTING,
+        )
+      },
+    )
   })
+
 })
