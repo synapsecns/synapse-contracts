@@ -105,7 +105,7 @@ describe(ADAPTER_NAME, function () {
 
   describe("Sanity checks", function () {
     it("Curve Adapter is properly set up", async function () {
-      expect(await adapter.pool()).to.eq(config[CHAIN][DEX][POOL])
+      expect(await this.adapter.pool()).to.eq(config[CHAIN][DEX][POOL])
 
       for (let i in this.tokens) {
         let token = this.tokens[i].address
