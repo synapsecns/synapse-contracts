@@ -208,7 +208,7 @@ describe("SushiSwap Adapter", async () => {
       ).to.be.reverted
     })
 
-    it("Noone can rescue overprovided swap tokens", async () => {
+    it("No one can rescue overprovided swap tokens", async () => {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await uniswapV2Adapter.depositAddress(

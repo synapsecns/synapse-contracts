@@ -178,6 +178,16 @@ contract SynapseAavePoolAdapter is SynapseBasePoolAdapter {
         return IERC20(aaveToken[_token]).balanceOf(address(this));
     }
 
+
+    function _checkTokens(address _tokenIn, address _tokenOut)
+    internal
+    view
+    virtual
+    override
+    returns (bool){
+        return true;
+    }
+
     /**
      * @notice Withdraw token from Aave and send underlying token to user
      *

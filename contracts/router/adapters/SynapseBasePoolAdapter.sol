@@ -94,6 +94,15 @@ contract SynapseBasePoolAdapter is SwapAddCalculator, Adapter {
         _returnTo(_tokenOut, _amountOut, _to);
     }
 
+    function _checkTokens(address _tokenIn, address _tokenOut)
+    internal
+    view
+    virtual
+    override
+    returns (bool){
+        return true;
+    }
+
     function _query(
         uint256 _amountIn,
         address _tokenIn,
