@@ -184,7 +184,7 @@ describe(ADAPTER_NAME, async () => {
     dudeAddress = this.dudeAddress
   })
 
-  describe.only("Sanity checks", () => {
+  describe("Sanity checks", () => {
     it("Curve Adapter is properly set up", async () => {
       expect(await adapter.pool()).to.eq(config[CHAIN][DEX][POOL])
 
