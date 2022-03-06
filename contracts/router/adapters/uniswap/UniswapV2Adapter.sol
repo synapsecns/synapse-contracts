@@ -121,6 +121,16 @@ contract UniswapV2Adapter is Adapter {
         return _getAmountOut(_amountIn, _reserveIn, _reserveOut);
     }
 
+
+    function _checkTokens(address _tokenIn, address _tokenOut)
+    internal
+    view
+    virtual
+    override
+    returns (bool){
+        return true;
+    }
+
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
     function _getAmountOut(
         uint256 _amountIn,
