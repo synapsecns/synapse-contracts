@@ -51,6 +51,8 @@ abstract contract Adapter is Ownable, IAdapter {
         _t.safeApprove(_spender, 0);
     }
 
+    // -- RESTRICTED RECOVER TOKEN FUNCTIONS --
+
     /**
      * @notice Recover ERC20 from contract
      * @param _tokenAddress token address
@@ -163,10 +165,13 @@ abstract contract Adapter is Ownable, IAdapter {
         uint256 _amount,
         address _spender
     ) internal {
-        if (_token.allowance(address(this), _spender) < _amount) {
+        uint256 _allowance = _token.allowance(address(this), _spender);
+        if (_allowance < _amount) {
             // safeApprove should only be called when setting an initial allowance,
             // or when resetting it to zero. (c) openzeppelin
-            _token.safeApprove(_spender, 0);
+            if (_allowance != 0) {
+                _token.safeApprove(_spender, 0);
+            }
             _token.safeApprove(_spender, UINT_MAX);
         }
     }
@@ -221,7 +226,7 @@ abstract contract Adapter is Ownable, IAdapter {
      * @param _amountIn amount being sold
      * @param _tokenIn ERC20 token being sold
      * @param _tokenOut ERC20 token being bought
-     * @param _to Where recieved tokens are sent to
+     * @param _to Where received tokens are sent to
      *
      * @return Amount of _tokenOut tokens received in swap
      */
@@ -236,9 +241,9 @@ abstract contract Adapter is Ownable, IAdapter {
      * @notice Internal implementation of query
      *
      * @dev All variables are already checked.
-     *      This should AWLAYS return _amountOut such as: the swapper underneath
+     *      This should ALWAYS return _amountOut such as: the swapper underneath
      *      is able to produce AT LEAST _amountOut in exchange for EXACTLY _amountIn
-     *      For efficiency reasons, returning the exact quote is preferrable,
+     *      For efficiency reasons, returning the exact quote is preferable,
      *      however, if the swapper doesn't have a reliable quoting method,
      *      it's safe to underquote the swapped amount
      *
