@@ -271,13 +271,14 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         uint256 _activePoolsAmount = activeRewardPools.length;
         IERC20[] memory _rewardTokens = new IERC20[](_activePoolsAmount);
         uint256[] memory _rewardAmounts = new uint256[](_activePoolsAmount);
+        uint256 _balance = balanceOf(_account);
         for (uint8 i = 0; i < _activePoolsAmount; i++) {
             address _rewardToken = activeRewardPools[i];
             _rewardTokens[i] = IERC20(_rewardToken);
             _rewardAmounts[i] = _earned(
                 _rewardToken,
                 _account,
-                balanceOf(_account)
+                _balance
             );
         }
 
