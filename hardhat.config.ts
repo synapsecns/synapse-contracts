@@ -123,6 +123,12 @@ let config: HardhatUserConfig = {
       },
       {
         version: "0.8.11",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 5000000, // see: https://github.com/ethereum/solidity/issues/5394#issue-379536332
+          },
+        },
       },
       {
         version: "0.4.24"
