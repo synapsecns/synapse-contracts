@@ -354,7 +354,7 @@ contract BonusChef is IRewarder, ReentrancyGuard, AccessControl {
     {
         require(_amount != 0, "Zero reward provided");
         RewardPool storage pool = rewardPools[_rewardToken];
-        require(pool.rewardsDuration != 0, "Pool is not added");
+        require(pool.isActive, "Pool is not added");
 
         pool.rewardToken.safeTransferFrom(msg.sender, address(this), _amount);
         if (block.timestamp >= pool.periodFinish) {
