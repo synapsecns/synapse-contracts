@@ -43,9 +43,9 @@ describe.only(ADAPTER_NAME, async () => {
 
   let testAdapterSwap: TestAdapterSwap
 
-  // const TOKENS_DECIMALS = [6, 8, 18]
+  const TOKENS_DECIMALS = []
   const TOKENS = []
-  const TOKENS_DECIMALS: Array<Number> = [6, 4, 14]
+  // const TOKENS_DECIMALS: Array<Number> = [6, 4, 14]
   const poolTokenSymbols: Array<String> = ["USDT", "WBTC", "WETH"]
 
   const ALL_TOKENS: Array<Number> = range(poolTokenSymbols.length)
@@ -53,80 +53,13 @@ describe.only(ADAPTER_NAME, async () => {
   const SHARE_SMALL: Array<Number> = [1, 12, 29, 42]
   const SHARE_BIG: Array<Number> = [66, 121]
 
-  const AMOUNTS: Array<Number> = [
-    [8, 1001, 96420, 1337000],
-    [1, 1000, 20000, 480000],
-    [10, 2500, 210000, 4790000],
-  ]
-  const AMOUNTS_BIG: Array<Number> =  [
-    [10200300, 50100200, 100300400],
-    [4200000, 20220000, 44000000],
-    [42000000, 231450000, 426900000],
-  ]
+  const AMOUNTS: Array<Number> = []
+  const AMOUNTS_BIG: Array<Number> =  []
+
   const CHECK_UNDERQUOTING = true
   const MAX_UNDERQUOTE = 1
   const MINT_AMOUNT = getBigNumber("1000000000000000000")
 
-  async function testAdapter(
-    adapter: IAdapter,
-    tokensFrom: Array<number>,
-    tokensTo: Array<number>,
-    times = 1,
-    amounts = AMOUNTS,
-  ) {
-    await testRunAdapter(
-      testAdapterSwap,
-      adapter,
-      tokensFrom,
-      tokensTo,
-      times,
-      amounts,
-      TOKENS,
-      TOKENS_DECIMALS,
-      CHECK_UNDERQUOTING,
-      true,
-    )
-  }
-
-  const setupTest = deployments.createFixture(
-    async ({ deployments, ethers }) => {
-      const { get } = deployments
-      await deployments.fixture() // ensure you start from a fresh deployments
-
-      // TOKENS.length = 0
-      signers = await ethers.getSigners()
-      owner = signers[0]
-      ownerAddress = await owner.getAddress()
-      dude = signers[1]
-      dudeAddress = await dude.getAddress()
-
-      const testFactory = await ethers.getContractFactory("TestAdapterSwap")
-
-      // we expect the query to underQuote by 1 at maximum
-      testAdapterSwap = (await testFactory.deploy(1)) as TestAdapterSwap
-
-      let amount = getBigNumber(1e12)
-
-      await setupTokens(
-        ownerAddress,
-        config[CHAIN],
-        poolTokenSymbols,
-        amount,
-      )
-
-      for (let symbol of poolTokenSymbols) {
-        let token = await ethers.getContractAt(
-          "contracts/amm/SwapCalculator.sol:IERC20Decimals",
-          config[CHAIN].assets[symbol],
-        )
-        TOKENS.push(token)
-        expect(await getUserTokenBalance(ownerAddress, token)).to.eq(amount)
-        await token.approve(testAdapterSwap.address, MAX_UINT256)
-      }
-
-      adapter = await deployAdapter(ADAPTER)
-    },
-  )
 
   before(async function () {
     await forkChain(process.env.ALCHEMY_API, 14000000)
@@ -161,19 +94,6 @@ describe.only(ADAPTER_NAME, async () => {
         poolTokenSymbols,
         SHARE_BIG,
     )
-
-    // We counted 3CRV balance for all stables, which has 18 decimals
-    let diff = getBigNumber(1, 12)
-    for (let index in poolTokenSymbols) {
-      if (["USDT"].includes(poolTokenSymbols[index])) {
-        for (let j in AMOUNTS[index]) {
-          AMOUNTS[index][j] = AMOUNTS[index][j].div(diff)
-        }
-        for (let j in AMOUNTS_BIG[index]) {
-          AMOUNTS_BIG[index][j] = AMOUNTS_BIG[index][j].div(diff)
-        }
-      }
-    }
 
     adapter = this.adapter
     TOKENS = this.tokens
@@ -286,7 +206,7 @@ describe.only(ADAPTER_NAME, async () => {
   })
 
   describe("Adapter Swaps", () => {
-    it("Swaps between tokens [120 small-medium swaps]", async () => {
+    it("Swaps between tokens [120 small-medium swaps]", async function() {
       await testRunAdapter(
           this,
           ALL_TOKENS,
@@ -297,7 +217,7 @@ describe.only(ADAPTER_NAME, async () => {
       )
     })
 
-    it("Swaps between tokens [90 big-ass swaps]", async () => {
+    it("Swaps between tokens [90 big-ass swaps]", async function() {
       await testRunAdapter(
           this,
           ALL_TOKENS,
