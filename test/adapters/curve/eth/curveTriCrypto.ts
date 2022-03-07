@@ -30,7 +30,7 @@ const STORAGE = "tricrypto"
 const ADAPTER = adapters[CHAIN][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
-describe.only(ADAPTER_NAME, async () => {
+describe(ADAPTER_NAME, async () => {
   let owner: Signer
   let ownerAddress: string
   let dude: Signer
