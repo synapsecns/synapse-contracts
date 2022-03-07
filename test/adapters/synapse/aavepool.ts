@@ -1,20 +1,20 @@
 //@ts-nocheck
 import { BigNumber, Signer } from "ethers"
-import { MAX_UINT256 } from "../utils"
+import { MAX_UINT256 } from "../../utils"
 import { solidity } from "ethereum-waffle"
 import { deployments } from "hardhat"
 
 import { TestAdapterSwap } from "../build/typechain/TestAdapterSwap"
 import { ILendingPool } from "../build/typechain/ILendingPool"
-import { GenericERC20 } from "../../build/typechain/GenericERC20"
-import { LPToken } from "../../build/typechain/LPToken"
-import { Swap } from "../../build/typechain/Swap"
-import { SynapseAavePoolAdapter } from "../../build/typechain/SynapseAavePoolAdapter"
+import { GenericERC20 } from "../../../build/typechain/GenericERC20"
+import { LPToken } from "../../../build/typechain/LPToken"
+import { Swap } from "../../../build/typechain/Swap"
+import { SynapseAavePoolAdapter } from "../../../build/typechain/SynapseAavePoolAdapter"
 import chai from "chai"
-import { getBigNumber } from "../bridge/utilities"
-import { setBalance } from "./utils/helpers"
+import { getBigNumber } from "../../bridge/utilities"
+import { setBalance } from "../utils/helpers"
 
-import config from "../config.json"
+import config from "../../config.json"
 
 chai.use(solidity)
 const { expect } = chai
@@ -96,7 +96,7 @@ describe("Aave Pool Adapter", async () => {
   const setupTest = deployments.createFixture(
     async ({ deployments, ethers }) => {
       const { get } = deployments
-      await deployments.fixture() // ensure you start froeqm a fresh deployments
+      await deployments.fixture() // ensure you start from a fresh deployments
 
       TOKENS.length = 0
       signers = await ethers.getSigners()
