@@ -101,7 +101,11 @@ abstract contract Adapter is Ownable, IAdapter {
         address _tokenIn,
         address _tokenOut
     ) external view returns (uint256) {
-        if (_amountIn == 0 || !_checkTokens(_tokenIn, _tokenOut)) {
+        if (
+            _amountIn == 0 ||
+            _tokenIn == _tokenOut ||
+            !_checkTokens(_tokenIn, _tokenOut)
+        ) {
             return 0;
         }
         return _query(_amountIn, _tokenIn, _tokenOut);
@@ -125,7 +129,8 @@ abstract contract Adapter is Ownable, IAdapter {
         address _to
     ) external returns (uint256 _amountOut) {
         require(_amountIn != 0, "Adapter: Insufficient input amount");
-        require(_to != address(0), "Adapter: Null address receiver");
+        require(_to != address(0), "Adapter: _to cannot be zero address");
+        require(_tokenIn != _tokenOut, "Adapter: Tokens must differ");
         require(_checkTokens(_tokenIn, _tokenOut), "Adapter: unknown tokens");
         _approveIfNeeded(_tokenIn, _amountIn);
         _amountOut = _swap(_amountIn, _tokenIn, _tokenOut, _to);
