@@ -100,7 +100,7 @@ describe("Base Pool Adapter", async () => {
       dudeAddress = await dude.getAddress()
 
       const testFactory = await ethers.getContractFactory("TestAdapterSwap")
-      testAdapterSwap = (await testFactory.deploy()) as TestAdapterSwap
+      testAdapterSwap = (await testFactory.deploy(0)) as TestAdapterSwap
 
       // Deploy dummy tokens
       const erc20Factory = await ethers.getContractFactory("GenericERC20")
