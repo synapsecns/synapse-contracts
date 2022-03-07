@@ -12,31 +12,40 @@ import "hardhat/console.sol";
 contract TestAdapterSwap {
     using SafeERC20 for IERC20;
 
+    uint256 maxUnderQuote;
+
+    constructor(uint256 _maxUnderQuote) {
+        maxUnderQuote = _maxUnderQuote;
+    }
+
     function testSwap(
-        address _adapterAddress,
+        IAdapter _adapter,
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
         bool _checkUnderQuoting,
         uint256 _iteration
     ) external {
-        IAdapter adapter = IAdapter(_adapterAddress);
-        
-        address depositAddress = adapter.depositAddress(_tokenIn, _tokenOut);
+        address depositAddress = _adapter.depositAddress(_tokenIn, _tokenOut);
         IERC20(_tokenIn).safeTransferFrom(
             msg.sender,
             depositAddress,
             _amountIn
         );
 
-        uint256 amountQuoted = adapter.query(_amountIn, _tokenIn, _tokenOut);
+        uint256 amountQuoted = _adapter.query(_amountIn, _tokenIn, _tokenOut);
 
-        uint256 amountSwapped = adapter.swap(
-            _amountIn,
-            _tokenIn,
-            _tokenOut,
-            address(this)
-        );
+        uint256 amountSwapped = 0;
+
+        try
+            _adapter.swap(_amountIn, _tokenIn, _tokenOut, address(this))
+        returns (uint256 _amount) {
+            amountSwapped = _amount;
+        } catch {
+            console.log("%s: %s -> %s", _iteration, _tokenIn, _tokenOut);
+            console.log("%s", _amountIn);
+            _adapter.swap(_amountIn, _tokenIn, _tokenOut, address(this));
+        }
         uint256 amountReceived = IERC20(_tokenOut).balanceOf(address(this));
 
         if (amountSwapped != amountReceived) {
@@ -51,7 +60,8 @@ contract TestAdapterSwap {
 
         if (
             amountQuoted > amountReceived ||
-            (amountQuoted < amountReceived && _checkUnderQuoting)
+            (amountQuoted + maxUnderQuote < amountReceived &&
+                _checkUnderQuoting)
         ) {
             console.log("Swap # %s", _iteration);
             if (amountQuoted > amountReceived) {
