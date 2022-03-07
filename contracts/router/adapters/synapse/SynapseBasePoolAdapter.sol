@@ -18,6 +18,8 @@ contract SynapseBasePoolAdapter is SwapAddCalculator, Adapter {
         address _pool,
         uint256 _swapGasEstimate
     ) SwapAddCalculator(ISynapse(_pool)) Adapter(_name, _swapGasEstimate) {
+        // add LP token as a "pool token"
+        // This will enable stable <-> nUSD swap on Mainnet via adapter
         isPoolToken[address(lpToken)] = true;
         tokenIndex[address(lpToken)] = uint8(numTokens);
     }
@@ -55,13 +57,6 @@ contract SynapseBasePoolAdapter is SwapAddCalculator, Adapter {
         address _tokenOut,
         address _to
     ) internal virtual override returns (uint256 _amountOut) {
-        require(_amountIn != 0, "Insufficient input amount");
-        require(_tokenIn != _tokenOut, "Tokens must differ");
-        require(
-            isPoolToken[_tokenIn] && isPoolToken[_tokenOut],
-            "Unknown tokens"
-        );
-
         if (
             tokenIndex[_tokenIn] != numTokens &&
             tokenIndex[_tokenOut] != numTokens
@@ -95,12 +90,13 @@ contract SynapseBasePoolAdapter is SwapAddCalculator, Adapter {
     }
 
     function _checkTokens(address _tokenIn, address _tokenOut)
-    internal
-    view
-    virtual
-    override
-    returns (bool){
-        return true;
+        internal
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        return isPoolToken[_tokenIn] && isPoolToken[_tokenOut];
     }
 
     function _query(
@@ -108,13 +104,7 @@ contract SynapseBasePoolAdapter is SwapAddCalculator, Adapter {
         address _tokenIn,
         address _tokenOut
     ) internal view virtual override returns (uint256 _amountOut) {
-        if (
-            _amountIn == 0 ||
-            _tokenIn == _tokenOut ||
-            !isPoolToken[_tokenIn] ||
-            !isPoolToken[_tokenOut] ||
-            pool.paused()
-        ) {
+        if (pool.paused()) {
             return 0;
         }
         if (
