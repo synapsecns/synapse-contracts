@@ -29,7 +29,7 @@ contract UniswapV2Adapter is Adapter {
         uint256 _swapGasEstimate,
         uint256 _fee
     ) Adapter(_name, _swapGasEstimate) {
-        require(_fee < MULTIPLIER, "Fee is damn too high");
+        require(_fee < MULTIPLIER, "Fee is too high. Must be less than multiplier");
         MULTIPLIER_WITH_FEE = MULTIPLIER - _fee;
         uniswapV2Factory = IUniswapV2Factory(_uniswapV2FactoryAddress);
     }
