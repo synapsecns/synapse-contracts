@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+
 import {IERC20, BoringERC20} from "@boringcrypto/boring-solidity/contracts/libraries/BoringERC20.sol";
 import {IMiniChefV2} from "./interfaces/IMiniChefV2.sol";
 import {IRewarder} from "./interfaces/IRewarder.sol";
@@ -30,9 +32,22 @@ import {IRewarder} from "./interfaces/IRewarder.sol";
 // 4. Read staking balance and total supply from MiniChef
 // 5. notifyRewardAmount updated to transferFrom(msg.sender) instead of using permissioned distributor
 // 6. Added a few sanity checks
-contract BonusChef is IRewarder, ReentrancyGuard {
+// 7. Governance and RewardsDistribution roles are now handled by AccessControl
+contract BonusChef is IRewarder, ReentrancyGuard, AccessControl {
     using SafeMath for uint256;
     using BoringERC20 for IERC20;
+
+    /* ========== ROLES ========== */
+
+    /// @notice Account with this role can add reward pools,
+    /// inactivate reward pools, rescue tokens from inactive reward pools,
+    /// grant rewardsDistribution role
+    bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
+
+    /// @notice Account with this role is able to provide rewards,
+    /// starting (or prolonging) the bonus rewards period
+    bytes32 public constant REWARDS_DISTRIBUTION_ROLE =
+        keccak256("REWARDS_DISTRIBUTION_ROLE");
 
     /* ========== STRUCTS ========== */
 
@@ -51,8 +66,8 @@ contract BonusChef is IRewarder, ReentrancyGuard {
 
     /* ========== STATE VARIABLES ========== */
 
-    address public rewardsDistribution;
-    address public governance;
+    /// @notice BonusChef is linked to the specific pool on MiniChef contract
+    /// Each reward pool specifies a different reward token for THE SAME pool on MiniChef
 
     IMiniChefV2 public immutable miniChef;
     uint256 public immutable chefPoolID;
@@ -71,8 +86,12 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         miniChef = _miniChef;
         chefPoolID = _chefPoolID;
         chefStakingToken = _miniChef.lpToken(_chefPoolID);
-        rewardsDistribution = _rewardsDistribution;
-        governance = msg.sender;
+
+        _setupRole(GOVERNANCE_ROLE, msg.sender);
+        _setupRole(REWARDS_DISTRIBUTION_ROLE, _rewardsDistribution);
+
+        _setRoleAdmin(GOVERNANCE_ROLE, GOVERNANCE_ROLE);
+        _setRoleAdmin(REWARDS_DISTRIBUTION_ROLE, GOVERNANCE_ROLE);
     }
 
     /* ========== VIEWS ========== */
@@ -275,11 +294,7 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         for (uint8 i = 0; i < _activePoolsAmount; i++) {
             address _rewardToken = activeRewardPools[i];
             _rewardTokens[i] = IERC20(_rewardToken);
-            _rewardAmounts[i] = _earned(
-                _rewardToken,
-                _account,
-                _balance
-            );
+            _rewardAmounts[i] = _earned(_rewardToken, _account, _balance);
         }
 
         return (_rewardTokens, _rewardAmounts);
@@ -455,20 +470,20 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         require(pool.isActive == false, "Cannot withdraw active reward token");
 
         uint256 _balance = IERC20(_rewardToken).balanceOf(address(this));
-        IERC20(_rewardToken).safeTransfer(governance, _balance);
+        IERC20(_rewardToken).safeTransfer(msg.sender, _balance);
     }
 
     /**
-        @notice Change the rewards supplier
+        @notice Add the rewards supplier
         @dev Make sure that _rewardsDistribution is vetted
         While this role can't claim/drain tokens, it can prolong the pools at will.
         @param _rewardsDistribution new reward supplier
      */
-    function setRewardsDistribution(address _rewardsDistribution)
+    function addRewardsDistribution(address _rewardsDistribution)
         external
         onlyGov
     {
-        rewardsDistribution = _rewardsDistribution;
+        _setupRole(REWARDS_DISTRIBUTION_ROLE, _rewardsDistribution);
     }
 
     /**
@@ -477,9 +492,11 @@ contract BonusChef is IRewarder, ReentrancyGuard {
         or funds might be SIFUed
         @param _governance new governor
      */
-    function setGovernance(address _governance) external onlyGov {
+    function transferGovernance(address _governance) external onlyGov {
         emit GovernanceChange(_governance);
-        governance = _governance;
+
+        renounceRole(GOVERNANCE_ROLE, msg.sender);
+        _setupRole(GOVERNANCE_ROLE, _governance);
     }
 
     /* ========== INTERNAL FUNCTIONS ========== */
@@ -622,12 +639,15 @@ contract BonusChef is IRewarder, ReentrancyGuard {
     }
 
     modifier onlyGov() {
-        require(msg.sender == governance, "!governance");
+        require(hasRole(GOVERNANCE_ROLE, msg.sender), "!governance");
         _;
     }
 
     modifier onlyRewardsDistribution() {
-        require(msg.sender == rewardsDistribution, "!rewardsDistribution");
+        require(
+            hasRole(REWARDS_DISTRIBUTION_ROLE, msg.sender),
+            "!rewardsDistribution"
+        );
         _;
     }
 
