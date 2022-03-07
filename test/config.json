@@ -9,7 +9,8 @@
       "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
       "aDAI": "0x028171bca77440897b824ca71d1c56cac55b68a3",
       "aUSDC": "0xbcca60bb61934080951369a648fb03df4f96263c",
-      "aUSDT": "0x3ed3b47dd13ec9a98b44e6204a523e766b225811"
+      "aUSDT": "0x3ed3b47dd13ec9a98b44e6204a523e766b225811",
+      "CRVLP": "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490"
     },
     "slot": {
       "DAI": 2,
