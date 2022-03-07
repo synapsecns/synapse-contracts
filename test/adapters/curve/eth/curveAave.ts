@@ -1,10 +1,8 @@
 //@ts-nocheck
 import { Signer } from "ethers"
-import { MAX_UINT256, getUserTokenBalance } from "../../../utils"
+import { getUserTokenBalance } from "../../../utils"
 import { solidity } from "ethereum-waffle"
-import { deployments } from "hardhat"
 
-import { TestAdapterSwap } from "../../../../build/typechain/TestAdapterSwap"
 import { CurveLendingPoolAdapter } from "../../../../build/typechain/CurveLendingPoolAdapter"
 import chai from "chai"
 import { getBigNumber } from "../../../bridge/utilities"
@@ -16,7 +14,6 @@ import {
   forkChain,
   getAmounts,
   getSwapsAmount,
-  doSwap,
 } from "../../utils/helpers"
 
 import config from "../../../config.json"
@@ -33,8 +30,6 @@ const ADAPTER = adapters[CHAIN][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
 describe(ADAPTER_NAME, function () {
-  let signers: Array<Signer>
-
   let owner: Signer
   let ownerAddress: string
   let dude: Signer
@@ -42,33 +37,31 @@ describe(ADAPTER_NAME, function () {
 
   let adapter: CurveLendingPoolAdapter
 
-  let testAdapterSwap: TestAdapterSwap
-
   // Test Values
   const TOKENS = []
 
-  const TOKENS_DECIMALS = []
-  const tokenSymbols = ["DAI", "USDC", "USDT"]
-  const poolTokenSymbols = ["aDAI", "aUSDC", "aUSDT"]
-  const ALL_TOKENS = range(tokenSymbols.length)
+  const TOKENS_DECIMALS: Array<Number> = []
+  const tokenSymbols: Array<string> = ["DAI", "USDC", "USDT"]
+  const poolTokenSymbols: Array<string> = ["aDAI", "aUSDC", "aUSDT"]
+  const ALL_TOKENS: Array<Number> = range(tokenSymbols.length)
 
   // MAX_SHARE = 1000
-  const SHARE_SMALL = [1, 12, 29, 42]
-  const SHARE_BIG = [66, 121]
+  const SHARE_SMALL: Array<Number> = [1, 12, 29, 42]
+  const SHARE_BIG: Array<Number> = [66, 121]
 
-  let swapsPerTime = SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
-  const timesSmall = Math.floor(125 / swapsPerTime) + 1
-  const swapsAmount = timesSmall * swapsPerTime
+  let swapsPerTime: Number = SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
+  const timesSmall: Number = Math.floor(125 / swapsPerTime) + 1
+  const swapsAmountSmall: Number = timesSmall * swapsPerTime
 
   swapsPerTime = SHARE_BIG.length * getSwapsAmount(tokenSymbols.length)
-  const timesBig = Math.floor(50 / swapsPerTime) + 1
-  const swapsAmountBig = timesBig * swapsPerTime
+  const timesBig: Number = Math.floor(50 / swapsPerTime) + 1
+  const swapsAmountBig: Number = timesBig * swapsPerTime
 
   const AMOUNTS: Array<BigNumber>
   const AMOUNTS_BIG: Array<BigNumber>
 
-  const MAX_UNDERQUOTE = 1
-  const CHECK_UNDERQUOTING = true
+  const MAX_UNDERQUOTE: Number = 1
+  const CHECK_UNDERQUOTING: Boolean = true
 
   const MINT_AMOUNT = getBigNumber("1000000000000000000")
 
@@ -78,7 +71,7 @@ describe(ADAPTER_NAME, function () {
     await prepareAdapterFactories(this, ADAPTER)
   })
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     await setupAdapterTests(
       this,
       config[CHAIN],
@@ -189,12 +182,12 @@ describe(ADAPTER_NAME, function () {
         TOKENS[1].address,
       )
 
-      // .add(1) to reflect underquoting by 1
+      // .add(MAX_UNDERQUOTE) to reflect underquoting
       await expect(() =>
         adapter
           .connect(dude)
           .swap(extra, TOKENS[0].address, TOKENS[1].address, dudeAddress),
-      ).to.changeTokenBalance(TOKENS[1], dude, swapQuote.add(1))
+      ).to.changeTokenBalance(TOKENS[1], dude, swapQuote.add(MAX_UNDERQUOTE))
     })
 
     it("Only Owner can rescue GAS from Adapter", async function () {
@@ -219,7 +212,7 @@ describe(ADAPTER_NAME, function () {
 
   describe("Adapter Swaps", function () {
     it(
-      "Swaps between tokens [" + swapsAmount + " small-medium swaps]",
+      "Swaps between tokens [" + swapsAmountSmall + " small-medium swaps]",
       async function () {
         await testRunAdapter(
           this,
@@ -246,5 +239,4 @@ describe(ADAPTER_NAME, function () {
       },
     )
   })
-
 })
