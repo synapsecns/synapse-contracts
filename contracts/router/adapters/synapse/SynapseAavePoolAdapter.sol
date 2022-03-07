@@ -70,10 +70,6 @@ contract SynapseAavePoolAdapter is SynapseBasePoolAdapter {
             _amountIn = _aaveDeposit(_tokenIn, _amountIn);
             // Swap pool can only trade aToken
             _tokenIn = aaveToken[_tokenIn];
-            require(
-                IERC20(_tokenIn).balanceOf(address(this)) == _amountIn,
-                "Aave mismatch"
-            );
         }
         if (isUnderlying[_tokenOut]) {
             // User needs to receive underlying token, so we ask the aToken to be sent to this contract
@@ -178,14 +174,17 @@ contract SynapseAavePoolAdapter is SynapseBasePoolAdapter {
         return IERC20(aaveToken[_token]).balanceOf(address(this));
     }
 
-
     function _checkTokens(address _tokenIn, address _tokenOut)
-    internal
-    view
-    virtual
-    override
-    returns (bool){
-        return true;
+        internal
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        // Swaps are supported between both pool and underlying tokens
+        return
+            (isPoolToken[_tokenIn] || isUnderlying[_tokenIn]) &&
+            (isPoolToken[_tokenOut] || isUnderlying[_tokenOut]);
     }
 
     /**
