@@ -195,6 +195,42 @@ describe("BonusChef", function () {
       ])
     })
 
+    it("User rewards are emptied after inactivating w/o rescuing", async function () {
+      await makeActions(this, [
+        [ADD, 1],
+        [ADD, 4],
+        [ADD, 5],
+      ])
+
+      await setupPool(this)
+      await startPool(this)
+
+      await advanceTime(1000)
+      await this.bonusChef.inactivateRewardPool(this.r.address)
+      // await checkRescue(this.bonusChef, this.r, this.alice)
+
+      await makeActions(this, [
+        [REM, 1],
+        [RST, 0],
+        [REM, 1],
+      ])
+
+      // Pool was inactivated, so all unclaimed rewards are lost
+      await this.users.clearUnclaimed()
+
+      await setupPool(this)
+      await startPool(this)
+      await advanceTime(100)
+
+      // this will check if the bonus rewards are correct after
+      // inactivate + restart
+      await makeActions(this, [
+        [HAR, 0],
+        [HAR, 0],
+        [HAR, 0],
+      ])
+    })
+
     it("Role for supplying rewards is granted correctly", async function () {
       await this.lp.mint(this.bob.address, getBigNumber(1))
       await this.lp
