@@ -71,14 +71,15 @@ contract CurveTriCryptoAdapter is CurveAbstractAdapter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut
-    ) internal view virtual override returns (uint256) {
-        // -1 to account for rounding errors.
-        // This will underquote by 1 wei sometimes, but that's life
-        return
-            pool.get_dy(
-                tokenIndex[_tokenIn],
-                tokenIndex[_tokenOut],
-                _amountIn
-            ) - 1;
+    ) internal view virtual override returns (uint256 _amountOut) {
+        try
+            pool.get_dy(tokenIndex[_tokenIn], tokenIndex[_tokenOut], _amountIn)
+        returns (uint256 _amt) {
+            // -1 to account for rounding errors.
+            // This will underquote by 1 wei sometimes, but that's life
+            _amountOut = _amt != 0 ? _amt - 1 : 0;
+        } catch {
+            _amountOut = 0;
+        }
     }
 }

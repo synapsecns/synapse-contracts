@@ -69,15 +69,19 @@ contract CurveMetaPoolAdapter is CurveLendingPoolAdapter {
         address _tokenIn,
         address _tokenOut
     ) internal view virtual override returns (uint256 _amountOut) {
-        // -1 to account for rounding errors.
-        // This will underquote by 1 wei sometimes, but that's life
-        _amountOut =
+        try
             pool.get_dy_underlying(
                 tokenIndex[_tokenIn],
                 tokenIndex[_tokenOut],
                 _amountIn
-            ) -
-            1;
+            )
+        returns (uint256 _amt) {
+            // -1 to account for rounding errors.
+            // This will underquote by 1 wei sometimes, but that's life
+            _amountOut = _amt != 0 ? _amt - 1 : 0;
+        } catch {
+            return 0;
+        }
 
         // quote for swaps from [base pool token] to [meta pool token] is
         // sometimes overly optimistic. Subtracting 1 bp should give
