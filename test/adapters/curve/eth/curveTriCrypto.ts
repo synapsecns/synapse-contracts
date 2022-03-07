@@ -19,19 +19,19 @@ import config from "../../../config.json"
 import adapters from "../adapters.json"
 import {CurveBasePoolAdapter} from "../../../../build/typechain";
 
-const STORAGE = "tricrypto"
-
-
 chai.use(solidity)
-const { expect } = chai
 
+
+const { expect } = chai
 const CHAIN = 1
+
 const DEX = "curve"
 const POOL = "tricrypto"
+const STORAGE = "tricrypto"
 const ADAPTER = adapters[CHAIN][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
-describe(ADAPTER_NAME, async () => {
+describe.only(ADAPTER_NAME, async () => {
   let signers: Array<Signer>
 
   let owner: Signer
