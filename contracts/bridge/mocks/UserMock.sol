@@ -48,6 +48,10 @@ contract UserMock is IUserMock {
         rewardRate = _rewardRate;
     }
 
+    function clearUnclaimed() external override {
+        unclaimed = 0;
+    }
+
     function setShare(uint256 _share) external override {
         share = _share;
     }
@@ -60,12 +64,7 @@ contract UserMock is IUserMock {
         ) = _beforeAction(pid);
         chef.deposit(pid, tokenAmount, address(this));
         unclaimed = expectedReward;
-        _checkRewards(
-            "deposit",
-            token,
-            balanceBefore,
-            0
-        );
+        _checkRewards("deposit", token, balanceBefore, 0);
     }
 
     function withdraw(uint256 pid, uint256 tokenAmount) external override {
@@ -76,12 +75,7 @@ contract UserMock is IUserMock {
         ) = _beforeAction(pid);
         chef.withdraw(pid, tokenAmount, address(this));
         unclaimed = expectedReward;
-        _checkRewards(
-            "withdraw",
-            token,
-            balanceBefore,
-            0
-        );
+        _checkRewards("withdraw", token, balanceBefore, 0);
     }
 
     function harvest(uint256 pid) external override {
@@ -119,12 +113,7 @@ contract UserMock is IUserMock {
             uint256 expectedReward
         ) = _beforeAction(pid);
         unclaimed = expectedReward;
-        _checkRewards(
-            "rest",
-            token,
-            balanceBefore,
-            0
-        );
+        _checkRewards("rest", token, balanceBefore, 0);
     }
 
     function _beforeAction(uint256 pid)

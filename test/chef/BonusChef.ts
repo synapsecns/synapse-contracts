@@ -150,9 +150,52 @@ describe("BonusChef", function () {
       ).to.be.revertedWith("!governance")
 
       await checkRescue(this.bonusChef, this.r, this.alice)
+
+      await expect(
+        this.bonusChef.notifyRewardAmount(this.r.address, getBigNumber(10)),
+      ).to.be.revertedWith("Pool is not added")
+
+      await setupPool(this)
+      await this.bonusChef.notifyRewardAmount(this.r.address, getBigNumber(10))
     })
 
-    it("Role for supplying rewards is transferred correctly", async function () {
+    it("User rewards are emptied after rescuing", async function () {
+      await makeActions(this, [
+        [ADD, 1],
+        [ADD, 4],
+        [ADD, 5],
+      ])
+
+      await setupPool(this)
+      await startPool(this)
+
+      await advanceTime(1000)
+      await this.bonusChef.inactivateRewardPool(this.r.address)
+      await checkRescue(this.bonusChef, this.r, this.alice)
+
+      await makeActions(this, [
+        [REM, 1],
+        [RST, 0],
+        [REM, 1],
+      ])
+
+      // Rewards were rescued, so all unclaimed rewards are lost
+      await this.users.clearUnclaimed()
+
+      await setupPool(this)
+      await startPool(this)
+      await advanceTime(100)
+
+      // this will check if the bonus rewards are correct after
+      // rescue + restart
+      await makeActions(this, [
+        [HAR, 0],
+        [HAR, 0],
+        [HAR, 0],
+      ])
+    })
+
+    it("Role for supplying rewards is granted correctly", async function () {
       await this.lp.mint(this.bob.address, getBigNumber(1))
       await this.lp
         .connect(this.bob)
@@ -162,7 +205,7 @@ describe("BonusChef", function () {
       await this.bonusChef.addRewardPool(this.lp.address, 100)
       await this.bonusChef.notifyRewardAmount(this.r.address, getBigNumber(10))
 
-      await this.bonusChef.setRewardsDistribution(this.bob.address)
+      await this.bonusChef.addRewardsDistribution(this.bob.address)
       await this.bonusChef
         .connect(this.bob)
         .notifyRewardAmount(this.lp.address, getBigNumber(1))
@@ -195,36 +238,40 @@ describe("BonusChef", function () {
 
     it("Governance role is transferred correctly", async function () {
       await expect(
-        this.bonusChef.connect(this.bob).setGovernance(this.bob.address),
+        this.bonusChef.connect(this.bob).transferGovernance(this.bob.address),
       ).to.be.revertedWith("!governance")
 
-      await this.bonusChef.setRewardsDistribution(this.bob.address)
+      await this.bonusChef.addRewardsDistribution(this.bob.address)
       await expect(
-        this.bonusChef.connect(this.bob).setGovernance(this.bob.address),
+        this.bonusChef.connect(this.bob).transferGovernance(this.bob.address),
       ).to.be.revertedWith("!governance")
 
-      await this.bonusChef.setGovernance(this.carol.address)
+      await this.bonusChef.transferGovernance(this.carol.address)
       await expect(
-        this.bonusChef.setGovernance(this.alice.address),
+        this.bonusChef.transferGovernance(this.alice.address),
       ).to.be.revertedWith("!governance")
       await expect(
-        this.bonusChef.setRewardsDistribution(this.alice.address),
+        this.bonusChef.addRewardsDistribution(this.alice.address),
       ).to.be.revertedWith("!governance")
 
       await this.bonusChef
         .connect(this.carol)
-        .setRewardsDistribution(this.alice.address)
+        .addRewardsDistribution(this.alice.address)
       await expect(
-        this.bonusChef.setGovernance(this.alice.address),
+        this.bonusChef.transferGovernance(this.alice.address),
       ).to.be.revertedWith("!governance")
 
-      await this.bonusChef.connect(this.carol).setGovernance(this.alice.address)
+      await this.bonusChef
+        .connect(this.carol)
+        .transferGovernance(this.alice.address)
       await expect(
-        this.bonusChef.connect(this.carol).setGovernance(this.bob.address),
+        this.bonusChef.connect(this.carol).transferGovernance(this.bob.address),
       ).to.be.revertedWith("!governance")
 
-      await this.bonusChef.setGovernance(this.bob.address)
-      await this.bonusChef.connect(this.bob).setGovernance(this.alice.address)
+      await this.bonusChef.transferGovernance(this.bob.address)
+      await this.bonusChef
+        .connect(this.bob)
+        .transferGovernance(this.alice.address)
 
       // OK, governance role is not a toy, let's stop tossing it around
     })
@@ -266,6 +313,7 @@ describe("BonusChef", function () {
       await advanceTime(1000)
       await this.bonusChef.inactivateRewardPool(this.r.address)
 
+      await setupPool(this)
       let log = await this.bonusChef.notifyRewardAmount(this.r.address, amount)
       let timestamp = (await ethers.provider.getBlock(log.blockNumber))
         .timestamp

@@ -39,6 +39,12 @@ contract Users {
         }
     }
 
+    function clearUnclaimed() external {
+        for (uint256 i = 0; i < userAmount; ++i) {
+            users[i].clearUnclaimed();
+        }
+    }
+
     function makeActions(
         uint256 pid,
         uint256[] calldata actions,
