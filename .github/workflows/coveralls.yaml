@@ -5,7 +5,7 @@ on: ["push", "pull_request"]
 
 jobs:
   coverage:
-    name: Build
+    name: Coverage
     runs-on: ubuntu-18.04
     env:
       AVAX_API: https://api.avax.network/ext/bc/C/rpc
