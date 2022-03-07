@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ILendingPool} from "../interfaces/ILendingPool.sol";
-import {ISynapse} from "../interfaces/ISynapse.sol";
+import {ILendingPool} from "../../interfaces/ILendingPool.sol";
+import {ISynapse} from "../../interfaces/ISynapse.sol";
 import {SynapseBasePoolAdapter} from "./SynapseBasePoolAdapter.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
@@ -24,7 +24,7 @@ contract SynapseAavePoolAdapter is SynapseBasePoolAdapter {
      * @param _name Adapter name
      * @param _pool Pool address
      * @param _swapGasEstimate Estimated gas usage for this.swap()
-     * @param _lendingPool Aave leding pool address
+     * @param _lendingPool Aave lending pool address
      * @param _underlyingTokens underlying pool tokens, that will be traded
      */
     constructor(

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ISynapse} from "../interfaces/ISynapse.sol";
-import {Adapter} from "../Adapter.sol";
-import {SwapAddCalculator} from "../helper/SwapAddCalculator.sol";
+import {ISynapse} from "../../interfaces/ISynapse.sol";
+import {Adapter} from "../../Adapter.sol";
+import {SwapAddCalculator} from "../../helper/SwapAddCalculator.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 

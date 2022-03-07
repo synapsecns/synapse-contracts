@@ -1,17 +1,17 @@
 //@ts-nocheck
 import { BigNumber, Signer } from "ethers"
-import { MAX_UINT256, getUserTokenBalance } from "../utils"
+import { MAX_UINT256, getUserTokenBalance } from "../../utils"
 import { solidity } from "ethereum-waffle"
 import { deployments } from "hardhat"
 
 import { TestAdapterSwap } from "../build/typechain/TestAdapterSwap"
 
-import { GenericERC20 } from "../../build/typechain/GenericERC20"
-import { LPToken } from "../../build/typechain/LPToken"
-import { Swap } from "../../build/typechain/Swap"
-import { SynapseBasePoolAdapter } from "../../build/typechain/SynapseBasePoolAdapter"
+import { GenericERC20 } from "../../../build/typechain/GenericERC20"
+import { LPToken } from "../../../build/typechain/LPToken"
+import { Swap } from "../../../build/typechain/Swap"
+import { SynapseBasePoolAdapter } from "../../../build/typechain/SynapseBasePoolAdapter"
 import chai from "chai"
-import { getBigNumber } from "../bridge/utilities"
+import { getBigNumber } from "../../bridge/utilities"
 
 chai.use(solidity)
 const { expect } = chai
@@ -227,7 +227,7 @@ describe("Base Pool Adapter", async () => {
     })
   })
 
-  describe("Wrong amount trasnferred", () => {
+  describe("Wrong amount transferred", () => {
     it("Swap fails if transfer amount is too little", async () => {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let depositAddress = await basePoolAdapter.depositAddress(
