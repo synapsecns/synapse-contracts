@@ -7,7 +7,6 @@ import { deployments } from "hardhat"
 import { TestUniswapAdapter } from "../build/typechain/TestUniswapAdapter"
 import { GenericERC20 } from "../../../../build/typechain/GenericERC20"
 import { IERC20Decimals } from "../../../../build/typechain/IERC20Decimals"
-import { IWETH9 } from "../../../../build/typechain/IWETH9"
 
 import chai from "chai"
 import { getBigNumber } from "../../../bridge/utilities"
