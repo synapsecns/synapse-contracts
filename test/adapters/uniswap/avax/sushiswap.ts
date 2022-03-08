@@ -142,6 +142,8 @@ describe("SushiSwap Adapter", async () => {
   )
 
   before(async () => {
+    this.timeout(400000)
+
     await network.provider.request({
       method: "hardhat_reset",
       params: [

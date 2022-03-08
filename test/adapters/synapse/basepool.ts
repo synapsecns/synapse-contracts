@@ -182,6 +182,7 @@ describe("Base Pool Adapter", async () => {
   )
 
   beforeEach(async () => {
+    this.timeout(400000)
     await setupTest()
   })
 
