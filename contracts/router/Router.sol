@@ -267,7 +267,7 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
             _path.length == _adapters.length + 1,
             "Router: wrong amount of _adapters/tokens"
         );
-        require(_to != address(0), "Router: incorrect _to address");
+        require(_to != address(0), "Router: _to cannot be zero address");
         IERC20(_path[0]).safeTransferFrom(
             _from,
             _getDepositAddress(_path, _adapters, 0),
@@ -278,8 +278,8 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     }
 
     /**
-     * @notice Perform a series of swaps, assuming
-     *         they are already deposited in this contract
+     * @notice Perform a series of swaps, assuming the starting tokens
+     *         are already deposited in this contract
      * @return Final amount of tokens swapped
      */
     function _selfSwap(
@@ -293,7 +293,7 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
             _path.length == _adapters.length + 1,
             "Router: wrong amount of _adapters/tokens"
         );
-        require(_to != address(0), "Router: incorrect _to address");
+        require(_to != address(0), "Router: _to cannot be zero address");
         IERC20(_path[0]).safeTransfer(
             _getDepositAddress(_path, _adapters, 0),
             _amountIn
@@ -303,8 +303,8 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     }
 
     /**
-     * @notice Perform a series of swaps, assuming
-     *         they have already been deposited in the first adapter
+     * @notice Perform a series of swaps, assuming the starting tokens
+     *         have already been deposited in the first adapter
      * @return _amount Final amount of tokens swapped
      */
     function _doChainedSwaps(
