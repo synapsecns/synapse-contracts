@@ -12,6 +12,8 @@ import {Ownable} from "@openzeppelin/contracts-4.4.2/access/Ownable.sol";
 contract BasicRouter is Ownable, IBasicRouter {
     using SafeERC20 for IERC20;
 
+    /// @dev This is address of contract representing
+    /// wrapped ERC20 version of a chain's native currency (ex. WETH, WAVAX, WMOVR)
     address payable public immutable WGAS;
 
     address[] public trustedAdapters;
