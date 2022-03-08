@@ -12,7 +12,7 @@ import { Swap } from "../../../build/typechain/Swap"
 import { SynapseAavePoolAdapter } from "../../../build/typechain/SynapseAavePoolAdapter"
 import chai from "chai"
 import { getBigNumber } from "../../bridge/utilities"
-import { setBalance } from "../utils/helpers"
+import { setBalance, forkChain } from "../utils/helpers"
 
 import config from "../../config.json"
 
@@ -335,18 +335,8 @@ describe("Aave Pool Adapter", async () => {
 
   before(async () => {
       this.timeout(400000)
-
-    await network.provider.request({
-      method: "hardhat_reset",
-      params: [
-        {
-          forking: {
-            jsonRpcUrl: process.env.AVAX_API,
-            blockNumber: 10000000,
-          },
-        },
-      ],
-    })
+      // 2022-01-24
+      await forkChain(process.env.AVAX_API, 10000000)
   })
 
   beforeEach(async () => {

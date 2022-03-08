@@ -10,7 +10,7 @@ import { IERC20Decimals } from "../../../../build/typechain/IERC20Decimals"
 
 import chai from "chai"
 import { getBigNumber } from "../../../bridge/utilities"
-import { setBalance } from "../../utils/helpers"
+import {forkChain, setBalance} from "../../utils/helpers"
 
 import config from "../../../config.json"
 
@@ -143,17 +143,8 @@ describe("Pangolin Adapter", async () => {
   before(async () => {
     this.timeout(400000)
 
-    await network.provider.request({
-      method: "hardhat_reset",
-      params: [
-        {
-          forking: {
-            jsonRpcUrl: process.env.AVAX_API,
-            blockNumber: 10000000,
-          },
-        },
-      ],
-    })
+    // 2022-01-24
+    await forkChain(process.env.AVAX_API, 10000000)
   })
 
   beforeEach(async () => {
