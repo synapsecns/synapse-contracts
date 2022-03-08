@@ -58,7 +58,6 @@ describe(ADAPTER_NAME, function () {
   const MINT_AMOUNT = getBigNumber("1000000000000000000")
 
   before(async function () {
-    this.timeout(400000)
     // 2022-01-24
     await forkChain(process.env.AVAX_API, 10000000)
     await prepareAdapterFactories(this, ADAPTER)

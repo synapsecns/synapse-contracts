@@ -29,7 +29,7 @@ const STORAGE = "frax"
 const ADAPTER = adapters[CHAIN][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
-describe(ADAPTER_NAME, async () => {
+describe(ADAPTER_NAME, async function() {
   let owner: Signer
   let ownerAddress: string
   let dude: Signer
@@ -68,7 +68,6 @@ describe(ADAPTER_NAME, async () => {
   const MINT_AMOUNT = getBigNumber("1000000000000000000")
 
   before(async function () {
-    this.timeout(400000)
     // 2022-01-13
     await forkChain(process.env.ALCHEMY_API, 14000000)
     await prepareAdapterFactories(this, ADAPTER)
@@ -125,7 +124,7 @@ describe(ADAPTER_NAME, async () => {
   })
 
   describe("Sanity checks", () => {
-    it("Curve Adapter is properly set up", async () => {
+    it("Curve Adapter is properly set up", async function() {
       expect(await adapter.pool()).to.eq(config[CHAIN][DEX][POOL])
 
       expect(TOKENS.length).to.gt(0)
@@ -136,7 +135,7 @@ describe(ADAPTER_NAME, async () => {
       }
     })
 
-    it("Swap fails if transfer amount is too little", async () => {
+    it("Swap fails if transfer amount is too little", async function() {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let depositAddress = await adapter.depositAddress(
         TOKENS[0].address,
@@ -153,7 +152,7 @@ describe(ADAPTER_NAME, async () => {
       ).to.be.reverted
     })
 
-    it("Only Owner can rescue overprovided swap tokens", async () => {
+    it("Only Owner can rescue overprovided swap tokens", async function() {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await adapter.depositAddress(
@@ -177,7 +176,7 @@ describe(ADAPTER_NAME, async () => {
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
-    it("Anyone can take advantage of overprovided swap tokens", async () => {
+    it("Anyone can take advantage of overprovided swap tokens", async function() {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await adapter.depositAddress(
@@ -206,7 +205,7 @@ describe(ADAPTER_NAME, async () => {
       ).to.changeTokenBalance(TOKENS[1], dude, swapQuote.add(MAX_UNDERQUOTE))
     })
 
-    it("Only Owner can rescue GAS from Adapter", async () => {
+    it("Only Owner can rescue GAS from Adapter", async function() {
       let amount = 42690
       await expect(() =>
         owner.sendTransaction({

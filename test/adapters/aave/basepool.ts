@@ -16,7 +16,7 @@ import { getBigNumber } from "../../bridge/utilities"
 chai.use(solidity)
 const { expect } = chai
 
-describe("Base Pool Adapter", async () => {
+describe("Base Pool Adapter", async function() {
   let signers: Array<Signer>
   let swap: Swap
   let DAI: GenericERC20
@@ -181,13 +181,12 @@ describe("Base Pool Adapter", async () => {
     },
   )
 
-  beforeEach(async () => {
-    this.timeout(400000)
+  beforeEach(async function() {
     await setupTest()
   })
 
   describe("Setup", () => {
-    it("BasePool Adapter is properly set up", async () => {
+    it("BasePool Adapter is properly set up", async function() {
       expect(await basePoolAdapter.pool()).to.be.eq(swap.address)
       expect(await basePoolAdapter.lpToken()).to.be.eq(swapToken.address)
       expect(await basePoolAdapter.numTokens()).to.be.eq(TOKENS.length - 1)
@@ -201,23 +200,23 @@ describe("Base Pool Adapter", async () => {
   })
 
   describe("Adapter Swaps", () => {
-    it("Swaps between tokens [48 small-medium sized swaps]", async () => {
+    it("Swaps between tokens [48 small-medium sized swaps]", async function() {
       await testAdapter(basePoolAdapter, [0, 1, 2], [0, 1, 2], 2)
     })
 
-    it("Zap into LP token [48 small-medium sized swaps]", async () => {
+    it("Zap into LP token [48 small-medium sized swaps]", async function() {
       await testAdapter(basePoolAdapter, [0, 1, 2], [3], 4)
     })
 
-    it("Withdraw from LP token [48 small-medium sized swaps]", async () => {
+    it("Withdraw from LP token [48 small-medium sized swaps]", async function() {
       await testAdapter(basePoolAdapter, [3], [0, 1, 2], 4)
     })
 
-    it("Swap stress test [240 small-medium sized swaps]", async () => {
+    it("Swap stress test [240 small-medium sized swaps]", async function() {
       await testAdapter(basePoolAdapter, [0, 1, 2, 3], [0, 1, 2, 3], 5)
     })
 
-    it("Swap stress test [180 big sized swaps]", async () => {
+    it("Swap stress test [180 big sized swaps]", async function() {
       await testAdapter(
         basePoolAdapter,
         [0, 1, 2, 3],
@@ -229,7 +228,7 @@ describe("Base Pool Adapter", async () => {
   })
 
   describe("Wrong amount transferred", () => {
-    it("Swap fails if transfer amount is too little", async () => {
+    it("Swap fails if transfer amount is too little", async function() {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let depositAddress = await basePoolAdapter.depositAddress(
         TOKENS[0].address,
@@ -246,7 +245,7 @@ describe("Base Pool Adapter", async () => {
       ).to.be.reverted
     })
 
-    it("Only Owner can rescue overprovided swap tokens", async () => {
+    it("Only Owner can rescue overprovided swap tokens", async function() {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await basePoolAdapter.depositAddress(
@@ -270,7 +269,7 @@ describe("Base Pool Adapter", async () => {
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
-    it("Anyone can take advantage of overprovided swap tokens", async () => {
+    it("Anyone can take advantage of overprovided swap tokens", async function() {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await basePoolAdapter.depositAddress(
@@ -298,7 +297,7 @@ describe("Base Pool Adapter", async () => {
       ).to.changeTokenBalance(TOKENS[1], dude, swapQuote)
     })
 
-    it("Only Owner can rescue GAS from Adapter", async () => {
+    it("Only Owner can rescue GAS from Adapter", async function() {
       let amount = 42690
       await expect(() =>
         owner.sendTransaction({ to: basePoolAdapter.address, value: amount }),

@@ -14,7 +14,7 @@ import { getBigNumber } from "../bridge/utilities"
 chai.use(solidity)
 const { expect } = chai
 
-describe("SwapCalculator 0.6", async () => {
+describe("SwapCalculator 0.6", async function () {
   let signers: Array<Signer>
   let swap: Swap
   let swapAddCalculator: SwapAddCalculator
@@ -162,12 +162,12 @@ describe("SwapCalculator 0.6", async () => {
     },
   )
 
-  beforeEach(async () => {
+  beforeEach(async function () {
     await setupTest()
   })
 
   describe("Setup", () => {
-    it("SwapAddCalculator is properly set up", async () => {
+    it("SwapAddCalculator is properly set up", async function () {
       expect(await swapAddCalculator.pool()).to.be.eq(swap.address)
       expect(await swapAddCalculator.lpToken()).to.be.eq(swapToken.address)
       expect(await swapAddCalculator.numTokens()).to.be.eq(TOKENS.length)
@@ -176,7 +176,7 @@ describe("SwapCalculator 0.6", async () => {
   })
 
   describe("Adding to empty pool", () => {
-    it("Reverts when providing not all tokens into empty pool", async () => {
+    it("Reverts when providing not all tokens into empty pool", async function () {
       let AMOUNTS = [String(1e18), String(1e6), String(1e6), String(1e18)]
       for (let i in AMOUNTS) {
         let depositAmounts = []
@@ -193,7 +193,7 @@ describe("SwapCalculator 0.6", async () => {
       }
     })
 
-    it("Returns deposited value when providing all tokens into empty pool", async () => {
+    it("Returns deposited value when providing all tokens into empty pool", async function () {
       for (let i in AMOUNTS) {
         let total = 4 * AMOUNTS[i]
         let depositAmounts = [
@@ -210,7 +210,7 @@ describe("SwapCalculator 0.6", async () => {
   })
 
   describe("Adding to existing pool", () => {
-    beforeEach(async () => {
+    beforeEach(async function () {
       // Populate the pool with initial liquidity
       await swap.addLiquidity(
         [String(50e18), String(50e6), String(50e6), String(50e18)],
@@ -227,38 +227,38 @@ describe("SwapCalculator 0.6", async () => {
       )
     })
 
-    it("Reverts when quoting empty deposit", async () => {
+    it("Reverts when quoting empty deposit", async function () {
       await expect(
         swapAddCalculator.calculateAddLiquidity([0, 0, 0, 0]),
       ).to.be.revertedWith("D should increase")
     })
 
-    it("Returns correct value when depositing all tokens in a balanced way", async () => {
+    it("Returns correct value when depositing all tokens in a balanced way", async function () {
       await testAddLiquidity([1, 1, 1, 1])
     })
 
-    it("Returns correct value when depositing all tokens in unbalanced way", async () => {
+    it("Returns correct value when depositing all tokens in unbalanced way", async function () {
       await testAddLiquidity([7, 4, 10, 5])
     })
 
-    it("Returns correct value when depositing 3 tokens", async () => {
+    it("Returns correct value when depositing 3 tokens", async function () {
       await testAddLiquidity([2, 4, 3, 0])
     })
 
-    it("Returns correct value when depositing 2 tokens", async () => {
+    it("Returns correct value when depositing 2 tokens", async function () {
       await testAddLiquidity([2, 0, 3, 0])
     })
 
-    it("Returns correct value when depositing 1 token", async () => {
+    it("Returns correct value when depositing 1 token", async function () {
       await testAddLiquidity([1, 0, 0, 0])
     })
 
-    it("updateSwapFee on unchanged swap fee doesn't change anything", async () => {
+    it("updateSwapFee on unchanged swap fee doesn't change anything", async function () {
       await swapAddCalculator.updateSwapFee()
       expect(await swapAddCalculator.swapFee()).to.eq(SWAP_FEE)
     })
 
-    it("New fee is applied after updateSwapFee", async () => {
+    it("New fee is applied after updateSwapFee", async function () {
       const NEW_FEE = 2 * SWAP_FEE
       await swap.setSwapFee(NEW_FEE)
       let depositAmounts = [String(1e18), "0", "0", "0"]
@@ -284,7 +284,7 @@ describe("SwapCalculator 0.6", async () => {
   })
 
   describe("Adding to existing pool with changed swap Fee", () => {
-    beforeEach(async () => {
+    beforeEach(async function () {
       // Populate the pool with initial liquidity
       await swap.addLiquidity(
         [String(50e18), String(50e6), String(50e6), String(50e18)],
@@ -306,23 +306,23 @@ describe("SwapCalculator 0.6", async () => {
       expect(await swapAddCalculator.swapFee()).to.eq(NEW_FEE)
     })
 
-    it("Returns correct value when depositing all tokens in a balanced way", async () => {
+    it("Returns correct value when depositing all tokens in a balanced way", async function () {
       await testAddLiquidity([1, 1, 1, 1])
     })
 
-    it("Returns correct value when depositing all tokens in unbalanced way", async () => {
+    it("Returns correct value when depositing all tokens in unbalanced way", async function () {
       await testAddLiquidity([7, 4, 10, 5])
     })
 
-    it("Returns correct value when depositing 3 tokens", async () => {
+    it("Returns correct value when depositing 3 tokens", async function () {
       await testAddLiquidity([2, 4, 3, 0])
     })
 
-    it("Returns correct value when depositing 2 tokens", async () => {
+    it("Returns correct value when depositing 2 tokens", async function () {
       await testAddLiquidity([2, 0, 3, 0])
     })
 
-    it("Returns correct value when depositing 1 token", async () => {
+    it("Returns correct value when depositing 1 token", async function () {
       await testAddLiquidity([1, 0, 0, 0])
     })
   })
