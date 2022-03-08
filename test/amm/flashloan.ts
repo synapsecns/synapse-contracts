@@ -1,5 +1,5 @@
 import { BigNumber, Signer } from "ethers"
-import { MAX_UINT256, getUserTokenBalance, asyncForEach } from "./testUtils"
+import { MAX_UINT256, getUserTokenBalance, asyncForEach } from "../utils"
 import { solidity } from "ethereum-waffle"
 
 import { GenericERC20 } from "../../build/typechain/GenericERC20"

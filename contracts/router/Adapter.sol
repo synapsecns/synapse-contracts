@@ -53,18 +53,28 @@ abstract contract Adapter is Ownable, IAdapter {
 
     // -- RESTRICTED RECOVER TOKEN FUNCTIONS --
 
-    function recoverERC20(address _tokenAddress) external onlyOwner {
-        uint256 _tokenAmount = IERC20(_tokenAddress).balanceOf(address(this));
-        require(_tokenAmount > 0, "Router: Nothing to recover");
-        IERC20(_tokenAddress).safeTransfer(msg.sender, _tokenAmount);
+    /**
+     * @notice Recover ERC20 from contract
+     * @param _tokenAddress token address
+     * @param _tokenAmount amount to recover
+     */
+    function recoverERC20(address _tokenAddress, uint256 _tokenAmount)
+        external
+        onlyOwner
+    {
+        require(_tokenAmount > 0, "Adapter: Nothing to recover");
         emit Recovered(_tokenAddress, _tokenAmount);
+        IERC20(_tokenAddress).safeTransfer(msg.sender, _tokenAmount);
     }
 
-    function recoverGAS() external onlyOwner {
-        uint256 _amount = address(this).balance;
-        require(_amount > 0, "Router: Nothing to recover");
-        payable(msg.sender).transfer(_amount);
+    /**
+     * @notice Recover GAS from contract
+     * @param _amount amount
+     */
+    function recoverGAS(uint256 _amount) external onlyOwner {
+        require(_amount > 0, "Adapter: Nothing to recover");
         emit Recovered(address(0), _amount);
+        payable(msg.sender).transfer(_amount);
     }
 
     /**
@@ -91,7 +101,11 @@ abstract contract Adapter is Ownable, IAdapter {
         address _tokenIn,
         address _tokenOut
     ) external view returns (uint256) {
-        if (_amountIn == 0 || !_checkTokens(_tokenIn, _tokenOut)) {
+        if (
+            _amountIn == 0 ||
+            _tokenIn == _tokenOut ||
+            !_checkTokens(_tokenIn, _tokenOut)
+        ) {
             return 0;
         }
         return _query(_amountIn, _tokenIn, _tokenOut);
@@ -115,7 +129,8 @@ abstract contract Adapter is Ownable, IAdapter {
         address _to
     ) external returns (uint256 _amountOut) {
         require(_amountIn != 0, "Adapter: Insufficient input amount");
-        require(_to != address(0), "Adapter: Null address receiver");
+        require(_to != address(0), "Adapter: _to cannot be zero address");
+        require(_tokenIn != _tokenOut, "Adapter: Tokens must differ");
         require(_checkTokens(_tokenIn, _tokenOut), "Adapter: unknown tokens");
         _approveIfNeeded(_tokenIn, _amountIn);
         _amountOut = _swap(_amountIn, _tokenIn, _tokenOut, _to);

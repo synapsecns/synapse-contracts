@@ -151,6 +151,14 @@ contract MRSynapseBridge is
         bytes32 indexed kappa
     );
 
+    // v2 events
+    event TokenRedeemV2(
+        bytes32 indexed to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    );
+
     // VIEW FUNCTIONS ***/
     function getFeeBalance(address tokenAddress)
         external
@@ -170,7 +178,7 @@ contract MRSynapseBridge is
      * * @param token ERC20 token in which fees acccumulated to transfer
      * * @param to Address to send the fees to
      */
-    function withdrawFees(IERC20 token, address to) external whenNotPaused() {
+    function withdrawFees(IERC20 token, address to) external whenNotPaused {
         require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
         require(to != address(0), "Address is 0x000");
         if (fees[address(token)] != 0) {
@@ -202,7 +210,7 @@ contract MRSynapseBridge is
         uint256 chainId,
         IERC20 token,
         uint256 amount
-    ) external nonReentrant() whenNotPaused() {
+    ) external nonReentrant whenNotPaused {
         emit TokenDeposit(to, chainId, token, amount);
         token.safeTransferFrom(msg.sender, address(this), amount);
     }
@@ -219,7 +227,7 @@ contract MRSynapseBridge is
         uint256 chainId,
         ERC20Burnable token,
         uint256 amount
-    ) external nonReentrant() whenNotPaused() {
+    ) external nonReentrant whenNotPaused {
         emit TokenRedeem(to, chainId, token, amount);
         token.burnFrom(msg.sender, amount);
     }
@@ -238,7 +246,7 @@ contract MRSynapseBridge is
         uint256 amount,
         uint256 fee,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
+    ) external nonReentrant whenNotPaused {
         require(
             hasRole(NODEGROUP_ROLE, msg.sender),
             "Caller is not a node group"
@@ -273,7 +281,7 @@ contract MRSynapseBridge is
         uint256 amount,
         uint256 fee,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
+    ) external nonReentrant whenNotPaused {
         require(
             hasRole(NODEGROUP_ROLE, msg.sender),
             "Caller is not a node group"
@@ -329,7 +337,7 @@ contract MRSynapseBridge is
         uint8 tokenIndexTo,
         uint256 minDy,
         uint256 deadline
-    ) external nonReentrant() whenNotPaused() {
+    ) external nonReentrant whenNotPaused {
         emit TokenDepositAndSwap(
             to,
             chainId,
@@ -363,7 +371,7 @@ contract MRSynapseBridge is
         uint8 tokenIndexTo,
         uint256 minDy,
         uint256 deadline
-    ) external nonReentrant() whenNotPaused() {
+    ) external nonReentrant whenNotPaused {
         emit TokenRedeemAndSwap(
             to,
             chainId,
@@ -395,7 +403,7 @@ contract MRSynapseBridge is
         uint8 swapTokenIndex,
         uint256 swapMinAmount,
         uint256 swapDeadline
-    ) external nonReentrant() whenNotPaused() {
+    ) external nonReentrant whenNotPaused {
         emit TokenRedeemAndRemove(
             to,
             chainId,
@@ -433,7 +441,7 @@ contract MRSynapseBridge is
         uint256 minDy,
         uint256 deadline,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
+    ) external nonReentrant whenNotPaused {
         require(
             hasRole(NODEGROUP_ROLE, msg.sender),
             "Caller is not a node group"
@@ -557,7 +565,7 @@ contract MRSynapseBridge is
         uint256 swapMinAmount,
         uint256 swapDeadline,
         bytes32 kappa
-    ) external nonReentrant() whenNotPaused() {
+    ) external nonReentrant whenNotPaused {
         require(
             hasRole(NODEGROUP_ROLE, msg.sender),
             "Caller is not a node group"
@@ -624,5 +632,23 @@ contract MRSynapseBridge is
                 kappa
             );
         }
+    }
+
+    // BRIDGE FUNCTIONS TO HANDLE DIFF ADDRESSES
+    /**
+     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+     * @param to address on other chain to redeem underlying assets to
+     * @param chainId which underlying chain to bridge assets onto
+     * @param token ERC20 compatible token to deposit into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+     **/
+    function redeemV2(
+        bytes32 to,
+        uint256 chainId,
+        ERC20Burnable token,
+        uint256 amount
+    ) external nonReentrant whenNotPaused {
+        emit TokenRedeemV2(to, chainId, token, amount);
+        token.burnFrom(msg.sender, amount);
     }
 }
