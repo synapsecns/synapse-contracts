@@ -451,6 +451,7 @@ contract BonusChef is IRewarder, ReentrancyGuard, AccessControl {
      */
     function _inactivateRewardPool(uint256 _index) internal {
         RewardPool storage pool = rewardPools[activeRewardPools[_index]];
+        require(block.timestamp >= pool.periodFinish, "Pool has not concluded");
         pool.isActive = false;
         // we don't care about the ordering of the active reward pool array
         // so we can just swap the element to delete with the last element
