@@ -33,6 +33,42 @@ import {IRewarder} from "./interfaces/IRewarder.sol";
 // 5. notifyRewardAmount updated to transferFrom(msg.sender) instead of using permissioned distributor
 // 6. Added a few sanity checks
 // 7. Governance and RewardsDistribution roles are now handled by AccessControl
+
+/// @dev How BonusChef and MiniChefV21 are supposed to work together?
+/// BonusChef contract is linked to an existing pool in MiniChefV21.
+/// BonusChef can handle arbitrary amount of "bonus tokens" for a single pool,
+/// each of the bonus tokens can have arbitrary reward rate and duration.
+
+/// @dev General setup
+/// 1. Pool is created on MiniChefV21 (or it already exists)
+/// 2. BonusChef is created, specifying MiniChef contract and needed pool ID.
+/// 3. BonusChef is set as a rewarder for pool ID on MiniChefV21
+/// 4. Later, each bonus token for the same pool on MiniChef is added
+///    to the same BonusChef contract.
+
+/// @dev How to add a new "bonus reward" for a given pool:
+/// 1. addRewardPool(r, T) is called by governance,
+///    specifying the bonus token (r) and its reward duration (T).
+/// 2. notifyRewardAmount(r, A) is called by rewards distributor,
+///    specifying the bonus token (r) and amount (A) of bonus tokens to distribute.
+/// 3. Bonus token distribution is started IMMEDIATELY. Exactly A tokens will be
+///    distributed over time period T.
+
+/// @dev How to extend an existing "bonus reward":
+/// 1. notifyRewardAmount(r, B) will distribute (B + leftover from previous round)
+///    tokens over THE SAME time period T, starting IMMEDIATELY.
+///    Math needs to be done, if leftover is meaningful amount, to not mess up the reward rate.
+/// PS. notifyRewardAmount(r, 1) will effectively cut the reward rate, so
+///     rewardDistribution should be a trusted account
+
+/// @dev How to remove an existing "bonus reward". Only use for deprecated bonus tokens,
+///      which have been mostly claimed by the users:
+/// 1. Wait until the bonus duration is finished.
+/// 2. inactivateRewardPool(r) will bonus token (r) from the list of bonus tokens,
+///    also all earned but unclaimed user rewards will become unclaimable,
+///    they can only be rescued by calling rescue(r) now. USE WITH CAUTION.
+/// PS. inactivateRewardPool(r) and later addRewardPool(r, TT) is the only way to change
+///     reward duration period (from T to TT).
 contract BonusChef is IRewarder, ReentrancyGuard, AccessControl {
     using SafeMath for uint256;
     using BoringERC20 for IERC20;
