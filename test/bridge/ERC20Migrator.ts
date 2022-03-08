@@ -77,7 +77,7 @@
 //             })
 //         })
 
-//         beforeEach(async () => {
+//         beforeEach(async function() {
 //             await setupTest()
 //         })
 

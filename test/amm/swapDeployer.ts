@@ -171,12 +171,12 @@ describe("Swap Deployer", () => {
     },
   )
 
-  beforeEach(async () => {
+  beforeEach(async function () {
     await setupTest()
   })
 
   describe("addLiquidity", () => {
-    it("Add liquidity succeeds with pool with 4 tokens", async () => {
+    it("Add liquidity succeeds with pool with 4 tokens", async function () {
       const calcTokenAmount = await swapClone.calculateTokenAmount(
         [String(1e18), 0, 0, 0],
         true,
@@ -200,7 +200,7 @@ describe("Swap Deployer", () => {
   })
 
   describe("swap", () => {
-    it("Swap works between tokens with different decimals", async () => {
+    it("Swap works between tokens with different decimals", async function () {
       const calcTokenAmount = await swapClone
         .connect(user1)
         .calculateSwap(2, 0, String(1e6))
@@ -228,7 +228,7 @@ describe("Swap Deployer", () => {
   })
 
   describe("removeLiquidity", () => {
-    it("Remove Liquidity succeeds", async () => {
+    it("Remove Liquidity succeeds", async function () {
       const calcTokenAmount = await swapClone.calculateTokenAmount(
         [String(1e18), 0, 0, 0],
         true,
@@ -293,10 +293,10 @@ describe("Swap Deployer", () => {
   })
 
   describe("Check for timestamp manipulations", () => {
-    beforeEach(async () => {
+    beforeEach(async function () {
       await forceAdvanceOneBlock()
     })
-    it("Check for maximum differences in A and virtual price when increasing", async () => {
+    it("Check for maximum differences in A and virtual price when increasing", async function () {
       // Create imbalanced pool to measure virtual price change
       // Number of tokens are in 2:1:1:1 ratio
       // We expect virtual price to increase as A increases
@@ -332,7 +332,7 @@ describe("Swap Deployer", () => {
       // = 1.00000192407
     })
 
-    it("Check for maximum differences in A and virtual price when decreasing", async () => {
+    it("Check for maximum differences in A and virtual price when decreasing", async function () {
       // Create imbalanced pool to measure virtual price change
       // Number of tokens are in 2:1:1:1 ratio
       // We expect virtual price to decrease as A decreases
@@ -391,7 +391,7 @@ describe("Swap Deployer", () => {
       let initialAttackerBalances: BigNumber[] = []
       let initialPoolBalances: BigNumber[] = []
 
-      beforeEach(async () => {
+      beforeEach(async function () {
         initialAttackerBalances = await getUserTokenBalances(attacker, TOKENS)
 
         expect(initialAttackerBalances[0]).to.be.eq(String(1e20))
@@ -421,7 +421,7 @@ describe("Swap Deployer", () => {
           // This attack is achieved by creating imbalance in the first block then
           // trading in reverse direction in the second block.
 
-          it("Attack fails with 900 seconds between blocks", async () => {
+          it("Attack fails with 900 seconds between blocks", async function () {
             // Swap 16e6 of USDC to SUSD, causing massive imbalance in the pool
             await swapClone
               .connect(attacker)
@@ -494,7 +494,7 @@ describe("Swap Deployer", () => {
             // The attack did not benefit the attacker.
           })
 
-          it("Attack fails with 2 weeks between transactions (mimics rapid A change)", async () => {
+          it("Attack fails with 2 weeks between transactions (mimics rapid A change)", async function () {
             // This test assumes there are no other transactions during the 2 weeks period of ramping up.
             // Purpose of this test case is to mimic rapid ramp up of A.
 
@@ -581,7 +581,7 @@ describe("Swap Deployer", () => {
           // This attack is achieved by attempting to resolve the imbalance by getting as close to 1:1 ratio of tokens.
           // Then re-creating the imbalance when A has changed.
 
-          beforeEach(async () => {
+          beforeEach(async function () {
             // Set up pool to be imbalanced prior to the attack
             await swapClone
               .connect(user2)
@@ -599,7 +599,7 @@ describe("Swap Deployer", () => {
             expect(initialPoolBalances[3]).to.be.eq(String(100e18))
           })
 
-          it("Attack fails with 900 seconds between blocks", async () => {
+          it("Attack fails with 900 seconds between blocks", async function () {
             // Swapping 25e6 of USDC to SUSD, resolving imbalance in the pool
             await swapClone
               .connect(attacker)
@@ -673,7 +673,7 @@ describe("Swap Deployer", () => {
             // The attack did not benefit the attacker.
           })
 
-          it("Attack succeeds with 2 weeks between transactions (mimics rapid A change)", async () => {
+          it("Attack succeeds with 2 weeks between transactions (mimics rapid A change)", async function () {
             // This test assumes there are no other transactions during the 2 weeks period of ramping up.
             // Purpose of this test case is to mimic rapid ramp up of A.
 
@@ -761,7 +761,7 @@ describe("Swap Deployer", () => {
       let initialAttackerBalances: BigNumber[] = []
       let initialPoolBalances: BigNumber[] = []
 
-      beforeEach(async () => {
+      beforeEach(async function () {
         // Set up the downward ramp A
         initialAttackerBalances = await getUserTokenBalances(attacker, TOKENS)
 
@@ -792,7 +792,7 @@ describe("Swap Deployer", () => {
           // This attack is achieved by creating imbalance in the first block then
           // trading in reverse direction in the second block.
 
-          it("Attack fails with 900 seconds between blocks", async () => {
+          it("Attack fails with 900 seconds between blocks", async function () {
             // Swap 16e6 of USDC to SUSD, causing massive imbalance in the pool
             await swapClone
               .connect(attacker)
@@ -864,7 +864,7 @@ describe("Swap Deployer", () => {
             // The attack did not benefit the attacker.
           })
 
-          it("Attack succeeds with 2 weeks between transactions (mimics rapid A change)", async () => {
+          it("Attack succeeds with 2 weeks between transactions (mimics rapid A change)", async function () {
             // This test assumes there are no other transactions during the 2 weeks period of ramping down.
             // Purpose of this test is to show how dangerous rapid A ramp is.
 
@@ -953,7 +953,7 @@ describe("Swap Deployer", () => {
           // This attack is achieved by attempting to resolve the imbalance by getting as close to 1:1 ratio of tokens.
           // Then re-creating the imbalance when A has changed.
 
-          beforeEach(async () => {
+          beforeEach(async function () {
             // Set up pool to be imbalanced prior to the attack
             await swapClone
               .connect(user2)
@@ -971,7 +971,7 @@ describe("Swap Deployer", () => {
             expect(initialPoolBalances[3]).to.be.eq(String(100e18))
           })
 
-          it("Attack fails with 900 seconds between blocks", async () => {
+          it("Attack fails with 900 seconds between blocks", async function () {
             // Swap 25e6 of USDC to SUSD, resolving imbalance in the pool
             await swapClone
               .connect(attacker)
@@ -1044,7 +1044,7 @@ describe("Swap Deployer", () => {
             // The attack did not benefit the attacker.
           })
 
-          it("Attack fails with 2 weeks between transactions (mimics rapid A change)", async () => {
+          it("Attack fails with 2 weeks between transactions (mimics rapid A change)", async function () {
             // This test assumes there are no other transactions during the 2 weeks period of ramping down.
             // Purpose of this test case is to mimic rapid ramp down of A.
 

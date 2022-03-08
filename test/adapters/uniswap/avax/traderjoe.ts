@@ -18,7 +18,7 @@ import config from "../../../config.json"
 chai.use(solidity)
 const { expect } = chai
 
-describe("TraderJoe Adapter", async () => {
+describe("TraderJoe Adapter", async function() {
   let signers: Array<Signer>
 
   let owner: Signer
@@ -139,24 +139,23 @@ describe("TraderJoe Adapter", async () => {
     },
   )
 
-  before(async () => {
-    this.timeout(400000)
+  before(async function() {
     // 2022-01-24
     await forkChain(process.env.AVAX_API, 10000000)
   })
 
-  beforeEach(async () => {
+  beforeEach(async function() {
     await setupTest()
   })
 
   describe("Sanity checks", () => {
-    it("UniswapV2 Adapter is properly set up", async () => {
+    it("UniswapV2 Adapter is properly set up", async function() {
       expect(await uniswapV2Adapter.uniswapV2Factory()).to.eq(
         config[CHAIN][DEX].factory,
       )
     })
 
-    it("Swap fails when there is no direct path between tokens", async () => {
+    it("Swap fails when there is no direct path between tokens", async function() {
       // WETHe -> LINKe
       let tokenFrom = 2
       let tokenTo = 4
@@ -180,7 +179,7 @@ describe("TraderJoe Adapter", async () => {
       ).to.be.revertedWith("Swap pool does not exist")
     })
 
-    it("Swap fails if transfer amount is too little", async () => {
+    it("Swap fails if transfer amount is too little", async function() {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let depositAddress = await uniswapV2Adapter.depositAddress(
         TOKENS[0].address,
@@ -198,7 +197,7 @@ describe("TraderJoe Adapter", async () => {
       ).to.be.reverted
     })
 
-    it("Noone can rescue overprovided swap tokens", async () => {
+    it("Noone can rescue overprovided swap tokens", async function() {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await uniswapV2Adapter.depositAddress(
@@ -222,7 +221,7 @@ describe("TraderJoe Adapter", async () => {
         .reverted
     })
 
-    it("Noone can take advantage of overprovided swap tokens", async () => {
+    it("Noone can take advantage of overprovided swap tokens", async function() {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await uniswapV2Adapter.depositAddress(
@@ -246,7 +245,7 @@ describe("TraderJoe Adapter", async () => {
       ).to.be.reverted
     })
 
-    it("Only Owner can rescue tokens sent to Adapter", async () => {
+    it("Only Owner can rescue tokens sent to Adapter", async function() {
       let extra = getBigNumber(10, TOKENS_DECIMALS[0])
       await TOKENS[0].transfer(uniswapV2Adapter.address, extra)
 
@@ -259,7 +258,7 @@ describe("TraderJoe Adapter", async () => {
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
-    it("Only Owner can rescue GAS from Adapter", async () => {
+    it("Only Owner can rescue GAS from Adapter", async function() {
       let amount = 42690
       await expect(() =>
         owner.sendTransaction({ to: uniswapV2Adapter.address, value: amount }),
@@ -276,13 +275,13 @@ describe("TraderJoe Adapter", async () => {
   })
 
   describe("Adapter Swaps from Base tokens", () => {
-    it("Swaps and Queries from Base (150 swaps)", async () => {
+    it("Swaps and Queries from Base (150 swaps)", async function() {
       await testAdapter(uniswapV2Adapter, baseTokens, allTokens, 5)
     })
   })
 
   describe("Adapter Swaps to Base tokens", () => {
-    it("Swaps and Queries to Base (150 swaps)", async () => {
+    it("Swaps and Queries to Base (150 swaps)", async function() {
       await testAdapter(uniswapV2Adapter, allTokens, baseTokens, 5)
     })
   })

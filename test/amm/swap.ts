@@ -24,7 +24,7 @@ import chai from "chai"
 chai.use(solidity)
 const { expect } = chai
 
-describe("Swap", async () => {
+describe("Swap", async function () {
   let signers: Array<Signer>
   let swap: Swap
   let testSwapReturnValues: TestSwapReturnValues
@@ -142,21 +142,21 @@ describe("Swap", async () => {
     },
   )
 
-  beforeEach(async () => {
+  beforeEach(async function () {
     await setupTest()
   })
 
   describe("swapStorage", () => {
-    describe("lpToken", async () => {
-      it("Returns correct lpTokenName", async () => {
+    describe("lpToken", async function () {
+      it("Returns correct lpTokenName", async function () {
         expect(await swapToken.name()).to.eq(LP_TOKEN_NAME)
       })
 
-      xit("Returns correct lpTokenSymbol", async () => {
+      xit("Returns correct lpTokenSymbol", async function () {
         expect(await swapToken.symbol()).to.eq(LP_TOKEN_SYMBOL)
       })
 
-      it("Returns true after successfully calling transferFrom", async () => {
+      it("Returns true after successfully calling transferFrom", async function () {
         // User 1 adds liquidity
         await swap
           .connect(user1)
@@ -174,44 +174,44 @@ describe("Swap", async () => {
       })
     })
 
-    describe("A", async () => {
-      it("Returns correct A value", async () => {
+    describe("A", async function () {
+      it("Returns correct A value", async function () {
         expect(await swap.getA()).to.eq(INITIAL_A_VALUE)
         expect(await swap.getAPrecise()).to.eq(INITIAL_A_VALUE * 100)
       })
     })
 
-    describe("fee", async () => {
-      it("Returns correct fee value", async () => {
+    describe("fee", async function () {
+      it("Returns correct fee value", async function () {
         expect((await swap.swapStorage()).swapFee).to.eq(SWAP_FEE)
       })
     })
 
-    describe("adminFee", async () => {
-      it("Returns correct adminFee value", async () => {
+    describe("adminFee", async function () {
+      it("Returns correct adminFee value", async function () {
         expect(swapStorage.adminFee).to.eq(0)
       })
     })
   })
 
   describe("getToken", () => {
-    it("Returns correct addresses of pooled tokens", async () => {
+    it("Returns correct addresses of pooled tokens", async function () {
       expect(await swap.getToken(0)).to.eq(firstToken.address)
       expect(await swap.getToken(1)).to.eq(secondToken.address)
     })
 
-    it("Reverts when index is out of range", async () => {
+    it("Reverts when index is out of range", async function () {
       await expect(swap.getToken(2)).to.be.reverted
     })
   })
 
   describe("getTokenIndex", () => {
-    it("Returns correct token indexes", async () => {
+    it("Returns correct token indexes", async function () {
       expect(await swap.getTokenIndex(firstToken.address)).to.be.eq(0)
       expect(await swap.getTokenIndex(secondToken.address)).to.be.eq(1)
     })
 
-    it("Reverts when token address is not found", async () => {
+    it("Reverts when token address is not found", async function () {
       await expect(swap.getTokenIndex(ZERO_ADDRESS)).to.be.revertedWith(
         "Token does not exist",
       )
@@ -219,24 +219,24 @@ describe("Swap", async () => {
   })
 
   describe("getTokenBalance", () => {
-    it("Returns correct balances of pooled tokens", async () => {
+    it("Returns correct balances of pooled tokens", async function () {
       expect(await swap.getTokenBalance(0)).to.eq(BigNumber.from(String(1e18)))
       expect(await swap.getTokenBalance(1)).to.eq(BigNumber.from(String(1e18)))
     })
 
-    it("Reverts when index is out of range", async () => {
+    it("Reverts when index is out of range", async function () {
       await expect(swap.getTokenBalance(2)).to.be.reverted
     })
   })
 
   describe("getA", () => {
-    it("Returns correct value", async () => {
+    it("Returns correct value", async function () {
       expect(await swap.getA()).to.eq(INITIAL_A_VALUE)
     })
   })
 
   describe("addLiquidity", () => {
-    it("Reverts when contract is paused", async () => {
+    it("Reverts when contract is paused", async function () {
       await swap.pause()
 
       await expect(
@@ -256,13 +256,13 @@ describe("Swap", async () => {
       expect(actualPoolTokenAmount).to.eq(BigNumber.from("3991672211258372957"))
     })
 
-    it("Reverts with 'Amounts must match pooled tokens'", async () => {
+    it("Reverts with 'Amounts must match pooled tokens'", async function () {
       await expect(
         swap.connect(user1).addLiquidity([String(1e16)], 0, MAX_UINT256),
       ).to.be.revertedWith("Amounts must match pooled tokens")
     })
 
-    it("Reverts with 'Cannot withdraw more than available'", async () => {
+    it("Reverts with 'Cannot withdraw more than available'", async function () {
       await expect(
         swap
           .connect(user1)
@@ -270,7 +270,7 @@ describe("Swap", async () => {
       ).to.be.revertedWith("Cannot withdraw more than available")
     })
 
-    it("Reverts with 'Must supply all tokens in pool'", async () => {
+    it("Reverts with 'Must supply all tokens in pool'", async function () {
       swapToken.approve(swap.address, String(2e18))
       await swap.removeLiquidity(String(2e18), [0, 0], MAX_UINT256)
       await expect(
@@ -280,7 +280,7 @@ describe("Swap", async () => {
       ).to.be.revertedWith("Must supply all tokens in pool")
     })
 
-    it("Succeeds with expected output amount of pool tokens", async () => {
+    it("Succeeds with expected output amount of pool tokens", async function () {
       const calculatedPoolTokenAmount = await swap
         .connect(user1)
         .calculateTokenAmount([String(1e18), String(3e18)], true)
@@ -303,7 +303,7 @@ describe("Swap", async () => {
       expect(actualPoolTokenAmount).to.eq(BigNumber.from("3991672211258372957"))
     })
 
-    it("Succeeds with actual pool token amount being within ±0.1% range of calculated pool token", async () => {
+    it("Succeeds with actual pool token amount being within ±0.1% range of calculated pool token", async function () {
       const calculatedPoolTokenAmount = await swap
         .connect(user1)
         .calculateTokenAmount([String(1e18), String(3e18)], true)
@@ -333,7 +333,7 @@ describe("Swap", async () => {
       )
     })
 
-    it("Succeeds with correctly updated tokenBalance after imbalanced deposit", async () => {
+    it("Succeeds with correctly updated tokenBalance after imbalanced deposit", async function () {
       await swap
         .connect(user1)
         .addLiquidity([String(1e18), String(3e18)], 0, MAX_UINT256)
@@ -343,7 +343,7 @@ describe("Swap", async () => {
       expect(await swap.getTokenBalance(1)).to.eq(BigNumber.from(String(4e18)))
     })
 
-    it("Returns correct minted lpToken amount", async () => {
+    it("Returns correct minted lpToken amount", async function () {
       await firstToken.mint(testSwapReturnValues.address, String(1e20))
       await secondToken.mint(testSwapReturnValues.address, String(1e20))
 
@@ -353,7 +353,7 @@ describe("Swap", async () => {
       )
     })
 
-    it("Reverts when minToMint is not reached due to front running", async () => {
+    it("Reverts when minToMint is not reached due to front running", async function () {
       const calculatedLPTokenAmount = await swap
         .connect(user1)
         .calculateTokenAmount([String(1e18), String(3e18)], true)
@@ -376,7 +376,7 @@ describe("Swap", async () => {
       ).to.be.reverted
     })
 
-    it("Reverts when block is mined after deadline", async () => {
+    it("Reverts when block is mined after deadline", async function () {
       const currentTimestamp = await getCurrentBlockTimestamp()
       await setNextTimestamp(currentTimestamp + 60 * 10)
 
@@ -391,7 +391,7 @@ describe("Swap", async () => {
       ).to.be.revertedWith("Deadline not met")
     })
 
-    it("Emits addLiquidity event", async () => {
+    it("Emits addLiquidity event", async function () {
       const calculatedLPTokenAmount = await swap
         .connect(user1)
         .calculateTokenAmount([String(2e18), String(1e16)], true)
@@ -413,19 +413,19 @@ describe("Swap", async () => {
   })
 
   describe("removeLiquidity", () => {
-    it("Reverts with 'Cannot exceed total supply'", async () => {
+    it("Reverts with 'Cannot exceed total supply'", async function () {
       await expect(
         swap.calculateRemoveLiquidity(MAX_UINT256),
       ).to.be.revertedWith("Cannot exceed total supply")
     })
 
-    it("Reverts with 'minAmounts must match poolTokens'", async () => {
+    it("Reverts with 'minAmounts must match poolTokens'", async function () {
       await expect(
         swap.removeLiquidity(String(2e18), [0], MAX_UINT256),
       ).to.be.revertedWith("minAmounts must match poolTokens")
     })
 
-    it("Succeeds even when contract is paused", async () => {
+    it("Succeeds even when contract is paused", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -448,7 +448,7 @@ describe("Swap", async () => {
       expect(await secondToken.balanceOf(swap.address)).to.eq(0)
     })
 
-    it("Succeeds with expected return amounts of underlying tokens", async () => {
+    it("Succeeds with expected return amounts of underlying tokens", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -502,7 +502,7 @@ describe("Swap", async () => {
       )
     })
 
-    it("Returns correct amounts of received tokens", async () => {
+    it("Returns correct amounts of received tokens", async function () {
       await firstToken.mint(testSwapReturnValues.address, String(1e20))
       await secondToken.mint(testSwapReturnValues.address, String(1e20))
 
@@ -517,7 +517,7 @@ describe("Swap", async () => {
       await testSwapReturnValues.test_removeLiquidity(tokenBalance, [0, 0])
     })
 
-    it("Reverts when user tries to burn more LP tokens than they own", async () => {
+    it("Reverts when user tries to burn more LP tokens than they own", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -536,7 +536,7 @@ describe("Swap", async () => {
       ).to.be.reverted
     })
 
-    it("Reverts when minAmounts of underlying tokens are not reached due to front running", async () => {
+    it("Reverts when minAmounts of underlying tokens are not reached due to front running", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -572,7 +572,7 @@ describe("Swap", async () => {
       ).to.be.reverted
     })
 
-    it("Reverts when block is mined after deadline", async () => {
+    it("Reverts when block is mined after deadline", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -595,7 +595,7 @@ describe("Swap", async () => {
       ).to.be.revertedWith("Deadline not met")
     })
 
-    it("Emits removeLiquidity event", async () => {
+    it("Emits removeLiquidity event", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -613,7 +613,7 @@ describe("Swap", async () => {
   })
 
   describe("removeLiquidityImbalance", () => {
-    it("Reverts when contract is paused", async () => {
+    it("Reverts when contract is paused", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -647,13 +647,13 @@ describe("Swap", async () => {
       ).to.be.reverted
     })
 
-    it("Reverts with 'Amounts should match pool tokens'", async () => {
+    it("Reverts with 'Amounts should match pool tokens'", async function () {
       await expect(
         swap.removeLiquidityImbalance([String(1e18)], MAX_UINT256, MAX_UINT256),
       ).to.be.revertedWith("Amounts should match pool tokens")
     })
 
-    it("Reverts with 'Cannot withdraw more than available'", async () => {
+    it("Reverts with 'Cannot withdraw more than available'", async function () {
       await expect(
         swap.removeLiquidityImbalance(
           [MAX_UINT256, MAX_UINT256],
@@ -663,7 +663,7 @@ describe("Swap", async () => {
       ).to.be.revertedWith("Cannot withdraw more than available")
     })
 
-    it("Succeeds with calculated max amount of pool token to be burned (±0.1%)", async () => {
+    it("Succeeds with calculated max amount of pool token to be burned (±0.1%)", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -737,7 +737,7 @@ describe("Swap", async () => {
       )
     })
 
-    it("Returns correct amount of burned lpToken", async () => {
+    it("Returns correct amount of burned lpToken", async function () {
       await firstToken.mint(testSwapReturnValues.address, String(1e20))
       await secondToken.mint(testSwapReturnValues.address, String(1e20))
 
@@ -755,7 +755,7 @@ describe("Swap", async () => {
       )
     })
 
-    it("Reverts when user tries to burn more LP tokens than they own", async () => {
+    it("Reverts when user tries to burn more LP tokens than they own", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -774,7 +774,7 @@ describe("Swap", async () => {
       ).to.be.reverted
     })
 
-    it("Reverts when minAmounts of underlying tokens are not reached due to front running", async () => {
+    it("Reverts when minAmounts of underlying tokens are not reached due to front running", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -812,7 +812,7 @@ describe("Swap", async () => {
       ).to.be.reverted
     })
 
-    it("Reverts when block is mined after deadline", async () => {
+    it("Reverts when block is mined after deadline", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -835,7 +835,7 @@ describe("Swap", async () => {
       ).to.be.revertedWith("Deadline not met")
     })
 
-    it("Emits RemoveLiquidityImbalance event", async () => {
+    it("Emits RemoveLiquidityImbalance event", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -858,7 +858,7 @@ describe("Swap", async () => {
   })
 
   describe("removeLiquidityOneToken", () => {
-    it("Reverts when contract is paused.", async () => {
+    it("Reverts when contract is paused.", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -883,13 +883,13 @@ describe("Swap", async () => {
       ).to.be.reverted
     })
 
-    it("Reverts with 'Token index out of range'", async () => {
+    it("Reverts with 'Token index out of range'", async function () {
       await expect(
         swap.calculateRemoveLiquidityOneToken(1, 5),
       ).to.be.revertedWith("Token index out of range")
     })
 
-    it("Reverts with 'Withdraw exceeds available'", async () => {
+    it("Reverts with 'Withdraw exceeds available'", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -902,13 +902,13 @@ describe("Swap", async () => {
       ).to.be.revertedWith("Withdraw exceeds available")
     })
 
-    it("Reverts with 'Token not found'", async () => {
+    it("Reverts with 'Token not found'", async function () {
       await expect(
         swap.connect(user1).removeLiquidityOneToken(0, 9, 1, MAX_UINT256),
       ).to.be.revertedWith("Token not found")
     })
 
-    it("Succeeds with calculated token amount as minAmount", async () => {
+    it("Succeeds with calculated token amount as minAmount", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -939,7 +939,7 @@ describe("Swap", async () => {
       expect(after.sub(before)).to.eq(BigNumber.from("2008990034631583696"))
     })
 
-    it("Returns correct amount of received token", async () => {
+    it("Returns correct amount of received token", async function () {
       await firstToken.mint(testSwapReturnValues.address, String(1e20))
       await secondToken.mint(testSwapReturnValues.address, String(1e20))
       await testSwapReturnValues.test_addLiquidity(
@@ -953,7 +953,7 @@ describe("Swap", async () => {
       )
     })
 
-    it("Reverts when user tries to burn more LP tokens than they own", async () => {
+    it("Reverts when user tries to burn more LP tokens than they own", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -973,7 +973,7 @@ describe("Swap", async () => {
       ).to.be.reverted
     })
 
-    it("Reverts when minAmount of underlying token is not reached due to front running", async () => {
+    it("Reverts when minAmount of underlying token is not reached due to front running", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -1007,7 +1007,7 @@ describe("Swap", async () => {
       ).to.be.reverted
     })
 
-    it("Reverts when block is mined after deadline", async () => {
+    it("Reverts when block is mined after deadline", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -1031,7 +1031,7 @@ describe("Swap", async () => {
       ).to.be.revertedWith("Deadline not met")
     })
 
-    it("Emits RemoveLiquidityOne event", async () => {
+    it("Emits RemoveLiquidityOne event", async function () {
       // User 1 adds liquidity
       await swap
         .connect(user1)
@@ -1048,7 +1048,7 @@ describe("Swap", async () => {
   })
 
   describe("swap", () => {
-    it("Reverts when contract is paused", async () => {
+    it("Reverts when contract is paused", async function () {
       // Owner pauses the contract
       await swap.pause()
 
@@ -1057,19 +1057,19 @@ describe("Swap", async () => {
         .to.be.reverted
     })
 
-    it("Reverts with 'Token index out of range'", async () => {
+    it("Reverts with 'Token index out of range'", async function () {
       await expect(swap.calculateSwap(0, 9, String(1e17))).to.be.revertedWith(
         "Token index out of range",
       )
     })
 
-    it("Reverts with 'Cannot swap more than you own'", async () => {
+    it("Reverts with 'Cannot swap more than you own'", async function () {
       await expect(
         swap.connect(user1).swap(0, 1, MAX_UINT256, 0, MAX_UINT256),
       ).to.be.revertedWith("Cannot swap more than you own")
     })
 
-    it("Succeeds with expected swap amounts", async () => {
+    it("Succeeds with expected swap amounts", async function () {
       // User 1 calculates how much token to receive
       const calculatedSwapReturn = await swap.calculateSwap(0, 1, String(1e17))
       expect(calculatedSwapReturn).to.eq(BigNumber.from("99702611562565289"))
@@ -1093,7 +1093,7 @@ describe("Swap", async () => {
       )
     })
 
-    it("Reverts when minDy (minimum amount token to receive) is not reached due to front running", async () => {
+    it("Reverts when minDy (minimum amount token to receive) is not reached due to front running", async function () {
       // User 1 calculates how much token to receive
       const calculatedSwapReturn = await swap.calculateSwap(0, 1, String(1e17))
       expect(calculatedSwapReturn).to.eq(BigNumber.from("99702611562565289"))
@@ -1109,7 +1109,7 @@ describe("Swap", async () => {
       ).to.be.reverted
     })
 
-    it("Succeeds when using lower minDy even when transaction is front-ran", async () => {
+    it("Succeeds when using lower minDy even when transaction is front-ran", async function () {
       // User 1 calculates how much token to receive with 1% slippage
       const calculatedSwapReturn = await swap.calculateSwap(0, 1, String(1e17))
       expect(calculatedSwapReturn).to.eq(BigNumber.from("99702611562565289"))
@@ -1152,7 +1152,7 @@ describe("Swap", async () => {
       expect(actualReceivedAmount).to.lt(calculatedSwapReturn)
     })
 
-    it("Returns correct amount of received token", async () => {
+    it("Returns correct amount of received token", async function () {
       await firstToken.mint(testSwapReturnValues.address, String(1e20))
       await secondToken.mint(testSwapReturnValues.address, String(1e20))
       await testSwapReturnValues.test_addLiquidity(
@@ -1162,7 +1162,7 @@ describe("Swap", async () => {
       await testSwapReturnValues.test_swap(0, 1, String(1e18), 0)
     })
 
-    it("Reverts when block is mined after deadline", async () => {
+    it("Reverts when block is mined after deadline", async function () {
       const currentTimestamp = await getCurrentBlockTimestamp()
       await setNextTimestamp(currentTimestamp + 60 * 10)
 
@@ -1174,7 +1174,7 @@ describe("Swap", async () => {
       ).to.be.revertedWith("Deadline not met")
     })
 
-    it("Emits TokenSwap event", async () => {
+    it("Emits TokenSwap event", async function () {
       // User 1 initiates swap
       await expect(
         swap.connect(user1).swap(0, 1, String(1e17), 0, MAX_UINT256),
@@ -1183,11 +1183,11 @@ describe("Swap", async () => {
   })
 
   describe("getVirtualPrice", () => {
-    it("Returns expected value after initial deposit", async () => {
+    it("Returns expected value after initial deposit", async function () {
       expect(await swap.getVirtualPrice()).to.eq(BigNumber.from(String(1e18)))
     })
 
-    it("Returns expected values after swaps", async () => {
+    it("Returns expected values after swaps", async function () {
       // With each swap, virtual price will increase due to the fees
       await swap.connect(user1).swap(0, 1, String(1e17), 0, MAX_UINT256)
       expect(await swap.getVirtualPrice()).to.eq(
@@ -1200,7 +1200,7 @@ describe("Swap", async () => {
       )
     })
 
-    it("Returns expected values after imbalanced withdrawal", async () => {
+    it("Returns expected values after imbalanced withdrawal", async function () {
       await swap
         .connect(user1)
         .addLiquidity([String(1e18), String(1e18)], 0, MAX_UINT256)
@@ -1228,7 +1228,7 @@ describe("Swap", async () => {
       )
     })
 
-    it("Value is unchanged after balanced deposits", async () => {
+    it("Value is unchanged after balanced deposits", async function () {
       // pool is 1:1 ratio
       expect(await swap.getVirtualPrice()).to.eq(BigNumber.from(String(1e18)))
       await swap
@@ -1252,7 +1252,7 @@ describe("Swap", async () => {
       )
     })
 
-    it("Value is unchanged after balanced withdrawals", async () => {
+    it("Value is unchanged after balanced withdrawals", async function () {
       await swap
         .connect(user1)
         .addLiquidity([String(1e18), String(1e18)], 0, MAX_UINT256)
@@ -1265,61 +1265,61 @@ describe("Swap", async () => {
   })
 
   describe("setSwapFee", () => {
-    it("Emits NewSwapFee event", async () => {
+    it("Emits NewSwapFee event", async function () {
       await expect(swap.setSwapFee(BigNumber.from(1e8))).to.emit(
         swap,
         "NewSwapFee",
       )
     })
 
-    it("Reverts when called by non-owners", async () => {
+    it("Reverts when called by non-owners", async function () {
       await expect(swap.connect(user1).setSwapFee(0)).to.be.reverted
       await expect(swap.connect(user2).setSwapFee(BigNumber.from(1e8))).to.be
         .reverted
     })
 
-    it("Reverts when fee is higher than the limit", async () => {
+    it("Reverts when fee is higher than the limit", async function () {
       await expect(swap.setSwapFee(BigNumber.from(1e8).add(1))).to.be.reverted
     })
 
-    it("Succeeds when fee is within the limit", async () => {
+    it("Succeeds when fee is within the limit", async function () {
       await swap.setSwapFee(BigNumber.from(1e8))
       expect((await swap.swapStorage()).swapFee).to.eq(BigNumber.from(1e8))
     })
   })
 
   describe("setAdminFee", () => {
-    it("Emits NewAdminFee event", async () => {
+    it("Emits NewAdminFee event", async function () {
       await expect(swap.setAdminFee(BigNumber.from(1e10))).to.emit(
         swap,
         "NewAdminFee",
       )
     })
 
-    it("Reverts when called by non-owners", async () => {
+    it("Reverts when called by non-owners", async function () {
       await expect(swap.connect(user1).setSwapFee(0)).to.be.reverted
       await expect(swap.connect(user2).setSwapFee(BigNumber.from(1e10))).to.be
         .reverted
     })
 
-    it("Reverts when adminFee is higher than the limit", async () => {
+    it("Reverts when adminFee is higher than the limit", async function () {
       await expect(swap.setAdminFee(BigNumber.from(1e10).add(1))).to.be.reverted
     })
 
-    it("Succeeds when adminFee is within the limit", async () => {
+    it("Succeeds when adminFee is within the limit", async function () {
       await swap.setAdminFee(BigNumber.from(1e10))
       expect((await swap.swapStorage()).adminFee).to.eq(BigNumber.from(1e10))
     })
   })
 
   describe("getAdminBalance", () => {
-    it("Reverts with 'Token index out of range'", async () => {
+    it("Reverts with 'Token index out of range'", async function () {
       await expect(swap.getAdminBalance(3)).to.be.revertedWith(
         "Token index out of range",
       )
     })
 
-    it("Is always 0 when adminFee is set to 0", async () => {
+    it("Is always 0 when adminFee is set to 0", async function () {
       expect(await swap.getAdminBalance(0)).to.eq(0)
       expect(await swap.getAdminBalance(1)).to.eq(0)
 
@@ -1329,7 +1329,7 @@ describe("Swap", async () => {
       expect(await swap.getAdminBalance(1)).to.eq(0)
     })
 
-    it("Returns expected amounts after swaps when adminFee is higher than 0", async () => {
+    it("Returns expected amounts after swaps when adminFee is higher than 0", async function () {
       // Sets adminFee to 1% of the swap fees
       await swap.setAdminFee(BigNumber.from(10 ** 8))
       await swap.connect(user1).swap(0, 1, String(1e17), 0, MAX_UINT256)
@@ -1349,12 +1349,12 @@ describe("Swap", async () => {
   })
 
   describe("withdrawAdminFees", () => {
-    it("Reverts when called by non-owners", async () => {
+    it("Reverts when called by non-owners", async function () {
       await expect(swap.connect(user1).withdrawAdminFees()).to.be.reverted
       await expect(swap.connect(user2).withdrawAdminFees()).to.be.reverted
     })
 
-    it("Succeeds when there are no fees withdrawn", async () => {
+    it("Succeeds when there are no fees withdrawn", async function () {
       // Sets adminFee to 1% of the swap fees
       await swap.setAdminFee(BigNumber.from(10 ** 8))
 
@@ -1374,7 +1374,7 @@ describe("Swap", async () => {
       expect(secondTokenBefore).to.eq(secondTokenAfter)
     })
 
-    it("Succeeds with expected amount of fees withdrawn", async () => {
+    it("Succeeds with expected amount of fees withdrawn", async function () {
       // Sets adminFee to 1% of the swap fees
       await swap.setAdminFee(BigNumber.from(10 ** 8))
       await swap.connect(user1).swap(0, 1, String(1e17), 0, MAX_UINT256)
@@ -1401,7 +1401,7 @@ describe("Swap", async () => {
       )
     })
 
-    it("Withdrawing admin fees has no impact on users' withdrawal", async () => {
+    it("Withdrawing admin fees has no impact on users' withdrawal", async function () {
       // Sets adminFee to 1% of the swap fees
       await swap.setAdminFee(BigNumber.from(10 ** 8))
       await swap
@@ -1442,11 +1442,11 @@ describe("Swap", async () => {
   })
 
   describe("rampA", () => {
-    beforeEach(async () => {
+    beforeEach(async function () {
       await forceAdvanceOneBlock()
     })
 
-    it("Emits RampA event", async () => {
+    it("Emits RampA event", async function () {
       await expect(
         swap.rampA(
           100,
@@ -1455,7 +1455,7 @@ describe("Swap", async () => {
       ).to.emit(swap, "RampA")
     })
 
-    it("Succeeds to ramp upwards", async () => {
+    it("Succeeds to ramp upwards", async function () {
       // Create imbalanced pool to measure virtual price change
       // We expect virtual price to increase as A decreases
       await swap.addLiquidity([String(1e18), 0], 0, MAX_UINT256)
@@ -1483,7 +1483,7 @@ describe("Swap", async () => {
       expect(await swap.getVirtualPrice()).to.be.eq("1000771363829405068")
     })
 
-    it("Succeeds to ramp downwards", async () => {
+    it("Succeeds to ramp downwards", async function () {
       // Create imbalanced pool to measure virtual price change
       // We expect virtual price to decrease as A decreases
       await swap.addLiquidity([String(1e18), 0], 0, MAX_UINT256)
@@ -1511,7 +1511,7 @@ describe("Swap", async () => {
       expect(await swap.getVirtualPrice()).to.be.eq("998999574522335473")
     })
 
-    it("Reverts when non-owner calls it", async () => {
+    it("Reverts when non-owner calls it", async function () {
       await expect(
         swap
           .connect(user1)
@@ -1519,7 +1519,7 @@ describe("Swap", async () => {
       ).to.be.reverted
     })
 
-    it("Reverts with 'Wait 1 day before starting ramp'", async () => {
+    it("Reverts with 'Wait 1 day before starting ramp'", async function () {
       await swap.rampA(
         55,
         (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1,
@@ -1529,25 +1529,25 @@ describe("Swap", async () => {
       ).to.be.revertedWith("Wait 1 day before starting ramp")
     })
 
-    it("Reverts with 'Insufficient ramp time'", async () => {
+    it("Reverts with 'Insufficient ramp time'", async function () {
       await expect(
         swap.rampA(55, (await getCurrentBlockTimestamp()) + 7 * TIME.DAYS - 1),
       ).to.be.revertedWith("Insufficient ramp time")
     })
 
-    it("Reverts with 'futureA_ must be > 0 and < MAX_A'", async () => {
+    it("Reverts with 'futureA_ must be > 0 and < MAX_A'", async function () {
       await expect(
         swap.rampA(0, (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1),
       ).to.be.revertedWith("futureA_ must be > 0 and < MAX_A")
     })
 
-    it("Reverts with 'futureA_ is too small'", async () => {
+    it("Reverts with 'futureA_ is too small'", async function () {
       await expect(
         swap.rampA(24, (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 1),
       ).to.be.revertedWith("futureA_ is too small")
     })
 
-    it("Reverts with 'futureA_ is too large'", async () => {
+    it("Reverts with 'futureA_ is too large'", async function () {
       await expect(
         swap.rampA(
           101,
@@ -1558,7 +1558,7 @@ describe("Swap", async () => {
   })
 
   describe("stopRampA", () => {
-    it("Emits StopRampA event", async () => {
+    it("Emits StopRampA event", async function () {
       // call rampA()
       await swap.rampA(
         100,
@@ -1569,7 +1569,7 @@ describe("Swap", async () => {
       expect(swap.stopRampA()).to.emit(swap, "StopRampA")
     })
 
-    it("Stop ramp succeeds", async () => {
+    it("Stop ramp succeeds", async function () {
       // call rampA()
       const endTimestamp =
         (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 100
@@ -1593,7 +1593,7 @@ describe("Swap", async () => {
       expect(await swap.getAPrecise()).to.be.eq(5413)
     })
 
-    it("Reverts with 'Ramp is already stopped'", async () => {
+    it("Reverts with 'Ramp is already stopped'", async function () {
       // call rampA()
       const endTimestamp =
         (await getCurrentBlockTimestamp()) + 14 * TIME.DAYS + 100
@@ -1617,11 +1617,11 @@ describe("Swap", async () => {
   })
 
   describe("Check for timestamp manipulations", () => {
-    beforeEach(async () => {
+    beforeEach(async function () {
       await forceAdvanceOneBlock()
     })
 
-    it("Check for maximum differences in A and virtual price when A is increasing", async () => {
+    it("Check for maximum differences in A and virtual price when A is increasing", async function () {
       // Create imbalanced pool to measure virtual price change
       // Sets the pool in 2:1 ratio where firstToken is significantly cheaper than secondToken
       await swap.addLiquidity([String(1e18), 0], 0, MAX_UINT256)
@@ -1653,7 +1653,7 @@ describe("Swap", async () => {
       // = 1.00000071615
     })
 
-    it("Check for maximum differences in A and virtual price when A is decreasing", async () => {
+    it("Check for maximum differences in A and virtual price when A is decreasing", async function () {
       // Create imbalanced pool to measure virtual price change
       // Sets the pool in 2:1 ratio where firstToken is significantly cheaper than secondToken
       await swap.addLiquidity([String(1e18), 0], 0, MAX_UINT256)
@@ -1709,7 +1709,7 @@ describe("Swap", async () => {
       let initialPoolBalances: BigNumber[] = []
       let attacker: Signer
 
-      beforeEach(async () => {
+      beforeEach(async function () {
         // This attack is achieved by creating imbalance in the first block then
         // trading in reverse direction in the second block.
         attacker = user1
@@ -1742,7 +1742,7 @@ describe("Swap", async () => {
         "When tokens are priced equally: " +
           "attacker creates massive imbalance prior to A change, and resolves it after",
         () => {
-          it("Attack fails with 900 seconds between blocks", async () => {
+          it("Attack fails with 900 seconds between blocks", async function () {
             // Swap 1e18 of firstToken to secondToken, causing massive imbalance in the pool
             await swap
               .connect(attacker)
@@ -1818,7 +1818,7 @@ describe("Swap", async () => {
             // The attack did not benefit the attacker.
           })
 
-          it("Attack fails with 2 weeks between transactions (mimics rapid A change)", async () => {
+          it("Attack fails with 2 weeks between transactions (mimics rapid A change)", async function () {
             // This test assumes there are no other transactions during the 2 weeks period of ramping up.
             // Purpose of this test case is to mimic rapid ramp up of A.
 
@@ -1906,7 +1906,7 @@ describe("Swap", async () => {
         "When token price is unequal: " +
           "attacker 'resolves' the imbalance prior to A change, then recreates the imbalance.",
         () => {
-          beforeEach(async () => {
+          beforeEach(async function () {
             // Set up pool to be imbalanced prior to the attack
             await swap
               .connect(user2)
@@ -1925,7 +1925,7 @@ describe("Swap", async () => {
             expect(initialPoolBalances[1]).to.be.eq(String(3e18))
           })
 
-          it("Attack fails with 900 seconds between blocks", async () => {
+          it("Attack fails with 900 seconds between blocks", async function () {
             // Swap 1e18 of firstToken to secondToken, resolving imbalance in the pool
             await swap
               .connect(attacker)
@@ -2004,7 +2004,7 @@ describe("Swap", async () => {
             // The attack did not benefit the attacker.
           })
 
-          it("Attack succeeds with 2 weeks between transactions (mimics rapid A change)", async () => {
+          it("Attack succeeds with 2 weeks between transactions (mimics rapid A change)", async function () {
             // This test assumes there are no other transactions during the 2 weeks period of ramping up.
             // Purpose of this test case is to mimic rapid ramp up of A.
 
@@ -2100,7 +2100,7 @@ describe("Swap", async () => {
       let initialPoolBalances: BigNumber[] = []
       let attacker: Signer
 
-      beforeEach(async () => {
+      beforeEach(async function () {
         // Set up the downward ramp A
         attacker = user1
 
@@ -2135,7 +2135,7 @@ describe("Swap", async () => {
           // This attack is achieved by creating imbalance in the first block then
           // trading in reverse direction in the second block.
 
-          it("Attack fails with 900 seconds between blocks", async () => {
+          it("Attack fails with 900 seconds between blocks", async function () {
             // Swap 1e18 of firstToken to secondToken, causing massive imbalance in the pool
             await swap
               .connect(attacker)
@@ -2211,7 +2211,7 @@ describe("Swap", async () => {
             // The attack did not benefit the attacker.
           })
 
-          it("Attack succeeds with 2 weeks between transactions (mimics rapid A change)", async () => {
+          it("Attack succeeds with 2 weeks between transactions (mimics rapid A change)", async function () {
             // This test assumes there are no other transactions during the 2 weeks period of ramping down.
             // Purpose of this test is to show how dangerous rapid A ramp is.
 
@@ -2301,7 +2301,7 @@ describe("Swap", async () => {
         "When token price is unequal: " +
           "attacker 'resolves' the imbalance prior to A change, then recreates the imbalance.",
         () => {
-          beforeEach(async () => {
+          beforeEach(async function () {
             // Set up pool to be imbalanced prior to the attack
             await swap
               .connect(user2)
@@ -2320,7 +2320,7 @@ describe("Swap", async () => {
             expect(initialPoolBalances[1]).to.be.eq(String(3e18))
           })
 
-          it("Attack fails with 900 seconds between blocks", async () => {
+          it("Attack fails with 900 seconds between blocks", async function () {
             // Swap 1e18 of firstToken to secondToken, resolving imbalance in the pool
             await swap
               .connect(attacker)
@@ -2399,7 +2399,7 @@ describe("Swap", async () => {
             // The attack did not benefit the attacker.
           })
 
-          it("Attack fails with 2 weeks between transactions (mimics rapid A change)", async () => {
+          it("Attack fails with 2 weeks between transactions (mimics rapid A change)", async function () {
             // This test assumes there are no other transactions during the 2 weeks period of ramping down.
             // Purpose of this test case is to mimic rapid ramp down of A.
 

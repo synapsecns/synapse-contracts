@@ -46,14 +46,14 @@ describe("Bridge Config V3", () => {
     },
   )
 
-  beforeEach(async () => {
+  beforeEach(async function () {
     await setupTest()
   })
 
   describe("max gas", () => {
     const bscGasPrice = BigNumber.from(10 ** 8)
 
-    it("should set max gas price for multiple chains", async () => {
+    it("should set max gas price for multiple chains", async function () {
       const mainnetGasPrice = BigNumber.from(10 ** 9)
 
       expect(bridgeConfigV3.setMaxGasPrice(CHAIN_ID.BSC, bscGasPrice)).to.be.not
@@ -481,7 +481,7 @@ describe("Bridge Config V3", () => {
       ]
     }
 
-    it("should set pool config", async () => {
+    it("should set pool config", async function () {
       // three pool configs, different chain ids to make sure they don't override eachother. Write/check twice
       for (let i = 0; i < 2; i++) {
         const poolConfigs = getPoolConfigTests()
