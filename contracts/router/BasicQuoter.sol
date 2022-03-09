@@ -15,7 +15,7 @@ contract BasicQuoter is Ownable, IBasicQuoter {
 
     // -- MODIFIERS --
 
-    modifier checkTokenIndex(uint256 _index) {
+    modifier checkTokenIndex(uint8 _index) {
         require(_index < trustedTokens.length, "Token index out of range");
         _;
     }
@@ -43,7 +43,7 @@ contract BasicQuoter is Ownable, IBasicQuoter {
     }
 
     function removeToken(address _token) external onlyOwner {
-        for (uint256 i = 0; i < trustedTokens.length; i++) {
+        for (uint8 i = 0; i < trustedTokens.length; i++) {
             if (trustedTokens[i] == _token) {
                 _removeTokenByIndex(i);
                 return;
@@ -52,7 +52,7 @@ contract BasicQuoter is Ownable, IBasicQuoter {
         revert("Token not found");
     }
 
-    function removeTokenByIndex(uint256 _index) external onlyOwner {
+    function removeTokenByIndex(uint8 _index) external onlyOwner {
         _removeTokenByIndex(_index);
     }
 
@@ -159,10 +159,7 @@ contract BasicQuoter is Ownable, IBasicQuoter {
 
     // -- PRIVATE FUNCTIONS --
 
-    function _removeTokenByIndex(uint256 _index)
-        private
-        checkTokenIndex(_index)
-    {
+    function _removeTokenByIndex(uint8 _index) private checkTokenIndex(_index) {
         address _removedToken = trustedTokens[_index];
         emit RemovedToken(_removedToken);
         // We don't care about tokens order, so we replace the

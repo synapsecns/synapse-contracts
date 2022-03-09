@@ -314,11 +314,11 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         address[] calldata _adapters,
         address _to
     ) internal returns (uint256 _amount) {
-        for (uint256 i = 0; i < _adapters.length; i++) {
+        for (uint8 i = 0; i < _adapters.length; ++i) {
             require(isTrustedAdapter[_adapters[i]], "Router: unknown adapter");
         }
         _amount = _amountIn;
-        for (uint256 i = 0; i < _adapters.length; i++) {
+        for (uint8 i = 0; i < _adapters.length; ++i) {
             address _targetAddress = i < _adapters.length - 1
                 ? _getDepositAddress(_path, _adapters, i + 1)
                 : _to;
@@ -344,7 +344,7 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     function _getDepositAddress(
         address[] calldata _path,
         address[] calldata _adapters,
-        uint256 _index
+        uint8 _index
     ) internal view returns (address _depositAddress) {
         _depositAddress = IAdapter(_adapters[_index]).depositAddress(
             _path[_index],

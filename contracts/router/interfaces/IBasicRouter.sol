@@ -12,7 +12,7 @@ interface IBasicRouter {
 
     function setAdapters(address[] memory _adapters) external;
 
-    function getTrustedAdapter(uint256 _index) external view returns (address);
+    function getTrustedAdapter(uint8 _index) external view returns (address);
 
     function trustedAdaptersCount() external view returns (uint256);
 

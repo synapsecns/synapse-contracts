@@ -36,7 +36,7 @@ interface IBasicQuoter {
         address[] adapters;
     }
 
-    function getTrustedToken(uint256 _index) external view returns (address);
+    function getTrustedToken(uint8 _index) external view returns (address);
 
     function trustedTokensCount() external view returns (uint256);
 
@@ -46,5 +46,5 @@ interface IBasicQuoter {
 
     function removeToken(address _token) external;
 
-    function removeTokenByIndex(uint256 _index) external;
+    function removeTokenByIndex(uint8 _index) external;
 }
