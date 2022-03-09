@@ -33,10 +33,21 @@ contract BasicRouter is Ownable, IBasicRouter {
         this;
     }
 
+    // -- MODIFIERS --
+
+    modifier checkAdapterIndex(uint256 _index) {
+        require(_index < trustedAdapters.length, "Adapter index out of range");
+        _;
+    }
+
     //  -- VIEWS --
 
-    function getTrustedAdapter(uint256 _index) external view returns (address) {
-        require(_index < trustedAdapters.length, "Index out of range");
+    function getTrustedAdapter(uint256 _index)
+        external
+        view
+        checkAdapterIndex(_index)
+        returns (address)
+    {
         return trustedAdapters[_index];
     }
 
@@ -129,8 +140,10 @@ contract BasicRouter is Ownable, IBasicRouter {
 
     // -- PRIVATE FUNCTIONS
 
-    function _removeAdapterByIndex(uint256 _index) private {
-        require(_index < trustedAdapters.length, "Index out of range");
+    function _removeAdapterByIndex(uint256 _index)
+        private
+        checkAdapterIndex(_index)
+    {
         address _removedAdapter = trustedAdapters[_index];
         emit RemovedAdapter(_removedAdapter);
         // We don't care about adapters order, so we replace the

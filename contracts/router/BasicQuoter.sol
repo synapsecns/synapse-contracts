@@ -13,10 +13,21 @@ contract BasicQuoter is Ownable, IBasicQuoter {
         setTokens(_tokens);
     }
 
+    // -- MODIFIERS --
+
+    modifier checkTokenIndex(uint256 _index) {
+        require(_index < trustedTokens.length, "Token index out of range");
+        _;
+    }
+
     //  -- VIEWS --
 
-    function getTrustedToken(uint256 _index) external view returns (address) {
-        require(_index < trustedTokens.length, "Index out of range");
+    function getTrustedToken(uint8 _index)
+        external
+        view
+        checkTokenIndex(_index)
+        returns (address)
+    {
         return trustedTokens[_index];
     }
 
@@ -148,8 +159,10 @@ contract BasicQuoter is Ownable, IBasicQuoter {
 
     // -- PRIVATE FUNCTIONS --
 
-    function _removeTokenByIndex(uint256 _index) private {
-        require(_index < trustedTokens.length, "Index out of range");
+    function _removeTokenByIndex(uint256 _index)
+        private
+        checkTokenIndex(_index)
+    {
         address _removedToken = trustedTokens[_index];
         emit RemovedToken(_removedToken);
         // We don't care about tokens order, so we replace the
