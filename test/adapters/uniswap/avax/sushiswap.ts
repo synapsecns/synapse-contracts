@@ -126,7 +126,7 @@ describe("SushiSwap Adapter", async function() {
         let tokenAddress = config[CHAIN].assets[symbol]
         let storageSlot = config[CHAIN].slot[symbol]
         let token = (await ethers.getContractAt(
-          "contracts/router/helper/SwapAddCalculator.sol:IERC20Decimals",
+          "contracts/router/helper/SwapCalculator.sol:IERC20Decimals",
           tokenAddress,
         )) as IERC20Decimals
         TOKENS.push(token)
