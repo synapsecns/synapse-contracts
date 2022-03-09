@@ -3,13 +3,13 @@ pragma solidity ^0.8.0;
 
 import {ISynapse} from "../../interfaces/ISynapse.sol";
 import {Adapter} from "../../Adapter.sol";
-import {SwapAddCalculator} from "../../helper/SwapAddCalculator.sol";
+import {SwapCalculator} from "../../helper/SwapCalculator.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 
 //solhint-disable not-rely-on-time
 
-contract SynapseBasePoolAdapter is SwapAddCalculator, Adapter {
+contract SynapseBasePoolAdapter is SwapCalculator, Adapter {
     mapping(address => bool) public isPoolToken;
     mapping(address => uint8) public tokenIndex;
 
@@ -17,7 +17,7 @@ contract SynapseBasePoolAdapter is SwapAddCalculator, Adapter {
         string memory _name,
         address _pool,
         uint256 _swapGasEstimate
-    ) SwapAddCalculator(ISynapse(_pool)) Adapter(_name, _swapGasEstimate) {
+    ) SwapCalculator(ISynapse(_pool)) Adapter(_name, _swapGasEstimate) {
         // add LP token as a "pool token"
         // This will enable stable <-> nUSD swap on Mainnet via adapter
         isPoolToken[address(lpToken)] = true;
@@ -29,7 +29,7 @@ contract SynapseBasePoolAdapter is SwapAddCalculator, Adapter {
         virtual
         override
     {
-        SwapAddCalculator._addPoolToken(token, index);
+        SwapCalculator._addPoolToken(token, index);
         isPoolToken[address(token)] = true;
         tokenIndex[address(token)] = index;
     }
