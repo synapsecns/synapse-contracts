@@ -9,8 +9,11 @@ import {Bytes} from "@synapseprotocol/sol-lib/contracts/universal/lib/LibBytes.s
 contract BasicQuoter is Ownable, IBasicQuoter {
     address[] public trustedTokens;
 
-    constructor(address[] memory _tokens) {
+    uint8 public maxSteps;
+
+    constructor(address[] memory _tokens, uint8 _maxSteps) {
         setTokens(_tokens);
+        setMaxSteps(_maxSteps);
     }
 
     // -- MODIFIERS --
@@ -54,6 +57,12 @@ contract BasicQuoter is Ownable, IBasicQuoter {
 
     function removeTokenByIndex(uint8 _index) external onlyOwner {
         _removeTokenByIndex(_index);
+    }
+
+    // -- RESTRICTED SETTERS
+
+    function setMaxSteps(uint8 _maxSteps) public onlyOwner {
+        maxSteps = _maxSteps;
     }
 
     function setTokens(address[] memory _tokens) public onlyOwner {
