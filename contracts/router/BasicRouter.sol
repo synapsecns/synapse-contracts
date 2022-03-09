@@ -35,14 +35,14 @@ contract BasicRouter is Ownable, IBasicRouter {
 
     // -- MODIFIERS --
 
-    modifier checkAdapterIndex(uint256 _index) {
+    modifier checkAdapterIndex(uint8 _index) {
         require(_index < trustedAdapters.length, "Adapter index out of range");
         _;
     }
 
     //  -- VIEWS --
 
-    function getTrustedAdapter(uint256 _index)
+    function getTrustedAdapter(uint8 _index)
         external
         view
         checkAdapterIndex(_index)
@@ -64,7 +64,7 @@ contract BasicRouter is Ownable, IBasicRouter {
     }
 
     function removeAdapter(address _adapter) external onlyOwner {
-        for (uint256 i = 0; i < trustedAdapters.length; i++) {
+        for (uint8 i = 0; i < trustedAdapters.length; i++) {
             if (trustedAdapters[i] == _adapter) {
                 _removeAdapterByIndex(i);
                 return;
@@ -73,7 +73,7 @@ contract BasicRouter is Ownable, IBasicRouter {
         revert("Adapter not found");
     }
 
-    function removeAdapterByIndex(uint256 _index) external onlyOwner {
+    function removeAdapterByIndex(uint8 _index) external onlyOwner {
         _removeAdapterByIndex(_index);
     }
 
@@ -140,7 +140,7 @@ contract BasicRouter is Ownable, IBasicRouter {
 
     // -- PRIVATE FUNCTIONS
 
-    function _removeAdapterByIndex(uint256 _index)
+    function _removeAdapterByIndex(uint8 _index)
         private
         checkAdapterIndex(_index)
     {
@@ -155,7 +155,7 @@ contract BasicRouter is Ownable, IBasicRouter {
     }
 
     function _saveAdapters(bool _status) private {
-        for (uint256 i = 0; i < trustedAdapters.length; i++) {
+        for (uint8 i = 0; i < trustedAdapters.length; ++i) {
             isTrustedAdapter[trustedAdapters[i]] = _status;
         }
     }
