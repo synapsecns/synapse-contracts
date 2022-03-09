@@ -49,7 +49,7 @@ contract BasicQuoter is Ownable, IBasicQuoter {
                 return;
             }
         }
-        revert("Adapter not found");
+        revert("Token not found");
     }
 
     function removeTokenByIndex(uint256 _index) external onlyOwner {
