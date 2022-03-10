@@ -2,11 +2,19 @@
 pragma solidity ^0.8.0;
 
 interface IBasicQuoter {
+    event UpdatedTrustedAdapters(address[] _newTrustedAdapters);
+
+    event AddedTrustedAdapter(address _newTrustedAdapter);
+
+    event RemovedAdapter(address _removedAdapter);
+
+    event RemovedAdapters(address[] _removedAdapters);
+
     event UpdatedTrustedTokens(address[] _newTrustedTokens);
 
-    event AddedTrustedToken(address _newTrustedTokens);
+    event AddedTrustedToken(address _newTrustedToken);
 
-    event RemovedToken(address _removedTokens);
+    event RemovedToken(address _removedToken);
 
     struct Query {
         address adapter;
@@ -38,9 +46,21 @@ interface IBasicQuoter {
 
     //  -- VIEWS --
 
+    function getTrustedAdapter(uint8 _index) external view returns (address); 
+
     function getTrustedToken(uint8 _index) external view returns (address);
 
+    function trustedAdaptersCount() external view returns (uint256);
+
     function trustedTokensCount() external view returns (uint256);
+
+    // -- ADAPTER FUNCTIONS --
+
+    function addTrustedAdapter(address _adapter) external;
+
+    function removeAdapter(address _adapter) external;
+
+    function removeAdapterByIndex(uint8 _index) external;
 
     // -- TOKEN FUNCTIONS --
 
@@ -51,6 +71,8 @@ interface IBasicQuoter {
     function removeTokenByIndex(uint8 _index) external;
 
     // -- SETTERS --
+
+    function setAdapters(address[] calldata _adapters) external;
 
     function setMaxSteps(uint8 _maxSteps) external;
 

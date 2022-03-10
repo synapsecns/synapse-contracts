@@ -2,74 +2,35 @@
 pragma solidity ^0.8.0;
 
 import {BasicQuoter} from "./BasicQuoter.sol";
-import {Router} from "./Router.sol";
 
 import {IAdapter} from "./interfaces/IAdapter.sol";
 import {IQuoter} from "./interfaces/IQuoter.sol";
+import {IBasicRouter} from "./interfaces/IBasicRouter.sol";
 
 import {Bytes} from "@synapseprotocol/sol-lib/contracts/universal/lib/LibBytes.sol";
 
-contract Quoter is BasicQuoter, Router, IQuoter {
-    constructor(
-        address[] memory _adapters,
-        address[] memory _tokens,
-        address payable _wgas,
-        address _bridge,
-        uint8 _maxSteps
-    ) BasicQuoter(_tokens, _maxSteps) Router(_adapters, _wgas, _bridge) {
-        this;
+contract Quoter is BasicQuoter, IQuoter {
+    /// @dev This is address of contract representing
+    /// wrapped ERC20 version of a chain's native currency (ex. WETH, WAVAX, WMOVR)
+    address payable public immutable WGAS;
+
+    /// @dev Setup flow:
+    /// 1. Create Router contract
+    /// 2. Create Quoter contract
+    /// 3. Give Quoter ADAPTERS_STORAGE_ROLE in Router contract
+    /// 4. Add tokens and adapters
+
+    /// PS. If the migration from one Quoter to another is needed (w/0 changing Router):
+    /// 1. call oldQuoter.setAdapters([]), this will clear the adapters in Router
+    /// 2. revoke ADAPTERS_STORAGE_ROLE from oldQuoter
+    /// 3. Do (2-4) from setup flow as usual
+    constructor(uint8 _maxSteps, IBasicRouter _router)
+        BasicQuoter(_maxSteps, _router)
+    {
+        WGAS = _router.WGAS();
     }
 
     // -- DIRECT SWAP QUERIES --
-
-    /**
-        @notice Get a swap quote for a selected adapter
-        @param _amountIn amount of tokens to swap
-        @param _tokenIn token to sell
-        @param _tokenOut token to buy
-        @param _index adapter index
-        @return _amountOut amount of tokens that can be bought
-     */
-    function queryDirectAdapter(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut,
-        uint8 _index
-    ) external view checkAdapterIndex(_index) returns (uint256 _amountOut) {
-        IAdapter _adapter = IAdapter(trustedAdapters[_index]);
-        _amountOut = _adapter.query(_amountIn, _tokenIn, _tokenOut);
-    }
-
-    /**
-        @notice Get the best swap quote for a selected subset of adapters
-        @param _amountIn amount of tokens to swap
-        @param _tokenIn token to sell
-        @param _tokenOut token to buy
-        @param _options indexes of adapters to check
-        @return _bestQuery Query with best quote available
-     */
-    function queryDirectAdapters(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut,
-        uint8[] calldata _options
-    ) external view returns (Query memory _bestQuery) {
-        for (uint8 i = 0; i < _options.length; ++i) {
-            require(
-                _options[i] < trustedAdapters.length,
-                "Adapter index out of range"
-            );
-            address _adapter = trustedAdapters[_options[i]];
-            uint256 amountOut = IAdapter(_adapter).query(
-                _amountIn,
-                _tokenIn,
-                _tokenOut
-            );
-            if (i == 0 || amountOut > _bestQuery.amountOut) {
-                _bestQuery = Query(_adapter, _tokenIn, _tokenOut, amountOut);
-            }
-        }
-    }
 
     /**
         @notice Get the best swap quote using any of the adapters
@@ -78,7 +39,7 @@ contract Quoter is BasicQuoter, Router, IQuoter {
         @param _tokenOut token to buy
         @return _bestQuery Query with best quote available
      */
-    function queryDirectAllAdapters(
+    function queryDirectSwap(
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut
@@ -214,7 +175,7 @@ contract Quoter is BasicQuoter, Router, IQuoter {
         uint256 _bestGasCost = 0;
 
         // First check if there is a path directly from tokenIn to tokenOut
-        Query memory _queryDirect = queryDirectAllAdapters(
+        Query memory _queryDirect = queryDirectSwap(
             _amountIn,
             _tokenIn,
             _tokenOut
@@ -244,7 +205,7 @@ contract Quoter is BasicQuoter, Router, IQuoter {
                 }
                 // Loop through all adapters to find the best one
                 // for swapping tokenIn for one of the trusted tokens
-                Query memory _bestSwap = queryDirectAllAdapters(
+                Query memory _bestSwap = queryDirectSwap(
                     _amountIn,
                     _tokenIn,
                     trustedTokens[i]
@@ -304,7 +265,7 @@ contract Quoter is BasicQuoter, Router, IQuoter {
     }
 
     /**
-        @notice Find the gas cost of the transaction, expressed in _token
+        @notice Find the gas cost of the transaction, expressed in _token (wei)
         @param _tokenPriceNwei gas price expressed in _token, in nanoWei
         @param _gasEstimate amount of gas units consumed
      */

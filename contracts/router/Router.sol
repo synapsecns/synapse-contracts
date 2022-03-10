@@ -14,13 +14,9 @@ import {ReentrancyGuard} from "@openzeppelin/contracts-4.4.2/security/Reentrancy
 contract Router is ReentrancyGuard, BasicRouter, IRouter {
     using SafeERC20 for IERC20;
 
-    address public bridge;
+    address public immutable bridge;
 
-    constructor(
-        address[] memory _adapters,
-        address payable _wgas,
-        address _bridge
-    ) BasicRouter(_adapters, _wgas) {
+    constructor(address payable _wgas, address _bridge) BasicRouter(_wgas) {
         bridge = _bridge;
     }
 

@@ -2,18 +2,22 @@
 pragma solidity ^0.8.0;
 
 import {IBasicQuoter} from "./interfaces/IBasicQuoter.sol";
+import {IBasicRouter} from "./interfaces/IBasicRouter.sol";
 
 import {Ownable} from "@openzeppelin/contracts-4.4.2/access/Ownable.sol";
 import {Bytes} from "@synapseprotocol/sol-lib/contracts/universal/lib/LibBytes.sol";
 
 contract BasicQuoter is Ownable, IBasicQuoter {
-    address[] public trustedTokens;
+    address[] internal trustedTokens;
+    address[] internal trustedAdapters;
 
     uint8 public maxSteps;
 
-    constructor(address[] memory _tokens, uint8 _maxSteps) {
-        setTokens(_tokens);
+    IBasicRouter public immutable router;
+
+    constructor(uint8 _maxSteps, IBasicRouter _router) {
         setMaxSteps(_maxSteps);
+        router = _router;
     }
 
     // -- MODIFIERS --
@@ -23,7 +27,21 @@ contract BasicQuoter is Ownable, IBasicQuoter {
         _;
     }
 
+    modifier checkAdapterIndex(uint8 _index) {
+        require(_index < trustedAdapters.length, "Adapter index out of range");
+        _;
+    }
+
     //  -- VIEWS --
+
+    function getTrustedAdapter(uint8 _index)
+        external
+        view
+        checkAdapterIndex(_index)
+        returns (address)
+    {
+        return trustedAdapters[_index];
+    }
 
     function getTrustedToken(uint8 _index)
         external
@@ -34,8 +52,35 @@ contract BasicQuoter is Ownable, IBasicQuoter {
         return trustedTokens[_index];
     }
 
+    function trustedAdaptersCount() external view returns (uint256) {
+        return trustedAdapters.length;
+    }
+
     function trustedTokensCount() external view returns (uint256) {
         return trustedTokens.length;
+    }
+
+    // -- RESTRICTED ADAPTER FUNCTIONS --
+
+    function addTrustedAdapter(address _adapter) external onlyOwner {
+        trustedAdapters.push(_adapter);
+        // Add Adapter to Router as well
+        router.addTrustedAdapter(_adapter);
+        emit AddedTrustedAdapter(_adapter);
+    }
+
+    function removeAdapter(address _adapter) external onlyOwner {
+        for (uint8 i = 0; i < trustedAdapters.length; i++) {
+            if (trustedAdapters[i] == _adapter) {
+                _removeAdapterByIndex(i);
+                return;
+            }
+        }
+        revert("Adapter not found");
+    }
+
+    function removeAdapterByIndex(uint8 _index) external onlyOwner {
+        _removeAdapterByIndex(_index);
     }
 
     // -- RESTRICTED TOKEN FUNCTIONS --
@@ -61,13 +106,23 @@ contract BasicQuoter is Ownable, IBasicQuoter {
 
     // -- RESTRICTED SETTERS
 
+    function setAdapters(address[] calldata _adapters) external onlyOwner {
+        // First, remove old Adapters, if there are any
+        if (trustedAdapters.length > 0) {
+            router.setAdapters(trustedAdapters, false);
+        }
+        trustedAdapters = _adapters;
+        router.setAdapters(_adapters, true);
+        emit UpdatedTrustedAdapters(_adapters);
+    }
+
     function setMaxSteps(uint8 _maxSteps) public onlyOwner {
         maxSteps = _maxSteps;
     }
 
-    function setTokens(address[] memory _tokens) public onlyOwner {
-        emit UpdatedTrustedTokens(_tokens);
+    function setTokens(address[] calldata _tokens) public onlyOwner {
         trustedTokens = _tokens;
+        emit UpdatedTrustedTokens(_tokens);
     }
 
     // -- INTERNAL HELPERS: OfferWithGas --
@@ -168,12 +223,31 @@ contract BasicQuoter is Ownable, IBasicQuoter {
 
     // -- PRIVATE FUNCTIONS --
 
+    function _removeAdapterByIndex(uint8 _index)
+        private
+        checkAdapterIndex(_index)
+    {
+        address _removedAdapter = trustedAdapters[_index];
+
+        // We don't care about adapters order, so we replace the
+        // selected adapter with the last one
+        trustedAdapters[_index] = trustedAdapters[trustedAdapters.length - 1];
+        trustedAdapters.pop();
+
+        // Remove Adapter from Router as well
+        router.removeAdapter(_removedAdapter);
+
+        emit RemovedAdapter(_removedAdapter);
+    }
+
     function _removeTokenByIndex(uint8 _index) private checkTokenIndex(_index) {
         address _removedToken = trustedTokens[_index];
-        emit RemovedToken(_removedToken);
+
         // We don't care about tokens order, so we replace the
         // selected token with the last one
         trustedTokens[_index] = trustedTokens[trustedTokens.length - 1];
         trustedTokens.pop();
+
+        emit RemovedToken(_removedToken);
     }
 }
