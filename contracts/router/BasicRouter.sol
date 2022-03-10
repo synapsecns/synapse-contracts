@@ -7,93 +7,80 @@ import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol"
 import {IWETH9} from "@synapseprotocol/sol-lib/contracts/universal/interfaces/IWETH9.sol";
 import {SafeERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/SafeERC20.sol";
 
-import {Ownable} from "@openzeppelin/contracts-4.4.2/access/Ownable.sol";
+import {AccessControl} from "@openzeppelin/contracts-4.4.2/access/AccessControl.sol";
 
-contract BasicRouter is Ownable, IBasicRouter {
+contract BasicRouter is AccessControl, IBasicRouter {
     using SafeERC20 for IERC20;
+
+    /// @notice Members of this role can add/remove trusted Adapters
+    bytes32 public constant ADAPTERS_STORAGE_ROLE =
+        keccak256("ADAPTERS_STORAGE_ROLE");
+
+    /// @notice Members of this role can rescue funds from this contract
+    bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
     /// @dev This is address of contract representing
     /// wrapped ERC20 version of a chain's native currency (ex. WETH, WAVAX, WMOVR)
     address payable public immutable WGAS;
 
-    address[] public trustedAdapters;
     mapping(address => bool) public isTrustedAdapter;
 
     uint256 internal constant UINT_MAX = type(uint256).max;
 
-    constructor(address[] memory _adapters, address payable _wgas) {
+    constructor(address payable _wgas) {
         WGAS = _wgas;
-        setAdapters(_adapters);
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(GOVERNANCE_ROLE, msg.sender);
     }
 
-    // -- FALLBACK --
+    // -- RECEIVE GAS --
 
     receive() external payable {
         // silence linter
         this;
     }
 
-    // -- MODIFIERS --
-
-    modifier checkAdapterIndex(uint8 _index) {
-        require(_index < trustedAdapters.length, "Adapter index out of range");
-        _;
-    }
-
-    //  -- VIEWS --
-
-    function getTrustedAdapter(uint8 _index)
-        external
-        view
-        checkAdapterIndex(_index)
-        returns (address)
-    {
-        return trustedAdapters[_index];
-    }
-
-    function trustedAdaptersCount() external view returns (uint256) {
-        return trustedAdapters.length;
-    }
-
     // -- RESTRICTED ADAPTER FUNCTIONS --
 
-    function addTrustedAdapter(address _adapter) external onlyOwner {
-        trustedAdapters.push(_adapter);
+    function addTrustedAdapter(address _adapter)
+        external
+        onlyRole(ADAPTERS_STORAGE_ROLE)
+    {
         isTrustedAdapter[_adapter] = true;
         emit AddedTrustedAdapter(_adapter);
     }
 
-    function removeAdapter(address _adapter) external onlyOwner {
-        for (uint8 i = 0; i < trustedAdapters.length; i++) {
-            if (trustedAdapters[i] == _adapter) {
-                _removeAdapterByIndex(i);
-                return;
-            }
+    function removeAdapter(address _adapter)
+        external
+        onlyRole(ADAPTERS_STORAGE_ROLE)
+    {
+        isTrustedAdapter[_adapter] = false;
+        emit RemovedAdapter(_adapter);
+    }
+
+    function setAdapters(address[] calldata _adapters, bool _status)
+        external
+        onlyRole(ADAPTERS_STORAGE_ROLE)
+    {
+        for (uint8 i = 0; i < _adapters.length; ++i) {
+            isTrustedAdapter[_adapters[i]] = _status;
         }
-        revert("Adapter not found");
-    }
-
-    function removeAdapterByIndex(uint8 _index) external onlyOwner {
-        _removeAdapterByIndex(_index);
-    }
-
-    function setAdapters(address[] memory _adapters) public onlyOwner {
-        emit UpdatedTrustedAdapters(_adapters);
-        _saveAdapters(false);
-        trustedAdapters = _adapters;
-        _saveAdapters(true);
+        emit UpdatedAdapters(_adapters, _status);
     }
 
     // -- RESTRICTED RECOVER TOKEN FUNCTIONS --
 
-    function recoverERC20(address _tokenAddress) external onlyOwner {
+    function recoverERC20(address _tokenAddress)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
         uint256 _tokenAmount = IERC20(_tokenAddress).balanceOf(address(this));
         require(_tokenAmount > 0, "Router: Nothing to recover");
         IERC20(_tokenAddress).safeTransfer(msg.sender, _tokenAmount);
         emit Recovered(_tokenAddress, _tokenAmount);
     }
 
-    function recoverGAS() external onlyOwner {
+    function recoverGAS() external onlyRole(GOVERNANCE_ROLE) {
         uint256 _amount = address(this).balance;
         require(_amount > 0, "Router: Nothing to recover");
         payable(msg.sender).transfer(_amount);
@@ -136,27 +123,5 @@ contract BasicRouter is Ownable, IBasicRouter {
 
     function _unwrap(uint256 _amount) internal {
         IWETH9(WGAS).withdraw(_amount);
-    }
-
-    // -- PRIVATE FUNCTIONS
-
-    function _removeAdapterByIndex(uint8 _index)
-        private
-        checkAdapterIndex(_index)
-    {
-        address _removedAdapter = trustedAdapters[_index];
-        emit RemovedAdapter(_removedAdapter);
-        // We don't care about adapters order, so we replace the
-        // selected adapter with the last one
-        trustedAdapters[_index] = trustedAdapters[trustedAdapters.length - 1];
-        trustedAdapters.pop();
-        // mark removed adapter as non-trusted
-        isTrustedAdapter[_removedAdapter] = false;
-    }
-
-    function _saveAdapters(bool _status) private {
-        for (uint8 i = 0; i < trustedAdapters.length; ++i) {
-            isTrustedAdapter[trustedAdapters[i]] = _status;
-        }
     }
 }

@@ -4,17 +4,17 @@ pragma solidity ^0.8.0;
 interface IBasicRouter {
     event Recovered(address indexed _asset, uint256 amount);
 
-    event UpdatedTrustedAdapters(address[] _newTrustedAdapters);
-
     event AddedTrustedAdapter(address _newTrustedAdapter);
 
     event RemovedAdapter(address _removedAdapter);
 
+    event UpdatedAdapters(address[] _adapters, bool _isTrusted);
+
     // -- VIEWS --
 
-    function getTrustedAdapter(uint8 _index) external view returns (address);
+    function isTrustedAdapter(address _adapter) external view returns (bool);
 
-    function trustedAdaptersCount() external view returns (uint256);
+    function WGAS() external view returns (address payable);
 
     // -- ADAPTER FUNCTIONS --
 
@@ -22,9 +22,7 @@ interface IBasicRouter {
 
     function removeAdapter(address _adapter) external;
 
-    function removeAdapterByIndex(uint8 _index) external;
-
-    function setAdapters(address[] memory _adapters) external;
+    function setAdapters(address[] memory _adapters, bool _status) external;
 
     // -- RECOVER FUNCTIONS --
 
