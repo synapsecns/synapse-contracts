@@ -142,7 +142,8 @@ contract Quoter is BasicQuoter, IQuoter {
     ) external view returns (bytes memory, uint256) {
         (
             FormattedOfferWithGas memory _bestOffer,
-            uint256 _minAmountOut
+            uint256 _minAmountOut,
+            uint256 _amountOut
         ) = _getBestOfferWithSlippage(
             _amountIn,
             _tokenIn,
@@ -164,7 +165,7 @@ contract Quoter is BasicQuoter, IQuoter {
             _bestOffer.amounts
         );
 
-        return (_bridgeData, _minAmountOut);
+        return (_bridgeData, _amountOut);
     }
 
     /**
@@ -176,7 +177,8 @@ contract Quoter is BasicQuoter, IQuoter {
         @param _maxSteps maximum amount of swaps in the route between initial and final tokens
         @param _gasPrice this chain's current gas price, in wei
         @param _maxSwapSlippage maximum slippage user is willing to accept for swap on this chain
-        @return tradeData: (amountIn, minAmountOut, path, adapters)
+        @return tradeData (amountIn, minAmountOut, path, adapters)
+        @return amountOut expected amount of final tokens user is going to receive on this chain 
      */
     function getTradeData(
         uint256 _amountIn,
@@ -185,10 +187,11 @@ contract Quoter is BasicQuoter, IQuoter {
         uint8 _maxSteps,
         uint256 _gasPrice,
         uint256 _maxSwapSlippage
-    ) external view returns (Trade memory) {
+    ) external view returns (Trade memory, uint256) {
         (
             FormattedOfferWithGas memory _bestOffer,
-            uint256 _minAmountOut
+            uint256 _minAmountOut,
+            uint256 _amountOut
         ) = _getBestOfferWithSlippage(
             _amountIn,
             _tokenIn,
@@ -198,13 +201,15 @@ contract Quoter is BasicQuoter, IQuoter {
             _maxSwapSlippage
         );
 
-        return
+        return (
             Trade(
                 _amountIn,
                 _minAmountOut,
                 _bestOffer.path,
                 _bestOffer.adapters
-            );
+            ),
+            _amountOut
+        );
     }
 
     function _getBestOfferWithSlippage(
@@ -214,7 +219,15 @@ contract Quoter is BasicQuoter, IQuoter {
         uint8 _maxSteps,
         uint256 _gasPrice,
         uint256 _maxSwapSlippage
-    ) internal view returns (FormattedOfferWithGas memory, uint256) {
+    )
+        internal
+        view
+        returns (
+            FormattedOfferWithGas memory,
+            uint256,
+            uint256
+        )
+    {
         require(
             _maxSwapSlippage < SLIPPAGE_PRECISION,
             "Slippage can't be over 100%"
@@ -227,15 +240,12 @@ contract Quoter is BasicQuoter, IQuoter {
             _gasPrice
         );
         // fetch _amountOut
-        uint256 _minAmountOut = _bestOffer.amounts[
-            _bestOffer.amounts.length - 1
-        ];
+        uint256 _amountOut = _bestOffer.amounts[_bestOffer.amounts.length - 1];
         // apply slippage
-        _minAmountOut =
-            (_minAmountOut * (SLIPPAGE_PRECISION - _maxSwapSlippage)) /
-            SLIPPAGE_PRECISION;
+        uint256 _minAmountOut = (_amountOut *
+            (SLIPPAGE_PRECISION - _maxSwapSlippage)) / SLIPPAGE_PRECISION;
 
-        return (_bestOffer, _minAmountOut);
+        return (_bestOffer, _minAmountOut, _amountOut);
     }
 
     // -- INTERNAL HELPERS
