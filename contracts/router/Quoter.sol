@@ -112,9 +112,10 @@ contract Quoter is BasicQuoter, IQuoter {
     }
 
     /**
-        @notice Calculate _bridgeData parameter for Router.swapAndBridge()
-        @dev Calling Router.swapAndBridge(<...>, _bridgeData) on ANOTHER chain
-             will bridge funds to THIS chain and do _tokenIn -> _tokenOut swap
+        @notice Find best path and calculate _bridgeData parameter for Router.swapAndBridge()
+        @dev getBridgeDataAndAmountOut() is supposed to be called on DESTINATION chain
+             Calling Router.swapAndBridge(<...>, _bridgeData) on INITIAL chain
+             will bridge funds to THIS chain and do _tokenIn -> _tokenOut swap (best available swap at the moment)
         @param _selector specific selector for bridge function, compatible with _bridgeToken (depositMaxAndSwap, redeemMaxAndSwap, etc)
         @param _to address on destination chain that will receive bridged&swapped funds
         @param _bridgeToken bridge token on initial chain
@@ -122,7 +123,7 @@ contract Quoter is BasicQuoter, IQuoter {
         @param _tokenIn bridge token on destination chain
         @param _tokenOut final token on destination chain
         @param _maxSteps maximum amount of swaps in the route between bridge and final tokens on destination chain
-        @param _gasPrice chain's current gas price, in wei
+        @param _gasPrice destination chain's current gas price, in wei
         @param _maxSwapSlippage maximum slippage user is willing to accept for swap on destination chain
 
         @return _bridgeData calldata parameter for Router.swapAndBridge()
@@ -138,7 +139,82 @@ contract Quoter is BasicQuoter, IQuoter {
         uint8 _maxSteps,
         uint256 _gasPrice,
         uint256 _maxSwapSlippage
-    ) external view returns (bytes memory _bridgeData, uint256 _amountOut) {
+    ) external view returns (bytes memory, uint256) {
+        (
+            FormattedOfferWithGas memory _bestOffer,
+            uint256 _minAmountOut
+        ) = _getBestOfferWithSlippage(
+            _amountIn,
+            _tokenIn,
+            _tokenOut,
+            _maxSteps,
+            _gasPrice,
+            _maxSwapSlippage
+        );
+
+        // TODO check that SynapseBridgeV2 is using these params in this order
+        // encode func(to, chainId, token, minAmountOut, path, adapters)
+        bytes memory _bridgeData = abi.encodeWithSelector(
+            _selector,
+            _to,
+            CHAIN_ID,
+            _bridgeToken,
+            _minAmountOut,
+            _bestOffer.path,
+            _bestOffer.amounts
+        );
+
+        return (_bridgeData, _minAmountOut);
+    }
+
+    /**
+        @notice Find best path and get full trade data for that swap on this chain via Router
+        @dev Use trade data for Router.swap|swapFromGas|swapToGas(...tradeData, to) or Router.swapAndBridge(...tradeData, bridgeData)
+        @param _amountIn amount of initial tokens
+        @param _tokenIn initial token to sell
+        @param _tokenOut final token to buy
+        @param _maxSteps maximum amount of swaps in the route between initial and final tokens
+        @param _gasPrice this chain's current gas price, in wei
+        @param _maxSwapSlippage maximum slippage user is willing to accept for swap on this chain
+        @return tradeData: (amountIn, minAmountOut, path, adapters)
+     */
+    function getTradeData(
+        uint256 _amountIn,
+        address _tokenIn,
+        address _tokenOut,
+        uint8 _maxSteps,
+        uint256 _gasPrice,
+        uint256 _maxSwapSlippage
+    ) external view returns (Trade memory) {
+        (
+            FormattedOfferWithGas memory _bestOffer,
+            uint256 _minAmountOut
+        ) = _getBestOfferWithSlippage(
+            _amountIn,
+            _tokenIn,
+            _tokenOut,
+            _maxSteps,
+            _gasPrice,
+            _maxSwapSlippage
+        );
+
+        return
+            Trade(
+                _amountIn,
+                _minAmountOut,
+                _bestOffer.path,
+                _bestOffer.adapters
+            );
+    }
+
+    function _getBestOfferWithSlippage(
+        uint256 _amountIn,
+        address _tokenIn,
+        address _tokenOut,
+        uint8 _maxSteps,
+        uint256 _gasPrice,
+        uint256 _maxSwapSlippage
+    ) internal view returns (FormattedOfferWithGas memory, uint256) {
         require(
             _maxSwapSlippage < SLIPPAGE_PRECISION,
             "Slippage can't be over 100%"
@@ -151,22 +227,15 @@ contract Quoter is BasicQuoter, IQuoter {
             _gasPrice
         );
         // fetch _amountOut
-        _amountOut = _bestOffer.amounts[_bestOffer.amounts.length - 1];
+        uint256 _minAmountOut = _bestOffer.amounts[
+            _bestOffer.amounts.length - 1
+        ];
         // apply slippage
-        uint256 _minAmountOut = (_amountOut *
-            (SLIPPAGE_PRECISION - _maxSwapSlippage)) / SLIPPAGE_PRECISION;
+        _minAmountOut =
+            (_minAmountOut * (SLIPPAGE_PRECISION - _maxSwapSlippage)) /
+            SLIPPAGE_PRECISION;
 
-        // TODO check that SynapseBridgeV2 is using these params in this order
-        // encode func(to, chainId, token, minAmountOut, path, adapters)
-        _bridgeData = abi.encodeWithSelector(
-            _selector,
-            _to,
-            CHAIN_ID,
-            _bridgeToken,
-            _minAmountOut,
-            _bestOffer.path,
-            _bestOffer.amounts
-        );
+        return (_bestOffer, _minAmountOut);
     }
 
     // -- INTERNAL HELPERS
