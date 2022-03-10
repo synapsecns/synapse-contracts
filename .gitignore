@@ -6,7 +6,6 @@ node_modules/*
 /dist
 .idea/*
 .eslintcache
-docs
 
 ### macOS ###
 # General
@@ -55,4 +54,4 @@ build
 tenderly.yaml
 
 .env
-
+doc/
