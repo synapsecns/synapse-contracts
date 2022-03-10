@@ -13,7 +13,7 @@
 ### onSynapseReward
 
 ```solidity
-function onSynapseReward(uint256 pid, address user, address recipient, uint256 synapseAmount, uint256 oldLpAmount) external nonpayable
+function onSynapseReward(uint256 pid, address user, address recipient, uint256 synapseAmount, uint256 newLpAmount) external nonpayable
 ```
 
 
@@ -28,7 +28,7 @@ function onSynapseReward(uint256 pid, address user, address recipient, uint256 s
 | user | address | undefined |
 | recipient | address | undefined |
 | synapseAmount | uint256 | undefined |
-| oldLpAmount | uint256 | undefined |
+| newLpAmount | uint256 | undefined |
 
 ### pendingTokens
 
