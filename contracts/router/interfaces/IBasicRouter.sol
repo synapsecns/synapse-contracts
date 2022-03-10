@@ -10,15 +10,29 @@ interface IBasicRouter {
 
     event RemovedAdapter(address _removedAdapter);
 
-    function setAdapters(address[] memory _adapters) external;
+    // -- VIEWS --
 
     function getTrustedAdapter(uint8 _index) external view returns (address);
 
     function trustedAdaptersCount() external view returns (uint256);
 
+    // -- ADAPTER FUNCTIONS --
+
+    function addTrustedAdapter(address _adapter) external;
+
+    function removeAdapter(address _adapter) external;
+
+    function removeAdapterByIndex(uint8 _index) external;
+
+    function setAdapters(address[] memory _adapters) external;
+
+    // -- RECOVER FUNCTIONS --
+
     function recoverERC20(address _tokenAddress) external;
 
     function recoverGAS() external;
+
+    // -- RECEIVE GAS FUNCTION --
 
     receive() external payable;
 }

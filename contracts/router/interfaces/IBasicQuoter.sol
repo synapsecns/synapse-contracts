@@ -36,15 +36,23 @@ interface IBasicQuoter {
         address[] adapters;
     }
 
+    //  -- VIEWS --
+
     function getTrustedToken(uint8 _index) external view returns (address);
 
     function trustedTokensCount() external view returns (uint256);
 
-    function addTrustedToken(address _token) external;
+    // -- TOKEN FUNCTIONS --
 
-    function setTokens(address[] memory _tokens) external;
+    function addTrustedToken(address _token) external;
 
     function removeToken(address _token) external;
 
     function removeTokenByIndex(uint8 _index) external;
+
+    // -- SETTERS --
+
+    function setMaxSteps(uint8 _maxSteps) external;
+
+    function setTokens(address[] memory _tokens) external;
 }
