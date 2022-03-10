@@ -236,38 +236,27 @@ contract Quoter is BasicQuoter, IQuoter {
         /// @dev (_bestAmountOut - _bestGasCost) is net returns of the swap,
         /// this is the parameter that should be maximized
 
-        // amount of _tokenOut in the local best found route
-        uint256 _bestAmountOut = 0;
-        // gas cost of the local best found route (in _tokenOut)
-        uint256 _bestGasCost = 0;
+        // _bestAmountOut: amount of _tokenOut in the local best found route
+        // _bestGasCost: gas cost of the local best found route (in _tokenOut)
 
         // First check if there is a path directly from tokenIn to tokenOut
-        Query memory _queryDirect = queryDirectSwap(
+        (uint256 _bestAmountOut, uint256 _bestGasCost) = _checkDirectSwap(
             _amountIn,
             _tokenIn,
-            _tokenOut
+            _tokenOut,
+            _bestOption,
+            _tokenOutPriceNwei
         );
-        if (_queryDirect.amountOut != 0) {
-            _addQueryWithGas(
-                _bestOption,
-                _queryDirect.amountOut,
-                _queryDirect.adapter,
-                _queryDirect.tokenOut,
-                _getGasEstimate(_queryDirect.adapter, _tokenOutPriceNwei)
-            );
-            _bestAmountOut = _queryDirect.amountOut;
-            _bestGasCost = _getGasCost(
-                _tokenOutPriceNwei,
-                _bestOption.gasEstimate
-            );
-        }
 
         // Check for swaps through intermediate tokens, only if there are enough steps left
         // Need at least two extra steps
         if (_maxSteps > 1 && _queries.adapters.length / 32 <= _maxSteps - 2) {
             // Check for paths that pass through trusted tokens
             for (uint256 i = 0; i < trustedTokens.length; i++) {
-                if (_tokenIn == trustedTokens[i]) {
+                address _trustedToken = trustedTokens[i];
+                // _trustedToken == _tokenIn  means swap isn't possible
+                // _trustedToken == _tokenOut was checked above in _checkDirectSwap
+                if (_trustedToken == _tokenIn || _trustedToken == _tokenOut) {
                     continue;
                 }
                 // Loop through all adapters to find the best one
@@ -275,7 +264,7 @@ contract Quoter is BasicQuoter, IQuoter {
                 Query memory _bestSwap = queryDirectSwap(
                     _amountIn,
                     _tokenIn,
-                    trustedTokens[i]
+                    _trustedToken
                 );
                 if (_bestSwap.amountOut == 0) {
                     continue;
@@ -290,11 +279,11 @@ contract Quoter is BasicQuoter, IQuoter {
                     _getGasEstimate(_bestSwap.adapter, _tokenOutPriceNwei)
                 );
                 // Find best path, starting with current route + _bestSwap
-                // new current token is trustedTokens[i]
+                // new current token is _trustedToken
                 // its amount is _bestSwap.amountOut
                 newOffer = _findBestPathWithGas(
                     _bestSwap.amountOut,
-                    trustedTokens[i],
+                    _trustedToken,
                     _tokenOut,
                     _maxSteps,
                     newOffer,
@@ -329,6 +318,31 @@ contract Quoter is BasicQuoter, IQuoter {
             }
         }
         return _bestOption;
+    }
+
+    function _checkDirectSwap(
+        uint256 _amountIn,
+        address _tokenIn,
+        address _tokenOut,
+        OfferWithGas memory _bestOption,
+        uint256 _tokenOutPriceNwei
+    ) internal view returns (uint256 _amountOut, uint256 _gasCost) {
+        Query memory _queryDirect = queryDirectSwap(
+            _amountIn,
+            _tokenIn,
+            _tokenOut
+        );
+        if (_queryDirect.amountOut != 0) {
+            _addQueryWithGas(
+                _bestOption,
+                _queryDirect.amountOut,
+                _queryDirect.adapter,
+                _queryDirect.tokenOut,
+                _getGasEstimate(_queryDirect.adapter, _tokenOutPriceNwei)
+            );
+            _amountOut = _queryDirect.amountOut;
+            _gasCost = _getGasCost(_tokenOutPriceNwei, _bestOption.gasEstimate);
+        }
     }
 
     /**
