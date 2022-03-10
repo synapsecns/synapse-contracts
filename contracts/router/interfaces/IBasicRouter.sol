@@ -14,6 +14,7 @@ interface IBasicRouter {
 
     function isTrustedAdapter(address _adapter) external view returns (bool);
 
+    // solhint-disable-next-line
     function WGAS() external view returns (address payable);
 
     // -- ADAPTER FUNCTIONS --

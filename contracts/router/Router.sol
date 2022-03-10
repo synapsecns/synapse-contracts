@@ -11,6 +11,8 @@ import {BasicRouter} from "./BasicRouter.sol";
 
 import {ReentrancyGuard} from "@openzeppelin/contracts-4.4.2/security/ReentrancyGuard.sol";
 
+// solhint-disable reason-string
+
 contract Router is ReentrancyGuard, BasicRouter, IRouter {
     using SafeERC20 for IERC20;
 
@@ -175,6 +177,7 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         bytes calldata _bridgeData
     ) internal {
         _setBridgeTokenAllowance(_bridgeToken, _bridgeAmount);
+        // solhint-disable-next-line
         (bool success, ) = bridge.call(_bridgeData);
         require(success, "Bridge interaction failed");
     }
