@@ -21,6 +21,7 @@ contract BasicRouter is AccessControl, IBasicRouter {
 
     /// @dev This is address of contract representing
     /// wrapped ERC20 version of a chain's native currency (ex. WETH, WAVAX, WMOVR)
+    // solhint-disable-next-line
     address payable public immutable WGAS;
 
     mapping(address => bool) public isTrustedAdapter;
@@ -109,6 +110,7 @@ contract BasicRouter is AccessControl, IBasicRouter {
         if (address(this) != _to) {
             if (_token == WGAS) {
                 _unwrap(_amount);
+                // solhint-disable-next-line
                 (bool success, ) = _to.call{value: _amount}("");
                 require(success, "GAS transfer failed");
             } else {

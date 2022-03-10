@@ -12,6 +12,7 @@ import {Bytes} from "@synapseprotocol/sol-lib/contracts/universal/lib/LibBytes.s
 contract Quoter is BasicQuoter, IQuoter {
     /// @dev This is address of contract representing
     /// wrapped ERC20 version of a chain's native currency (ex. WETH, WAVAX, WMOVR)
+    // solhint-disable-next-line
     address payable public immutable WGAS;
 
     /// @dev Setup flow:
