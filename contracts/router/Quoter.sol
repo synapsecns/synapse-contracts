@@ -15,6 +15,11 @@ contract Quoter is BasicQuoter, IQuoter {
     // solhint-disable-next-line
     address payable public immutable WGAS;
 
+    // solhint-disable-next-line
+    uint256 internal immutable CHAIN_ID;
+
+    uint256 internal constant SLIPPAGE_PRECISION = 10**18;
+
     /// @dev Setup flow:
     /// 1. Create Router contract
     /// 2. Create Quoter contract
@@ -25,10 +30,13 @@ contract Quoter is BasicQuoter, IQuoter {
     /// 1. call oldQuoter.setAdapters([]), this will clear the adapters in Router
     /// 2. revoke ADAPTERS_STORAGE_ROLE from oldQuoter
     /// 3. Do (2-4) from setup flow as usual
-    constructor(uint8 _maxSteps, IBasicRouter _router)
-        BasicQuoter(_maxSteps, _router)
-    {
+    constructor(
+        IBasicRouter _router,
+        uint8 _maxSteps,
+        uint256 _chainId
+    ) BasicQuoter(_maxSteps, _router) {
         WGAS = _router.WGAS();
+        CHAIN_ID = _chainId;
     }
 
     // -- DIRECT SWAP QUERIES --
@@ -76,7 +84,7 @@ contract Quoter is BasicQuoter, IQuoter {
         address _tokenOut,
         uint8 _maxSteps,
         uint256 _gasPrice
-    ) external view returns (FormattedOfferWithGas memory _bestOffer) {
+    ) public view returns (FormattedOfferWithGas memory _bestOffer) {
         require(
             _maxSteps > 0 && _maxSteps < maxSteps,
             "Quoter: Invalid max-steps"
@@ -101,6 +109,64 @@ contract Quoter is BasicQuoter, IQuoter {
             _queries.path = "";
         }
         return _formatOfferWithGas(_queries);
+    }
+
+    /**
+        @notice Calculate _bridgeData parameter for Router.swapAndBridge()
+        @dev Calling Router.swapAndBridge(<...>, _bridgeData) on ANOTHER chain
+             will bridge funds to THIS chain and do _tokenIn -> _tokenOut swap
+        @param _selector specific selector for bridge function, compatible with _bridgeToken (depositMaxAndSwap, redeemMaxAndSwap, etc)
+        @param _to address on destination chain that will receive bridged&swapped funds
+        @param _bridgeToken bridge token on initial chain
+        @param _amountIn amount of bridged tokens, after applying bridge fees
+        @param _tokenIn bridge token on destination chain
+        @param _tokenOut final token on destination chain
+        @param _maxSteps maximum amount of swaps in the route between bridge and final tokens on destination chain
+        @param _gasPrice chain's current gas price, in wei
+        @param _maxSwapSlippage maximum slippage user is willing to accept for swap on destination chain
+
+        @return _bridgeData calldata parameter for Router.swapAndBridge()
+        @return _amountOut expected amount of final tokens user is going to receive on destination chain
+     */
+    function getBridgeDataAndAmountOut(
+        bytes4 _selector,
+        address _to,
+        address _bridgeToken,
+        uint256 _amountIn,
+        address _tokenIn,
+        address _tokenOut,
+        uint8 _maxSteps,
+        uint256 _gasPrice,
+        uint256 _maxSwapSlippage
+    ) external view returns (bytes memory _bridgeData, uint256 _amountOut) {
+        require(
+            _maxSwapSlippage < SLIPPAGE_PRECISION,
+            "Slippage can't be over 100%"
+        );
+        FormattedOfferWithGas memory _bestOffer = findBestPathWithGas(
+            _amountIn,
+            _tokenIn,
+            _tokenOut,
+            _maxSteps,
+            _gasPrice
+        );
+        // fetch _amountOut
+        _amountOut = _bestOffer.amounts[_bestOffer.amounts.length - 1];
+        // apply slippage
+        uint256 _minAmountOut = (_amountOut *
+            (SLIPPAGE_PRECISION - _maxSwapSlippage)) / SLIPPAGE_PRECISION;
+
+        // TODO check that SynapseBridgeV2 is using these params in this order
+        // encode func(to, chainId, token, minAmountOut, path, adapters)
+        _bridgeData = abi.encodeWithSelector(
+            _selector,
+            _to,
+            CHAIN_ID,
+            _bridgeToken,
+            _minAmountOut,
+            _bestOffer.path,
+            _bestOffer.amounts
+        );
     }
 
     // -- INTERNAL HELPERS
