@@ -17,6 +17,8 @@ interface IBasicRouter {
     // solhint-disable-next-line
     function WGAS() external view returns (address payable);
 
+    function bridgeMaxSwaps() external view returns (uint8);
+
     // -- ADAPTER FUNCTIONS --
 
     function addTrustedAdapter(address _adapter) external;

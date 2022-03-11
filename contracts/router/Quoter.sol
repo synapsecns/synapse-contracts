@@ -32,9 +32,9 @@ contract Quoter is BasicQuoter, IQuoter {
     /// 3. Do (2-4) from setup flow as usual
     constructor(
         IBasicRouter _router,
-        uint8 _maxSteps,
+        uint8 _maxSwaps,
         uint256 _chainId
-    ) BasicQuoter(_maxSteps, _router) {
+    ) BasicQuoter(_maxSwaps, _router) {
         WGAS = _router.WGAS();
         CHAIN_ID = _chainId;
     }
@@ -75,19 +75,19 @@ contract Quoter is BasicQuoter, IQuoter {
         @param _amountIn amount of initial tokens to swap
         @param _tokenIn initial token to sell
         @param _tokenOut final token to buy
-        @param _maxSteps maximum amount of swaps in the route between initial and final tokens
+        @param _maxSwaps maximum amount of swaps in the route between initial and final tokens
         @param _gasPrice chain's current gas price, in wei
      */
     function findBestPathWithGas(
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
-        uint8 _maxSteps,
+        uint8 _maxSwaps,
         uint256 _gasPrice
     ) public view returns (FormattedOfferWithGas memory _bestOffer) {
         require(
-            _maxSteps > 0 && _maxSteps < maxSteps,
-            "Quoter: Invalid max-steps"
+            _maxSwaps > 0 && _maxSwaps <= maxSwaps,
+            "Quoter: Invalid max-swaps"
         );
         OfferWithGas memory _queries;
         _queries.amounts = Bytes.toBytes(_amountIn);
@@ -98,7 +98,7 @@ contract Quoter is BasicQuoter, IQuoter {
             _amountIn,
             _tokenIn,
             _tokenOut,
-            _maxSteps,
+            _maxSwaps,
             _queries,
             _tokenOutPriceNwei
         );
@@ -122,7 +122,6 @@ contract Quoter is BasicQuoter, IQuoter {
         @param _amountIn amount of bridged tokens, after applying bridge fees
         @param _tokenIn bridge token on destination chain
         @param _tokenOut final token on destination chain
-        @param _maxSteps maximum amount of swaps in the route between bridge and final tokens on destination chain
         @param _gasPrice destination chain's current gas price, in wei
         @param _maxSwapSlippage maximum slippage user is willing to accept for swap on destination chain
 
@@ -136,7 +135,6 @@ contract Quoter is BasicQuoter, IQuoter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
-        uint8 _maxSteps,
         uint256 _gasPrice,
         uint256 _maxSwapSlippage
     ) external view returns (bytes memory, uint256) {
@@ -148,7 +146,7 @@ contract Quoter is BasicQuoter, IQuoter {
             _amountIn,
             _tokenIn,
             _tokenOut,
-            _maxSteps,
+            router.bridgeMaxSwaps(), // use max swaps for Bridge&Swap tx
             _gasPrice,
             _maxSwapSlippage
         );
@@ -174,7 +172,7 @@ contract Quoter is BasicQuoter, IQuoter {
         @param _amountIn amount of initial tokens
         @param _tokenIn initial token to sell
         @param _tokenOut final token to buy
-        @param _maxSteps maximum amount of swaps in the route between initial and final tokens
+        @param _maxSwaps maximum amount of swaps in the route between initial and final tokens
         @param _gasPrice this chain's current gas price, in wei
         @param _maxSwapSlippage maximum slippage user is willing to accept for swap on this chain
         @return tradeData (amountIn, minAmountOut, path, adapters)
@@ -184,7 +182,7 @@ contract Quoter is BasicQuoter, IQuoter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
-        uint8 _maxSteps,
+        uint8 _maxSwaps,
         uint256 _gasPrice,
         uint256 _maxSwapSlippage
     ) external view returns (Trade memory, uint256) {
@@ -196,7 +194,7 @@ contract Quoter is BasicQuoter, IQuoter {
             _amountIn,
             _tokenIn,
             _tokenOut,
-            _maxSteps,
+            _maxSwaps,
             _gasPrice,
             _maxSwapSlippage
         );
@@ -216,7 +214,7 @@ contract Quoter is BasicQuoter, IQuoter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
-        uint8 _maxSteps,
+        uint8 _maxSwaps,
         uint256 _gasPrice,
         uint256 _maxSwapSlippage
     )
@@ -236,7 +234,7 @@ contract Quoter is BasicQuoter, IQuoter {
             _amountIn,
             _tokenIn,
             _tokenOut,
-            _maxSteps,
+            _maxSwaps,
             _gasPrice
         );
         // fetch _amountOut
@@ -299,7 +297,7 @@ contract Quoter is BasicQuoter, IQuoter {
         @param _amountIn amount of current tokens to swap
         @param _tokenIn current token to sell
         @param _tokenOut final token to buy
-        @param _maxSteps maximum amount of swaps in the route between initial and final tokens
+        @param _maxSwaps maximum amount of swaps in the route between initial and final tokens
         @param _queries Fixed prefix of the route between initial and final tokens
         @param _tokenOutPriceNwei gas price expressed in _tokenOut, in nanoWei
      */
@@ -307,7 +305,7 @@ contract Quoter is BasicQuoter, IQuoter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
-        uint256 _maxSteps,
+        uint256 _maxSwaps,
         OfferWithGas memory _queries,
         uint256 _tokenOutPriceNwei
     ) internal view returns (OfferWithGas memory) {
@@ -327,9 +325,9 @@ contract Quoter is BasicQuoter, IQuoter {
             _tokenOutPriceNwei
         );
 
-        // Check for swaps through intermediate tokens, only if there are enough steps left
-        // Need at least two extra steps
-        if (_maxSteps > 1 && _queries.adapters.length / 32 <= _maxSteps - 2) {
+        // Check for swaps through intermediate tokens, only if there are enough swaps left
+        // Need at least two extra swaps
+        if (_maxSwaps > 1 && _queries.adapters.length / 32 <= _maxSwaps - 2) {
             // Check for paths that pass through trusted tokens
             for (uint256 i = 0; i < trustedTokens.length; i++) {
                 address _trustedToken = trustedTokens[i];
@@ -364,7 +362,7 @@ contract Quoter is BasicQuoter, IQuoter {
                     _bestSwap.amountOut,
                     _trustedToken,
                     _tokenOut,
-                    _maxSteps,
+                    _maxSwaps,
                     newOffer,
                     _tokenOutPriceNwei
                 );

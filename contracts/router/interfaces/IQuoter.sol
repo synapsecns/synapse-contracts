@@ -14,7 +14,7 @@ interface IQuoter is IBasicQuoter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
-        uint8 _maxSteps,
+        uint8 _maxSwaps,
         uint256 _gasPrice
     ) external view returns (FormattedOfferWithGas memory);
 }
