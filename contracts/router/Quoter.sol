@@ -129,7 +129,7 @@ contract Quoter is BasicQuoter, IQuoter {
         @return _bridgeData calldata parameter for Router.swapAndBridge()
         @return _amountOut expected amount of final tokens user is going to receive on destination chain
      */
-    function getBridgeDataAndAmountOut(
+    function getBridgeDataAmountOut(
         bytes4 _selector,
         address _to,
         address _bridgeToken,
@@ -180,7 +180,7 @@ contract Quoter is BasicQuoter, IQuoter {
         @return tradeData (amountIn, minAmountOut, path, adapters)
         @return amountOut expected amount of final tokens user is going to receive on this chain 
      */
-    function getTradeData(
+    function getTradeDataAmountOut(
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
