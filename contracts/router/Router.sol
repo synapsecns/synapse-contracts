@@ -18,7 +18,11 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
 
     address public immutable bridge;
 
-    constructor(address payable _wgas, address _bridge) BasicRouter(_wgas) {
+    constructor(
+        address payable _wgas,
+        uint8 _bridgeMaxSwaps,
+        address _bridge
+    ) BasicRouter(_wgas, _bridgeMaxSwaps) {
         bridge = _bridge;
     }
 
@@ -220,6 +224,7 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         address[] calldata _adapters,
         address _to
     ) external onlyBridge returns (uint256 _swappedAmount) {
+        require(_adapters.length <= bridgeMaxSwaps, "Too many swaps in path");
         if (_path[_path.length - 1] == WGAS) {
             // Path ends with WGAS, and no one wants
             // to receive WGAS after bridging, right?

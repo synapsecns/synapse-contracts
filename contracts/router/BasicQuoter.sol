@@ -8,15 +8,25 @@ import {Ownable} from "@openzeppelin/contracts-4.4.2/access/Ownable.sol";
 import {Bytes} from "@synapseprotocol/sol-lib/contracts/universal/lib/LibBytes.sol";
 
 contract BasicQuoter is Ownable, IBasicQuoter {
+    /// @notice A list of tokens that will be used as "intermediate" tokens, when
+    /// finding the best path between initial and final token
     address[] internal trustedTokens;
+
+    /// @notice A list of adapters that are abstracting away swaps via third party contracts
     address[] internal trustedAdapters;
 
-    uint8 public maxSteps;
+    /// @notice Maximum amount of swaps that Quoter will be using
+    /// for finding the best path between two tokens.
+    /// This is done for two reasons:
+    /// 1. Too many swaps in the path make very little sense
+    /// 2. Every extra swap increases the amount of possible paths exponentially,
+    ///    so we need some sensible limitation.
+    uint8 public maxSwaps;
 
     IBasicRouter public immutable router;
 
-    constructor(uint8 _maxSteps, IBasicRouter _router) {
-        setMaxSteps(_maxSteps);
+    constructor(uint8 _maxSwaps, IBasicRouter _router) {
+        setMaxSwaps(_maxSwaps);
         router = _router;
     }
 
@@ -116,8 +126,8 @@ contract BasicQuoter is Ownable, IBasicQuoter {
         emit UpdatedTrustedAdapters(_adapters);
     }
 
-    function setMaxSteps(uint8 _maxSteps) public onlyOwner {
-        maxSteps = _maxSteps;
+    function setMaxSwaps(uint8 _maxSwaps) public onlyOwner {
+        maxSwaps = _maxSwaps;
     }
 
     function setTokens(address[] calldata _tokens) public onlyOwner {

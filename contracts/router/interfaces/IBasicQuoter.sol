@@ -46,7 +46,7 @@ interface IBasicQuoter {
 
     //  -- VIEWS --
 
-    function getTrustedAdapter(uint8 _index) external view returns (address); 
+    function getTrustedAdapter(uint8 _index) external view returns (address);
 
     function getTrustedToken(uint8 _index) external view returns (address);
 
@@ -74,7 +74,7 @@ interface IBasicQuoter {
 
     function setAdapters(address[] calldata _adapters) external;
 
-    function setMaxSteps(uint8 _maxSteps) external;
+    function setMaxSwaps(uint8 _maxSwaps) external;
 
     function setTokens(address[] memory _tokens) external;
 }
