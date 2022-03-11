@@ -10,7 +10,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // Manually check if the pool is already deployed
   let nUSDPoolV3 = await getOrNull("nUSDPoolV3")
-  if (nUSDPoolV3 || includes([CHAIN_ID.OPTIMISM, CHAIN_ID.MAINNET, CHAIN_ID.MOONBEAM, CHAIN_ID.METIS, CHAIN_ID.CRONOS], await getChainId())) {
+  if (nUSDPoolV3 || includes([CHAIN_ID.OPTIMISM, CHAIN_ID.MAINNET, CHAIN_ID.MOONBEAM, CHAIN_ID.CRONOS], await getChainId())) {
     // log(`reusing "nUSDPoolV3" at ${nUSDPoolV3}`)
   } else {
     // Constructor arguments
@@ -71,6 +71,15 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       ]
       TOKEN_DECIMALS = [18, 18, 6, 6]
       INITIAL_A = 200
+    }
+
+    if (await getChainId() === CHAIN_ID.METIS) {
+      TOKEN_ADDRESSES = [
+        (await get("nUSD")).address,
+        (await get("USDC")).address,
+      ]
+      TOKEN_DECIMALS = [18, 6]
+      INITIAL_A = 400
     }
 
 
