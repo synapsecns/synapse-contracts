@@ -7,6 +7,8 @@ import {IAdapter} from "./interfaces/IAdapter.sol";
 import {IQuoter} from "./interfaces/IQuoter.sol";
 import {IBasicRouter} from "./interfaces/IBasicRouter.sol";
 
+import {Offers} from "./libraries/LibOffers.sol";
+
 import {Bytes} from "@synapseprotocol/sol-lib/contracts/universal/lib/LibBytes.sol";
 
 contract Quoter is BasicQuoter, IQuoter {
@@ -84,12 +86,12 @@ contract Quoter is BasicQuoter, IQuoter {
         address _tokenOut,
         uint8 _maxSwaps,
         uint256 _gasPrice
-    ) public view returns (FormattedOfferWithGas memory _bestOffer) {
+    ) public view returns (Offers.FormattedOfferWithGas memory _bestOffer) {
         require(
             _maxSwaps > 0 && _maxSwaps <= maxSwaps,
             "Quoter: Invalid max-swaps"
         );
-        OfferWithGas memory _queries;
+        Offers.OfferWithGas memory _queries;
         _queries.amounts = Bytes.toBytes(_amountIn);
         _queries.path = Bytes.toBytes(_tokenIn);
         uint256 _tokenOutPriceNwei = _findTokenPriceNwei(_tokenOut, _gasPrice);
@@ -108,7 +110,7 @@ contract Quoter is BasicQuoter, IQuoter {
             _queries.amounts = "";
             _queries.path = "";
         }
-        return _formatOfferWithGas(_queries);
+        return Offers.formatOfferWithGas(_queries);
     }
 
     /**
@@ -139,7 +141,7 @@ contract Quoter is BasicQuoter, IQuoter {
         uint256 _maxSwapSlippage
     ) external view returns (bytes memory, uint256) {
         (
-            FormattedOfferWithGas memory _bestOffer,
+            Offers.FormattedOfferWithGas memory _bestOffer,
             uint256 _minAmountOut,
             uint256 _amountOut
         ) = _getBestOfferWithSlippage(
@@ -187,7 +189,7 @@ contract Quoter is BasicQuoter, IQuoter {
         uint256 _maxSwapSlippage
     ) external view returns (Trade memory, uint256) {
         (
-            FormattedOfferWithGas memory _bestOffer,
+            Offers.FormattedOfferWithGas memory _bestOffer,
             uint256 _minAmountOut,
             uint256 _amountOut
         ) = _getBestOfferWithSlippage(
@@ -221,7 +223,7 @@ contract Quoter is BasicQuoter, IQuoter {
         internal
         view
         returns (
-            FormattedOfferWithGas memory,
+            Offers.FormattedOfferWithGas memory,
             uint256,
             uint256
         )
@@ -230,7 +232,7 @@ contract Quoter is BasicQuoter, IQuoter {
             _maxSwapSlippage < SLIPPAGE_PRECISION,
             "Slippage can't be over 100%"
         );
-        FormattedOfferWithGas memory _bestOffer = findBestPathWithGas(
+        Offers.FormattedOfferWithGas memory _bestOffer = findBestPathWithGas(
             _amountIn,
             _tokenIn,
             _tokenOut,
@@ -269,10 +271,10 @@ contract Quoter is BasicQuoter, IQuoter {
             // nothing needs to be done except for conversion to nanoWei
             return _gasPrice * 1e9;
         } else {
-            OfferWithGas memory gasQueries;
+            Offers.OfferWithGas memory gasQueries;
             gasQueries.amounts = Bytes.toBytes(1e18);
             gasQueries.path = Bytes.toBytes(WGAS);
-            OfferWithGas memory gasQuery = _findBestPathWithGas(
+            Offers.OfferWithGas memory gasQuery = _findBestPathWithGas(
                 1e18, // find how much 1 WGAS is worth in _token
                 WGAS,
                 _token,
@@ -280,7 +282,7 @@ contract Quoter is BasicQuoter, IQuoter {
                 gasQueries,
                 0 // ignore gas costs
             );
-            uint256[] memory _tokenOutAmounts = _formatAmounts(
+            uint256[] memory _tokenOutAmounts = Offers.formatAmounts(
                 gasQuery.amounts
             );
             // convert to nanoWei
@@ -306,10 +308,12 @@ contract Quoter is BasicQuoter, IQuoter {
         address _tokenIn,
         address _tokenOut,
         uint256 _maxSwaps,
-        OfferWithGas memory _queries,
+        Offers.OfferWithGas memory _queries,
         uint256 _tokenOutPriceNwei
-    ) internal view returns (OfferWithGas memory) {
-        OfferWithGas memory _bestOption = _cloneOfferWithGas(_queries);
+    ) internal view returns (Offers.OfferWithGas memory) {
+        Offers.OfferWithGas memory _bestOption = Offers.cloneOfferWithGas(
+            _queries
+        );
         /// @dev (_bestAmountOut - _bestGasCost) is net returns of the swap,
         /// this is the parameter that should be maximized
 
@@ -346,9 +350,11 @@ contract Quoter is BasicQuoter, IQuoter {
                 if (_bestSwap.amountOut == 0) {
                     continue;
                 }
-                OfferWithGas memory newOffer = _cloneOfferWithGas(_queries);
+                Offers.OfferWithGas memory newOffer = Offers.cloneOfferWithGas(
+                    _queries
+                );
                 // add _bestSwap to the current route
-                _addQueryWithGas(
+                Offers.addQueryWithGas(
                     newOffer,
                     _bestSwap.amountOut,
                     _bestSwap.adapter,
@@ -401,7 +407,7 @@ contract Quoter is BasicQuoter, IQuoter {
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
-        OfferWithGas memory _bestOption,
+        Offers.OfferWithGas memory _bestOption,
         uint256 _tokenOutPriceNwei
     ) internal view returns (uint256 _amountOut, uint256 _gasCost) {
         Query memory _queryDirect = queryDirectSwap(
@@ -410,7 +416,7 @@ contract Quoter is BasicQuoter, IQuoter {
             _tokenOut
         );
         if (_queryDirect.amountOut != 0) {
-            _addQueryWithGas(
+            Offers.addQueryWithGas(
                 _bestOption,
                 _queryDirect.amountOut,
                 _queryDirect.adapter,

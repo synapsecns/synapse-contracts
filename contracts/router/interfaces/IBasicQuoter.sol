@@ -23,20 +23,6 @@ interface IBasicQuoter {
         uint256 amountOut;
     }
 
-    struct OfferWithGas {
-        bytes amounts;
-        bytes adapters;
-        bytes path;
-        uint256 gasEstimate;
-    }
-
-    struct FormattedOfferWithGas {
-        uint256[] amounts;
-        address[] adapters;
-        address[] path;
-        uint256 gasEstimate;
-    }
-
     struct Trade {
         uint256 amountIn;
         uint256 amountOut;

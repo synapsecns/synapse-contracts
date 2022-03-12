@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {IBasicQuoter} from "./IBasicQuoter.sol";
+import {Offers} from "../libraries/LibOffers.sol";
 
 interface IQuoter is IBasicQuoter {
 
@@ -24,7 +25,7 @@ interface IQuoter is IBasicQuoter {
         address _tokenOut,
         uint8 _maxSwaps,
         uint256 _gasPrice
-    ) external view returns (FormattedOfferWithGas memory);
+    ) external view returns (Offers.FormattedOfferWithGas memory);
 
     function getBridgeDataAmountOut(
         bytes4 _selector,
