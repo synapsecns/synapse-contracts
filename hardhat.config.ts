@@ -8,7 +8,8 @@ import "hardhat-gas-reporter"
 import "solidity-coverage"
 import "hardhat-deploy"
 import "hardhat-spdx-license-identifier"
-import "hardhat-interface-generator"
+import "hardhat-interface-generator";
+import "@primitivefi/hardhat-dodoc";
 
 import { HardhatUserConfig } from "hardhat/config"
 import dotenv from "dotenv"
@@ -100,6 +101,13 @@ let config: HardhatUserConfig = {
   typechain: {
     outDir: "./build/typechain/",
     target: "ethers-v5",
+  },
+  dodoc: {
+    runOnCompile: true,
+    debugMode: false,
+    // pre solidity 5 breaks docgen
+    exclude: ["MultisigWallet", "WETH9"]
+    // More options...
   },
   solidity: {
     compilers: [
