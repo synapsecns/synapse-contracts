@@ -73,6 +73,9 @@ contract BasicQuoter is Ownable, IBasicQuoter {
     // -- RESTRICTED ADAPTER FUNCTIONS --
 
     function addTrustedAdapter(address _adapter) external onlyOwner {
+        for (uint8 i = 0; i < trustedAdapters.length; i++) {
+            require(trustedAdapters[i] != _adapter, "Adapter already added");
+        }
         trustedAdapters.push(_adapter);
         // Add Adapter to Router as well
         router.addTrustedAdapter(_adapter);
@@ -96,6 +99,9 @@ contract BasicQuoter is Ownable, IBasicQuoter {
     // -- RESTRICTED TOKEN FUNCTIONS --
 
     function addTrustedToken(address _token) external onlyOwner {
+        for (uint8 i = 0; i < trustedTokens.length; i++) {
+            require(trustedTokens[i] != _token, "Token already added");
+        }
         trustedTokens.push(_token);
         emit AddedTrustedToken(_token);
     }
@@ -116,6 +122,8 @@ contract BasicQuoter is Ownable, IBasicQuoter {
 
     // -- RESTRICTED SETTERS
 
+    /// @dev This doesn't check if any of the adapters are duplicated,
+    /// so make sure to check the data for duplicates
     function setAdapters(address[] calldata _adapters) external onlyOwner {
         // First, remove old Adapters, if there are any
         if (trustedAdapters.length > 0) {
@@ -130,6 +138,8 @@ contract BasicQuoter is Ownable, IBasicQuoter {
         maxSwaps = _maxSwaps;
     }
 
+    /// @dev This doesn't check if any of the tokens are duplicated,
+    /// so make sure to check the data for duplicates
     function setTokens(address[] calldata _tokens) public onlyOwner {
         trustedTokens = _tokens;
         emit UpdatedTrustedTokens(_tokens);
