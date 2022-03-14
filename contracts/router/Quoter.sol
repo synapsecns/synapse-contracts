@@ -36,7 +36,7 @@ contract Quoter is BasicQuoter, IQuoter {
         IBasicRouter _router,
         uint8 _maxSwaps,
         uint256 _chainId
-    ) BasicQuoter(_maxSwaps, _router) {
+    ) BasicQuoter(_router, _maxSwaps) {
         WGAS = _router.WGAS();
         CHAIN_ID = _chainId;
     }

@@ -25,7 +25,7 @@ contract BasicQuoter is Ownable, IBasicQuoter {
 
     IBasicRouter public immutable router;
 
-    constructor(uint8 _maxSwaps, IBasicRouter _router) {
+    constructor(IBasicRouter _router, uint8 _maxSwaps) {
         setMaxSwaps(_maxSwaps);
         router = _router;
     }
