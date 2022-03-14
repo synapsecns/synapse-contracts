@@ -17,9 +17,6 @@ contract Quoter is BasicQuoter, IQuoter {
     // solhint-disable-next-line
     address payable public immutable WGAS;
 
-    // solhint-disable-next-line
-    uint256 internal immutable CHAIN_ID;
-
     uint256 internal constant SLIPPAGE_PRECISION = 10**18;
 
     /// @dev Setup flow:
@@ -32,13 +29,10 @@ contract Quoter is BasicQuoter, IQuoter {
     /// 1. call oldQuoter.setAdapters([]), this will clear the adapters in Router
     /// 2. revoke ADAPTERS_STORAGE_ROLE from oldQuoter
     /// 3. Do (2-4) from setup flow as usual
-    constructor(
-        IBasicRouter _router,
-        uint8 _maxSwaps,
-        uint256 _chainId
-    ) BasicQuoter(_router, _maxSwaps) {
+    constructor(IBasicRouter _router, uint8 _maxSwaps)
+        BasicQuoter(_router, _maxSwaps)
+    {
         WGAS = _router.WGAS();
-        CHAIN_ID = _chainId;
     }
 
     // -- DIRECT SWAP QUERIES --
@@ -153,12 +147,17 @@ contract Quoter is BasicQuoter, IQuoter {
             _maxSwapSlippage
         );
 
+        uint256 _chainId;
+        assembly {
+            _chainId := chainid()
+        }
+
         // TODO check that SynapseBridgeV2 is using these params in this order
         // encode func(to, chainId, token, minAmountOut, path, adapters)
         bytes memory _bridgeData = abi.encodeWithSelector(
             _selector,
             _to,
-            CHAIN_ID,
+            _chainId,
             _bridgeToken,
             _minAmountOut,
             _bestOffer.path,
