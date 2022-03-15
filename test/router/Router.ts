@@ -249,7 +249,7 @@ describe("Router", function () {
   beforeEach(async function () {
     await setupTest()
 
-    let amount = 10000
+    let amount = 6000
 
     for (let token in decimals) {
       let tokenAmount = getBigNumber(amount, decimals[token])
