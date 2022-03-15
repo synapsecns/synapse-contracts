@@ -62,6 +62,7 @@ contract UniswapV2Adapter is Adapter {
         address _pair = _getPair(_tokenIn, _tokenOut);
         // _amountIn and _pair are already checked
         _amountOut = _getPairAmountOut(_pair, _tokenIn, _tokenOut, _amountIn);
+        require(_amountOut > 0, "Adapter: Insufficient output amount");
         (uint256 _amount0Out, uint256 _amount1Out) = _tokenIn < _tokenOut
             ? (uint256(0), _amountOut)
             : (_amountOut, uint256(0));
@@ -135,8 +136,9 @@ contract UniswapV2Adapter is Adapter {
         uint256 _reserveIn,
         uint256 _reserveOut
     ) internal view returns (uint256 _amountOut) {
-        require(_amountIn > 0, "INSUFFICIENT_INPUT_AMOUNT");
-        require(_reserveIn > 0 && _reserveOut > 0, "INSUFFICIENT_LIQUIDITY");
+        if (_reserveIn == 0 || _reserveOut == 0) {
+            return 0;
+        }
         uint256 amountInWithFee = _amountIn * MULTIPLIER_WITH_FEE;
         uint256 numerator = amountInWithFee * _reserveOut;
         uint256 denominator = _reserveIn * MULTIPLIER + amountInWithFee;
