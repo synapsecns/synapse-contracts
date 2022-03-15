@@ -177,7 +177,7 @@ describe("Pangolin Adapter", async function() {
           TOKENS[tokenTo].address,
           ownerAddress,
         ),
-      ).to.be.revertedWith("Swap pool does not exist")
+      ).to.be.revertedWith("Adapter: unknown tokens")
     })
 
     it("Swap fails if transfer amount is too little", async function() {
