@@ -29,7 +29,10 @@ contract UniswapV2Adapter is Adapter {
         uint256 _swapGasEstimate,
         uint256 _fee
     ) Adapter(_name, _swapGasEstimate) {
-        require(_fee < MULTIPLIER, "Fee is too high. Must be less than multiplier");
+        require(
+            _fee < MULTIPLIER,
+            "Fee is too high. Must be less than multiplier"
+        );
         MULTIPLIER_WITH_FEE = MULTIPLIER - _fee;
         uniswapV2Factory = IUniswapV2Factory(_uniswapV2FactoryAddress);
     }
@@ -56,11 +59,8 @@ contract UniswapV2Adapter is Adapter {
         address _tokenOut,
         address _to
     ) internal virtual override returns (uint256 _amountOut) {
-        require(_amountIn != 0, "Insufficient input amount");
-
         address _pair = _getPair(_tokenIn, _tokenOut);
-        require(_pair != address(0), "Swap pool does not exist");
-
+        // _amountIn and _pair are already checked
         _amountOut = _getAmountOut(_pair, _tokenIn, _tokenOut, _amountIn);
         (uint256 _amount0Out, uint256 _amount1Out) = _tokenIn < _tokenOut
             ? (uint256(0), _amountOut)
@@ -75,9 +75,7 @@ contract UniswapV2Adapter is Adapter {
         address _tokenOut
     ) internal view virtual override returns (uint256 _amountOut) {
         address _pair = _depositAddress(_tokenIn, _tokenOut);
-        if (_pair == address(0)) {
-            return 0;
-        }
+        // _pair is already checked
         _amountOut = _getAmountOut(_pair, _tokenIn, _tokenOut, _amountIn);
     }
 
@@ -101,7 +99,7 @@ contract UniswapV2Adapter is Adapter {
         address _tokenB
     ) internal view returns (uint256 _reserveA, uint256 _reserveB) {
         (uint256 _reserve0, uint256 _reserve1, ) = IUniswapV2Pair(_pair)
-        .getReserves();
+            .getReserves();
         (_reserveA, _reserveB) = _tokenA < _tokenB
             ? (_reserve0, _reserve1)
             : (_reserve1, _reserve0);
@@ -121,14 +119,14 @@ contract UniswapV2Adapter is Adapter {
         return _getAmountOut(_amountIn, _reserveIn, _reserveOut);
     }
 
-
     function _checkTokens(address _tokenIn, address _tokenOut)
-    internal
-    view
-    virtual
-    override
-    returns (bool){
-        return true;
+        internal
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        return _depositAddress(_tokenIn, _tokenOut) != address(0);
     }
 
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
