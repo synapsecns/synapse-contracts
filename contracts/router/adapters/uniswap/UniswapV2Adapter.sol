@@ -61,7 +61,7 @@ contract UniswapV2Adapter is Adapter {
     ) internal virtual override returns (uint256 _amountOut) {
         address _pair = _getPair(_tokenIn, _tokenOut);
         // _amountIn and _pair are already checked
-        _amountOut = _getAmountOut(_pair, _tokenIn, _tokenOut, _amountIn);
+        _amountOut = _getPairAmountOut(_pair, _tokenIn, _tokenOut, _amountIn);
         (uint256 _amount0Out, uint256 _amount1Out) = _tokenIn < _tokenOut
             ? (uint256(0), _amountOut)
             : (_amountOut, uint256(0));
@@ -76,7 +76,7 @@ contract UniswapV2Adapter is Adapter {
     ) internal view virtual override returns (uint256 _amountOut) {
         address _pair = _depositAddress(_tokenIn, _tokenOut);
         // _pair is already checked
-        _amountOut = _getAmountOut(_pair, _tokenIn, _tokenOut, _amountIn);
+        _amountOut = _getPairAmountOut(_pair, _tokenIn, _tokenOut, _amountIn);
     }
 
     function _getPair(address _tokenA, address _tokenB)
@@ -105,7 +105,7 @@ contract UniswapV2Adapter is Adapter {
             : (_reserve1, _reserve0);
     }
 
-    function _getAmountOut(
+    function _getPairAmountOut(
         address _pair,
         address _tokenIn,
         address _tokenOut,
@@ -116,7 +116,7 @@ contract UniswapV2Adapter is Adapter {
             _tokenIn,
             _tokenOut
         );
-        return _getAmountOut(_amountIn, _reserveIn, _reserveOut);
+        return _calcAmountOut(_amountIn, _reserveIn, _reserveOut);
     }
 
     function _checkTokens(address _tokenIn, address _tokenOut)
@@ -130,7 +130,7 @@ contract UniswapV2Adapter is Adapter {
     }
 
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-    function _getAmountOut(
+    function _calcAmountOut(
         uint256 _amountIn,
         uint256 _reserveIn,
         uint256 _reserveOut
