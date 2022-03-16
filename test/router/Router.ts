@@ -110,6 +110,12 @@ describe("Router", function () {
         amountA: 2,
         amountB: 180,
       },
+      {
+        tokenA: "gmx",
+        tokenB: "usdc",
+        amountA: 20,
+        amountB: 60,
+      },
     ],
     cccSwapFactory: [
       {
@@ -366,8 +372,11 @@ describe("Router", function () {
     })
 
     it("Direct Swap via Synapse pool from/to GAS", async function () {
+      // Swaps from GAS
       await checkRouterSwap(this, ["weth", "neth"], [synETH], 1)
       await checkRouterSwap(this, ["weth", "neth"], [synETH], 10)
+
+      // Swaps to GAS
       await checkRouterSwap(this, ["neth", "weth"], [synETH], 5)
       await checkRouterSwap(this, ["neth", "weth"], [synETH], 12)
     })
@@ -383,10 +392,12 @@ describe("Router", function () {
     })
 
     it("Direct Swap via Uniswap pool from/to GAS", async function () {
+      // Swaps from GAS
       await checkRouterSwap(this, ["weth", "wbtc"], [uniAAA], 5)
       await checkRouterSwap(this, ["weth", "dai"], [uniBBB], 6)
       await checkRouterSwap(this, ["weth", "wbtc"], [uniCCC], 9)
 
+      // Swaps to GAS
       await checkRouterSwap(this, ["usdt", "weth"], [uniAAA], 20)
       await checkRouterSwap(this, ["dai", "weth"], [uniBBB], 12)
       await checkRouterSwap(this, ["wbtc", "weth"], [uniCCC], 6)
@@ -430,6 +441,7 @@ describe("Router", function () {
     })
 
     it("Uniswap + Uniswap to/from GAS", async function () {
+      // Swaps from GAS
       await checkRouterSwap(this, ["weth", "wbtc", "usdc"], [uniAAA, uniBBB], 9)
       await checkRouterSwap(this, ["weth", "dai", "usdc"], [uniBBB, uniCCC], 4)
       await checkRouterSwap(
@@ -439,9 +451,117 @@ describe("Router", function () {
         61,
       )
 
+      // Swaps to GAS
       await checkRouterSwap(this, ["usdc", "wbtc", "weth"], [uniBBB, uniAAA], 2)
       await checkRouterSwap(this, ["usdc", "dai", "weth"], [uniCCC, uniBBB], 19)
       await checkRouterSwap(this, ["usdt", "wbtc", "weth"], [uniBBB, uniCCC], 1)
+    })
+  })
+
+  describe("Router: 3-step Swap", function () {
+    it("3-step Swap between tokens", async function () {
+      await checkRouterSwap(
+        this,
+        ["wbtc", "weth", "neth", "usdt"],
+        [uniAAA, synETH, uniBBB],
+        2,
+      )
+
+      await checkRouterSwap(
+        this,
+        ["usdt", "neth", "weth", "dai"],
+        [uniBBB, synETH, uniBBB],
+        21,
+      )
+
+      // different decimals for each token
+      await checkRouterSwap(
+        this,
+        ["ohm", "neth", "usdt", "wbtc"],
+        [uniAAA, uniBBB, uniBBB],
+        1,
+      )
+
+      // A -> B -> A consecutive swaps via the SAME UniSwap pair are not supported
+      // it is also stupid
+      await expect(
+        checkRouterSwap(
+          this,
+          ["usdc", "gmx", "usdc", "usdt"],
+          [uniAAA, uniAAA, synUSD],
+          42,
+        ),
+      ).to.be.reverted
+
+      // A -> B -> A consecutive swaps via the DIFFERENT UniSwap pair are supported
+      // might be useful for arbitrageurs
+      await checkRouterSwap(
+        this,
+        ["usdc", "gmx", "usdc", "usdt"],
+        [uniAAA, uniBBB, synUSD],
+        66,
+      )
+
+      await checkRouterSwap(
+        this,
+        ["usdt", "dai", "weth", "neth"],
+        [synUSD, uniBBB, synETH],
+        66,
+      )
+
+      await checkRouterSwap(
+        this,
+        ["usdc", "wbtc", "weth", "usdt"],
+        [uniBBB, uniCCC, uniAAA],
+        9,
+      )
+    })
+
+    it("3-step Swap between from/to GAS", async function () {
+      // Swaps from GAS
+      await checkRouterSwap(
+        this,
+        ["weth", "neth", "usdt", "dai"],
+        [synETH, uniBBB, synUSD],
+        9,
+      )
+
+      await checkRouterSwap(
+        this,
+        ["weth", "dai", "usdt", "neth"],
+        [uniBBB, synUSD, uniBBB],
+        2,
+      )
+
+      await checkRouterSwap(
+        this,
+        ["weth", "wbtc", "usdc", "dai"],
+        [uniAAA, uniBBB, uniCCC],
+        4,
+      )
+
+      // Swaps to GAS
+
+      await checkRouterSwap(
+        this,
+        ["usdt", "usdc", "dai", "weth"],
+        [synUSD, uniCCC, uniBBB],
+        13,
+      )
+
+      await checkRouterSwap(
+        this,
+        ["dai", "usdt", "neth", "weth"],
+        [synUSD, uniBBB, synETH],
+        11,
+      )
+
+      await checkRouterSwap(
+        this,
+        ["usdc", "wbtc", "usdt", "weth"],
+        [uniBBB, uniBBB, uniAAA],
+        6,
+      )
     })
   })
 })
