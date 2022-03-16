@@ -22,6 +22,19 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
 
     // -- SWAPPERS [single chain swaps] --
 
+    /**
+        @notice Perform a series of swaps along the token path, using the provided Adapters
+        @dev 1. Tokens will be pulled from msg.sender, so make sure Router has enough allowance to 
+                spend initial token. 
+             2. Use Quoter.getTradeDataAmountOut() -> _tradeData to find best route with preset slippage.
+             3. len(_path) = N, len(_adapters) = N - 1
+        @param _amountIn amount of initial tokens to swap
+        @param _minAmountOut minimum amount of final tokens for a swap to be successful
+        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
+        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
+        @param _to address to receive final tokens
+        @return _amountOut Final amount of tokens swapped
+     */
     function swap(
         uint256 _amountIn,
         uint256 _minAmountOut,
@@ -39,6 +52,19 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         );
     }
 
+    /**
+        @notice Perform a series of swaps along the token path, starting with
+                chain's native currency (GAS), using the provided Adapters.
+        @dev 1. Make sure to set _amountIn = msg.value, _path[0] = WGAS
+             2. Use Quoter.getTradeDataAmountOut() -> _tradeData to find best route with preset slippage.
+             3. len(_path) = N, len(_adapters) = N - 1
+        @param _amountIn amount of initial tokens to swap
+        @param _minAmountOut minimum amount of final tokens for a swap to be successful
+        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
+        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
+        @param _to address to receive final tokens
+        @return _amountOut Final amount of tokens swapped
+     */
     function swapFromGAS(
         uint256 _amountIn,
         uint256 _minAmountOut,
@@ -53,6 +79,22 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         _amountOut = _selfSwap(_amountIn, _minAmountOut, _path, _adapters, _to);
     }
 
+    /**
+        @notice Perform a series of swaps along the token path, ending with
+                chain's native currency (GAS), using the provided Adapters.
+        @dev 1. Tokens will be pulled from msg.sender, so make sure Router has enough allowance to 
+                spend initial token.
+             2. Make sure to set _path[N-1] = WGAS
+             3. Address _to needs to be able to accept native GAS
+             4. Use Quoter.getTradeDataAmountOut() -> _tradeData to find best route with preset slippage.
+             5. len(_path) = N, len(_adapters) = N - 1
+        @param _amountIn amount of initial tokens to swap
+        @param _minAmountOut minimum amount of final tokens for a swap to be successful
+        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
+        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
+        @param _to address to receive final tokens
+        @return _amountOut Final amount of tokens swapped
+     */
     function swapToGAS(
         uint256 _amountIn,
         uint256 _minAmountOut,
@@ -83,10 +125,16 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     /// @dev All internal swap functions have a reentrancy guard
 
     /**
-     * @notice Pull tokens from user and perform a series of swaps
-     * @dev Use _selfSwap if tokens are already in the contract
-     *      Don't do this: _from = address(this);
-     * @return _amountOut Final amount of tokens swapped
+        @notice Pull tokens from user and perform a series of swaps
+        @dev Use _selfSwap if tokens are already in the contract
+             Don't do this: _from = address(this);
+        @param _amountIn amount of initial tokens to swap
+        @param _minAmountOut minimum amount of final tokens for a swap to be successful
+        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
+        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
+        @param _from address to pull initial tokens from
+        @param _to address to receive final tokens
+        @return _amountOut Final amount of tokens swapped
      */
     function _swap(
         uint256 _amountIn,
@@ -112,9 +160,14 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     }
 
     /**
-     * @notice Perform a series of swaps, assuming the starting tokens
-     *         are already deposited in this contract
-     * @return _amountOut Final amount of tokens swapped
+        @notice Perform a series of swaps, assuming the starting tokens
+                are already deposited in this contract
+        @param _amountIn amount of initial tokens to swap
+        @param _minAmountOut minimum amount of final tokens for a swap to be successful
+        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
+        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
+        @param _to address to receive final tokens
+        @return _amountOut Final amount of tokens swapped
      */
     function _selfSwap(
         uint256 _amountIn,
@@ -138,9 +191,14 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     }
 
     /**
-     * @notice Perform a series of swaps, assuming the starting tokens
-     *         have already been deposited in the first adapter
-     * @return _amountOut Final amount of tokens swapped
+        @notice Perform a series of swaps, assuming the starting tokens
+                have already been deposited in the first adapter
+        @param _amountIn amount of initial tokens to swap
+        @param _minAmountOut minimum amount of final tokens for a swap to be successful
+        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
+        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
+        @param _to address to receive final tokens
+        @return _amountOut Final amount of tokens swapped
      */
     function _doChainedSwaps(
         uint256 _amountIn,
@@ -179,10 +237,13 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     // -- INTERNAL HELPERS
 
     /**
-     * @notice Get selected adapter's deposit address
-     *
-     * @dev Return value of address(0) means that
-     *      adapter doesn't support this pair of tokens
+        @notice Get selected adapter's deposit address
+        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
+        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
+        @param _index index of adapter to get deposit address
+    
+        @dev Return value of address(0) means that
+             adapter doesn't support this pair of tokens
      */
     function _getDepositAddress(
         address[] calldata _path,
