@@ -328,9 +328,7 @@ describe("Router", function () {
     }
 
     // ignore Bridge testing for now
-    await deploy(this, [
-      ["router", this.Router, [this.weth.address, 4, ZERO_ADDRESS]],
-    ])
+    await deploy(this, [["router", this.Router, [this.weth.address]]])
 
     await deploy(this, [["quoter", this.BasicQuoter, [this.router.address, 4]]])
 
