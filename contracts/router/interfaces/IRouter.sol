@@ -19,7 +19,7 @@ interface IRouter is IBasicRouter {
         address[] calldata _path,
         address[] calldata _adapters,
         address _to
-    ) external returns (uint256);
+    ) external returns (uint256 _amountOut);
 
     function swapFromGAS(
         uint256 _amountIn,
@@ -27,7 +27,7 @@ interface IRouter is IBasicRouter {
         address[] calldata _path,
         address[] calldata _adapters,
         address _to
-    ) external payable returns (uint256);
+    ) external payable returns (uint256 _amountOut);
 
     function swapToGAS(
         uint256 _amountIn,
@@ -35,7 +35,7 @@ interface IRouter is IBasicRouter {
         address[] calldata _path,
         address[] calldata _adapters,
         address _to
-    ) external returns (uint256);
+    ) external returns (uint256 _amountOut);
 
     // Bridge related functions [initial chain]
 
@@ -69,5 +69,5 @@ interface IRouter is IBasicRouter {
         address[] calldata _path,
         address[] calldata _adapters,
         address _to
-    ) external returns (uint256);
+    ) external returns (uint256 _amountOut);
 }
