@@ -116,8 +116,8 @@ contract Quoter is BasicQuoter, IQuoter {
         @param _maxSwaps maximum amount of swaps in the route between initial and final tokens
         @param _gasPrice this chain's current gas price, in wei
         @param _maxSwapSlippage maximum slippage user is willing to accept for swap on this chain
-        @return tradeData (amountIn, minAmountOut, path, adapters)
-        @return amountOut expected amount of final tokens user is going to receive on this chain 
+        @return _tradeData uint256 amountIn, uint256 minAmountOut, address[] path, address[] adapters
+        @return _amountOut expected amount of final tokens user is going to receive on this chain 
      */
     function getTradeDataAmountOut(
         uint256 _amountIn,
@@ -151,6 +151,19 @@ contract Quoter is BasicQuoter, IQuoter {
         );
     }
 
+    /**
+        @notice Find best path and get full trade data for that swap on this chain via Router
+        @dev Use trade data for Router.swap|swapFromGas|swapToGas(...tradeData, to) or BridgeRouter.swapAndBridge(...tradeData, bridgeData)
+        @param _amountIn amount of initial tokens
+        @param _tokenIn initial token to sell
+        @param _tokenOut final token to buy
+        @param _maxSwaps maximum amount of swaps in the route between initial and final tokens
+        @param _gasPrice this chain's current gas price, in wei
+        @param _maxSwapSlippage maximum slippage user is willing to accept for swap on this chain
+        @return _bestOffer uint256[] amounts, address[] adapters, address[] path, uint256 gasEstimate
+        @return _minAmountOut expected amount of final tokens, adjusted by max slippage
+        @return _amountOut expected amount of final tokens user is going to receive on this chain 
+     */
     function _getBestOfferWithSlippage(
         uint256 _amountIn,
         address _tokenIn,
@@ -195,6 +208,8 @@ contract Quoter is BasicQuoter, IQuoter {
 
         @param _token token to express gas price in
         @param _gasPrice chain's current gas price, in wei
+
+        @return _tokenPriceNwei gas price, expressed in _token (in nanoWei) 
      */
     function _findTokenPriceNwei(address _token, uint256 _gasPrice)
         internal
@@ -234,6 +249,7 @@ contract Quoter is BasicQuoter, IQuoter {
     /**
         @notice Find the best path between two tokens, taking the gas cost into account
         @dev Part of the route is fixed, which is reflected in _queries
+             The return value is unformatted byte arrays, use Offers.formatOfferWithGas() to format
 
         @param _amountIn amount of current tokens to swap
         @param _tokenIn current token to sell
@@ -241,6 +257,7 @@ contract Quoter is BasicQuoter, IQuoter {
         @param _maxSwaps maximum amount of swaps in the route between initial and final tokens
         @param _queries Fixed prefix of the route between initial and final tokens
         @param _tokenOutPriceNwei gas price expressed in _tokenOut, in nanoWei
+        @return _bestOption bytes amounts, bytes adapters, bytes path, uint256 gasEstimate
      */
     function _findBestPathWithGas(
         uint256 _amountIn,
@@ -342,12 +359,21 @@ contract Quoter is BasicQuoter, IQuoter {
         return _bestOption;
     }
 
+    /**
+        @notice Find the best direct swap between tokens and append it to current OfferWithGas
+        @dev Nothing will be appended, if no direct route between tokens is found
+        @param _amountIn amount of initial token to swap
+        @param _tokenIn token to sell
+        @param _tokenOut token to buy
+        @param _bestOption current Offer to append the found swap
+        @param _tokenPriceNwei gas price expressed in final swap token (not _tokenOut), in nanoWei
+     */
     function _checkDirectSwap(
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
         Offers.OfferWithGas memory _bestOption,
-        uint256 _tokenOutPriceNwei
+        uint256 _tokenPriceNwei
     ) internal view returns (uint256 _amountOut, uint256 _gasCost) {
         Query memory _queryDirect = queryDirectSwap(
             _amountIn,
@@ -360,10 +386,10 @@ contract Quoter is BasicQuoter, IQuoter {
                 _queryDirect.amountOut,
                 _queryDirect.adapter,
                 _queryDirect.tokenOut,
-                _getGasEstimate(_queryDirect.adapter, _tokenOutPriceNwei)
+                _getGasEstimate(_queryDirect.adapter, _tokenPriceNwei)
             );
             _amountOut = _queryDirect.amountOut;
-            _gasCost = _getGasCost(_tokenOutPriceNwei, _bestOption.gasEstimate);
+            _gasCost = _getGasCost(_tokenPriceNwei, _bestOption.gasEstimate);
         }
     }
 
@@ -371,13 +397,14 @@ contract Quoter is BasicQuoter, IQuoter {
         @notice Find the gas cost of the transaction, expressed in _token (wei)
         @param _tokenPriceNwei gas price expressed in _token, in nanoWei
         @param _gasEstimate amount of gas units consumed
+        @return _gasCost gas cost, expressed in _token (wei)
      */
     function _getGasCost(uint256 _tokenPriceNwei, uint256 _gasEstimate)
         internal
         pure
-        returns (uint256)
+        returns (uint256 _gasCost)
     {
-        return (_tokenPriceNwei * _gasEstimate) / 1e9;
+        _gasCost = (_tokenPriceNwei * _gasEstimate) / 1e9;
     }
 
     /**
@@ -385,16 +412,15 @@ contract Quoter is BasicQuoter, IQuoter {
         @dev _tokenPriceNwei=0 will ignore the gas consumption
         @param _adapter address of the adapter
         @param _tokenPriceNwei gas price expressed in _token, in nanoWei
+        @return _gasEstimate estimation for gas units spent by adapter.swap()
      */
     function _getGasEstimate(address _adapter, uint256 _tokenPriceNwei)
         internal
         view
-        returns (uint256)
+        returns (uint256 _gasEstimate)
     {
         if (_tokenPriceNwei != 0) {
-            return IAdapter(_adapter).swapGasEstimate();
-        } else {
-            return 0;
+            _gasEstimate = IAdapter(_adapter).swapGasEstimate();
         }
     }
 }

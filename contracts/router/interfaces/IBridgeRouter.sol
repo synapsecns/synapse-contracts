@@ -20,7 +20,7 @@ interface IBridgeRouter is IRouter {
         address[] calldata _path,
         address[] calldata _adapters,
         bytes calldata _bridgeData
-    ) external;
+    ) external returns (uint256 _amountOut);
 
     function swapFromGasAndBridge(
         uint256 _amountIn,
@@ -28,7 +28,7 @@ interface IBridgeRouter is IRouter {
         address[] calldata _path,
         address[] calldata _adapters,
         bytes calldata _bridgeData
-    ) external payable;
+    ) external payable returns (uint256 _amountOut);
 
     // -- BRIDGE FUNCTIONS [destination chain] --
 
@@ -44,5 +44,5 @@ interface IBridgeRouter is IRouter {
         address[] calldata _path,
         address[] calldata _adapters,
         address _to
-    ) external returns (uint256);
+    ) external returns (uint256 _amountOut);
 }
