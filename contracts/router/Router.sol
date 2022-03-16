@@ -261,11 +261,6 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         address _from,
         address _to
     ) internal nonReentrant returns (uint256 _amountOut) {
-        require(
-            _path.length == _adapters.length + 1,
-            "Router: wrong amount of _adapters/tokens"
-        );
-        require(_to != address(0), "Router: _to cannot be zero address");
         IERC20(_path[0]).safeTransferFrom(
             _from,
             _getDepositAddress(_path, _adapters, 0),
@@ -293,11 +288,6 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         address[] calldata _adapters,
         address _to
     ) internal nonReentrant returns (uint256 _amountOut) {
-        require(
-            _path.length == _adapters.length + 1,
-            "Router: wrong amount of _adapters/tokens"
-        );
-        require(_to != address(0), "Router: _to cannot be zero address");
         IERC20(_path[0]).safeTransfer(
             _getDepositAddress(_path, _adapters, 0),
             _amountIn
@@ -324,6 +314,11 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         address[] calldata _adapters,
         address _to
     ) internal returns (uint256 _amountOut) {
+        require(
+            _path.length == _adapters.length + 1,
+            "Router: wrong amount of adapters/tokens"
+        );
+        require(_to != address(0), "Router: _to cannot be zero address");
         for (uint8 i = 0; i < _adapters.length; ++i) {
             require(isTrustedAdapter[_adapters[i]], "Router: unknown adapter");
         }
