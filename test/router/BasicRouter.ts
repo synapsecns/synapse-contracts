@@ -48,7 +48,7 @@ describe("Basic Router + Quoter", function () {
 
     token = this.syn
 
-    await deploy(this, [["router", this.BasicRouter, [this.weth.address, 4]]])
+    await deploy(this, [["router", this.BasicRouter, [this.weth.address]]])
 
     await deploy(this, [["quoter", this.BasicQuoter, [this.router.address, 4]]])
 
@@ -59,25 +59,6 @@ describe("Basic Router + Quoter", function () {
   })
 
   describe("Router: Access Checks", function () {
-    it("Only governance can modify bridgeMaxSwaps", async function () {
-      let newSwaps = 2
-
-      await expect(router.connect(dude).setBridgeMaxSwaps(newSwaps)).to.be
-        .reverted
-
-      await router.setBridgeMaxSwaps(newSwaps)
-      expect(await router.bridgeMaxSwaps()).to.eq(newSwaps)
-
-      await router.renounceRole(GOVERNANCE_ROLE, ownerAddress)
-      await router.grantRole(GOVERNANCE_ROLE, dudeAddress)
-
-      newSwaps = 3
-      await expect(router.setBridgeMaxSwaps(newSwaps)).to.be.reverted
-
-      await router.connect(dude).setBridgeMaxSwaps(newSwaps)
-      expect(await router.bridgeMaxSwaps()).to.eq(newSwaps)
-    })
-
     it("Only admin can modify AdaptersStorage", async function () {
       await router.renounceRole(GOVERNANCE_ROLE, ownerAddress)
       await router.grantRole(GOVERNANCE_ROLE, dudeAddress)
