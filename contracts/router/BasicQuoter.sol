@@ -23,9 +23,9 @@ contract BasicQuoter is Ownable, IBasicQuoter {
     ///    so we need some sensible limitation.
     uint8 public maxSwaps;
 
-    IBasicRouter public immutable router;
+    address payable public immutable router;
 
-    constructor(IBasicRouter _router, uint8 _maxSwaps) {
+    constructor(address payable _router, uint8 _maxSwaps) {
         setMaxSwaps(_maxSwaps);
         router = _router;
     }
@@ -78,7 +78,7 @@ contract BasicQuoter is Ownable, IBasicQuoter {
         }
         trustedAdapters.push(_adapter);
         // Add Adapter to Router as well
-        router.addTrustedAdapter(_adapter);
+        IBasicRouter(router).addTrustedAdapter(_adapter);
         emit AddedTrustedAdapter(_adapter);
     }
 
@@ -127,10 +127,10 @@ contract BasicQuoter is Ownable, IBasicQuoter {
     function setAdapters(address[] calldata _adapters) external onlyOwner {
         // First, remove old Adapters, if there are any
         if (trustedAdapters.length > 0) {
-            router.setAdapters(trustedAdapters, false);
+            IBasicRouter(router).setAdapters(trustedAdapters, false);
         }
         trustedAdapters = _adapters;
-        router.setAdapters(_adapters, true);
+        IBasicRouter(router).setAdapters(_adapters, true);
         emit UpdatedTrustedAdapters(_adapters);
     }
 
@@ -159,7 +159,7 @@ contract BasicQuoter is Ownable, IBasicQuoter {
         trustedAdapters.pop();
 
         // Remove Adapter from Router as well
-        router.removeAdapter(_removedAdapter);
+        IBasicRouter(router).removeAdapter(_removedAdapter);
 
         emit RemovedAdapter(_removedAdapter);
     }

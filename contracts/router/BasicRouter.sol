@@ -24,20 +24,14 @@ contract BasicRouter is AccessControl, IBasicRouter {
     // solhint-disable-next-line
     address payable public immutable WGAS;
 
-    /// @notice Maximum amount of swaps for Bridge&Swap transaction
-    /// It is enforced to limit the gas costs for validators on "expensive" chains
-    /// There's no extra limitation for Swap&Bridge txs, as the gas is paid by the user
-    uint8 public bridgeMaxSwaps;
-
     mapping(address => bool) public isTrustedAdapter;
 
     uint256 internal constant UINT_MAX = type(uint256).max;
 
-    constructor(address payable _wgas, uint8 _bridgeMaxSwaps) {
+    constructor(address payable _wgas) {
         WGAS = _wgas;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(GOVERNANCE_ROLE, msg.sender);
-        setBridgeMaxSwaps(_bridgeMaxSwaps);
     }
 
     // -- RECEIVE GAS --
@@ -45,15 +39,6 @@ contract BasicRouter is AccessControl, IBasicRouter {
     receive() external payable {
         // silence linter
         this;
-    }
-
-    // -- RESTRICTED SETTERS --
-
-    function setBridgeMaxSwaps(uint8 _bridgeMaxSwaps)
-        public
-        onlyRole(GOVERNANCE_ROLE)
-    {
-        bridgeMaxSwaps = _bridgeMaxSwaps;
     }
 
     // -- RESTRICTED ADAPTER FUNCTIONS --

@@ -5,7 +5,6 @@ import {IBasicQuoter} from "./IBasicQuoter.sol";
 import {Offers} from "../libraries/LibOffers.sol";
 
 interface IQuoter is IBasicQuoter {
-
     // solhint-disable-next-line
     function WGAS() external view returns (address payable);
 
@@ -27,17 +26,6 @@ interface IQuoter is IBasicQuoter {
         uint256 _gasPrice
     ) external view returns (Offers.FormattedOfferWithGas memory);
 
-    function getBridgeDataAmountOut(
-        bytes4 _selector,
-        address _to,
-        address _bridgeToken,
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut,
-        uint256 _gasPrice,
-        uint256 _maxSwapSlippage
-    ) external view returns (bytes memory, uint256);
-
     function getTradeDataAmountOut(
         uint256 _amountIn,
         address _tokenIn,
@@ -45,5 +33,5 @@ interface IQuoter is IBasicQuoter {
         uint8 _maxSwaps,
         uint256 _gasPrice,
         uint256 _maxSwapSlippage
-    ) external view returns (Trade memory, uint256);
+    ) external view returns (Trade memory _tradeData, uint256 _amountOut);
 }
