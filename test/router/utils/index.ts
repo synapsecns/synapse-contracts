@@ -49,6 +49,7 @@ export async function setupSynapsePool(
   a: number,
   fee: number,
   amount: number,
+  swapGasEstimate: number = 150000,
 ) {
   let swap = (await swapFactory.deploy()) as Swap
   await swap.initialize(
@@ -68,7 +69,7 @@ export async function setupSynapsePool(
   let basePoolAdapter = (await adapterFactory.deploy(
     "BasePoolAdapter",
     swap.address,
-    160000,
+    swapGasEstimate,
   )) as SynapseBasePoolAdapter
   thisObject[adapter] = basePoolAdapter
 
@@ -110,7 +111,7 @@ export async function setupUniswapAdapters(
   uniswapAdapterFactory: ContractFactory,
   factories: Array<string>,
   adapters: Array<string>,
-  swapGasEstimate: number = 100000,
+  swapGasEstimate: number = 50000,
   fee: number = 30,
 ) {
   for (let index in factories) {
@@ -122,4 +123,26 @@ export async function setupUniswapAdapters(
       fee,
     )
   }
+}
+
+export function areDiffResults(
+  pathA: Array<string>,
+  adaptersA: Array<string>,
+  pathB: Array<string>,
+  adaptersB: Array<string>,
+): boolean {
+  if (pathA.length != pathB.length || adaptersA.length != adaptersB.length) {
+    return true
+  }
+  for (let index in pathA) {
+    if (pathA[index] !== pathB[index]) {
+      return true
+    }
+  }
+  for (let index in adaptersA) {
+    if (adaptersA[index] !== adaptersB[index]) {
+      return true
+    }
+  }
+  return false
 }
