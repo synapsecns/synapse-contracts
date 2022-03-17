@@ -17,6 +17,16 @@ import { MAX_UINT256, ZERO_ADDRESS } from "../utils"
 import { Adapter, BasicQuoter, WETH9 } from "../../build/typechain"
 import { Context } from "mocha"
 
+import {
+  decimals,
+  seededLiquidity,
+  synUSD,
+  synETH,
+  uniAAA,
+  uniBBB,
+  uniCCC,
+} from "./utils/data"
+
 chai.use(solidity)
 
 describe("Router", function () {
@@ -39,105 +49,6 @@ describe("Router", function () {
   let lpTokenAddress: string
 
   let adapters: Array<Adapter>
-
-  const synUSD = 0
-  const synETH = 1
-  const uniAAA = 2
-  const uniBBB = 3
-  const uniCCC = 4
-
-  const decimals = {
-    syn: 18,
-    neth: 18,
-    weth: 18,
-    dai: 18,
-    usdc: 6,
-    usdt: 6,
-    gmx: 18,
-    ohm: 9,
-    wbtc: 8,
-  }
-
-  const seededLiquidity = {
-    aaaSwapFactory: [
-      {
-        tokenA: "weth",
-        tokenB: "wbtc",
-        amountA: 10,
-        amountB: 1,
-      },
-      {
-        tokenA: "weth",
-        tokenB: "usdt",
-        amountA: 1,
-        amountB: 10,
-      },
-      {
-        tokenA: "gmx",
-        tokenB: "usdc",
-        amountA: 40,
-        amountB: 60,
-      },
-      {
-        tokenA: "neth",
-        tokenB: "ohm",
-        amountA: 20,
-        amountB: 420,
-      },
-    ],
-    bbbSwapFactory: [
-      {
-        tokenA: "wbtc",
-        tokenB: "usdc",
-        amountA: 1,
-        amountB: 100,
-      },
-      {
-        tokenA: "weth",
-        tokenB: "dai",
-        amountA: 10,
-        amountB: 90,
-      },
-      {
-        tokenA: "neth",
-        tokenB: "usdt",
-        amountA: 2,
-        amountB: 15,
-      },
-      {
-        tokenA: "wbtc",
-        tokenB: "usdt",
-        amountA: 2,
-        amountB: 180,
-      },
-      {
-        tokenA: "gmx",
-        tokenB: "usdc",
-        amountA: 20,
-        amountB: 60,
-      },
-    ],
-    cccSwapFactory: [
-      {
-        tokenA: "dai",
-        tokenB: "usdc",
-        amountA: 100,
-        amountB: 120,
-      },
-      {
-        tokenA: "wbtc",
-        tokenB: "weth",
-        amountA: 10,
-        amountB: 80,
-      },
-      {
-        tokenA: "neth",
-        tokenB: "syn",
-        amountA: 10,
-        amountB: 13,
-      },
-    ],
-  }
 
   async function checkRouterSwap(
     thisObject: Context,
@@ -255,7 +166,7 @@ describe("Router", function () {
   beforeEach(async function () {
     await setupTest()
 
-    let amount = 6000
+    let amount = 100000
 
     for (let token in decimals) {
       let tokenAmount = getBigNumber(amount, decimals[token])
@@ -274,7 +185,7 @@ describe("Router", function () {
 
     weth = this.weth
 
-    await weth.deposit({ value: getBigNumber(amount) })
+    await weth.deposit({ value: getBigNumber(9500) })
 
     await setupSynapsePool(
       this,
