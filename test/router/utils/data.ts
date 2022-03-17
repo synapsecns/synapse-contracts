@@ -50,6 +50,12 @@ export const seededLiquidity = {
       amountA: 200,
       amountB: 4200,
     },
+    {
+      tokenA: "syn",
+      tokenB: "usdt",
+      amountA: 100,
+      amountB: 800,
+    },
   ],
   bbbSwapFactory: [
     {

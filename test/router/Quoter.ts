@@ -1,5 +1,5 @@
 import { expect } from "chai"
-import { web3, deployments, network } from "hardhat"
+import { web3, deployments, network, ethers } from "hardhat"
 import { solidity } from "ethereum-waffle"
 import {
   prepare,
@@ -128,10 +128,11 @@ describe("Quoter", function () {
         bestPath.adapters,
       )
     ) {
-      let dec = 10 ** decimals[tokenOutName]
+      let dec = decimals[tokenOutName]
       console.log(
         "Expected amountOut: ",
-        (amountOut.toNumber() / dec).toFixed(4),
+        ethers.utils.formatUnits(amountOut, dec),
+        // (amountOut.toNumber() / dec).toFixed(4),
       )
       console.log(
         tokenPath.map(function (a) {
@@ -144,7 +145,8 @@ describe("Quoter", function () {
         }),
       )
       amountOut = bestPath.amounts[bestPath.amounts.length - 1]
-      console.log("Found amountOut: ", (amountOut.toNumber() / dec).toFixed(4))
+      console.log("Found amountOut: ", ethers.utils.formatUnits(amountOut, dec))
+      // console.log("Found amountOut: ", (amountOut.toNumber() / dec).toFixed(4))
       console.log(
         bestPath.path.map(function (a) {
           return findTokenName(thisObject, a)
@@ -358,6 +360,22 @@ describe("Quoter", function () {
         ["dai", "usdc", "usdt", "wbtc"],
         [uniCCC, synUSD, uniBBB],
         10,
+      )
+
+      // 10 GMX -> WETH
+      await checkQuoter(
+        this,
+        ["gmx", "usdc", "dai", "weth"],
+        [uniBBB, synUSD, uniBBB],
+        10,
+      )
+
+      // 1 WBTC -> SYN
+      await checkQuoter(
+        this,
+        ["wbtc", "weth", "neth", "syn"],
+        [uniAAA, synETH, uniCCC],
+        1,
       )
     })
   })
