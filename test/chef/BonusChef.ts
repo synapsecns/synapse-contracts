@@ -52,7 +52,7 @@ describe("BonusChef", function () {
       "ERC20Mock",
       "UserMock",
       "Users",
-      "BonusChef",
+      "BonusChefFactory",
     ])
   })
 
@@ -62,6 +62,7 @@ describe("BonusChef", function () {
     ])
 
     await deploy(this, [
+      ["bonusChefFactory", this.BonusChefFactory, []],
       ["chef", this.MiniChefV21, [this.syn.address]],
       ["lp", this.ERC20Mock, ["LPT", "LP Token", getBigNumber(3000)]],
       ["r", this.ERC20Mock, ["RT", "Reward Token", getBigNumber(1000)]],
@@ -88,9 +89,16 @@ describe("BonusChef", function () {
 
     await this.chef.add(10, this.lp.address, ZERO_ADDRESS)
 
-    await deploy(this, [
-      ["bonusChef", this.BonusChef, [this.chef.address, 0, this.alice.address]],
-    ])
+    let bonusChefAddress = await this.bonusChefFactory.callStatic.deploy(
+      this.chef.address, 0, this.alice.address, this.alice.address
+    )
+    await this.bonusChefFactory.deploy(
+      this.chef.address, 0, this.alice.address, this.alice.address
+    )
+    this.bonusChef = await ethers.getContractAt(
+      "BonusChef",
+      bonusChefAddress
+    )
 
     await this.syn.mint(this.chef.address, getBigNumber(10000))
     await this.chef.setSynapsePerSecond("10000000000000000")
