@@ -95,8 +95,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         "0x0000000000000000000000000000000000000000",
         (await get("nUSDPoolV3")).address,
         (await get("nUSD")).address,
-        "0x0000000000000000000000000000000000000000",
-        "0x0000000000000000000000000000000000000000",
+        (await get("ETHPool")).address,
+        (await get("nETH")).address,
         (await get("SynapseBridge")).address,
       ],
     })
