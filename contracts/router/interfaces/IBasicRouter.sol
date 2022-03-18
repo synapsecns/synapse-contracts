@@ -4,21 +4,34 @@ pragma solidity ^0.8.0;
 interface IBasicRouter {
     event Recovered(address indexed _asset, uint256 amount);
 
-    event UpdatedTrustedAdapters(address[] _newTrustedAdapters);
-
     event AddedTrustedAdapter(address _newTrustedAdapter);
 
     event RemovedAdapter(address _removedAdapter);
 
-    function setAdapters(address[] memory _adapters) external;
+    event UpdatedAdapters(address[] _adapters, bool _isTrusted);
 
-    function getTrustedAdapter(uint256 _index) external view returns (address);
+    // -- VIEWS --
 
-    function trustedAdaptersCount() external view returns (uint256);
+    function isTrustedAdapter(address _adapter) external view returns (bool);
+
+    // solhint-disable-next-line
+    function WGAS() external view returns (address payable);
+
+    // -- ADAPTER FUNCTIONS --
+
+    function addTrustedAdapter(address _adapter) external;
+
+    function removeAdapter(address _adapter) external;
+
+    function setAdapters(address[] memory _adapters, bool _status) external;
+
+    // -- RECOVER FUNCTIONS --
 
     function recoverERC20(address _tokenAddress) external;
 
     function recoverGAS() external;
+
+    // -- RECEIVE GAS FUNCTION --
 
     receive() external payable;
 }

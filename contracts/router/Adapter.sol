@@ -9,6 +9,8 @@ import {SafeERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/SafeERC2
 
 import {Ownable} from "@openzeppelin/contracts-4.4.2/access/Ownable.sol";
 
+// solhint-disable reason-string
+
 abstract contract Adapter is Ownable, IAdapter {
     using SafeERC20 for IERC20;
 
