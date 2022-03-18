@@ -117,13 +117,14 @@ contract BonusChef is IRewarder, ReentrancyGuard, AccessControl {
     constructor(
         IMiniChefV2 _miniChef,
         uint256 _chefPoolID,
-        address _rewardsDistribution
+        address _rewardsDistribution,
+        address _governance
     ) public {
         miniChef = _miniChef;
         chefPoolID = _chefPoolID;
         chefStakingToken = _miniChef.lpToken(_chefPoolID);
 
-        _setupRole(GOVERNANCE_ROLE, msg.sender);
+        _setupRole(GOVERNANCE_ROLE, _governance);
         _setupRole(REWARDS_DISTRIBUTION_ROLE, _rewardsDistribution);
 
         _setRoleAdmin(GOVERNANCE_ROLE, GOVERNANCE_ROLE);
