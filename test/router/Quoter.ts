@@ -163,6 +163,109 @@ describe("Quoter", function () {
     checkArrays(bestPath.adapters, adapterAddresses)
   }
 
+  async function checkRouter(
+    thisObject: Context,
+    tokenInName: string,
+    tokenOutName: string,
+    maxSwaps: number = 4,
+    amount: number = 1,
+    gasPrice: number = 0,
+    checkExactOut: boolean = true,
+  ): Promise<number> {
+    let amountIn = getBigNumber(amount, decimals[tokenInName])
+    let bestPath = await quoter.findBestPathWithGas(
+      amountIn,
+      thisObject[tokenInName].address,
+      thisObject[tokenOutName].address,
+      maxSwaps,
+      gasPrice,
+    )
+    if (bestPath.path.length == 0) {
+      // no path found between tokens
+      return 0
+    }
+
+    let minAmountOut = bestPath.amounts[bestPath.amounts.length - 1]
+    // for testing purposes we'll treat WGAS like a usual token, and not do swap from/to GAS
+    if (checkExactOut) {
+      await expect(() =>
+        router.swap(
+          amountIn,
+          minAmountOut,
+          bestPath.path,
+          bestPath.adapters,
+          ownerAddress,
+        ),
+      ).to.changeTokenBalance(thisObject[tokenOutName], owner, minAmountOut)
+    } else {
+      let amountOut = await router.callStatic.swap(
+        amountIn,
+        0,
+        bestPath.path,
+        bestPath.adapters,
+        ownerAddress,
+      )
+
+      await router.swap(
+        amountIn,
+        0,
+        bestPath.path,
+        bestPath.adapters,
+        ownerAddress,
+      )
+
+      console.log(
+        "Expected: ",
+        ethers.utils.formatUnits(minAmountOut, decimals[tokenOutName]),
+      )
+      console.log(
+        "Received: ",
+        ethers.utils.formatUnits(amountOut, decimals[tokenOutName]),
+      )
+    }
+
+    return bestPath.adapters.length
+  }
+
+  async function checkSwaps(
+    thisObject: Context,
+    maxSwaps: number = 4,
+    amount: number = 1,
+    gasPrice: number = 0,
+    checkExactOut: boolean = true,
+  ) {
+    let tested = []
+    for (let swaps = 0; swaps <= maxSwaps; swaps++) {
+      tested.push(0)
+    }
+
+    for (let tokenInName in decimals) {
+      for (let tokenOutName in decimals) {
+        if (tokenInName !== tokenOutName) {
+          let swaps = await checkRouter(
+            thisObject,
+            tokenInName,
+            tokenOutName,
+            maxSwaps,
+            amount,
+            gasPrice,
+            checkExactOut,
+          )
+
+          ++tested[swaps]
+        }
+      }
+    }
+
+    if (tested[0] > 0) {
+      console.log("Path not found: ", tested[0])
+    }
+
+    for (let swaps = 1; swaps <= maxSwaps; swaps++) {
+      console.log("Successful find & swap [", swaps, " swaps]: ", tested[swaps])
+    }
+  }
+
   before(async function () {
     await prepare(this, [
       "Router",
@@ -378,5 +481,19 @@ describe("Quoter", function () {
         1,
       )
     })
+  })
+
+  describe("Executing Quoter+Router", function () {
+    it("up-to-3-step swaps", async function () {
+      await checkSwaps(this, 3)
+    })
+
+    // This takes shit ton of time to complete
+    // it("up-to-4-step swaps", async function () {
+    //   this.timeout(420 * 1000)
+    //   await checkSwaps(
+    //     this, 4
+    //   )
+    // })
   })
 })
