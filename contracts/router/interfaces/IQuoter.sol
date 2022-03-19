@@ -8,14 +8,6 @@ interface IQuoter is IBasicQuoter {
     // solhint-disable-next-line
     function WGAS() external view returns (address payable);
 
-    // -- DIRECT SWAP QUERIES --
-
-    function queryDirectSwap(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut
-    ) external view returns (Query memory);
-
     // -- FIND BEST PATH --
 
     function findBestPathWithGas(
