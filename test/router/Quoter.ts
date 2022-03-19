@@ -241,7 +241,7 @@ describe("Quoter", function () {
 
     for (let tokenInName in decimals) {
       for (let tokenOutName in decimals) {
-        if (tokenInName !== tokenOutName) {
+        if (tokenInName > tokenOutName) {
           let swaps = await checkRouter(
             thisObject,
             tokenInName,
@@ -589,10 +589,12 @@ describe("Quoter", function () {
 
   describe("Executing Quoter+Router", function () {
     it("up-to-3-step swaps", async function () {
+      this.timeout(420 * 1000)
       await checkSwaps(this, 3)
     })
 
     it("up-to-3-step swaps with gas", async function () {
+      this.timeout(420 * 1000)
       await checkSwaps(this, 3, getBigNumber(1, 12))
     })
 
