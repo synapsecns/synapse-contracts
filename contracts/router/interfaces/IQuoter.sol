@@ -17,13 +17,4 @@ interface IQuoter is IBasicQuoter {
         uint8 _maxSwaps,
         uint256 _gasPrice
     ) external view returns (Offers.FormattedOfferWithGas memory);
-
-    function getTradeDataAmountOut(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut,
-        uint8 _maxSwaps,
-        uint256 _gasPrice,
-        uint256 _maxSwapSlippage
-    ) external view returns (Trade memory _tradeData, uint256 _amountOut);
 }

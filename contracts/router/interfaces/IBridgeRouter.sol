@@ -3,16 +3,24 @@ pragma solidity ^0.8.0;
 
 import {IRouter} from "./IRouter.sol";
 
+import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
+
 interface IBridgeRouter is IRouter {
-	function bridgeMaxSwaps() external view returns (uint8);
+    function bridgeMaxSwaps() external view returns (uint8);
 
-	function bridge() external view returns (address);
+    function bridge() external view returns (address);
 
-	// -- SETTERS --
+    // -- SETTERS --
 
-	function setBridgeMaxSwaps(uint8 _bridgeMaxSwaps) external;
+    function setBridgeMaxSwaps(uint8 _bridgeMaxSwaps) external;
 
-	// -- BRIDGE FUNCTIONS [initial chain] --
+    // -- BRIDGE FUNCTIONS [initial chain] --
+
+    function bridgeToken(
+        IERC20 _bridgeToken,
+        uint256 _bridgeAmount,
+        bytes calldata _bridgeData
+    ) external;
 
     function swapAndBridge(
         uint256 _amountIn,

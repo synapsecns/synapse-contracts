@@ -25,63 +25,39 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
         this;
     }
 
-    /**
-        @notice Find best path and calculate _bridgeData parameter for Router.swapAndBridge()
-        @dev getBridgeDataAndAmountOut() is supposed to be called on DESTINATION chain
-             Calling Router.swapAndBridge(<...>, _bridgeData) on INITIAL chain
-             will bridge funds to THIS chain and do _tokenIn -> _tokenOut swap (best available swap at the moment)
-        @param _selector specific selector for bridge function, compatible with _bridgeToken (depositMaxAndSwap, redeemMaxAndSwap, etc)
-        @param _to address on destination chain that will receive bridged&swapped funds
-        @param _bridgeToken bridge token on initial chain
-        @param _amountIn amount of bridged tokens, after applying bridge fees
-        @param _tokenIn bridge token on destination chain
-        @param _tokenOut final token on destination chain
-        @param _gasPrice destination chain's current gas price, in wei
-        @param _maxSwapSlippage maximum slippage user is willing to accept for swap on destination chain
-
-        @return _bridgeData calldata parameter for Router.swapAndBridge()
-        @return _amountOut expected amount of final tokens user is going to receive on destination chain
-     */
-    function getBridgeDataAmountOut(
-        bytes4 _selector,
-        address _to,
-        address _bridgeToken,
+    function findBestPathInitialChain(
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
-        uint256 _gasPrice,
-        uint256 _maxSwapSlippage
-    ) external view returns (bytes memory, uint256) {
-        (
-            Offers.FormattedOfferWithGas memory _bestOffer,
-            uint256 _minAmountOut,
-            uint256 _amountOut
-        ) = _getBestOfferWithSlippage(
-            _amountIn,
-            _tokenIn,
-            _tokenOut,
-            IBridgeRouter(router).bridgeMaxSwaps(), // use max swaps for Bridge&Swap tx
-            _gasPrice,
-            _maxSwapSlippage
-        );
+        uint256 _gasPrice
+    ) external view returns (Offers.FormattedOfferWithGas memory _bestOffer) {
+        // User pays for gas, so:
+        // use maximum swaps permitted for the search
+        return
+            findBestPathWithGas(
+                _amountIn,
+                _tokenIn,
+                _tokenOut,
+                maxSwaps,
+                _gasPrice
+            );
+    }
 
-        uint256 _chainId;
-        assembly {
-            _chainId := chainid()
-        }
-
-        // TODO check that SynapseBridgeV2 is using these params in this order
-        // encode func(to, chainId, token, minAmountOut, path, adapters)
-        bytes memory _bridgeData = abi.encodeWithSelector(
-            _selector,
-            _to,
-            _chainId,
-            _bridgeToken,
-            _minAmountOut,
-            _bestOffer.path,
-            _bestOffer.adapters
-        );
-
-        return (_bridgeData, _amountOut);
+    function findBestPathDestinationChain(
+        uint256 _amountIn,
+        address _tokenIn,
+        address _tokenOut,
+        uint256 _gasPrice
+    ) external view returns (Offers.FormattedOfferWithGas memory _bestOffer) {
+        // Relayer pays for gas, so:
+        // use maximum swaps permitted for bridge+swap transaction
+        return
+            findBestPathWithGas(
+                _amountIn,
+                _tokenIn,
+                _tokenOut,
+                IBridgeRouter(router).bridgeMaxSwaps(),
+                _gasPrice
+            );
     }
 }

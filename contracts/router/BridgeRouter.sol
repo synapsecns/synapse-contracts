@@ -48,40 +48,116 @@ contract BridgeRouter is Router, IBridgeRouter {
     // -- BRIDGE RELATED FUNCTIONS [initial chain] --
 
     /** @dev
-        Anyone interacting with BridgeRouter, willing to do a swap + bridge + swap is supposed to:
+        >>> PARAMS
 
-        1. [off-chain] use Quoter.getTradeDataAmountOut(_amountIn, _tokenIn, _bridgeToken, ...) on THIS chain 
-           to get (_tradeData, _amountOut) for a swap from _amountIn [initial token -> bridge token].
-           _tradeData will include _minAmountOut: estimated output (in bridged token) with max slippage
-           user is willing to accept on this chain.
-           _bridgeToken is address of bridge token on THIS chain
+        IC = Initial Chain
+        DC = Destination Chain
 
-        2. [off-chain] use BridgeConfig on Ethereum Mainnet to get minBridgedAmount,
-            which is _amountOut (assuming no slippage) after bridging fees.
+        addressDC: user address on DC
 
-        3. [off-chain] use BridgeQuoter.getBridgeDataAmountOut(_bridgeToken, minBridgeAmount, bridgedToken, tokenOut, ...)
-           on DESTINATION chain to get (bridgeData, amountOut) for a swap from minBridgedAmount [bridgedToken -> tokenOut].
-           _bridgeToken is address of bridge token on THIS chain
-           bridgedToken is address of bridge token on DESTINATION chain
+        chainIdDC: chainId of DC
 
-           bridgeData will include _minAmountOut: estimated output (in final token) with max slippage
-           user is willing to accept for the whole [initial token -> final token] Swap&Bridge&Swap tx.
-           Make sure to set slippage at least as much as in step 1.
+        tokenIn: initial token on IC
+        amountIn: amount of initial tokens
+        
+        bridgeTokenIC: intermediate (bridge) token on IC
+        amountOutIC: estimated amount of bridge token received after swap on IC
 
-        4. amountOut is the estimated final token output for Swap&Bridge&Swap, taking bridge fees into account,
-           assuming no slippage on both swaps. Use this as "estimated amount" in the UI.
-           
-           _tradeData._minAmountOut: minimum amount of bridged token to receive after the first swap
-           _bridgeData._minAmountOut: minimum amount of final token to receive after the second swap
+        slippageIC: max slippage % user can tolerate on IC
+        minAmountOutIC: minimum received on IC after swap, or tx will be reverted
 
-        5. Unpack _tradeData and call BridgeRouter.swapAndBridge(
-            ...(_tradeData),
-            _bridgeData
-        )
+        bridgeTokenDC: intermediate (bridge) token on DC
+        amountInDC: estimated amount of bridge token received after bridging to DC
 
-        6. Use BridgeRouter.swapFromGasAndBridge() with same params instead, 
-           if you want to start from GAS
+        tokenOut: final token on DC
+        amountOut: estimated amount of final token received after swap on DC
+
+        slippageTotal: max slippage % user can tolerate for the whole tokenIn -> tokenOut swap
+        minAmountOut: minimum received on DC after swap, or user will receive bridgeTokenDC instead
+
+        >>> SLIPPAGE SETTINGS
+
+        Practically, for the sake of simplicity:
+            slippageIC = slippageTotal
+        
+        On chains, where trade with high slippage is likely to be sandwiched:
+            slippageIC = slippageTotal * X%, where X = ~50%
+
+        >>> GENERAL BRIDGE FLOW
+
+        1. tokenIn -> bridgeTokenIC swap on IC
+        2. bridgeTokenIC is bridged to DC, where its address is bridgeTokenDC
+        3. bridgeTokenDC -> tokenOut swap on DC
+
+        >>> HOW TO: SWAP + BRIDGE + SWAP
+
+        1. [off-chain on IC]
+            bestOfferIC = BridgeQuoter.findBestPathInitialChain(amountIn, tokenIn, bridgeToken, gasPriceIC);
+            amountOutIC = bestOfferIC.amounts[bestOfferIC.amounts.length - 1];
+
+        2. [off-chain on Ethereum]
+            bridgeFees = BridgeConfig.calculateSwapFee(bridgeTokenDC, chainIdDC, amountOutIC)
+            amountInDC = max(amountOutIC - bridgeFees, 0)
+
+        3. [off-chain on DC] 
+            bestOfferDC = BridgeQuoter.findBestPathDestinationChain(amountInDC, bridgeTokenDC, tokenOut, gasPriceDC);
+            amountOutDC = bestOfferDC.amounts[bestOfferDC.amounts.length - 1];
+
+        4. Apply slippage
+            minAmountOutIC = applySlippage(amountOutIC, slippageIC);
+            minAmountOutDC = applySlippage(amountOutDC, slippageTotal);
+
+        5. Figure out selectorIC: selector for Synapse: Bridge function, 
+        that is used for bridging bridgeTokenIC from IC to DC.
+
+        Might be eventually supported by BridgeConfig, but has to be done manually for now.
+        
+        6. bridgeDataIC = ethers.abi.encodeWithSelector(
+            selectorIC,
+            addressDC,
+            chainIdDC,
+            bridgeTokenIC,
+            minAmountOutDC,
+            bestOfferDC.path,
+            bestOfferDC.adapters
+        );
+
+        7. [on-chain on IC]
+            BridgeRouter.swapAndBridge(
+                amountIn,
+                minAmountOutIC,
+                bestOfferIC.path,
+                bestOfferIC.adapters,
+                bridgeDataIC
+            );
+
+        7a. Use BridgeRouter.swapFromGasAndBridge() with same params instead, 
+        if you want to start from GAS
+
+        7b. Use BridgeRouter.bridgeToken(bridgeTokenIC, amountIn, bridgeData) instead,
+        if no swap on IC is needed, i.e. user starts from already supported token on IC
+    */
+
+    /**
+        @notice Pull a token from user, then perform a bridging transaction
+        @dev 1. Tokens will be pulled from msg.sender, so make sure Router has enough allowance to 
+                spend bridged token. 
+             2. _bridgeData does NOT include amount of tokens.
+             3. Make sure bridged token is supported by Bridge.call(_bridgeData)
+        @param _bridgeToken token to bridge
+        @param _bridgeAmount amount tokens to bridge
+        @param _bridgeData calldata for Bridge contract to perform a final bridge operation
      */
+    function bridgeToken(
+        IERC20 _bridgeToken,
+        uint256 _bridgeAmount,
+        bytes calldata _bridgeData
+    ) external {
+        // First, pull token from user
+        _bridgeToken.safeTransferFrom(msg.sender, address(this), _bridgeAmount);
+        // Then, perform bridging
+        _callBridge(address(_bridgeToken), _bridgeAmount, _bridgeData);
+    }
 
     /// @dev Use this function, when doing a "swap into ETH and bridge" on Mainnet,
     /// as bridging from ETH Mainnet requires depositing WETH into bridge contract
@@ -93,10 +169,9 @@ contract BridgeRouter is Router, IBridgeRouter {
                 then bridge the final token
         @dev 1. Tokens will be pulled from msg.sender, so make sure Router has enough allowance to 
                  spend initial token. 
-             2. Use Quoter -> _minAmountOut to set slippage.
-             3. len(_path) = N, len(_adapters) = N - 1
-             4. _bridgeData does NOT include amount of tokens, all swapped final tokens will be bridged
-             5. Make sure final token (_path[N-1]) is supported by Bridge via _bridgeData
+             2. len(_path) = N, len(_adapters) = N - 1
+             3. _bridgeData does NOT include amount of tokens, all swapped final tokens will be bridged
+             4. Make sure final token (_path[N-1]) is supported by Bridge.call(_bridgeData)
         @param _amountIn amount of initial tokens to swap
         @param _minAmountOut minimum amount of final tokens for a swap to be successful
         @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
@@ -111,6 +186,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         address[] calldata _adapters,
         bytes calldata _bridgeData
     ) external returns (uint256 _amountOut) {
+        // First, do the swap on this chain
         _amountOut = _swap(
             _amountIn,
             _minAmountOut,
@@ -119,6 +195,7 @@ contract BridgeRouter is Router, IBridgeRouter {
             msg.sender,
             address(this)
         );
+        // Then, perform bridging
         _callBridge(_path[_path.length - 1], _amountOut, _bridgeData);
     }
 
@@ -126,10 +203,9 @@ contract BridgeRouter is Router, IBridgeRouter {
         @notice Perform a series of swaps along the token path, starting with
                 chain's native currency (GAS), using the provided Adapters, then bridge the final token.
         @dev 1. Make sure to set _amountIn = msg.value, _path[0] = WGAS
-             2. Use Quoter -> _minAmountOut to set slippage.
-             3. len(_path) = N, len(_adapters) = N - 1
-             4. _bridgeData does NOT include amount of tokens, all swapped final tokens will be bridged
-             5. Make sure final token (_path[N-1]) is supported by Bridge via _bridgeData
+             2. len(_path) = N, len(_adapters) = N - 1
+             3. _bridgeData does NOT include amount of tokens, all swapped final tokens will be bridged
+             4. Make sure final token (_path[N-1]) is supported by Bridge.call(_bridgeData)
         @param _amountIn amount of initial tokens to swap
         @param _minAmountOut minimum amount of final tokens for a swap to be successful
         @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
@@ -146,8 +222,10 @@ contract BridgeRouter is Router, IBridgeRouter {
     ) external payable returns (uint256 _amountOut) {
         require(msg.value == _amountIn, "Router: incorrect amount of GAS");
         require(_path[0] == WGAS, "Router: path needs to begin with WGAS");
+        // First, wrap GAS into WGAS
         _wrap(_amountIn);
-        // WGAS tokens need to be sent from this contract
+        // Then, swap WGAS on this chain
+        // WGAS is in this contract, thus _selfSwap()
         _amountOut = _selfSwap(
             _amountIn,
             _minAmountOut,
@@ -155,6 +233,7 @@ contract BridgeRouter is Router, IBridgeRouter {
             _adapters,
             address(this)
         );
+        // Then, perform bridging
         _callBridge(_path[_path.length - 1], _amountOut, _bridgeData);
     }
 
@@ -169,7 +248,9 @@ contract BridgeRouter is Router, IBridgeRouter {
         uint256 _bridgeAmount,
         bytes calldata _bridgeData
     ) internal {
+        // First, allow bridge to spend exactly _bridgeAmount
         _setBridgeTokenAllowance(_bridgeToken, _bridgeAmount);
+        // Do the actual bridging
         // solhint-disable-next-line
         (bool success, ) = bridge.call(_bridgeData);
         require(success, "Bridge interaction failed");
@@ -219,8 +300,8 @@ contract BridgeRouter is Router, IBridgeRouter {
                 are already deposited in this contract
         @dev 1. This will revert if amount of adapters is too big, 
                 bridgeMaxSwaps is usually lower than maxSwaps
-             2. Use BridgeQuoter.getBridgeDataAmountOut -> _bridgeData to correctly 
-                find path with len(_adapters) <= bridgeMaxSwaps and set slippage.
+             2. Use BridgeQuoter.findBestPathDestinationChain() to correctly 
+                find path with len(_adapters) <= bridgeMaxSwaps
              3. len(_path) = N, len(_adapters) = N - 1
         @param _amountIn amount of initial tokens to swap
         @param _minAmountOut minimum amount of final tokens for a swap to be successful
