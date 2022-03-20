@@ -57,6 +57,9 @@ contract BridgeRouter is Router, IBridgeRouter {
 
         chainIdDC: chainId of DC
 
+        gasPriceIC: estimation for gas price on IC, in wei
+        gasPriceDC: estimation for gas price on DC, in wei
+
         tokenIn: initial token on IC
         amountIn: amount of initial tokens
         
@@ -92,7 +95,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         >>> HOW TO: SWAP + BRIDGE + SWAP
 
         1. [off-chain on IC]
-            bestOfferIC = BridgeQuoter.findBestPathInitialChain(amountIn, tokenIn, bridgeToken, gasPriceIC);
+            bestOfferIC = BridgeQuoter.findBestPathInitialChain(amountIn, tokenIn, bridgeTokenIC, gasPriceIC);
             amountOutIC = bestOfferIC.amounts[bestOfferIC.amounts.length - 1];
 
         2. [off-chain on Ethereum]
