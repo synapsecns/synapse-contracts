@@ -79,7 +79,7 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
             _bridgeToken,
             _minAmountOut,
             _bestOffer.path,
-            _bestOffer.amounts
+            _bestOffer.adapters
         );
 
         return (_bridgeData, _amountOut);
