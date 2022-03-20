@@ -17,8 +17,6 @@ contract Quoter is BasicQuoter, IQuoter {
     // solhint-disable-next-line
     address payable public immutable WGAS;
 
-    uint256 internal constant SLIPPAGE_PRECISION = 10**18;
-
     /// @dev Setup flow:
     /// 1. Create Router contract
     /// 2. Create Quoter contract
@@ -78,99 +76,6 @@ contract Quoter is BasicQuoter, IQuoter {
             _queries.path = "";
         }
         return Offers.formatOfferWithGas(_queries);
-    }
-
-    /**
-        @notice Find best path and get full trade data for that swap on this chain via Router
-        @dev Use trade data for Router.swap|swapFromGas|swapToGas(...tradeData, to) or BridgeRouter.swapAndBridge(...tradeData, bridgeData)
-        @param _amountIn amount of initial tokens
-        @param _tokenIn initial token to sell
-        @param _tokenOut final token to buy
-        @param _maxSwaps maximum amount of swaps in the route between initial and final tokens
-        @param _gasPrice this chain's current gas price, in wei
-        @param _maxSwapSlippage maximum slippage user is willing to accept for swap on this chain
-        @return _tradeData uint256 amountIn, uint256 minAmountOut, address[] path, address[] adapters
-        @return _amountOut expected amount of final tokens user is going to receive on this chain 
-     */
-    function getTradeDataAmountOut(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut,
-        uint8 _maxSwaps,
-        uint256 _gasPrice,
-        uint256 _maxSwapSlippage
-    ) external view returns (Trade memory, uint256) {
-        (
-            Offers.FormattedOfferWithGas memory _bestOffer,
-            uint256 _minAmountOut,
-            uint256 _amountOut
-        ) = _getBestOfferWithSlippage(
-            _amountIn,
-            _tokenIn,
-            _tokenOut,
-            _maxSwaps,
-            _gasPrice,
-            _maxSwapSlippage
-        );
-
-        return (
-            Trade(
-                _amountIn,
-                _minAmountOut,
-                _bestOffer.path,
-                _bestOffer.adapters
-            ),
-            _amountOut
-        );
-    }
-
-    /**
-        @notice Find best path and get full trade data for that swap on this chain via Router
-        @dev Use trade data for Router.swap|swapFromGas|swapToGas(...tradeData, to) or BridgeRouter.swapAndBridge(...tradeData, bridgeData)
-        @param _amountIn amount of initial tokens
-        @param _tokenIn initial token to sell
-        @param _tokenOut final token to buy
-        @param _maxSwaps maximum amount of swaps in the route between initial and final tokens
-        @param _gasPrice this chain's current gas price, in wei
-        @param _maxSwapSlippage maximum slippage user is willing to accept for swap on this chain
-        @return _bestOffer uint256[] amounts, address[] adapters, address[] path, uint256 gasEstimate
-        @return _minAmountOut expected amount of final tokens, adjusted by max slippage
-        @return _amountOut expected amount of final tokens user is going to receive on this chain 
-     */
-    function _getBestOfferWithSlippage(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut,
-        uint8 _maxSwaps,
-        uint256 _gasPrice,
-        uint256 _maxSwapSlippage
-    )
-        internal
-        view
-        returns (
-            Offers.FormattedOfferWithGas memory,
-            uint256,
-            uint256
-        )
-    {
-        require(
-            _maxSwapSlippage < SLIPPAGE_PRECISION,
-            "Slippage can't be over 100%"
-        );
-        Offers.FormattedOfferWithGas memory _bestOffer = findBestPathWithGas(
-            _amountIn,
-            _tokenIn,
-            _tokenOut,
-            _maxSwaps,
-            _gasPrice
-        );
-        // fetch _amountOut
-        uint256 _amountOut = _bestOffer.amounts[_bestOffer.amounts.length - 1];
-        // apply slippage
-        uint256 _minAmountOut = (_amountOut *
-            (SLIPPAGE_PRECISION - _maxSwapSlippage)) / SLIPPAGE_PRECISION;
-
-        return (_bestOffer, _minAmountOut, _amountOut);
     }
 
     // -- INTERNAL HELPERS
