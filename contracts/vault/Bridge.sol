@@ -106,8 +106,15 @@ contract Bridge is
         IERC20 token,
         uint256 amount
     ) external nonReentrant whenNotPaused {
-        emit TokenDeposit(to, chainId, token, amount);
-        _depositToVault(token, amount);
+        _deposit(to, chainId, token, amount);
+    }
+
+    function depositMax(
+        address to,
+        uint256 chainId,
+        IERC20 token
+    ) external nonReentrant whenNotPaused {
+        _deposit(to, chainId, token, _getMaxAmount(address(token)));
     }
 
     function depositAndSwapV2(
@@ -133,6 +140,16 @@ contract Bridge is
             _getMaxAmount(address(token)),
             swapParams
         );
+    }
+
+    function _deposit(
+        address to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    ) internal {
+        emit TokenDeposit(to, chainId, token, amount);
+        _depositToVault(token, amount);
     }
 
     function _depositAndSwapV2(
@@ -163,8 +180,15 @@ contract Bridge is
         ERC20Burnable token,
         uint256 amount
     ) external nonReentrant whenNotPaused {
-        emit TokenRedeem(to, chainId, token, amount);
-        token.burnFrom(msg.sender, amount);
+        _redeem(to, chainId, token, amount);
+    }
+
+    function redeemMax(
+        address to,
+        uint256 chainId,
+        ERC20Burnable token
+    ) external nonReentrant whenNotPaused {
+        _redeem(to, chainId, token, _getMaxAmount(address(token)));
     }
 
     function redeemV2(
@@ -173,8 +197,15 @@ contract Bridge is
         ERC20Burnable token,
         uint256 amount
     ) external nonReentrant whenNotPaused {
-        emit TokenRedeemV2(to, chainId, token, amount);
-        token.burnFrom(msg.sender, amount);
+        _redeemV2(to, chainId, token, amount);
+    }
+
+    function redeemV2Max(
+        bytes32 to,
+        uint256 chainId,
+        ERC20Burnable token
+    ) external nonReentrant whenNotPaused {
+        _redeemV2(to, chainId, token, _getMaxAmount(address(token)));
     }
 
     function redeemAndSwapV2(
@@ -200,6 +231,26 @@ contract Bridge is
             _getMaxAmount(address(token)),
             swapParams
         );
+    }
+
+    function _redeem(
+        address to,
+        uint256 chainId,
+        ERC20Burnable token,
+        uint256 amount
+    ) internal {
+        emit TokenRedeem(to, chainId, token, amount);
+        token.burnFrom(msg.sender, amount);
+    }
+
+    function _redeemV2(
+        bytes32 to,
+        uint256 chainId,
+        ERC20Burnable token,
+        uint256 amount
+    ) internal {
+        emit TokenRedeemV2(to, chainId, token, amount);
+        token.burnFrom(msg.sender, amount);
     }
 
     function _redeemAndSwapV2(
