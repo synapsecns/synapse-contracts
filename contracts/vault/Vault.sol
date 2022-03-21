@@ -51,15 +51,41 @@ contract Vault is
         startBlockNumber = block.number;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         __AccessControl_init();
+        __ReentrancyGuard_init();
+        __Pausable_init_unchained();
     }
 
     // -- EVENTS
 
+    event FeesWithdrawn(IERC20 indexed token, uint256 amount);
+
+    event GasRecovered(uint256 amount);
+
     event UpdatedChainGasAmount(uint256 amount);
 
-    event UpdatedTokenSpender(IERC20 token, address spender);
+    event UpdatedTokenSpender(IERC20 indexed token, address spender);
 
     // -- MODIFIERS --
+
+    /// @notice Check if address is a valid receiver
+    modifier checkReceiver(address to) {
+        require(to != address(0), "to is 0x00 address");
+        _;
+    }
+
+    /// @notice Check if possible to withdraw amount of token
+    modifier checkTokenRequest(IERC20 token, uint256 amount) {
+        require(amount != 0, "Amount is zero");
+        require(getTokenBalance(token) >= amount, "Withdraw amount is too big");
+        _;
+    }
+
+    /// @notice Check if kappa has already been used, mark as used if not
+    modifier markKappa(bytes32 kappa) {
+        require(!kappaMap[kappa], "Kappa already exists");
+        kappaMap[kappa] = true;
+        _;
+    }
 
     /// @notice This role can setup WETh address and manage other roles
     modifier onlyAdmin() {
@@ -133,7 +159,20 @@ contract Vault is
         }
     }
 
-    // -- FEE FUNCTIONS --
+    // -- RECOVER TOKEN/GAS --
+
+    /**
+        @notice Recover GAS from the contract
+     */
+    function recoverGAS() external onlyGovernance {
+        uint256 amount = address(this).balance;
+        require(amount != 0, "Nothing to recover");
+
+        emit GasRecovered(amount);
+        //solhint-disable-next-line
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "GAS transfer failed");
+    }
 
     /**
      * * @notice withdraw specified ERC20 token fees to a given address
@@ -148,54 +187,70 @@ contract Vault is
         require(to != address(0), "Address is 0x00");
         uint256 feeAmount = fees[address(token)];
         require(feeAmount != 0, "Nothing to withdraw");
+
+        emit FeesWithdrawn(token, feeAmount);
         fees[address(token)] = 0;
         token.safeTransfer(to, feeAmount);
     }
 
     // -- PAUSABLE FUNCTIONS --
 
-    function pause() external {
-        require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+    function pause() external onlyGovernance {
         _pause();
     }
 
-    function unpause() external {
-        require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+    function unpause() external onlyGovernance {
         _unpause();
     }
 
     // -- VAULT FUNCTIONS --
 
-    function withdrawToken(
+    function adjustMintedFees(
         IERC20 token,
-        uint256 amount,
-        address to,
+        uint256 fee,
         bytes32 kappa
-    ) external onlyNodeGroup nonReentrant whenNotPaused {
-        _checkTokenRequest(token, amount, to);
-        require(!kappaMap[kappa], "Kappa already exists");
-        kappaMap[kappa] = true;
-        token.safeTransfer(to, amount);
+    )
+        external
+        onlyNodeGroup
+        nonReentrant
+        whenNotPaused
+        markKappa(kappa)
+        checkTokenRequest(token, fee)
+    {
+        fees[address(token)] += fee;
     }
 
     function spendToken(
+        address to,
         IERC20 token,
-        uint256 amount,
-        address to
-    ) external onlyTokenSpender(token) nonReentrant whenNotPaused {
-        _checkTokenRequest(token, amount, to);
+        uint256 amount
+    )
+        external
+        onlyTokenSpender(token)
+        nonReentrant
+        whenNotPaused
+        checkReceiver(to)
+        checkTokenRequest(token, amount)
+    {
         token.safeTransfer(to, amount);
     }
 
-    // -- INTERNAL HELPERS --
-
-    function _checkTokenRequest(
+    function withdrawToken(
+        address to,
         IERC20 token,
         uint256 amount,
-        address to
-    ) internal view {
-        require(amount != 0, "Amount is zero");
-        require(to != address(0), "to is 0x00 address");
-        require(getTokenBalance(token) >= amount, "Withdraw amount is too big");
+        uint256 fee,
+        bytes32 kappa
+    )
+        external
+        onlyNodeGroup
+        nonReentrant
+        whenNotPaused
+        markKappa(kappa)
+        checkReceiver(to)
+        checkTokenRequest(token, amount + fee)
+    {
+        token.safeTransfer(to, amount);
+        fees[address(token)] += fee;
     }
 }
