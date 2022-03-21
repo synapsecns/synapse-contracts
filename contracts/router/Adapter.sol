@@ -57,26 +57,27 @@ abstract contract Adapter is Ownable, IAdapter {
 
     /**
      * @notice Recover ERC20 from contract
-     * @param _tokenAddress token address
-     * @param _tokenAmount amount to recover
+     * @param _token token to recover
      */
-    function recoverERC20(address _tokenAddress, uint256 _tokenAmount)
-        external
-        onlyOwner
-    {
-        require(_tokenAmount > 0, "Adapter: Nothing to recover");
-        emit Recovered(_tokenAddress, _tokenAmount);
-        IERC20(_tokenAddress).safeTransfer(msg.sender, _tokenAmount);
+    function recoverERC20(IERC20 _token) external onlyOwner {
+        uint256 _amount = _token.balanceOf(address(this));
+        require(_amount > 0, "Adapter: Nothing to recover");
+
+        emit Recovered(address(_token), _amount);
+        _token.safeTransfer(msg.sender, _amount);
     }
 
     /**
      * @notice Recover GAS from contract
-     * @param _amount amount
      */
-    function recoverGAS(uint256 _amount) external onlyOwner {
+    function recoverGAS() external onlyOwner {
+        uint256 _amount = address(this).balance;
         require(_amount > 0, "Adapter: Nothing to recover");
+
         emit Recovered(address(0), _amount);
-        payable(msg.sender).transfer(_amount);
+        //solhint-disable-next-line
+        (bool success, ) = msg.sender.call{value: _amount}("");
+        require(success, "GAS transfer failed");
     }
 
     /**
