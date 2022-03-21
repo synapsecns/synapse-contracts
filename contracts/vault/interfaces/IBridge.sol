@@ -113,11 +113,24 @@ interface IBridge {
         uint256 amount
     ) external;
 
+    function depositMax(
+        address to,
+        uint256 chainId,
+        IERC20 token
+    ) external;
+
     function depositAndSwapV2(
         address to,
         uint256 chainId,
         IERC20 token,
         uint256 amount,
+        SwapParams calldata swapParams
+    ) external;
+
+    function depositMaxAndSwapV2(
+        address to,
+        uint256 chainId,
+        IERC20 token,
         SwapParams calldata swapParams
     ) external;
 
@@ -130,6 +143,12 @@ interface IBridge {
         uint256 amount
     ) external;
 
+    function redeemMax(
+        address to,
+        uint256 chainId,
+        ERC20Burnable token
+    ) external;
+
     function redeemV2(
         bytes32 to,
         uint256 chainId,
@@ -137,11 +156,24 @@ interface IBridge {
         uint256 amount
     ) external;
 
+    function redeemV2Max(
+        bytes32 to,
+        uint256 chainId,
+        ERC20Burnable token
+    ) external;
+
     function redeemAndSwapV2(
         address to,
         uint256 chainId,
         ERC20Burnable token,
         uint256 amount,
+        SwapParams calldata swapParams
+    ) external;
+
+    function redeemMaxAndSwapV2(
+        address to,
+        uint256 chainId,
+        ERC20Burnable token,
         SwapParams calldata swapParams
     ) external;
 
