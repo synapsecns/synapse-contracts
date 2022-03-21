@@ -215,11 +215,11 @@ describe("SushiSwap Adapter", async function() {
       )
 
       await expect(
-        uniswapV2Adapter.connect(dude).recoverERC20(TOKENS[0].address, extra),
+        uniswapV2Adapter.connect(dude).recoverERC20(TOKENS[0].address),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       // tokens are in the UniSwap pair, not the Adapter
-      await expect(uniswapV2Adapter.recoverERC20(TOKENS[0].address, extra)).to.be
+      await expect(uniswapV2Adapter.recoverERC20(TOKENS[0].address)).to.be
         .reverted
     })
 
@@ -252,11 +252,11 @@ describe("SushiSwap Adapter", async function() {
       await TOKENS[0].transfer(uniswapV2Adapter.address, extra)
 
       await expect(
-        uniswapV2Adapter.connect(dude).recoverERC20(TOKENS[0].address, extra),
+        uniswapV2Adapter.connect(dude).recoverERC20(TOKENS[0].address),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        uniswapV2Adapter.recoverERC20(TOKENS[0].address, extra),
+        uniswapV2Adapter.recoverERC20(TOKENS[0].address),
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
@@ -267,11 +267,11 @@ describe("SushiSwap Adapter", async function() {
       ).to.changeEtherBalance(uniswapV2Adapter, amount)
 
       await expect(
-        uniswapV2Adapter.connect(dude).recoverGAS(amount),
+        uniswapV2Adapter.connect(dude).recoverGAS(),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        uniswapV2Adapter.recoverGAS(amount),
+        uniswapV2Adapter.recoverGAS(),
       ).to.changeEtherBalances([uniswapV2Adapter, owner], [-amount, amount])
     })
   })

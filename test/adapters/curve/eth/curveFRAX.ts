@@ -168,11 +168,11 @@ describe(ADAPTER_NAME, async function() {
       )
 
       await expect(
-        adapter.connect(dude).recoverERC20(TOKENS[0].address, extra),
+        adapter.connect(dude).recoverERC20(TOKENS[0].address),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        adapter.recoverERC20(TOKENS[0].address, extra),
+        adapter.recoverERC20(TOKENS[0].address),
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
@@ -214,11 +214,11 @@ describe(ADAPTER_NAME, async function() {
         }),
       ).to.changeEtherBalance(adapter, amount)
 
-      await expect(adapter.connect(dude).recoverGAS(amount)).to.be.revertedWith(
+      await expect(adapter.connect(dude).recoverGAS()).to.be.revertedWith(
         "Ownable: caller is not the owner",
       )
 
-      await expect(() => adapter.recoverGAS(amount)).to.changeEtherBalances(
+      await expect(() => adapter.recoverGAS()).to.changeEtherBalances(
         [adapter, owner],
         [-amount, amount],
       )

@@ -438,11 +438,11 @@ describe("Aave Pool Adapter", async function() {
       )
 
       await expect(
-        aavePoolAdapter.connect(dude).recoverERC20(TOKENS[0].address, extra),
+        aavePoolAdapter.connect(dude).recoverERC20(TOKENS[0].address),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        aavePoolAdapter.recoverERC20(TOKENS[0].address, extra),
+        aavePoolAdapter.recoverERC20(TOKENS[0].address),
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
@@ -481,11 +481,11 @@ describe("Aave Pool Adapter", async function() {
       ).to.changeEtherBalance(aavePoolAdapter, amount)
 
       await expect(
-        aavePoolAdapter.connect(dude).recoverGAS(amount),
+        aavePoolAdapter.connect(dude).recoverGAS(),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        aavePoolAdapter.recoverGAS(amount),
+        aavePoolAdapter.recoverGAS(),
       ).to.changeEtherBalances([aavePoolAdapter, owner], [-amount, amount])
     })
   })
