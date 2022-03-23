@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Adapter} from "../../Adapter.sol";
+import {CurveAbstractAdapter} from "./CurveAbstractAdapter.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
-import {ICurvePool} from "../../interfaces/ICurvePool.sol";
-
-import {CurveAbstractAdapter} from "./CurveAbstractAdapter.sol";
-import {SafeCast} from "@openzeppelin/contracts-4.4.2/utils/math/SafeCast.sol";
 
 contract CurveTriCryptoAdapter is CurveAbstractAdapter {
     mapping(address => uint256) public tokenIndex;

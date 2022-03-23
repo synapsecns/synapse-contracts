@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../interfaces/ISynapse.sol";
+import "../adapters/synapse/interfaces/ISynapse.sol";
 
 interface IERC20Decimals is IERC20 {
     function decimals() external view returns (uint8);
