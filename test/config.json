@@ -27,6 +27,38 @@
       "tricrypto": "0xD51a44d3FaE010294C616388b506AcdA1bfAAE46"
     }
   },
+  "250": {
+    "assets": {
+      "WFTM": "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
+      "ETH": "0x74b23882a30290451A17c44f4F05243b6b58C76d",
+      "USDC": "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
+      "BOO": "0x841FAD6EAe12c286d1Fd18d1d525DFfA75C7EFFE",
+      "fUSDT": "0x049d68029688eAbF473097a2fC38ef61633A3C7A",
+      "BTC": "0x321162Cd933E2Be498Cd2267a90534A804051b11",
+      "MIM": "0x82f0B8B456c1A451378467398982d4834b6829c1",
+      "DAI": "0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E"
+    },
+    "slot": {
+      "WFTM": 0,
+      "ETH": 2,
+      "USDC": 2,
+      "BOO": 0,
+      "fUSDT": 2,
+      "BTC": 2,
+      "MIM": 2,
+      "DAI": 2
+    },
+    "solidly": {
+      "factory": "0x3fAaB499b519fdC5819e3D7ed0C26111904cbc28",
+      "router": "0xa38cd27185a464914D3046f0AB9d43356B34829D",
+      "hash": "0x57ae84018c47ebdaf7ddb2d1216c8c36389d12481309af65428eb6d460f747a4"
+    },
+    "spookyswap": {
+      "factory": "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3",
+      "router": "0xF491e7B69E4244ad4002BC14e878a34207E38c29",
+      "hash": ""
+    }
+  },
   "43114": {
     "assets": {
       "WAVAX": "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
