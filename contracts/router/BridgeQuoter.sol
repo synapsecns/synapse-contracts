@@ -28,36 +28,26 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
     function findBestPathInitialChain(
         uint256 _amountIn,
         address _tokenIn,
-        address _tokenOut,
-        uint256 _gasPrice
-    ) external view returns (Offers.FormattedOfferWithGas memory _bestOffer) {
+        address _tokenOut
+    ) external view returns (Offers.FormattedOffer memory _bestOffer) {
         // User pays for gas, so:
         // use maximum swaps permitted for the search
-        return
-            findBestPathWithGas(
-                _amountIn,
-                _tokenIn,
-                _tokenOut,
-                maxSwaps,
-                _gasPrice
-            );
+        return findBestPath(_amountIn, _tokenIn, _tokenOut, maxSwaps);
     }
 
     function findBestPathDestinationChain(
         uint256 _amountIn,
         address _tokenIn,
-        address _tokenOut,
-        uint256 _gasPrice
-    ) external view returns (Offers.FormattedOfferWithGas memory _bestOffer) {
+        address _tokenOut
+    ) external view returns (Offers.FormattedOffer memory _bestOffer) {
         // Relayer pays for gas, so:
         // use maximum swaps permitted for bridge+swap transaction
         return
-            findBestPathWithGas(
+            findBestPath(
                 _amountIn,
                 _tokenIn,
                 _tokenOut,
-                IBridgeRouter(router).bridgeMaxSwaps(),
-                _gasPrice
+                IBridgeRouter(router).bridgeMaxSwaps()
             );
     }
 }
