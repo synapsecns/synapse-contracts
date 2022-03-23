@@ -109,8 +109,9 @@ describe("TraderJoe Adapter", async function() {
 
       uniswapV2Adapter = (await uniswapAdapterFactory.deploy(
         "UniswapV2Adapter",
-        config[CHAIN][DEX].factory,
         160000,
+        config[CHAIN][DEX].factory,
+        config[CHAIN][DEX].hash,
         FEE
       )) as UniswapV2Adapter
 
@@ -176,7 +177,7 @@ describe("TraderJoe Adapter", async function() {
           TOKENS[tokenTo].address,
           ownerAddress,
         ),
-      ).to.be.revertedWith("Adapter: unknown tokens")
+      ).to.be.revertedWith("Adapter: Insufficient output amount")
     })
 
     it("Swap fails if transfer amount is too little", async function() {
