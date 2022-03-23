@@ -127,7 +127,7 @@ describe("Router", function () {
       "ERC20MockDecimals",
       "WETH9",
 
-      "SynapseBasePoolAdapter",
+      "SynapseBaseAdapter",
       "UniswapV2Adapter",
       "UniswapV2Factory",
     ])
@@ -190,7 +190,7 @@ describe("Router", function () {
     await setupSynapsePool(
       this,
       swapFactory,
-      this.SynapseBasePoolAdapter,
+      this.SynapseBaseAdapter,
       lpTokenAddress,
       "usdPool",
       "adapterUSD",
@@ -204,7 +204,7 @@ describe("Router", function () {
     await setupSynapsePool(
       this,
       swapFactory,
-      this.SynapseBasePoolAdapter,
+      this.SynapseBaseAdapter,
       lpTokenAddress,
       "ethPool",
       "adapterETH",
