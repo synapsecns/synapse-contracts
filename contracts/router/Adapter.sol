@@ -137,7 +137,6 @@ abstract contract Adapter is Ownable, IAdapter {
         require(_checkTokens(_tokenIn, _tokenOut), "Adapter: unknown tokens");
         _approveIfNeeded(_tokenIn, _amountIn);
         _amountOut = _swap(_amountIn, _tokenIn, _tokenOut, _to);
-        emit AdapterSwap(_tokenIn, _tokenOut, _amountIn, _amountOut);
     }
 
     // -- INTERNAL FUNCTIONS
