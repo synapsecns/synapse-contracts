@@ -61,7 +61,7 @@ describe("Aave Pool Adapter", async function() {
   const CHECK_UNDERQUOTING = true
 
   async function testAdapter(
-    adapter: SynapseBasePoolAdapter,
+    adapter: SynapseAaveAdapter,
     tokensFrom: Array<number>,
     tokensTo: Array<number>,
     times = 1,

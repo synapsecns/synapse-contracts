@@ -272,7 +272,7 @@ describe("Quoter", function () {
       "ERC20MockDecimals",
       "WETH9",
 
-      "SynapseBasePoolAdapter",
+      "SynapseBaseAdapter",
       "UniswapV2Adapter",
       "UniswapV2Factory",
     ])
@@ -338,7 +338,7 @@ describe("Quoter", function () {
     await setupSynapsePool(
       this,
       swapFactory,
-      this.SynapseBasePoolAdapter,
+      this.SynapseBaseAdapter,
       lpTokenAddress,
       "usdPool",
       "adapterUSD",
@@ -352,7 +352,7 @@ describe("Quoter", function () {
     await setupSynapsePool(
       this,
       swapFactory,
-      this.SynapseBasePoolAdapter,
+      this.SynapseBaseAdapter,
       lpTokenAddress,
       "ethPool",
       "adapterETH",

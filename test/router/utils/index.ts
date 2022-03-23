@@ -5,7 +5,7 @@ import {
   IERC20,
   Swap,
   UniswapV2Factory,
-  SynapseBasePoolAdapter,
+  SynapseBaseAdapter,
   IUniswapV2Pair,
 } from "../../../build/typechain"
 import { MAX_UINT256 } from "../../utils"
@@ -70,7 +70,7 @@ export async function setupSynapsePool(
     "BasePoolAdapter",
     swap.address,
     swapGasEstimate,
-  )) as SynapseBasePoolAdapter
+  )) as SynapseBaseAdapter
   thisObject[adapter] = basePoolAdapter
 
   let amounts = []
