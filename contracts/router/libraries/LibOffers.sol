@@ -4,29 +4,26 @@ pragma solidity ^0.8.0;
 import {Bytes} from "@synapseprotocol/sol-lib/contracts/universal/lib/LibBytes.sol";
 
 library Offers {
-    struct OfferWithGas {
+    struct Offer {
         bytes amounts;
         bytes adapters;
         bytes path;
-        uint256 gasEstimate;
     }
 
-    struct FormattedOfferWithGas {
+    struct FormattedOffer {
         uint256[] amounts;
         address[] adapters;
         address[] path;
-        uint256 gasEstimate;
     }
 
     /**
      * Appends Query elements to Offer struct
      */
-    function addQueryWithGas(
-        OfferWithGas memory _queries,
+    function addQuery(
+        Offer memory _queries,
         uint256 _amount,
         address _adapter,
-        address _tokenOut,
-        uint256 _gasEstimate
+        address _tokenOut
     ) internal pure {
         _queries.path = Bytes.mergeBytes(
             _queries.path,
@@ -40,24 +37,17 @@ library Offers {
             _queries.adapters,
             Bytes.toBytes(_adapter)
         );
-        _queries.gasEstimate += _gasEstimate;
     }
 
     /**
-     * Makes a deep copy of OfferWithGas struct
+     * Makes a deep copy of Offer struct
      */
-    function cloneOfferWithGas(OfferWithGas memory _queries)
+    function cloneOfferWithGas(Offer memory _queries)
         internal
         pure
-        returns (OfferWithGas memory)
+        returns (Offer memory)
     {
-        return
-            OfferWithGas(
-                _queries.amounts,
-                _queries.adapters,
-                _queries.path,
-                _queries.gasEstimate
-            );
+        return Offer(_queries.amounts, _queries.adapters, _queries.path);
     }
 
     /**
@@ -96,17 +86,16 @@ library Offers {
     /**
      * Formats elements in the Offer object from byte-arrays to integers and addresses
      */
-    function formatOfferWithGas(OfferWithGas memory _queries)
+    function formatOfferWithGas(Offer memory _queries)
         internal
         pure
-        returns (FormattedOfferWithGas memory)
+        returns (FormattedOffer memory)
     {
         return
-            FormattedOfferWithGas(
+            FormattedOffer(
                 formatAmounts(_queries.amounts),
                 formatAddresses(_queries.adapters),
-                formatAddresses(_queries.path),
-                _queries.gasEstimate
+                formatAddresses(_queries.path)
             );
     }
 }
