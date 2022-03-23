@@ -9,7 +9,7 @@ import { ILendingPool } from "../build/typechain/ILendingPool"
 import { GenericERC20 } from "../../../build/typechain/GenericERC20"
 import { LPToken } from "../../../build/typechain/LPToken"
 import { Swap } from "../../../build/typechain/Swap"
-import { SynapseAavePoolAdapter } from "../../../build/typechain/SynapseAavePoolAdapter"
+import { SynapseAaveAdapter } from "../../../build/typechain/SynapseAaveAdapter"
 import chai from "chai"
 import { getBigNumber } from "../../bridge/utilities"
 import { setBalance, forkChain } from "../utils/helpers"
@@ -31,8 +31,8 @@ describe("Aave Pool Adapter", async function() {
   let dude: Signer
   let dudeAddress: string
 
-  let aavePoolAdapter: SynapseAavePoolAdapter
-  let aaveEthPoolAdapter: SynapseAavePoolAdapter
+  let aaveUsdAdapter: SynapseAaveAdapter
+  let aaveEthAdapter: SynapseAaveAdapter
   let aaveLendingPool: ILendingPool
 
   let testAdapterSwap: TestAdapterSwap
@@ -222,28 +222,28 @@ describe("Aave Pool Adapter", async function() {
         ),
       )
 
-      const aavePoolAdapterFactory = await ethers.getContractFactory(
-        "SynapseAavePoolAdapter",
+      const aaveAdapterFactory = await ethers.getContractFactory(
+        "SynapseAaveAdapter",
       )
 
-      aavePoolAdapter = (await aavePoolAdapterFactory.deploy(
-        "aavePoolAdapter",
-        swap.address,
+      aaveUsdAdapter = (await aaveAdapterFactory.deploy(
+        "aaveUsdAdapter",
         160000,
+        swap.address,
         config[43114].aave.lendingpool,
         underlyingTokens,
-      )) as SynapseAavePoolAdapter
+      )) as SynapseAaveAdapter
 
-      aaveEthPoolAdapter = (await aavePoolAdapterFactory.deploy(
-        "aaveEthPoolAdapter",
-        swapETH.address,
+      aaveEthAdapter = (await aaveAdapterFactory.deploy(
+        "aaveEthAdapter",
         160000,
+        swapETH.address,
         config[43114].aave.lendingpool,
         ethUnderlyingTokens,
-      )) as SynapseAavePoolAdapter
+      )) as SynapseAaveAdapter
 
       aaveLendingPool = (await ethers.getContractAt(
-        "contracts/router/interfaces/ILendingPool.sol:ILendingPool",
+        "contracts/router/adapters/synapse/interfaces/ILendingPool.sol:ILendingPool",
         config[43114].aave.lendingpool,
       )) as ILendingPool
 
@@ -345,30 +345,30 @@ describe("Aave Pool Adapter", async function() {
 
   describe("Setup", () => {
     it("AavePool Adapter is properly set up", async function() {
-      await checkPool(aavePoolAdapter, swap, TOKENS)
-      await checkPool(aaveEthPoolAdapter, swapETH, TOKENS_ETH)
+      await checkPool(aaveUsdAdapter, swap, TOKENS)
+      await checkPool(aaveEthAdapter, swapETH, TOKENS_ETH)
     })
   })
 
   describe("Adapter Swaps: 2 token pool", () => {
-    it("Swap stress test [240 small-medium sized swaps]", async function() {
+    it("Swap stress test [24 small-medium sized swaps]", async function() {
       await testAdapter(
-        aaveEthPoolAdapter,
+        aaveEthAdapter,
         [0, 1],
         [0, 1],
-        30,
+        3,
         AMOUNTS,
         TOKENS_ETH,
         DECIMALS_ETH,
       )
     })
 
-    it("Swap stress test [180 big sized swaps]", async function() {
+    it("Swap stress test [18 big sized swaps]", async function() {
       await testAdapter(
-        aaveEthPoolAdapter,
+        aaveEthAdapter,
         [0, 1],
         [0, 1],
-        30,
+        3,
         AMOUNTS_BIG,
         TOKENS_ETH,
         DECIMALS_ETH,
@@ -377,28 +377,24 @@ describe("Aave Pool Adapter", async function() {
   })
 
   describe("Adapter Swaps: 4 token pool", () => {
-    it("Swaps between underlying tokens [48 small-medium sized swaps]", async function() {
-      await testAdapter(aavePoolAdapter, [1, 2, 3], [1, 2, 3], 2)
+    it("Swaps between underlying tokens [24 small-medium sized swaps]", async function() {
+      await testAdapter(aaveUsdAdapter, [1, 2, 3], [1, 2, 3], 1)
     })
 
-    it("Swaps from nUSD to underlying Token [48 small-medium sized swaps]", async function() {
-      await testAdapter(aavePoolAdapter, [0], [1, 2, 3], 4)
+    it("Swaps from nUSD to underlying Token [12 small-medium sized swaps]", async function() {
+      await testAdapter(aaveUsdAdapter, [0], [1, 2, 3], 1)
     })
 
-    it("Swaps from underlying Tokens to nUSD [48 small-medium sized swaps]", async function() {
-      await testAdapter(aavePoolAdapter, [1, 2, 3], [0], 4)
+    it("Swaps from underlying Tokens to nUSD [12 small-medium sized swaps]", async function() {
+      await testAdapter(aaveUsdAdapter, [1, 2, 3], [0], 1)
     })
 
-    it("Swap stress test [240 small-medium sized swaps]", async function() {
-      await testAdapter(aavePoolAdapter, [0, 1, 2, 3], [0, 1, 2, 3], 5)
-    })
-
-    it("Swap stress test [180 big sized swaps]", async function() {
+    it("Swap stress test [36 big sized swaps]", async function() {
       await testAdapter(
-        aavePoolAdapter,
+        aaveUsdAdapter,
         [0, 1, 2, 3],
         [0, 1, 2, 3],
-        5,
+        1,
         AMOUNTS_BIG,
       )
     })
@@ -407,13 +403,13 @@ describe("Aave Pool Adapter", async function() {
   describe("Wrong amount transferred", () => {
     it("Swap fails if transfer amount is too little", async function() {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
-      let depositAddress = await aavePoolAdapter.depositAddress(
+      let depositAddress = await aaveUsdAdapter.depositAddress(
         TOKENS[0].address,
         TOKENS[1].address,
       )
       TOKENS[0].transfer(depositAddress, amount.sub(1))
       await expect(
-        aavePoolAdapter.swap(
+        aaveUsdAdapter.swap(
           amount,
           TOKENS[0].address,
           TOKENS[1].address,
@@ -425,12 +421,12 @@ describe("Aave Pool Adapter", async function() {
     it("Only Owner can rescue overprovided swap tokens", async function() {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
-      let depositAddress = await aavePoolAdapter.depositAddress(
+      let depositAddress = await aaveUsdAdapter.depositAddress(
         TOKENS[0].address,
         TOKENS[1].address,
       )
       TOKENS[0].transfer(depositAddress, amount.add(extra))
-      await aavePoolAdapter.swap(
+      await aaveUsdAdapter.swap(
         amount,
         TOKENS[0].address,
         TOKENS[1].address,
@@ -438,37 +434,37 @@ describe("Aave Pool Adapter", async function() {
       )
 
       await expect(
-        aavePoolAdapter.connect(dude).recoverERC20(TOKENS[0].address),
+        aaveUsdAdapter.connect(dude).recoverERC20(TOKENS[0].address),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        aavePoolAdapter.recoverERC20(TOKENS[0].address),
+        aaveUsdAdapter.recoverERC20(TOKENS[0].address),
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
     it("Anyone can take advantage of overprovided swap tokens", async function() {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
-      let depositAddress = await aavePoolAdapter.depositAddress(
+      let depositAddress = await aaveUsdAdapter.depositAddress(
         TOKENS[0].address,
         TOKENS[1].address,
       )
       TOKENS[0].transfer(depositAddress, amount.add(extra))
-      await aavePoolAdapter.swap(
+      await aaveUsdAdapter.swap(
         amount,
         TOKENS[0].address,
         TOKENS[1].address,
         ownerAddress,
       )
 
-      let swapQuote = await aavePoolAdapter.query(
+      let swapQuote = await aaveUsdAdapter.query(
         extra,
         TOKENS[0].address,
         TOKENS[1].address,
       )
 
       await expect(() =>
-        aavePoolAdapter
+        aaveUsdAdapter
           .connect(dude)
           .swap(extra, TOKENS[0].address, TOKENS[1].address, dudeAddress),
       ).to.changeTokenBalance(TOKENS[1], dude, swapQuote)
@@ -477,16 +473,16 @@ describe("Aave Pool Adapter", async function() {
     it("Only Owner can rescue GAS from Adapter", async function() {
       let amount = 42690
       await expect(() =>
-        owner.sendTransaction({ to: aavePoolAdapter.address, value: amount }),
-      ).to.changeEtherBalance(aavePoolAdapter, amount)
+        owner.sendTransaction({ to: aaveUsdAdapter.address, value: amount }),
+      ).to.changeEtherBalance(aaveUsdAdapter, amount)
 
       await expect(
-        aavePoolAdapter.connect(dude).recoverGAS(),
+        aaveUsdAdapter.connect(dude).recoverGAS(),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        aavePoolAdapter.recoverGAS(),
-      ).to.changeEtherBalances([aavePoolAdapter, owner], [-amount, amount])
+        aaveUsdAdapter.recoverGAS(),
+      ).to.changeEtherBalances([aaveUsdAdapter, owner], [-amount, amount])
     })
   })
 })

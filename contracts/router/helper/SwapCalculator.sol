@@ -112,7 +112,7 @@ contract SwapCalculator {
         return tokenPrecisionMultipliers.length;
     }
 
-    function _addPoolToken(IERC20 token, uint8) internal virtual {
+    function _addPoolToken(IERC20 token, uint256) internal virtual {
         IERC20Decimals _token = IERC20Decimals(address(token));
         tokenPrecisionMultipliers.push(
             10**uint256(POOL_PRECISION_DECIMALS - _token.decimals())

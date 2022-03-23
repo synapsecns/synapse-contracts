@@ -9,14 +9,14 @@ import { TestAdapterSwap } from "../build/typechain/TestAdapterSwap"
 import { GenericERC20 } from "../../../build/typechain/GenericERC20"
 import { LPToken } from "../../../build/typechain/LPToken"
 import { Swap } from "../../../build/typechain/Swap"
-import { SynapseBaseAdapter } from "../../../build/typechain/SynapseBaseAdapter"
+import { SynapseBaseMainnetAdapter } from "../../../build/typechain/SynapseBaseMainnetAdapter"
 import chai from "chai"
 import { getBigNumber } from "../../bridge/utilities"
 
 chai.use(solidity)
 const { expect } = chai
 
-describe("Base Pool Adapter", async function () {
+describe("Base Pool Adapter on Mainnet", async function () {
   let signers: Array<Signer>
   let swap: Swap
   let DAI: GenericERC20
@@ -29,7 +29,7 @@ describe("Base Pool Adapter", async function () {
   let dude: Signer
   let dudeAddress: string
 
-  let basePoolAdapter: SynapseBaseAdapter
+  let basePoolAdapter: SynapseBaseMainnetAdapter
 
   let testAdapterSwap: TestAdapterSwap
 
@@ -56,7 +56,7 @@ describe("Base Pool Adapter", async function () {
   const CHECK_UNDERQUOTING = true
 
   async function testAdapter(
-    adapter: SynapseBaseAdapter,
+    adapter: SynapseBaseMainnetAdapter,
     tokensFrom: Array<number>,
     tokensTo: Array<number>,
     times = 1,
@@ -145,7 +145,7 @@ describe("Base Pool Adapter", async function () {
         swapStorage.lpToken,
       )) as LPToken
 
-      TOKENS.push(DAI, USDC, USDT)
+      TOKENS.push(DAI, USDC, USDT, swapToken)
 
       for (let token of TOKENS) {
         await token.approve(swap.address, MAX_UINT256)
@@ -153,14 +153,14 @@ describe("Base Pool Adapter", async function () {
       }
 
       const basePoolAdapterFactory = await ethers.getContractFactory(
-        "SynapseBaseAdapter",
+        "SynapseBaseMainnetAdapter",
       )
 
       basePoolAdapter = (await basePoolAdapterFactory.deploy(
         "BasePoolAdapter",
         160000,
         swap.address,
-      )) as SynapseBaseAdapter
+      )) as SynapseBaseMainnetAdapter
 
       let amounts = [
         getBigNumber(2000, TOKENS_DECIMALS[0]),
@@ -189,7 +189,7 @@ describe("Base Pool Adapter", async function () {
     it("BasePool Adapter is properly set up", async function () {
       expect(await basePoolAdapter.pool()).to.be.eq(swap.address)
       expect(await basePoolAdapter.lpToken()).to.be.eq(swapToken.address)
-      expect(await basePoolAdapter.numTokens()).to.be.eq(TOKENS.length)
+      expect(await basePoolAdapter.numTokens()).to.be.eq(TOKENS.length - 1)
       expect(await basePoolAdapter.swapFee()).to.be.eq(SWAP_FEE)
 
       for (let i in TOKENS) {
@@ -201,15 +201,15 @@ describe("Base Pool Adapter", async function () {
 
   describe("Adapter Swaps", () => {
     it("Swap stress test [48 small-medium sized swaps]", async function () {
-      await testAdapter(basePoolAdapter, [0, 1, 2], [0, 1, 2], 2)
+      await testAdapter(basePoolAdapter, [0, 1, 2, 3], [0, 1, 2, 3], 1)
     })
 
     it("Swap stress test [36 big sized swaps]", async function () {
       await testAdapter(
         basePoolAdapter,
-        [0, 1, 2],
-        [0, 1, 2],
-        2,
+        [0, 1, 2, 3],
+        [0, 1, 2, 3],
+        1,
         AMOUNTS_BIG,
       )
     })
