@@ -39,18 +39,26 @@ abstract contract Adapter is Ownable, IAdapter {
         emit UpdatedGasEstimate(address(this), _estimate);
     }
 
+    // -- RESTRICTED ALLOWANCE FUNCTIONS --
+
+    function setInfiniteAllowance(IERC20 _token, address _spender)
+        external
+        onlyOwner
+    {
+        _setInfiniteAllowance(_token, _spender);
+    }
+
     /**
      * @notice Revoke token allowance
      *
      * @param _token address
      * @param _spender address
      */
-    function revokeAllowance(address _token, address _spender)
+    function revokeTokenAllowance(IERC20 _token, address _spender)
         external
         onlyOwner
     {
-        IERC20 _t = IERC20(_token);
-        _t.safeApprove(_spender, 0);
+        _token.safeApprove(_spender, 0);
     }
 
     // -- RESTRICTED RECOVER TOKEN FUNCTIONS --
@@ -183,30 +191,33 @@ abstract contract Adapter is Ownable, IAdapter {
         }
     }
 
+    function _setInfiniteAllowance(IERC20 _token, address _spender) internal {
+        _checkAllowance(_token, UINT_MAX, _spender);
+    }
+
     // -- INTERNAL VIRTUAL FUNCTIONS
 
     /**
      * @notice Approves token for the underneath swapper to use
      *
      * @dev Implement via _checkAllowance(_tokenIn, _amount, POOL)
-     *
-     * @param _tokenIn ERC20 token to approve
-     * @param _amount token amount to approve
+     *      if actually needed
      */
-    function _approveIfNeeded(address _tokenIn, uint256 _amount)
-        internal
-        virtual;
+    function _approveIfNeeded(address, uint256) internal virtual {
+        this;
+    }
 
     /**
      * @notice Checks if a swap between two tokens is supported by adapter
-     * @param _tokenIn ERC20 token to check
-     * @param _tokenOut ERC20 token to check
      */
-    function _checkTokens(address _tokenIn, address _tokenOut)
+    function _checkTokens(address, address)
         internal
         view
         virtual
-        returns (bool);
+        returns (bool)
+    {
+        return true;
+    }
 
     /**
      * @notice Internal implementation for depositAddress

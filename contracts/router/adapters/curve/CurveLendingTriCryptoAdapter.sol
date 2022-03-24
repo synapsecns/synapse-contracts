@@ -33,6 +33,7 @@ contract CurveLendingTriCryptoAdapter is CurveAbstractAdapter {
         for (uint8 i = 0; true; i++) {
             try pool.underlying_coins(i) returns (address _tokenAddress) {
                 _addPoolToken(_tokenAddress, i);
+                _setInfiniteAllowance(IERC20(_tokenAddress), address(pool));
             } catch {
                 break;
             }

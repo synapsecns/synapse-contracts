@@ -5,6 +5,7 @@ import {CurveLendingPoolAdapter} from "./CurveLendingPoolAdapter.sol";
 
 import {ICurvePool} from "./interfaces/ICurvePool.sol";
 
+import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 import {SafeCast} from "@openzeppelin/contracts-4.4.2/utils/math/SafeCast.sol";
 
 contract CurveMetaPoolAdapter is CurveLendingPoolAdapter {
@@ -40,6 +41,8 @@ contract CurveMetaPoolAdapter is CurveLendingPoolAdapter {
                 _addPoolToken(_tokenAddress, i);
                 _lastToken = _tokenAddress;
                 _numTokens++;
+
+                _setInfiniteAllowance(IERC20(_tokenAddress), address(pool));
             } catch {
                 break;
             }
@@ -57,6 +60,8 @@ contract CurveMetaPoolAdapter is CurveLendingPoolAdapter {
             try _basePool.coins(i) returns (address _tokenAddress) {
                 _addPoolToken(_tokenAddress, _numTokens);
                 _numTokens++;
+
+                _setInfiniteAllowance(IERC20(_tokenAddress), address(pool));
             } catch {
                 break;
             }

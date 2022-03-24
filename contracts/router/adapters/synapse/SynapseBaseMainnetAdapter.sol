@@ -19,10 +19,7 @@ contract SynapseBaseMainnetAdapter is SynapseBaseAdapter {
     ) SynapseBaseAdapter(_name, _swapGasEstimate, _pool) {
         // add LP token as a "pool token"
         // This will enable stable <-> nUSD swap on Mainnet via adapter
-        isPoolToken[address(lpToken)] = true;
-        tokenIndex[address(lpToken)] = numTokens;
-
-        _checkAllowance(lpToken, UINT_MAX, address(pool));
+        _registerPoolToken(lpToken, numTokens);
     }
 
     function _swap(

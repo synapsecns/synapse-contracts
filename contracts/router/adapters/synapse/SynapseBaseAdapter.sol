@@ -27,14 +27,23 @@ contract SynapseBaseAdapter is SwapCalculator, Adapter {
         override
     {
         SwapCalculator._addPoolToken(token, index);
-        isPoolToken[address(token)] = true;
-        tokenIndex[address(token)] = index;
-
-        _checkAllowance(token, UINT_MAX, address(pool));
+        _registerPoolToken(token, index);
     }
 
-    function _approveIfNeeded(address, uint256) internal virtual override {
-        this;
+    function _registerPoolToken(IERC20 token, uint256 index) internal {
+        isPoolToken[address(token)] = true;
+        tokenIndex[address(token)] = index;
+        _setInfiniteAllowance(token, address(pool));
+    }
+
+    function _checkTokens(address _tokenIn, address _tokenOut)
+        internal
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        return isPoolToken[_tokenIn] && isPoolToken[_tokenOut];
     }
 
     function _depositAddress(address, address)
@@ -61,16 +70,6 @@ contract SynapseBaseAdapter is SwapCalculator, Adapter {
         );
 
         _returnTo(_tokenOut, _amountOut, _to);
-    }
-
-    function _checkTokens(address _tokenIn, address _tokenOut)
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
-        return isPoolToken[_tokenIn] && isPoolToken[_tokenOut];
     }
 
     function _query(

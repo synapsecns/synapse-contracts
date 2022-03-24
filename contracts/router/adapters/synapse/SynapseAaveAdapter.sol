@@ -36,31 +36,34 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
     ) SynapseBaseAdapter(_name, _swapGasEstimate, _pool) {
         require(_underlyingTokens.length == numTokens, "Wrong tokens amount");
         lendingPool = ILendingPool(_lendingPool);
+
         for (uint8 i = 0; i < _underlyingTokens.length; i++) {
             address _poolToken = address(poolTokens[i]);
             if (_poolToken != _underlyingTokens[i]) {
-                address _underlying = _underlyingTokens[i];
-                aaveToken[_underlying] = _poolToken;
-                isUnderlying[_underlying] = true;
-
-                _checkAllowance(
-                    IERC20(_underlying),
-                    UINT_MAX,
-                    address(_lendingPool)
-                );
+                _registerUnderlyingToken(_underlyingTokens[i], _poolToken);
             }
         }
     }
 
-    function _approveIfNeeded(address, uint256) internal virtual override {
-        this;
-        // if (isUnderlying[_tokenIn]) {
-        //     // Lending Pool needs to have approval to spend underlying
-        //     _checkAllowance(IERC20(_tokenIn), _amount, address(lendingPool));
-        //     // Swap pool needs to have approval to spend aToken
-        //     _tokenIn = aaveToken[_tokenIn];
-        // }
-        // SynapseBaseAdapter._approveIfNeeded(_tokenIn, _amount);
+    function _registerUnderlyingToken(address _underlying, address _poolToken)
+        internal
+    {
+        aaveToken[_underlying] = _poolToken;
+        isUnderlying[_underlying] = true;
+        _setInfiniteAllowance(IERC20(_underlying), address(lendingPool));
+    }
+
+    function _checkTokens(address _tokenIn, address _tokenOut)
+        internal
+        view
+        virtual
+        override
+        returns (bool)
+    {
+        // Swaps are supported between both pool and underlying tokens
+        return
+            (isUnderlying[_tokenIn] || isPoolToken[_tokenIn]) &&
+            (isUnderlying[_tokenOut] || isPoolToken[_tokenOut]);
     }
 
     function _swap(
@@ -176,19 +179,6 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
     {
         lendingPool.deposit(_token, _amount, address(this), 0);
         return IERC20(aaveToken[_token]).balanceOf(address(this));
-    }
-
-    function _checkTokens(address _tokenIn, address _tokenOut)
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
-        // Swaps are supported between both pool and underlying tokens
-        return
-            (isPoolToken[_tokenIn] || isUnderlying[_tokenIn]) &&
-            (isPoolToken[_tokenOut] || isUnderlying[_tokenOut]);
     }
 
     /**
