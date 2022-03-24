@@ -68,6 +68,23 @@ contract Quoter is BasicQuoter, IQuoter {
         return Offers.formatOfferWithGas(_queries);
     }
 
+    /**
+        @notice Find the best path between two tokens, using the predefined
+                maximum amount of swaps in the route between initial and final tokens
+        @param _amountIn amount of initial tokens to swap
+        @param _tokenIn initial token to sell
+        @param _tokenOut final token to buy
+    */
+    function findBestPathMaxSwaps(
+        uint256 _amountIn,
+        address _tokenIn,
+        address _tokenOut
+    ) external view returns (Offers.FormattedOffer memory _bestOffer) {
+        // User pays for gas, so:
+        // use maximum swaps permitted for the search
+        _bestOffer = findBestPath(_amountIn, _tokenIn, _tokenOut, maxSwaps);
+    }
+
     // -- INTERNAL HELPERS
 
     /**

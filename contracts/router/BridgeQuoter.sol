@@ -25,16 +25,6 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
         this;
     }
 
-    function findBestPathInitialChain(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut
-    ) external view returns (Offers.FormattedOffer memory _bestOffer) {
-        // User pays for gas, so:
-        // use maximum swaps permitted for the search
-        return findBestPath(_amountIn, _tokenIn, _tokenOut, maxSwaps);
-    }
-
     function findBestPathDestinationChain(
         uint256 _amountIn,
         address _tokenIn,
