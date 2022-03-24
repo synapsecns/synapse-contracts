@@ -1,18 +1,18 @@
 //@ts-nocheck
 import { Signer } from "ethers"
-import { MAX_UINT256, getUserTokenBalance } from "../../../utils"
+import { MAX_UINT256, getUserTokenBalance } from "../../../test/utils"
 import { solidity } from "ethereum-waffle"
 import { deployments } from "hardhat"
 
 import { TestUniswapAdapter } from "../build/typechain/TestUniswapAdapter"
-import { GenericERC20 } from "../../../../build/typechain/GenericERC20"
-import { IERC20Decimals } from "../../../../build/typechain/IERC20Decimals"
+import { GenericERC20 } from "../../../build/typechain/GenericERC20"
+import { IERC20Decimals } from "../../../build/typechain/IERC20Decimals"
 
 import chai from "chai"
-import { getBigNumber } from "../../../bridge/utilities"
-import {forkChain, setBalance} from "../../utils/helpers"
+import { getBigNumber } from "../../../test/bridge/utilities"
+import {forkChain, setBalance} from "../../../test/adapters/utils/helpers"
 
-import config from "../../../config.json"
+import config from "../../../test/config.json"
 
 chai.use(solidity)
 const { expect } = chai
