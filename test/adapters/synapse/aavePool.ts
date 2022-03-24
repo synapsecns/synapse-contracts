@@ -19,8 +19,7 @@ import config from "../../config.json"
 chai.use(solidity)
 const { expect } = chai
 
-describe("Aave Pool Adapter", async function() {
-
+describe("Aave Pool Adapter", async function () {
   let signers: Array<Signer>
   let swap: Swap
   let swapETH: Swap
@@ -335,24 +334,24 @@ describe("Aave Pool Adapter", async function() {
     }
   }
 
-  before(async function() {
-      // 2022-01-24
-      await forkChain(process.env.AVAX_API, 10000000)
+  before(async function () {
+    // 2022-01-24
+    await forkChain(process.env.AVAX_API, 10000000)
   })
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     await setupTest()
   })
 
   describe("Setup", () => {
-    it("AavePool Adapter is properly set up", async function() {
+    it("AavePool Adapter is properly set up", async function () {
       await checkPool(aaveUsdAdapter, swap, TOKENS)
       await checkPool(aaveEthAdapter, swapETH, TOKENS_ETH)
     })
   })
 
   describe("Adapter Swaps: 2 token pool", () => {
-    it("Swap stress test [24 small-medium sized swaps]", async function() {
+    it("Swap stress test [24 small-medium sized swaps]", async function () {
       await testAdapter(
         aaveEthAdapter,
         [0, 1],
@@ -364,7 +363,7 @@ describe("Aave Pool Adapter", async function() {
       )
     })
 
-    it("Swap stress test [18 big sized swaps]", async function() {
+    it("Swap stress test [18 big sized swaps]", async function () {
       await testAdapter(
         aaveEthAdapter,
         [0, 1],
@@ -378,19 +377,19 @@ describe("Aave Pool Adapter", async function() {
   })
 
   describe("Adapter Swaps: 4 token pool", () => {
-    it("Swaps between underlying tokens [24 small-medium sized swaps]", async function() {
+    it("Swaps between underlying tokens [24 small-medium sized swaps]", async function () {
       await testAdapter(aaveUsdAdapter, [1, 2, 3], [1, 2, 3], 1)
     })
 
-    it("Swaps from nUSD to underlying Token [12 small-medium sized swaps]", async function() {
+    it("Swaps from nUSD to underlying Token [12 small-medium sized swaps]", async function () {
       await testAdapter(aaveUsdAdapter, [0], [1, 2, 3], 1)
     })
 
-    it("Swaps from underlying Tokens to nUSD [12 small-medium sized swaps]", async function() {
+    it("Swaps from underlying Tokens to nUSD [12 small-medium sized swaps]", async function () {
       await testAdapter(aaveUsdAdapter, [1, 2, 3], [0], 1)
     })
 
-    it("Swap stress test [36 big sized swaps]", async function() {
+    it("Swap stress test [36 big sized swaps]", async function () {
       await testAdapter(
         aaveUsdAdapter,
         [0, 1, 2, 3],
@@ -402,7 +401,7 @@ describe("Aave Pool Adapter", async function() {
   })
 
   describe("Wrong amount transferred", () => {
-    it("Swap fails if transfer amount is too little", async function() {
+    it("Swap fails if transfer amount is too little", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let depositAddress = await aaveUsdAdapter.depositAddress(
         TOKENS[0].address,
@@ -419,7 +418,7 @@ describe("Aave Pool Adapter", async function() {
       ).to.be.reverted
     })
 
-    it("Only Owner can rescue overprovided swap tokens", async function() {
+    it("Only Owner can rescue overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await aaveUsdAdapter.depositAddress(
@@ -443,7 +442,7 @@ describe("Aave Pool Adapter", async function() {
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
-    it("Anyone can take advantage of overprovided swap tokens", async function() {
+    it("Anyone can take advantage of overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await aaveUsdAdapter.depositAddress(
@@ -471,7 +470,7 @@ describe("Aave Pool Adapter", async function() {
       ).to.changeTokenBalance(TOKENS[1], dude, swapQuote)
     })
 
-    it("Only Owner can rescue GAS from Adapter", async function() {
+    it("Only Owner can rescue GAS from Adapter", async function () {
       let amount = 42690
       await expect(() =>
         owner.sendTransaction({ to: aaveUsdAdapter.address, value: amount }),
@@ -481,9 +480,10 @@ describe("Aave Pool Adapter", async function() {
         aaveUsdAdapter.connect(dude).recoverGAS(),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
-      await expect(() =>
-        aaveUsdAdapter.recoverGAS(),
-      ).to.changeEtherBalances([aaveUsdAdapter, owner], [-amount, amount])
+      await expect(() => aaveUsdAdapter.recoverGAS()).to.changeEtherBalances(
+        [aaveUsdAdapter, owner],
+        [-amount, amount],
+      )
     })
   })
 })

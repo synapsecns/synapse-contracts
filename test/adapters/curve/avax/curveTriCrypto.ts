@@ -29,8 +29,20 @@ const ADAPTER = adapters[CHAIN][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
 describe(ADAPTER_NAME, function () {
-  const tokenSymbols: Array<String> = ["DAIe", "USDCe", "USDTe", "WBTCe", "WETHe"]
-  const poolTokenSymbols: Array<String> = ["avCRV", "avCRV", "avCRV", "avWBTC", "avWETH"]
+  const tokenSymbols: Array<String> = [
+    "DAIe",
+    "USDCe",
+    "USDTe",
+    "WBTCe",
+    "WETHe",
+  ]
+  const poolTokenSymbols: Array<String> = [
+    "avCRV",
+    "avCRV",
+    "avCRV",
+    "avWBTC",
+    "avWETH",
+  ]
 
   const ALL_TOKENS: Array<Number> = range(tokenSymbols.length)
 
@@ -38,7 +50,8 @@ describe(ADAPTER_NAME, function () {
   const SHARE_SMALL: Array<Number> = [1, 12, 29, 42]
   const SHARE_BIG: Array<Number> = [66, 121]
 
-  let swapsPerTime: number = SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
+  let swapsPerTime: number =
+    SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
   const timesSmall: number = Math.floor(125 / swapsPerTime) + 1
   const swapsAmount: number = timesSmall * swapsPerTime
 
@@ -175,9 +188,10 @@ describe(ADAPTER_NAME, function () {
         this.adapter.connect(this.dude).recoverGAS(),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
-      await expect(() =>
-        this.adapter.recoverGAS(),
-      ).to.changeEtherBalances([this.adapter, this.owner], [-amount, amount])
+      await expect(() => this.adapter.recoverGAS()).to.changeEtherBalances(
+        [this.adapter, this.owner],
+        [-amount, amount],
+      )
     })
   })
 
