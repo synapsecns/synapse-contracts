@@ -90,6 +90,7 @@ describe("Pangolin Adapter", async function() {
           }
         }
       }
+      console.log("Swaps: %s", swapsAmount)
   }
 
   const setupTest = deployments.createFixture(
@@ -277,14 +278,14 @@ describe("Pangolin Adapter", async function() {
   })
 
   describe("Adapter Swaps from Base tokens", () => {
-    it("Swaps and Queries from Base (140 swaps)", async function() {
-      await testAdapter(uniswapV2Adapter, baseTokens, allTokens, 5)
+    it("Swaps and Queries from Base (28 swaps)", async function() {
+      await testAdapter(uniswapV2Adapter, baseTokens, allTokens, 1)
     })
   })
 
   describe("Adapter Swaps to Base tokens", () => {
-    it("Swaps and Queries to Base (140 swaps)", async function() {
-      await testAdapter(uniswapV2Adapter, allTokens, baseTokens, 5)
+    it("Swaps and Queries to Base (28 swaps)", async function() {
+      await testAdapter(uniswapV2Adapter, allTokens, baseTokens, 1)
     })
   })
 })

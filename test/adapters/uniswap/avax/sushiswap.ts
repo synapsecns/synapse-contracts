@@ -278,14 +278,14 @@ describe("SushiSwap Adapter", async function() {
   })
 
   describe("Adapter Swaps from Base tokens", () => {
-    it("Swaps and Queries from Base (150 swaps)", async function() {
-      await testAdapter(uniswapV2Adapter, baseTokens, allTokens, 5)
+    it("Swaps and Queries from Base (24 swaps)", async function() {
+      await testAdapter(uniswapV2Adapter, baseTokens, allTokens, 1)
     })
   })
 
   describe("Adapter Swaps to Base tokens", () => {
-    it("Swaps and Queries to Base (150 swaps)", async function() {
-      await testAdapter(uniswapV2Adapter, allTokens, baseTokens, 5)
+    it("Swaps and Queries to Base (24 swaps)", async function() {
+      await testAdapter(uniswapV2Adapter, allTokens, baseTokens, 1)
     })
   })
 })

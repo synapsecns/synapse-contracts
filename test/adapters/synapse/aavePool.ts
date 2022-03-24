@@ -92,6 +92,7 @@ describe("Aave Pool Adapter", async function() {
           }
         }
       }
+    console.log("Swaps: %s", swapsAmount)
   }
 
   const setupTest = deployments.createFixture(
