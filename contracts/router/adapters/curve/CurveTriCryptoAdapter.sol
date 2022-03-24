@@ -6,6 +6,11 @@ import {CurveAbstractAdapter} from "./CurveAbstractAdapter.sol";
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 
 contract CurveTriCryptoAdapter is CurveAbstractAdapter {
+    /**
+        @dev TriCrypto Adapter is using uint256 for indexes
+        and is using exchange() for swaps
+     */
+
     mapping(address => uint256) public tokenIndex;
 
     constructor(

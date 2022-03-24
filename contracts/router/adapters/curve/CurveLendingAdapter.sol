@@ -6,6 +6,11 @@ import {CurveBaseAdapter} from "./CurveBaseAdapter.sol";
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 
 contract CurveLendingAdapter is CurveBaseAdapter {
+    /**
+        @dev Base Adapter is using int128 for indexes
+        and is using exchange_underlying() for swaps
+     */
+
     constructor(
         string memory _name,
         address _pool,
