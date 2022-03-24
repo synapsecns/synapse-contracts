@@ -31,20 +31,29 @@ contract Bridge is
     bytes32 public constant NODEGROUP_ROLE = keccak256("NODEGROUP_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
-    uint256 public chainGasAmount;
+    /// @notice GAS airdrop amount, that is given for every bridge IN transaction
+    uint128 public chainGasAmount;
+    /// @notice Maximum amount of GAS units for Swap part of bridge transaction
+    uint128 public maxGasForSwap;
 
-    function initialize(IVault _vault) external initializer {
+    function initialize(IVault _vault, uint128 _maxGasForSwap)
+        external
+        initializer
+    {
         __AccessControl_init();
         __ReentrancyGuard_init();
         __Pausable_init();
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+
         vault = _vault;
+        maxGasForSwap = _maxGasForSwap;
+
         updateChainGasAmount();
     }
 
     function updateChainGasAmount() public {
-        chainGasAmount = vault.chainGasAmount();
+        chainGasAmount = uint128(vault.chainGasAmount());
     }
 
     // -- MODIFIERS --
@@ -90,6 +99,13 @@ contract Bridge is
     }
 
     // -- RESTRICTED SETTERS --
+
+    function setMaxSwapPerGas(uint128 _maxSwapPerGas)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        maxGasForSwap = _maxSwapPerGas;
+    }
 
     function setRouter(IBridgeRouter _router)
         external
@@ -452,8 +468,11 @@ contract Bridge is
         uint256 amountPostFee,
         SwapParams calldata swapParams
     ) internal returns (IERC20 tokenOut, uint256 amountOut) {
+        // We're limiting amount of gas forwarded to Router,
+        // so we always have some leftover gas to transfer
+        // bridged token, should the swap run out of gas
         try
-            router.selfSwap(
+            router.selfSwap{gas: maxGasForSwap}(
                 amountPostFee,
                 swapParams.minAmountOut,
                 swapParams.path,
