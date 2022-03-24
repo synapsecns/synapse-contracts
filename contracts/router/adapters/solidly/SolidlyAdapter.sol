@@ -8,7 +8,7 @@ import {Address} from "@openzeppelin/contracts-solc8/utils/Address.sol";
 
 contract SolidlyAdapter is Adapter {
     address public immutable solidlyFactory;
-	bool public immutable stable;
+    bool public immutable stable;
 
     bytes32 internal immutable initCodeHash;
 
@@ -25,10 +25,6 @@ contract SolidlyAdapter is Adapter {
         solidlyFactory = _solidlyFactoryAddress;
         initCodeHash = _initCodeHash;
         stable = _stable;
-    }
-
-    function _approveIfNeeded(address, uint256) internal virtual override {
-        this;
     }
 
     function _depositAddress(address _tokenIn, address _tokenOut)
@@ -98,15 +94,5 @@ contract SolidlyAdapter is Adapter {
                 this;
             }
         }
-    }
-
-	function _checkTokens(address, address)
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
-        return true;
     }
 }

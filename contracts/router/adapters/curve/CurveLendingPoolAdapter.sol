@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import {CurveBasePoolAdapter} from "./CurveBasePoolAdapter.sol";
 
+import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
+
 contract CurveLendingPoolAdapter is CurveBasePoolAdapter {
     constructor(
         string memory _name,
@@ -24,6 +26,7 @@ contract CurveLendingPoolAdapter is CurveBasePoolAdapter {
         for (uint8 i = 0; true; i++) {
             try pool.underlying_coins(i) returns (address _tokenAddress) {
                 _addPoolToken(_tokenAddress, i);
+                _setInfiniteAllowance(IERC20(_tokenAddress), address(pool));
             } catch {
                 break;
             }

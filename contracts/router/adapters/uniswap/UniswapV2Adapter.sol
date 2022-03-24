@@ -6,8 +6,11 @@ import {Adapter} from "../../Adapter.sol";
 
 import {Address} from "@openzeppelin/contracts-solc8/utils/Address.sol";
 
+//solhint-disable reason-string
+
 contract UniswapV2Adapter is Adapter {
     // in base points
+    //solhint-disable-next-line
     uint128 internal immutable MULTIPLIER_WITH_FEE;
     uint128 internal constant MULTIPLIER = 10000;
 
@@ -32,10 +35,6 @@ contract UniswapV2Adapter is Adapter {
         MULTIPLIER_WITH_FEE = uint128(MULTIPLIER - _fee);
         uniswapV2Factory = _uniswapV2FactoryAddress;
         initCodeHash = _initCodeHash;
-    }
-
-    function _approveIfNeeded(address, uint256) internal virtual override {
-        this;
     }
 
     function _depositAddress(address _tokenIn, address _tokenOut)
@@ -120,16 +119,6 @@ contract UniswapV2Adapter is Adapter {
                 this;
             }
         }
-    }
-
-    function _checkTokens(address, address)
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
-        return true;
     }
 
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset

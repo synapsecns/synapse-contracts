@@ -28,6 +28,7 @@ abstract contract CurveAbstractAdapter is Adapter {
         for (uint8 i = 0; true; i++) {
             try pool.coins(i) returns (address _tokenAddress) {
                 _addPoolToken(_tokenAddress, i);
+                _setInfiniteAllowance(IERC20(_tokenAddress), address(pool));
             } catch {
                 break;
             }
@@ -38,14 +39,6 @@ abstract contract CurveAbstractAdapter is Adapter {
         internal
         virtual;
 
-    function _approveIfNeeded(address _tokenIn, uint256 _amount)
-        internal
-        virtual
-        override
-    {
-        _checkAllowance(IERC20(_tokenIn), _amount, address(pool));
-    }
-
     function _checkTokens(address _tokenIn, address _tokenOut)
         internal
         view
@@ -55,7 +48,6 @@ abstract contract CurveAbstractAdapter is Adapter {
     {
         return isPoolToken[_tokenIn] && isPoolToken[_tokenOut];
     }
-
 
     function _depositAddress(address, address)
         internal
