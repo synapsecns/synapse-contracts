@@ -41,11 +41,11 @@ describe(ADAPTER_NAME, function () {
   const SHARE_BIG = [66, 121]
 
   let swapsPerTime = SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
-  const timesSmall = Math.floor(125 / swapsPerTime) + 1
+  const timesSmall = Math.floor(40 / swapsPerTime) + 1
   const swapsAmount = timesSmall * swapsPerTime
 
   swapsPerTime = SHARE_BIG.length * getSwapsAmount(tokenSymbols.length)
-  const timesBig = Math.floor(50 / swapsPerTime) + 1
+  const timesBig = Math.floor(30 / swapsPerTime) + 1
   const swapsAmountBig = timesBig * swapsPerTime
 
   const AMOUNTS = []
