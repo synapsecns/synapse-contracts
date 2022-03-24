@@ -66,9 +66,7 @@ abstract contract CurveAbstractAdapter is Adapter {
         address _to
     ) internal virtual override returns (uint256 _amountOut) {
         if (directSwapSupported) {
-            _amountOut = IERC20(_tokenOut).balanceOf(_to);
-            _doDirectSwap(_amountIn, _tokenIn, _tokenOut, _to);
-            _amountOut = IERC20(_tokenOut).balanceOf(_to) - _amountOut;
+            _amountOut = _doDirectSwap(_amountIn, _tokenIn, _tokenOut, _to);
         } else {
             _amountOut = _doIndirectSwap(_amountIn, _tokenIn, _tokenOut);
             _returnTo(_tokenOut, _amountOut, _to);
@@ -80,7 +78,7 @@ abstract contract CurveAbstractAdapter is Adapter {
         address _tokenIn,
         address _tokenOut,
         address _to
-    ) internal virtual;
+    ) internal virtual returns (uint256);
 
     function _doIndirectSwap(
         uint256 _amountIn,
