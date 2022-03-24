@@ -17,7 +17,7 @@ import {
 
 import config from "../../../config.json"
 import adapters from "../adapters.json"
-import { CurveBasePoolAdapter } from "../../../../build/typechain"
+import { CurveBaseAdapter } from "../../../../build/typechain"
 
 chai.use(solidity)
 
@@ -36,7 +36,7 @@ describe(ADAPTER_NAME, async function () {
   let dude: Signer
   let dudeAddress: string
 
-  let adapter: CurveBasePoolAdapter
+  let adapter: CurveBaseAdapter
 
   const TOKENS_DECIMALS = []
   const TOKENS = []

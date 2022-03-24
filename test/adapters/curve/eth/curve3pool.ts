@@ -3,7 +3,7 @@ import { Signer } from "ethers"
 import { getUserTokenBalance } from "../../../utils"
 import { solidity } from "ethereum-waffle"
 
-import { CurveBasePoolAdapter } from "../../../../build/typechain/CurveBasePoolAdapter"
+import { CurveBaseAdapter } from "../../../../build/typechain/CurveBaseAdapter"
 import chai from "chai"
 import { getBigNumber } from "../../../bridge/utilities"
 import {
@@ -35,7 +35,7 @@ describe(ADAPTER_NAME, function () {
   let dude: Signer
   let dudeAddress: string
 
-  let adapter: CurveBasePoolAdapter
+  let adapter: CurveBaseAdapter
 
   // Test Values
   const TOKENS = []
