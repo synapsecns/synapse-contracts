@@ -1,18 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {CurveBasePoolAdapter} from "./CurveBasePoolAdapter.sol";
+import {CurveAbstractAdapter} from "./CurveAbstractAdapter.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
+import {SafeCast} from "@openzeppelin/contracts-4.4.2/utils/math/SafeCast.sol";
 
-contract CurveLendingPoolAdapter is CurveBasePoolAdapter {
+contract CurveBaseAdapter is CurveAbstractAdapter {
+    mapping(address => int128) public tokenIndex;
+
     constructor(
         string memory _name,
         address _pool,
         uint256 _swapGasEstimate,
         bool _directSwapSupported
     )
-        CurveBasePoolAdapter(
+        CurveAbstractAdapter(
             _name,
             _pool,
             _swapGasEstimate,
@@ -22,15 +25,15 @@ contract CurveLendingPoolAdapter is CurveBasePoolAdapter {
         this;
     }
 
-    function _setPoolTokens() internal virtual override {
-        for (uint8 i = 0; true; i++) {
-            try pool.underlying_coins(i) returns (address _tokenAddress) {
-                _addPoolToken(_tokenAddress, i);
-                _setInfiniteAllowance(IERC20(_tokenAddress), address(pool));
-            } catch {
-                break;
-            }
-        }
+    function _addPoolToken(address _tokenAddress, uint8 _index)
+        internal
+        virtual
+        override
+    {
+        isPoolToken[_tokenAddress] = true;
+        tokenIndex[_tokenAddress] = SafeCast.toInt128(
+            SafeCast.toInt256(_index)
+        );
     }
 
     function _doDirectSwap(
@@ -39,7 +42,7 @@ contract CurveLendingPoolAdapter is CurveBasePoolAdapter {
         address _tokenOut,
         address _to
     ) internal virtual override {
-        pool.exchange_underlying(
+        pool.exchange(
             tokenIndex[_tokenIn],
             tokenIndex[_tokenOut],
             _amountIn,
@@ -53,12 +56,14 @@ contract CurveLendingPoolAdapter is CurveBasePoolAdapter {
         address _tokenIn,
         address _tokenOut
     ) internal virtual override returns (uint256 _amountOut) {
-        _amountOut = pool.exchange_underlying(
+        pool.exchange(
             tokenIndex[_tokenIn],
             tokenIndex[_tokenOut],
             _amountIn,
             0
         );
+        // Imagine not returning amount of swapped tokens
+        _amountOut = IERC20(_tokenOut).balanceOf(address(this));
     }
 
     function _query(
@@ -67,11 +72,7 @@ contract CurveLendingPoolAdapter is CurveBasePoolAdapter {
         address _tokenOut
     ) internal view virtual override returns (uint256 _amountOut) {
         try
-            pool.get_dy_underlying(
-                tokenIndex[_tokenIn],
-                tokenIndex[_tokenOut],
-                _amountIn
-            )
+            pool.get_dy(tokenIndex[_tokenIn], tokenIndex[_tokenOut], _amountIn)
         returns (uint256 _amt) {
             // -1 to account for rounding errors.
             // This will underquote by 1 wei sometimes, but that's life
