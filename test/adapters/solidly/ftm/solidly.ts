@@ -85,6 +85,7 @@ describe("Solidly Adapter", async function () {
           }
         }
       }
+    console.log("Swaps: %s", swapsAmount)
   }
 
   async function setupTest() {
@@ -270,14 +271,14 @@ describe("Solidly Adapter", async function () {
   })
 
   describe("Adapter Swaps from Base tokens", function () {
-    it("Swaps and Queries from Base (140 swaps)", async function () {
-      await testAdapter(solidlyAdapter, baseTokens, allTokens, 5)
+    it("Swaps and Queries from Base (32 swaps)", async function () {
+      await testAdapter(solidlyAdapter, baseTokens, allTokens, 2)
     })
   })
 
   describe("Adapter Swaps to Base tokens", function () {
-    it("Swaps and Queries to Base (140 swaps)", async function () {
-      await testAdapter(solidlyAdapter, allTokens, baseTokens, 5)
+    it("Swaps and Queries to Base (32 swaps)", async function () {
+      await testAdapter(solidlyAdapter, allTokens, baseTokens, 2)
     })
   })
 })

@@ -85,6 +85,7 @@ describe("Base Pool Adapter on Mainnet", async function () {
           }
         }
       }
+    console.log("Swaps: %s", swapsAmount)
   }
 
   const setupTest = deployments.createFixture(
