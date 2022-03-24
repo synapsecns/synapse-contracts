@@ -68,8 +68,8 @@ export async function setupSynapsePool(
 
   let basePoolAdapter = (await adapterFactory.deploy(
     "BasePoolAdapter",
-    swap.address,
     swapGasEstimate,
+    swap.address,
   )) as SynapseBaseAdapter
   thisObject[adapter] = basePoolAdapter
 
@@ -116,10 +116,12 @@ export async function setupUniswapAdapters(
 ) {
   for (let index in factories) {
     let factoryName = factories[index]
+    let initHash = await thisObject[factoryName].pairCodeHash()
     thisObject[adapters[index]] = await uniswapAdapterFactory.deploy(
       factoryName,
-      thisObject[factoryName].address,
       swapGasEstimate,
+      thisObject[factoryName].address,
+      initHash,
       fee,
     )
   }
