@@ -7,6 +7,11 @@ import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol"
 import {SafeCast} from "@openzeppelin/contracts-4.4.2/utils/math/SafeCast.sol";
 
 contract CurveBaseAdapter is CurveAbstractAdapter {
+    /**
+        @dev Base Adapter is using int128 for indexes
+        and is using exchange() for swaps
+     */
+
     mapping(address => int128) public tokenIndex;
 
     constructor(

@@ -8,6 +8,11 @@ import {ICurvePool} from "./interfaces/ICurvePool.sol";
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 
 contract CurveLendingTriCryptoAdapter is CurveAbstractAdapter {
+    /**
+        @dev Lending TriCrypto Adapter is using uint256 for indexes
+        and is using exchange_underlying() for swaps
+     */
+
     uint256 private immutable numberStablecoins;
 
     mapping(address => uint256) public tokenIndex;
