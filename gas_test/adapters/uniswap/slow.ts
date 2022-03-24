@@ -10,14 +10,14 @@ import { IERC20Decimals } from "../../../build/typechain/IERC20Decimals"
 
 import chai from "chai"
 import { getBigNumber } from "../../../test/bridge/utilities"
-import {forkChain, setBalance} from "../../../test/adapters/utils/helpers"
+import { forkChain, setBalance } from "../../../test/adapters/utils/helpers"
 
 import config from "../../../test/config.json"
 
 chai.use(solidity)
 const { expect } = chai
 
-describe("Pangolin Adapter", async function() {
+describe("Pangolin Adapter", async function () {
   let signers: Array<Signer>
 
   let owner: Signer
@@ -42,7 +42,7 @@ describe("Pangolin Adapter", async function() {
   const AMOUNTS = [1, 6, 13, 37]
   const CHECK_UNDERQUOTING = true
 
-  const range = n => Array.from({length: n}, (value, key) => key)
+  const range = (n) => Array.from({ length: n }, (value, key) => key)
 
   const tokenSymbols = [
     "WAVAX",
@@ -52,7 +52,7 @@ describe("Pangolin Adapter", async function() {
     "WETHe",
     "WBTCe",
     "LINKe",
-    "alexarUST"
+    "alexarUST",
   ]
 
   const baseTokens = [0]
@@ -79,7 +79,7 @@ describe("Pangolin Adapter", async function() {
               continue
             }
             let tokenTo = tokens[j]
-            
+
             let amountOut = await adapter.query(
               amountIn,
               tokenFrom.address,
@@ -99,7 +99,7 @@ describe("Pangolin Adapter", async function() {
               amountIn,
               tokenFrom.address,
               tokenTo.address,
-              ownerAddress
+              ownerAddress,
             )
           }
         }
@@ -129,7 +129,7 @@ describe("Pangolin Adapter", async function() {
         "UniswapV2AdapterSlow",
         160000,
         config[CHAIN][DEX].factory,
-        FEE
+        FEE,
       )) as UniswapV2AdapterSlow
 
       const testFactory = await ethers.getContractFactory("TestUniswapAdapter")
@@ -157,23 +157,23 @@ describe("Pangolin Adapter", async function() {
     },
   )
 
-  before(async function() {
+  before(async function () {
     // 2022-01-24
     await forkChain(process.env.AVAX_API, 10000000)
   })
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     await setupTest()
   })
 
   describe("Adapter Swaps from Base tokens", () => {
-    it("Swaps and Queries from Base (140 swaps)", async function() {
+    it("Swaps and Queries from Base (140 swaps)", async function () {
       await testAdapter(uniswapV2Adapter, baseTokens, allTokens, 5)
     })
   })
 
   describe("Adapter Swaps to Base tokens", () => {
-    it("Swaps and Queries to Base (140 swaps)", async function() {
+    it("Swaps and Queries to Base (140 swaps)", async function () {
       await testAdapter(uniswapV2Adapter, allTokens, baseTokens, 5)
     })
   })

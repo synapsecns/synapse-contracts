@@ -183,9 +183,10 @@ describe(ADAPTER_NAME, function () {
         this.adapter.connect(this.dude).recoverGAS(),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
-      await expect(() =>
-        this.adapter.recoverGAS(),
-      ).to.changeEtherBalances([this.adapter, this.owner], [-amount, amount])
+      await expect(() => this.adapter.recoverGAS()).to.changeEtherBalances(
+        [this.adapter, this.owner],
+        [-amount, amount],
+      )
     })
   })
 

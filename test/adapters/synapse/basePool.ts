@@ -206,13 +206,7 @@ describe("Base Pool Adapter", async function () {
     })
 
     it("Swap stress test [36 big sized swaps]", async function () {
-      await testAdapter(
-        basePoolAdapter,
-        [0, 1, 2],
-        [0, 1, 2],
-        2,
-        AMOUNTS_BIG,
-      )
+      await testAdapter(basePoolAdapter, [0, 1, 2], [0, 1, 2], 2, AMOUNTS_BIG)
     })
   })
 

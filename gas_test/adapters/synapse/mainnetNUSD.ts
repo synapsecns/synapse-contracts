@@ -209,7 +209,7 @@ describe("Base Pool Adapter", async function () {
     //   await testAdapter(baseAdapter, [0, 1, 2], [0, 1, 2], 5)
     // })
 
-    it("Withdraw from LP token [120 small-medium sized swaps]", async function() {
+    it("Withdraw from LP token [120 small-medium sized swaps]", async function () {
       await testAdapter(baseAdapter, [3], [0, 1, 2], 10)
     })
   })

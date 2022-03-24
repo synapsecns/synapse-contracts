@@ -11,14 +11,14 @@ import { IWETH9 } from "../../../../build/typechain/IWETH9"
 
 import chai from "chai"
 import { getBigNumber } from "../../../bridge/utilities"
-import {forkChain, setBalance} from "../../utils/helpers"
+import { forkChain, setBalance } from "../../utils/helpers"
 
 import config from "../../../config.json"
 
 chai.use(solidity)
 const { expect } = chai
 
-describe("SushiSwap Adapter", async function() {
+describe("SushiSwap Adapter", async function () {
   let signers: Array<Signer>
 
   let owner: Signer
@@ -43,7 +43,7 @@ describe("SushiSwap Adapter", async function() {
   const AMOUNTS = [1, 6, 13, 37]
   const CHECK_UNDERQUOTING = true
 
-  const range = n => Array.from({length: n}, (value, key) => key)
+  const range = (n) => Array.from({ length: n }, (value, key) => key)
 
   const tokenSymbols = [
     "WAVAX",
@@ -52,7 +52,7 @@ describe("SushiSwap Adapter", async function() {
     "USDCe",
     "wMEMO",
     "USDTe",
-    "SUSHIe"
+    "SUSHIe",
   ]
 
   const baseTokens = [0]
@@ -114,7 +114,7 @@ describe("SushiSwap Adapter", async function() {
         160000,
         config[CHAIN][DEX].factory,
         config[CHAIN][DEX].hash,
-        FEE
+        FEE,
       )) as UniswapV2Adapter
 
       const testFactory = await ethers.getContractFactory("TestUniswapAdapter")
@@ -142,23 +142,23 @@ describe("SushiSwap Adapter", async function() {
     },
   )
 
-  before(async function() {
+  before(async function () {
     // 2022-01-24
     await forkChain(process.env.AVAX_API, 10000000)
   })
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     await setupTest()
   })
 
   describe("Sanity checks", () => {
-    it("UniswapV2 Adapter is properly set up", async function() {
+    it("UniswapV2 Adapter is properly set up", async function () {
       expect(await uniswapV2Adapter.uniswapV2Factory()).to.eq(
         config[CHAIN][DEX].factory,
       )
     })
 
-    it("Swap fails when there is no direct path between tokens", async function() {
+    it("Swap fails when there is no direct path between tokens", async function () {
       // USDCe -> SUSHIe
       let tokenFrom = 3
       let tokenTo = 6
@@ -182,7 +182,7 @@ describe("SushiSwap Adapter", async function() {
       ).to.be.revertedWith("Adapter: Insufficient output amount")
     })
 
-    it("Swap fails if transfer amount is too little", async function() {
+    it("Swap fails if transfer amount is too little", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let depositAddress = await uniswapV2Adapter.depositAddress(
         TOKENS[0].address,
@@ -200,7 +200,7 @@ describe("SushiSwap Adapter", async function() {
       ).to.be.reverted
     })
 
-    it("No one can rescue overprovided swap tokens", async function() {
+    it("No one can rescue overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await uniswapV2Adapter.depositAddress(
@@ -224,7 +224,7 @@ describe("SushiSwap Adapter", async function() {
         .reverted
     })
 
-    it("Noone can take advantage of overprovided swap tokens", async function() {
+    it("Noone can take advantage of overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await uniswapV2Adapter.depositAddress(
@@ -248,7 +248,7 @@ describe("SushiSwap Adapter", async function() {
       ).to.be.reverted
     })
 
-    it("Only Owner can rescue tokens sent to Adapter", async function() {
+    it("Only Owner can rescue tokens sent to Adapter", async function () {
       let extra = getBigNumber(10, TOKENS_DECIMALS[0])
       await TOKENS[0].transfer(uniswapV2Adapter.address, extra)
 
@@ -261,7 +261,7 @@ describe("SushiSwap Adapter", async function() {
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
-    it("Only Owner can rescue GAS from Adapter", async function() {
+    it("Only Owner can rescue GAS from Adapter", async function () {
       let amount = 42690
       await expect(() =>
         owner.sendTransaction({ to: uniswapV2Adapter.address, value: amount }),
@@ -271,20 +271,21 @@ describe("SushiSwap Adapter", async function() {
         uniswapV2Adapter.connect(dude).recoverGAS(),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
-      await expect(() =>
-        uniswapV2Adapter.recoverGAS(),
-      ).to.changeEtherBalances([uniswapV2Adapter, owner], [-amount, amount])
+      await expect(() => uniswapV2Adapter.recoverGAS()).to.changeEtherBalances(
+        [uniswapV2Adapter, owner],
+        [-amount, amount],
+      )
     })
   })
 
   describe("Adapter Swaps from Base tokens", () => {
-    it("Swaps and Queries from Base (24 swaps)", async function() {
+    it("Swaps and Queries from Base (24 swaps)", async function () {
       await testAdapter(uniswapV2Adapter, baseTokens, allTokens, 1)
     })
   })
 
   describe("Adapter Swaps to Base tokens", () => {
-    it("Swaps and Queries to Base (24 swaps)", async function() {
+    it("Swaps and Queries to Base (24 swaps)", async function () {
       await testAdapter(uniswapV2Adapter, allTokens, baseTokens, 1)
     })
   })
