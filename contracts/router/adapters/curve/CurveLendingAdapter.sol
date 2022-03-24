@@ -16,14 +16,7 @@ contract CurveLendingAdapter is CurveBaseAdapter {
         address _pool,
         uint256 _swapGasEstimate,
         bool _directSwapSupported
-    )
-        CurveBaseAdapter(
-            _name,
-            _pool,
-            _swapGasEstimate,
-            _directSwapSupported
-        )
-    {
+    ) CurveBaseAdapter(_name, _pool, _swapGasEstimate, _directSwapSupported) {
         this;
     }
 
@@ -43,8 +36,8 @@ contract CurveLendingAdapter is CurveBaseAdapter {
         address _tokenIn,
         address _tokenOut,
         address _to
-    ) internal virtual override {
-        pool.exchange_underlying(
+    ) internal virtual override returns (uint256 _amountOut) {
+        _amountOut = pool.exchange_underlying(
             tokenIndex[_tokenIn],
             tokenIndex[_tokenOut],
             _amountIn,

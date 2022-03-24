@@ -75,7 +75,8 @@ contract CurveLendingTriCryptoAdapter is CurveAbstractAdapter {
         address _tokenIn,
         address _tokenOut,
         address _to
-    ) internal virtual override {
+    ) internal virtual override returns (uint256 _amountOut) {
+        _amountOut = IERC20(_tokenOut).balanceOf(_to);
         pool.exchange_underlying(
             tokenIndex[_tokenIn],
             tokenIndex[_tokenOut],
@@ -83,6 +84,7 @@ contract CurveLendingTriCryptoAdapter is CurveAbstractAdapter {
             0,
             _to
         );
+        _amountOut = IERC20(_tokenOut).balanceOf(_to) - _amountOut;
     }
 
     function _doIndirectSwap(
