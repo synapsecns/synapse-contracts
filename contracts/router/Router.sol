@@ -190,6 +190,14 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         );
     }
 
+    struct ChainedSwapData {
+        address tokenIn;
+        address tokenOut;
+        address tokenNext;
+        IAdapter adapterNext;
+        address targetAddress;
+    }
+
     /**
         @notice Perform a series of swaps, assuming the starting tokens
                 have already been deposited in the first adapter
@@ -215,23 +223,45 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         for (uint8 i = 0; i < _adapters.length; ++i) {
             require(isTrustedAdapter[_adapters[i]], "Router: unknown adapter");
         }
-        _amountOut = _amountIn;
+
+        // yo mama's too deep
+        ChainedSwapData memory data;
+        data.tokenOut = _path[0];
+        data.tokenNext = _path[1];
+        data.adapterNext = IAdapter(_adapters[0]);
+
+        _amountOut = IERC20(_path[_path.length - 1]).balanceOf(_to);
+
         for (uint8 i = 0; i < _adapters.length; ++i) {
-            address _targetAddress = i < _adapters.length - 1
-                ? _getDepositAddress(_path, _adapters, i + 1)
-                : _to;
-            _amountOut = IAdapter(_adapters[i]).swap(
-                _amountOut,
-                _path[i],
-                _path[i + 1],
-                _targetAddress
+            data.tokenIn = data.tokenOut;
+            data.tokenOut = data.tokenNext;
+
+            IAdapter _adapter = data.adapterNext;
+            if (i < _adapters.length - 1) {
+                data.adapterNext = IAdapter(_adapters[i + 1]);
+                data.tokenNext = _path[i + 2];
+                data.targetAddress = data.adapterNext.depositAddress(
+                    data.tokenOut,
+                    data.tokenNext
+                );
+            } else {
+                data.targetAddress = _to;
+            }
+
+            _amountIn = _adapter.swap(
+                _amountIn,
+                data.tokenIn,
+                data.tokenOut,
+                data.targetAddress
             );
         }
+        // figure out how much tokens user received exactly
+        _amountOut = IERC20(data.tokenOut).balanceOf(_to) - _amountOut;
         require(
             _amountOut >= _minAmountOut,
             "Router: Insufficient output amount"
         );
-        emit Swap(_path[0], _path[_path.length - 1], _amountIn, _amountOut);
+        emit Swap(_path[0], data.tokenOut, _amountIn, _amountOut);
     }
 
     // -- INTERNAL HELPERS
