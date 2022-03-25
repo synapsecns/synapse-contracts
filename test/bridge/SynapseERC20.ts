@@ -10,7 +10,7 @@
 // chai.use(solidity)
 // const { expect } = chai
 
-// describe('SynapseERC20Factory', async () => {
+// describe('SynapseERC20Factory', async function() {
 //   const { get } = deployments
 //   let signers: Array<Signer>
 //   let synapseERC20Factory: SynapseERC20Factory
@@ -56,18 +56,18 @@
 //     }
 //   )
 
-//   beforeEach(async () => {
+//   beforeEach(async function() {
 //     await setupTest()
 //   })
 
 //   describe('SynToken', () => {
-//     it('Token info', async () => {
+//     it('Token info', async function() {
 //       expect(await synapseERC20.name()).to.be.eq('Synapse Test Token')
 //       expect(await synapseERC20.symbol()).to.be.eq('SYNTEST')
 //       expect(await synapseERC20.decimals()).to.be.eq(18)
 //     })
 
-//     it('Initialize once', async () => {
+//     it('Initialize once', async function() {
 //       await expect(
 //         synapseERC20.initialize(
 //           'Synapse Test Token',
@@ -79,7 +79,7 @@
 //     })
 
 //     describe('Mint', () => {
-//       it('mint', async () => {
+//       it('mint', async function() {
 //         await synapseERC20
 //           .connect(owner)
 //           .grantRole(await synapseERC20.MINTER_ROLE(), await owner.getAddress())
@@ -89,7 +89,7 @@
 //         ).to.be.eq('1000')
 //       })
 
-//       it('Mint not allowed without role', async () => {
+//       it('Mint not allowed without role', async function() {
 //         // await synapseERC20.connect(owner).grantRole(await synapseERC20.MINTER_ROLE(), await owner.getAddress());
 //         await expect(
 //           synapseERC20.connect(owner).mint(await user1.getAddress(), '1000')

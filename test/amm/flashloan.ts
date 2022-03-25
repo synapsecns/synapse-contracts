@@ -1,5 +1,5 @@
 import { BigNumber, Signer } from "ethers"
-import { MAX_UINT256, getUserTokenBalance, asyncForEach } from "./testUtils"
+import { MAX_UINT256, getUserTokenBalance, asyncForEach } from "../utils"
 import { solidity } from "ethereum-waffle"
 
 import { GenericERC20 } from "../../build/typechain/GenericERC20"
@@ -151,17 +151,17 @@ describe("Swap Flashloan", () => {
     },
   )
 
-  beforeEach(async () => {
+  beforeEach(async function () {
     await setupTest()
   })
 
-  it("Reverts when the borrower does not have enough to pay back", async () => {
+  it("Reverts when the borrower does not have enough to pay back", async function () {
     await expect(
       flashLoanExample.flashLoan(swapFlashLoan.address, USDC.address, 1e6, []),
     ).to.be.revertedWith("ERC20: transfer amount exceeds balance")
   })
 
-  it("Reverts when flashloan debt is not paid", async () => {
+  it("Reverts when flashloan debt is not paid", async function () {
     await expect(
       flashLoanExample.flashLoan(
         swapFlashLoan.address,
@@ -172,7 +172,7 @@ describe("Swap Flashloan", () => {
     ).to.be.revertedWith("flashLoan fee is not met")
   })
 
-  it("Reverts when calling re-entering swap contract via `addLiquidity`", async () => {
+  it("Reverts when calling re-entering swap contract via `addLiquidity`", async function () {
     await expect(
       flashLoanExample.flashLoan(
         swapFlashLoan.address,
@@ -183,7 +183,7 @@ describe("Swap Flashloan", () => {
     ).to.be.revertedWith("ReentrancyGuard: reentrant call")
   })
 
-  it("Reverts when calling re-entering swap contract via `swap`", async () => {
+  it("Reverts when calling re-entering swap contract via `swap`", async function () {
     await expect(
       flashLoanExample.flashLoan(
         swapFlashLoan.address,
@@ -194,7 +194,7 @@ describe("Swap Flashloan", () => {
     ).to.be.revertedWith("ReentrancyGuard: reentrant call")
   })
 
-  it("Reverts when calling re-entering swap contract via `removeLiquidity`", async () => {
+  it("Reverts when calling re-entering swap contract via `removeLiquidity`", async function () {
     await expect(
       flashLoanExample.flashLoan(
         swapFlashLoan.address,
@@ -205,7 +205,7 @@ describe("Swap Flashloan", () => {
     ).to.be.revertedWith("ReentrancyGuard: reentrant call")
   })
 
-  it("Reverts when calling re-entering swap contract via `removeLiquidityOneToken`", async () => {
+  it("Reverts when calling re-entering swap contract via `removeLiquidityOneToken`", async function () {
     await expect(
       flashLoanExample.flashLoan(
         swapFlashLoan.address,
@@ -216,7 +216,7 @@ describe("Swap Flashloan", () => {
     ).to.be.revertedWith("ReentrancyGuard: reentrant call")
   })
 
-  it("Succeeds when fee is paid off", async () => {
+  it("Succeeds when fee is paid off", async function () {
     const flashLoanAmount = BigNumber.from(1e6)
     const flashLoanFee = flashLoanAmount
       .mul(await swapFlashLoan.flashLoanFeeBPS())
@@ -259,13 +259,13 @@ describe("Swap Flashloan", () => {
   })
 
   describe("setFlashLoanFees", () => {
-    it("Reverts when called by non-owner", async () => {
+    it("Reverts when called by non-owner", async function () {
       await expect(
         swapFlashLoan.connect(user1).setFlashLoanFees(100, 5000),
       ).to.be.revertedWith("Ownable: caller is not the owner")
     })
 
-    it("Reverts when fees are not in the range", async () => {
+    it("Reverts when fees are not in the range", async function () {
       await expect(swapFlashLoan.setFlashLoanFees(0, 5000)).to.be.revertedWith(
         "fees are not in valid range",
       )
@@ -280,7 +280,7 @@ describe("Swap Flashloan", () => {
       ).to.be.revertedWith("fees are not in valid range")
     })
 
-    it("Succeeds when protocol fee bps is set to 0", async () => {
+    it("Succeeds when protocol fee bps is set to 0", async function () {
       // Realistic flashloan fee
       const newFlashLoanFeeBPS = 8
       const newProtocolFeeBPS = 0
@@ -316,7 +316,7 @@ describe("Swap Flashloan", () => {
       expect(await USDC.balanceOf(swapFlashLoan.address)).to.eq("50000800")
     })
 
-    it("Succeeds when fees are in the valid range", async () => {
+    it("Succeeds when fees are in the valid range", async function () {
       const newFlashLoanFeeBPS = 50
       const newProtocolFeeBPS = 100
 
