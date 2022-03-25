@@ -21,7 +21,7 @@
 // chai.use(solidity)
 // const { expect } = chai
 
-// describe("SynapseBridge", async () => {
+// describe("SynapseBridge", async function() {
 //     const { get } = deployments
 //     let signers: Array<Signer>
 //     let synapseBridge: SynapseBridge
@@ -87,18 +87,18 @@
 
 //         })
 
-//     beforeEach(async () => {
+//     beforeEach(async function() {
 //         await setupTest()
 //     })
 
 //     describe("Bridge", () => {
 //         describe("ERC20", () => {
-//             it("Deposit - return correct balance in bridge contract", async () => {
+//             it("Deposit - return correct balance in bridge contract", async function() {
 //                 await synapseBridge.deposit(user1Address, 56, testERC20.address, String(1e18))
 //                 await expect(await testERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e18))
 //             })
 
-//             it("Withdraw - correct balance to user and keep correct fee", async () => {
+//             it("Withdraw - correct balance to user and keep correct fee", async function() {
 //                 //user deposits 1 token
 //                 await synapseBridge.deposit(user1Address, 56, testERC20.address, String(1e18))
 //                 let preWithdraw = await testERC20.balanceOf(user1Address)
@@ -111,7 +111,7 @@
 
 //             })
 
-//             it("Mint - correct balance to user and keep correct fee", async () => {
+//             it("Mint - correct balance to user and keep correct fee", async function() {
 //                 // nodegroup mints after receiving TokenDeposit Event
 //                 let preMint = await syntestERC20.balanceOf(user1Address)
 
@@ -125,7 +125,7 @@
 
 //             })
 
-//             it("Redeem - correct balance to user and keep correct fee", async () => {
+//             it("Redeem - correct balance to user and keep correct fee", async function() {
 //                 // user decides to redeem back to base chainId
 //                 let preRedeem = await syntestERC20.balanceOf(user1Address)
 
@@ -133,7 +133,7 @@
 //                 await expect((await syntestERC20.balanceOf(user1Address)).sub(preRedeem)).to.be.eq(String(0))
 //             })
 
-//             it("Withdraw fees", async () => {
+//             it("Withdraw fees", async function() {
 //                 let preWithdrawFees = await syntestERC20.balanceOf(ownerAddress)
 //                 let synTestFees = await synapseBridge.getFeeBalance(syntestERC20.address)
 //                 await synapseBridge.withdrawFees(syntestERC20.address, ownerAddress)
@@ -142,14 +142,14 @@
 //         })
 
 //         describe("ETH", () => {
-//             it("Deposit ETH", async () => {
+//             it("Deposit ETH", async function() {
 //                 await synapseBridge.depositETH(user1Address, 56, String(1e18), {
 //                     value: String(1e18)
 //                 })
 //                 expect(await ethers.provider.getBalance(synapseBridge.address)).to.be.eq(String(1e18))
 //             })
 
-//             it("Withdraw ETH with correct fees", async () => {
+//             it("Withdraw ETH with correct fees", async function() {
 //                 // someone deposits eth
 //                 await synapseBridge.depositETH(ownerAddress, 56, String(1e18), {
 //                     value: String(1e18)

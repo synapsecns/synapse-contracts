@@ -7,13 +7,13 @@ import { GenericERC20 } from "../../build/typechain/GenericERC20"
 
 import chai from "chai"
 import { deployments, ethers } from "hardhat"
-import { asyncForEach, MAX_UINT256 } from "./testUtils"
+import { asyncForEach, MAX_UINT256 } from "../utils"
 
 chai.use(solidity)
 const { expect } = chai
 const { get } = deployments
 
-describe("LPToken", async () => {
+describe("LPToken", async function () {
   let signers: Array<Signer>
   let owner: Signer
   let firstToken: LPToken
@@ -29,11 +29,11 @@ describe("LPToken", async () => {
     },
   )
 
-  beforeEach(async () => {
+  beforeEach(async function () {
     await setupTest()
   })
 
-  it("Reverts when minting 0", async () => {
+  it("Reverts when minting 0", async function () {
     // Deploy dummy tokens
     firstToken = (await lpTokenFactory.deploy()) as LPToken
     firstToken.initialize("Test Token", "TEST")
@@ -42,7 +42,7 @@ describe("LPToken", async () => {
     ).to.be.revertedWith("LPToken: cannot mint 0")
   })
 
-  xit("Reverts when transferring the token to itself", async () => {
+  xit("Reverts when transferring the token to itself", async function () {
     const swap = (await ethers.getContractAt(
       "SwapFlashLoan",
       (

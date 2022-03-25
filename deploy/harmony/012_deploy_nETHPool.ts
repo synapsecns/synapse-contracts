@@ -1,6 +1,7 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
 import { CHAIN_ID } from "../../utils/network"
+import {includes} from "lodash";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, getChainId } = hre
@@ -11,10 +12,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   let ETHPool = await getOrNull("ETHPool")
   if (ETHPool) {
     log(`reusing "ETHPool" at ${ETHPool.address}`)
-  } else if (
-    (await getChainId()) != CHAIN_ID.HARMONY &&
-    (await getChainId()) != CHAIN_ID.HARDHAT
-  ) {
+  } else if ((includes([CHAIN_ID.HARMONY, CHAIN_ID.HARDHAT], await getChainId()))) {
     log(`Not BOBA or Hardhat`)
   } else {
     // Constructor arguments

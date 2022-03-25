@@ -1,5 +1,5 @@
 import { Signer } from "ethers"
-import { ZERO_ADDRESS } from "./testUtils"
+import { ZERO_ADDRESS } from "../utils"
 import { solidity } from "ethereum-waffle"
 import { deployments, ethers } from "hardhat"
 
@@ -56,12 +56,12 @@ describe("Swap", () => {
     },
   )
 
-  beforeEach(async () => {
+  beforeEach(async function () {
     await setupTest()
   })
 
   describe("swapStorage#constructor", () => {
-    it("Reverts with '_pooledTokens.length <= 1'", async () => {
+    it("Reverts with '_pooledTokens.length <= 1'", async function () {
       await expect(
         swap.initialize(
           [],
@@ -78,7 +78,7 @@ describe("Swap", () => {
       ).to.be.revertedWith("_pooledTokens.length <= 1")
     })
 
-    it("Reverts with '_pooledTokens.length > 32'", async () => {
+    it("Reverts with '_pooledTokens.length > 32'", async function () {
       await expect(
         swap.initialize(
           Array(33).fill(firstToken.address),
@@ -95,7 +95,7 @@ describe("Swap", () => {
       ).to.be.revertedWith("_pooledTokens.length > 32")
     })
 
-    it("Reverts with '_pooledTokens decimals mismatch'", async () => {
+    it("Reverts with '_pooledTokens decimals mismatch'", async function () {
       await expect(
         swap.initialize(
           [firstToken.address, secondToken.address],
@@ -112,7 +112,7 @@ describe("Swap", () => {
       ).to.be.revertedWith("_pooledTokens decimals mismatch")
     })
 
-    it("Reverts with 'Duplicate tokens'", async () => {
+    it("Reverts with 'Duplicate tokens'", async function () {
       await expect(
         swap.initialize(
           [firstToken.address, firstToken.address],
@@ -129,7 +129,7 @@ describe("Swap", () => {
       ).to.be.revertedWith("Duplicate tokens")
     })
 
-    it("Reverts with 'The 0 address isn't an ERC-20'", async () => {
+    it("Reverts with 'The 0 address isn't an ERC-20'", async function () {
       await expect(
         swap.initialize(
           [ZERO_ADDRESS, ZERO_ADDRESS],
@@ -146,7 +146,7 @@ describe("Swap", () => {
       ).to.be.revertedWith("The 0 address isn't an ERC-20")
     })
 
-    it("Reverts with 'Token decimals exceeds max'", async () => {
+    it("Reverts with 'Token decimals exceeds max'", async function () {
       await expect(
         swap.initialize(
           [firstToken.address, secondToken.address],
@@ -163,7 +163,7 @@ describe("Swap", () => {
       ).to.be.revertedWith("Token decimals exceeds max")
     })
 
-    it("Reverts with '_a exceeds maximum'", async () => {
+    it("Reverts with '_a exceeds maximum'", async function () {
       await expect(
         swap.initialize(
           [firstToken.address, secondToken.address],
@@ -180,7 +180,7 @@ describe("Swap", () => {
       ).to.be.revertedWith("_a exceeds maximum")
     })
 
-    it("Reverts with '_fee exceeds maximum'", async () => {
+    it("Reverts with '_fee exceeds maximum'", async function () {
       await expect(
         swap.initialize(
           [firstToken.address, secondToken.address],
@@ -197,7 +197,7 @@ describe("Swap", () => {
       ).to.be.revertedWith("_fee exceeds maximum")
     })
 
-    it("Reverts with '_adminFee exceeds maximum'", async () => {
+    it("Reverts with '_adminFee exceeds maximum'", async function () {
       await expect(
         swap.initialize(
           [firstToken.address, secondToken.address],
@@ -214,7 +214,7 @@ describe("Swap", () => {
       ).to.be.revertedWith("_adminFee exceeds maximum")
     })
 
-    it("Reverts when the LPToken target does not implement initialize function", async () => {
+    it("Reverts when the LPToken target does not implement initialize function", async function () {
       await expect(
         swap.initialize(
           [firstToken.address, secondToken.address],

@@ -6,6 +6,9 @@ on: ["push", "pull_request"]
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      AVAX_API: https://api.avax.network/ext/bc/C/rpc
+      ALCHEMY_API: ${{ secrets.ALCHEMY_API }}
 
     steps:
       - uses: actions/checkout@v2
@@ -27,6 +30,6 @@ jobs:
           npm install
           npm run build
 
-      - name: Test and Coverage
+      - name: Test
         run: |
           npm run test

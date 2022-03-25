@@ -252,7 +252,27 @@ contract MoonriverBridgeZap {
             }
             synapseBridge.redeem(to, chainId, token, amount);
         }
-        
+    }
+
+    /**
+ * @notice Wraps SynapseBridge redeemV2() function
+   * @param to address on other chain to bridge assets to
+   * @param chainId which chain to bridge assets onto
+   * @param token ERC20 compatible token to redeem into the bridge
+   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+   **/
+    function redeemV2(
+        bytes32 to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    ) external {
+        token.safeTransferFrom(msg.sender, address(this), amount);
+
+        if (token.allowance(address(this), address(synapseBridge)) < amount) {
+            token.safeApprove(address(synapseBridge), MAX_UINT256);
+        }
+        synapseBridge.redeemV2(to, chainId, token, amount);
     }
 
     /**
