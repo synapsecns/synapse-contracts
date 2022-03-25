@@ -81,6 +81,9 @@ let config: HardhatUserConfig = {
     metis: {
       url: 'https://andromeda.metis.io/?owner=1088',
     },
+    dfk: {
+      url: process.env.DFK_API,
+    },
     mainnet: {
       url: process.env.ALCHEMY_API || "https://main-light.eth.linkpool.io/",
     },
@@ -139,6 +142,7 @@ let config: HardhatUserConfig = {
       default: 0, // here this will by default take the first account as deployer
       1: 0, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
       42161: 0,
+      53935: 3
     },
     libraryDeployer: {
       default: 0, // use a different account for deploying libraries on the hardhat network
@@ -178,7 +182,8 @@ if (process.env.PRIVATE_KEYS) {
     "optimism",
     "aurora",
     "cronos",
-    "metis"
+    "metis",
+    "dfk"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
