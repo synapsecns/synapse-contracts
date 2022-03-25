@@ -226,7 +226,7 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
             "Router: wrong amount of adapters/tokens"
         );
         require(_to != address(0), "Router: _to cannot be zero address");
-        for (uint8 i = 0; i < _adapters.length; ++i) {
+        for (uint256 i = 0; i < _adapters.length; ++i) {
             require(isTrustedAdapter[_adapters[i]], "Router: unknown adapter");
         }
 
@@ -238,7 +238,7 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
 
         _amountOut = IERC20(_path[_path.length - 1]).balanceOf(_to);
 
-        for (uint8 i = 0; i < _adapters.length; ++i) {
+        for (uint256 i = 0; i < _adapters.length; ++i) {
             data.tokenIn = data.tokenOut;
             data.tokenOut = data.tokenNext;
 
