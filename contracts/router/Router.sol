@@ -42,14 +42,7 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         address[] calldata _adapters,
         address _to
     ) external returns (uint256 _amountOut) {
-        _amountOut = _swap(
-            _amountIn,
-            _minAmountOut,
-            _path,
-            _adapters,
-            msg.sender,
-            _to
-        );
+        _amountOut = _swap(_amountIn, _minAmountOut, _path, _adapters, _to);
     }
 
     /**
@@ -112,7 +105,6 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
             _minAmountOut,
             _path,
             _adapters,
-            msg.sender,
             address(this)
         );
         // this will unwrap WGAS and return GAS
@@ -125,14 +117,13 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     /// @dev All internal swap functions have a reentrancy guard
 
     /**
-        @notice Pull tokens from user and perform a series of swaps
+        @notice Pull tokens from msg.sender and perform a series of swaps
         @dev Use _selfSwap if tokens are already in the contract
              Don't do this: _from = address(this);
         @param _amountIn amount of initial tokens to swap
         @param _minAmountOut minimum amount of final tokens for a swap to be successful
         @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
         @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
-        @param _from address to pull initial tokens from
         @param _to address to receive final tokens
         @return _amountOut Final amount of tokens swapped
      */
@@ -141,14 +132,13 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         uint256 _minAmountOut,
         address[] calldata _path,
         address[] calldata _adapters,
-        address _from,
         address _to
     ) internal nonReentrant returns (uint256 _amountOut) {
         require(_path.length > 1, "Router: path too short");
         address _tokenIn = _path[0];
         address _tokenNext = _path[1];
         IERC20(_tokenIn).safeTransferFrom(
-            _from,
+            msg.sender,
             _getDepositAddress(_adapters[0], _tokenIn, _tokenNext),
             _amountIn
         );

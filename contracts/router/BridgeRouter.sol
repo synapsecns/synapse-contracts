@@ -195,7 +195,6 @@ contract BridgeRouter is Router, IBridgeRouter {
             _minAmountOut,
             _path,
             _adapters,
-            msg.sender,
             address(this)
         );
         // Then, perform bridging
