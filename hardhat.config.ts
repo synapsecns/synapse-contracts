@@ -60,7 +60,7 @@ let config: HardhatUserConfig = {
     },
     avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
-      // gasPrice: 750 * 1000000000,
+      gasPrice: 200 * 1000000000,
     },
     harmony: {
       url: "https://harmony-0-rpc.gateway.pokt.network/",
