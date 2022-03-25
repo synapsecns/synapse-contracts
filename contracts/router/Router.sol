@@ -144,9 +144,12 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         address _from,
         address _to
     ) internal nonReentrant returns (uint256 _amountOut) {
-        IERC20(_path[0]).safeTransferFrom(
+        require(_path.length > 1, "Router: path too short");
+        address _tokenIn = _path[0];
+        address _tokenNext = _path[1];
+        IERC20(_tokenIn).safeTransferFrom(
             _from,
-            _getDepositAddress(_path, _adapters, 0),
+            _getDepositAddress(_adapters[0], _tokenIn, _tokenNext),
             _amountIn
         );
 
@@ -176,8 +179,11 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         address[] calldata _adapters,
         address _to
     ) internal nonReentrant returns (uint256 _amountOut) {
-        IERC20(_path[0]).safeTransfer(
-            _getDepositAddress(_path, _adapters, 0),
+        require(_path.length > 1, "Router: path too short");
+        address _tokenIn = _path[0];
+        address _tokenNext = _path[1];
+        IERC20(_tokenIn).safeTransfer(
+            _getDepositAddress(_adapters[0], _tokenIn, _tokenNext),
             _amountIn
         );
 
@@ -268,21 +274,20 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
 
     /**
         @notice Get selected adapter's deposit address
-        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
-        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
-        @param _index index of adapter to get deposit address
-    
-        @dev Return value of address(0) means that
-             adapter doesn't support this pair of tokens
+        @dev Return value of address(0) means that adapter
+             doesn't support this pair of tokens, thus revert
+        @param _adapter Adapter in question
+        @param _tokenIn token to sell
+        @param _tokenOut token to buy
      */
     function _getDepositAddress(
-        address[] calldata _path,
-        address[] calldata _adapters,
-        uint8 _index
+        address _adapter,
+        address _tokenIn,
+        address _tokenOut
     ) internal view returns (address _depositAddress) {
-        _depositAddress = IAdapter(_adapters[_index]).depositAddress(
-            _path[_index],
-            _path[_index + 1]
+        _depositAddress = IAdapter(_adapter).depositAddress(
+            _tokenIn,
+            _tokenOut
         );
         require(_depositAddress != address(0), "Adapter: unknown tokens");
     }
