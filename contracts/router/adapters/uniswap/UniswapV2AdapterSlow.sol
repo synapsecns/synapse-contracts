@@ -6,6 +6,8 @@ import {IUniswapV2Pair} from "../interfaces/IUniswapV2Pair.sol";
 
 import {Adapter} from "../../Adapter.sol";
 
+// solhint-disable reason-string
+
 contract UniswapV2AdapterSlow is Adapter {
     IUniswapV2Factory public uniswapV2Factory;
 
@@ -13,6 +15,7 @@ contract UniswapV2AdapterSlow is Adapter {
     mapping(address => mapping(address => address)) private pairs;
 
     // in base points
+    // solhint-disable-next-line
     uint256 internal immutable MULTIPLIER_WITH_FEE;
     uint256 internal constant MULTIPLIER = 10000;
 
