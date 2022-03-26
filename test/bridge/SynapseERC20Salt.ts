@@ -10,17 +10,20 @@ import chai from "chai"
 chai.use(solidity)
 const { expect } = chai
 
-describe("SynapseERC20Factory", async () => {
+describe("SynapseERC20Factory (deterministic deploy)", async () => {
   const { get } = deployments
   let signers: Array<Signer>
   let synapseERC20Factory: SynapseERC20Factory
   let synapseERC20: SynapseERC20
+  let synapseERC20Base: SynapseERC20
   let owner: Signer
   let user1: Signer
   let user2: Signer
   let ownerAddress: string
   let user1Address: string
   let user2Address: string
+
+  const salt = ethers.utils.zeroPad(ethers.utils.hexlify(42069), 32)
 
   const setupTest = deployments.createFixture(
     async ({ deployments, ethers }) => {
@@ -45,19 +48,21 @@ describe("SynapseERC20Factory", async () => {
       synapseERC20Factory =
         (await synapseERC20FactoryContract.deploy()) as SynapseERC20Factory
 
-      let synapseERC20Base =
-        (await synapseERC20Contract.deploy()) as SynapseERC20
+      synapseERC20Base = (await synapseERC20Contract.deploy()) as SynapseERC20
 
-      const synapseERC20Address = await synapseERC20Factory.callStatic.deploy(
-        synapseERC20Base.address,
-        "Synapse Test Token",
-        "SYNTEST",
-        18,
-        ownerAddress,
-      )
+      const synapseERC20Address =
+        await synapseERC20Factory.callStatic.deployDeterministic(
+          synapseERC20Base.address,
+          salt,
+          "Synapse Test Token",
+          "SYNTEST",
+          18,
+          ownerAddress,
+        )
 
-      await synapseERC20Factory.deploy(
+      await synapseERC20Factory.deployDeterministic(
         synapseERC20Base.address,
+        salt,
         "Synapse Test Token",
         "SYNTEST",
         18,
@@ -80,6 +85,14 @@ describe("SynapseERC20Factory", async () => {
       expect(await synapseERC20.name()).to.be.eq("Synapse Test Token")
       expect(await synapseERC20.symbol()).to.be.eq("SYNTEST")
       expect(await synapseERC20.decimals()).to.be.eq(18)
+    })
+
+    it("Predicted and deployed address match", async () => {
+      let predicted = await synapseERC20Factory.predictDeterministicAddress(
+        synapseERC20Base.address,
+        salt,
+      )
+      expect(predicted).to.eq(synapseERC20.address)
     })
 
     it("Initialize once", async () => {
