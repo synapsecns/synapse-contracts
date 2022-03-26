@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ISolidlyPair} from "./interfaces/ISolidlyPair.sol";
+import {ISolidlyPair} from "../interfaces/ISolidlyPair.sol";
 import {Adapter} from "../../Adapter.sol";
 
 import {Address} from "@openzeppelin/contracts-solc8/utils/Address.sol";
