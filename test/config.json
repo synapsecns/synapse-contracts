@@ -59,6 +59,26 @@
       "hash": ""
     }
   },
+  "42161": {
+    "assets": {
+      "WBTC": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+      "WETH": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "USDC": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+      "USDT": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+      "FRAX": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F"
+    },
+    "slot": {
+      "WBTC": 51,
+      "WETH": 51,
+      "USDC": 51,
+      "USDT": 51,
+      "FRAX": 0
+    },
+    "gmx": {
+      "vault": "0x489ee077994B6658eAfA855C308275EAd8097C4A",
+      "reader": "0x22199a49A999c351eF7927602CFB187ec3cae489"
+    }
+  },
   "43114": {
     "assets": {
       "WAVAX": "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
@@ -111,6 +131,10 @@
       "usdc": "0x3a43A5851A3e3E0e25A3c1089670269786be1577",
       "tricrypto": "0x58e57cA18B7A47112b877E31929798Cd3D703b0f",
       "tricryptopool": "0xB755B949C126C04e0348DD881a5cF55d424742B2"
+    },
+    "gmx": {
+      "vault": "0x9ab2De34A33fB459b538c43f251eB825645e8595",
+      "reader": "0x67b789D48c926006F5132BFCe4e976F0A7A63d5D"
     },
     "platypus": {
       "pool": "0x66357dCaCe80431aee0A7507e2E361B7e2402370"
