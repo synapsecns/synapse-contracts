@@ -12,13 +12,13 @@ contract SynapseERC20Factory {
     event SynapseERC20Created(address contractAddress);
 
     /**
-     * @notice Deploys a new node
+     * @notice Deploys a new SynapseERC20 token
      * @param synapseERC20Address address of the synapseERC20Address contract to initialize with
      * @param name Token name
      * @param symbol Token symbol
      * @param decimals Token name
      * @param owner admin address to be initialized with
-     * @return Address of the newest node management contract created
+     * @return synERC20Clone Address of the newest SynapseERC20 token created
      **/
     function deploy(
         address synapseERC20Address,
@@ -26,12 +26,51 @@ contract SynapseERC20Factory {
         string memory symbol,
         uint8 decimals,
         address owner
-    ) external returns (address) {
-        address synERC20Clone = Clones.clone(synapseERC20Address);
+    ) external returns (address synERC20Clone) {
+        synERC20Clone = Clones.clone(synapseERC20Address);
+        _initializeToken(synERC20Clone, name, symbol, decimals, owner);
+    }
+
+    /**
+     * @notice Deploys a new SynapseERC20 token
+     * @dev Use the same salt for the same token on different chains to get the same deployment address.
+     *      Requires having SynapseERC20Factory deployed at the same address on different chains as well.
+     *
+     * @param synapseERC20Address address of the synapseERC20Address contract to initialize with
+     * @param salt Salt for creating a clone
+     * @param name Token name
+     * @param symbol Token symbol
+     * @param decimals Token name
+     * @param owner admin address to be initialized with
+     * @return synERC20Clone Address of the newest SynapseERC20 token created
+     **/
+    function deployDeterministic(
+        address synapseERC20Address,
+        bytes32 salt,
+        string memory name,
+        string memory symbol,
+        uint8 decimals,
+        address owner
+    ) external returns (address synERC20Clone) {
+        synERC20Clone = Clones.cloneDeterministic(synapseERC20Address, salt);
+        _initializeToken(synERC20Clone, name, symbol, decimals, owner);
+    }
+
+    function predictDeterministicAddress(
+        address synapseERC20Address,
+        bytes32 salt
+    ) external view returns (address) {
+        return Clones.predictDeterministicAddress(synapseERC20Address, salt);
+    }
+
+    function _initializeToken(
+        address synERC20Clone,
+        string memory name,
+        string memory symbol,
+        uint8 decimals,
+        address owner
+    ) internal {
         ISynapseERC20(synERC20Clone).initialize(name, symbol, decimals, owner);
-
         emit SynapseERC20Created(synERC20Clone);
-
-        return synERC20Clone;
     }
 }
