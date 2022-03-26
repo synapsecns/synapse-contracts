@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {CurveAbstractAdapter} from "./CurveAbstractAdapter.sol";
 
-import {ICurvePool} from "./interfaces/ICurvePool.sol";
+import {ICurvePool} from "../interfaces/ICurvePool.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 
