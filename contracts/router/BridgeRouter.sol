@@ -45,6 +45,21 @@ contract BridgeRouter is Router, IBridgeRouter {
         bridgeMaxSwaps = _bridgeMaxSwaps;
     }
 
+    function setInfiniteTokenAllowance(IERC20 _token, address _spender)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        require(_spender != bridge, "Bridge doesn't need infinite allowance");
+        _setTokenAllowance(_token, _spender, UINT_MAX);
+    }
+
+    function revokeTokenAllowance(IERC20 _token, address _spender)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        _token.safeApprove(_spender, 0);
+    }
+
     // -- BRIDGE RELATED FUNCTIONS [initial chain] --
 
     /** @dev
@@ -361,13 +376,23 @@ contract BridgeRouter is Router, IBridgeRouter {
     function _setBridgeTokenAllowance(address _bridgeToken, uint256 _amount)
         internal
     {
-        IERC20 _token = IERC20(_bridgeToken);
-        uint256 allowance = _token.allowance(address(this), bridge);
+        _setTokenAllowance(IERC20(_bridgeToken), bridge, _amount);
+    }
+
+    function _setTokenAllowance(
+        IERC20 _token,
+        address _spender,
+        uint256 _amount
+    ) internal {
+        uint256 allowance = _token.allowance(address(this), _spender);
+        if (allowance == _amount) {
+            return;
+        }
         // safeApprove should only be called when setting an initial allowance,
         // or when resetting it to zero. (c) openzeppelin
         if (allowance != 0) {
-            _token.safeApprove(bridge, 0);
+            _token.safeApprove(_spender, 0);
         }
-        _token.safeApprove(bridge, _amount);
+        _token.safeApprove(_spender, _amount);
     }
 }
