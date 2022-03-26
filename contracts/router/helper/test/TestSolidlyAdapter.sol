@@ -10,6 +10,8 @@ import {ISolidlyPair} from "../../adapters/interfaces/ISolidlyPair.sol";
 
 import "hardhat/console.sol";
 
+// solhint-disable reason-string
+
 interface ISolidlyRouter {
     struct Route {
         address from;

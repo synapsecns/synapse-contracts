@@ -6,6 +6,8 @@ import {Adapter} from "../../Adapter.sol";
 
 import {Address} from "@openzeppelin/contracts-solc8/utils/Address.sol";
 
+// solhint-disable reason-string
+
 contract SolidlyAdapter is Adapter {
     address public immutable solidlyFactory;
     bool public immutable stable;
