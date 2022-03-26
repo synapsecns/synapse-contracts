@@ -36,7 +36,10 @@
       "fUSDT": "0x049d68029688eAbF473097a2fC38ef61633A3C7A",
       "BTC": "0x321162Cd933E2Be498Cd2267a90534A804051b11",
       "MIM": "0x82f0B8B456c1A451378467398982d4834b6829c1",
-      "DAI": "0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E"
+      "DAI": "0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E",
+
+      "FRAX": "0xdc301622e621166BD8E82f2cA0A26c13Ad0BE355",
+      "synFRAX": "0x1852F70512298d56e9c8FDd905e02581E04ddb2a"
     },
     "slot": {
       "WFTM": 0,
@@ -46,7 +49,13 @@
       "fUSDT": 2,
       "BTC": 2,
       "MIM": 2,
-      "DAI": 2
+      "DAI": 2,
+
+      "FRAX": 0,
+      "synFRAX": -1
+    },
+    "synapse": {
+      "bridge": "0xAf41a65F786339e7911F4acDAD6BD49426F2Dc6b"
     },
     "solidly": {
       "factory": "0x3fAaB499b519fdC5819e3D7ed0C26111904cbc28",

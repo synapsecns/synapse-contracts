@@ -1,9 +1,8 @@
 //@ts-nocheck
 import { ethers, network } from "hardhat"
-import { BigNumber} from "@ethersproject/bignumber";
+import { BigNumber } from "@ethersproject/bignumber"
 import { MAX_UINT256, getUserTokenBalance } from "../../utils"
-import { getBigNumber } from "../../bridge/utilities"
-import { IAdapter } from "../../../build/typechain/IAdapter"
+import { ERC20, SynapseBridge } from "../../../build/typechain"
 
 export async function prepare(thisObject, contracts) {
   for (let indexFrom in contracts) {
@@ -82,6 +81,46 @@ export async function setBalance(
     index.toString(),
     encode(["uint"], [amount]),
   ])
+}
+
+let currentKappa = 0
+const VALIDATOR = "0x230A1AC45690B9Ae1176389434610B9526d2f21b"
+
+export async function setSynapseBalance(
+  userAddress: string,
+  tokenAddress: string,
+  amount: BigNumber,
+  bridgeAddress: string,
+) {
+  await network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [VALIDATOR],
+  })
+  let validator = await ethers.getSigner(VALIDATOR)
+  let bridge = (await ethers.getContractAt(
+    "SynapseBridge",
+    bridgeAddress,
+  )) as SynapseBridge
+
+  let token = (await ethers.getContractAt(
+    "@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20",
+    tokenAddress,
+  )) as ERC20
+
+  let balance = await token.balanceOf(userAddress)
+
+  if (amount.gt(balance)) {
+    await bridge
+      .connect(validator)
+      .mint(
+        userAddress,
+        tokenAddress,
+        amount.sub(balance),
+        0,
+        ethers.utils.hexZeroPad(ethers.utils.hexlify(currentKappa), 32),
+      )
+    currentKappa += 1
+  }
 }
 
 export async function deployAdapter(adapter) {
