@@ -243,7 +243,7 @@ describe("Aave Pool Adapter", async function () {
       )) as SynapseAaveAdapter
 
       aaveLendingPool = (await ethers.getContractAt(
-        "contracts/router/adapters/synapse/interfaces/ILendingPool.sol:ILendingPool",
+        "contracts/router/adapters/interfaces/ILendingPool.sol:ILendingPool",
         config[43114].aave.lendingpool,
       )) as ILendingPool
 
