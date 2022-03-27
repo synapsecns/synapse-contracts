@@ -58,7 +58,7 @@ contract Bridge is
 
     // -- MODIFIERS --
 
-    modifier preCheckPostGasDrop(
+    modifier bridgeInTx(
         uint256 amount,
         uint256 fee,
         address to
@@ -297,7 +297,7 @@ contract Bridge is
         onlyRole(NODEGROUP_ROLE)
         nonReentrant
         whenNotPaused
-        preCheckPostGasDrop(amount, fee, to)
+        bridgeInTx(amount, fee, to)
     {
         // Use amount post fees
         _mint(to, token, amount - fee, fee, kappa, true);
@@ -315,7 +315,7 @@ contract Bridge is
         onlyRole(NODEGROUP_ROLE)
         nonReentrant
         whenNotPaused
-        preCheckPostGasDrop(amount, fee, to)
+        bridgeInTx(amount, fee, to)
     {
         // First, get the amount post fees
         amount = amount - fee;
@@ -374,7 +374,7 @@ contract Bridge is
         onlyRole(NODEGROUP_ROLE)
         nonReentrant
         whenNotPaused
-        preCheckPostGasDrop(amount, fee, to)
+        bridgeInTx(amount, fee, to)
     {
         // Use amount post fees
         _withdraw(to, token, amount - fee, fee, kappa, true);
@@ -392,7 +392,7 @@ contract Bridge is
         onlyRole(NODEGROUP_ROLE)
         nonReentrant
         whenNotPaused
-        preCheckPostGasDrop(amount, fee, to)
+        bridgeInTx(amount, fee, to)
     {
         // First, get the amount post fees
         amount = amount - fee;
