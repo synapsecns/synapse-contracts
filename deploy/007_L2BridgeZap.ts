@@ -184,6 +184,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (await get("nUSD")).address,
         (await get("ETHPool")).address,
         (await get("nETH")).address,
+        (await get("JewelBridgeSwap")).address,
+        (await get("synJEWEL")).address,
         (await get("SynapseBridge")).address,
       ],
     })
@@ -224,4 +226,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 }
 export default func
 func.tags = ["L2BridgeZap"]
-func.dependencies = ["DummyWeth", "WETH"]
+func.dependencies = ["DummyWeth", "WETH", "JewelBridgeSwap"]
