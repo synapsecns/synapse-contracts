@@ -205,8 +205,10 @@ contract Vault is
 
     // -- VAULT FUNCTIONS --
 
-    function adjustMintedFees(
+    function mintToken(
+        address to,
         IERC20 token,
+        uint256 amount,
         uint256 fee,
         bytes32 kappa
     )
@@ -215,9 +217,12 @@ contract Vault is
         nonReentrant
         whenNotPaused
         markKappa(kappa)
-        checkTokenRequest(token, fee)
+        checkReceiver(to)
+        checkTokenRequest(token, amount + fee)
     {
         fees[address(token)] += fee;
+        token.mint(to, amount);
+        token.mint(address(this), fee);
     }
 
     function spendToken(
@@ -250,7 +255,7 @@ contract Vault is
         checkReceiver(to)
         checkTokenRequest(token, amount + fee)
     {
-        token.safeTransfer(to, amount);
         fees[address(token)] += fee;
+        token.safeTransfer(to, amount);
     }
 }

@@ -23,8 +23,10 @@ interface IVault {
 
     // -- VAULT FUNCTIONS --
 
-    function adjustMintedFees(
+    function mintToken(
+        address to,
         IERC20 token,
+        uint256 amount,
         uint256 fee,
         bytes32 kappa
     ) external;
@@ -36,7 +38,7 @@ interface IVault {
     ) external;
 
     function withdrawToken(
-        address to, 
+        address to,
         IERC20 token,
         uint256 amount,
         uint256 fee,
