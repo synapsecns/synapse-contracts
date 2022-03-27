@@ -164,8 +164,7 @@ contract Bridge is
         IERC20 token,
         uint256 amount
     ) internal {
-        emit TokenDeposit(to, chainId, token, amount);
-        _depositToVault(token, amount);
+        emit TokenDeposit(to, chainId, token, _depositToVault(token, amount));
     }
 
     function _depositAndSwapV2(
@@ -179,13 +178,12 @@ contract Bridge is
             to,
             chainId,
             token,
-            amount,
+            _depositToVault(token, amount),
             swapParams.minAmountOut,
             swapParams.path,
             swapParams.adapters,
             swapParams.deadline
         );
-        _depositToVault(token, amount);
     }
 
     // -- BRIDGE OUT FUNCTIONS: Redeem --
@@ -255,8 +253,7 @@ contract Bridge is
         ERC20Burnable token,
         uint256 amount
     ) internal {
-        emit TokenRedeem(to, chainId, token, amount);
-        token.burnFrom(msg.sender, amount);
+        emit TokenRedeem(to, chainId, token, _burnFromSender(token, amount));
     }
 
     function _redeemV2(
@@ -265,8 +262,7 @@ contract Bridge is
         ERC20Burnable token,
         uint256 amount
     ) internal {
-        emit TokenRedeemV2(to, chainId, token, amount);
-        token.burnFrom(msg.sender, amount);
+        emit TokenRedeemV2(to, chainId, token, _burnFromSender(token, amount));
     }
 
     function _redeemAndSwapV2(
@@ -280,13 +276,12 @@ contract Bridge is
             to,
             chainId,
             token,
-            amount,
+            _burnFromSender(token, amount),
             swapParams.minAmountOut,
             swapParams.path,
             swapParams.adapters,
             swapParams.deadline
         );
-        token.burnFrom(msg.sender, amount);
     }
 
     // -- BRIDGE IN FUNCTIONS: Mint --
@@ -447,8 +442,24 @@ contract Bridge is
 
     // -- INTERNAL HELPERS --
 
-    function _depositToVault(IERC20 token, uint256 amount) internal {
+    function _burnFromSender(ERC20Burnable token, uint256 amount)
+        internal
+        returns (uint256 amountBurnt)
+    {
+        uint256 balanceBefore = token.balanceOf(msg.sender);
+        token.burnFrom(msg.sender, amount);
+        amountBurnt = balanceBefore - token.balanceOf(msg.sender);
+        require(amountBurnt > 0, "No burn happened");
+    }
+
+    function _depositToVault(IERC20 token, uint256 amount)
+        internal
+        returns (uint256 amountDeposited)
+    {
+        uint256 balanceBefore = token.balanceOf(address(vault));
         token.safeTransferFrom(msg.sender, address(vault), amount);
+        amountDeposited = token.balanceOf(address(vault)) - balanceBefore;
+        require(amountDeposited > 0, "No deposit happened");
     }
 
     function _getMaxAmount(address tokenAddress)
