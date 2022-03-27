@@ -44,6 +44,7 @@ contract UniswapV2Adapter is Adapter {
     function _depositAddress(address _tokenIn, address _tokenOut)
         internal
         view
+        virtual
         override
         returns (address)
     {
