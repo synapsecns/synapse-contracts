@@ -4,6 +4,7 @@ pragma solidity 0.6.12;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
 interface IERC20Mintable is IERC20 {
@@ -103,12 +104,13 @@ contract JewelBridgeSwap {
             dx = tokenFrom.balanceOf(address(this)).sub(beforeBalance);
         }
 
-        // mint synJEWEL to caller
+        // redeem JEWEL for synJEWEL
         if (tokenIndexFrom == 0 && tokenIndexTo == 1) {
             IERC20Mintable(address(pooledTokens[tokenIndexTo])).mint(msg.sender, dx);
             return dx;
         // redeem synJEWEL for JEWEL
         } else if (tokenIndexFrom == 1 && tokenIndexTo == 0) {
+            ERC20Burnable(address(pooledTokens[tokenIndexFrom])).burn(dx);
             pooledTokens[tokenIndexTo].safeTransfer(msg.sender, dx);
             return dx;
         } else {
