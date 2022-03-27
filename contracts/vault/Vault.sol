@@ -10,6 +10,10 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
+interface IERC20Mintable is IERC20 {
+    function mint(address to, uint256 amount) external;
+}
+
 contract Vault is
     Initializable,
     AccessControlUpgradeable,
@@ -207,7 +211,7 @@ contract Vault is
 
     function mintToken(
         address to,
-        IERC20 token,
+        IERC20Mintable token,
         uint256 amount,
         uint256 fee,
         bytes32 kappa
