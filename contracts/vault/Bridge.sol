@@ -100,11 +100,11 @@ contract Bridge is
 
     // -- RESTRICTED SETTERS --
 
-    function setMaxSwapPerGas(uint128 _maxSwapPerGas)
+    function setMaxGasForSwap(uint128 _maxGasForSwap)
         external
         onlyRole(GOVERNANCE_ROLE)
     {
-        maxGasForSwap = _maxSwapPerGas;
+        maxGasForSwap = _maxGasForSwap;
     }
 
     function setRouter(IBridgeRouter _router)
