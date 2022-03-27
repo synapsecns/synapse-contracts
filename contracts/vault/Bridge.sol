@@ -354,9 +354,7 @@ contract Bridge is
         bytes32 kappa,
         bool emitEvent
     ) internal {
-        token.mint(address(vault), fee);
-        vault.adjustMintedFees(token, fee, kappa);
-        token.mint(to, amountPostFee);
+        vault.mintToken(to, token, amountPostFee, fee, kappa);
 
         if (emitEvent) {
             emit TokenMint(to, token, amountPostFee + fee, fee, kappa);
