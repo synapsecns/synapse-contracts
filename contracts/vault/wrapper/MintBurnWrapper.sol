@@ -115,10 +115,10 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
         onlyRole(BRIDGE_ROLE)
     {
         require(
-            _allowances[msg.sender][address(this)] >= amount,
+            _allowances[account][msg.sender] >= amount,
             "Can't burn more than allowance"
         );
-        _allowances[msg.sender][address(this)] -= amount;
+        _allowances[account][msg.sender] -= amount;
         uint256 balanceBefore = IERC20(tokenNative).balanceOf(account);
 
         _burnFrom(account, amount);
