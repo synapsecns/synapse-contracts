@@ -73,6 +73,7 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
 
     mapping(address => mapping(address => uint256)) private _allowances;
 
+    /// @notice address of native (underlying) token
     address public immutable tokenNative;
 
     constructor(
@@ -88,6 +89,10 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
         _grantRole(DEFAULT_ADMIN_ROLE, _adminAddress);
     }
 
+    /**
+        @notice Get maximum amount of native tokens `spender` can burn from `spender` 
+        via {burnFrom}.
+     */
     function allowance(address owner, address spender)
         external
         view
@@ -96,11 +101,18 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
         return _allowances[owner][spender];
     }
 
+    /**
+        @notice Sets `amount` as maximum amount of tokens `spender` can burn from caller.
+     */
     function approve(address spender, uint256 amount) external returns (bool) {
         _allowances[msg.sender][spender] = amount;
         return true;
     }
 
+    /**
+        @notice Returns the `account` balance of native tokens. This is required for 
+        external validation of {mint} and {burnFrom}.
+     */
     function balanceOf(address account)
         external
         view
@@ -110,6 +122,11 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
         return IERC20(tokenNative).balanceOf(account);
     }
 
+    /**
+        @notice Burns native tokens from `account`, within the approved allowance.
+        @dev Only Bridge is supposed to call this function (see the list of interactions above).
+        This, and the requirement for approving, makes it impossible to call {burnFrom} without bridging the tokens.
+     */
     function burnFrom(address account, uint256 amount)
         external
         onlyRole(BRIDGE_ROLE)
@@ -127,6 +144,11 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
         require(balanceBefore == amount + balanceAfter, "Burn is incomplete");
     }
 
+    /**
+        @notice Mints native tokens to account.
+        @dev Only Vault is supposed to call this function (see the list of interactions above).
+        This makes it impossible to mint tokens without having valid proof of bridging (see Vault).
+     */
     function mint(address to, uint256 amount) external onlyRole(VAULT_ROLE) {
         uint256 balanceBefore = IERC20(tokenNative).balanceOf(to);
 
@@ -136,6 +158,22 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
         require(balanceBefore + amount == balanceAfter, "Mint is incomplete");
     }
 
+    /**
+        @notice Sends native tokens from caller to account.
+        @dev Only Router is supposed to call this function (see the list of interactions above).
+        This makes sure only following Router swaps with {MintBurnToken} are possible:
+        1. BridgeRouter.selfSwap(), using {MintBurnToken} as initial token: takes care of 
+        "bridge into {tokenNative} and swap" transactions.
+        2. BridgeRouter.swapAndBridge() using {MintBurnToken} as final token: takes care of
+        "swap into {tokenNative} and bridge" transactions.
+        3. Router.swap() using {MintBurnToken} as final token: this will do exactly the same as
+        Router.swap() using {tokenNative} as final token, while spending some extra gas. This is why
+        UI is supposed to use {MintBurnToken} instead of {tokenNative} only for cross-chain swaps.
+
+        The absence of {transferFrom} makes it impossible to do Router.swap() using {MintBurnToken}
+        as initial token. It will also not be used as intermediate token for swapping, provided {MintBurnToken}
+        is not set as "trusted token" on {Quoter}.
+     */
     function transfer(address to, uint256 amount)
         external
         onlyRole(ROUTER_ROLE)
