@@ -5,7 +5,7 @@ import { ethers } from "hardhat"
 
 import {
   TestAdapterSwap,
-  FraxAdapter,
+  SynFraxAdapter,
   ERC20,
   IFrax,
 } from "../../../../build/typechain"
@@ -27,7 +27,7 @@ describe("FRAX Adapter", async function () {
   let dude: Signer
   let dudeAddress: string
 
-  let adapter: FraxAdapter
+  let adapter: SynFraxAdapter
 
   let testAdapterSwap: TestAdapterSwap
 
@@ -95,14 +95,14 @@ describe("FRAX Adapter", async function () {
     dude = signers[1]
     dudeAddress = await dude.getAddress()
 
-    const adapterFactory = await ethers.getContractFactory("FraxAdapter")
+    const adapterFactory = await ethers.getContractFactory("SynFraxAdapter")
 
     adapter = (await adapterFactory.deploy(
-      "FraxAdapter",
+      "SynFraxAdapter",
       160000,
       config[CHAIN].assets.FRAX,
       config[CHAIN].assets.synFRAX,
-    )) as FraxAdapter
+    )) as SynFraxAdapter
 
     const testFactory = await ethers.getContractFactory("TestAdapterSwap")
 
