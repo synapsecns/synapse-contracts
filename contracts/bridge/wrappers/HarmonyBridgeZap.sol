@@ -30,15 +30,12 @@ contract HarmonyBridgeZap {
         address tokenOne,
         address _swapTwo,
         address tokenTwo,
-        address _swapThree,
-        address tokenThree,
         ISynapseBridge _synapseBridge
     ) public {
         WETH_ADDRESS = _wethAddress;
         synapseBridge = _synapseBridge;
         swapMap[tokenOne] = _swapOne;
         swapMap[tokenTwo] = _swapTwo;
-        swapMap[tokenThree] = _swapThree;
 
         if (address(_swapOne) != address(0)) {
             {
@@ -66,24 +63,6 @@ contract HarmonyBridgeZap {
                     ) {
                         swapTokensMap[_swapTwo].push(token);
                         token.safeApprove(address(_swapTwo), MAX_UINT256);
-                        token.safeApprove(address(synapseBridge), MAX_UINT256);
-                    } catch {
-                        break;
-                    }
-                }
-                require(i > 1, "swap must have at least 2 tokens");
-            }
-        }
-
-        if (address(_swapThree) != address(0)) {
-            {
-                uint8 i;
-                for (; i < 32; i++) {
-                    try ISwap(_swapThree).getToken(i) returns (
-                        IERC20 token
-                    ) {
-                        swapTokensMap[_swapThree].push(token);
-                        token.safeApprove(address(_swapThree), MAX_UINT256);
                         token.safeApprove(address(synapseBridge), MAX_UINT256);
                     } catch {
                         break;
