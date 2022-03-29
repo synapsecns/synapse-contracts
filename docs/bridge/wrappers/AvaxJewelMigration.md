@@ -10,6 +10,57 @@
 
 ## Methods
 
+### LEGACY_TOKEN
+
+```solidity
+function LEGACY_TOKEN() external view returns (contract IERC20)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | contract IERC20 | undefined |
+
+### NEW_TOKEN
+
+```solidity
+function NEW_TOKEN() external view returns (contract IERC20Mintable)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | contract IERC20Mintable | undefined |
+
+### SYNAPSE_BRIDGE
+
+```solidity
+function SYNAPSE_BRIDGE() external view returns (contract ISynapseBridge)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | contract ISynapseBridge | undefined |
+
 ### migrate
 
 ```solidity
