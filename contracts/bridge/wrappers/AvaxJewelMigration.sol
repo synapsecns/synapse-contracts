@@ -22,8 +22,8 @@ contract AvaxJewelMigration is Ownable {
     IERC20 public constant LEGACY_TOKEN =
         IERC20(0x4f60a160D8C2DDdaAfe16FCC57566dB84D674BD6);
     // SYNAPSE JEWEL
-    IERC20 public constant NEW_TOKEN =
-        IERC20(0x997Ddaa07d716995DE90577C123Db411584E5E46);
+    IERC20Mintable public constant NEW_TOKEN =
+        IERC20Mintable(0x997Ddaa07d716995DE90577C123Db411584E5E46);
     uint256 private constant MAX_UINT256 = 2**256 - 1;
 
     constructor() public {
@@ -32,7 +32,7 @@ contract AvaxJewelMigration is Ownable {
 
     function migrate(uint256 amount) public {
         LEGACY_TOKEN.safeTransferFrom(msg.sender, address(this), amount);
-        IERC20Mintable(address(NEW_TOKEN)).mint(msg.sender, amount);
+        NEW_TOKEN.mint(msg.sender, amount);
     }
 
     function migrateAndBridge(
