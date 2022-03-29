@@ -30,9 +30,8 @@ contract AvaxJewelMigration is Ownable {
         NEW_TOKEN.safeApprove(address(SYNAPSE_BRIDGE), MAX_UINT256);
     }
 
-    function migrate(uint256 amount) public {
-        LEGACY_TOKEN.safeTransferFrom(msg.sender, address(this), amount);
-        NEW_TOKEN.mint(msg.sender, amount);
+    function migrate(uint256 amount) external {
+        _migrate(amount, msg.sender);
     }
 
     function migrateAndBridge(
@@ -40,8 +39,17 @@ contract AvaxJewelMigration is Ownable {
         address to,
         uint256 chainId
     ) external {
-        migrate(amount);
+        // First, mint new tokens to this contract, as Bridge burns tokens
+        // from msg.sender, which would be AvaxJewelMigration
+        _migrate(amount, address(this));
+        // Initiate bridging and specify `to` as receiver on destination chain
         SYNAPSE_BRIDGE.redeem(to, chainId, NEW_TOKEN, amount);
+    }
+
+    /// @notice Pull old tokens from user and mint new ones to account
+    function _migrate(uint256 amount, address account) internal {
+        LEGACY_TOKEN.safeTransferFrom(msg.sender, address(this), amount);
+        NEW_TOKEN.mint(account, amount);
     }
 
     function redeemLegacy() external onlyOwner {
