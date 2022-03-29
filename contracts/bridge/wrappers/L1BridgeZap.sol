@@ -35,6 +35,7 @@ contract L1BridgeZap {
     baseSwap = _baseSwap;
     synapseBridge = _synapseBridge;
     IERC20(_wethAddress).safeIncreaseAllowance(address(_synapseBridge), MAX_UINT256);
+    if (address(_baseSwap) != address(0)) {
     {
       uint8 i;
       for (; i < 32; i++) {
@@ -46,6 +47,7 @@ contract L1BridgeZap {
         }
       }
       require(i > 1, 'baseSwap must have at least 2 tokens');
+    }
     }
   }
   
