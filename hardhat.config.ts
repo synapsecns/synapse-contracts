@@ -82,7 +82,7 @@ let config: HardhatUserConfig = {
       url: 'https://andromeda.metis.io/?owner=1088',
     },
     dfk: {
-      url: process.env.DFK_API,
+      url: 'https://api-dfk.avax.network/rpc',
     },
     mainnet: {
       url: process.env.ALCHEMY_API || "https://main-light.eth.linkpool.io/",
