@@ -48,6 +48,7 @@ contract AvaxJewelMigration is Ownable {
 
     /// @notice Pull old tokens from user and mint new ones to account
     function _migrate(uint256 amount, address account) internal {
+        require(amount != 0, "Amount must be greater than zero");
         LEGACY_TOKEN.safeTransferFrom(msg.sender, address(this), amount);
         NEW_TOKEN.mint(account, amount);
     }
