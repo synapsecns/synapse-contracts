@@ -19,7 +19,7 @@ contract JewelBridgeSwap {
     // Maps token address to an index in the pool. Used to prevent duplicate tokens in the pool.
     // getTokenIndex function also relies on this mapping to retrieve token index.
     mapping(address => uint8) private tokenIndexes;
-    IERC20[2] pooledTokens;
+    IERC20[] pooledTokens;
     
     constructor(IERC20 tokenA, IERC20 mintableTokenB) public {
         pooledTokens[0] = tokenA;
@@ -33,7 +33,7 @@ contract JewelBridgeSwap {
      * @param index the index of the token
      * @return address of the token at given index
      */
-    function getToken(uint8 index) public view returns (IERC20) {
+    function getToken(uint8 index) public view virtual returns (IERC20) {
         require(index < pooledTokens.length, "Out of range");
         return pooledTokens[index];
     }
