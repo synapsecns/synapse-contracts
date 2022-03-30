@@ -21,6 +21,18 @@ contract BridgeRouter is Router, IBridgeRouter {
     /// There's no extra limitation for Swap&Bridge txs, as the gas is paid by the user
     uint8 public bridgeMaxSwaps;
 
+    /// @dev Some of the tokens are not directly compatible with Synapse:Bridge contract.
+    /// For these tokens a wrapper contract is deployed, that will be used
+    /// as a "bridge token" in Synapse:Bridge.
+    /// The UI, or any other entity, interacting with the BridgeRouter do NOT need to
+    /// know anything about the "bridge wrappers", they should interact as if the
+    /// underlying token is the "bridge token".
+
+    /// For example, when calling {bridgeToken}, set `_bridgeToken` as underlying token.
+    /// In {swapAndBridge} use underlying token as `path[N-1]`.
+    mapping(address => address) public bridgeWrappers;
+    mapping(address => address) public underlyingTokens;
+
     constructor(
         address payable _wgas,
         address _bridge,
@@ -43,6 +55,37 @@ contract BridgeRouter is Router, IBridgeRouter {
         onlyRole(GOVERNANCE_ROLE)
     {
         bridgeMaxSwaps = _bridgeMaxSwaps;
+    }
+
+    /**
+        @notice Register a MintBurnWrapper that will be used as a "bridge token".
+        @dev This is meant to be used, when original bridge token isn't directly compatible with Synapse:Bridge.
+             1. Set `_bridgeWrapper` = address(0) to bridge `_bridgeToken` directly
+             2. Use unique `bridgeWrapper` for every `bridgeToken` that needs a bridge wrapper contract
+        @param _bridgeToken underlying (native) bridge token
+        @param _bridgeWrapper wrapper contract used for actual bridging
+     */
+    function setBridgeWrapper(address _bridgeToken, address _bridgeWrapper)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        // Delete record of underlying from bridgeToken's "old bridge wrapper",
+        // if there is one
+        address _oldWrapper = bridgeWrappers[_bridgeToken];
+        if (_oldWrapper != address(0)) {
+            underlyingTokens[_oldWrapper] = address(0);
+        }
+
+        // Delete record of wrapper from bridgeWrapper's "old underlying token",
+        // if there is one
+        address _oldUnderlying = underlyingTokens[_bridgeWrapper];
+        if (_oldUnderlying != address(0)) {
+            bridgeWrappers[_oldUnderlying] = address(0);
+        }
+
+        // Update records for both tokens
+        bridgeWrappers[_bridgeToken] = _bridgeWrapper;
+        underlyingTokens[_bridgeWrapper] = _bridgeToken;
     }
 
     function setInfiniteTokenAllowance(IERC20 _token, address _spender)
@@ -265,6 +308,10 @@ contract BridgeRouter is Router, IBridgeRouter {
         uint256 _bridgeAmount,
         bytes calldata _bridgeData
     ) internal {
+        // Use Wrapper contract, if there's one registered
+        // This allows to abstract concept of "Bridge Wrappers" away from the UI
+        _bridgeToken = _getBridgeToken(_bridgeToken);
+
         // First, allow bridge to spend exactly _bridgeAmount
         _setBridgeTokenAllowance(_bridgeToken, _bridgeAmount);
         // Do the actual bridging
@@ -309,7 +356,9 @@ contract BridgeRouter is Router, IBridgeRouter {
         // for reentrancy when calling refundToAddress()
         // Imagine [Bridge GAS & Swap] back to its native chain.
         // If swap fails, this unwrap WGAS and return GAS to user
-        _returnTokensTo(_token, _amount, _to);
+
+        /// @dev In case `_token` is a Bridge Wrapper, we need to return underlying token
+        _returnTokensTo(_getUnderlyingToken(_token), _amount, _to);
     }
 
     /**
@@ -363,6 +412,28 @@ contract BridgeRouter is Router, IBridgeRouter {
     }
 
     // -- INTERNAL HELPERS --
+
+    function _getBridgeToken(address _bridgeToken)
+        internal
+        view
+        returns (address _actualBridgeToken)
+    {
+        _actualBridgeToken = bridgeWrappers[_bridgeToken];
+        if (_actualBridgeToken == address(0)) {
+            _actualBridgeToken = _bridgeToken;
+        }
+    }
+
+    function _getUnderlyingToken(address _bridgeToken)
+        internal
+        view
+        returns (address _actualUnderlyingToken)
+    {
+        _actualUnderlyingToken = underlyingTokens[_bridgeToken];
+        if (_actualUnderlyingToken == address(0)) {
+            _actualUnderlyingToken = _bridgeToken;
+        }
+    }
 
     /**
         @notice Set approval for bridge to spend Router's _bridgeToken
