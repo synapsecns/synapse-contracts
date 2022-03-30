@@ -47,6 +47,20 @@ contract Vault is
     /// without providing kappa (single-chain tx)
     mapping(address => address) private tokenSpender;
 
+    /// @dev Some of the tokens are not directly compatible with Synapse:Bridge contract.
+    /// For these tokens a wrapper contract is deployed, that will be used
+    /// as a "bridge token" in Synapse:Bridge.
+
+    /// The UI, or any other entity, interacting with the BridgeRouter do NOT need to
+    /// know anything about the "bridge wrappers", they should interact as if the
+    /// underlying token is the "bridge token".
+
+    /// Contracts, interacting with Bridge/Vault directly (such as BridgeRouter), need to know
+    /// if a token is supported, or a "bridge wrapper" needs to be used
+
+    mapping(address => address) public bridgeWrappers;
+    mapping(address => address) public underlyingTokens;
+
     receive() external payable {
         this;
     }
@@ -140,6 +154,37 @@ contract Vault is
 
     // -- RESTRICTED SETTERS --
 
+    /**
+        @notice Register a MintBurnWrapper that will be used as a "bridge token".
+        @dev This is meant to be used, when original bridge token isn't directly compatible with Synapse:Bridge.
+             1. Set `_bridgeWrapper` = address(0) to bridge `bridgeToken` directly
+             2. Use unique `bridgeWrapper` for every `bridgeToken` that needs a bridge wrapper contract
+        @param bridgeToken underlying (native) bridge token
+        @param _bridgeWrapper wrapper contract used for actual bridging
+     */
+    function setBridgeWrapper(address bridgeToken, address _bridgeWrapper)
+        external
+        onlyGovernance
+    {
+        // Delete record of underlying from bridgeToken's "old bridge wrapper",
+        // if there is one
+        address _oldWrapper = bridgeWrappers[bridgeToken];
+        if (_oldWrapper != address(0)) {
+            underlyingTokens[_oldWrapper] = address(0);
+        }
+
+        // Delete record of wrapper from bridgeWrapper's "old underlying token",
+        // if there is one
+        address _oldUnderlying = underlyingTokens[_bridgeWrapper];
+        if (_oldUnderlying != address(0)) {
+            bridgeWrappers[_oldUnderlying] = address(0);
+        }
+
+        // Update records for both tokens
+        bridgeWrappers[bridgeToken] = _bridgeWrapper;
+        underlyingTokens[_bridgeWrapper] = bridgeToken;
+    }
+
     function setChainGasAmount(uint256 amount) external onlyGovernance {
         chainGasAmount = amount;
         emit UpdatedChainGasAmount(amount);
@@ -223,7 +268,11 @@ contract Vault is
         markKappa(kappa)
         checkReceiver(to)
     {
-        fees[address(token)] += fee;
+        /// @dev if `token` is a Bridge Wrapper, fees are collected
+        /// in underlying token and have to be stored accordingly,
+        /// otherwise these fees will be unclaimable via {withdrawFees}
+        fees[_getUnderlyingToken(address(token))] += fee;
+
         token.mint(to, amount);
         token.mint(address(this), fee);
     }
@@ -260,5 +309,17 @@ contract Vault is
     {
         fees[address(token)] += fee;
         token.safeTransfer(to, amount);
+    }
+
+    // -- INTERNAL HELPERS --
+    function _getUnderlyingToken(address bridgeToken)
+        internal
+        view
+        returns (address actualUnderlyingToken)
+    {
+        actualUnderlyingToken = underlyingTokens[bridgeToken];
+        if (actualUnderlyingToken == address(0)) {
+            actualUnderlyingToken = bridgeToken;
+        }
     }
 }
