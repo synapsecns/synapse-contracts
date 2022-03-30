@@ -35,9 +35,4 @@ contract GmxBridgeWrapper is MintBurnWrapper {
     function _mint(address to, uint256 amount) internal virtual override {
         IGmx(tokenNative).mint(to, amount);
     }
-
-    /// @dev This will require BridgeRouter.setInfiniteTokenAllowance(GMX, address(GmxBridgeWrapper))
-    function _transfer(address to, uint256 amount) internal virtual override {
-        IGmx(tokenNative).safeTransferFrom(msg.sender, to, amount);
-    }
 }
