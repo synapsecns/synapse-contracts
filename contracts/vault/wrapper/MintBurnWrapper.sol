@@ -161,36 +161,6 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
         require(balanceBefore + amount == balanceAfter, "Mint is incomplete");
     }
 
-    /**
-        @notice Sends native tokens from caller to account.
-        @dev Only Router is supposed to call this function (see the list of interactions above).
-        This makes sure only following Router swaps with {MintBurnToken} are possible:
-        1. BridgeRouter.selfSwap(), using {MintBurnToken} as initial token: takes care of 
-        "bridge into {tokenNative} and swap" transactions.
-        2. BridgeRouter.swapAndBridge() using {MintBurnToken} as final token: takes care of
-        "swap into {tokenNative} and bridge" transactions.
-        3. Router.swap() using {MintBurnToken} as final token: this will do exactly the same as
-        Router.swap() using {tokenNative} as final token, while spending some extra gas. This is why
-        UI is supposed to use {MintBurnToken} instead of {tokenNative} only for cross-chain swaps.
-
-        The absence of {transferFrom} makes it impossible to do Router.swap() using {MintBurnToken}
-        as initial token. It will also not be used as intermediate token for swapping, provided {MintBurnToken}
-        is not set as "trusted token" on {Quoter}.
-     */
-    function transfer(address to, uint256 amount)
-        external
-        onlyRole(ROUTER_ROLE)
-    {
-        uint256 balanceBefore = IERC20(tokenNative).balanceOf(to);
-        _transfer(to, amount);
-
-        uint256 balanceAfter = IERC20(tokenNative).balanceOf(to);
-        require(
-            balanceBefore + amount == balanceAfter,
-            "Transfer is incomplete"
-        );
-    }
-
     /// @dev This should burn native token from account.
     /// Will only be called by Bridge
     function _burnFrom(address account, uint256 amount) internal virtual;
@@ -198,8 +168,4 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
     /// @dev This should mint native token to account.
     /// Will only be called by Vault
     function _mint(address to, uint256 amount) internal virtual;
-
-    /// @dev This should transfer native token from caller to account.
-    /// Will only be called by Router, set up infinite allowance, if needed.
-    function _transfer(address to, uint256 amount) internal virtual;
 }
