@@ -16,52 +16,52 @@ interface IERC20Decimals is IERC20 {
          native (underlying) token is not directly compatible with Synapse:Bridge.
          A way to perform 1:1 "swap" between MintBurnWrapper and tokenNative has to exist.
 
-    Here's the list of all contracts that will be interacting with MintBurnWrapper
+    Here's the list of all contracts that will be interacting with MintBurnWrapper.
+    List is constructed using implementation of Router from this branch (yeah, it's annoying, I know):
+    https://github.com/synapsecns/synapse-contracts/tree/chisq/adapters-optimising/contracts/router
+
+                    Getting MintBurnWrapper as parameter:
     1. Bridge
-            Direct calls:
-        1. balanceOf() in _getMaxAmount()
-        2. allowance() in _getMaxAmount()
-        3. balanceOf() in _burnFromSender() 
-        4. burnFrom() in _burnFromSender()
+                Externally:
+        1. mint [as token] -> _mint(token)
+        2. mintAndSwapV2 [as token] -> _mint(token); _handleSwap(token)
+        3. redeem(Max) [as token] -> _redeem(token); _getMaxAmount(token)
+        4. redeemV2(Max) [as token] -> _redeemV2(token); _getMaxAmount(token)
+        5. redeem(Max)AndSwapV2 [as token] -> _redeemAndSwapV2(token); _getMaxAmount(token)
 
-            Passing as a parameter:
-        1. Vault.mintToken() [as token] in _mint()
-        2. BridgeRouter.selfSwap() [as path[0]] in _handleSwap()
-        3. BridgeRouter.refundToAddress() [as token] in _handleSwap()
+                Internally:
+        (1) _mint [as token] -> Vault.mintToken(token)
+        (2) _handleSwap [as token] -> BridgeRouter.refundToAddress(token)
+            (swapParams.path[0] would be underlying token)
+        3. _redeem(AndSwap)(V2) [as token] -> _burnFromSender(token)
+        [4] _burnFromSender [as token] -> token.balanceOf(); token.burnFrom()
+        [5] _getMaxAmount [as token] -> token.balanceOf(); token.allowance()
+
     2. Vault
-            Direct calls:
-        1. mint() in mintToken()
+                Externally:
+        [1] mintToken [as token] -> _getUnderlyingToken(token); token.mint()
 
-            Passing as a parameter:
-        None
+                Internally:
+        1. _getUnderlyingToken [as token] -> read underlyingTokens[token]
+
     3. BridgeRouter
-            Direct calls:
-        1. allowance() in _setBridgeTokenAllowance()
-        2. approve() in _setBridgeTokenAllowance()
+                Externally:
+        1. refundToAddress [as token] -> _getUnderlyingToken(token)
 
-            Passing as a parameter:
-        1. Router._swap() [as path[N-1]] in swapAndBridge()
-        2. Router._selfSwap() [as path[N-1]] in swapFromGasAndBridge()
-        3. Bridge.redeemMax|Bridge.redeemMaxAndSwapV2 [as token] in _callBridge()
-        4. BasicRouter._returnTokensTo() [as _token] in refundToAddress()
-        5. Router._selfSwap() [as path[0]] in selfSwap()
-        
-    4. Router
-            Direct calls:
-        1. transfer() in _selfSwap() [when passed as path[0]]
-    
-            Passing as a parameter:
-        1. Adapter.swap() [as tokenIn|tokenOut] in _doChainedSwaps()
-    
-    5. BasicRouter
-            Direct calls:
-        1. transfer() in _returnTokensTo()
-    
-    6. Adapter
-        A specialized Adapter must be implemented that will be actually swapping native token,
-        while stating a support for MintBurnWrapper swaps. No calls to this contract,
-        rather than tokenNative() must be made
- */
+                Internally:
+        1. _getUnderlyingToken [as token] -> read underlyingTokens[token]
+        (2) _callBridge [as _getBridgeToken] -> _setBridgeTokenAllowance(_bridgeToken); 
+                                                Bridge.redeemMax(AndSwapV2) [as token]
+        3. _setBridgeTokenAllowance [as _bridgeToken] -> _setTokenAllowance(_bridgeToken)
+        [4] _setTokenAllowance [as token] -> token.allowance(); token.approve()
+
+            Summary on token functions:
+    1. allowance: Bridge, BridgeRouter
+    2. approve: BridgeRouter
+    3. burnFrom: Bridge
+    4. mint: Vault
+
+*/
 abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
     bytes32 public constant BRIDGE_ROLE = keccak256("BRIDGE_ROLE");
     bytes32 public constant ROUTER_ROLE = keccak256("ROUTER_ROLE");
@@ -111,7 +111,8 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
 
     /**
         @notice Returns the `account` balance of native tokens. This is required for 
-        external validation of {mint} and {burnFrom}.
+        external validation of {mint} and {burnFrom}, as well as for getting the max amount of 
+        native tokens can be burnt via {burnFrom}.
      */
     function balanceOf(address account)
         external
@@ -124,7 +125,7 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
 
     /**
         @notice Burns native tokens from `account`, within the approved allowance.
-        @dev Only Bridge is supposed to call this function (see the list of interactions above).
+        @dev Only Bridge is able to call this function (see the list of interactions above).
         This, and the requirement for approving, makes it impossible to call {burnFrom} without bridging the tokens.
      */
     function burnFrom(address account, uint256 amount)
@@ -141,12 +142,13 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
         _burnFrom(account, amount);
 
         uint256 balanceAfter = IERC20(tokenNative).balanceOf(account);
+        // Verify the burn, so Bridge doesn't have to trust burn implementation
         require(balanceBefore == amount + balanceAfter, "Burn is incomplete");
     }
 
     /**
         @notice Mints native tokens to account.
-        @dev Only Vault is supposed to call this function (see the list of interactions above).
+        @dev Only Vault is able to call this function (see the list of interactions above).
         This makes it impossible to mint tokens without having valid proof of bridging (see Vault).
      */
     function mint(address to, uint256 amount) external onlyRole(VAULT_ROLE) {
@@ -155,6 +157,7 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
         _mint(to, amount);
 
         uint256 balanceAfter = IERC20(tokenNative).balanceOf(to);
+        // Verify the burn, so Vault doesn't have to trust mint implementation
         require(balanceBefore + amount == balanceAfter, "Mint is incomplete");
     }
 
