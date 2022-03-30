@@ -222,7 +222,6 @@ contract Vault is
         whenNotPaused
         markKappa(kappa)
         checkReceiver(to)
-        checkTokenRequest(token, amount + fee)
     {
         fees[address(token)] += fee;
         token.mint(to, amount);
