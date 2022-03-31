@@ -302,6 +302,80 @@ contract L1BridgeZap {
       synapseBridge.redeem(to, chainId, token, amount);
   }
 
+    /**
+     * @notice Wraps redeemAndSwap on SynapseBridge.sol
+     * Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
+     * @param to address on other chain to redeem underlying assets to
+     * @param chainId which underlying chain to bridge assets onto
+     * @param token ERC20 compatible token to deposit into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+     * @param tokenIndexFrom the token the user wants to swap from
+     * @param tokenIndexTo the token the user wants to swap to
+     * @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
+     * @param deadline latest timestamp to accept this transaction
+     **/
+    function redeemAndSwap(
+        address to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline
+    ) external {
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        if (token.allowance(address(this), address(synapseBridge)) < amount) {
+            token.safeApprove(address(synapseBridge), MAX_UINT256);
+        }
+        synapseBridge.redeemAndSwap(
+            to,
+            chainId,
+            token,
+            amount,
+            tokenIndexFrom,
+            tokenIndexTo,
+            minDy,
+            deadline
+        );
+    }
+
+    /**
+     * @notice Wraps redeemAndRemove on SynapseBridge
+     * Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
+     * @param to address on other chain to redeem underlying assets to
+     * @param chainId which underlying chain to bridge assets onto
+     * @param token ERC20 compatible token to deposit into the bridge
+     * @param amount Amount of (typically) LP token to pass to the nodes to attempt to removeLiquidity() with to redeem for the underlying assets of the LP token
+     * @param liqTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
+     * @param liqMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
+     * @param liqDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
+     **/
+    function redeemAndRemove(
+        address to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount,
+        uint8 liqTokenIndex,
+        uint256 liqMinAmount,
+        uint256 liqDeadline
+    ) external {
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        if (token.allowance(address(this), address(synapseBridge)) < amount) {
+            token.safeApprove(address(synapseBridge), MAX_UINT256);
+        }
+        synapseBridge.redeemAndRemove(
+            to,
+            chainId,
+            token,
+            amount,
+            liqTokenIndex,
+            liqMinAmount,
+            liqDeadline
+        );
+    }
+
+
   /**
    * @notice Wraps SynapseBridge redeemv2() function
    * @param to address on other chain to bridge assets to
