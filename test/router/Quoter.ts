@@ -82,7 +82,6 @@ describe("Quoter", function () {
     tokenNames: Array<string>,
     adapterIndexes: Array<number>,
     amount: number = 1,
-    gasPrice: BigNumber = BigNumber.from(0),
     maxSwaps: number = 3,
   ) {
     let tokenInName = tokenNames[0]
@@ -112,12 +111,11 @@ describe("Quoter", function () {
 
     let tokenOutName = tokenNames[tokenNames.length - 1]
 
-    let bestPath = await quoter.findBestPathWithGas(
+    let bestPath = await quoter.findBestPath(
       amountIn,
       thisObject[tokenInName].address,
       thisObject[tokenOutName].address,
       maxSwaps,
-      gasPrice,
     )
 
     if (
@@ -169,16 +167,14 @@ describe("Quoter", function () {
     tokenOutName: string,
     maxSwaps: number = 4,
     amount: number = 1,
-    gasPrice: BigNumber = BigNumber.from(0),
     checkExactOut: boolean = true,
   ): Promise<number> {
     let amountIn = getBigNumber(amount, decimals[tokenInName])
-    let bestPath = await quoter.findBestPathWithGas(
+    let bestPath = await quoter.findBestPath(
       amountIn,
       thisObject[tokenInName].address,
       thisObject[tokenOutName].address,
       maxSwaps,
-      gasPrice,
     )
     if (bestPath.path.length == 0) {
       // no path found between tokens
@@ -230,7 +226,6 @@ describe("Quoter", function () {
   async function checkSwaps(
     thisObject: Context,
     maxSwaps: number = 4,
-    gasPrice: BigNumber = BigNumber.from(0),
     amount: number = 1,
     checkExactOut: boolean = true,
   ) {
@@ -248,7 +243,6 @@ describe("Quoter", function () {
             tokenOutName,
             maxSwaps,
             amount,
-            gasPrice,
             checkExactOut,
           )
 
@@ -270,20 +264,6 @@ describe("Quoter", function () {
     }
   }
 
-  async function getTokenOutPrice(
-    thisObject: Context,
-    tokenOut: string,
-  ): Promise<BigNumber> {
-    let bestPath = await quoter.findBestPathWithGas(
-      getBigNumber(1),
-      thisObject.weth.address,
-      thisObject[tokenOut].address,
-      2,
-      0,
-    )
-    return bestPath.amounts[bestPath.amounts.length - 1]
-  }
-
   before(async function () {
     await prepare(this, [
       "Router",
@@ -292,7 +272,7 @@ describe("Quoter", function () {
       "ERC20MockDecimals",
       "WETH9",
 
-      "SynapseBasePoolAdapter",
+      "SynapseBaseAdapter",
       "UniswapV2Adapter",
       "UniswapV2Factory",
     ])
@@ -358,7 +338,7 @@ describe("Quoter", function () {
     await setupSynapsePool(
       this,
       swapFactory,
-      this.SynapseBasePoolAdapter,
+      this.SynapseBaseAdapter,
       lpTokenAddress,
       "usdPool",
       "adapterUSD",
@@ -372,7 +352,7 @@ describe("Quoter", function () {
     await setupSynapsePool(
       this,
       swapFactory,
-      this.SynapseBasePoolAdapter,
+      this.SynapseBaseAdapter,
       lpTokenAddress,
       "ethPool",
       "adapterETH",
@@ -443,7 +423,7 @@ describe("Quoter", function () {
     }
   })
 
-  describe("Finding best path ignoring gas", function () {
+  describe("Finding best path", function () {
     it("1-step swap", async function () {
       // 1 WBTC -> WETH
       await checkQuoter(this, ["wbtc", "weth"], [uniAAA], 1)
@@ -501,101 +481,10 @@ describe("Quoter", function () {
     })
   })
 
-  describe("Finding best path with gas", function () {
-    it("1-step swap", async function () {
-      let ethUsdc = await getTokenOutPrice(this, "usdc")
-      let gasDiff = getBigNumber(1, 18 + decimals.usdc).div(ethUsdc)
-
-      // 100 DAI -> USDC
-      // need gas diff to be worth $2.5+
-      await checkQuoter(
-        this,
-        ["dai", "usdc"],
-        [synUSD],
-        100,
-        gasDiff.mul(248).div(100).div(100000),
-      )
-
-      await checkQuoter(
-        this,
-        ["dai", "usdc"],
-        [uniCCC],
-        100,
-        gasDiff.mul(252).div(100).div(100000),
-      )
-
-      // 10 DAI -> USDC
-      // need gas diff to be worth $0.22+
-      await checkQuoter(
-        this,
-        ["dai", "weth", "wbtc", "usdc"],
-        [uniBBB, uniCCC, uniBBB],
-        10,
-        gasDiff.mul(20).div(100).div(100000),
-      )
-
-      await checkQuoter(
-        this,
-        ["dai", "usdc"],
-        [uniCCC],
-        10,
-        gasDiff.mul(24).div(100).div(100000),
-      )
-    })
-
-    it("2-step swap", async function () {
-      let ethUsdt = await getTokenOutPrice(this, "usdt")
-      let gasDiff = getBigNumber(1, 18 + decimals.usdt).div(ethUsdt)
-
-      // 1 WBTC -> USDT
-      // need gas diff to be worth $1.16 +
-      await checkQuoter(
-        this,
-        ["wbtc", "usdc", "usdt"],
-        [uniBBB, synUSD],
-        1,
-        gasDiff.mul(114).div(100).div(150000),
-      )
-
-      await checkQuoter(
-        this,
-        ["wbtc", "usdt"],
-        [uniBBB],
-        1,
-        gasDiff.mul(118).div(100).div(150000),
-      )
-
-      let ethDai = await getTokenOutPrice(this, "dai")
-      gasDiff = getBigNumber(1, 18 + decimals.dai).div(ethDai)
-
-      // need gas diff to be worth $9.04+
-      await checkQuoter(
-        this,
-        ["wbtc", "usdc", "dai"],
-        [uniBBB, synUSD],
-        1,
-        gasDiff.mul(902).div(100).div(100000),
-      )
-
-      await checkQuoter(
-        this,
-        ["wbtc", "weth", "dai"],
-        [uniAAA, uniBBB],
-        1,
-        gasDiff.mul(906).div(100).div(100000),
-      )
-    })
-  })
-
   describe("Executing Quoter+Router", function () {
     it("up-to-3-step swaps", async function () {
       this.timeout(420 * 1000)
       await checkSwaps(this, 3)
-    })
-
-    it("up-to-3-step swaps with gas", async function () {
-      this.timeout(420 * 1000)
-      await checkSwaps(this, 3, getBigNumber(1, 12))
     })
 
     // This takes shit ton of time to complete, but feel free to uncomment

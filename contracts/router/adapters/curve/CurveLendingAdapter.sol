@@ -1,24 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {CurveBasePoolAdapter} from "./CurveBasePoolAdapter.sol";
+import {CurveBaseAdapter} from "./CurveBaseAdapter.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 
-contract CurveLendingPoolAdapter is CurveBasePoolAdapter {
+contract CurveLendingAdapter is CurveBaseAdapter {
+    /**
+        @dev Base Adapter is using int128 for indexes
+        and is using exchange_underlying() for swaps
+     */
+
     constructor(
         string memory _name,
         address _pool,
         uint256 _swapGasEstimate,
         bool _directSwapSupported
-    )
-        CurveBasePoolAdapter(
-            _name,
-            _pool,
-            _swapGasEstimate,
-            _directSwapSupported
-        )
-    {
+    ) CurveBaseAdapter(_name, _pool, _swapGasEstimate, _directSwapSupported) {
         this;
     }
 
@@ -26,6 +24,7 @@ contract CurveLendingPoolAdapter is CurveBasePoolAdapter {
         for (uint8 i = 0; true; i++) {
             try pool.underlying_coins(i) returns (address _tokenAddress) {
                 _addPoolToken(_tokenAddress, i);
+                _setInfiniteAllowance(IERC20(_tokenAddress), address(pool));
             } catch {
                 break;
             }
@@ -37,8 +36,8 @@ contract CurveLendingPoolAdapter is CurveBasePoolAdapter {
         address _tokenIn,
         address _tokenOut,
         address _to
-    ) internal virtual override {
-        pool.exchange_underlying(
+    ) internal virtual override returns (uint256 _amountOut) {
+        _amountOut = pool.exchange_underlying(
             tokenIndex[_tokenIn],
             tokenIndex[_tokenOut],
             _amountIn,

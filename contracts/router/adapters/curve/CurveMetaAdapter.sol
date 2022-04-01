@@ -1,14 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {CurveLendingPoolAdapter} from "./CurveLendingPoolAdapter.sol";
+import {CurveLendingAdapter} from "./CurveLendingAdapter.sol";
+
+import {ICurvePool} from "../interfaces/ICurvePool.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
-import {ICurvePool} from "../../interfaces/ICurvePool.sol";
-
 import {SafeCast} from "@openzeppelin/contracts-4.4.2/utils/math/SafeCast.sol";
 
-contract CurveMetaPoolAdapter is CurveLendingPoolAdapter {
+contract CurveMetaAdapter is CurveLendingAdapter {
+    /**
+        @dev Meta Adapter is using int128 for indexes
+        and is using exchange_underlying() for swaps.
+        Exactly the same as Lending Adapter,
+        so _swap() implementation stays the same
+    */
+    
     // (MetaPoolToken, BasePool LP Token)
     // (MetaPoolToken, [BasePoolToken 1, BasePoolToken 2, BasePoolToken 3])
     //                      ^
@@ -23,7 +30,7 @@ contract CurveMetaPoolAdapter is CurveLendingPoolAdapter {
         bool _directSwapSupported,
         address _basePool
     )
-        CurveLendingPoolAdapter(
+        CurveLendingAdapter(
             _name,
             _pool,
             _swapGasEstimate,
@@ -41,6 +48,8 @@ contract CurveMetaPoolAdapter is CurveLendingPoolAdapter {
                 _addPoolToken(_tokenAddress, i);
                 _lastToken = _tokenAddress;
                 _numTokens++;
+
+                _setInfiniteAllowance(IERC20(_tokenAddress), address(pool));
             } catch {
                 break;
             }
@@ -58,6 +67,8 @@ contract CurveMetaPoolAdapter is CurveLendingPoolAdapter {
             try _basePool.coins(i) returns (address _tokenAddress) {
                 _addPoolToken(_tokenAddress, _numTokens);
                 _numTokens++;
+
+                _setInfiniteAllowance(IERC20(_tokenAddress), address(pool));
             } catch {
                 break;
             }

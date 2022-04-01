@@ -5,7 +5,7 @@ import {
   IERC20,
   Swap,
   UniswapV2Factory,
-  SynapseBasePoolAdapter,
+  SynapseBaseAdapter,
   IUniswapV2Pair,
 } from "../../../build/typechain"
 import { MAX_UINT256 } from "../../utils"
@@ -68,9 +68,9 @@ export async function setupSynapsePool(
 
   let basePoolAdapter = (await adapterFactory.deploy(
     "BasePoolAdapter",
-    swap.address,
     swapGasEstimate,
-  )) as SynapseBasePoolAdapter
+    swap.address,
+  )) as SynapseBaseAdapter
   thisObject[adapter] = basePoolAdapter
 
   let amounts = []
@@ -116,10 +116,12 @@ export async function setupUniswapAdapters(
 ) {
   for (let index in factories) {
     let factoryName = factories[index]
+    let initHash = await thisObject[factoryName].pairCodeHash()
     thisObject[adapters[index]] = await uniswapAdapterFactory.deploy(
       factoryName,
-      thisObject[factoryName].address,
       swapGasEstimate,
+      thisObject[factoryName].address,
+      initHash,
       fee,
     )
   }

@@ -41,11 +41,11 @@ describe(ADAPTER_NAME, function () {
   const SHARE_BIG = [66, 121]
 
   let swapsPerTime = SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
-  const timesSmall = Math.floor(125 / swapsPerTime) + 1
+  const timesSmall = Math.floor(40 / swapsPerTime) + 1
   const swapsAmount = timesSmall * swapsPerTime
 
   swapsPerTime = SHARE_BIG.length * getSwapsAmount(tokenSymbols.length)
-  const timesBig = Math.floor(50 / swapsPerTime) + 1
+  const timesBig = Math.floor(30 / swapsPerTime) + 1
   const swapsAmountBig = timesBig * swapsPerTime
 
   const AMOUNTS = []
@@ -120,11 +120,11 @@ describe(ADAPTER_NAME, function () {
       await expect(
         this.adapter
           .connect(this.dude)
-          .recoverERC20(this.tokens[indexFrom].address, extra),
+          .recoverERC20(this.tokens[indexFrom].address),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        this.adapter.recoverERC20(this.tokens[indexFrom].address, extra),
+        this.adapter.recoverERC20(this.tokens[indexFrom].address),
       ).to.changeTokenBalance(this.tokens[indexFrom], this.owner, extra)
     })
 
@@ -161,12 +161,13 @@ describe(ADAPTER_NAME, function () {
       ).to.changeEtherBalance(this.adapter, amount)
 
       await expect(
-        this.adapter.connect(this.dude).recoverGAS(amount),
+        this.adapter.connect(this.dude).recoverGAS(),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
-      await expect(() =>
-        this.adapter.recoverGAS(amount),
-      ).to.changeEtherBalances([this.adapter, this.owner], [-amount, amount])
+      await expect(() => this.adapter.recoverGAS()).to.changeEtherBalances(
+        [this.adapter, this.owner],
+        [-amount, amount],
+      )
     })
   })
 

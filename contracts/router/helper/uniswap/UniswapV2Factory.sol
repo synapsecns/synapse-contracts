@@ -48,4 +48,9 @@ contract UniswapV2Factory is IUniswapV2Factory {
         require(msg.sender == feeToSetter, "UniswapV2: FORBIDDEN");
         feeToSetter = _feeToSetter;
     }
+
+    // https://github.com/solidlyexchange/solidly/blob/eac1ef02ca8736138b25062c02646ea43d5bb6e4/contracts/BaseV1-core.sol#L624
+    function pairCodeHash() external pure returns (bytes32) {
+        return keccak256(type(UniswapV2Pair).creationCode);
+    }
 }

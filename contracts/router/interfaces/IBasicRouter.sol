@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
+
 interface IBasicRouter {
     event Recovered(address indexed _asset, uint256 amount);
 
@@ -27,7 +29,7 @@ interface IBasicRouter {
 
     // -- RECOVER FUNCTIONS --
 
-    function recoverERC20(address _tokenAddress) external;
+    function recoverERC20(IERC20 _token) external;
 
     function recoverGAS() external;
 
