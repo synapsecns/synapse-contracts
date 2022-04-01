@@ -18,7 +18,7 @@ interface IMintBurnWrapper {
 
     function symbol() external view returns (string memory);
 
-    function tokenNative() external view returns (address);
+    function nativeToken() external view returns (address);
 
     // -- STATE CHANGING --
 
