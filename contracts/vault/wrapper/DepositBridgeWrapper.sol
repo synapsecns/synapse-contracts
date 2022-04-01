@@ -32,10 +32,10 @@ contract DepositBridgeWrapper is MintBurnWrapper {
         virtual
         override
     {
-        IERC20(tokenNative).safeTransferFrom(account, address(this), amount);
+        IERC20(nativeToken).safeTransferFrom(account, address(this), amount);
     }
 
     function _mint(address to, uint256 amount) internal virtual override {
-        IERC20(tokenNative).safeTransfer(to, amount);
+        IERC20(nativeToken).safeTransfer(to, amount);
     }
 }

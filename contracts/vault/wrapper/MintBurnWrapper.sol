@@ -14,7 +14,7 @@ interface IERC20Decimals is IERC20 {
 /**
     @dev This contract is used as a bridge mint-burn token on chains where 
          native (underlying) token is not directly compatible with Synapse:Bridge.
-         A way to perform 1:1 "swap" between MintBurnWrapper and tokenNative has to exist.
+         A way to perform 1:1 "swap" between MintBurnWrapper and nativeToken has to exist.
 
     Here's the list of all contracts that will be interacting with MintBurnWrapper.
 
@@ -62,13 +62,13 @@ interface IERC20Decimals is IERC20 {
 abstract contract MintBurnWrapper is IMintBurnWrapper {
     /**
         @dev This contract is supposed to provide following functionality:
-        1. Burn `tokenNative` from arbitrary address, when {burnFrom} is called. By default Bridge.redeem() will be only 
-        called by BridgeRouter, so setting up infinite approval for `tokenNative` on BridgeRouter might be needed.
+        1. Burn `nativeToken` from arbitrary address, when {burnFrom} is called. By default Bridge.redeem() will be only 
+        called by BridgeRouter, so setting up infinite approval for `nativeToken` on BridgeRouter might be needed.
 
-        2. Mint `tokenNative` to arbitrary address, when asked by Vault. This usually requires minting rights on the `tokenNative`
+        2. Mint `nativeToken` to arbitrary address, when asked by Vault. This usually requires minting rights on the `nativeToken`
 
-        3. Transfer `tokenNative` from Vault, when Vault.withdrawFees(MintBurnWrapper) is called. Vault knows nothing about wrapping,
-        so all Vault's `tokenNative` are actually stored in this contract (see {balanceOf}). This enables transfer without Vault having
+        3. Transfer `nativeToken` from Vault, when Vault.withdrawFees(MintBurnWrapper) is called. Vault knows nothing about wrapping,
+        so all Vault's `nativeToken` are actually stored in this contract (see {balanceOf}). This enables transfer without Vault having
         to set up token allowances (which Vault isn't supposed to do).
 
         Other functions are complimentary and take care that all interactions (see list above) are working as expected.
@@ -85,21 +85,21 @@ abstract contract MintBurnWrapper is IMintBurnWrapper {
     mapping(address => mapping(address => uint256)) private _allowances;
 
     /// @notice address of native (underlying) token
-    address public immutable tokenNative;
+    address public immutable nativeToken;
 
     constructor(
         address _bridge,
         address _vault,
         string memory _name,
         string memory _symbol,
-        address _tokenNative
+        address _nativeToken
     ) {
         bridge = _bridge;
         vault = _vault;
         name = _name;
         symbol = _symbol;
-        decimals = IERC20Decimals(_tokenNative).decimals();
-        tokenNative = _tokenNative;
+        decimals = IERC20Decimals(_nativeToken).decimals();
+        nativeToken = _nativeToken;
     }
 
     modifier onlyBridge() {
@@ -147,9 +147,9 @@ abstract contract MintBurnWrapper is IMintBurnWrapper {
     {
         // Remember, native tokens from Vault are stored here
         if (account == vault) {
-            return IERC20(tokenNative).balanceOf(address(this));
+            return IERC20(nativeToken).balanceOf(address(this));
         } else {
-            return IERC20(tokenNative).balanceOf(account);
+            return IERC20(nativeToken).balanceOf(account);
         }
     }
 
@@ -164,11 +164,11 @@ abstract contract MintBurnWrapper is IMintBurnWrapper {
             "Can't burn more than allowance"
         );
         _allowances[account][msg.sender] -= amount;
-        uint256 balanceBefore = IERC20(tokenNative).balanceOf(account);
+        uint256 balanceBefore = IERC20(nativeToken).balanceOf(account);
 
         _burnFrom(account, amount);
 
-        uint256 balanceAfter = IERC20(tokenNative).balanceOf(account);
+        uint256 balanceAfter = IERC20(nativeToken).balanceOf(account);
         // Verify the burn, so Bridge doesn't have to trust burn implementation
         require(balanceBefore == amount + balanceAfter, "Burn is incomplete");
     }
@@ -183,11 +183,11 @@ abstract contract MintBurnWrapper is IMintBurnWrapper {
             // Don't mint native tokens to Vault, mint to this address instead
             to = address(this);
         }
-        uint256 balanceBefore = IERC20(tokenNative).balanceOf(to);
+        uint256 balanceBefore = IERC20(nativeToken).balanceOf(to);
 
         _mint(to, amount);
 
-        uint256 balanceAfter = IERC20(tokenNative).balanceOf(to);
+        uint256 balanceAfter = IERC20(nativeToken).balanceOf(to);
         // Verify the burn, so Vault doesn't have to trust mint implementation
         require(balanceBefore + amount == balanceAfter, "Mint is incomplete");
     }
@@ -198,10 +198,10 @@ abstract contract MintBurnWrapper is IMintBurnWrapper {
         being withdrawn.
      */
     function transfer(address to, uint256 amount) external onlyVault {
-        uint256 balanceBefore = IERC20(tokenNative).balanceOf(to);
+        uint256 balanceBefore = IERC20(nativeToken).balanceOf(to);
         _transfer(to, amount);
 
-        uint256 balanceAfter = IERC20(tokenNative).balanceOf(to);
+        uint256 balanceAfter = IERC20(nativeToken).balanceOf(to);
         require(
             balanceBefore + amount == balanceAfter,
             "Transfer is incomplete"
@@ -219,6 +219,6 @@ abstract contract MintBurnWrapper is IMintBurnWrapper {
     /// @dev This should transfer native token from caller to account.
     /// Will only be called by Vault, no allowance is required
     function _transfer(address to, uint256 amount) internal virtual {
-        IERC20(tokenNative).safeTransfer(to, amount);
+        IERC20(nativeToken).safeTransfer(to, amount);
     }
 }
