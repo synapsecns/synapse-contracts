@@ -8,22 +8,6 @@ import {SafeERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/SafeERC2
 
 import {Router} from "./Router.sol";
 
-interface IBridge {
-    function vault() external view returns (address);
-}
-
-interface IVault {
-    function bridgeWrappers(address underlyingToken)
-        external
-        view
-        returns (address);
-
-    function underlyingTokens(address bridgeToken)
-        external
-        view
-        returns (address);
-}
-
 // solhint-disable reason-string
 
 contract BridgeRouter is Router, IBridgeRouter {
@@ -32,13 +16,22 @@ contract BridgeRouter is Router, IBridgeRouter {
     /// @notice Address of Synapse: Bridge contract
     address public immutable bridge;
 
-    /// @notice Address of Synapse: Vault contract
-    address public immutable vault;
-
     /// @notice Maximum amount of swaps for Bridge&Swap transaction
     /// It is enforced to limit the gas costs for validators on "expensive" chains
     /// There's no extra limitation for Swap&Bridge txs, as the gas is paid by the user
     uint8 public bridgeMaxSwaps;
+
+    /// @dev Some of the tokens are not directly compatible with Synapse:Bridge contract.
+    /// For these tokens a wrapper contract is deployed, that will be used
+    /// as a "bridge token" in Synapse:Bridge.
+    /// The UI, or any other entity, interacting with the BridgeRouter do NOT need to
+    /// know anything about the "bridge wrappers", they should interact as if the
+    /// underlying token is the "bridge token".
+
+    /// For example, when calling {bridgeToken}, set `_bridgeToken` as underlying token.
+    /// In {swapAndBridge} use underlying token as `path[N-1]`.
+    mapping(address => address) public bridgeWrappers;
+    mapping(address => address) public underlyingTokens;
 
     constructor(
         address payable _wgas,
@@ -46,7 +39,6 @@ contract BridgeRouter is Router, IBridgeRouter {
         uint8 _bridgeMaxSwaps
     ) Router(_wgas) {
         bridge = _bridge;
-        vault = IBridge(_bridge).vault();
         setBridgeMaxSwaps(_bridgeMaxSwaps);
     }
 
@@ -63,6 +55,37 @@ contract BridgeRouter is Router, IBridgeRouter {
         onlyRole(GOVERNANCE_ROLE)
     {
         bridgeMaxSwaps = _bridgeMaxSwaps;
+    }
+
+    /**
+        @notice Register a MintBurnWrapper that will be used as a "bridge token".
+        @dev This is meant to be used, when original bridge token isn't directly compatible with Synapse:Bridge.
+             1. Set `_bridgeWrapper` = address(0) to bridge `_bridgeToken` directly
+             2. Use unique `bridgeWrapper` for every `bridgeToken` that needs a bridge wrapper contract
+        @param _bridgeToken underlying (native) bridge token
+        @param _bridgeWrapper wrapper contract used for actual bridging
+     */
+    function setBridgeWrapper(address _bridgeToken, address _bridgeWrapper)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        // Delete record of underlying from bridgeToken's "old bridge wrapper",
+        // if there is one
+        address _oldWrapper = bridgeWrappers[_bridgeToken];
+        if (_oldWrapper != address(0)) {
+            underlyingTokens[_oldWrapper] = address(0);
+        }
+
+        // Delete record of wrapper from bridgeWrapper's "old underlying token",
+        // if there is one
+        address _oldUnderlying = underlyingTokens[_bridgeWrapper];
+        if (_oldUnderlying != address(0)) {
+            bridgeWrappers[_oldUnderlying] = address(0);
+        }
+
+        // Update records for both tokens
+        bridgeWrappers[_bridgeToken] = _bridgeWrapper;
+        underlyingTokens[_bridgeWrapper] = _bridgeToken;
     }
 
     function setInfiniteTokenAllowance(IERC20 _token, address _spender)
@@ -390,22 +413,12 @@ contract BridgeRouter is Router, IBridgeRouter {
 
     // -- INTERNAL HELPERS --
 
-    /// @dev Some of the tokens are not directly compatible with Synapse:Bridge contract.
-    /// For these tokens a wrapper contract is deployed, that will be used
-    /// as a "bridge token" in Synapse:Bridge.
-    /// The UI, or any other entity, interacting with the BridgeRouter do NOT need to
-    /// know anything about the "bridge wrappers", they should interact as if the
-    /// underlying token is the "bridge token".
-
-    /// For example, when calling {bridgeToken}, set `_bridgeToken` as underlying token.
-    /// In {swapAndBridge} use underlying token as `path[N-1]`.
-
     function _getBridgeToken(address _bridgeToken)
         internal
         view
         returns (address _actualBridgeToken)
     {
-        _actualBridgeToken = IVault(vault).bridgeWrappers(_bridgeToken);
+        _actualBridgeToken = bridgeWrappers[_bridgeToken];
         if (_actualBridgeToken == address(0)) {
             _actualBridgeToken = _bridgeToken;
         }
@@ -416,7 +429,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         view
         returns (address _actualUnderlyingToken)
     {
-        _actualUnderlyingToken = IVault(vault).underlyingTokens(_bridgeToken);
+        _actualUnderlyingToken = underlyingTokens[_bridgeToken];
         if (_actualUnderlyingToken == address(0)) {
             _actualUnderlyingToken = _bridgeToken;
         }
