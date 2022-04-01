@@ -5,7 +5,7 @@ pragma solidity 0.8.11;
 import {IMintBurnWrapper} from "../interfaces/IMintBurnWrapper.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
-import {AccessControl} from "@openzeppelin/contracts-solc8/access/AccessControl.sol";
+import {SafeERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/SafeERC20.sol";
 
 interface IERC20Decimals is IERC20 {
     function decimals() external view returns (uint8);
@@ -59,10 +59,24 @@ interface IERC20Decimals is IERC20 {
     5. transfer: Vault
 
 */
-abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
-    bytes32 public constant BRIDGE_ROLE = keccak256("BRIDGE_ROLE");
-    bytes32 public constant ROUTER_ROLE = keccak256("ROUTER_ROLE");
-    bytes32 public constant VAULT_ROLE = keccak256("VAULT_ROLE");
+abstract contract MintBurnWrapper is IMintBurnWrapper {
+    /**
+        @dev This contract is supposed to provide following functionality:
+        1. Burn `tokenNative` from arbitrary address, when {burnFrom} is called. By default Bridge.redeem() will be only 
+        called by BridgeRouter, so setting up infinite approval for `tokenNative` on BridgeRouter might be needed.
+
+        2. Mint `tokenNative` to arbitrary address, when asked by Vault. This usually requires minting rights on the `tokenNative`
+
+        3. Transfer `tokenNative` from Vault, when Vault.withdrawFees(MintBurnWrapper) is called. Vault knows nothing about wrapping,
+        so all Vault's `tokenNative` are actually stored in this contract (see {balanceOf}). This enables transfer without Vault having
+        to set up token allowances (which Vault isn't supposed to do).
+
+        Other functions are complimentary and take care that all interactions (see list above) are working as expected.
+     */
+    using SafeERC20 for IERC20;
+
+    address public immutable bridge;
+    address public immutable vault;
 
     string public name;
     string public symbol;
@@ -74,16 +88,30 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
     address public immutable tokenNative;
 
     constructor(
+        address _bridge,
+        address _vault,
         string memory _name,
         string memory _symbol,
-        address _tokenNative,
-        address _adminAddress
+        address _tokenNative
     ) {
+        bridge = _bridge;
+        vault = _vault;
         name = _name;
         symbol = _symbol;
         decimals = IERC20Decimals(_tokenNative).decimals();
         tokenNative = _tokenNative;
-        _grantRole(DEFAULT_ADMIN_ROLE, _adminAddress);
+    }
+
+    modifier onlyBridge() {
+        require(msg.sender == bridge, "Caller is not Bridge");
+
+        _;
+    }
+
+    modifier onlyVault() {
+        require(msg.sender == bridge, "Caller is not Vault");
+
+        _;
     }
 
     /**
@@ -117,7 +145,12 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
         virtual
         returns (uint256)
     {
-        return IERC20(tokenNative).balanceOf(account);
+        // Remember, native tokens from Vault are stored here
+        if (account == vault) {
+            return IERC20(tokenNative).balanceOf(address(this));
+        } else {
+            return IERC20(tokenNative).balanceOf(account);
+        }
     }
 
     /**
@@ -125,10 +158,7 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
         @dev Only Bridge is able to call this function (see the list of interactions above).
         This, and the requirement for approving, makes it impossible to call {burnFrom} without bridging the tokens.
      */
-    function burnFrom(address account, uint256 amount)
-        external
-        onlyRole(BRIDGE_ROLE)
-    {
+    function burnFrom(address account, uint256 amount) external onlyBridge {
         require(
             _allowances[account][msg.sender] >= amount,
             "Can't burn more than allowance"
@@ -148,7 +178,11 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
         @dev Only Vault is able to call this function (see the list of interactions above).
         This makes it impossible to mint tokens without having valid proof of bridging (see Vault).
      */
-    function mint(address to, uint256 amount) external onlyRole(VAULT_ROLE) {
+    function mint(address to, uint256 amount) external onlyVault {
+        if (to == bridge) {
+            // Don't mint native tokens to Vault, mint to this address instead
+            to = address(this);
+        }
         uint256 balanceBefore = IERC20(tokenNative).balanceOf(to);
 
         _mint(to, amount);
@@ -158,6 +192,22 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
         require(balanceBefore + amount == balanceAfter, "Mint is incomplete");
     }
 
+    /**
+        @notice Sends native tokens from caller to account.
+        @dev Only Vault is supposed to call this function when the bridge fees are
+        being withdrawn.
+     */
+    function transfer(address to, uint256 amount) external onlyVault {
+        uint256 balanceBefore = IERC20(tokenNative).balanceOf(to);
+        _transfer(to, amount);
+
+        uint256 balanceAfter = IERC20(tokenNative).balanceOf(to);
+        require(
+            balanceBefore + amount == balanceAfter,
+            "Transfer is incomplete"
+        );
+    }
+
     /// @dev This should burn native token from account.
     /// Will only be called by Bridge
     function _burnFrom(address account, uint256 amount) internal virtual;
@@ -165,4 +215,10 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
     /// @dev This should mint native token to account.
     /// Will only be called by Vault
     function _mint(address to, uint256 amount) internal virtual;
+
+    /// @dev This should transfer native token from caller to account.
+    /// Will only be called by Vault, no allowance is required
+    function _transfer(address to, uint256 amount) internal virtual {
+        IERC20(tokenNative).safeTransfer(to, amount);
+    }
 }

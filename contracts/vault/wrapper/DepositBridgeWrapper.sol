@@ -11,11 +11,12 @@ contract DepositBridgeWrapper is MintBurnWrapper {
     using SafeERC20 for IERC20;
 
     constructor(
+        address _bridge,
+        address _vault,
         string memory _name,
         string memory _symbol,
-        address _depositToken,
-        address _adminAddress
-    ) MintBurnWrapper(_name, _symbol, _depositToken, _adminAddress) {
+        address _depositToken
+    ) MintBurnWrapper(_bridge, _vault, _name, _symbol, _depositToken) {
         this;
     }
 

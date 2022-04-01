@@ -16,9 +16,11 @@ interface IGmx is IERC20 {
 contract GmxBridgeWrapper is MintBurnWrapper {
     using SafeERC20 for IGmx;
 
-    constructor(address _gmx, address _adminAddress)
-        MintBurnWrapper("GMX (Synapse)", "synGMX", _gmx, _adminAddress)
-    {
+    constructor(
+        address _bridge,
+        address _vault,
+        address _gmx
+    ) MintBurnWrapper(_bridge, _vault, "GMX (Synapse)", "synGMX", _gmx) {
         this;
     }
 
