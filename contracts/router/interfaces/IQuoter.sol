@@ -5,25 +5,10 @@ import {IBasicQuoter} from "./IBasicQuoter.sol";
 import {Offers} from "../libraries/LibOffers.sol";
 
 interface IQuoter is IBasicQuoter {
-    // solhint-disable-next-line
-    function WGAS() external view returns (address payable);
-
-    // -- FIND BEST PATH --
-
-    function findBestPathWithGas(
+    function findBestPath(
         uint256 _amountIn,
         address _tokenIn,
         address _tokenOut,
-        uint8 _maxSwaps,
-        uint256 _gasPrice
-    ) external view returns (Offers.FormattedOfferWithGas memory);
-
-    function getTradeDataAmountOut(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut,
-        uint8 _maxSwaps,
-        uint256 _gasPrice,
-        uint256 _maxSwapSlippage
-    ) external view returns (Trade memory _tradeData, uint256 _amountOut);
+        uint8 _maxSwaps
+    ) external view returns (Offers.FormattedOffer memory);
 }

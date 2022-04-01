@@ -39,44 +39,53 @@ abstract contract Adapter is Ownable, IAdapter {
         emit UpdatedGasEstimate(address(this), _estimate);
     }
 
+    // -- RESTRICTED ALLOWANCE FUNCTIONS --
+
+    function setInfiniteAllowance(IERC20 _token, address _spender)
+        external
+        onlyOwner
+    {
+        _setInfiniteAllowance(_token, _spender);
+    }
+
     /**
      * @notice Revoke token allowance
      *
      * @param _token address
      * @param _spender address
      */
-    function revokeAllowance(address _token, address _spender)
+    function revokeTokenAllowance(IERC20 _token, address _spender)
         external
         onlyOwner
     {
-        IERC20 _t = IERC20(_token);
-        _t.safeApprove(_spender, 0);
+        _token.safeApprove(_spender, 0);
     }
 
     // -- RESTRICTED RECOVER TOKEN FUNCTIONS --
 
     /**
      * @notice Recover ERC20 from contract
-     * @param _tokenAddress token address
-     * @param _tokenAmount amount to recover
+     * @param _token token to recover
      */
-    function recoverERC20(address _tokenAddress, uint256 _tokenAmount)
-        external
-        onlyOwner
-    {
-        require(_tokenAmount > 0, "Adapter: Nothing to recover");
-        emit Recovered(_tokenAddress, _tokenAmount);
-        IERC20(_tokenAddress).safeTransfer(msg.sender, _tokenAmount);
+    function recoverERC20(IERC20 _token) external onlyOwner {
+        uint256 _amount = _token.balanceOf(address(this));
+        require(_amount > 0, "Adapter: Nothing to recover");
+
+        emit Recovered(address(_token), _amount);
+        _token.safeTransfer(msg.sender, _amount);
     }
 
     /**
      * @notice Recover GAS from contract
-     * @param _amount amount
      */
-    function recoverGAS(uint256 _amount) external onlyOwner {
+    function recoverGAS() external onlyOwner {
+        uint256 _amount = address(this).balance;
         require(_amount > 0, "Adapter: Nothing to recover");
+
         emit Recovered(address(0), _amount);
-        payable(msg.sender).transfer(_amount);
+        //solhint-disable-next-line
+        (bool success, ) = msg.sender.call{value: _amount}("");
+        require(success, "GAS transfer failed");
     }
 
     /**
@@ -136,7 +145,6 @@ abstract contract Adapter is Ownable, IAdapter {
         require(_checkTokens(_tokenIn, _tokenOut), "Adapter: unknown tokens");
         _approveIfNeeded(_tokenIn, _amountIn);
         _amountOut = _swap(_amountIn, _tokenIn, _tokenOut, _to);
-        emit AdapterSwap(_tokenIn, _tokenOut, _amountIn, _amountOut);
     }
 
     // -- INTERNAL FUNCTIONS
@@ -183,30 +191,33 @@ abstract contract Adapter is Ownable, IAdapter {
         }
     }
 
+    function _setInfiniteAllowance(IERC20 _token, address _spender) internal {
+        _checkAllowance(_token, UINT_MAX, _spender);
+    }
+
     // -- INTERNAL VIRTUAL FUNCTIONS
 
     /**
      * @notice Approves token for the underneath swapper to use
      *
      * @dev Implement via _checkAllowance(_tokenIn, _amount, POOL)
-     *
-     * @param _tokenIn ERC20 token to approve
-     * @param _amount token amount to approve
+     *      if actually needed
      */
-    function _approveIfNeeded(address _tokenIn, uint256 _amount)
-        internal
-        virtual;
+    function _approveIfNeeded(address, uint256) internal virtual {
+        this;
+    }
 
     /**
      * @notice Checks if a swap between two tokens is supported by adapter
-     * @param _tokenIn ERC20 token to check
-     * @param _tokenOut ERC20 token to check
      */
-    function _checkTokens(address _tokenIn, address _tokenOut)
+    function _checkTokens(address, address)
         internal
         view
         virtual
-        returns (bool);
+        returns (bool)
+    {
+        return true;
+    }
 
     /**
      * @notice Internal implementation for depositAddress

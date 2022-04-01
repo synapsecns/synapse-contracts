@@ -4,11 +4,14 @@ pragma solidity ^0.8.0;
 import {CurveAbstractAdapter} from "./CurveAbstractAdapter.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
-import {ICurvePool} from "../../interfaces/ICurvePool.sol";
-
 import {SafeCast} from "@openzeppelin/contracts-4.4.2/utils/math/SafeCast.sol";
 
-contract CurveBasePoolAdapter is CurveAbstractAdapter {
+contract CurveBaseAdapter is CurveAbstractAdapter {
+    /**
+        @dev Base Adapter is using int128 for indexes
+        and is using exchange() for swaps
+     */
+
     mapping(address => int128) public tokenIndex;
 
     constructor(
@@ -43,7 +46,8 @@ contract CurveBasePoolAdapter is CurveAbstractAdapter {
         address _tokenIn,
         address _tokenOut,
         address _to
-    ) internal virtual override {
+    ) internal virtual override returns (uint256 _amountOut) {
+        _amountOut = IERC20(_tokenOut).balanceOf(_to);
         pool.exchange(
             tokenIndex[_tokenIn],
             tokenIndex[_tokenOut],
@@ -51,6 +55,7 @@ contract CurveBasePoolAdapter is CurveAbstractAdapter {
             0,
             _to
         );
+        _amountOut = IERC20(_tokenOut).balanceOf(_to) - _amountOut;
     }
 
     function _doIndirectSwap(

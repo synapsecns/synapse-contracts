@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ILendingPool} from "../../interfaces/ILendingPool.sol";
-import {ISynapse} from "../../interfaces/ISynapse.sol";
-import {SynapseBasePoolAdapter} from "./SynapseBasePoolAdapter.sol";
+import {ILendingPool} from "../interfaces/ILendingPool.sol";
+import {SynapseBaseAdapter} from "./SynapseBaseAdapter.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 
@@ -11,7 +10,7 @@ interface AaveToken is IERC20 {
     function scaledBalanceOf(address user) external view returns (uint256);
 }
 
-contract SynapseAavePoolAdapter is SynapseBasePoolAdapter {
+contract SynapseAaveAdapter is SynapseBaseAdapter {
     ILendingPool public immutable lendingPool;
 
     mapping(address => address) public aaveToken;
@@ -22,41 +21,48 @@ contract SynapseAavePoolAdapter is SynapseBasePoolAdapter {
 
     /**
      * @param _name Adapter name
-     * @param _pool Pool address
      * @param _swapGasEstimate Estimated gas usage for this.swap()
+     * @param _pool Pool address
      * @param _lendingPool Aave lending pool address
      * @param _underlyingTokens underlying pool tokens, that will be traded
      */
     constructor(
         string memory _name,
-        address _pool,
         uint256 _swapGasEstimate,
+        address _pool,
         address _lendingPool,
         address[] memory _underlyingTokens
-    ) SynapseBasePoolAdapter(_name, _pool, _swapGasEstimate) {
+    ) SynapseBaseAdapter(_name, _swapGasEstimate, _pool) {
         require(_underlyingTokens.length == numTokens, "Wrong tokens amount");
         lendingPool = ILendingPool(_lendingPool);
+
         for (uint8 i = 0; i < _underlyingTokens.length; i++) {
             address _poolToken = address(poolTokens[i]);
             if (_poolToken != _underlyingTokens[i]) {
-                aaveToken[_underlyingTokens[i]] = _poolToken;
-                isUnderlying[_underlyingTokens[i]] = true;
+                _registerUnderlyingToken(_underlyingTokens[i], _poolToken);
             }
         }
     }
 
-    function _approveIfNeeded(address _tokenIn, uint256 _amount)
+    function _registerUnderlyingToken(address _underlying, address _poolToken)
         internal
+    {
+        aaveToken[_underlying] = _poolToken;
+        isUnderlying[_underlying] = true;
+        _setInfiniteAllowance(IERC20(_underlying), address(lendingPool));
+    }
+
+    function _checkTokens(address _tokenIn, address _tokenOut)
+        internal
+        view
         virtual
         override
+        returns (bool)
     {
-        if (isUnderlying[_tokenIn]) {
-            // Lending Pool needs to have approval to spend underlying
-            _checkAllowance(IERC20(_tokenIn), _amount, address(lendingPool));
-            // Swap pool needs to have approval to spend aToken
-            _tokenIn = aaveToken[_tokenIn];
-        }
-        SynapseBasePoolAdapter._approveIfNeeded(_tokenIn, _amount);
+        // Swaps are supported between both pool and underlying tokens
+        return
+            (isUnderlying[_tokenIn] || isPoolToken[_tokenIn]) &&
+            (isUnderlying[_tokenOut] || isPoolToken[_tokenOut]);
     }
 
     function _swap(
@@ -73,7 +79,7 @@ contract SynapseAavePoolAdapter is SynapseBasePoolAdapter {
         }
         if (isUnderlying[_tokenOut]) {
             // User needs to receive underlying token, so we ask the aToken to be sent to this contract
-            SynapseBasePoolAdapter._swap(
+            SynapseBaseAdapter._swap(
                 _amountIn,
                 _tokenIn,
                 aaveToken[_tokenOut],
@@ -83,7 +89,7 @@ contract SynapseAavePoolAdapter is SynapseBasePoolAdapter {
             _amountOut = _aaveWithdraw(_tokenOut, UINT_MAX, _to);
         } else {
             // User needs to receive pool token, so we can use parent's logic
-            _amountOut = SynapseBasePoolAdapter._swap(
+            _amountOut = SynapseBaseAdapter._swap(
                 _amountIn,
                 _tokenIn,
                 _tokenOut,
@@ -109,7 +115,7 @@ contract SynapseAavePoolAdapter is SynapseBasePoolAdapter {
             uint256 _index = lendingPool.getReserveNormalizedIncome(_tokenOut);
             // replace _tokenOut with actual pool token
             _tokenOut = aaveToken[_tokenOut];
-            _amountOut = SynapseBasePoolAdapter._query(
+            _amountOut = SynapseBaseAdapter._query(
                 _amountIn,
                 _tokenIn,
                 _tokenOut
@@ -117,7 +123,7 @@ contract SynapseAavePoolAdapter is SynapseBasePoolAdapter {
 
             _amountOut = _calcTransferredOut(_amountOut, _index);
         } else {
-            _amountOut = SynapseBasePoolAdapter._query(
+            _amountOut = SynapseBaseAdapter._query(
                 _amountIn,
                 _tokenIn,
                 _tokenOut
@@ -146,7 +152,7 @@ contract SynapseAavePoolAdapter is SynapseBasePoolAdapter {
 
         uint256 _delta = (_amount * RAY + _index / 2) / _index;
         uint256 _oldScaledBalance = AaveToken(aaveToken[_token])
-        .scaledBalanceOf(address(pool));
+            .scaledBalanceOf(address(pool));
 
         uint256 _newScaledBalance = _oldScaledBalance + _delta;
 
@@ -172,19 +178,6 @@ contract SynapseAavePoolAdapter is SynapseBasePoolAdapter {
     {
         lendingPool.deposit(_token, _amount, address(this), 0);
         return IERC20(aaveToken[_token]).balanceOf(address(this));
-    }
-
-    function _checkTokens(address _tokenIn, address _tokenOut)
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
-        // Swaps are supported between both pool and underlying tokens
-        return
-            (isPoolToken[_tokenIn] || isUnderlying[_tokenIn]) &&
-            (isPoolToken[_tokenOut] || isUnderlying[_tokenOut]);
     }
 
     /**

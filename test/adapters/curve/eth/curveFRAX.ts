@@ -29,7 +29,7 @@ const STORAGE = "frax"
 const ADAPTER = adapters[CHAIN][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
-describe(ADAPTER_NAME, async function() {
+describe(ADAPTER_NAME, async function () {
   let owner: Signer
   let ownerAddress: string
   let dude: Signer
@@ -52,11 +52,11 @@ describe(ADAPTER_NAME, async function() {
 
   let swapsPerTime: Number =
     SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
-  const timesSmall: Number = Math.floor(125 / swapsPerTime) + 1
+  const timesSmall: Number = Math.floor(40 / swapsPerTime) + 1
   const swapsAmountSmall: Number = timesSmall * swapsPerTime
 
   swapsPerTime = SHARE_BIG.length * getSwapsAmount(tokenSymbols.length)
-  const timesBig: Number = Math.floor(50 / swapsPerTime) + 1
+  const timesBig: Number = Math.floor(30 / swapsPerTime) + 1
   const swapsAmountBig: Number = timesBig * swapsPerTime
 
   const AMOUNTS: Array<BigNumber>
@@ -124,7 +124,7 @@ describe(ADAPTER_NAME, async function() {
   })
 
   describe("Sanity checks", () => {
-    it("Curve Adapter is properly set up", async function() {
+    it("Curve Adapter is properly set up", async function () {
       expect(await adapter.pool()).to.eq(config[CHAIN][DEX][POOL])
 
       expect(TOKENS.length).to.gt(0)
@@ -135,7 +135,7 @@ describe(ADAPTER_NAME, async function() {
       }
     })
 
-    it("Swap fails if transfer amount is too little", async function() {
+    it("Swap fails if transfer amount is too little", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let depositAddress = await adapter.depositAddress(
         TOKENS[0].address,
@@ -152,7 +152,7 @@ describe(ADAPTER_NAME, async function() {
       ).to.be.reverted
     })
 
-    it("Only Owner can rescue overprovided swap tokens", async function() {
+    it("Only Owner can rescue overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await adapter.depositAddress(
@@ -168,15 +168,15 @@ describe(ADAPTER_NAME, async function() {
       )
 
       await expect(
-        adapter.connect(dude).recoverERC20(TOKENS[0].address, extra),
+        adapter.connect(dude).recoverERC20(TOKENS[0].address),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        adapter.recoverERC20(TOKENS[0].address, extra),
+        adapter.recoverERC20(TOKENS[0].address),
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
-    it("Anyone can take advantage of overprovided swap tokens", async function() {
+    it("Anyone can take advantage of overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await adapter.depositAddress(
@@ -205,7 +205,7 @@ describe(ADAPTER_NAME, async function() {
       ).to.changeTokenBalance(TOKENS[1], dude, swapQuote.add(MAX_UNDERQUOTE))
     })
 
-    it("Only Owner can rescue GAS from Adapter", async function() {
+    it("Only Owner can rescue GAS from Adapter", async function () {
       let amount = 42690
       await expect(() =>
         owner.sendTransaction({
@@ -214,11 +214,11 @@ describe(ADAPTER_NAME, async function() {
         }),
       ).to.changeEtherBalance(adapter, amount)
 
-      await expect(adapter.connect(dude).recoverGAS(amount)).to.be.revertedWith(
+      await expect(adapter.connect(dude).recoverGAS()).to.be.revertedWith(
         "Ownable: caller is not the owner",
       )
 
-      await expect(() => adapter.recoverGAS(amount)).to.changeEtherBalances(
+      await expect(() => adapter.recoverGAS()).to.changeEtherBalances(
         [adapter, owner],
         [-amount, amount],
       )

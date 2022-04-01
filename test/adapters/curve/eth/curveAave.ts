@@ -3,7 +3,7 @@ import { Signer } from "ethers"
 import { getUserTokenBalance } from "../../../utils"
 import { solidity } from "ethereum-waffle"
 
-import { CurveLendingPoolAdapter } from "../../../../build/typechain/CurveLendingPoolAdapter"
+import { CurveLendingAdapter } from "../../../../build/typechain/CurveLendingAdapter"
 import chai from "chai"
 import { getBigNumber } from "../../../bridge/utilities"
 import {
@@ -35,7 +35,7 @@ describe(ADAPTER_NAME, function () {
   let dude: Signer
   let dudeAddress: string
 
-  let adapter: CurveLendingPoolAdapter
+  let adapter: CurveLendingAdapter
 
   // Test Values
   const TOKENS = []
@@ -49,12 +49,13 @@ describe(ADAPTER_NAME, function () {
   const SHARE_SMALL: Array<Number> = [1, 12, 29, 42]
   const SHARE_BIG: Array<Number> = [66, 121]
 
-  let swapsPerTime: Number = SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
-  const timesSmall: Number = Math.floor(125 / swapsPerTime) + 1
+  let swapsPerTime: Number =
+    SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
+  const timesSmall: Number = Math.floor(40 / swapsPerTime) + 1
   const swapsAmountSmall: Number = timesSmall * swapsPerTime
 
   swapsPerTime = SHARE_BIG.length * getSwapsAmount(tokenSymbols.length)
-  const timesBig: Number = Math.floor(50 / swapsPerTime) + 1
+  const timesBig: Number = Math.floor(30 / swapsPerTime) + 1
   const swapsAmountBig: Number = timesBig * swapsPerTime
 
   const AMOUNTS: Array<BigNumber>
@@ -153,11 +154,11 @@ describe(ADAPTER_NAME, function () {
       )
 
       await expect(
-        adapter.connect(dude).recoverERC20(TOKENS[0].address, extra),
+        adapter.connect(dude).recoverERC20(TOKENS[0].address),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
       await expect(() =>
-        adapter.recoverERC20(TOKENS[0].address, extra),
+        adapter.recoverERC20(TOKENS[0].address),
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
@@ -199,11 +200,11 @@ describe(ADAPTER_NAME, function () {
         }),
       ).to.changeEtherBalance(adapter, amount)
 
-      await expect(adapter.connect(dude).recoverGAS(amount)).to.be.revertedWith(
+      await expect(adapter.connect(dude).recoverGAS()).to.be.revertedWith(
         "Ownable: caller is not the owner",
       )
 
-      await expect(() => adapter.recoverGAS(amount)).to.changeEtherBalances(
+      await expect(() => adapter.recoverGAS()).to.changeEtherBalances(
         [adapter, owner],
         [-amount, amount],
       )

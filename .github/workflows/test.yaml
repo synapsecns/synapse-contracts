@@ -7,8 +7,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      AVAX_API: https://api.avax.network/ext/bc/C/rpc
       ALCHEMY_API: ${{ secrets.ALCHEMY_API }}
+      ARBITRUM_API: ${{ secrets.ARBITRUM_API }}
+      AVAX_API: https://api.avax.network/ext/bc/C/rpc
+      FTM_API: https://rpc.fantom.network
 
     steps:
       - uses: actions/checkout@v2

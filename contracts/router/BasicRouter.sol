@@ -71,21 +71,22 @@ contract BasicRouter is AccessControl, IBasicRouter {
 
     // -- RESTRICTED RECOVER TOKEN FUNCTIONS --
 
-    function recoverERC20(address _tokenAddress)
-        external
-        onlyRole(GOVERNANCE_ROLE)
-    {
-        uint256 _tokenAmount = IERC20(_tokenAddress).balanceOf(address(this));
-        require(_tokenAmount > 0, "Router: Nothing to recover");
-        IERC20(_tokenAddress).safeTransfer(msg.sender, _tokenAmount);
-        emit Recovered(_tokenAddress, _tokenAmount);
+    function recoverERC20(IERC20 _token) external onlyRole(GOVERNANCE_ROLE) {
+        uint256 _amount = _token.balanceOf(address(this));
+        require(_amount > 0, "Adapter: Nothing to recover");
+
+        emit Recovered(address(_token), _amount);
+        _token.safeTransfer(msg.sender, _amount);
     }
 
     function recoverGAS() external onlyRole(GOVERNANCE_ROLE) {
         uint256 _amount = address(this).balance;
-        require(_amount > 0, "Router: Nothing to recover");
-        payable(msg.sender).transfer(_amount);
+        require(_amount > 0, "Adapter: Nothing to recover");
+
         emit Recovered(address(0), _amount);
+        //solhint-disable-next-line
+        (bool success, ) = msg.sender.call{value: _amount}("");
+        require(success, "GAS transfer failed");
     }
 
     // -- INTERNAL HELPERS --
