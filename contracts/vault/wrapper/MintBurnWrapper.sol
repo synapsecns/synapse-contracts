@@ -17,8 +17,6 @@ interface IERC20Decimals is IERC20 {
          A way to perform 1:1 "swap" between MintBurnWrapper and tokenNative has to exist.
 
     Here's the list of all contracts that will be interacting with MintBurnWrapper.
-    List is constructed using implementation of Router from this branch (yeah, it's annoying, I know):
-    https://github.com/synapsecns/synapse-contracts/tree/chisq/adapters-optimising/contracts/router
 
                     Getting MintBurnWrapper as parameter:
     1. Bridge
@@ -39,10 +37,8 @@ interface IERC20Decimals is IERC20 {
 
     2. Vault
                 Externally:
-        [1] mintToken [as token] -> _getUnderlyingToken(token); token.mint()
-
-                Internally:
-        1. _getUnderlyingToken [as token] -> read underlyingTokens[token]
+        [1] mintToken [as token] -> fees[token]; token.mint()
+        [2] withdrawFees [as token] -> fees[token]; token.transfer()
 
     3. BridgeRouter
                 Externally:
@@ -55,11 +51,12 @@ interface IERC20Decimals is IERC20 {
         3. _setBridgeTokenAllowance [as _bridgeToken] -> _setTokenAllowance(_bridgeToken)
         [4] _setTokenAllowance [as token] -> token.allowance(); token.approve()
 
-            Summary on token functions:
+            Summary on token functions calls:
     1. allowance: Bridge, BridgeRouter
     2. approve: BridgeRouter
     3. burnFrom: Bridge
     4. mint: Vault
+    5. transfer: Vault
 
 */
 abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
@@ -90,7 +87,7 @@ abstract contract MintBurnWrapper is AccessControl, IMintBurnWrapper {
     }
 
     /**
-        @notice Get maximum amount of native tokens `spender` can burn from `spender` 
+        @notice Get maximum amount of native tokens `spender` can burn from `owner` 
         via {burnFrom}.
      */
     function allowance(address owner, address spender)
