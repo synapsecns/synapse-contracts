@@ -26,6 +26,8 @@ contract AvaxJewelMigration is Ownable {
         IERC20Mintable(0x997Ddaa07d716995DE90577C123Db411584E5E46);
     uint256 private constant MAX_UINT256 = 2**256 - 1;
 
+    uint256 private constant HARMONY_ID = 1666600000;
+
     constructor() public {
         NEW_TOKEN.safeApprove(address(SYNAPSE_BRIDGE), MAX_UINT256);
     }
@@ -43,7 +45,20 @@ contract AvaxJewelMigration is Ownable {
         // from msg.sender, which would be AvaxJewelMigration
         _migrate(amount, address(this));
         // Initiate bridging and specify `to` as receiver on destination chain
-        SYNAPSE_BRIDGE.redeem(to, chainId, NEW_TOKEN, amount);
+        if (chainId == HARMONY_ID) {
+            SYNAPSE_BRIDGE.redeemAndSwap(
+                to,
+                chainId,
+                NEW_TOKEN,
+                amount,
+                1, // indexFrom
+                0, // indexTo
+                0, // minDy
+                type(uint256).max // deadline
+            );
+        } else {
+            SYNAPSE_BRIDGE.redeem(to, chainId, NEW_TOKEN, amount);
+        }
     }
 
     /// @notice Pull old tokens from user and mint new ones to account

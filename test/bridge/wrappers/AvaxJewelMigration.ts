@@ -1,5 +1,5 @@
 import { Signer } from "ethers"
-import { impersonateAccount, asyncForEach } from "../../utils"
+import { impersonateAccount, asyncForEach, MAX_UINT256 } from "../../utils"
 import { solidity } from "ethereum-waffle"
 import { ethers, network } from "hardhat"
 
@@ -41,6 +41,7 @@ describe("Avax Jewel Migration", async function () {
   const FAT_CAT = "0x9aa76ae9f804e7a70ba3fb8395d0042079238e9c"
 
   const DFK_CHAIN_ID = 53935
+  const HARMONY_ID = 1666600000
 
   before(async function () {
     // 2022-03-26
@@ -173,7 +174,7 @@ describe("Avax Jewel Migration", async function () {
       )
     })
 
-    it("Cross-chain migration (Bridge event emitted)", async function () {
+    it("Cross-chain migration to DFK (Bridge event emitted)", async function () {
       let ownerBalance = await multiJewel.balanceOf(ownerAddress)
       let dudeBalance = await multiJewel.balanceOf(dudeAddress)
       let ownerAmount = getBigNumber(42)
@@ -199,6 +200,55 @@ describe("Avax Jewel Migration", async function () {
       )
         .to.emit(bridge, "TokenRedeem")
         .withArgs(dudeAddress, DFK_CHAIN_ID, synJewel.address, dudeAmount)
+      expect(await multiJewel.balanceOf(dudeAddress)).to.eq(
+        dudeBalance.sub(dudeAmount),
+      )
+    })
+
+    it("Cross-chain migration to Harmony (Bridge event emitted)", async function () {
+      let ownerBalance = await multiJewel.balanceOf(ownerAddress)
+      let dudeBalance = await multiJewel.balanceOf(dudeAddress)
+      let ownerAmount = getBigNumber(42)
+      let dudeAmount = getBigNumber(13)
+
+      await multiJewel.approve(migrator.address, ownerBalance)
+      await multiJewel.connect(dude).approve(migrator.address, dudeBalance)
+
+      await expect(
+        migrator.migrateAndBridge(ownerAmount, ownerAddress, HARMONY_ID),
+      )
+        .to.emit(bridge, "TokenRedeemAndSwap")
+        .withArgs(
+          ownerAddress,
+          HARMONY_ID,
+          synJewel.address,
+          ownerAmount,
+          1,
+          0,
+          0,
+          MAX_UINT256,
+        )
+
+      expect(await multiJewel.balanceOf(ownerAddress)).to.eq(
+        ownerBalance.sub(ownerAmount),
+      )
+
+      await expect(
+        migrator
+          .connect(dude)
+          .migrateAndBridge(dudeAmount, dudeAddress, HARMONY_ID),
+      )
+        .to.emit(bridge, "TokenRedeemAndSwap")
+        .withArgs(
+          dudeAddress,
+          HARMONY_ID,
+          synJewel.address,
+          dudeAmount,
+          1,
+          0,
+          0,
+          MAX_UINT256,
+        )
       expect(await multiJewel.balanceOf(dudeAddress)).to.eq(
         dudeBalance.sub(dudeAmount),
       )
