@@ -16,6 +16,8 @@ import {IBridge} from "./interfaces/IBridge.sol";
 
 import {IBridgeRouter} from "../router/interfaces/IBridgeRouter.sol";
 
+// solhint-disable reason-string
+
 contract Bridge is
     Initializable,
     AccessControlUpgradeable,
@@ -35,6 +37,8 @@ contract Bridge is
     uint128 public chainGasAmount;
     /// @notice Maximum amount of GAS units for Swap part of bridge transaction
     uint128 public maxGasForSwap;
+
+    uint256 internal constant UINT_MAX = type(uint256).max;
 
     function initialize(IVault _vault, uint128 _maxGasForSwap)
         external
@@ -116,194 +120,187 @@ contract Bridge is
 
     // -- BRIDGE OUT FUNCTIONS: Deposit --
 
-    function deposit(
+    function depositEVM(
         address to,
         uint256 chainId,
         IERC20 token,
-        uint256 amount
-    ) external nonReentrant whenNotPaused {
-        _deposit(to, chainId, token, amount);
+        uint256 amount,
+        SwapParams calldata swapParams
+    ) external {
+        _depositEVM(to, chainId, token, amount, swapParams);
     }
 
-    function depositMax(
+    function depositMaxEVM(
         address to,
+        uint256 chainId,
+        IERC20 token,
+        SwapParams calldata swapParams
+    ) external {
+        // First, determine how much Bridge call pull from caller
+        uint256 amount = _getMaxAmount(address(token));
+
+        _depositEVM(to, chainId, token, amount, swapParams);
+    }
+
+    function depositNonEVM(
+        bytes32 to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    ) external {
+        _depositNonEVM(to, chainId, token, amount);
+    }
+
+    function depositMaxNonEVM(
+        bytes32 to,
         uint256 chainId,
         IERC20 token
-    ) external nonReentrant whenNotPaused {
-        _deposit(to, chainId, token, _getMaxAmount(address(token)));
+    ) external {
+        // First, determine how much Bridge call pull from caller
+        uint256 amount = _getMaxAmount(address(token));
+        _depositNonEVM(to, chainId, token, amount);
     }
 
-    function depositAndSwapV2(
+    function _depositEVM(
         address to,
         uint256 chainId,
         IERC20 token,
         uint256 amount,
         SwapParams calldata swapParams
-    ) external nonReentrant whenNotPaused {
-        _depositAndSwapV2(to, chainId, token, amount, swapParams);
+    ) internal {
+        // First, deposit to Vault. Use verified deposit amount for bridging
+        amount = _depositToVault(token, amount);
+        // Then, emit corresponding Bridge Event
+        if (_isSwapPresent(swapParams)) {
+            emit TokenDepositEVM(
+                to,
+                chainId,
+                token,
+                amount,
+                swapParams.minAmountOut,
+                swapParams.path,
+                swapParams.adapters,
+                swapParams.deadline
+            );
+        } else {
+            emit TokenDepositEVM(
+                to,
+                chainId,
+                token,
+                amount,
+                0, // minAmountOut
+                new address[](0), // path
+                new address[](0), // adapters
+                UINT_MAX // deadline
+            );
+        }
     }
 
-    function depositMaxAndSwapV2(
-        address to,
-        uint256 chainId,
-        IERC20 token,
-        SwapParams calldata swapParams
-    ) external nonReentrant whenNotPaused {
-        _depositAndSwapV2(
-            to,
-            chainId,
-            token,
-            _getMaxAmount(address(token)),
-            swapParams
-        );
-    }
-
-    function _deposit(
-        address to,
+    function _depositNonEVM(
+        bytes32 to,
         uint256 chainId,
         IERC20 token,
         uint256 amount
     ) internal {
-        emit TokenDeposit(to, chainId, token, _depositToVault(token, amount));
-    }
-
-    function _depositAndSwapV2(
-        address to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount,
-        SwapParams calldata swapParams
-    ) internal {
-        emit TokenDepositAndSwapV2(
-            to,
-            chainId,
-            token,
-            _depositToVault(token, amount),
-            swapParams.minAmountOut,
-            swapParams.path,
-            swapParams.adapters,
-            swapParams.deadline
-        );
+        // First, deposit to Vault. Use verified deposit amount for bridging
+        amount = _depositToVault(token, amount);
+        // Then, emit corresponding Bridge Event
+        emit TokenDepositNonEVM(to, chainId, token, amount);
     }
 
     // -- BRIDGE OUT FUNCTIONS: Redeem --
 
-    function redeem(
+    function redeemEVM(
         address to,
         uint256 chainId,
         ERC20Burnable token,
-        uint256 amount
-    ) external nonReentrant whenNotPaused {
-        _redeem(to, chainId, token, amount);
+        uint256 amount,
+        SwapParams calldata swapParams
+    ) external {
+        _redeemEVM(to, chainId, token, amount, swapParams);
     }
 
-    function redeemMax(
+    function redeemMaxEVM(
         address to,
+        uint256 chainId,
+        ERC20Burnable token,
+        SwapParams calldata swapParams
+    ) external {
+        // First, determine how much Bridge can pull from caller
+        uint256 amount = _getMaxAmount(address(token));
+
+        _redeemEVM(to, chainId, token, amount, swapParams);
+    }
+
+    function redeemNonEVM(
+        bytes32 to,
+        uint256 chainId,
+        ERC20Burnable token,
+        uint256 amount
+    ) external {
+        _redeemNonEVM(to, chainId, token, amount);
+    }
+
+    function redeemMaxNonEVM(
+        bytes32 to,
         uint256 chainId,
         ERC20Burnable token
-    ) external nonReentrant whenNotPaused {
-        _redeem(to, chainId, token, _getMaxAmount(address(token)));
+    ) external {
+        // First, determine how much Bridge can pull from caller
+        uint256 amount = _getMaxAmount(address(token));
+        _redeemNonEVM(to, chainId, token, amount);
     }
 
-    function redeemV2(
-        bytes32 to,
-        uint256 chainId,
-        ERC20Burnable token,
-        uint256 amount
-    ) external nonReentrant whenNotPaused {
-        _redeemV2(to, chainId, token, amount);
-    }
-
-    function redeemV2Max(
-        bytes32 to,
-        uint256 chainId,
-        ERC20Burnable token
-    ) external nonReentrant whenNotPaused {
-        _redeemV2(to, chainId, token, _getMaxAmount(address(token)));
-    }
-
-    function redeemAndSwapV2(
-        address to,
-        uint256 chainId,
-        ERC20Burnable token,
-        uint256 amount,
-        SwapParams calldata swapParams
-    ) external nonReentrant whenNotPaused {
-        _redeemAndSwapV2(to, chainId, token, amount, swapParams);
-    }
-
-    function redeemMaxAndSwapV2(
-        address to,
-        uint256 chainId,
-        ERC20Burnable token,
-        SwapParams calldata swapParams
-    ) external nonReentrant whenNotPaused {
-        _redeemAndSwapV2(
-            to,
-            chainId,
-            token,
-            _getMaxAmount(address(token)),
-            swapParams
-        );
-    }
-
-    function _redeem(
-        address to,
-        uint256 chainId,
-        ERC20Burnable token,
-        uint256 amount
-    ) internal {
-        emit TokenRedeem(to, chainId, token, _burnFromSender(token, amount));
-    }
-
-    function _redeemV2(
-        bytes32 to,
-        uint256 chainId,
-        ERC20Burnable token,
-        uint256 amount
-    ) internal {
-        emit TokenRedeemV2(to, chainId, token, _burnFromSender(token, amount));
-    }
-
-    function _redeemAndSwapV2(
+    function _redeemEVM(
         address to,
         uint256 chainId,
         ERC20Burnable token,
         uint256 amount,
         SwapParams calldata swapParams
     ) internal {
-        emit TokenRedeemAndSwapV2(
-            to,
-            chainId,
-            token,
-            _burnFromSender(token, amount),
-            swapParams.minAmountOut,
-            swapParams.path,
-            swapParams.adapters,
-            swapParams.deadline
-        );
+        // First, burn tokens from caller. Use verified deposit amount for bridging
+        amount = _burnFromCaller(token, amount);
+        // Then, emit corresponding Bridge Event
+        if (_isSwapPresent(swapParams)) {
+            emit TokenRedeemEVM(
+                to,
+                chainId,
+                token,
+                amount,
+                swapParams.minAmountOut,
+                swapParams.path,
+                swapParams.adapters,
+                swapParams.deadline
+            );
+        } else {
+            emit TokenRedeemEVM(
+                to,
+                chainId,
+                token,
+                amount,
+                0, // minAmountOut
+                new address[](0), // path
+                new address[](0), // adapters
+                UINT_MAX // deadline
+            );
+        }
     }
 
-    // -- BRIDGE IN FUNCTIONS: Mint --
-
-    function mint(
-        address to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 kappa
-    )
-        external
-        onlyRole(NODEGROUP_ROLE)
-        nonReentrant
-        whenNotPaused
-        bridgeInTx(amount, fee, to)
-    {
-        // Use amount post fees
-        _mint(to, token, amount - fee, fee, kappa, true);
+    function _redeemNonEVM(
+        bytes32 to,
+        uint256 chainId,
+        ERC20Burnable token,
+        uint256 amount
+    ) internal {
+        // First, burn tokens from caller. Use verified deposit amount for bridging
+        amount = _burnFromCaller(token, amount);
+        // Then, emit corresponding Bridge Event
+        emit TokenRedeemNonEVM(to, chainId, token, amount);
     }
 
-    function mintAndSwapV2(
+    // -- BRIDGE IN FUNCTIONS --
+
+    function bridgeInMint(
         address to,
         IERC20 token,
         uint256 amount,
@@ -317,70 +314,11 @@ contract Bridge is
         whenNotPaused
         bridgeInTx(amount, fee, to)
     {
-        // First, get the amount post fees
-        amount = amount - fee;
-        if (_isDeadlineFailed(swapParams.deadline)) {
-            _mint(to, token, amount, fee, kappa, true);
-            return;
-        }
-
-        // Mint tokens directly to Router
-        _mint(address(router), token, amount, fee, kappa, false);
-
-        // Tokens are in Router, do the swap
-        (IERC20 tokenOut, uint256 amountOut) = _handleSwap(
-            to,
-            token,
-            amount,
-            swapParams
-        );
-
-        emit TokenMintAndSwapV2(
-            to,
-            token,
-            amount + fee,
-            fee,
-            tokenOut,
-            amountOut,
-            kappa
-        );
+        // isMint = true
+        _bridgeIn(to, token, amount, fee, swapParams, kappa, true);
     }
 
-    function _mint(
-        address to,
-        IERC20 token,
-        uint256 amountPostFee,
-        uint256 fee,
-        bytes32 kappa,
-        bool emitEvent
-    ) internal {
-        vault.mintToken(to, token, amountPostFee, fee, kappa);
-
-        if (emitEvent) {
-            emit TokenMint(to, token, amountPostFee + fee, fee, kappa);
-        }
-    }
-
-    // -- BRIDGE IN FUNCTIONS: Withdraw --
-
-    function withdraw(
-        address to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 kappa
-    )
-        external
-        onlyRole(NODEGROUP_ROLE)
-        nonReentrant
-        whenNotPaused
-        bridgeInTx(amount, fee, to)
-    {
-        // Use amount post fees
-        _withdraw(to, token, amount - fee, fee, kappa, true);
-    }
-
-    function withdrawAndSwapV2(
+    function bridgeInWithdraw(
         address to,
         IERC20 token,
         uint256 amount,
@@ -394,53 +332,78 @@ contract Bridge is
         whenNotPaused
         bridgeInTx(amount, fee, to)
     {
+        // isMint = false
+        _bridgeIn(to, token, amount, fee, swapParams, kappa, false);
+    }
+
+    function _bridgeIn(
+        address to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        SwapParams calldata swapParams,
+        bytes32 kappa,
+        bool isMint
+    ) internal {
         // First, get the amount post fees
         amount = amount - fee;
-        if (_isDeadlineFailed(swapParams.deadline)) {
-            _withdraw(to, token, amount, fee, kappa, true);
-            return;
+
+        IERC20 tokenReceived;
+        uint256 amountReceived;
+
+        if (
+            _isSwapPresent(swapParams) &&
+            !_isDeadlineFailed(swapParams.deadline)
+        ) {
+            // If there's a swap, and deadline check is passed,
+            // mint|withdraw bridged tokens to Router
+            (isMint ? vault.mintToken : vault.withdrawToken)(
+                address(router),
+                token,
+                amount,
+                fee,
+                kappa
+            );
+
+            // Then handle the swap part
+            (tokenReceived, amountReceived) = _handleSwap(
+                to,
+                token,
+                amount,
+                swapParams
+            );
+        } else {
+            // If there's no swap, or deadline check is not passed,
+            // mint|withdraw bridged token to needed address
+            (isMint ? vault.mintToken : vault.withdrawToken)(
+                to,
+                token,
+                amount,
+                fee,
+                kappa
+            );
+
+            // TODO: if bridge wrapper is used, its address will be emitted.
+            // Is this what we want?
+            (tokenReceived, amountReceived) = (token, amount);
         }
 
-        // Withdraw tokens directly to Router
-        _withdraw(address(router), token, amount, fee, kappa, false);
-
-        // Tokens are in Router, do the swap
-        (IERC20 tokenOut, uint256 amountOut) = _handleSwap(
-            to,
-            token,
-            amount,
-            swapParams
-        );
-
-        emit TokenWithdrawAndSwapV2(
+        // Finally, emit BridgeIn Event
+        emit TokenBridgedIn(
             to,
             token,
             amount + fee,
             fee,
-            tokenOut,
-            amountOut,
+            tokenReceived,
+            amountReceived,
+            isMint,
             kappa
         );
-    }
-
-    function _withdraw(
-        address to,
-        IERC20 token,
-        uint256 amountPostFee,
-        uint256 fee,
-        bytes32 kappa,
-        bool emitEvent
-    ) internal {
-        vault.withdrawToken(to, token, amountPostFee, fee, kappa);
-
-        if (emitEvent) {
-            emit TokenWithdraw(to, token, amountPostFee + fee, fee, kappa);
-        }
     }
 
     // -- INTERNAL HELPERS --
 
-    function _burnFromSender(ERC20Burnable token, uint256 amount)
+    function _burnFromCaller(ERC20Burnable token, uint256 amount)
         internal
         returns (uint256 amountBurnt)
     {
@@ -501,6 +464,21 @@ contract Bridge is
     function _isDeadlineFailed(uint256 deadline) internal view returns (bool) {
         //solhint-disable-next-line
         return block.timestamp > deadline;
+    }
+
+    function _isSwapPresent(SwapParams calldata params)
+        internal
+        pure
+        returns (bool)
+    {
+        if (params.adapters.length == 0) {
+            require(
+                params.path.length == 0,
+                "Path must be empty, if no adapters"
+            );
+            return false;
+        }
+        return true;
     }
 
     function _transferGasDrop(address to) internal {

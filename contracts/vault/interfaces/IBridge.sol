@@ -19,14 +19,7 @@ interface IBridge {
 
     // -- BRIDGE EVENTS OUT: Deposit --
 
-    event TokenDeposit(
-        address indexed to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    );
-
-    event TokenDepositAndSwapV2(
+    event TokenDepositEVM(
         address indexed to,
         uint256 chainId,
         IERC20 token,
@@ -37,132 +30,79 @@ interface IBridge {
         uint256 deadline
     );
 
-    // -- BRIDGE EVENTS OUT: Redeem --
-
-    event TokenRedeem(
-        address indexed to,
+    event TokenDepositNonEVM(
+        bytes32 indexed to,
         uint256 chainId,
-        ERC20Burnable token,
+        IERC20 token,
         uint256 amount
     );
 
-    event TokenRedeemV2(
+    // -- BRIDGE EVENTS OUT: Redeem --
+
+    event TokenRedeemEVM(
+        address indexed to,
+        uint256 chainId,
+        ERC20Burnable token,
+        uint256 amount,
+        uint256 minAmountOut,
+        address[] path,
+        address[] adapters,
+        uint256 deadline
+    );
+
+    event TokenRedeemNonEVM(
         bytes32 indexed to,
         uint256 chainId,
         ERC20Burnable token,
         uint256 amount
     );
 
-    event TokenRedeemAndSwapV2(
-        address indexed to,
-        uint256 chainId,
-        ERC20Burnable token,
-        uint256 amount,
-        uint256 minAmountOut,
-        address[] path,
-        address[] adapters,
-        uint256 deadline
-    );
+    // -- BRIDGE EVENTS IN --
 
-    // -- BRIDGE EVENTS IN: Mint --
-
-    event TokenMint(
-        address indexed to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 indexed kappa
-    );
-
-    event TokenMintAndSwapV2(
+    event TokenBridgedIn(
         address indexed to,
         IERC20 tokenBridged,
         uint256 amountBridged,
         uint256 bridgeFee,
         IERC20 tokenReceived,
         uint256 amountReceived,
-        bytes32 indexed kappa
-    );
-
-    // -- BRIDGE EVENTS IN: Withdraw --
-
-    event TokenWithdraw(
-        address indexed to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 indexed kappa
-    );
-
-    event TokenWithdrawAndSwapV2(
-        address indexed to,
-        IERC20 tokenBridged,
-        uint256 amountBridged,
-        uint256 bridgeFee,
-        IERC20 tokenReceived,
-        uint256 amountReceived,
+        bool isMint,
         bytes32 indexed kappa
     );
 
     // -- BRIDGE OUT FUNCTIONS: Deposit --
 
-    function deposit(
+    function depositEVM(
         address to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount,
+        SwapParams calldata swapParams
+    ) external;
+
+    function depositMaxEVM(
+        address to,
+        uint256 chainId,
+        IERC20 token,
+        SwapParams calldata swapParams
+    ) external;
+
+    function depositNonEVM(
+        bytes32 to,
         uint256 chainId,
         IERC20 token,
         uint256 amount
     ) external;
 
-    function depositMax(
-        address to,
+    function depositMaxNonEVM(
+        bytes32 to,
         uint256 chainId,
         IERC20 token
     ) external;
 
-    function depositAndSwapV2(
-        address to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount,
-        SwapParams calldata swapParams
-    ) external;
-
-    function depositMaxAndSwapV2(
-        address to,
-        uint256 chainId,
-        IERC20 token,
-        SwapParams calldata swapParams
-    ) external;
-
     // -- BRIDGE OUT FUNCTIONS: Redeem --
 
-    function redeem(
-        address to,
-        uint256 chainId,
-        ERC20Burnable token,
-        uint256 amount
-    ) external;
-
-    function redeemMax(
-        address to,
-        uint256 chainId,
-        ERC20Burnable token
-    ) external;
-
-    function redeemV2(
-        bytes32 to,
-        uint256 chainId,
-        ERC20Burnable token,
-        uint256 amount
-    ) external;
-
-    function redeemV2Max(
-        bytes32 to,
-        uint256 chainId,
-        ERC20Burnable token
-    ) external;
-
-    function redeemAndSwapV2(
+    function redeemEVM(
         address to,
         uint256 chainId,
         ERC20Burnable token,
@@ -170,24 +110,29 @@ interface IBridge {
         SwapParams calldata swapParams
     ) external;
 
-    function redeemMaxAndSwapV2(
+    function redeemMaxEVM(
         address to,
         uint256 chainId,
         ERC20Burnable token,
         SwapParams calldata swapParams
+    ) external;
+
+    function redeemNonEVM(
+        bytes32 to,
+        uint256 chainId,
+        ERC20Burnable token,
+        uint256 amount
+    ) external;
+
+    function redeemMaxNonEVM(
+        bytes32 to,
+        uint256 chainId,
+        ERC20Burnable token
     ) external;
 
     // -- BRIDGE IN FUNCTIONS: Mint --
 
-    function mint(
-        address to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 kappa
-    ) external;
-
-    function mintAndSwapV2(
+    function bridgeInMint(
         address to,
         IERC20 token,
         uint256 amount,
@@ -198,15 +143,7 @@ interface IBridge {
 
     // -- BRIDGE IN FUNCTIONS: Withdraw --
 
-    function withdraw(
-        address to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 kappa
-    ) external;
-
-    function withdrawAndSwapV2(
+    function bridgeInWithdraw(
         address to,
         IERC20 token,
         uint256 amount,
