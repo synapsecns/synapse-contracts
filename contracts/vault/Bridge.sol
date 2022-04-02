@@ -465,7 +465,6 @@ contract Bridge is
         if (address(this).balance >= chainGasAmount) {
             //solhint-disable-next-line
             (bool success, ) = to.call{value: chainGasAmount}("");
-            require(success, "GAS drop failed");
         }
     }
 }
