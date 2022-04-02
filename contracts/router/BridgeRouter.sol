@@ -134,7 +134,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         );
     }
 
-    function swapAndBridgeToEVM(
+    function swapTokenAndBridgeToEVM(
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
@@ -160,7 +160,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         );
     }
 
-    function swapFromGasAndBridgeToEVM(
+    function swapGasAndBridgeToEVM(
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
