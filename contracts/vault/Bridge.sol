@@ -312,11 +312,12 @@ contract Bridge is
 
     // -- BRIDGE IN FUNCTIONS --
 
-    function bridgeInMint(
+    function bridgeIn(
         address to,
         IERC20 token,
         uint256 amount,
         uint256 fee,
+        bool isMint,
         SwapParams calldata swapParams,
         bytes32 kappa
     )
@@ -326,37 +327,6 @@ contract Bridge is
         whenNotPaused
         bridgeInTx(amount, fee, to)
     {
-        // isMint = true
-        _bridgeIn(to, token, amount, fee, swapParams, kappa, true);
-    }
-
-    function bridgeInWithdraw(
-        address to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        SwapParams calldata swapParams,
-        bytes32 kappa
-    )
-        external
-        onlyRole(NODEGROUP_ROLE)
-        nonReentrant
-        whenNotPaused
-        bridgeInTx(amount, fee, to)
-    {
-        // isMint = false
-        _bridgeIn(to, token, amount, fee, swapParams, kappa, false);
-    }
-
-    function _bridgeIn(
-        address to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        SwapParams calldata swapParams,
-        bytes32 kappa,
-        bool isMint
-    ) internal {
         // First, get the amount post fees
         amount = amount - fee;
 
