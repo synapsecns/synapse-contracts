@@ -42,11 +42,6 @@ contract Vault is
 
     // -- END OF Synapse:Bridge V1 state variables --
 
-    /// @dev for some tokens external Synapse contracts will need
-    /// to withdraw funds from Vault by locking/burning other tokens
-    /// without providing kappa (single-chain tx)
-    mapping(address => address) private tokenSpender;
-
     receive() external payable {
         this;
     }
@@ -66,8 +61,6 @@ contract Vault is
     event GasRecovered(uint256 amount);
 
     event UpdatedChainGasAmount(uint256 amount);
-
-    event UpdatedTokenSpender(IERC20 indexed token, address spender);
 
     // -- MODIFIERS --
 
@@ -110,14 +103,6 @@ contract Vault is
         _;
     }
 
-    /// @notice Token's spender is able to withdraw a given token
-    /// without providing kappa. This is permissioned and is supposed
-    /// to be used for tricky swap adapters.
-    modifier onlyTokenSpender(IERC20 token) {
-        require(msg.sender == tokenSpender[address(token)], "Not spender");
-        _;
-    }
-
     // -- VIEWS --
 
     function getFeeBalance(address tokenAddress)
@@ -143,14 +128,6 @@ contract Vault is
     function setChainGasAmount(uint256 amount) external onlyGovernance {
         chainGasAmount = amount;
         emit UpdatedChainGasAmount(amount);
-    }
-
-    function setTokenSpender(IERC20 token, address spender)
-        external
-        onlyGovernance
-    {
-        tokenSpender[address(token)] = spender;
-        emit UpdatedTokenSpender(token, spender);
     }
 
     function setWethAddress(address payable _wethAddress) external onlyAdmin {
@@ -226,21 +203,6 @@ contract Vault is
         fees[address(token)] += fee;
         token.mint(to, amount);
         token.mint(address(this), fee);
-    }
-
-    function spendToken(
-        address to,
-        IERC20 token,
-        uint256 amount
-    )
-        external
-        onlyTokenSpender(token)
-        nonReentrant
-        whenNotPaused
-        checkReceiver(to)
-        checkTokenRequest(token, amount)
-    {
-        token.safeTransfer(to, amount);
     }
 
     function withdrawToken(
