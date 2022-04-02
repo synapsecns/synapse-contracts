@@ -17,6 +17,10 @@ interface IBridge {
 
     event Recovered(address indexed asset, uint256 amount);
 
+    // -- VIEWS
+
+    function tokenBridgeType(address token) external view returns (uint256);
+
     // -- BRIDGE EVENTS OUT: Deposit --
 
     event TokenDepositEVM(
@@ -75,7 +79,7 @@ interface IBridge {
     function depositEVM(
         address to,
         uint256 chainId,
-        IERC20 token,
+        address token,
         uint256 amount,
         SwapParams calldata swapParams
     ) external;
@@ -83,21 +87,21 @@ interface IBridge {
     function depositMaxEVM(
         address to,
         uint256 chainId,
-        IERC20 token,
+        address token,
         SwapParams calldata swapParams
     ) external;
 
     function depositNonEVM(
         bytes32 to,
         uint256 chainId,
-        IERC20 token,
+        address token,
         uint256 amount
     ) external;
 
     function depositMaxNonEVM(
         bytes32 to,
         uint256 chainId,
-        IERC20 token
+        address token
     ) external;
 
     // -- BRIDGE OUT FUNCTIONS: Redeem --
@@ -105,7 +109,7 @@ interface IBridge {
     function redeemEVM(
         address to,
         uint256 chainId,
-        ERC20Burnable token,
+        address token,
         uint256 amount,
         SwapParams calldata swapParams
     ) external;
@@ -113,21 +117,21 @@ interface IBridge {
     function redeemMaxEVM(
         address to,
         uint256 chainId,
-        ERC20Burnable token,
+        address token,
         SwapParams calldata swapParams
     ) external;
 
     function redeemNonEVM(
         bytes32 to,
         uint256 chainId,
-        ERC20Burnable token,
+        address token,
         uint256 amount
     ) external;
 
     function redeemMaxNonEVM(
         bytes32 to,
         uint256 chainId,
-        ERC20Burnable token
+        address token
     ) external;
 
     // -- BRIDGE IN FUNCTIONS: Mint --
@@ -159,4 +163,6 @@ interface IBridge {
     function recoverERC20(IERC20 token) external;
 
     function setRouter(IBridgeRouter _router) external;
+
+    function setTokenBridgeType(address token, uint256 bridgeType) external;
 }

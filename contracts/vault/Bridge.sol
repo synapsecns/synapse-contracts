@@ -40,6 +40,11 @@ contract Bridge is
 
     uint256 internal constant UINT_MAX = type(uint256).max;
 
+    uint256 internal constant MINT_BURN = 1;
+    uint256 internal constant DEPOSIT_WITHDRAW = 2;
+
+    mapping(address => uint256) public tokenBridgeType;
+
     function initialize(IVault _vault, uint128 _maxGasForSwap)
         external
         initializer
@@ -118,47 +123,54 @@ contract Bridge is
         router = _router;
     }
 
+    function setTokenBridgeType(address token, uint256 bridgeType)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        tokenBridgeType[token] = bridgeType;
+    }
+
     // -- BRIDGE OUT FUNCTIONS: Deposit --
 
     function depositEVM(
         address to,
         uint256 chainId,
-        IERC20 token,
+        address token,
         uint256 amount,
         SwapParams calldata swapParams
     ) external {
-        _depositEVM(to, chainId, token, amount, swapParams);
+        _depositEVM(to, chainId, IERC20(token), amount, swapParams);
     }
 
     function depositMaxEVM(
         address to,
         uint256 chainId,
-        IERC20 token,
+        address token,
         SwapParams calldata swapParams
     ) external {
         // First, determine how much Bridge call pull from caller
-        uint256 amount = _getMaxAmount(address(token));
+        uint256 amount = _getMaxAmount(token);
 
-        _depositEVM(to, chainId, token, amount, swapParams);
+        _depositEVM(to, chainId, IERC20(token), amount, swapParams);
     }
 
     function depositNonEVM(
         bytes32 to,
         uint256 chainId,
-        IERC20 token,
+        address token,
         uint256 amount
     ) external {
-        _depositNonEVM(to, chainId, token, amount);
+        _depositNonEVM(to, chainId, IERC20(token), amount);
     }
 
     function depositMaxNonEVM(
         bytes32 to,
         uint256 chainId,
-        IERC20 token
+        address token
     ) external {
         // First, determine how much Bridge call pull from caller
-        uint256 amount = _getMaxAmount(address(token));
-        _depositNonEVM(to, chainId, token, amount);
+        uint256 amount = _getMaxAmount(token);
+        _depositNonEVM(to, chainId, IERC20(token), amount);
     }
 
     function _depositEVM(
@@ -213,42 +225,42 @@ contract Bridge is
     function redeemEVM(
         address to,
         uint256 chainId,
-        ERC20Burnable token,
+        address token,
         uint256 amount,
         SwapParams calldata swapParams
     ) external {
-        _redeemEVM(to, chainId, token, amount, swapParams);
+        _redeemEVM(to, chainId, ERC20Burnable(token), amount, swapParams);
     }
 
     function redeemMaxEVM(
         address to,
         uint256 chainId,
-        ERC20Burnable token,
+        address token,
         SwapParams calldata swapParams
     ) external {
         // First, determine how much Bridge can pull from caller
-        uint256 amount = _getMaxAmount(address(token));
+        uint256 amount = _getMaxAmount(token);
 
-        _redeemEVM(to, chainId, token, amount, swapParams);
+        _redeemEVM(to, chainId, ERC20Burnable(token), amount, swapParams);
     }
 
     function redeemNonEVM(
         bytes32 to,
         uint256 chainId,
-        ERC20Burnable token,
+        address token,
         uint256 amount
     ) external {
-        _redeemNonEVM(to, chainId, token, amount);
+        _redeemNonEVM(to, chainId, ERC20Burnable(token), amount);
     }
 
     function redeemMaxNonEVM(
         bytes32 to,
         uint256 chainId,
-        ERC20Burnable token
+        address token
     ) external {
         // First, determine how much Bridge can pull from caller
-        uint256 amount = _getMaxAmount(address(token));
-        _redeemNonEVM(to, chainId, token, amount);
+        uint256 amount = _getMaxAmount(token);
+        _redeemNonEVM(to, chainId, ERC20Burnable(token), amount);
     }
 
     function _redeemEVM(
