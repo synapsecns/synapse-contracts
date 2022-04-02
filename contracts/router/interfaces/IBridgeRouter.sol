@@ -25,7 +25,7 @@ interface IBridgeRouter is IRouter {
         IBridge.SwapParams calldata _bridgedSwapParams
     ) external returns (uint256 _amountBridged);
 
-    function swapAndBridgeToEVM(
+    function swapTokenAndBridgeToEVM(
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
@@ -33,7 +33,7 @@ interface IBridgeRouter is IRouter {
         IBridge.SwapParams calldata _bridgedSwapParams
     ) external returns (uint256 _amountBridged);
 
-    function swapFromGasAndBridgeToEVM(
+    function swapGasAndBridgeToEVM(
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
