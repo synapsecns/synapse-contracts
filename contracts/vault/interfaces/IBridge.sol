@@ -134,24 +134,14 @@ interface IBridge {
         address token
     ) external;
 
-    // -- BRIDGE IN FUNCTIONS: Mint --
+    // -- BRIDGE IN FUNCTIONS --
 
-    function bridgeInMint(
+    function bridgeIn(
         address to,
         IERC20 token,
         uint256 amount,
         uint256 fee,
-        SwapParams calldata swapParams,
-        bytes32 kappa
-    ) external;
-
-    // -- BRIDGE IN FUNCTIONS: Withdraw --
-
-    function bridgeInWithdraw(
-        address to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
+        bool isMint,
         SwapParams calldata swapParams,
         bytes32 kappa
     ) external;
