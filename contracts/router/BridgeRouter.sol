@@ -3,8 +3,11 @@ pragma solidity ^0.8.0;
 
 import {IBridgeRouter} from "./interfaces/IBridgeRouter.sol";
 
+import {ERC20Burnable} from "@openzeppelin/contracts-solc8/token/ERC20/extensions/ERC20Burnable.sol";
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 import {SafeERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/SafeERC20.sol";
+
+import {IBridge} from "../vault/interfaces/IBridge.sol";
 
 import {Router} from "./Router.sol";
 
@@ -24,7 +27,7 @@ contract BridgeRouter is Router, IBridgeRouter {
     /// @dev Some of the tokens are not directly compatible with Synapse:Bridge contract.
     /// For these tokens a wrapper contract is deployed, that will be used
     /// as a "bridge token" in Synapse:Bridge.
-    /// The UI, or any other entity, interacting with the BridgeRouter do NOT need to
+    /// The UI, or any other entity, interacting with the BridgeRouter, do NOT need to
     /// know anything about the "bridge wrappers", they should interact as if the
     /// underlying token is the "bridge token".
 
@@ -32,6 +35,12 @@ contract BridgeRouter is Router, IBridgeRouter {
     /// In {swapAndBridge} use underlying token as `path[N-1]`.
     mapping(address => address) public bridgeWrappers;
     mapping(address => address) public underlyingTokens;
+
+    uint256 internal constant MINT_BURN = 1;
+    uint256 internal constant DEPOSIT_WITHDRAW = 2;
+
+    uint256 internal constant EVM_CHAIN = 1;
+    uint256 internal constant NON_EVM_CHAIN = 2;
 
     constructor(
         address payable _wgas,
@@ -103,239 +112,221 @@ contract BridgeRouter is Router, IBridgeRouter {
         _token.safeApprove(_spender, 0);
     }
 
-    // -- BRIDGE RELATED FUNCTIONS [initial chain] --
+    // -- BRIDGE FUNCTIONS [initial chain]: to EVM chains --
 
-    /** @dev
-        >>> PARAMS
+    function bridgeToEVM(
+        IERC20 _tokenIn,
+        uint256 _amountIn,
+        address _to,
+        uint256 _chainId,
+        IBridge.SwapParams calldata _bridgedSwapParams
+    ) external returns (uint256 _amountBridged) {
+        // First, pull token from user and use actual amount received later
+        _amountBridged = _pullTokenFromCaller(_tokenIn, _amountIn);
 
-        IC = Initial Chain
-        DC = Destination Chain
-
-        addressDC: user address on DC
-
-        chainIdDC: chainId of DC
-
-        gasPriceIC: estimation for gas price on IC, in wei
-        gasPriceDC: estimation for gas price on DC, in wei
-
-        tokenIn: initial token on IC
-        amountIn: amount of initial tokens
-        
-        bridgeTokenIC: intermediate (bridge) token on IC
-        amountOutIC: estimated amount of bridge token received after swap on IC
-
-        slippageIC: max slippage % user can tolerate on IC
-        minAmountOutIC: minimum received on IC after swap, or tx will be reverted
-
-        bridgeTokenDC: intermediate (bridge) token on DC
-        amountInDC: estimated amount of bridge token received after bridging to DC
-
-        tokenOut: final token on DC
-        amountOut: estimated amount of final token received after swap on DC
-
-        slippageTotal: max slippage % user can tolerate for the whole tokenIn -> tokenOut swap
-        minAmountOut: minimum received on DC after swap, or user will receive bridgeTokenDC instead
-
-        >>> SLIPPAGE SETTINGS
-
-        Practically, for the sake of simplicity:
-            slippageIC = slippageTotal
-        
-        On chains, where trade with high slippage is likely to be sandwiched:
-            slippageIC = slippageTotal * X%, where X = ~50%
-
-        >>> GENERAL BRIDGE FLOW
-
-        1. tokenIn -> bridgeTokenIC swap on IC
-        2. bridgeTokenIC is bridged to DC, where its address is bridgeTokenDC
-        3. bridgeTokenDC -> tokenOut swap on DC
-
-        >>> HOW TO: SWAP + BRIDGE + SWAP
-
-        1. [off-chain on IC]
-            bestOfferIC = BridgeQuoter.findBestPathInitialChain(amountIn, tokenIn, bridgeTokenIC, gasPriceIC);
-            amountOutIC = bestOfferIC.amounts[bestOfferIC.amounts.length - 1];
-
-        2. [off-chain on Ethereum]
-            bridgeFees = BridgeConfig.calculateSwapFee(bridgeTokenDC, chainIdDC, amountOutIC)
-            amountInDC = max(amountOutIC - bridgeFees, 0)
-
-        3. [off-chain on DC] 
-            bestOfferDC = BridgeQuoter.findBestPathDestinationChain(amountInDC, bridgeTokenDC, tokenOut, gasPriceDC);
-            amountOutDC = bestOfferDC.amounts[bestOfferDC.amounts.length - 1];
-
-        4. Apply slippage
-            minAmountOutIC = applySlippage(amountOutIC, slippageIC);
-            minAmountOutDC = applySlippage(amountOutDC, slippageTotal);
-
-        5. Figure out selectorIC: selector for Synapse: Bridge function, 
-        that is used for bridging bridgeTokenIC from IC to DC.
-
-        Might be eventually supported by BridgeConfig, but has to be done manually for now.
-        
-        6. bridgeDataIC = ethers.abi.encodeWithSelector(
-            selectorIC,
-            addressDC,
-            chainIdDC,
-            bridgeTokenIC,
-            minAmountOutDC,
-            bestOfferDC.path,
-            bestOfferDC.adapters
-        );
-
-        7. [on-chain on IC]
-            BridgeRouter.swapAndBridge(
-                amountIn,
-                minAmountOutIC,
-                bestOfferIC.path,
-                bestOfferIC.adapters,
-                bridgeDataIC
-            );
-
-        7a. Use BridgeRouter.swapFromGasAndBridge() with same params instead, 
-        if you want to start from GAS
-
-        7b. Use BridgeRouter.bridgeToken(bridgeTokenIC, amountIn, bridgeData) instead,
-        if no swap on IC is needed, i.e. user starts from already supported token on IC
-    */
-
-    /**
-        @notice Pull a token from user, then perform a bridging transaction
-        @dev 1. Tokens will be pulled from msg.sender, so make sure Router has enough allowance to 
-                spend bridged token. 
-             2. _bridgeData does NOT include amount of tokens.
-             3. Make sure bridged token is supported by Bridge.call(_bridgeData)
-        @param _bridgeToken token to bridge
-        @param _bridgeAmount amount tokens to bridge
-        @param _bridgeData calldata for Bridge contract to perform a final bridge operation
-     */
-    function bridgeToken(
-        IERC20 _bridgeToken,
-        uint256 _bridgeAmount,
-        bytes calldata _bridgeData
-    ) external {
-        // First, pull token from user
-        _bridgeToken.safeTransferFrom(msg.sender, address(this), _bridgeAmount);
         // Then, perform bridging
-        _callBridge(address(_bridgeToken), _bridgeAmount, _bridgeData);
+        _bridgeToEVM(
+            address(_tokenIn),
+            _amountBridged,
+            _to,
+            _chainId,
+            _bridgedSwapParams
+        );
     }
 
-    /// @dev Use this function, when doing a "swap into ETH and bridge" on Mainnet,
-    /// as bridging from ETH Mainnet requires depositing WETH into bridge contract
-    /// This is why there's no "swapToGasAndBridge()" implemented
-    /// The same applies to "swap into BNB and bridge" on BNB,
-    /// "swap into AVAX and bridge" on Avalanche, etc
-    /**
-        @notice Perform a series of swaps along the token path, using the provided Adapters,
-                then bridge the final token
-        @dev 1. Tokens will be pulled from msg.sender, so make sure Router has enough allowance to 
-                 spend initial token. 
-             2. len(_path) = N, len(_adapters) = N - 1
-             3. _bridgeData does NOT include amount of tokens, all swapped final tokens will be bridged
-             4. Make sure final token (_path[N-1]) is supported by Bridge.call(_bridgeData)
-        @param _amountIn amount of initial tokens to swap
-        @param _minAmountOut minimum amount of final tokens for a swap to be successful
-        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
-        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
-        @param _bridgeData calldata for Bridge contract to perform a final bridge operation
-        @return _amountOut amount of bridged tokens
-     */
-    function swapAndBridge(
+    function swapAndBridgeToEVM(
         uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        bytes calldata _bridgeData
-    ) external returns (uint256 _amountOut) {
-        // First, do the swap on this chain
-        _amountOut = _swap(
+        IBridge.SwapParams calldata _initialSwapParams,
+        address _to,
+        uint256 _chainId,
+        IBridge.SwapParams calldata _bridgedSwapParams
+    ) external returns (uint256 _amountBridged) {
+        // First, perform swap on initial chain
+        // Need to pull tokens from caller => isSelfSwap = false
+        address _bridgeToken;
+        (_bridgeToken, _amountBridged) = _doInitialSwap(
             _amountIn,
-            _minAmountOut,
-            _path,
-            _adapters,
-            address(this)
+            _initialSwapParams,
+            false
         );
+
         // Then, perform bridging
-        _callBridge(_path[_path.length - 1], _amountOut, _bridgeData);
+        _bridgeToEVM(
+            _bridgeToken,
+            _amountBridged,
+            _to,
+            _chainId,
+            _bridgedSwapParams
+        );
     }
 
-    /**
-        @notice Perform a series of swaps along the token path, starting with
-                chain's native currency (GAS), using the provided Adapters, then bridge the final token.
-        @dev 1. Make sure to set _amountIn = msg.value, _path[0] = WGAS
-             2. len(_path) = N, len(_adapters) = N - 1
-             3. _bridgeData does NOT include amount of tokens, all swapped final tokens will be bridged
-             4. Make sure final token (_path[N-1]) is supported by Bridge.call(_bridgeData)
-        @param _amountIn amount of initial tokens to swap
-        @param _minAmountOut minimum amount of final tokens for a swap to be successful
-        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
-        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
-        @param _bridgeData calldata for Bridge contract to perform a final bridge operation
-        @return _amountOut amount of bridged tokens
-     */
-    function swapFromGasAndBridge(
+    function swapFromGasAndBridgeToEVM(
         uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        bytes calldata _bridgeData
-    ) external payable returns (uint256 _amountOut) {
+        IBridge.SwapParams calldata _initialSwapParams,
+        address _to,
+        uint256 _chainId,
+        IBridge.SwapParams calldata _bridgedSwapParams
+    ) external payable returns (uint256 _amountBridged) {
+        // TODO: ditch _amountIn ? or leave for consistency with other functions' params
         require(msg.value == _amountIn, "Router: incorrect amount of GAS");
-        require(_path[0] == WGAS, "Router: path needs to begin with WGAS");
+        require(
+            _initialSwapParams.path[0] == WGAS,
+            "Router: path needs to begin with WGAS"
+        );
+
         // First, wrap GAS into WGAS
         _wrap(_amountIn);
-        // Then, swap WGAS on this chain
-        // WGAS is in this contract, thus _selfSwap()
-        _amountOut = _selfSwap(
+
+        // Then, perform swap on initial chain
+        // Tokens(WGAS) are in the contract => isSelfSwap = true
+        address _bridgeToken;
+        (_bridgeToken, _amountBridged) = _doInitialSwap(
             _amountIn,
-            _minAmountOut,
-            _path,
-            _adapters,
-            address(this)
+            _initialSwapParams,
+            true
         );
-        // Then, perform bridging
-        _callBridge(_path[_path.length - 1], _amountOut, _bridgeData);
+
+        // Finally, perform bridging
+        _bridgeToEVM(
+            _bridgeToken,
+            _amountBridged,
+            _to,
+            _chainId,
+            _bridgedSwapParams
+        );
     }
 
-    /**
-        @notice Ask Synapse:Bridge to perform a bridge operation
-        @param _bridgeToken token to bridge
-        @param _bridgeAmount amount of tokens to bridge
-        @param _bridgeData calldata for Bridge contract to perform a bridge operation
-     */
-    function _callBridge(
+    // -- BRIDGE FUNCTIONS [initial chain]: to non-EVM chains --
+
+    function bridgeToNonEVM(
+        IERC20 _tokenIn,
+        uint256 _amountIn,
+        bytes32 _to,
+        uint256 _chainId
+    ) external returns (uint256 _amountBridged) {
+        // First, pull token from user and use actual amount received later
+        _amountBridged = _pullTokenFromCaller(_tokenIn, _amountIn);
+
+        // Then, perform bridging
+        _bridgeToNonEVM(address(_tokenIn), _amountIn, _to, _chainId);
+    }
+
+    function swapAndBridgeToNonEVM(
+        uint256 _amountIn,
+        IBridge.SwapParams calldata _initialSwapParams,
+        bytes32 _to,
+        uint256 _chainId
+    ) external returns (uint256 _amountBridged) {
+        // First, perform swap on initial chain
+        // Need to pull tokens from caller => isSelfSwap = false
+        address _bridgeToken;
+        (_bridgeToken, _amountBridged) = _doInitialSwap(
+            _amountIn,
+            _initialSwapParams,
+            false
+        );
+
+        // Then, perform bridging
+        _bridgeToNonEVM(_bridgeToken, _amountBridged, _to, _chainId);
+    }
+
+    function swapFromGasAndBridgeToNonEVM(
+        uint256 _amountIn,
+        IBridge.SwapParams calldata _initialSwapParams,
+        bytes32 _to,
+        uint256 _chainId
+    ) external payable returns (uint256 _amountBridged) {
+        // TODO: ditch _amountIn ? or leave for consistency with other functions' params
+        require(msg.value == _amountIn, "Router: incorrect amount of GAS");
+        require(
+            _initialSwapParams.path[0] == WGAS,
+            "Router: path needs to begin with WGAS"
+        );
+
+        // First, wrap GAS into WGAS
+        _wrap(_amountIn);
+
+        // Then, perform swap on initial chain
+        // Tokens(WGAS) are in the contract => isSelfSwap = true
+        address _bridgeToken;
+        (_bridgeToken, _amountBridged) = _doInitialSwap(
+            _amountIn,
+            _initialSwapParams,
+            true
+        );
+
+        // Finally, perform bridging
+        _bridgeToNonEVM(_bridgeToken, _amountBridged, _to, _chainId);
+    }
+
+    // -- BRIDGE FUNCTIONS [initial chain]: internal helpers
+
+    function _bridgeToEVM(
         address _bridgeToken,
         uint256 _bridgeAmount,
-        bytes calldata _bridgeData
+        address _to,
+        uint256 _chainId,
+        IBridge.SwapParams calldata _bridgedSwapParams
     ) internal {
         // Use Wrapper contract, if there's one registered
         // This allows to abstract concept of "Bridge Wrappers" away from the UI
         _bridgeToken = _getBridgeToken(_bridgeToken);
 
-        // First, allow bridge to spend exactly _bridgeAmount
-        _setBridgeTokenAllowance(_bridgeToken, _bridgeAmount);
-        // Do the actual bridging
-        // solhint-disable-next-line
-        (bool success, ) = bridge.call(_bridgeData);
-        require(success, "Bridge interaction failed");
+        uint256 _bridgeType = IBridge(bridge).tokenBridgeType(_bridgeToken);
+        require(
+            _bridgeType == MINT_BURN || _bridgeType == DEPOSIT_WITHDRAW,
+            "BridgeRouter: Unsupported bridge token"
+        );
+
+        (
+            _bridgeType == MINT_BURN
+                ? IBridge(bridge).redeemEVM
+                : IBridge(bridge).depositEVM
+        )(_to, _chainId, _bridgeToken, _bridgeAmount, _bridgedSwapParams);
+    }
+
+    function _bridgeToNonEVM(
+        address _bridgeToken,
+        uint256 _bridgeAmount,
+        bytes32 _to,
+        uint256 _chainId
+    ) internal {
+        // Use Wrapper contract, if there's one registered
+        // This allows to abstract concept of "Bridge Wrappers" away from the UI
+        _bridgeToken = _getBridgeToken(_bridgeToken);
+
+        uint256 _bridgeType = IBridge(bridge).tokenBridgeType(_bridgeToken);
+        require(
+            _bridgeType == MINT_BURN || _bridgeType == DEPOSIT_WITHDRAW,
+            "BridgeRouter: Unsupported bridge token"
+        );
+
+        (
+            _bridgeType == MINT_BURN
+                ? IBridge(bridge).redeemNonEVM
+                : IBridge(bridge).depositNonEVM
+        )(_to, _chainId, _bridgeToken, _bridgeAmount);
+    }
+
+    function _doInitialSwap(
+        uint256 _amountIn,
+        IBridge.SwapParams calldata _initialSwapParams,
+        bool _isSelfSwap
+    ) internal returns (address _lastToken, uint256 _amountOut) {
+        _amountOut = (_isSelfSwap ? _selfSwap : _swap)(
+            _amountIn,
+            _initialSwapParams.minAmountOut,
+            _initialSwapParams.path,
+            _initialSwapParams.adapters,
+            address(this)
+        );
+
+        _lastToken = _initialSwapParams.path[
+            _initialSwapParams.path.length - 1
+        ];
     }
 
     // -- BRIDGE RELATED FUNCTIONS [destination chain] --
-
-    /** @dev
-        Bridge contract is supposed to 
-        1. Transfer tokens (token: _path[0]; amount: _amountIn) to Router contract
-
-        2. Call ROUTER.selfSwap(...)
-
-        3. If swap succeeds, no need to do anything, tokens are at _to address
-                If _path ends with WGAS, user will receive GAS instead of WGAS
-
-        4. If selfSwap() reverts, bridge is supposed to call 
-                refundToAddress(_path[0], _amountIn, _to);
-            This will return bridged token (nUSD, nETH, ...) to the user
-            (!!!) This will return GAS to user, when bridging WGAS back to its native chain
-     */
 
     /**
         @notice refund tokens from unsuccessful swap back to user
@@ -433,6 +424,16 @@ contract BridgeRouter is Router, IBridgeRouter {
         if (_actualUnderlyingToken == address(0)) {
             _actualUnderlyingToken = _bridgeToken;
         }
+    }
+
+    function _pullTokenFromCaller(IERC20 _token, uint256 _amount)
+        internal
+        returns (uint256 _amountPulled)
+    {
+        _amountPulled = _token.balanceOf(address(this));
+        _token.safeTransferFrom(msg.sender, address(this), _amount);
+        // Return difference in token balance
+        _amountPulled = _token.balanceOf(address(this)) - _amountPulled;
     }
 
     /**
