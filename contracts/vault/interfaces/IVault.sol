@@ -31,12 +31,6 @@ interface IVault {
         bytes32 kappa
     ) external;
 
-    function spendToken(
-        address to,
-        IERC20 token,
-        uint256 amount
-    ) external;
-
     function withdrawToken(
         address to,
         IERC20 token,
