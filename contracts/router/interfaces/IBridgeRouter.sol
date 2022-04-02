@@ -72,11 +72,9 @@ interface IBridgeRouter is IRouter {
         address _to
     ) external;
 
-    function selfSwap(
+    function postBridgeSwap(
         uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
+        IBridge.SwapParams calldata _swapParams,
         address _to
     ) external returns (uint256 _amountOut);
 }
