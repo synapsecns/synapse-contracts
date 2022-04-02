@@ -321,9 +321,7 @@ contract BridgeRouter is Router, IBridgeRouter {
             address(this)
         );
 
-        _lastToken = _initialSwapParams.path[
-            _initialSwapParams.path.length - 1
-        ];
+        _lastToken = _getLastToken(_initialSwapParams);
     }
 
     // -- BRIDGE RELATED FUNCTIONS [destination chain] --
@@ -361,31 +359,26 @@ contract BridgeRouter is Router, IBridgeRouter {
                 find path with len(_adapters) <= bridgeMaxSwaps
              3. len(_path) = N, len(_adapters) = N - 1
         @param _amountIn amount of initial tokens to swap
-        @param _minAmountOut minimum amount of final tokens for a swap to be successful
-        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
-        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
         @param _to address to receive final tokens
         @return _amountOut Final amount of tokens swapped
      */
-    function selfSwap(
+    function postBridgeSwap(
         uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
+        IBridge.SwapParams calldata _swapParams,
         address _to
     ) external onlyBridge returns (uint256 _amountOut) {
         require(
-            _adapters.length <= bridgeMaxSwaps,
+            _swapParams.adapters.length <= bridgeMaxSwaps,
             "BridgeRouter: Too many swaps in path"
         );
-        if (_path[_path.length - 1] == WGAS) {
+        if (_getLastToken(_swapParams) == WGAS) {
             // Path ends with WGAS, and no one wants
             // to receive WGAS after bridging, right?
             _amountOut = _selfSwap(
                 _amountIn,
-                _minAmountOut,
-                _path,
-                _adapters,
+                _swapParams.minAmountOut,
+                _swapParams.path,
+                _swapParams.adapters,
                 address(this)
             );
             // this will unwrap WGAS and return GAS
@@ -394,9 +387,9 @@ contract BridgeRouter is Router, IBridgeRouter {
         } else {
             _amountOut = _selfSwap(
                 _amountIn,
-                _minAmountOut,
-                _path,
-                _adapters,
+                _swapParams.minAmountOut,
+                _swapParams.path,
+                _swapParams.adapters,
                 _to
             );
         }
@@ -424,6 +417,14 @@ contract BridgeRouter is Router, IBridgeRouter {
         if (_actualUnderlyingToken == address(0)) {
             _actualUnderlyingToken = _bridgeToken;
         }
+    }
+
+    function _getLastToken(IBridge.SwapParams calldata _swapParams)
+        internal
+        pure
+        returns (address _lastToken)
+    {
+        _lastToken = _swapParams.path[_swapParams.path.length - 1];
     }
 
     function _pullTokenFromCaller(IERC20 _token, uint256 _amount)

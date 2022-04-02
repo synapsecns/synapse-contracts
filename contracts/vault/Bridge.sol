@@ -456,11 +456,9 @@ contract Bridge is
         // so we always have some leftover gas to transfer
         // bridged token, should the swap run out of gas
         try
-            router.selfSwap{gas: maxGasForSwap}(
+            router.postBridgeSwap{gas: maxGasForSwap}(
                 amountPostFee,
-                swapParams.minAmountOut,
-                swapParams.path,
-                swapParams.adapters,
+                swapParams,
                 to
             )
         returns (uint256 _amountOut) {
