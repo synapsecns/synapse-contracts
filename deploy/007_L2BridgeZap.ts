@@ -203,6 +203,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (await get("nETH")).address,
         (await get("JewelBridgeSwap")).address,
         (await get("synJEWEL")).address,
+        (await get("BridgedAVAXPool")).address,
+        (await get("AVAX")).address,
         (await get("SynapseBridge")).address,
       ],
     })
