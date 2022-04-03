@@ -342,8 +342,7 @@ contract Bridge is
         // First, get the amount post fees
         amount = amount - fee;
 
-        IERC20 tokenReceived;
-        uint256 amountReceived;
+        SwapResult memory swapResult;
 
         if (
             _isSwapPresent(bridgedSwapParams) &&
@@ -360,12 +359,7 @@ contract Bridge is
             );
 
             // Then handle the swap part
-            (tokenReceived, amountReceived) = _handleSwap(
-                to,
-                token,
-                amount,
-                bridgedSwapParams
-            );
+            swapResult = _handleSwap(to, token, amount, bridgedSwapParams);
         } else {
             // If there's no swap, or deadline check is not passed,
             // mint|withdraw bridged token to needed address
@@ -379,7 +373,7 @@ contract Bridge is
 
             // TODO: if bridge wrapper is used, its address will be emitted.
             // Is this what we want?
-            (tokenReceived, amountReceived) = (token, amount);
+            swapResult = SwapResult(token, amount);
         }
 
         // Finally, emit BridgeIn Event
@@ -388,8 +382,8 @@ contract Bridge is
             token,
             amount + fee,
             fee,
-            tokenReceived,
-            amountReceived,
+            swapResult.tokenReceived,
+            swapResult.amountReceived,
             isMint,
             kappa
         );
@@ -433,7 +427,7 @@ contract Bridge is
         IERC20 token,
         uint256 amountPostFee,
         SwapParams calldata swapParams
-    ) internal returns (IERC20 tokenOut, uint256 amountOut) {
+    ) internal returns (SwapResult memory swapResult) {
         // We're limiting amount of gas forwarded to Router,
         // so we always have some leftover gas to transfer
         // bridged token, should the swap run out of gas
@@ -444,11 +438,12 @@ contract Bridge is
                 to
             )
         returns (uint256 _amountOut) {
-            tokenOut = IERC20(swapParams.path[swapParams.path.length - 1]);
-            amountOut = _amountOut;
+            swapResult = SwapResult(
+                IERC20(swapParams.path[swapParams.path.length - 1]),
+                _amountOut
+            );
         } catch {
-            tokenOut = token;
-            amountOut = amountPostFee;
+            swapResult = SwapResult(token, amountPostFee);
             router.refundToAddress(address(token), amountPostFee, to);
         }
     }
