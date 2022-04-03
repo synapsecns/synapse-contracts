@@ -17,15 +17,8 @@ interface IBridgeRouter is IRouter {
 
     // -- BRIDGE FUNCTIONS [initial chain]: to EVM chains --
 
-    function bridgeToEVM(
+    function bridgeTokenToEVM(
         IERC20 _tokenIn,
-        uint256 _amountIn,
-        address _to,
-        uint256 _chainId,
-        IBridge.SwapParams calldata _bridgedSwapParams
-    ) external returns (uint256 _amountBridged);
-
-    function swapTokenAndBridgeToEVM(
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
@@ -33,8 +26,7 @@ interface IBridgeRouter is IRouter {
         IBridge.SwapParams calldata _bridgedSwapParams
     ) external returns (uint256 _amountBridged);
 
-    function swapGasAndBridgeToEVM(
-        uint256 _amountIn,
+    function bridgeGasToEVM(
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
         uint256 _chainId,
@@ -43,22 +35,15 @@ interface IBridgeRouter is IRouter {
 
     // -- BRIDGE FUNCTIONS [initial chain]: to non-EVM chains --
 
-    function bridgeToNonEVM(
+    function bridgeTokenToNonEVM(
         IERC20 _tokenIn,
-        uint256 _amountIn,
-        bytes32 _to,
-        uint256 _chainId
-    ) external returns (uint256 _amountBridged);
-
-    function swapAndBridgeToNonEVM(
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         bytes32 _to,
         uint256 _chainId
     ) external returns (uint256 _amountBridged);
 
-    function swapFromGasAndBridgeToNonEVM(
-        uint256 _amountIn,
+    function bridgeGasToNonEVM(
         IBridge.SwapParams calldata _initialSwapParams,
         bytes32 _to,
         uint256 _chainId
