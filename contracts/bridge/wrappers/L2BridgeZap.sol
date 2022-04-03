@@ -279,6 +279,31 @@ contract L2BridgeZap {
     }
 
 
+  /**
+   * @notice Wraps SynapseBridge depositAndSwap() function to make it compatible w/ ETH -> WETH conversions
+   * @param to address on other chain to bridge assets to
+   * @param chainId which chain to bridge assets onto
+   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+   * @param tokenIndexFrom the token the user wants to swap from
+   * @param tokenIndexTo the token the user wants to swap to
+   * @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
+   * @param deadline latest timestamp to accept this transaction
+   **/
+  function depositETHAndSwap(
+    address to,
+    uint256 chainId,
+    uint256 amount,
+    uint8 tokenIndexFrom,
+    uint8 tokenIndexTo,
+    uint256 minDy,
+    uint256 deadline
+    ) external payable {
+      require(msg.value > 0 && msg.value == amount, 'INCORRECT MSG VALUE');
+      IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+      synapseBridge.depositAndSwap(to, chainId, IERC20(WETH_ADDRESS), amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
+    }
+
+
     function swapETHAndRedeem(
         address to,
         uint256 chainId,
