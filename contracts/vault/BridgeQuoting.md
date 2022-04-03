@@ -86,7 +86,7 @@ struct SwapParams {
 
 ```
 
-1. `minAmountOut` minimum amount of tokens user is willing to receive after swap is completed, in final token's decimals precision. If swap results in less than `minAmountOut` tokens, it will fail. On initial chain this will lead to failed tx, and tokens spent/bridged. On destination chain, however, failed swap will lead to user receiving bridged token, instead of the final token they specified.
+1. `minAmountOut` minimum amount of tokens user is willing to receive after swap is completed, in final token's decimals precision. If swap results in less than `minAmountOut` tokens, it will fail. On initial chain this will lead to failed tx, and tokens **not** spent/bridged. On destination chain, however, failed swap will lead to user receiving bridged token, instead of the final token they specified.
 2. `path` is a list of tokens, describing the series of swaps. `path = [A, B, C]` means that two swaps will be made: `A -> B` and `B -> C`.
 3. `adapters` is a list of Synapse Adapters, that will do the swapping. `adapters = [AB, BC]` means that two adapters will be used: `AB` for `A -> B` swap, and `BC` for `B -> C` swap.
 4. `deadline` is unix timestamp representing the deadline for swap to be completed. Swap will fail, if too much time passed since the transaction was submitted. See (1) for initial/destination chain failed swap description.
