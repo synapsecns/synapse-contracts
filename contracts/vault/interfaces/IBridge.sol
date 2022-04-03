@@ -15,6 +15,11 @@ interface IBridge {
         uint256 deadline;
     }
 
+    struct SwapResult {
+        IERC20 tokenReceived;
+        uint256 amountReceived;
+    }
+
     event Recovered(address indexed asset, uint256 amount);
 
     // -- VIEWS
