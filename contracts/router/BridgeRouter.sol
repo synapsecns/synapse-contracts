@@ -31,8 +31,8 @@ contract BridgeRouter is Router, IBridgeRouter {
     /// know anything about the "bridge wrappers", they should interact as if the
     /// underlying token is the "bridge token".
 
-    /// For example, when calling {bridgeToken}, set `_bridgeToken` as underlying token.
-    /// In {swapAndBridge} use underlying token as `path[N-1]`.
+    /// For example, when calling {bridgeTokenToEVM}, set `_tokenIn` as underlying token, if there is no swap on initial chain.
+    /// if there is a swap on initial chain, use underlying token as `path[N-1]`.
     mapping(address => address) public bridgeWrappers;
     mapping(address => address) public underlyingTokens;
 
@@ -114,37 +114,22 @@ contract BridgeRouter is Router, IBridgeRouter {
 
     // -- BRIDGE FUNCTIONS [initial chain]: to EVM chains --
 
-    function bridgeToEVM(
+    function bridgeTokenToEVM(
         IERC20 _tokenIn,
-        uint256 _amountIn,
-        address _to,
-        uint256 _chainId,
-        IBridge.SwapParams calldata _bridgedSwapParams
-    ) external returns (uint256 _amountBridged) {
-        // First, pull token from user and use actual amount received later
-        _amountBridged = _pullTokenFromCaller(_tokenIn, _amountIn);
-
-        // Then, perform bridging
-        _bridgeToEVM(
-            address(_tokenIn),
-            _amountBridged,
-            _to,
-            _chainId,
-            _bridgedSwapParams
-        );
-    }
-
-    function swapTokenAndBridgeToEVM(
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
         uint256 _chainId,
         IBridge.SwapParams calldata _bridgedSwapParams
     ) external returns (uint256 _amountBridged) {
+        // TODO: enforce consistency?? ditch _tokenIn and change "empty swapParams" standard to
+        // having adapters.length == 0 and path.length == 1 and path[0] == _tokenIn
+
         // First, perform swap on initial chain
         // Need to pull tokens from caller => isSelfSwap = false
         address _bridgeToken;
         (_bridgeToken, _amountBridged) = _doInitialSwap(
+            address(_tokenIn),
             _amountIn,
             _initialSwapParams,
             false
@@ -160,28 +145,29 @@ contract BridgeRouter is Router, IBridgeRouter {
         );
     }
 
-    function swapGasAndBridgeToEVM(
-        uint256 _amountIn,
+    function bridgeGasToEVM(
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
         uint256 _chainId,
         IBridge.SwapParams calldata _bridgedSwapParams
     ) external payable returns (uint256 _amountBridged) {
-        // TODO: ditch _amountIn ? or leave for consistency with other functions' params
-        require(msg.value == _amountIn, "Router: incorrect amount of GAS");
+        // TODO: enforce consistency?? introduce _amountIn parameter
+
         require(
-            _initialSwapParams.path[0] == WGAS,
+            !_isSwapPresent(_initialSwapParams) ||
+                _initialSwapParams.path[0] == WGAS,
             "Router: path needs to begin with WGAS"
         );
 
         // First, wrap GAS into WGAS
-        _wrap(_amountIn);
+        _wrap(msg.value);
 
         // Then, perform swap on initial chain
         // Tokens(WGAS) are in the contract => isSelfSwap = true
         address _bridgeToken;
         (_bridgeToken, _amountBridged) = _doInitialSwap(
-            _amountIn,
+            WGAS,
+            msg.value,
             _initialSwapParams,
             true
         );
@@ -198,29 +184,21 @@ contract BridgeRouter is Router, IBridgeRouter {
 
     // -- BRIDGE FUNCTIONS [initial chain]: to non-EVM chains --
 
-    function bridgeToNonEVM(
+    function bridgeTokenToNonEVM(
         IERC20 _tokenIn,
-        uint256 _amountIn,
-        bytes32 _to,
-        uint256 _chainId
-    ) external returns (uint256 _amountBridged) {
-        // First, pull token from user and use actual amount received later
-        _amountBridged = _pullTokenFromCaller(_tokenIn, _amountIn);
-
-        // Then, perform bridging
-        _bridgeToNonEVM(address(_tokenIn), _amountIn, _to, _chainId);
-    }
-
-    function swapAndBridgeToNonEVM(
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         bytes32 _to,
         uint256 _chainId
     ) external returns (uint256 _amountBridged) {
+        // TODO: enforce consistency?? ditch _tokenIn and change "empty swapParams" standard to
+        // having adapters.length == 0 and path.length == 1 and path[0] == _tokenIn
+
         // First, perform swap on initial chain
         // Need to pull tokens from caller => isSelfSwap = false
         address _bridgeToken;
         (_bridgeToken, _amountBridged) = _doInitialSwap(
+            address(_tokenIn),
             _amountIn,
             _initialSwapParams,
             false
@@ -230,27 +208,28 @@ contract BridgeRouter is Router, IBridgeRouter {
         _bridgeToNonEVM(_bridgeToken, _amountBridged, _to, _chainId);
     }
 
-    function swapFromGasAndBridgeToNonEVM(
-        uint256 _amountIn,
+    function bridgeGasToNonEVM(
         IBridge.SwapParams calldata _initialSwapParams,
         bytes32 _to,
         uint256 _chainId
     ) external payable returns (uint256 _amountBridged) {
-        // TODO: ditch _amountIn ? or leave for consistency with other functions' params
-        require(msg.value == _amountIn, "Router: incorrect amount of GAS");
+        // TODO: enforce consistency?? introduce _amountIn parameter
+
         require(
-            _initialSwapParams.path[0] == WGAS,
+            !_isSwapPresent(_initialSwapParams) ||
+                _initialSwapParams.path[0] == WGAS,
             "Router: path needs to begin with WGAS"
         );
 
         // First, wrap GAS into WGAS
-        _wrap(_amountIn);
+        _wrap(msg.value);
 
         // Then, perform swap on initial chain
         // Tokens(WGAS) are in the contract => isSelfSwap = true
         address _bridgeToken;
         (_bridgeToken, _amountBridged) = _doInitialSwap(
-            _amountIn,
+            WGAS,
+            msg.value,
             _initialSwapParams,
             true
         );
@@ -309,19 +288,33 @@ contract BridgeRouter is Router, IBridgeRouter {
     }
 
     function _doInitialSwap(
+        address _tokenIn,
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         bool _isSelfSwap
     ) internal returns (address _lastToken, uint256 _amountOut) {
-        _amountOut = (_isSelfSwap ? _selfSwap : _swap)(
-            _amountIn,
-            _initialSwapParams.minAmountOut,
-            _initialSwapParams.path,
-            _initialSwapParams.adapters,
-            address(this)
-        );
+        if (_isSwapPresent(_initialSwapParams)) {
+            _amountOut = (_isSelfSwap ? _selfSwap : _swap)(
+                _amountIn,
+                _initialSwapParams.minAmountOut,
+                _initialSwapParams.path,
+                _initialSwapParams.adapters,
+                address(this)
+            );
 
-        _lastToken = _getLastToken(_initialSwapParams);
+            _lastToken = _getLastToken(_initialSwapParams);
+        } else {
+            if (!_isSelfSwap) {
+                // If tokens aren't in the contract, we need to pull them from caller
+                // Use pulled amount as actual amount of tokens
+                _amountOut = _pullTokenFromCaller(IERC20(_tokenIn), _amountIn);
+            } else {
+                // Tokens are already in the contract
+                _amountOut = _amountIn;
+            }
+
+            _lastToken = _tokenIn;
+        }
     }
 
     // -- BRIDGE RELATED FUNCTIONS [destination chain] --
@@ -425,6 +418,21 @@ contract BridgeRouter is Router, IBridgeRouter {
         returns (address _lastToken)
     {
         _lastToken = _swapParams.path[_swapParams.path.length - 1];
+    }
+
+    function _isSwapPresent(IBridge.SwapParams calldata _swapParams)
+        internal
+        pure
+        returns (bool)
+    {
+        if (_swapParams.adapters.length == 0) {
+            require(
+                _swapParams.path.length == 0,
+                "Path must be empty, if no adapters"
+            );
+            return false;
+        }
+        return true;
     }
 
     function _pullTokenFromCaller(IERC20 _token, uint256 _amount)
