@@ -152,12 +152,12 @@ describe("StakedSYN", async () => {
             })
             // wait an hour
             await increaseTimestamp(3600)
-            await stakedSYN.distribute()
+            await stakedSYN.distributeSYN()
             await asyncForEach([owner, user1, user2, user3], async (signer) => {
                 expect((await stakedSYN.underlyingBalanceOf((await signer.getAddress())))).to.eq("1006500000000000000000")
             })
             await increaseTimestamp(3600)
-            await stakedSYN.distribute()
+            await stakedSYN.distributeSYN()
             await asyncForEach([owner, user1, user2, user3], async (signer) => {
                 expect((await stakedSYN.underlyingBalanceOf((await signer.getAddress())))).to.eq("1906750000000000000000")
             })
@@ -175,7 +175,7 @@ describe("StakedSYN", async () => {
             expect((await stakedSYN.underlyingBalanceOf((await owner.getAddress())))).to.eq("3830834745762711864406")
 
             await increaseTimestamp(3600)
-            await stakedSYN.distribute()
+            await stakedSYN.distributeSYN()
             expect((await stakedSYN.underlyingBalanceOf((await user3.getAddress())))).to.eq("3699055084745762711864")
             await asyncForEach([user1, user2], async (signer) => {
                 expect((await stakedSYN.underlyingBalanceOf((await signer.getAddress())))).to.eq("4885301652050069718084")
@@ -184,7 +184,7 @@ describe("StakedSYN", async () => {
             await stakedSYN.connect(owner).stake(BigNumber.from(10).pow(18).mul(4711))
 
             await increaseTimestamp(3600)
-            await stakedSYN.distribute()
+            await stakedSYN.distributeSYN()
 
             await asyncForEach([user1, user2], async (signer) => {
                 expect((await stakedSYN.underlyingBalanceOf((await signer.getAddress())))).to.eq("5785813711574260203257")

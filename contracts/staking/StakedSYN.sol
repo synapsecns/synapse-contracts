@@ -16,21 +16,21 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC20 public synapse;
+    IERC20 public SYNAPSE;
     IMinter public STAKING_MINTER;
 
     // Tracks active delegated SYN backing sSYN
-    uint256 internal activeSYN;
+    uint256 internal totalActiveSYN;
     // Last timestamp of SYN distributed to contract
     uint256 internal lastSynMint;
 
     // Tracks when SYN can be unstaked, along with amounts at time of unstake
-    mapping(address => uint256) public undelegateTimestamps;
-    mapping(address => uint256) public undelegateUnderlyingAmounts;
+    mapping(address => uint256) public undelegatedTimestamps;
+    mapping(address => uint256) public undelegatedSynapseAmounts;
 
     // Define the Synapse token contract
     constructor(IERC20 _synapse, uint256 _stakingStart) public {
-        synapse = _synapse;
+        SYNAPSE = _synapse;
         lastSynMint = _stakingStart;
     }
 
@@ -42,12 +42,12 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
 
     /*** VIEW FUNCTIONS ***/
 
-    function undelegatedSynapse(address user)
+    function undelegatedSynapse(address _user)
         external
         view
         returns (uint256 amount, uint256 timestamp)
     {
-        return (undelegateUnderlyingAmounts[user], undelegateTimestamps[user]);
+        return (undelegatedSynapseAmounts[_user], undelegatedTimestamps[_user]);
     }
 
     function _getUnderlyingSynapseAmount(uint256 _amount)
@@ -56,22 +56,24 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         returns (uint256)
     {
         uint256 totalStaked = totalSupply();
-        return totalStaked > 0 ? _amount.mul(activeSYN).div(totalStaked) : 0;
+        return totalStaked > 0 ? _amount.mul(totalActiveSYN).div(totalStaked) : 0;
     }
 
-    function underlyingBalanceOf(address user) external view returns (uint256) {
+    function underlyingBalanceOf(address _user) external view returns (uint256) {
         return
-            _getUnderlyingSynapseAmount(balanceOf(user)) +
-            undelegateUnderlyingAmounts[user];
+            _getUnderlyingSynapseAmount(balanceOf(_user)) +
+            undelegatedSynapseAmounts[_user];
     }
 
-    function distribute() public {
+    /*** STATE CHANGING FUNCTIONS ***/
+
+    function distributeSYN() public {
         if (totalSupply() != 0) {
             uint256 lastMint = lastSynMint;
             if (block.timestamp >= lastMint.add(1 hours)) {
                 lastSynMint = block.timestamp;
                 uint256 mintAmount = STAKING_MINTER.stakingMint(lastMint);
-                activeSYN = activeSYN.add(mintAmount);
+                totalActiveSYN = totalActiveSYN.add(mintAmount);
             }
         }
     }
@@ -80,60 +82,60 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
     // Locks Synapse and mints sSYN
     function stake(uint256 _amount) external {
         // Catch up on
-        distribute();
+        distributeSYN();
 
         uint256 totalStaked = totalSupply();
         // If no sSYN exists, mint it 1:1 to the amount put in
-        if (totalStaked == 0 || activeSYN == 0) {
+        if (totalStaked == 0 || totalActiveSYN == 0) {
             _mint(msg.sender, _amount);
         }
         // Calculate and mint the amount of sSYN the SYN is worth. 
         // The ratio will change overtime, as sSYN is burned/minted and more SYN is added.
         else {
-            uint256 stakedAmount = _amount.mul(totalStaked).div(activeSYN);
+            uint256 stakedAmount = _amount.mul(totalStaked).div(totalActiveSYN);
             _mint(msg.sender, stakedAmount);
         }
         // Lock the sSYN in the contract
-        activeSYN = activeSYN.add(_amount);
-        synapse.safeTransferFrom(msg.sender, address(this), _amount);
+        totalActiveSYN = totalActiveSYN.add(_amount);
+        SYNAPSE.safeTransferFrom(msg.sender, address(this), _amount);
     }
 
-    // Initiate 7d undelegation period, locks amount of SYN at time of undelegatation request, burn sSYN
+    // Initiate 7d undelegation period, locks amount of SYN at time of undelegation request, burn sSYN
     function undelegate(uint256 _amount) external {
         require(balanceOf(msg.sender) >= _amount, "Balance not met");
         // Catch up on
-        distribute();
+        distributeSYN();
 
         // Undelegate
-        undelegateTimestamps[msg.sender] = block.timestamp.add(7 days);
+        undelegatedTimestamps[msg.sender] = block.timestamp.add(7 days);
         // Calculates the amount of SYN the sSYN is worth at the time of undelegate
         uint256 totalStaked = totalSupply();
         uint256 underlyingSynapseAmount = _getUnderlyingSynapseAmount(_amount);
         // If undelegate was called previously within past 7days, add amount to previous. Replace timestamp fully.
-        undelegateUnderlyingAmounts[msg.sender] += underlyingSynapseAmount;
+        undelegatedSynapseAmounts[msg.sender] += underlyingSynapseAmount;
         // locks SYN for given undelegated amount, reduces active staking
-        activeSYN = activeSYN.sub(underlyingSynapseAmount);
+        totalActiveSYN = totalActiveSYN.sub(underlyingSynapseAmount);
         // burns sSYN shares
         _burn(msg.sender, _amount);
     }
 
     // Unlocks SYN after 7d undelegate period
     function unstake() external {
-        require(undelegateTimestamps[msg.sender] > 0, "Nothing to unstake");
+        require(undelegatedTimestamps[msg.sender] > 0, "Nothing to unstake");
         require(
-            block.timestamp > undelegateTimestamps[msg.sender],
+            block.timestamp > undelegatedTimestamps[msg.sender],
             "Undelegate period not reached"
         );
         // Catch up on
-        distribute();
+        distributeSYN();
 
-        uint256 undelegateUnderlyingAmount = undelegateUnderlyingAmounts[
+        uint256 undelegatedSynapseAmount = undelegatedSynapseAmounts[
             msg.sender
         ];
         // resets undelegate state
-        undelegateTimestamps[msg.sender] = 0;
-        undelegateUnderlyingAmounts[msg.sender] = 0;
+        undelegatedTimestamps[msg.sender] = 0;
+        undelegatedSynapseAmounts[msg.sender] = 0;
         // transfer underlying SYN from time of undelegate
-        synapse.safeTransfer(msg.sender, undelegateUnderlyingAmount);
+        SYNAPSE.safeTransfer(msg.sender, undelegatedSynapseAmount);
     }
 }

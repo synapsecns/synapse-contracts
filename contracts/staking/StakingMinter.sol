@@ -10,32 +10,39 @@ interface IERC20Mintable is IERC20 {
     function mint(address to, uint256 amount) external;
 }
 
-interface SSYN {
-    function distribute() external;
+interface IStakedSYN {
+    function distributeSYN() external;
 }
 
 contract StakingMinter is Ownable {
     using SafeMath for uint256;
-    IERC20Mintable public synapse;
-    IERC20 public sSYN;
+
+    IERC20Mintable public immutable SYNAPSE;
+    address public immutable STAKED_SYN;
+
     uint256 public synapsePerSecond;
 
-    constructor(IERC20Mintable _synapse, IERC20 _sSYN) public {
-        synapse = _synapse;
-        sSYN = _sSYN;
+    constructor(IERC20Mintable _synapse, address _sSYN) public {
+        SYNAPSE = _synapse;
+        STAKED_SYN = _sSYN;
     }
 
     function setSynapsePerSecond(uint256 _rate) external onlyOwner {
         require(_rate <= 1e18, "Minting rate too high");
-        SSYN(address(sSYN)).distribute();
+
+        IStakedSYN(STAKED_SYN).distributeSYN();
         synapsePerSecond = _rate;
     }
 
-    function stakingMint(uint256 lastMint) external returns (uint256) {
-        require(msg.sender == address(sSYN), "not sSYN");
+    function stakingMint(uint256 lastMint)
+        external
+        returns (uint256 mintAmount)
+    {
+        require(msg.sender == STAKED_SYN, "Not sSYN");
+
         uint256 secondsElapsed = block.timestamp.sub(lastMint);
-        uint256 mintAmount = secondsElapsed.mul(synapsePerSecond);
-        synapse.mint(address(sSYN), mintAmount);
-        return mintAmount;
+        mintAmount = secondsElapsed.mul(synapsePerSecond);
+
+        SYNAPSE.mint(STAKED_SYN, mintAmount);
     }
 }
