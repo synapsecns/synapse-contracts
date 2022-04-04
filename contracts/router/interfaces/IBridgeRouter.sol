@@ -7,9 +7,21 @@ import {IBridge} from "../../vault/interfaces/IBridge.sol";
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 
 interface IBridgeRouter is IRouter {
+    // -- VIEWS --
+
     function bridgeMaxSwaps() external view returns (uint8);
 
     function bridge() external view returns (address);
+
+    function getBridgeToken(address _bridgeToken)
+        external
+        view
+        returns (address);
+
+    function getUnderlyingToken(address _bridgeToken)
+        external
+        view
+        returns (address);
 
     // -- SETTERS --
 

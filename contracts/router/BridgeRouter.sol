@@ -33,8 +33,8 @@ contract BridgeRouter is Router, IBridgeRouter {
 
     /// For example, when calling {bridgeTokenToEVM}, set `_tokenIn` as underlying token, if there is no swap on initial chain.
     /// if there is a swap on initial chain, use underlying token as `path[N-1]`.
-    mapping(address => address) public bridgeWrappers;
-    mapping(address => address) public underlyingTokens;
+    mapping(address => address) internal bridgeWrappers;
+    mapping(address => address) internal underlyingTokens;
 
     uint256 internal constant MINT_BURN = 1;
     uint256 internal constant DEPOSIT_WITHDRAW = 2;
@@ -55,6 +55,30 @@ contract BridgeRouter is Router, IBridgeRouter {
         require(msg.sender == bridge, "Caller is not Bridge");
 
         _;
+    }
+
+    // -- VIEWS --
+
+    function getBridgeToken(address _bridgeToken)
+        public
+        view
+        returns (address _actualBridgeToken)
+    {
+        _actualBridgeToken = bridgeWrappers[_bridgeToken];
+        if (_actualBridgeToken == address(0)) {
+            _actualBridgeToken = _bridgeToken;
+        }
+    }
+
+    function getUnderlyingToken(address _bridgeToken)
+        public
+        view
+        returns (address _actualUnderlyingToken)
+    {
+        _actualUnderlyingToken = underlyingTokens[_bridgeToken];
+        if (_actualUnderlyingToken == address(0)) {
+            _actualUnderlyingToken = _bridgeToken;
+        }
     }
 
     // -- RESTRICTED SETTERS --
@@ -249,7 +273,7 @@ contract BridgeRouter is Router, IBridgeRouter {
     ) internal {
         // Use Wrapper contract, if there's one registered
         // This allows to abstract concept of "Bridge Wrappers" away from the UI
-        _bridgeToken = _getBridgeToken(_bridgeToken);
+        _bridgeToken = getBridgeToken(_bridgeToken);
 
         uint256 _bridgeType = IBridge(bridge).tokenBridgeType(_bridgeToken);
         require(
@@ -272,7 +296,7 @@ contract BridgeRouter is Router, IBridgeRouter {
     ) internal {
         // Use Wrapper contract, if there's one registered
         // This allows to abstract concept of "Bridge Wrappers" away from the UI
-        _bridgeToken = _getBridgeToken(_bridgeToken);
+        _bridgeToken = getBridgeToken(_bridgeToken);
 
         uint256 _bridgeType = IBridge(bridge).tokenBridgeType(_bridgeToken);
         require(
@@ -340,7 +364,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         // If swap fails, this unwrap WGAS and return GAS to user
 
         /// @dev In case `_token` is a Bridge Wrapper, we need to return underlying token
-        _returnTokensTo(_getUnderlyingToken(_token), _amount, _to);
+        _returnTokensTo(getUnderlyingToken(_token), _amount, _to);
     }
 
     /**
@@ -389,28 +413,6 @@ contract BridgeRouter is Router, IBridgeRouter {
     }
 
     // -- INTERNAL HELPERS --
-
-    function _getBridgeToken(address _bridgeToken)
-        internal
-        view
-        returns (address _actualBridgeToken)
-    {
-        _actualBridgeToken = bridgeWrappers[_bridgeToken];
-        if (_actualBridgeToken == address(0)) {
-            _actualBridgeToken = _bridgeToken;
-        }
-    }
-
-    function _getUnderlyingToken(address _bridgeToken)
-        internal
-        view
-        returns (address _actualUnderlyingToken)
-    {
-        _actualUnderlyingToken = underlyingTokens[_bridgeToken];
-        if (_actualUnderlyingToken == address(0)) {
-            _actualUnderlyingToken = _bridgeToken;
-        }
-    }
 
     function _getLastToken(IBridge.SwapParams calldata _swapParams)
         internal
