@@ -13,16 +13,6 @@ interface IBridgeRouter is IRouter {
 
     function bridge() external view returns (address);
 
-    function getBridgeToken(address _bridgeToken)
-        external
-        view
-        returns (address);
-
-    function getUnderlyingToken(address _bridgeToken)
-        external
-        view
-        returns (address);
-
     // -- SETTERS --
 
     function setBridgeMaxSwaps(uint8 _bridgeMaxSwaps) external;
