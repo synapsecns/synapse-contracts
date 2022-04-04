@@ -24,6 +24,16 @@ interface IBridge {
 
     // -- VIEWS
 
+    function getBridgeToken(address _bridgeToken)
+        external
+        view
+        returns (address);
+
+    function getUnderlyingToken(address _bridgeToken)
+        external
+        view
+        returns (address);
+
     function tokenBridgeType(address token) external view returns (uint256);
 
     // -- BRIDGE EVENTS OUT: Deposit --

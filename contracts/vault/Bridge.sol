@@ -45,6 +45,18 @@ contract Bridge is
 
     mapping(address => uint256) public tokenBridgeType;
 
+    /// @dev Some of the tokens are not directly compatible with Synapse:Bridge contract.
+    /// For these tokens a wrapper contract is deployed, that will be used
+    /// as a "bridge token" in Synapse:Bridge.
+    /// The UI, or any other entity, interacting with the BridgeRouter, do NOT need to
+    /// know anything about the "bridge wrappers", they should interact as if the
+    /// underlying token is the "bridge token".
+
+    /// For example, when calling {depositEVM}, set `token` as underlying token
+    /// Also, use underlying token for `destinationSwapParams.path[0]`
+    mapping(address => address) internal bridgeWrappers;
+    mapping(address => address) internal underlyingTokens;
+
     function initialize(IVault _vault, uint128 _maxGasForSwap)
         external
         initializer
@@ -88,6 +100,30 @@ contract Bridge is
         _;
     }
 
+    // -- VIEWS --
+
+    function getBridgeToken(address bridgeToken)
+        public
+        view
+        returns (address actualBridgeToken)
+    {
+        actualBridgeToken = bridgeWrappers[bridgeToken];
+        if (actualBridgeToken == address(0)) {
+            actualBridgeToken = bridgeToken;
+        }
+    }
+
+    function getUnderlyingToken(address bridgeToken)
+        public
+        view
+        returns (address actualUnderlyingToken)
+    {
+        actualUnderlyingToken = underlyingTokens[bridgeToken];
+        if (actualUnderlyingToken == address(0)) {
+            actualUnderlyingToken = bridgeToken;
+        }
+    }
+
     // -- RECOVER TOKEN/GAS --
 
     /**
@@ -117,6 +153,37 @@ contract Bridge is
     }
 
     // -- RESTRICTED SETTERS --
+
+    /**
+        @notice Register a MintBurnWrapper that will be used as a "bridge token".
+        @dev This is meant to be used, when original bridge token isn't directly compatible with Synapse:Bridge.
+             1. Set `bridgeWrapper` = address(0) to bridge `bridgeToken` directly
+             2. Use unique `bridgeWrapper` for every `bridgeToken` that needs a bridge wrapper contract
+        @param bridgeToken underlying (native) bridge token
+        @param bridgeWrapper wrapper contract used for actual bridging
+     */
+    function setBridgeWrapper(address bridgeToken, address bridgeWrapper)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        // Delete record of underlying from bridgeToken's "old bridge wrapper",
+        // if there is one
+        address _oldWrapper = bridgeWrappers[bridgeToken];
+        if (_oldWrapper != address(0)) {
+            underlyingTokens[_oldWrapper] = address(0);
+        }
+
+        // Delete record of wrapper from bridgeWrapper's "old underlying token",
+        // if there is one
+        address _oldUnderlying = underlyingTokens[bridgeWrapper];
+        if (_oldUnderlying != address(0)) {
+            bridgeWrappers[_oldUnderlying] = address(0);
+        }
+
+        // Update records for both tokens
+        bridgeWrappers[bridgeToken] = bridgeWrapper;
+        underlyingTokens[bridgeWrapper] = bridgeToken;
+    }
 
     function setMaxGasForSwap(uint128 _maxGasForSwap)
         external
@@ -148,6 +215,9 @@ contract Bridge is
         uint256 amount,
         SwapParams calldata destinationSwapParams
     ) external {
+        // First, use Bridge Wrapper, if there is one for `token`
+        token = getBridgeToken(token);
+        // Then, do bridging
         _depositEVM(to, chainId, IERC20(token), amount, destinationSwapParams);
     }
 
@@ -157,9 +227,11 @@ contract Bridge is
         address token,
         SwapParams calldata destinationSwapParams
     ) external {
-        // First, determine how much Bridge call pull from caller
+        // First, use Bridge Wrapper, if there is one for `token`
+        token = getBridgeToken(token);
+        // Then, determine how much Bridge call pull from caller
         uint256 amount = _getMaxAmount(token);
-
+        // Finally, do bridging
         _depositEVM(to, chainId, IERC20(token), amount, destinationSwapParams);
     }
 
@@ -169,6 +241,9 @@ contract Bridge is
         address token,
         uint256 amount
     ) external {
+        // First, use Bridge Wrapper, if there is one for `token`
+        token = getBridgeToken(token);
+        // Then, do bridging
         _depositNonEVM(to, chainId, IERC20(token), amount);
     }
 
@@ -177,8 +252,11 @@ contract Bridge is
         uint256 chainId,
         address token
     ) external {
-        // First, determine how much Bridge call pull from caller
+        // First, use Bridge Wrapper, if there is one for `token`
+        token = getBridgeToken(token);
+        // Then, determine how much Bridge call pull from caller
         uint256 amount = _getMaxAmount(token);
+        // Finally, do bridging
         _depositNonEVM(to, chainId, IERC20(token), amount);
     }
 
@@ -225,6 +303,9 @@ contract Bridge is
         uint256 amount,
         SwapParams calldata destinationSwapParams
     ) external {
+        // First, use Bridge Wrapper, if there is one for `token`
+        token = getBridgeToken(token);
+        // Then, do bridging
         _redeemEVM(
             to,
             chainId,
@@ -240,9 +321,11 @@ contract Bridge is
         address token,
         SwapParams calldata destinationSwapParams
     ) external {
-        // First, determine how much Bridge can pull from caller
+        // First, use Bridge Wrapper, if there is one for `token`
+        token = getBridgeToken(token);
+        // Then, determine how much Bridge call pull from caller
         uint256 amount = _getMaxAmount(token);
-
+        // Finally, do bridging
         _redeemEVM(
             to,
             chainId,
@@ -258,6 +341,9 @@ contract Bridge is
         address token,
         uint256 amount
     ) external {
+        // First, use Bridge Wrapper, if there is one for `token`
+        token = getBridgeToken(token);
+        // Then, do bridging
         _redeemNonEVM(to, chainId, ERC20Burnable(token), amount);
     }
 
@@ -266,8 +352,11 @@ contract Bridge is
         uint256 chainId,
         address token
     ) external {
-        // First, determine how much Bridge can pull from caller
+        // First, use Bridge Wrapper, if there is one for `token`
+        token = getBridgeToken(token);
+        // Then, determine how much Bridge call pull from caller
         uint256 amount = _getMaxAmount(token);
+        // Finally, do bridging
         _redeemNonEVM(to, chainId, ERC20Burnable(token), amount);
     }
 
@@ -355,8 +444,8 @@ contract Bridge is
             );
 
             // If token is a Bridge Wrapper, use underlying for the Event Log
-            token = IERC20(router.getUnderlyingToken(address(token)));
-            swapResult = SwapResult(token, amount);
+            address underlyingToken = getUnderlyingToken(address(token));
+            swapResult = SwapResult(IERC20(underlyingToken), amount);
         }
 
         // Finally, emit BridgeIn Event
@@ -426,8 +515,10 @@ contract Bridge is
                 _amountOut
             );
         } catch {
-            swapResult = SwapResult(token, amountPostFee);
-            router.refundToAddress(address(token), amountPostFee, to);
+            // If token is a Bridge Wrapper, use underlying for returning
+            address underlyingToken = getUnderlyingToken(address(token));
+            swapResult = SwapResult(IERC20(underlyingToken), amountPostFee);
+            router.refundToAddress(underlyingToken, amountPostFee, to);
         }
     }
 

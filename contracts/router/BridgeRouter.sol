@@ -24,18 +24,6 @@ contract BridgeRouter is Router, IBridgeRouter {
     /// There's no extra limitation for Swap&Bridge txs, as the gas is paid by the user
     uint8 public bridgeMaxSwaps;
 
-    /// @dev Some of the tokens are not directly compatible with Synapse:Bridge contract.
-    /// For these tokens a wrapper contract is deployed, that will be used
-    /// as a "bridge token" in Synapse:Bridge.
-    /// The UI, or any other entity, interacting with the BridgeRouter, do NOT need to
-    /// know anything about the "bridge wrappers", they should interact as if the
-    /// underlying token is the "bridge token".
-
-    /// For example, when calling {bridgeTokenToEVM}, set `_tokenIn` as underlying token, if there is no swap on initial chain.
-    /// if there is a swap on initial chain, use underlying token as `path[N-1]`.
-    mapping(address => address) internal bridgeWrappers;
-    mapping(address => address) internal underlyingTokens;
-
     uint256 internal constant MINT_BURN = 1;
     uint256 internal constant DEPOSIT_WITHDRAW = 2;
 
@@ -66,30 +54,6 @@ contract BridgeRouter is Router, IBridgeRouter {
         _;
     }
 
-    // -- VIEWS --
-
-    function getBridgeToken(address _bridgeToken)
-        public
-        view
-        returns (address _actualBridgeToken)
-    {
-        _actualBridgeToken = bridgeWrappers[_bridgeToken];
-        if (_actualBridgeToken == address(0)) {
-            _actualBridgeToken = _bridgeToken;
-        }
-    }
-
-    function getUnderlyingToken(address _bridgeToken)
-        public
-        view
-        returns (address _actualUnderlyingToken)
-    {
-        _actualUnderlyingToken = underlyingTokens[_bridgeToken];
-        if (_actualUnderlyingToken == address(0)) {
-            _actualUnderlyingToken = _bridgeToken;
-        }
-    }
-
     // -- RESTRICTED SETTERS --
 
     function setBridgeMaxSwaps(uint8 _bridgeMaxSwaps)
@@ -97,37 +61,6 @@ contract BridgeRouter is Router, IBridgeRouter {
         onlyRole(GOVERNANCE_ROLE)
     {
         bridgeMaxSwaps = _bridgeMaxSwaps;
-    }
-
-    /**
-        @notice Register a MintBurnWrapper that will be used as a "bridge token".
-        @dev This is meant to be used, when original bridge token isn't directly compatible with Synapse:Bridge.
-             1. Set `_bridgeWrapper` = address(0) to bridge `_bridgeToken` directly
-             2. Use unique `bridgeWrapper` for every `bridgeToken` that needs a bridge wrapper contract
-        @param _bridgeToken underlying (native) bridge token
-        @param _bridgeWrapper wrapper contract used for actual bridging
-     */
-    function setBridgeWrapper(address _bridgeToken, address _bridgeWrapper)
-        external
-        onlyRole(GOVERNANCE_ROLE)
-    {
-        // Delete record of underlying from bridgeToken's "old bridge wrapper",
-        // if there is one
-        address _oldWrapper = bridgeWrappers[_bridgeToken];
-        if (_oldWrapper != address(0)) {
-            underlyingTokens[_oldWrapper] = address(0);
-        }
-
-        // Delete record of wrapper from bridgeWrapper's "old underlying token",
-        // if there is one
-        address _oldUnderlying = underlyingTokens[_bridgeWrapper];
-        if (_oldUnderlying != address(0)) {
-            bridgeWrappers[_oldUnderlying] = address(0);
-        }
-
-        // Update records for both tokens
-        bridgeWrappers[_bridgeToken] = _bridgeWrapper;
-        underlyingTokens[_bridgeWrapper] = _bridgeToken;
     }
 
     function setInfiniteTokenAllowance(IERC20 _token, address _spender)
@@ -268,10 +201,6 @@ contract BridgeRouter is Router, IBridgeRouter {
         uint256 _chainId,
         IBridge.SwapParams calldata _destinationSwapParams
     ) internal {
-        // Use Wrapper contract, if there's one registered
-        // This allows to abstract concept of "Bridge Wrappers" away from the UI
-        _bridgeToken = getBridgeToken(_bridgeToken);
-
         uint256 _bridgeType = IBridge(bridge).tokenBridgeType(_bridgeToken);
         require(
             _bridgeType == MINT_BURN || _bridgeType == DEPOSIT_WITHDRAW,
@@ -291,10 +220,6 @@ contract BridgeRouter is Router, IBridgeRouter {
         bytes32 _to,
         uint256 _chainId
     ) internal {
-        // Use Wrapper contract, if there's one registered
-        // This allows to abstract concept of "Bridge Wrappers" away from the UI
-        _bridgeToken = getBridgeToken(_bridgeToken);
-
         uint256 _bridgeType = IBridge(bridge).tokenBridgeType(_bridgeToken);
         require(
             _bridgeType == MINT_BURN || _bridgeType == DEPOSIT_WITHDRAW,
@@ -367,8 +292,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         // Imagine [Bridge GAS & Swap] back to its native chain.
         // If swap fails, this unwrap WGAS and return GAS to user
 
-        /// @dev In case `_token` is a Bridge Wrapper, we need to return underlying token
-        _returnTokensTo(getUnderlyingToken(_token), _amount, _to);
+        _returnTokensTo(_token, _amount, _to);
     }
 
     /**

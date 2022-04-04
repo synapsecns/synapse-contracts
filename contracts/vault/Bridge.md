@@ -106,7 +106,7 @@ function <...>NonEVM(
 
 > `token` and `destinationSwapParams.path[0]` are two counterparts of the bridge token, representing its addresses on initial and destination chain respectively.
 
-> Some tokens are not directly compatible with the bridge, and require a `Bridge Wrapper` contract for actual bridging. This concept is abstracted away from user/UI in `BridgeRouter`, but not in `Bridge`. `initialSwapParams.path[N-1]` and `destinationSwapParams.path[0]` **are always** the tokens, that are actually used for the bridging.
+> Some tokens are not directly compatible with the bridge, and require a `Bridge Wrapper` contract for actual bridging. This concept is abstracted away from user/UI. `token` and `destinationSwapParams.path[0]` **are always** the tokens, that are actually used/traded on their respective chains.
 
 # Bridge In Functions
 
@@ -116,10 +116,10 @@ All bridge in functions are covered by `bridgeIn()`, whether it's mint|withdraw,
 
 ## Modifiers
 
-1. `onlyRole(NODEGROUP_ROLE)` makes sure that only accounts from Node Group are allowed to submit _Bridge In transactions_.
-2. `nonReentrant` prevents reentrancy attacks.
-3. `whenNotPaused` leaves the ability to pause the `Bridge` if needed.
-4. `bridgeInTx(amount, fee, to)` checks whether `amount > fee`, proceeds to fulfill bridging in, then does a gas drop.
+- `onlyRole(NODEGROUP_ROLE)` makes sure that only accounts from Node Group are allowed to submit _Bridge In transactions_.
+- `nonReentrant` prevents reentrancy attacks.
+- `whenNotPaused` leaves the ability to pause the `Bridge` if needed.
+- `bridgeInTx(amount, fee, to)` checks whether `amount > fee`, proceeds to fulfill bridging in, then does a gas drop.
 
 ## Parameters
 
