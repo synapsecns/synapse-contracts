@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 import "./interfaces/ISwap.sol";
 import "./interfaces/IWETH9.sol";
+import "./interfaces/IRateLimiter.sol";
 
 interface IERC20Mintable is IERC20 {
     function mint(address to, uint256 amount) external;
@@ -29,7 +30,14 @@ contract SynapseBridge is
     using SafeMath for uint256;
 
     bytes32 public constant NODEGROUP_ROLE = keccak256("NODEGROUP_ROLE");
+    bytes32 public constant RATE_LIMITER_ROLE = keccak256("RATE_LIMITER_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
+
+    // selectors
+    bytes4 private constant MINT_SELECTOR = bytes4(keccak256("mint(address,IERC20Mintable,uint256,uint256,bytes32)"));
+    bytes4 private constant MINT_AND_SWAP_SELECTOR = bytes4(keccak256("mintAndSwap(address,address,uint256,uint256,address,uint8,uint8,uint256,uint256,bytes32)"));
+    bytes4 private constant WITHDRAW_AND_REMOVE_SELECTOR = bytes4(keccak256("withdrawAndRemove(address,address,uint256,uint256,address,uint8,uint256,uint256,bytes32)"));
+
 
     mapping(address => uint256) private fees;
 
@@ -37,6 +45,7 @@ contract SynapseBridge is
     uint256 public constant bridgeVersion = 6;
     uint256 public chainGasAmount;
     address payable public WETH_ADDRESS;
+    IRateLimiter public rateLimiter;
 
     mapping(bytes32 => bool) private kappaMap;
 
@@ -56,6 +65,11 @@ contract SynapseBridge is
     function setWethAddress(address payable _wethAddress) external {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
         WETH_ADDRESS = _wethAddress;
+    }
+
+    function setRateLimiter(IRateLimiter _rateLimiter) external {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
+        rateLimiter = _rateLimiter;
     }
 
     function addKappas(bytes32[] calldata kappas) external {
