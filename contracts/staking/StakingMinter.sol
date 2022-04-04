@@ -2,12 +2,12 @@
 
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 interface IERC20Mintable is IERC20 {
-  function mint(address to, uint256 amount) external;
+    function mint(address to, uint256 amount) external;
 }
 
 interface SSYN {
@@ -26,13 +26,13 @@ contract StakingMinter is Ownable {
     }
 
     function setSynapsePerSecond(uint256 _rate) external onlyOwner {
-        require(_rate <= 1e18, 'Minting rate too high');
+        require(_rate <= 1e18, "Minting rate too high");
         SSYN(address(sSYN)).distribute();
         synapsePerSecond = _rate;
     }
 
     function stakingMint(uint256 lastMint) external returns (uint256) {
-        require(msg.sender == address(sSYN), 'not sSYN');
+        require(msg.sender == address(sSYN), "not sSYN");
         uint256 secondsElapsed = block.timestamp.sub(lastMint);
         uint256 mintAmount = secondsElapsed.mul(synapsePerSecond);
         synapse.mint(address(sSYN), mintAmount);
