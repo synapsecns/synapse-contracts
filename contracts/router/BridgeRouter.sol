@@ -57,6 +57,15 @@ contract BridgeRouter is Router, IBridgeRouter {
         _;
     }
 
+    modifier checkSwapParams(IBridge.SwapParams calldata swapParams) {
+        require(
+            swapParams.path.length == swapParams.adapters.length + 1,
+            "BridgeRouter: len(path)!=len(adapters)+1"
+        );
+
+        _;
+    }
+
     // -- VIEWS --
 
     function getBridgeToken(address _bridgeToken)
@@ -139,21 +148,16 @@ contract BridgeRouter is Router, IBridgeRouter {
     // -- BRIDGE FUNCTIONS [initial chain]: to EVM chains --
 
     function bridgeTokenToEVM(
-        IERC20 _tokenIn,
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
         uint256 _chainId,
         IBridge.SwapParams calldata _destinationSwapParams
     ) external returns (uint256 _amountBridged) {
-        // TODO: enforce consistency?? ditch _tokenIn and change "empty swapParams" standard to
-        // having adapters.length == 0 and path.length == 1 and path[0] == _tokenIn
-
         // First, perform swap on initial chain
         // Need to pull tokens from caller => isSelfSwap = false
         address _bridgeToken;
         (_bridgeToken, _amountBridged) = _doInitialSwap(
-            address(_tokenIn),
             _amountIn,
             _initialSwapParams,
             false
@@ -178,7 +182,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         // TODO: enforce consistency?? introduce _amountIn parameter
 
         require(
-            !_isSwapPresent(_initialSwapParams) ||
+            _initialSwapParams.path.length > 0 &&
                 _initialSwapParams.path[0] == WGAS,
             "Router: path needs to begin with WGAS"
         );
@@ -190,7 +194,6 @@ contract BridgeRouter is Router, IBridgeRouter {
         // Tokens(WGAS) are in the contract => isSelfSwap = true
         address _bridgeToken;
         (_bridgeToken, _amountBridged) = _doInitialSwap(
-            WGAS,
             msg.value,
             _initialSwapParams,
             true
@@ -209,20 +212,15 @@ contract BridgeRouter is Router, IBridgeRouter {
     // -- BRIDGE FUNCTIONS [initial chain]: to non-EVM chains --
 
     function bridgeTokenToNonEVM(
-        IERC20 _tokenIn,
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         bytes32 _to,
         uint256 _chainId
     ) external returns (uint256 _amountBridged) {
-        // TODO: enforce consistency?? ditch _tokenIn and change "empty swapParams" standard to
-        // having adapters.length == 0 and path.length == 1 and path[0] == _tokenIn
-
         // First, perform swap on initial chain
         // Need to pull tokens from caller => isSelfSwap = false
         address _bridgeToken;
         (_bridgeToken, _amountBridged) = _doInitialSwap(
-            address(_tokenIn),
             _amountIn,
             _initialSwapParams,
             false
@@ -240,7 +238,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         // TODO: enforce consistency?? introduce _amountIn parameter
 
         require(
-            !_isSwapPresent(_initialSwapParams) ||
+            _initialSwapParams.path.length > 0 &&
                 _initialSwapParams.path[0] == WGAS,
             "Router: path needs to begin with WGAS"
         );
@@ -252,7 +250,6 @@ contract BridgeRouter is Router, IBridgeRouter {
         // Tokens(WGAS) are in the contract => isSelfSwap = true
         address _bridgeToken;
         (_bridgeToken, _amountBridged) = _doInitialSwap(
-            WGAS,
             msg.value,
             _initialSwapParams,
             true
@@ -312,11 +309,14 @@ contract BridgeRouter is Router, IBridgeRouter {
     }
 
     function _doInitialSwap(
-        address _tokenIn,
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         bool _isSelfSwap
-    ) internal returns (address _lastToken, uint256 _amountOut) {
+    )
+        internal
+        checkSwapParams(_initialSwapParams)
+        returns (address _lastToken, uint256 _amountOut)
+    {
         if (_isSwapPresent(_initialSwapParams)) {
             _amountOut = (_isSelfSwap ? _selfSwap : _swap)(
                 _amountIn,
@@ -328,16 +328,20 @@ contract BridgeRouter is Router, IBridgeRouter {
 
             _lastToken = _getLastToken(_initialSwapParams);
         } else {
-            if (!_isSelfSwap) {
-                // If tokens aren't in the contract, we need to pull them from caller
-                // Use pulled amount as actual amount of tokens
-                _amountOut = _pullTokenFromCaller(IERC20(_tokenIn), _amountIn);
-            } else {
+            // checkSwapParams() checked that path.length == 1
+            _lastToken = _initialSwapParams.path[0];
+
+            if (_isSelfSwap) {
                 // Tokens are already in the contract
                 _amountOut = _amountIn;
+            } else {
+                // If tokens aren't in the contract, we need to pull them from caller
+                // Use pulled amount as actual amount of tokens
+                _amountOut = _pullTokenFromCaller(
+                    IERC20(_lastToken),
+                    _amountIn
+                );
             }
-
-            _lastToken = _tokenIn;
         }
     }
 
@@ -427,14 +431,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         pure
         returns (bool)
     {
-        if (_swapParams.adapters.length == 0) {
-            require(
-                _swapParams.path.length == 0,
-                "Path must be empty, if no adapters"
-            );
-            return false;
-        }
-        return true;
+        return _swapParams.adapters.length > 0;
     }
 
     function _pullTokenFromCaller(IERC20 _token, uint256 _amount)
