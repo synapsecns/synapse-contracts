@@ -101,7 +101,7 @@ function bridgeGasToNonEVM(
   > UI should have a warning, that is another address is specified for receiving tokens on destination chain, that it should always be the non-custodial wallet, otherwise the funds might be lost (especially when bridging into destination chain's GAS).
 - `chainId`: destination chain's ID.
 - `destinationSwapParams`: [valid](#valid-swapparams) parameters for swapping token into bridge token on **destination chain**, if needed. Otherwise, it's [empty](#empty-swapparams).
-- `minAmountOut`: minimum amount of bridge token to receive after swap on **initial chain**, otherwise the transaction **will be reverted**.
+  - `minAmountOut`: minimum amount of bridge token to receive after swap on **initial chain**, otherwise the transaction **will be reverted**.
   - `path`: list of tokens, specifying the swap route on **destination chain**.
     - `path[0]`: token that will be used for bridging on **destination chain**.
     - `path[1]`: token received after the first swap of the route.

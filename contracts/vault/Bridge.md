@@ -2,9 +2,8 @@
 
 ## Naming
 
-All functions allowing to bridge funds have the same naming convention: `[deposit|redeem](Max)[EVM|nonEVM]`.
+All functions allowing to bridge funds have the same naming convention: `bridge(Max)[EVM|nonEVM]`.
 
-- `[deposit|redeem]` specifies whether to deposit token into `Vault`, or to burn it on this chain.
 - (optional) If `Max` is present in the function name, `amount` parameter will be missing, meaning Bridge will pull as many tokens from caller as possible.
   > This would be the token balance, or the token spending allowance, whichever is **smaller**.
 - `[EVM|nonEVM]` specifies whether the destination chain is EVM-compatible or not. If chain is EVM-compatible, there's an additional parameter passed: `swapParams`,
@@ -69,7 +68,7 @@ modifier checkSwapParams(SwapParams calldata swapParams) {
 ## Function list
 
 ```solidity
-function <...>EVM(
+function bridgeToEVM(
   address to,
   uint256 chainId,
   address token,
@@ -77,7 +76,20 @@ function <...>EVM(
   SwapParams calldata destinationSwapParams
 ) external;
 
-function <...>NonEVM(
+function bridgeMaxToEVM(
+  address to,
+  uint256 chainId,
+  address token,
+  SwapParams calldata destinationSwapParams
+) external;
+
+function bridgeMaxToNonEVM(
+  bytes32 to,
+  uint256 chainId,
+  address token
+) external;
+
+function bridgeToNonEVM(
   bytes32 to,
   uint256 chainId,
   address token,
@@ -91,9 +103,10 @@ function <...>NonEVM(
 - `chainId`: destination chain's ID.
 - `token`: token that will be used for bridging.
 - `amount` is amount of tokens to bridge, in `token` decimals precision.
+  > For functions having `Max` in their name: `amount = min(token.balanceOf(msg.sender), token.allowance(msg.sender, bridge))`
 - `destinationSwapParams`: [valid](#valid-swapparams) parameters for swapping token into bridge token on **destination chain**, if needed. Otherwise, it's [empty](#empty-swapparams).
-- `minAmountOut`: minimum amount of bridge token to receive after swap on **destination chain**, otherwise user **will receive bridge token**.
-  > If bridge token on **destination chain** is `WGAS`, it will be automatically unwrapped and sent as native chain `GAS`.
+  - `minAmountOut`: minimum amount of bridge token to receive after swap on **destination chain**, otherwise user **will receive bridge token**.
+    > If bridge token on **destination chain** is `WGAS`, it will be automatically unwrapped and sent as native chain `GAS`.
   - `path`: list of tokens, specifying the swap route on **destination chain**.
     - `path[0]`: token that will be used for bridging on **destination chain**.
     - `path[1]`: token received after the first swap of the route.
