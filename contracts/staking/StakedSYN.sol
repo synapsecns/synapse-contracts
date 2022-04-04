@@ -42,6 +42,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
 
     /*** VIEW FUNCTIONS ***/
 
+    /// @notice Get value of 1 sSYN, in 18 decimals precision
     function getStakedSynapseValue() external view returns (uint256) {
         uint256 totalStaked = totalSupply();
         uint256 precision = 10**18;
@@ -52,6 +53,9 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         }
     }
 
+    /// @notice Get user's undelegated Synapse status
+    /// @return amount Amount of SYN that will be available to be unstaked
+    /// @return timestamp Timestamp for SYN to be come available for unstaking
     function undelegatedSynapse(address _user)
         external
         view
@@ -60,6 +64,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         return (undelegatedSynapseAmounts[_user], undelegatedTimestamps[_user]);
     }
 
+    /// @notice Get user's total staked SYN value
     function underlyingBalanceOf(address _user)
         external
         view
@@ -70,6 +75,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
             undelegatedSynapseAmounts[_user];
     }
 
+    /// @notice Get SYN value of given amount of sSYN
     function _getUnderlyingSynapseAmount(uint256 _amount)
         internal
         view
@@ -82,6 +88,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
 
     /*** STATE CHANGING FUNCTIONS ***/
 
+    /// @notice Mint and distribute SYN among sSYN holders
     function distributeSYN() public {
         if (totalSupply() != 0) {
             uint256 lastMint = lastSynMint;
@@ -93,8 +100,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         }
     }
 
-    // Enter the bar. Give some SYN. Get some sSYN.
-    // Locks Synapse and mints sSYN
+    /// @notice Stake SYN to receive sSYN
     function stake(uint256 _amount) external {
         require(_amount > 0, "Can't stake zero tokens");
 
@@ -119,7 +125,8 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         totalActiveSYN = totalActiveSYN.add(_amount);
     }
 
-    // Initiate 7d undelegation period, locks amount of SYN at time of undelegation request, burn sSYN
+    /// @notice Burn sSYN and initiate 7d undelegation period for given amount of sSYN.
+    /// SYN will be available for unstaking after 7d are passed.
     function undelegate(uint256 _amount) external {
         require(balanceOf(msg.sender) >= _amount, "Balance not met");
         require(_amount > 0, "Can't undelegate zero tokens");
@@ -143,7 +150,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         _burn(msg.sender, _amount);
     }
 
-    // Unlocks SYN after 7d undelegate period
+    /// @notice Unstake undelegated SYN
     function unstake() external {
         require(undelegatedTimestamps[msg.sender] > 0, "Nothing to unstake");
         require(
