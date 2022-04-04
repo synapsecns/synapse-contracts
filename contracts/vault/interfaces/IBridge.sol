@@ -86,14 +86,14 @@ interface IBridge {
         uint256 chainId,
         address token,
         uint256 amount,
-        SwapParams calldata bridgeSwapParams
+        SwapParams calldata destinationSwapParams
     ) external;
 
     function depositMaxEVM(
         address to,
         uint256 chainId,
         address token,
-        SwapParams calldata bridgeSwapParams
+        SwapParams calldata destinationSwapParams
     ) external;
 
     function depositNonEVM(
@@ -116,14 +116,14 @@ interface IBridge {
         uint256 chainId,
         address token,
         uint256 amount,
-        SwapParams calldata bridgeSwapParams
+        SwapParams calldata destinationSwapParams
     ) external;
 
     function redeemMaxEVM(
         address to,
         uint256 chainId,
         address token,
-        SwapParams calldata bridgeSwapParams
+        SwapParams calldata destinationSwapParams
     ) external;
 
     function redeemNonEVM(
@@ -147,7 +147,7 @@ interface IBridge {
         uint256 amount,
         uint256 fee,
         bool isMint,
-        SwapParams calldata bridgeSwapParams,
+        SwapParams calldata destinationSwapParams,
         bytes32 kappa
     ) external;
 

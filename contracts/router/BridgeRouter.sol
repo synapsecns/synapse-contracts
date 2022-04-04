@@ -120,7 +120,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
         uint256 _chainId,
-        IBridge.SwapParams calldata _bridgedSwapParams
+        IBridge.SwapParams calldata _destinationSwapParams
     ) external returns (uint256 _amountBridged) {
         // TODO: enforce consistency?? ditch _tokenIn and change "empty swapParams" standard to
         // having adapters.length == 0 and path.length == 1 and path[0] == _tokenIn
@@ -141,7 +141,7 @@ contract BridgeRouter is Router, IBridgeRouter {
             _amountBridged,
             _to,
             _chainId,
-            _bridgedSwapParams
+            _destinationSwapParams
         );
     }
 
@@ -149,7 +149,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
         uint256 _chainId,
-        IBridge.SwapParams calldata _bridgedSwapParams
+        IBridge.SwapParams calldata _destinationSwapParams
     ) external payable returns (uint256 _amountBridged) {
         // TODO: enforce consistency?? introduce _amountIn parameter
 
@@ -178,7 +178,7 @@ contract BridgeRouter is Router, IBridgeRouter {
             _amountBridged,
             _to,
             _chainId,
-            _bridgedSwapParams
+            _destinationSwapParams
         );
     }
 
@@ -245,7 +245,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         uint256 _bridgeAmount,
         address _to,
         uint256 _chainId,
-        IBridge.SwapParams calldata _bridgedSwapParams
+        IBridge.SwapParams calldata _destinationSwapParams
     ) internal {
         // Use Wrapper contract, if there's one registered
         // This allows to abstract concept of "Bridge Wrappers" away from the UI
@@ -261,7 +261,7 @@ contract BridgeRouter is Router, IBridgeRouter {
             _bridgeType == MINT_BURN
                 ? IBridge(bridge).redeemEVM
                 : IBridge(bridge).depositEVM
-        )(_to, _chainId, _bridgeToken, _bridgeAmount, _bridgedSwapParams);
+        )(_to, _chainId, _bridgeToken, _bridgeAmount, _destinationSwapParams);
     }
 
     function _bridgeToNonEVM(

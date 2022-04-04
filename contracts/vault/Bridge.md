@@ -55,7 +55,7 @@ function someBridgeOutEVMFunction(
   uint256 chainId,
   address token,
   uint256 amount,
-  SwapParams calldata bridgedSwapParams
+  SwapParams calldata destinationSwapParams
 ) external;
 
 function someBridgeOutNonEVMFunction(
@@ -71,7 +71,7 @@ function someBridgeOutNonEVMFunction(
 2. `chainId` specifies the destination chain's ID.
 3. `token` is the token that will be used for bridging. In most cases this is also the token user wants to bridge, but some tokens are not directly compatible with the bridge, and require a `Bridge Wrapper` contract for actual bridging. This concept is abstracted away from user/UI in `BridgeRouter`, but not in `Bridge`. `token` is **always** the token that will be used for actual bridging (i.e. might differ from token that will be pulled from user).
 4. `amount` is amount of tokens to bridge, in `token` decimals precision.
-5. `bridgedSwapParams` specifies specifies the parameters for swapping bridged token, if needed. Otherwise, it's empty (see `SwapParams` section above).
+5. `destinationSwapParams` specifies specifies the parameters for swapping bridged token, if needed. Otherwise, it's empty (see `SwapParams` section above).
 
 # Bridge In Functions
 
@@ -95,7 +95,7 @@ function bridgeIn(
   uint256 amount,
   uint256 fee,
   bool isMint,
-  SwapParams calldata bridgedSwapParams,
+  SwapParams calldata swapParams,
   bytes32 kappa
 ) external;
 
@@ -106,5 +106,5 @@ function bridgeIn(
 3. `amount` is total amount bridged, including bridge fee, in `token` decimals precision.
 4. `fee` is bridge fee, in `token` decimals.
 5. `isMint` refers to whether tokens needs to be minted or withdrawn by `Vault`.
-6. `bridgedSwapParams` specifies the parameters for swapping bridged token, if needed. Otherwise, it's empty (see `SwapParams` section above).
+6. `swapParams` specifies the parameters for swapping bridged token, if needed. Otherwise, it's empty (see `SwapParams` section above).
 7. `kappa` refers to a unique bridge transaction parameter. Only one transaction with a given kappa will be accepted by the Vault.

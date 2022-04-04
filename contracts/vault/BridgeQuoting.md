@@ -211,7 +211,7 @@ To submit a **Synapse: Bridge** transaction, consider following pseudo code (ass
     initialSwapParams=swapParamsIC,
     to=userAddress,
     chainId=idDC,
-    bridgedSwapParams=swapParamsDC
+    destinationSwapParams=swapParamsDC
   )
 
   // Or, if you start from initial chain gas
@@ -219,7 +219,7 @@ To submit a **Synapse: Bridge** transaction, consider following pseudo code (ass
     initialSwapParams=swapParamsIC,
     to=userAddress,
     chainId=idDC,
-    bridgedSwapParams=swapParamsDC
+    destinationSwapParams=swapParamsDC
   )
 ```
 
