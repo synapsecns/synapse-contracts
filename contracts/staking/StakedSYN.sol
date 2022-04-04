@@ -50,16 +50,6 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         return (undelegatedSynapseAmounts[_user], undelegatedTimestamps[_user]);
     }
 
-    function _getUnderlyingSynapseAmount(uint256 _amount)
-        internal
-        view
-        returns (uint256)
-    {
-        uint256 totalStaked = totalSupply();
-        return
-            totalStaked > 0 ? _amount.mul(totalActiveSYN).div(totalStaked) : 0;
-    }
-
     function underlyingBalanceOf(address _user)
         external
         view
@@ -68,6 +58,16 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         return
             _getUnderlyingSynapseAmount(balanceOf(_user)) +
             undelegatedSynapseAmounts[_user];
+    }
+
+    function _getUnderlyingSynapseAmount(uint256 _amount)
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 totalStaked = totalSupply();
+        return
+            totalStaked > 0 ? _amount.mul(totalActiveSYN).div(totalStaked) : 0;
     }
 
     /*** STATE CHANGING FUNCTIONS ***/
@@ -88,10 +88,12 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
     function stake(uint256 _amount) external {
         require(_amount > 0, "Can't stake zero tokens");
 
+        // Pull SYN from caller
+        SYNAPSE.safeTransferFrom(msg.sender, address(this), _amount);
+
         // Catch up on
         distributeSYN();
 
-        uint256 totalStaked = totalSupply();
         // If no sSYN exists, mint it 1:1 to the amount put in
         if (totalActiveSYN == 0) {
             _mint(msg.sender, _amount);
@@ -99,12 +101,12 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         // Calculate and mint the amount of sSYN the SYN is worth.
         // The ratio will change overtime, as sSYN is burned/minted and more SYN is added.
         else {
+            uint256 totalStaked = totalSupply();
             uint256 stakedAmount = _amount.mul(totalStaked).div(totalActiveSYN);
             _mint(msg.sender, stakedAmount);
         }
         // Lock the sSYN in the contract
         totalActiveSYN = totalActiveSYN.add(_amount);
-        SYNAPSE.safeTransferFrom(msg.sender, address(this), _amount);
     }
 
     // Initiate 7d undelegation period, locks amount of SYN at time of undelegation request, burn sSYN
@@ -116,14 +118,15 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         distributeSYN();
 
         // Undelegate
-        undelegatedTimestamps[msg.sender] = block.timestamp.add(7 days);
-        // Calculates the amount of SYN the sSYN is worth at the time of undelegate
 
+        // Calculates the amount of SYN the sSYN is worth at the time of undelegate
         uint256 underlyingSynapseAmount = _getUnderlyingSynapseAmount(_amount);
         // If undelegate was called previously within past 7days, add amount to previous. Replace timestamp fully.
         undelegatedSynapseAmounts[msg.sender] = undelegatedSynapseAmounts[
             msg.sender
         ].add(underlyingSynapseAmount);
+        undelegatedTimestamps[msg.sender] = block.timestamp.add(7 days);
+
         // locks SYN for given undelegated amount, reduces active staking
         totalActiveSYN = totalActiveSYN.sub(underlyingSynapseAmount);
         // burns sSYN shares
