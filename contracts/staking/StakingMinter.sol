@@ -14,6 +14,8 @@ interface IStakedSYN {
     function distributeSYN() external;
 }
 
+// solhint-disable not-rely-on-time
+
 contract StakingMinter is Ownable {
     using SafeMath for uint256;
 
