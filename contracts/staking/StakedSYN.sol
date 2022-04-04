@@ -56,10 +56,15 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         returns (uint256)
     {
         uint256 totalStaked = totalSupply();
-        return totalStaked > 0 ? _amount.mul(totalActiveSYN).div(totalStaked) : 0;
+        return
+            totalStaked > 0 ? _amount.mul(totalActiveSYN).div(totalStaked) : 0;
     }
 
-    function underlyingBalanceOf(address _user) external view returns (uint256) {
+    function underlyingBalanceOf(address _user)
+        external
+        view
+        returns (uint256)
+    {
         return
             _getUnderlyingSynapseAmount(balanceOf(_user)) +
             undelegatedSynapseAmounts[_user];
@@ -89,7 +94,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         if (totalActiveSYN == 0) {
             _mint(msg.sender, _amount);
         }
-        // Calculate and mint the amount of sSYN the SYN is worth. 
+        // Calculate and mint the amount of sSYN the SYN is worth.
         // The ratio will change overtime, as sSYN is burned/minted and more SYN is added.
         else {
             uint256 stakedAmount = _amount.mul(totalStaked).div(totalActiveSYN);
