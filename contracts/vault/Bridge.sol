@@ -171,15 +171,27 @@ contract Bridge is
         In some cases, an intermediate contract is required to achieve that, it is called a Bridge Wrapper.
         In this case, `bridgeToken != bridgeWrapper`.
 
+        Use registerBridgeToken(bridgeToken, bridgeWrapper, NOT_SUPPORTED) to remove token from supported list
+        Use registerBridgeToken(bridgeToken, newBridgeWrapper, MINT_BURN) to update record about a Bridge Wrapper
+
         @param bridgeToken token that will be bridged
         @param bridgeWrapper token that Synapse:Bridge will use for bridging
-        @param tokenType mint-burn or deposit-withdraw
+        @param tokenType not-supported, mint-burn or deposit-withdraw
      */
     function registerBridgeToken(
         address bridgeToken,
         address bridgeWrapper,
         TokenType tokenType
     ) external onlyRole(GOVERNANCE_ROLE) {
+        require(
+            bridgeToken != address(0),
+            "Bridge token can't be zero address"
+        );
+        require(
+            bridgeWrapper != address(0),
+            "Bridge wrapper can't be zero address"
+        );
+
         address _oldUnderlying = underlyingTokens[bridgeWrapper];
         require(
             _oldUnderlying == address(0) || _oldUnderlying == bridgeWrapper,
@@ -194,16 +206,17 @@ contract Bridge is
             bridgeTokenType[_oldWrapper] = TokenType.NOT_SUPPORTED;
         }
 
-        // Save record for bridgeWrapper's underlying token
-        if (_oldUnderlying == address(0)) {
+        if (tokenType != TokenType.NOT_SUPPORTED) {
+            // Save records
             underlyingTokens[bridgeWrapper] = bridgeToken;
+            bridgeWrappers[bridgeToken] = bridgeWrapper;
+        } else {
+            // Delete records
+            underlyingTokens[bridgeWrapper] = address(0);
+            bridgeWrappers[bridgeToken] = address(0);
         }
 
-        // Save record for bridgeToken's bridge wrapper
-        bridgeWrappers[bridgeToken] = bridgeWrapper;
-
         bridgeTokenType[bridgeWrapper] = tokenType;
-
         emit BridgeTokenRegistered(bridgeToken, bridgeWrapper, tokenType);
     }
 
