@@ -27,6 +27,8 @@ contract StakingMinter is Ownable {
         STAKED_SYN = _sSYN;
     }
 
+    /// @notice Set up SYN minting rate
+    /// @param _rate minting rate, SYN per second
     function setSynapsePerSecond(uint256 _rate) external onlyOwner {
         require(_rate <= 1e18, "Minting rate too high");
 
@@ -34,6 +36,7 @@ contract StakingMinter is Ownable {
         synapsePerSecond = _rate;
     }
 
+    /// @notice Mint SYN to sSYN contract. Can only be called by sSYN.
     function stakingMint(uint256 lastMint)
         external
         returns (uint256 mintAmount)
