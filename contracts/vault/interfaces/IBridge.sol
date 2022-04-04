@@ -8,6 +8,13 @@ import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol"
 import {IBridgeRouter} from "../../router/interfaces/IBridgeRouter.sol";
 
 interface IBridge {
+    /// @dev NOT_SUPPORTED would be default value
+    enum TokenType {
+        NOT_SUPPORTED,
+        MINT_BURN,
+        DEPOSIT_WITHDRAW
+    }
+
     struct SwapParams {
         uint256 minAmountOut;
         address[] path;
@@ -19,6 +26,12 @@ interface IBridge {
         IERC20 tokenReceived;
         uint256 amountReceived;
     }
+
+    event BridgeTokenRegistered(
+        address indexed bridgeToken,
+        address indexed bridgeWrapper,
+        TokenType tokenType
+    );
 
     event Recovered(address indexed asset, uint256 amount);
 
@@ -34,7 +47,7 @@ interface IBridge {
         view
         returns (address);
 
-    function tokenBridgeType(address token) external view returns (uint256);
+    function bridgeTokenType(address token) external view returns (TokenType);
 
     // -- BRIDGE EVENTS OUT: Deposit --
 
@@ -89,9 +102,9 @@ interface IBridge {
         bytes32 indexed kappa
     );
 
-    // -- BRIDGE OUT FUNCTIONS: Deposit --
+    // -- BRIDGE OUT FUNCTIONS: to EVM chains --
 
-    function depositEVM(
+    function bridgeToEVM(
         address to,
         uint256 chainId,
         address token,
@@ -99,51 +112,23 @@ interface IBridge {
         SwapParams calldata destinationSwapParams
     ) external;
 
-    function depositMaxEVM(
+    function bridgeMaxToEVM(
         address to,
         uint256 chainId,
         address token,
         SwapParams calldata destinationSwapParams
     ) external;
 
-    function depositNonEVM(
+    // -- BRIDGE OUT FUNCTIONS: to non-EVM chains --
+
+    function bridgeToNonEVM(
         bytes32 to,
         uint256 chainId,
         address token,
         uint256 amount
     ) external;
 
-    function depositMaxNonEVM(
-        bytes32 to,
-        uint256 chainId,
-        address token
-    ) external;
-
-    // -- BRIDGE OUT FUNCTIONS: Redeem --
-
-    function redeemEVM(
-        address to,
-        uint256 chainId,
-        address token,
-        uint256 amount,
-        SwapParams calldata destinationSwapParams
-    ) external;
-
-    function redeemMaxEVM(
-        address to,
-        uint256 chainId,
-        address token,
-        SwapParams calldata destinationSwapParams
-    ) external;
-
-    function redeemNonEVM(
-        bytes32 to,
-        uint256 chainId,
-        address token,
-        uint256 amount
-    ) external;
-
-    function redeemMaxNonEVM(
+    function bridgeMaxToNonEVM(
         bytes32 to,
         uint256 chainId,
         address token
@@ -163,11 +148,15 @@ interface IBridge {
 
     // -- RESTRICTED FUNCTIONS --
 
+    function registerBridgeToken(
+        address bridgeToken,
+        address bridgeWrapper,
+        TokenType tokenType
+    ) external;
+
     function recoverGAS() external;
 
     function recoverERC20(IERC20 token) external;
 
     function setRouter(IBridgeRouter _router) external;
-
-    function setTokenBridgeType(address token, uint256 bridgeType) external;
 }

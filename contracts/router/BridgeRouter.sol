@@ -24,12 +24,6 @@ contract BridgeRouter is Router, IBridgeRouter {
     /// There's no extra limitation for Swap&Bridge txs, as the gas is paid by the user
     uint8 public bridgeMaxSwaps;
 
-    uint256 internal constant MINT_BURN = 1;
-    uint256 internal constant DEPOSIT_WITHDRAW = 2;
-
-    uint256 internal constant EVM_CHAIN = 1;
-    uint256 internal constant NON_EVM_CHAIN = 2;
-
     constructor(
         address payable _wgas,
         address _bridge,
@@ -97,11 +91,11 @@ contract BridgeRouter is Router, IBridgeRouter {
         );
 
         // Then, perform bridging
-        _bridgeToEVM(
-            _bridgeToken,
-            _amountBridged,
+        IBridge(bridge).bridgeToEVM(
             _to,
             _chainId,
+            _bridgeToken,
+            _amountBridged,
             _destinationSwapParams
         );
     }
@@ -133,11 +127,11 @@ contract BridgeRouter is Router, IBridgeRouter {
         );
 
         // Finally, perform bridging
-        _bridgeToEVM(
-            _bridgeToken,
-            _amountBridged,
+        IBridge(bridge).bridgeToEVM(
             _to,
             _chainId,
+            _bridgeToken,
+            _amountBridged,
             _destinationSwapParams
         );
     }
@@ -160,7 +154,12 @@ contract BridgeRouter is Router, IBridgeRouter {
         );
 
         // Then, perform bridging
-        _bridgeToNonEVM(_bridgeToken, _amountBridged, _to, _chainId);
+        IBridge(bridge).bridgeToNonEVM(
+            _to,
+            _chainId,
+            _bridgeToken,
+            _amountBridged
+        );
     }
 
     function bridgeGasToNonEVM(
@@ -189,49 +188,15 @@ contract BridgeRouter is Router, IBridgeRouter {
         );
 
         // Finally, perform bridging
-        _bridgeToNonEVM(_bridgeToken, _amountBridged, _to, _chainId);
+        IBridge(bridge).bridgeToNonEVM(
+            _to,
+            _chainId,
+            _bridgeToken,
+            _amountBridged
+        );
     }
 
     // -- BRIDGE FUNCTIONS [initial chain]: internal helpers
-
-    function _bridgeToEVM(
-        address _bridgeToken,
-        uint256 _bridgeAmount,
-        address _to,
-        uint256 _chainId,
-        IBridge.SwapParams calldata _destinationSwapParams
-    ) internal {
-        uint256 _bridgeType = IBridge(bridge).tokenBridgeType(_bridgeToken);
-        require(
-            _bridgeType == MINT_BURN || _bridgeType == DEPOSIT_WITHDRAW,
-            "BridgeRouter: Unsupported bridge token"
-        );
-
-        (
-            _bridgeType == MINT_BURN
-                ? IBridge(bridge).redeemEVM
-                : IBridge(bridge).depositEVM
-        )(_to, _chainId, _bridgeToken, _bridgeAmount, _destinationSwapParams);
-    }
-
-    function _bridgeToNonEVM(
-        address _bridgeToken,
-        uint256 _bridgeAmount,
-        bytes32 _to,
-        uint256 _chainId
-    ) internal {
-        uint256 _bridgeType = IBridge(bridge).tokenBridgeType(_bridgeToken);
-        require(
-            _bridgeType == MINT_BURN || _bridgeType == DEPOSIT_WITHDRAW,
-            "BridgeRouter: Unsupported bridge token"
-        );
-
-        (
-            _bridgeType == MINT_BURN
-                ? IBridge(bridge).redeemNonEVM
-                : IBridge(bridge).depositNonEVM
-        )(_to, _chainId, _bridgeToken, _bridgeAmount);
-    }
 
     function _doInitialSwap(
         uint256 _amountIn,

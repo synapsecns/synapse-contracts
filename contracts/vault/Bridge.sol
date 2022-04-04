@@ -40,11 +40,6 @@ contract Bridge is
 
     uint256 internal constant UINT_MAX = type(uint256).max;
 
-    uint256 internal constant MINT_BURN = 1;
-    uint256 internal constant DEPOSIT_WITHDRAW = 2;
-
-    mapping(address => uint256) public tokenBridgeType;
-
     /// @dev Some of the tokens are not directly compatible with Synapse:Bridge contract.
     /// For these tokens a wrapper contract is deployed, that will be used
     /// as a "bridge token" in Synapse:Bridge.
@@ -56,6 +51,9 @@ contract Bridge is
     /// Also, use underlying token for `destinationSwapParams.path[0]`
     mapping(address => address) internal bridgeWrappers;
     mapping(address => address) internal underlyingTokens;
+
+    /// @dev key is bridgeWrapper here,
+    mapping(address => TokenType) public bridgeTokenType;
 
     function initialize(IVault _vault, uint128 _maxGasForSwap)
         external
@@ -95,6 +93,15 @@ contract Bridge is
         require(
             swapParams.path.length == swapParams.adapters.length + 1,
             "Bridge: len(path)!=len(adapters)+1"
+        );
+
+        _;
+    }
+
+    modifier checkTokenSupported(address token) {
+        require(
+            bridgeTokenType[token] != TokenType.NOT_SUPPORTED,
+            "Bridge: token is not supported"
         );
 
         _;
@@ -155,34 +162,49 @@ contract Bridge is
     // -- RESTRICTED SETTERS --
 
     /**
-        @notice Register a MintBurnWrapper that will be used as a "bridge token".
-        @dev This is meant to be used, when original bridge token isn't directly compatible with Synapse:Bridge.
-             1. Set `bridgeWrapper` = address(0) to bridge `bridgeToken` directly
-             2. Use unique `bridgeWrapper` for every `bridgeToken` that needs a bridge wrapper contract
-        @param bridgeToken underlying (native) bridge token
-        @param bridgeWrapper wrapper contract used for actual bridging
+        @notice Register a bridge token for later usage on the bridge
+        @dev Most of the time `bridgeToken` will be directly compatible with Synapse: Bridge,
+        i.e. can be safely used as deposit-withdraw, or can be used as mint-burn, if both
+        {mint} and {burnFrom} are implemented correctly, and `Vault` has a Minter role.
+        In this case, `bridgeToken == bridgeWrapper`.
+
+        In some cases, an intermediate contract is required to achieve that, it is called a Bridge Wrapper.
+        In this case, `bridgeToken != bridgeWrapper`.
+
+        @param bridgeToken token that will be bridged
+        @param bridgeWrapper token that Synapse:Bridge will use for bridging
+        @param tokenType mint-burn or deposit-withdraw
      */
-    function setBridgeWrapper(address bridgeToken, address bridgeWrapper)
-        external
-        onlyRole(GOVERNANCE_ROLE)
-    {
+    function registerBridgeToken(
+        address bridgeToken,
+        address bridgeWrapper,
+        TokenType tokenType
+    ) external onlyRole(GOVERNANCE_ROLE) {
+        address _oldUnderlying = underlyingTokens[bridgeWrapper];
+        require(
+            _oldUnderlying == address(0) || _oldUnderlying == bridgeWrapper,
+            "BridgeWrapper is linked to another bridge token"
+        );
+
         // Delete record of underlying from bridgeToken's "old bridge wrapper",
         // if there is one
         address _oldWrapper = bridgeWrappers[bridgeToken];
-        if (_oldWrapper != address(0)) {
+        if (_oldWrapper != address(0) && _oldWrapper != bridgeWrapper) {
             underlyingTokens[_oldWrapper] = address(0);
+            bridgeTokenType[_oldWrapper] = TokenType.NOT_SUPPORTED;
         }
 
-        // Delete record of wrapper from bridgeWrapper's "old underlying token",
-        // if there is one
-        address _oldUnderlying = underlyingTokens[bridgeWrapper];
-        if (_oldUnderlying != address(0)) {
-            bridgeWrappers[_oldUnderlying] = address(0);
+        // Save record for bridgeWrapper's underlying token
+        if (_oldUnderlying == address(0)) {
+            underlyingTokens[bridgeWrapper] = bridgeToken;
         }
 
-        // Update records for both tokens
+        // Save record for bridgeToken's bridge wrapper
         bridgeWrappers[bridgeToken] = bridgeWrapper;
-        underlyingTokens[bridgeWrapper] = bridgeToken;
+
+        bridgeTokenType[bridgeWrapper] = tokenType;
+
+        emit BridgeTokenRegistered(bridgeToken, bridgeWrapper, tokenType);
     }
 
     function setMaxGasForSwap(uint128 _maxGasForSwap)
@@ -199,16 +221,16 @@ contract Bridge is
         router = _router;
     }
 
-    function setTokenBridgeType(address token, uint256 bridgeType)
+    function setTokenBridgeType(address token, TokenType bridgeType)
         external
         onlyRole(GOVERNANCE_ROLE)
     {
-        tokenBridgeType[token] = bridgeType;
+        bridgeTokenType[token] = bridgeType;
     }
 
-    // -- BRIDGE OUT FUNCTIONS: Deposit --
+    // -- BRIDGE OUT FUNCTIONS: to EVM chains --
 
-    function depositEVM(
+    function bridgeToEVM(
         address to,
         uint256 chainId,
         address token,
@@ -218,10 +240,10 @@ contract Bridge is
         // First, use Bridge Wrapper, if there is one for `token`
         token = getBridgeToken(token);
         // Then, do bridging
-        _depositEVM(to, chainId, IERC20(token), amount, destinationSwapParams);
+        _bridgeToEVM(to, chainId, token, amount, destinationSwapParams);
     }
 
-    function depositMaxEVM(
+    function bridgeMaxToEVM(
         address to,
         uint256 chainId,
         address token,
@@ -232,10 +254,30 @@ contract Bridge is
         // Then, determine how much Bridge call pull from caller
         uint256 amount = _getMaxAmount(token);
         // Finally, do bridging
-        _depositEVM(to, chainId, IERC20(token), amount, destinationSwapParams);
+        _bridgeToEVM(to, chainId, token, amount, destinationSwapParams);
     }
 
-    function depositNonEVM(
+    function _bridgeToEVM(
+        address to,
+        uint256 chainId,
+        address token,
+        uint256 amount,
+        SwapParams calldata destinationSwapParams
+    )
+        internal
+        checkSwapParams(destinationSwapParams)
+        checkTokenSupported(token)
+    {
+        (
+            bridgeTokenType[token] == TokenType.MINT_BURN
+                ? _redeemEVM
+                : _depositEVM
+        )(to, chainId, token, amount, destinationSwapParams);
+    }
+
+    // -- BRIDGE OUT FUNCTIONS: to non-EVM chain --
+
+    function bridgeToNonEVM(
         bytes32 to,
         uint256 chainId,
         address token,
@@ -244,10 +286,10 @@ contract Bridge is
         // First, use Bridge Wrapper, if there is one for `token`
         token = getBridgeToken(token);
         // Then, do bridging
-        _depositNonEVM(to, chainId, IERC20(token), amount);
+        _bridgeToNonEVM(to, chainId, token, amount);
     }
 
-    function depositMaxNonEVM(
+    function bridgeMaxToNonEVM(
         bytes32 to,
         uint256 chainId,
         address token
@@ -257,23 +299,38 @@ contract Bridge is
         // Then, determine how much Bridge call pull from caller
         uint256 amount = _getMaxAmount(token);
         // Finally, do bridging
-        _depositNonEVM(to, chainId, IERC20(token), amount);
+        _bridgeToNonEVM(to, chainId, token, amount);
     }
+
+    function _bridgeToNonEVM(
+        bytes32 to,
+        uint256 chainId,
+        address token,
+        uint256 amount
+    ) internal checkTokenSupported(token) {
+        (
+            bridgeTokenType[token] == TokenType.MINT_BURN
+                ? _redeemNonEVM
+                : _depositNonEVM
+        )(to, chainId, token, amount);
+    }
+
+    // -- BRIDGE OUT FUNCTIONS: Deposit internal implementation --
 
     function _depositEVM(
         address to,
         uint256 chainId,
-        IERC20 token,
+        address token,
         uint256 amount,
         SwapParams calldata destinationSwapParams
-    ) internal checkSwapParams(destinationSwapParams) {
+    ) internal {
         // First, deposit to Vault. Use verified deposit amount for bridging
         amount = _depositToVault(token, amount);
         // Then, emit corresponding Bridge Event
         emit TokenDepositEVM(
             to,
             chainId,
-            token,
+            IERC20(token),
             amount,
             destinationSwapParams.minAmountOut,
             destinationSwapParams.path,
@@ -285,95 +342,31 @@ contract Bridge is
     function _depositNonEVM(
         bytes32 to,
         uint256 chainId,
-        IERC20 token,
+        address token,
         uint256 amount
     ) internal {
         // First, deposit to Vault. Use verified deposit amount for bridging
         amount = _depositToVault(token, amount);
         // Then, emit corresponding Bridge Event
-        emit TokenDepositNonEVM(to, chainId, token, amount);
+        emit TokenDepositNonEVM(to, chainId, IERC20(token), amount);
     }
 
-    // -- BRIDGE OUT FUNCTIONS: Redeem --
-
-    function redeemEVM(
-        address to,
-        uint256 chainId,
-        address token,
-        uint256 amount,
-        SwapParams calldata destinationSwapParams
-    ) external {
-        // First, use Bridge Wrapper, if there is one for `token`
-        token = getBridgeToken(token);
-        // Then, do bridging
-        _redeemEVM(
-            to,
-            chainId,
-            ERC20Burnable(token),
-            amount,
-            destinationSwapParams
-        );
-    }
-
-    function redeemMaxEVM(
-        address to,
-        uint256 chainId,
-        address token,
-        SwapParams calldata destinationSwapParams
-    ) external {
-        // First, use Bridge Wrapper, if there is one for `token`
-        token = getBridgeToken(token);
-        // Then, determine how much Bridge call pull from caller
-        uint256 amount = _getMaxAmount(token);
-        // Finally, do bridging
-        _redeemEVM(
-            to,
-            chainId,
-            ERC20Burnable(token),
-            amount,
-            destinationSwapParams
-        );
-    }
-
-    function redeemNonEVM(
-        bytes32 to,
-        uint256 chainId,
-        address token,
-        uint256 amount
-    ) external {
-        // First, use Bridge Wrapper, if there is one for `token`
-        token = getBridgeToken(token);
-        // Then, do bridging
-        _redeemNonEVM(to, chainId, ERC20Burnable(token), amount);
-    }
-
-    function redeemMaxNonEVM(
-        bytes32 to,
-        uint256 chainId,
-        address token
-    ) external {
-        // First, use Bridge Wrapper, if there is one for `token`
-        token = getBridgeToken(token);
-        // Then, determine how much Bridge call pull from caller
-        uint256 amount = _getMaxAmount(token);
-        // Finally, do bridging
-        _redeemNonEVM(to, chainId, ERC20Burnable(token), amount);
-    }
+    // -- BRIDGE OUT FUNCTIONS: Redeem internal implementation --
 
     function _redeemEVM(
         address to,
         uint256 chainId,
-        ERC20Burnable token,
+        address token,
         uint256 amount,
         SwapParams calldata destinationSwapParams
-    ) internal checkSwapParams(destinationSwapParams) {
+    ) internal {
         // First, burn tokens from caller. Use verified deposit amount for bridging
         amount = _burnFromCaller(token, amount);
         // Then, emit corresponding Bridge Event
         emit TokenRedeemEVM(
             to,
             chainId,
-            token,
+            ERC20Burnable(token),
             amount,
             destinationSwapParams.minAmountOut,
             destinationSwapParams.path,
@@ -385,13 +378,13 @@ contract Bridge is
     function _redeemNonEVM(
         bytes32 to,
         uint256 chainId,
-        ERC20Burnable token,
+        address token,
         uint256 amount
     ) internal {
         // First, burn tokens from caller. Use verified deposit amount for bridging
         amount = _burnFromCaller(token, amount);
         // Then, emit corresponding Bridge Event
-        emit TokenRedeemNonEVM(to, chainId, token, amount);
+        emit TokenRedeemNonEVM(to, chainId, ERC20Burnable(token), amount);
     }
 
     // -- BRIDGE IN FUNCTIONS --
@@ -463,20 +456,22 @@ contract Bridge is
 
     // -- INTERNAL HELPERS --
 
-    function _burnFromCaller(ERC20Burnable token, uint256 amount)
+    function _burnFromCaller(address tokenAddress, uint256 amount)
         internal
         returns (uint256 amountBurnt)
     {
+        ERC20Burnable token = ERC20Burnable(tokenAddress);
         uint256 balanceBefore = token.balanceOf(msg.sender);
         token.burnFrom(msg.sender, amount);
         amountBurnt = balanceBefore - token.balanceOf(msg.sender);
         require(amountBurnt > 0, "No burn happened");
     }
 
-    function _depositToVault(IERC20 token, uint256 amount)
+    function _depositToVault(address tokenAddress, uint256 amount)
         internal
         returns (uint256 amountDeposited)
     {
+        IERC20 token = IERC20(tokenAddress);
         uint256 balanceBefore = token.balanceOf(address(vault));
         token.safeTransferFrom(msg.sender, address(vault), amount);
         amountDeposited = token.balanceOf(address(vault)) - balanceBefore;
