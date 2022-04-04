@@ -42,6 +42,16 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
 
     /*** VIEW FUNCTIONS ***/
 
+    function getStakedSynapseValue() external view returns (uint256) {
+        uint256 totalStaked = totalSupply();
+        uint256 precision = 10**18;
+        if (totalStaked == 0) {
+            return precision;
+        } else {
+            return precision.mul(totalActiveSYN).div(totalStaked);
+        }
+    }
+
     function undelegatedSynapse(address _user)
         external
         view
