@@ -171,4 +171,13 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         // transfer underlying SYN from time of undelegate
         SYNAPSE.safeTransfer(msg.sender, undelegatedSynapseAmount);
     }
+
+    /// @notice Override ERC20._transfer() so that sSYN is non-transferrable
+    function _transfer(
+        address,
+        address,
+        uint256
+    ) internal virtual override {
+        revert("sSYN transfers are disabled");
+    }
 }
