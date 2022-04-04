@@ -16,7 +16,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC20 public SYNAPSE;
+    IERC20 public immutable SYNAPSE;
     IMinter public STAKING_MINTER;
 
     // Tracks active delegated SYN backing sSYN
@@ -86,7 +86,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
 
         uint256 totalStaked = totalSupply();
         // If no sSYN exists, mint it 1:1 to the amount put in
-        if (totalStaked == 0 || totalActiveSYN == 0) {
+        if (totalActiveSYN == 0) {
             _mint(msg.sender, _amount);
         }
         // Calculate and mint the amount of sSYN the SYN is worth. 
@@ -109,7 +109,7 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
         // Undelegate
         undelegatedTimestamps[msg.sender] = block.timestamp.add(7 days);
         // Calculates the amount of SYN the sSYN is worth at the time of undelegate
-        uint256 totalStaked = totalSupply();
+
         uint256 underlyingSynapseAmount = _getUnderlyingSynapseAmount(_amount);
         // If undelegate was called previously within past 7days, add amount to previous. Replace timestamp fully.
         undelegatedSynapseAmounts[msg.sender] += underlyingSynapseAmount;
