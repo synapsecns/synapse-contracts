@@ -33,7 +33,7 @@ bridgeMap = {
 }
 ```
 
-Then, you would need contract addresses for Synapse `BridgeQuoter` contracts on all chains, as well as `BridgeConfig` contract on Ethereum Mainnet.
+Then, you would need addresses for Synapse `BridgeQuoter` contracts on all chains, as well as `BridgeConfig` contract address on Ethereum Mainnet.
 
 ## Understanding Quoter output format
 
@@ -45,11 +45,14 @@ struct Offers.FormattedOffer{
 }
 ```
 
-`N = adapters.length`: specifies amount of swaps in `FormattedOffer`
+`N = adapters.length`: amount of swaps in `FormattedOffer`.
 
-1. `amounts[N+1]`: amount of tokens along the swap path. `amount[0]` is amount of staring tokens, `amount[1]` is amount of tokens after first swap, ..., `amount[N]` is amount of final tokens.
-2. `adapters[N]`: Synapse adapters, that enable the swaps. `adapters[0]` will be used for the first swap, ..., `adapters[N-1]` for the last.
-3. `path`: list of tokens in the swap route. `path[0]` is initial token, `path[1]` is token received after first swap, ..., `path[N]` is final token.
+- `amounts[N+1]`: amount of tokens along the swap path. `amount[0]` is amount of staring tokens, `amount[1]` is amount of tokens after first swap, ..., `amount[N]` is amount of final tokens.
+- `adapters[N]`: Synapse adapters, that enable the swaps. `adapters[0]` will be used for the first swap, ..., `adapters[N-1]` for the last.
+- `path[N+1]`: list of tokens in the swap route. `path[0]` is initial token, `path[1]` is token received after first swap, ..., `path[N]` is final token.
+
+> If `Quoter` fails to find _any path_ between starting and final tokens, it will return **void** `FormattedOffer`:
+> `len(amounts) = len(adapters) = len(path) = 0`
 
 ## Understanding BridgeQuoter functions
 
@@ -68,11 +71,12 @@ function findBestPathDestinationChain(
 
 ```
 
-Both function will find you the best swap path between `tokenIn` and `tokenOut`, given that you start with exactly `amountIn` tokens. The only difference is the maximum amount of swaps that the `BridgeQuoter` will be using.
+Both functions will find you the best swap path between `tokenIn` and `tokenOut`, given that you start with exactly `amountIn` tokens. The only difference is the maximum amount of swaps that the `BridgeQuoter` will be using.
 
-On initial chain, user pays for gas, so higher amount of swaps is allowed. On destination chain, the relayer pays for gas, so amount of swaps might be set lower on more expensive chains (Ethereum Mainnet, for example).
+- On initial chain, user pays for gas, so higher amount of swaps is allowed.
+- On destination chain, the relayer pays for gas, so amount of swaps might be set lower on more expensive chains (Ethereum Mainnet, for example).
 
-Note, that while you can use `findBestPathInitialChain` to find a more attractive, yet longer, swap on destination chain, it will be automatically rejected by the Bridge contract on destination chain. No cheating allowed!
+> Note, that while you can use `findBestPathInitialChain` to find a more attractive, yet longer, swap on destination chain, it will be automatically rejected by the Bridge contract on destination chain. No cheating allowed!
 
 ## Understanding Bridge Swap Parameters
 
@@ -86,10 +90,35 @@ struct SwapParams {
 
 ```
 
-1. `minAmountOut` minimum amount of tokens user is willing to receive after swap is completed, in final token's decimals precision. If swap results in less than `minAmountOut` tokens, it will fail. On initial chain this will lead to failed tx, and tokens **not** spent/bridged. On destination chain, however, failed swap will lead to user receiving bridged token, instead of the final token they specified.
-2. `path` is a list of tokens, describing the series of swaps. `path = [A, B, C]` means that two swaps will be made: `A -> B` and `B -> C`.
-3. `adapters` is a list of Synapse Adapters, that will do the swapping. `adapters = [AB, BC]` means that two adapters will be used: `AB` for `A -> B` swap, and `BC` for `B -> C` swap.
-4. `deadline` is unix timestamp representing the deadline for swap to be completed. Swap will fail, if too much time passed since the transaction was submitted. See (1) for initial/destination chain failed swap description.
+- `minAmountOut`: minimum amount of tokens user is willing to receive after swap is completed, in final token's decimals precision. If swap results in less than `minAmountOut` tokens, it **will fail**.
+- `path`: a list of tokens, describing the series of swaps. `path = [A, B, C]` means that two swaps will be made: `A -> B` and `B -> C`.
+- `adapters`: a list of Synapse Adapters, that will do the swapping. `adapters = [AB, BC]` means that two adapters will be used: `AB` for `A -> B` swap, and `BC` for `B -> C` swap.
+- `deadline`: Unix timestamp representing the deadline for swap to be completed. Swap **will fail**, if too much time passed since the transaction was submitted.
+
+> Failed swap on initial chain this will lead to failed tx, and tokens **not** spent/bridged. On destination chain, however, failed swap will lead to user receiving bridged token, instead of the final token they specified.
+
+### Valid SwapParams
+
+- `swapParams` is considered **_valid_**, if `len(path) == len(adapters) + 1`.
+
+### Empty SwapParams
+
+- When there's no swap required, `SwapParams` should be **_empty_**, i.e.
+
+```solidity
+(swapParams.adapters.path == 0) &&
+(swapParams.path.length == 1) &&
+(swapParams.path[0] == neededToken)
+```
+
+> **_Empty_** `SwapParams` should have zero length array for `adapters`, and a single _needed token_ in `path`. For initial chain, that would be the starting token, for destination chain — the final token.
+
+- `minAmountOut` and `deadline` are not checked for **_empty_** `swapParams`, but using following values is recommended for consistency:
+
+```solidity
+swapParams.minAmountOut = 0;
+swapParams.deadline = type(uint256).max;
+```
 
 ## Getting a Bridge fee
 
@@ -102,10 +131,11 @@ function calculateSwapFee(
 )
 ```
 
-1. `tokenAddress`: address of bridged token on destination chain
-2. `chainID`: ID of destination chain
-3. `amount`: amount of bridged tokens in token decimal precision on destination chain
-4. `swapBridgedTokens`: indicates, whether or not a token will be swapped on destination chain. Higher minimum fee is present, when bridge transaction includes a swap on destination chain.
+- `tokenAddress`: address of bridged token on destination chain
+- `chainID`: ID of destination chain
+- `amount`: amount of bridged tokens in token decimal precision on destination chain
+- `swapBridgedTokens`: whether or not a token will be swapped on destination chain.
+  > Higher minimum fee is present, when bridge transaction includes a swap on destination chain.
 
 ## Quoting a pre-set bridge transaction
 
@@ -146,7 +176,7 @@ if (tokenS != bridgeTokenIC) {
 
   swapParamsIC = SwapParams(
     (minAmountOut = 0),
-    (path = []),
+    (path = [tokenS]),
     (adapters = []),
     (deadline = type(uint256).max),
   )
@@ -189,7 +219,7 @@ if (tokenF != bridgeTokenDC) {
 
   swapParamsDC = SwapParams(
     (minAmountOut = 0),
-    (path = []),
+    (path = [tokenF]),
     (adapters = []),
     (deadline = type(uint256).max),
   )
@@ -206,7 +236,6 @@ To submit a **Synapse: Bridge** transaction, consider following pseudo code (ass
 
   // Then, submit a bridge transaction
   BridgeRouterIC.bridgeTokenToEVM(
-    tokenIn=tokenS,
     amountIn=amountS,
     initialSwapParams=swapParamsIC,
     to=userAddress,
@@ -225,11 +254,15 @@ To submit a **Synapse: Bridge** transaction, consider following pseudo code (ass
 
 ## Finding the best quote for Synapse:Bridge swap
 
-Imagine that pseudo code from previous section is wrapped into `findBestSwap` function.
+Imagine that pseudo code from previous section is wrapped into function:
+
+> `findBestSwap(tokenIn, amountIn, bridgeTokenIC, bridgeTokenDC, tokenOut)`
+
+To find the best quote available, you would have to iterate through all possible bridge tokens, that are present on both initial and destination chain.
 
 ```js
   bestAmountF = 0
-
+  // iterate through all bridge tokens
   for (bridgeToken of bridgeMap) {
     // get config for the bridge token
     config = bridgeMap[bridgeToken]
@@ -256,4 +289,4 @@ Imagine that pseudo code from previous section is wrapped into `findBestSwap` fu
   }
 ```
 
-Then, you can use pseudo code from previous section to execute the best found cross-chain swap.
+> Then, you can use pseudo code from previous section to execute the best found cross-chain swap.

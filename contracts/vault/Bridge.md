@@ -4,20 +4,13 @@
 
 All functions allowing to bridge funds have the same naming convention: `[deposit|redeem](Max)[EVM|nonEVM]`.
 
-1. `[deposit|redeem]` specifies whether to deposit token into `Vault`, or to burn it on this chain.
-2. (optional) If `(Max)`is present in the function name, `amount` parameter will be missing, meaning Bridge will pull as many tokens from caller,
-   the token balance, or the token allowance, whichever is **smaller**.
-3. `[EVM|nonEVM]` specifies whether the destination chain is EVM-compatible or not. If chain is EVM-compatible, there's an additional parameter passed: `swapParams`,
-   containing information about the swap that needs to be made on the destination chain (can be left empty, if no swap in needed).
+- `[deposit|redeem]` specifies whether to deposit token into `Vault`, or to burn it on this chain.
+- (optional) If `Max` is present in the function name, `amount` parameter will be missing, meaning Bridge will pull as many tokens from caller as possible.
+  > This would be the token balance, or the token spending allowance, whichever is **smaller**.
+- `[EVM|nonEVM]` specifies whether the destination chain is EVM-compatible or not. If chain is EVM-compatible, there's an additional parameter passed: `swapParams`,
+  containing information about the swap that needs to be made on the destination chain (can be left [empty](#empty-swapparams), if no swap in needed).
 
-## Modifiers
-
-There are no modifiers, meaning anyone can call bridge out functions. However, interacting via `BridgeRouter` is highly recommended, as it is doing the needed checks,
-and is also handling any bridged tokens requiring a Wrapper Contract to bridge them.
-
-## Parameters
-
-### SwapParams
+## SwapParams
 
 ```solidity
 struct SwapParams {
@@ -29,28 +22,54 @@ struct SwapParams {
 
 ```
 
-1. `minAmountOut` minimum amount of tokens user is willing to receive after swap is completed, in final token's decimals precision. If swap results in less than `minAmountOut` tokens, it will fail. On initial chain this will lead to failed tx, and tokens **not** spent/bridged. On destination chain, however, failed swap will lead to user receiving bridged token, instead of the final token they specified.
-2. `path` is a list of tokens, describing the series of swaps. `path = [A, B, C]` means that two swaps will be made: `A -> B` and `B -> C`.
-3. `adapters` is a list of Synapse Adapters, that will do the swapping. `adapters = [AB, BC]` means that two adapters will be used: `AB` for `A -> B` swap, and `BC` for `B -> C` swap.
-4. `deadline` is unix timestamp representing the deadline for swap to be completed. Swap will fail, if too much time passed since the transaction was submitted. See (1) for initial/destination chain failed swap description.
+- `minAmountOut`: minimum amount of tokens user is willing to receive after swap is completed, in final token's decimals precision. If swap results in less than `minAmountOut` tokens, it **will fail**.
+- `path`: a list of tokens, describing the series of swaps. `path = [A, B, C]` means that two swaps will be made: `A -> B` and `B -> C`.
+- `adapters`: a list of Synapse Adapters, that will do the swapping. `adapters = [AB, BC]` means that two adapters will be used: `AB` for `A -> B` swap, and `BC` for `B -> C` swap.
+- `deadline`: Unix timestamp representing the deadline for swap to be completed. Swap **will fail**, if too much time passed since the transaction was submitted.
 
-When there's no swap required, `SwapParams` should be empty, i.e.
+> Failed swap on initial chain this will lead to failed tx, and tokens **not** spent/bridged. On destination chain, however, failed swap will lead to user receiving bridged token, instead of the final token they specified.
+
+### Valid SwapParams
+
+- `swapParams` is considered **_valid_**, if `len(path) == len(adapters) + 1`.
+
+### Empty SwapParams
+
+- When there's no swap required, `SwapParams` should be **_empty_**, i.e.
 
 ```solidity
-(swapParams.path.length == 0) && (swapParams.adapters.path == 0)
+(swapParams.adapters.path == 0) &&
+(swapParams.path.length == 1) &&
+(swapParams.path[0] == neededToken)
 ```
 
-`minAmountOut` and `deadline` are not checked for empty `swapParam`, but using following values is recommended for consistency:
+> **_Empty_** `SwapParams` should have zero length array for `adapters`, and a single _needed token_ in `path`. For initial chain, that would be the starting token, for destination chain — the final token.
+
+- `minAmountOut` and `deadline` are not checked for **_empty_** `swapParams`, but using following values is recommended for consistency:
 
 ```solidity
 swapParams.minAmountOut = 0;
 swapParams.deadline = type(uint256).max;
 ```
 
-### Functions
+## Modifiers
 
 ```solidity
-function someBridgeOutEVMFunction(
+modifier checkSwapParams(SwapParams calldata swapParams) {
+  require(swapParams.path.length == swapParams.adapters.length + 1, "Bridge: len(path)!=len(adapters)+1");
+
+  _;
+}
+```
+
+- `checkSwapParams` is used for every _Bridge Out to EVM_ function, to check `destinationSwapParams` parameter for being a [valid](#valid-swapparams) swap description.
+
+- There are no access modifiers, meaning anyone can call bridge out functions. However, interacting via `BridgeRouter` is highly recommended, as it is doing the needed checks, and is also handling any bridged tokens requiring a Wrapper Contract to bridge them.
+
+## Function list
+
+```solidity
+function <...>EVM(
   address to,
   uint256 chainId,
   address token,
@@ -58,7 +77,7 @@ function someBridgeOutEVMFunction(
   SwapParams calldata destinationSwapParams
 ) external;
 
-function someBridgeOutNonEVMFunction(
+function <...>NonEVM(
   bytes32 to,
   uint256 chainId,
   address token,
@@ -67,11 +86,27 @@ function someBridgeOutNonEVMFunction(
 
 ```
 
-1. `to` is address that will receive the tokens on destination chain. Unless user specified a different address, this should be user's address. UI should have a warning, that is another address is specified for receiving tokens on destination chain, that it should always be the non-custodial wallet, otherwise the funds might be lost (especially when bridging into destination chain's GAS).
-2. `chainId` specifies the destination chain's ID.
-3. `token` is the token that will be used for bridging. In most cases this is also the token user wants to bridge, but some tokens are not directly compatible with the bridge, and require a `Bridge Wrapper` contract for actual bridging. This concept is abstracted away from user/UI in `BridgeRouter`, but not in `Bridge`. `token` is **always** the token that will be used for actual bridging (i.e. might differ from token that will be pulled from user).
-4. `amount` is amount of tokens to bridge, in `token` decimals precision.
-5. `destinationSwapParams` specifies specifies the parameters for swapping bridged token, if needed. Otherwise, it's empty (see `SwapParams` section above).
+- `to`: address that will receive the tokens on destination chain. Unless user specified a different address, this should be user's address.
+  > UI should have a warning, that is another address is specified for receiving tokens on destination chain, that it should always be the non-custodial wallet, otherwise the funds might be lost (especially when bridging into destination chain's GAS).
+- `chainId`: destination chain's ID.
+- `token`: token that will be used for bridging.
+- `amount` is amount of tokens to bridge, in `token` decimals precision.
+- `destinationSwapParams`: [valid](#valid-swapparams) parameters for swapping token into bridge token on **destination chain**, if needed. Otherwise, it's [empty](#empty-swapparams).
+- `minAmountOut`: minimum amount of bridge token to receive after swap on **destination chain**, otherwise user **will receive bridge token**.
+  > If bridge token on **destination chain** is `WGAS`, it will be automatically unwrapped and sent as native chain `GAS`.
+  - `path`: list of tokens, specifying the swap route on **destination chain**.
+    - `path[0]`: token that will be used for bridging on **destination chain**.
+    - `path[1]`: token received after the first swap of the route.
+    - `...`
+    - `path[path.length-1]`: token that user will receive on **destination chain**.
+      > If final token is `WGAS`, it will be automatically unwrapped and sent as native chain `GAS`.
+  - `adapters`: list of Synapse adapters, that will be used for swaps on **initial chain**.
+  - `deadline`: deadline for swap on **destination chain**. If deadline check is failed, user **will receive bridge token**.
+    > If bridge token on **destination chain** is `WGAS`, it will be automatically unwrapped and sent as native chain `GAS`.
+
+> `token` and `destinationSwapParams.path[0]` are two counterparts of the bridge token, representing its addresses on initial and destination chain respectively.
+
+> Some tokens are not directly compatible with the bridge, and require a `Bridge Wrapper` contract for actual bridging. This concept is abstracted away from user/UI in `BridgeRouter`, but not in `Bridge`. `initialSwapParams.path[N-1]` and `destinationSwapParams.path[0]` **are always** the tokens, that are actually used for the bridging.
 
 # Bridge In Functions
 
@@ -81,8 +116,8 @@ All bridge in functions are covered by `bridgeIn()`, whether it's mint|withdraw,
 
 ## Modifiers
 
-1. `onlyRole(NODEGROUP_ROLE)` makes sure that only accounts from Node Group are allowed to submit Bridge In transactions.
-2. `nonReentrant` prevents reentrancy attacks
+1. `onlyRole(NODEGROUP_ROLE)` makes sure that only accounts from Node Group are allowed to submit _Bridge In transactions_.
+2. `nonReentrant` prevents reentrancy attacks.
 3. `whenNotPaused` leaves the ability to pause the `Bridge` if needed.
 4. `bridgeInTx(amount, fee, to)` checks whether `amount > fee`, proceeds to fulfill bridging in, then does a gas drop.
 
@@ -97,14 +132,30 @@ function bridgeIn(
   bool isMint,
   SwapParams calldata swapParams,
   bytes32 kappa
-) external;
+)
+  external
+  onlyRole(NODEGROUP_ROLE)
+  nonReentrant
+  whenNotPaused
+  bridgeInTx(amount, fee, to);
 
 ```
 
-1. `to` is the address that will receive the final token (either bridged token, or tokens from swap).
-2. `token` is bridged token.
-3. `amount` is total amount bridged, including bridge fee, in `token` decimals precision.
-4. `fee` is bridge fee, in `token` decimals.
-5. `isMint` refers to whether tokens needs to be minted or withdrawn by `Vault`.
-6. `swapParams` specifies the parameters for swapping bridged token, if needed. Otherwise, it's empty (see `SwapParams` section above).
-7. `kappa` refers to a unique bridge transaction parameter. Only one transaction with a given kappa will be accepted by the Vault.
+- `to`: address that will receive the final token (either bridged token, or tokens from swap).
+- `token`: bridged token.
+- `amount`: total amount bridged, including bridge fee, in `token` decimals precision.
+- `fee`: bridge fee, in `token` decimals precision.
+- `isMint`: refers to whether tokens needs to be minted or withdrawn by `Vault`.
+- `swapParams`: [valid](#valid-swapparams) parameters for swapping token into bridge token on **destination chain**, if needed. Otherwise, it's [empty](#empty-swapparams).
+  - `minAmountOut`: minimum amount of bridge token to receive after swap on **destination chain**, otherwise user **will receive bridge token**.
+    > If bridge token on **destination chain** is `WGAS`, it will be automatically unwrapped and sent as native chain `GAS`.
+  - `path`: list of tokens, specifying the swap route on **destination chain**.
+    - `path[0]`: token that will be used for bridging on **destination chain**.
+    - `path[1]`: token received after the first swap of the route.
+    - `...`
+    - `path[path.length-1]`: token that user will receive on **destination chain**.
+      > If final token is `WGAS`, it will be automatically unwrapped and sent as native chain `GAS`.
+  - `adapters`: list of Synapse adapters, that will be used for swaps on **initial chain**.
+  - `deadline`: deadline for swap on **destination chain**. If deadline check is failed, user **will receive bridge token**.
+    > If bridge token on **destination chain** is `WGAS`, it will be automatically unwrapped and sent as native chain `GAS`.
+- `kappa`: unique bridge transaction parameter. Only one transaction with a given `kappa` will be accepted by `Vault`.
