@@ -34,10 +34,22 @@ contract SynapseBridge is
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
     // selectors
-    bytes4 private constant MINT_SELECTOR = bytes4(keccak256("mint(address,IERC20Mintable,uint256,uint256,bytes32)"));
-    bytes4 private constant MINT_AND_SWAP_SELECTOR = bytes4(keccak256("mintAndSwap(address,address,uint256,uint256,address,uint8,uint8,uint256,uint256,bytes32)"));
-    bytes4 private constant WITHDRAW_AND_REMOVE_SELECTOR = bytes4(keccak256("withdrawAndRemove(address,address,uint256,uint256,address,uint8,uint256,uint256,bytes32)"));
-
+    bytes4 private constant MINT_SELECTOR =
+        bytes4(
+            keccak256("mint(address,IERC20Mintable,uint256,uint256,bytes32)")
+        );
+    bytes4 private constant MINT_AND_SWAP_SELECTOR =
+        bytes4(
+            keccak256(
+                "mintAndSwap(address,address,uint256,uint256,address,uint8,uint8,uint256,uint256,bytes32)"
+            )
+        );
+    bytes4 private constant WITHDRAW_AND_REMOVE_SELECTOR =
+        bytes4(
+            keccak256(
+                "withdrawAndRemove(address,address,uint256,uint256,address,uint8,uint256,uint256,bytes32)"
+            )
+        );
 
     mapping(address => uint256) private fees;
 
