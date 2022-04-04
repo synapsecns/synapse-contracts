@@ -86,6 +86,8 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
     // Enter the bar. Give some SYN. Get some sSYN.
     // Locks Synapse and mints sSYN
     function stake(uint256 _amount) external {
+        require(_amount > 0, "Can't stake zero tokens");
+
         // Catch up on
         distributeSYN();
 
@@ -108,6 +110,8 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
     // Initiate 7d undelegation period, locks amount of SYN at time of undelegation request, burn sSYN
     function undelegate(uint256 _amount) external {
         require(balanceOf(msg.sender) >= _amount, "Balance not met");
+        require(_amount > 0, "Can't undelegate zero tokens");
+
         // Catch up on
         distributeSYN();
 
