@@ -98,6 +98,23 @@ describe("StakedSYN", async () => {
         })
     })
 
+    describe('Transfers are turned off', () => {
+        it("sSYN.transfer is reverted", async() => {
+            let amount = BigNumber.from(10).pow(18)
+            await asyncForEach([user1, user2, user3], async (signer) => {
+                await expect(stakedSYN.connect(signer).transfer(ownerAddress, amount)).to.be.reverted
+            })
+        })
+
+        it("sSYN.transferFrom is reverted", async() => {
+            let amount = BigNumber.from(10).pow(18)
+            await asyncForEach([user1, user2, user3], async (signer) => {
+                await stakedSYN.connect(signer).approve(ownerAddress, amount)
+                await expect(stakedSYN.connect(owner).transferFrom(await signer.getAddress(), ownerAddress, amount)).to.be.reverted
+            })
+        })
+    })
+
     describe('Undelegate without incoming SYN', () => {
         it("sSYN Undelegation State Changes", async() => {
             await stakedSYN.connect(owner).undelegate(BigNumber.from(10).pow(18).mul(100))
