@@ -5,10 +5,13 @@ import "@openzeppelin/contracts-4.3.1-upgradeable/proxy/utils/Initializable.sol"
 import "@openzeppelin/contracts-4.3.1-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-4.3.1-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-
 // @title RateLimiter
 // @dev a bridge asset rate limiter based on https://github.com/gnosis/safe-modules/blob/master/allowances/contracts/AlowanceModule.sol
-contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable {
+contract RateLimiter is
+    Initializable,
+    AccessControlUpgradeable,
+    ReentrancyGuardUpgradeable
+{
     /*** STATE ***/
 
     string public constant NAME = "Rate Limiter";
@@ -20,15 +23,20 @@ contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuard
     bytes32 public constant BRIDGE_ROLE = keccak256("BRIDGE_ROLE");
 
     // Token -> Allowance
-    mapping (address => Allowance) public allowances;
+    mapping(address => Allowance) public allowances;
+    // Kappa->Retry Selector
+    mapping(bytes32 => bytes) public limited;
 
     // List of tokens
     address[] public tokens;
 
-
     /*** EVENTS ***/
 
-    event SetAllowance(address indexed token, uint96 allowanceAmount, uint16 resetTime);
+    event SetAllowance(
+        address indexed token,
+        uint96 allowanceAmount,
+        uint16 resetTime
+    );
     event ResetAllowance(address indexed token);
 
     /*** STRUCTS ***/
@@ -42,9 +50,7 @@ contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuard
         uint16 nonce;
     }
 
-
     /*** FUNCTIONS ***/
-
 
     function initialize() external initializer {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -58,9 +64,15 @@ contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuard
      * @param resetTimeMin minimum reset time (amount goes to 0 after this)
      * @param resetBaseMin amount Amount in native token decimals to transfer cross-chain pre-fees
      **/
-    function setAllowance(address token, uint96 allowanceAmount, uint16 resetTimeMin, uint32 resetBaseMin) public onlyRole(LIMITER_ROLE) {
+    function setAllowance(
+        address token,
+        uint96 allowanceAmount,
+        uint16 resetTimeMin,
+        uint32 resetBaseMin
+    ) public onlyRole(LIMITER_ROLE) {
         Allowance memory allowance = getAllowance(token);
-        if (allowance.nonce == 0) { // New token
+        if (allowance.nonce == 0) {
+            // New token
             // Nonce should never be 0 once allowance has been activated
             allowance.nonce = 1;
             tokens.push(token);
@@ -70,7 +82,9 @@ contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuard
         uint32 currentMin = uint32(block.timestamp / 60);
         if (resetBaseMin > 0) {
             require(resetBaseMin <= currentMin, "resetBaseMin <= currentMin");
-            allowance.lastResetMin = currentMin - ((currentMin - resetBaseMin) % resetTimeMin);
+            allowance.lastResetMin =
+                currentMin -
+                ((currentMin - resetBaseMin) % resetTimeMin);
         } else if (allowance.lastResetMin == 0) {
             allowance.lastResetMin = currentMin;
         }
@@ -80,19 +94,31 @@ contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuard
         emit SetAllowance(token, allowanceAmount, resetTimeMin);
     }
 
-    function updateAllowance(address token, Allowance memory allowance) private {
+    function updateAllowance(address token, Allowance memory allowance)
+        private
+    {
         allowances[token] = allowance;
     }
 
-    function getAllowance(address token) private view returns (Allowance memory allowance) {
+    function getAllowance(address token)
+        private
+        view
+        returns (Allowance memory allowance)
+    {
         allowance = allowances[token];
         // solium-disable-next-line security/no-block-members
         uint32 currentMin = uint32(block.timestamp / 60);
         // Check if we should reset the time. We do this on load to minimize storage read/ writes
-        if (allowance.resetTimeMin > 0 && allowance.lastResetMin <= currentMin - allowance.resetTimeMin) {
+        if (
+            allowance.resetTimeMin > 0 &&
+            allowance.lastResetMin <= currentMin - allowance.resetTimeMin
+        ) {
             allowance.spent = 0;
             // Resets happen in regular intervals and `lastResetMin` should be aligned to that
-            allowance.lastResetMin = currentMin - ((currentMin - allowance.lastResetMin) % allowance.resetTimeMin);
+            allowance.lastResetMin =
+                currentMin -
+                ((currentMin - allowance.lastResetMin) %
+                    allowance.resetTimeMin);
         }
         return allowance;
     }
@@ -102,7 +128,12 @@ contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuard
      * otherwise true is returned and the transaction can proceed
      * @param amount to transfer
      **/
-    function checkAndUpdateAllowance(address token, uint256 amount) external nonReentrant onlyRole(BRIDGE_ROLE) returns (bool){
+    function checkAndUpdateAllowance(address token, uint256 amount)
+        external
+        nonReentrant
+        onlyRole(BRIDGE_ROLE)
+        returns (bool)
+    {
         Allowance memory allowance = getAllowance(token);
 
         // Update state
@@ -111,10 +142,13 @@ contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuard
         uint96 newSpent = allowance.spent + uint96(amount);
 
         // Check overflow
-        require(newSpent > allowance.spent, "overflow detected: newSpent > allowance.spent");
+        require(
+            newSpent > allowance.spent,
+            "overflow detected: newSpent > allowance.spent"
+        );
 
         // do not proceed. Store the transaction for later
-        if (newSpent <= allowance.amount){
+        if (newSpent <= allowance.amount) {
             return false;
         }
 
@@ -122,6 +156,10 @@ contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuard
         updateAllowance(token, allowance);
 
         return true;
+    }
+
+    function addToRetryQueue(bytes32 kappa, bytes memory rateLimited) external onlyRole(BRIDGE_ROLE){
+        limited[kappa] = rateLimited;
     }
 
     /**
@@ -138,15 +176,18 @@ contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuard
         emit ResetAllowance(token);
     }
 
-    function getTokenAllowance(address token) public view returns (uint256[5] memory) {
+    function getTokenAllowance(address token)
+        public
+        view
+        returns (uint256[5] memory)
+    {
         Allowance memory allowance = getAllowance(token);
         return [
-        uint256(allowance.amount),
-        uint256(allowance.spent),
-        uint256(allowance.resetTimeMin),
-        uint256(allowance.lastResetMin),
-        uint256(allowance.nonce)
+            uint256(allowance.amount),
+            uint256(allowance.spent),
+            uint256(allowance.resetTimeMin),
+            uint256(allowance.lastResetMin),
+            uint256(allowance.nonce)
         ];
     }
-
 }
