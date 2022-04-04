@@ -12,6 +12,8 @@ interface IMinter {
     function stakingMint(uint256 lastMint) external returns (uint256);
 }
 
+// solhint-disable not-rely-on-time
+
 contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
