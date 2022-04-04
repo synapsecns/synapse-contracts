@@ -103,7 +103,8 @@ let config: HardhatUserConfig = {
     target: "ethers-v5",
   },
   dodoc: {
-    runOnCompile: true,
+    // TODO, re-enable. RateLimiter is breaking this
+    runOnCompile: false,
     debugMode: false,
     // pre solidity 5 breaks docgen
     exclude: ["MultisigWallet", "WETH9"]
@@ -128,6 +129,15 @@ let config: HardhatUserConfig = {
       },
       {
         version: "0.8.3",
+      },
+      {
+        version: "0.8.11",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 5000000, // see: https://github.com/ethereum/solidity/issues/5394#issue-379536332
+          },
+        },
       },
       {
         version: "0.4.24"
