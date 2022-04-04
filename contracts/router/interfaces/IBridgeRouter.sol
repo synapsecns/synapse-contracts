@@ -23,14 +23,14 @@ interface IBridgeRouter is IRouter {
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
         uint256 _chainId,
-        IBridge.SwapParams calldata _bridgedSwapParams
+        IBridge.SwapParams calldata _destinationSwapParams
     ) external returns (uint256 _amountBridged);
 
     function bridgeGasToEVM(
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
         uint256 _chainId,
-        IBridge.SwapParams calldata _bridgedSwapParams
+        IBridge.SwapParams calldata _destinationSwapParams
     ) external payable returns (uint256 _amountBridged);
 
     // -- BRIDGE FUNCTIONS [initial chain]: to non-EVM chains --

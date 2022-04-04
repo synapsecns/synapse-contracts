@@ -137,21 +137,21 @@ contract Bridge is
         uint256 chainId,
         address token,
         uint256 amount,
-        SwapParams calldata bridgedSwapParams
+        SwapParams calldata destinationSwapParams
     ) external {
-        _depositEVM(to, chainId, IERC20(token), amount, bridgedSwapParams);
+        _depositEVM(to, chainId, IERC20(token), amount, destinationSwapParams);
     }
 
     function depositMaxEVM(
         address to,
         uint256 chainId,
         address token,
-        SwapParams calldata bridgedSwapParams
+        SwapParams calldata destinationSwapParams
     ) external {
         // First, determine how much Bridge call pull from caller
         uint256 amount = _getMaxAmount(token);
 
-        _depositEVM(to, chainId, IERC20(token), amount, bridgedSwapParams);
+        _depositEVM(to, chainId, IERC20(token), amount, destinationSwapParams);
     }
 
     function depositNonEVM(
@@ -178,21 +178,21 @@ contract Bridge is
         uint256 chainId,
         IERC20 token,
         uint256 amount,
-        SwapParams calldata bridgedSwapParams
+        SwapParams calldata destinationSwapParams
     ) internal {
         // First, deposit to Vault. Use verified deposit amount for bridging
         amount = _depositToVault(token, amount);
         // Then, emit corresponding Bridge Event
-        if (_isSwapPresent(bridgedSwapParams)) {
+        if (_isSwapPresent(destinationSwapParams)) {
             emit TokenDepositEVM(
                 to,
                 chainId,
                 token,
                 amount,
-                bridgedSwapParams.minAmountOut,
-                bridgedSwapParams.path,
-                bridgedSwapParams.adapters,
-                bridgedSwapParams.deadline
+                destinationSwapParams.minAmountOut,
+                destinationSwapParams.path,
+                destinationSwapParams.adapters,
+                destinationSwapParams.deadline
             );
         } else {
             emit TokenDepositEVM(
@@ -227,14 +227,14 @@ contract Bridge is
         uint256 chainId,
         address token,
         uint256 amount,
-        SwapParams calldata bridgedSwapParams
+        SwapParams calldata destinationSwapParams
     ) external {
         _redeemEVM(
             to,
             chainId,
             ERC20Burnable(token),
             amount,
-            bridgedSwapParams
+            destinationSwapParams
         );
     }
 
@@ -242,7 +242,7 @@ contract Bridge is
         address to,
         uint256 chainId,
         address token,
-        SwapParams calldata bridgedSwapParams
+        SwapParams calldata destinationSwapParams
     ) external {
         // First, determine how much Bridge can pull from caller
         uint256 amount = _getMaxAmount(token);
@@ -252,7 +252,7 @@ contract Bridge is
             chainId,
             ERC20Burnable(token),
             amount,
-            bridgedSwapParams
+            destinationSwapParams
         );
     }
 
@@ -280,21 +280,21 @@ contract Bridge is
         uint256 chainId,
         ERC20Burnable token,
         uint256 amount,
-        SwapParams calldata bridgedSwapParams
+        SwapParams calldata destinationSwapParams
     ) internal {
         // First, burn tokens from caller. Use verified deposit amount for bridging
         amount = _burnFromCaller(token, amount);
         // Then, emit corresponding Bridge Event
-        if (_isSwapPresent(bridgedSwapParams)) {
+        if (_isSwapPresent(destinationSwapParams)) {
             emit TokenRedeemEVM(
                 to,
                 chainId,
                 token,
                 amount,
-                bridgedSwapParams.minAmountOut,
-                bridgedSwapParams.path,
-                bridgedSwapParams.adapters,
-                bridgedSwapParams.deadline
+                destinationSwapParams.minAmountOut,
+                destinationSwapParams.path,
+                destinationSwapParams.adapters,
+                destinationSwapParams.deadline
             );
         } else {
             emit TokenRedeemEVM(
@@ -330,7 +330,7 @@ contract Bridge is
         uint256 amount,
         uint256 fee,
         bool isMint,
-        SwapParams calldata bridgedSwapParams,
+        SwapParams calldata swapParams,
         bytes32 kappa
     )
         external
@@ -345,8 +345,8 @@ contract Bridge is
         SwapResult memory swapResult;
 
         if (
-            _isSwapPresent(bridgedSwapParams) &&
-            !_isDeadlineFailed(bridgedSwapParams.deadline)
+            _isSwapPresent(swapParams) &&
+            !_isDeadlineFailed(swapParams.deadline)
         ) {
             // If there's a swap, and deadline check is passed,
             // mint|withdraw bridged tokens to Router
@@ -359,7 +359,7 @@ contract Bridge is
             );
 
             // Then handle the swap part
-            swapResult = _handleSwap(to, token, amount, bridgedSwapParams);
+            swapResult = _handleSwap(to, token, amount, swapParams);
         } else {
             // If there's no swap, or deadline check is not passed,
             // mint|withdraw bridged token to needed address

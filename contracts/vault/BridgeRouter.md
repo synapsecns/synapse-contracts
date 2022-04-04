@@ -52,7 +52,7 @@ function bridgeTokenToEVM(
   IBridge.SwapParams calldata initialSwapParams,
   address to,
   uint256 chainId,
-  IBridge.SwapParams calldata bridgedSwapParams
+  IBridge.SwapParams calldata destinationSwapParams
 ) external returns (uint256 amountBridged);
 
 function bridgeTokenToNonEVM(
@@ -70,7 +70,7 @@ function bridgeTokenToNonEVM(
 3. `initialSwapParams` specifies specifies the parameters for swapping token into bridge token on initial chain, if needed. Otherwise, it's empty (see `SwapParams` section above). Just like in (1), the `Bridge Wrapper` concept is abstracted away, use actual (underlying) token as `initialSwapParams.path[N-1]`, no need to worry about if token is supported natively by the **Synapse:Bridge** or not.
 4. `to` is address that will receive the tokens on destination chain. Unless user specified a different address, this should be user's address. UI should have a warning, that is another address is specified for receiving tokens on destination chain, that it should always be the non-custodial wallet, otherwise the funds might be lost (especially when bridging into destination chain's GAS).
 5. `chainId` specifies the destination chain's ID.
-6. `bridgedSwapParams` specifies specifies the parameters for swapping bridged token, if needed. Otherwise, it's empty (see `SwapParams` section above).
+6. `destinationSwapParams` specifies specifies the parameters for swapping bridged token, if needed. Otherwise, it's empty (see `SwapParams` section above).
 7. `amountBridged`: function returns amount of tokens bridged, in bridge token decimals precision.
 
 ```solidity
@@ -78,7 +78,7 @@ function bridgeGasToEVM(
   IBridge.SwapParams calldata initialSwapParams,
   address to,
   uint256 chainId,
-  IBridge.SwapParams calldata bridgedSwapParams
+  IBridge.SwapParams calldata destinationSwapParams
 ) external returns (uint256 amountBridged);
 
 function bridgeGasToNonEVM(
@@ -93,5 +93,5 @@ function bridgeGasToNonEVM(
 2. `initialSwapParams` specifies specifies the parameters for swapping token into bridge token on initial chain, if needed. Otherwise, it's empty (see `SwapParams` section above). Just like in `bridgeTokenToEVM`, the `Bridge Wrapper` concept is abstracted away, use actual (underlying) token as `initialSwapParams.path[N-1]`, no need to worry about if token is supported natively by the **Synapse:Bridge** or not.
 3. `to` is address that will receive the tokens on destination chain. Unless user specified a different address, this should be user's address. UI should have a warning, that is another address is specified for receiving tokens on destination chain, that it should always be the non-custodial wallet, otherwise the funds might be lost (especially when bridging into destination chain's GAS).
 4. `chainId` specifies the destination chain's ID.
-5. `bridgedSwapParams` specifies specifies the parameters for swapping bridged token, if needed. Otherwise, it's empty (see `SwapParams` section above).
+5. `destinationSwapParams` specifies specifies the parameters for swapping bridged token, if needed. Otherwise, it's empty (see `SwapParams` section above).
 6. `amountBridged`: function returns amount of tokens bridged, in bridge token decimals precision.
