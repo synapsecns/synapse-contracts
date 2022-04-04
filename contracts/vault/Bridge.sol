@@ -79,6 +79,15 @@ contract Bridge is
         _transferGasDrop(to);
     }
 
+    modifier checkSwapParams(SwapParams calldata swapParams) {
+        require(
+            swapParams.path.length == swapParams.adapters.length + 1,
+            "Bridge: len(path)!=len(adapters)+1"
+        );
+
+        _;
+    }
+
     // -- RECOVER TOKEN/GAS --
 
     /**
@@ -179,33 +188,20 @@ contract Bridge is
         IERC20 token,
         uint256 amount,
         SwapParams calldata destinationSwapParams
-    ) internal {
+    ) internal checkSwapParams(destinationSwapParams) {
         // First, deposit to Vault. Use verified deposit amount for bridging
         amount = _depositToVault(token, amount);
         // Then, emit corresponding Bridge Event
-        if (_isSwapPresent(destinationSwapParams)) {
-            emit TokenDepositEVM(
-                to,
-                chainId,
-                token,
-                amount,
-                destinationSwapParams.minAmountOut,
-                destinationSwapParams.path,
-                destinationSwapParams.adapters,
-                destinationSwapParams.deadline
-            );
-        } else {
-            emit TokenDepositEVM(
-                to,
-                chainId,
-                token,
-                amount,
-                0, // minAmountOut
-                new address[](0), // path
-                new address[](0), // adapters
-                UINT_MAX // deadline
-            );
-        }
+        emit TokenDepositEVM(
+            to,
+            chainId,
+            token,
+            amount,
+            destinationSwapParams.minAmountOut,
+            destinationSwapParams.path,
+            destinationSwapParams.adapters,
+            destinationSwapParams.deadline
+        );
     }
 
     function _depositNonEVM(
@@ -281,33 +277,20 @@ contract Bridge is
         ERC20Burnable token,
         uint256 amount,
         SwapParams calldata destinationSwapParams
-    ) internal {
+    ) internal checkSwapParams(destinationSwapParams) {
         // First, burn tokens from caller. Use verified deposit amount for bridging
         amount = _burnFromCaller(token, amount);
         // Then, emit corresponding Bridge Event
-        if (_isSwapPresent(destinationSwapParams)) {
-            emit TokenRedeemEVM(
-                to,
-                chainId,
-                token,
-                amount,
-                destinationSwapParams.minAmountOut,
-                destinationSwapParams.path,
-                destinationSwapParams.adapters,
-                destinationSwapParams.deadline
-            );
-        } else {
-            emit TokenRedeemEVM(
-                to,
-                chainId,
-                token,
-                amount,
-                0, // minAmountOut
-                new address[](0), // path
-                new address[](0), // adapters
-                UINT_MAX // deadline
-            );
-        }
+        emit TokenRedeemEVM(
+            to,
+            chainId,
+            token,
+            amount,
+            destinationSwapParams.minAmountOut,
+            destinationSwapParams.path,
+            destinationSwapParams.adapters,
+            destinationSwapParams.deadline
+        );
     }
 
     function _redeemNonEVM(
@@ -371,8 +354,8 @@ contract Bridge is
                 kappa
             );
 
-            // TODO: if bridge wrapper is used, its address will be emitted.
-            // Is this what we want?
+            // If token is a Bridge Wrapper, use underlying for the Event Log
+            token = IERC20(router.getUnderlyingToken(address(token)));
             swapResult = SwapResult(token, amount);
         }
 
@@ -458,14 +441,7 @@ contract Bridge is
         pure
         returns (bool)
     {
-        if (params.adapters.length == 0) {
-            require(
-                params.path.length == 0,
-                "Path must be empty, if no adapters"
-            );
-            return false;
-        }
-        return true;
+        return params.adapters.length > 0;
     }
 
     function _transferGasDrop(address to) internal {

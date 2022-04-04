@@ -30,7 +30,6 @@ interface IBridgeRouter is IRouter {
     // -- BRIDGE FUNCTIONS [initial chain]: to EVM chains --
 
     function bridgeTokenToEVM(
-        IERC20 _tokenIn,
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         address _to,
@@ -48,7 +47,6 @@ interface IBridgeRouter is IRouter {
     // -- BRIDGE FUNCTIONS [initial chain]: to non-EVM chains --
 
     function bridgeTokenToNonEVM(
-        IERC20 _tokenIn,
         uint256 _amountIn,
         IBridge.SwapParams calldata _initialSwapParams,
         bytes32 _to,
