@@ -117,7 +117,9 @@ contract StakedSYN is Ownable, ERC20("Staked Synapse", "sSYN") {
 
         uint256 underlyingSynapseAmount = _getUnderlyingSynapseAmount(_amount);
         // If undelegate was called previously within past 7days, add amount to previous. Replace timestamp fully.
-        undelegatedSynapseAmounts[msg.sender] += underlyingSynapseAmount;
+        undelegatedSynapseAmounts[msg.sender] = undelegatedSynapseAmounts[
+            msg.sender
+        ].add(underlyingSynapseAmount);
         // locks SYN for given undelegated amount, reduces active staking
         totalActiveSYN = totalActiveSYN.sub(underlyingSynapseAmount);
         // burns sSYN shares
