@@ -241,23 +241,6 @@ contract Bridge is
         _bridgeToEVM(to, chainId, token, amount, destinationSwapParams);
     }
 
-    function bridgeMaxToEVM(
-        address to,
-        uint256 chainId,
-        IERC20 token,
-        SwapParams calldata destinationSwapParams
-    ) external {
-        // First, determine how much Bridge call pull from caller
-        uint256 amount = _getMaxAmount(token);
-
-        // Then, pull tokens from caller.
-        // Use Bridge Wrapper, if there is one for `token`
-        token = _pullFromCaller(token, amount);
-
-        // Finally, do bridging
-        _bridgeToEVM(to, chainId, token, amount, destinationSwapParams);
-    }
-
     function _bridgeToEVM(
         address to,
         uint256 chainId,
@@ -302,22 +285,6 @@ contract Bridge is
         _bridgeToNonEVM(to, chainId, token, amount);
     }
 
-    function bridgeMaxToNonEVM(
-        bytes32 to,
-        uint256 chainId,
-        IERC20 token
-    ) external {
-        // First, determine how much Bridge call pull from caller
-        uint256 amount = _getMaxAmount(token);
-
-        // Then, pull tokens from caller.
-        // Use Bridge Wrapper, if there is one for `token`
-        token = _pullFromCaller(token, amount);
-
-        // Finally, do bridging
-        _bridgeToNonEVM(to, chainId, token, amount);
-    }
-
     function _bridgeToNonEVM(
         bytes32 to,
         uint256 chainId,
@@ -355,12 +322,6 @@ contract Bridge is
         token.transfer(address(vault), amount);
         amountDeposited = token.balanceOf(address(vault)) - balanceBefore;
         require(amountDeposited > 0, "No deposit happened");
-    }
-
-    function _getMaxAmount(IERC20 token) internal view returns (uint256) {
-        uint256 balance = token.balanceOf(msg.sender);
-        uint256 allowance = token.allowance(msg.sender, address(this));
-        return balance < allowance ? balance : allowance;
     }
 
     function _pullFromCaller(IERC20 token, uint256 amount)
