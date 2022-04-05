@@ -61,6 +61,23 @@ function NODEGROUP_ROLE() external view returns (bytes32)
 |---|---|---|
 | _0 | bytes32 | undefined |
 
+### RATE_LIMITER_ROLE
+
+```solidity
+function RATE_LIMITER_ROLE() external view returns (bytes32)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes32 | undefined |
+
 ### WETH_ADDRESS
 
 ```solidity
@@ -405,6 +422,23 @@ function paused() external view returns (bool)
 |---|---|---|
 | _0 | bool | undefined |
 
+### rateLimiter
+
+```solidity
+function rateLimiter() external view returns (contract IRateLimiter)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | contract IRateLimiter | undefined |
+
 ### redeem
 
 ```solidity
@@ -537,6 +571,22 @@ function setChainGasAmount(uint256 amount) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | amount | uint256 | undefined |
+
+### setRateLimiter
+
+```solidity
+function setRateLimiter(contract IRateLimiter _rateLimiter) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _rateLimiter | contract IRateLimiter | undefined |
 
 ### setWethAddress
 
