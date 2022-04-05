@@ -4,7 +4,6 @@ import { deployments, ethers } from "hardhat"
 import { BigNumber, BigNumberish, Signer } from "ethers"
 import Wallet from "ethereumjs-wallet"
 
-import { RateLimiter } from "../../build/typechain/RateLimiter"
 import { CHAIN_ID } from "../../utils/network"
 import { Address } from "hardhat-deploy/dist/types"
 import { faker } from "@faker-js/faker"
@@ -13,6 +12,7 @@ import {
   BridgeConfigV3,
   GenericERC20,
   RateLimiterTest,
+  RateLimiter
 } from "../../build/typechain"
 import epochSeconds from "@stdlib/time-now"
 
@@ -100,7 +100,7 @@ describe("Rate Limiter", () => {
       expect(lastResetMin).to.be.eq(lastReset)
     })
 
-    it("should update allowance", async () => {
+    it.only("should update allowance", async () => {
       const allowance = 100 * Math.pow(10, 6) // allowance of $100
       const lastReset = Math.floor(epochSeconds() / hour)
 
@@ -150,5 +150,32 @@ describe("Rate Limiter", () => {
       expect(resetTimeMin).to.be.eq(60)
       expect(lastResetMin).to.be.eq(lastReset)
     })
+
+      it("should reset allowance", async () => {
+          const allowance = 1000 * Math.pow(10, 6) // allowance of $100
+          const lastReset = Math.floor(epochSeconds() / hour)
+
+          // reset every hour after current epoch time to an allowance of $100
+          expect(rateLimiter.setAllowance(USDC.address, allowance, hour, lastReset))
+              .to.be.not.reverted
+
+          await expect(
+              rateLimiterTest.storeCheckAndUpdateAllowance(USDC.address, 1),
+          ).to.be.not.reverted
+
+          // make sure method returned false
+          console.log(await rateLimiterTest.getLastUpdateValue())
+          expect(await rateLimiterTest.getLastUpdateValue()).to.be.true
+
+          await expect(rateLimiter.resetAllowance(USDC.address)).to.be.not.reverted
+
+          let [amount, spent, resetTimeMin, lastResetMin] =
+              await rateLimiter.getTokenAllowance(USDC.address)
+
+          expect(allowance).to.be.eq(amount)
+          expect(spent).to.be.eq(0)
+          expect(resetTimeMin).to.be.eq(60)
+          expect(lastResetMin).to.be.eq(lastReset)
+      })
   })
 })
