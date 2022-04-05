@@ -107,7 +107,7 @@ let config: HardhatUserConfig = {
     runOnCompile: false,
     debugMode: false,
     // pre solidity 5 breaks docgen
-    exclude: ["MultisigWallet", "WETH9"]
+    exclude: ["MultisigWallet", "WETH9", "RateLimiter"]
     // More options...
   },
   solidity: {

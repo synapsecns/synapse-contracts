@@ -4,13 +4,16 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-4.3.1-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-4.3.1-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-4.3.1-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "./interfaces/IRateLimiter.sol";
+import "hardhat/console.sol";
 
 // @title RateLimiter
 // @dev a bridge asset rate limiter based on https://github.com/gnosis/safe-modules/blob/master/allowances/contracts/AlowanceModule.sol
 contract RateLimiter is
     Initializable,
     AccessControlUpgradeable,
-    ReentrancyGuardUpgradeable
+    ReentrancyGuardUpgradeable,
+    IRateLimiter
 {
     /*** STATE ***/
 
@@ -46,7 +49,7 @@ contract RateLimiter is
         uint96 amount;
         uint96 spent;
         uint16 resetTimeMin; // Maximum reset time span is 65k minutes
-        uint32 lastResetMin;
+        uint32 lastResetMin; // epoch/60
         uint16 nonce;
     }
 
@@ -148,11 +151,12 @@ contract RateLimiter is
         );
 
         // do not proceed. Store the transaction for later
-        if (newSpent <= allowance.amount) {
+        if (newSpent >= allowance.amount) {
             return false;
         }
 
         allowance.spent = newSpent;
+        console.log(allowance.spent);
         updateAllowance(token, allowance);
 
         return true;

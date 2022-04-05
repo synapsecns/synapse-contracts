@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity >=0.4.23 <0.9.0;
 
 interface IRateLimiter {
     function addToRetryQueue(bytes32 kappa, bytes memory rateLimited) external;
