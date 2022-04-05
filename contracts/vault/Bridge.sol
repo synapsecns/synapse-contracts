@@ -247,8 +247,10 @@ contract Bridge is
         uint256 amount,
         SwapParams calldata destinationSwapParams
     ) external {
-        // First, use Bridge Wrapper, if there is one for `token`
-        token = getBridgeToken(token);
+        // First, pull tokens from caller.
+        // Use Bridge Wrapper, if there is one for `token`
+        token = _pullFromCaller(token, amount);
+
         // Then, do bridging
         _bridgeToEVM(to, chainId, token, amount, destinationSwapParams);
     }
@@ -259,10 +261,13 @@ contract Bridge is
         IERC20 token,
         SwapParams calldata destinationSwapParams
     ) external {
-        // First, use Bridge Wrapper, if there is one for `token`
-        token = getBridgeToken(token);
-        // Then, determine how much Bridge call pull from caller
+        // First, determine how much Bridge call pull from caller
         uint256 amount = _getMaxAmount(token);
+
+        // Then, pull tokens from caller.
+        // Use Bridge Wrapper, if there is one for `token`
+        token = _pullFromCaller(token, amount);
+
         // Finally, do bridging
         _bridgeToEVM(to, chainId, token, amount, destinationSwapParams);
     }
@@ -282,8 +287,8 @@ contract Bridge is
         // Use verified burnt/deposited amount for bridging purposes
         amount = (
             bridgeTokenType[address(token)] == TokenType.MINT_BURN
-                ? _burnFromCaller
-                : _depositToVault
+                ? _burnToken
+                : _depositToken
         )(token, amount);
         // Then, emit a Bridge Event
         emit BridgedOutEVM(
@@ -303,8 +308,10 @@ contract Bridge is
         IERC20 token,
         uint256 amount
     ) external {
-        // First, use Bridge Wrapper, if there is one for `token`
-        token = getBridgeToken(token);
+        // First, pull tokens from caller.
+        // Use Bridge Wrapper, if there is one for `token`
+        token = _pullFromCaller(token, amount);
+
         // Then, do bridging
         _bridgeToNonEVM(to, chainId, token, amount);
     }
@@ -314,10 +321,13 @@ contract Bridge is
         uint256 chainId,
         IERC20 token
     ) external {
-        // First, use Bridge Wrapper, if there is one for `token`
-        token = getBridgeToken(token);
-        // Then, determine how much Bridge call pull from caller
+        // First, determine how much Bridge call pull from caller
         uint256 amount = _getMaxAmount(token);
+
+        // Then, pull tokens from caller.
+        // Use Bridge Wrapper, if there is one for `token`
+        token = _pullFromCaller(token, amount);
+
         // Finally, do bridging
         _bridgeToNonEVM(to, chainId, token, amount);
     }
@@ -332,11 +342,49 @@ contract Bridge is
         // Use verified burnt/deposited amount for bridging purposes
         amount = (
             bridgeTokenType[address(token)] == TokenType.MINT_BURN
-                ? _burnFromCaller
-                : _depositToVault
+                ? _burnToken
+                : _depositToken
         )(token, amount);
         // Then, emit a Bridge Event
         emit BridgedOutNonEVM(to, chainId, IERC20(token), amount);
+    }
+
+    // -- BRIDGE OUT : internal helpers --
+
+    function _burnToken(IERC20 token, uint256 amount)
+        internal
+        returns (uint256 amountBurnt)
+    {
+        uint256 balanceBefore = token.balanceOf(address(this));
+        ERC20Burnable(address(token)).burn(amount);
+        amountBurnt = balanceBefore - token.balanceOf(address(this));
+        require(amountBurnt > 0, "No burn happened");
+    }
+
+    function _depositToken(IERC20 token, uint256 amount)
+        internal
+        returns (uint256 amountDeposited)
+    {
+        uint256 balanceBefore = token.balanceOf(address(vault));
+        token.transfer(address(vault), amount);
+        amountDeposited = token.balanceOf(address(vault)) - balanceBefore;
+        require(amountDeposited > 0, "No deposit happened");
+    }
+
+    function _getMaxAmount(IERC20 token) internal view returns (uint256) {
+        uint256 balance = token.balanceOf(msg.sender);
+        uint256 allowance = token.allowance(msg.sender, address(this));
+        return balance < allowance ? balance : allowance;
+    }
+
+    function _pullFromCaller(IERC20 token, uint256 amount)
+        internal
+        returns (IERC20 bridgeToken)
+    {
+        // First, pull tokens from caller
+        token.safeTransferFrom(msg.sender, address(this), amount);
+        // Then, return  Bridge Wrapper, if there is one for `token`
+        bridgeToken = getBridgeToken(token);
     }
 
     // -- BRIDGE IN FUNCTIONS --
@@ -406,33 +454,7 @@ contract Bridge is
         );
     }
 
-    // -- INTERNAL HELPERS --
-
-    function _burnFromCaller(IERC20 token, uint256 amount)
-        internal
-        returns (uint256 amountBurnt)
-    {
-        uint256 balanceBefore = token.balanceOf(msg.sender);
-        ERC20Burnable(address(token)).burnFrom(msg.sender, amount);
-        amountBurnt = balanceBefore - token.balanceOf(msg.sender);
-        require(amountBurnt > 0, "No burn happened");
-    }
-
-    function _depositToVault(IERC20 token, uint256 amount)
-        internal
-        returns (uint256 amountDeposited)
-    {
-        uint256 balanceBefore = token.balanceOf(address(vault));
-        token.safeTransferFrom(msg.sender, address(vault), amount);
-        amountDeposited = token.balanceOf(address(vault)) - balanceBefore;
-        require(amountDeposited > 0, "No deposit happened");
-    }
-
-    function _getMaxAmount(IERC20 token) internal view returns (uint256) {
-        uint256 balance = token.balanceOf(msg.sender);
-        uint256 allowance = token.allowance(msg.sender, address(this));
-        return balance < allowance ? balance : allowance;
-    }
+    // -- BRIDGE IN: internal helpers --
 
     function _handleSwap(
         address to,

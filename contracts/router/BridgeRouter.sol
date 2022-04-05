@@ -84,7 +84,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         // First, perform swap on initial chain
         // Need to pull tokens from caller => isSelfSwap = false
         IERC20 _bridgeToken;
-        (_bridgeToken, _amountBridged) = _doInitialSwap(
+        (_bridgeToken, _amountBridged) = _swapAndPrepare(
             _initialSwapParams,
             _amountIn,
             false
@@ -120,7 +120,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         // Then, perform swap on initial chain
         // Tokens(WGAS) are in the contract => isSelfSwap = true
         IERC20 _bridgeToken;
-        (_bridgeToken, _amountBridged) = _doInitialSwap(
+        (_bridgeToken, _amountBridged) = _swapAndPrepare(
             _initialSwapParams,
             msg.value,
             true
@@ -147,7 +147,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         // First, perform swap on initial chain
         // Need to pull tokens from caller => isSelfSwap = false
         IERC20 _bridgeToken;
-        (_bridgeToken, _amountBridged) = _doInitialSwap(
+        (_bridgeToken, _amountBridged) = _swapAndPrepare(
             _initialSwapParams,
             _amountIn,
             false
@@ -181,7 +181,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         // Then, perform swap on initial chain
         // Tokens(WGAS) are in the contract => isSelfSwap = true
         IERC20 _bridgeToken;
-        (_bridgeToken, _amountBridged) = _doInitialSwap(
+        (_bridgeToken, _amountBridged) = _swapAndPrepare(
             _initialSwapParams,
             msg.value,
             true
@@ -198,7 +198,7 @@ contract BridgeRouter is Router, IBridgeRouter {
 
     // -- BRIDGE FUNCTIONS [initial chain]: internal helpers
 
-    function _doInitialSwap(
+    function _swapAndPrepare(
         IBridge.SwapParams calldata _initialSwapParams,
         uint256 _amountIn,
         bool _isSelfSwap
@@ -230,6 +230,8 @@ contract BridgeRouter is Router, IBridgeRouter {
                 _amountOut = _pullTokenFromCaller(_lastToken, _amountIn);
             }
         }
+        // Allow Bridge to spend token we got from the swap
+        _setBridgeTokenAllowance(_lastToken, _amountOut);
     }
 
     // -- BRIDGE RELATED FUNCTIONS [destination chain] --
