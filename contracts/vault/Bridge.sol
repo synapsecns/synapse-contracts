@@ -229,33 +229,24 @@ contract Bridge is
         address to,
         uint256 chainId,
         IERC20 token,
-        uint256 amount,
-        SwapParams calldata destinationSwapParams
-    ) external {
-        // First, pull tokens from caller.
-        _pullFromCaller(token, amount);
-
-        // Then, do bridging
-        _bridgeToEVM(to, chainId, token, amount, destinationSwapParams);
-    }
-
-    function _bridgeToEVM(
-        address to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount,
         SwapParams calldata destinationSwapParams
     )
-        internal
+        external
         checkSwapParams(destinationSwapParams)
-        checkTokenSupported(token)
+        returns (uint256 amountBridged)
     {
-        // First, burn token, or deposit to Vault, depending on bridge token type
-        // Use verified burnt/deposited amount for bridging purposes
-        amount = _lockToken(token, amount);
+        // First, burn token, or deposit to Vault (depending on bridge token type).
+        // Use verified burnt/deposited amount for bridging purposes.
+        amountBridged = _lockToken(token);
 
-        // Then, emit a Bridge Event
-        emit BridgedOutEVM(to, chainId, token, amount, destinationSwapParams);
+        // Finally, emit a Bridge Event
+        emit BridgedOutEVM(
+            to,
+            chainId,
+            token,
+            amountBridged,
+            destinationSwapParams
+        );
     }
 
     // -- BRIDGE OUT FUNCTIONS: to non-EVM chain --
@@ -263,28 +254,14 @@ contract Bridge is
     function bridgeToNonEVM(
         bytes32 to,
         uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    ) external {
-        // First, pull tokens from caller.
-        _pullFromCaller(token, amount);
-
-        // Then, do bridging
-        _bridgeToNonEVM(to, chainId, token, amount);
-    }
-
-    function _bridgeToNonEVM(
-        bytes32 to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    ) internal checkTokenSupported(token) {
-        // First, burn token, or deposit to Vault, depending on bridge token type
-        // Use verified burnt/deposited amount for bridging purposes
-        amount = _lockToken(token, amount);
+        IERC20 token
+    ) external returns (uint256 amountBridged) {
+        // First, burn token, or deposit to Vault (depending on bridge token type).
+        // Use verified burnt/deposited amount for bridging purposes.
+        amountBridged = _lockToken(token);
 
         // Then, emit a Bridge Event
-        emit BridgedOutNonEVM(to, chainId, token, amount);
+        emit BridgedOutNonEVM(to, chainId, token, amountBridged);
     }
 
     // -- BRIDGE OUT : internal helpers --
@@ -315,20 +292,21 @@ contract Bridge is
         require(amountDeposited > 0, "No deposit happened");
     }
 
-    function _lockToken(IERC20 token, uint256 amount)
+    function _lockToken(IERC20 token)
         internal
+        checkTokenSupported(token)
         returns (uint256 amountVerified)
     {
+        // First, figure out how much tokens do we have.
+        uint256 amount = token.balanceOf(address(this));
+        require(amount > 0, "Bridge: Insufficient token amount");
+
+        // Then, burn token, or deposit to Vault (depending on bridge token type).
         amountVerified = (
             bridgeTokenType[address(token)] == TokenType.MINT_BURN
                 ? _burnToken
                 : _depositToken
         )(token, amount);
-    }
-
-    function _pullFromCaller(IERC20 token, uint256 amount) internal {
-        // First, pull tokens from caller
-        token.safeTransferFrom(msg.sender, address(this), amount);
     }
 
     // -- BRIDGE IN FUNCTIONS --

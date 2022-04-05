@@ -80,18 +80,16 @@ interface IBridge {
         address to,
         uint256 chainId,
         IERC20 token,
-        uint256 amount,
         SwapParams calldata destinationSwapParams
-    ) external;
+    ) external returns (uint256 amountBridged);
 
     // -- BRIDGE OUT FUNCTIONS: to non-EVM chains --
 
     function bridgeToNonEVM(
         bytes32 to,
         uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    ) external;
+        IERC20 token
+    ) external returns (uint256 amountBridged);
 
     // -- BRIDGE IN FUNCTIONS --
 

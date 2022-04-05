@@ -59,9 +59,11 @@ modifier checkSwapParams(SwapParams calldata swapParams) {
 }
 ```
 
-- `checkSwapParams` is used for every _Bridge Out to EVM_ function, to check `destinationSwapParams` parameter for being a [valid](#valid-swapparams) swap description.
+- `checkSwapParams` is used in `bridgeToEVM`, to check `destinationSwapParams` parameter for being a [valid](#valid-swapparams) swap description.
 
-- There are no access modifiers, meaning anyone can call bridge out functions. However, interacting via `BridgeRouter` is highly recommended, as it is doing the needed checks, and is also handling any bridged tokens requiring a Wrapper Contract to bridge them.
+- There are no access modifiers, meaning anyone can call **Bridge Out** functions. However, calling `bridgeTo[EVM|NonEVM]` requires transferring bridge token to `Bridge` first. This means one would need to interact with a smart contract, which would load token into `Bridge` and call needed **Bridge Out** function.
+
+  > An example of such contract is `BridgeRouter`, which not only allows to bridge a token, but also enables doing a swap from any token into bridge token before that.
 
 ## Function list
 
@@ -70,7 +72,6 @@ function bridgeToEVM(
   address to,
   uint256 chainId,
   IERC20 token,
-  uint256 amount,
   SwapParams calldata destinationSwapParams
 ) external;
 
@@ -78,16 +79,16 @@ function bridgeToNonEVM(
   bytes32 to,
   uint256 chainId,
   IERC20 token,
-  uint256 amount
 ) external;
 
 ```
+
+> As you may noticed, there is no `amount` parameter present. `Bridge` will use its `token` balance for bridging, which means that to use `Bridge` effectively, one must send bridge tokens to `Bridge` and call **Bridge Out** function in the same transaction. This is enabled by interacting with `BridgeRouter`.
 
 - `to`: address that will receive the tokens on destination chain. Unless user specified a different address, this should be user's address.
   > UI should have a warning, that is another address is specified for receiving tokens on destination chain, that it should always be the non-custodial wallet, otherwise the funds might be lost (especially when bridging into destination chain's GAS).
 - `chainId`: destination chain's ID.
 - `token`: token that will be used for bridging.
-- `amount` is amount of tokens to bridge, in `token` decimals precision.
 - `destinationSwapParams`: [valid](#valid-swapparams) parameters for swapping token into bridge token on **destination chain**, if needed. Otherwise, it's [empty](#empty-swapparams).
   - `minAmountOut`: minimum amount of bridge token to receive after swap on **destination chain**, otherwise user **will receive bridge token**.
     > If bridge token on **destination chain** is `WGAS`, it will be automatically unwrapped and sent as native chain `GAS`.
