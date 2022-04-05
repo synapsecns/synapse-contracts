@@ -66,9 +66,9 @@ describe("Rate Limiter", () => {
       const rateLimiterTestFactory = await ethers.getContractFactory(
         "RateLimiterTest",
       )
-      rateLimiterTest =
-        (await rateLimiterTestFactory.deploy()) as RateLimiterTest
-      await rateLimiterTest.initialize(rateLimiter.address)
+      rateLimiterTest = (await rateLimiterTestFactory.deploy(
+        rateLimiter.address,
+      )) as RateLimiterTest
 
       // grant the bridge role to rateLimiterTest
       await rateLimiter

@@ -61,22 +61,6 @@ function getLastUpdateValue() external view returns (bool)
 |---|---|---|
 | _0 | bool | undefined |
 
-### initialize
-
-```solidity
-function initialize(contract IRateLimiter _rateLimiter) external nonpayable
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _rateLimiter | contract IRateLimiter | undefined |
-
 ### storeCheckAndUpdateAllowance
 
 ```solidity
