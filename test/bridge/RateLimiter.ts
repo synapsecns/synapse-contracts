@@ -19,7 +19,7 @@ import epochSeconds from "@stdlib/time-now"
 chai.use(solidity)
 const { expect, assert } = chai
 
-describe("Rate Limiter", () => {
+describe.only("Rate Limiter", () => {
   let signers: Array<Signer>
   let deployer: Signer
   let owner: Signer
@@ -146,6 +146,34 @@ describe("Rate Limiter", () => {
         await rateLimiter.getTokenAllowance(USDC.address)
 
       expect(allowance).to.be.eq(amount)
+      expect(spent).to.be.eq(0)
+      expect(resetTimeMin).to.be.eq(60)
+      expect(lastResetMin).to.be.eq(lastReset)
+    })
+
+    it("should reset allowance", async () => {
+      const allowance = 100 * Math.pow(10, 6) // allowance of $100
+      const lastReset = Math.floor(epochSeconds() / hour)
+
+      // reset every hour after current epoch time to an allowance of $100
+      expect(rateLimiter.setAllowance(USDC.address, allowance, hour, lastReset))
+        .to.be.not.reverted
+
+      // draw down $10 from allowance
+      await expect(
+        rateLimiterTest.storeCheckAndUpdateAllowance(
+          USDC.address,
+          10 * Math.pow(10, 6),
+        ),
+      ).to.be.not.reverted
+
+      expect(await rateLimiterTest.getLastUpdateValue()).to.be.true
+
+      await expect(rateLimiter.resetAllowance(USDC.address))
+
+      let [amount, spent, resetTimeMin, lastResetMin] =
+        await rateLimiter.getTokenAllowance(USDC.address)
+      expect(amount).to.be.eq(amount)
       expect(spent).to.be.eq(0)
       expect(resetTimeMin).to.be.eq(60)
       expect(lastResetMin).to.be.eq(lastReset)
