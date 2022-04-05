@@ -49,43 +49,20 @@ interface IBridge {
 
     function bridgeTokenType(address token) external view returns (TokenType);
 
-    // -- BRIDGE EVENTS OUT: Deposit --
+    // -- BRIDGE EVENTS OUT: Reworked
 
-    event TokenDepositEVM(
+    event BridgedOutEVM(
         address indexed to,
         uint256 chainId,
         IERC20 token,
         uint256 amount,
-        uint256 minAmountOut,
-        address[] path,
-        address[] adapters,
-        uint256 deadline
+        SwapParams swapParams
     );
 
-    event TokenDepositNonEVM(
+    event BridgedOutNonEVM(
         bytes32 indexed to,
         uint256 chainId,
         IERC20 token,
-        uint256 amount
-    );
-
-    // -- BRIDGE EVENTS OUT: Redeem --
-
-    event TokenRedeemEVM(
-        address indexed to,
-        uint256 chainId,
-        ERC20Burnable token,
-        uint256 amount,
-        uint256 minAmountOut,
-        address[] path,
-        address[] adapters,
-        uint256 deadline
-    );
-
-    event TokenRedeemNonEVM(
-        bytes32 indexed to,
-        uint256 chainId,
-        ERC20Burnable token,
         uint256 amount
     );
 
