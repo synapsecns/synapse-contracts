@@ -2,14 +2,13 @@
 pragma solidity ^0.8.0;
 
 import "../interfaces/IRateLimiter.sol";
-import "@openzeppelin/contracts-4.3.1-upgradeable/proxy/utils/Initializable.sol";
 
 /// @title RateLimiterTest
 // @dev this contract is used to test RateLimiter's checkAndUpdateAllowance method's return value
 // because web3 libraries don't provide an interface for retrieving boolean values from a non-view function
 // we store the return value here for retrieval later.
 
-contract RateLimiterTest is Initializable {
+contract RateLimiterTest {
     /*** STATE ***/
 
     string public constant NAME = "Rate Limiter Test";
@@ -24,7 +23,7 @@ contract RateLimiterTest is Initializable {
     // the rate limiter contract
     IRateLimiter rateLimiter;
 
-    function initialize(IRateLimiter _rateLimiter) external initializer {
+    constructor(IRateLimiter _rateLimiter) {
         rateLimiter = _rateLimiter;
     }
 
