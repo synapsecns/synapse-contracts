@@ -20,46 +20,46 @@ interface IBridgeRouter is IRouter {
     // -- BRIDGE FUNCTIONS [initial chain]: to EVM chains --
 
     function bridgeTokenToEVM(
-        uint256 _amountIn,
-        IBridge.SwapParams calldata _initialSwapParams,
         address _to,
         uint256 _chainId,
+        IBridge.SwapParams calldata _initialSwapParams,
+        uint256 _amountIn,
         IBridge.SwapParams calldata _destinationSwapParams
     ) external returns (uint256 _amountBridged);
 
     function bridgeGasToEVM(
-        IBridge.SwapParams calldata _initialSwapParams,
         address _to,
         uint256 _chainId,
+        IBridge.SwapParams calldata _initialSwapParams,
         IBridge.SwapParams calldata _destinationSwapParams
     ) external payable returns (uint256 _amountBridged);
 
     // -- BRIDGE FUNCTIONS [initial chain]: to non-EVM chains --
 
     function bridgeTokenToNonEVM(
-        uint256 _amountIn,
-        IBridge.SwapParams calldata _initialSwapParams,
         bytes32 _to,
-        uint256 _chainId
+        uint256 _chainId,
+        IBridge.SwapParams calldata _initialSwapParams,
+        uint256 _amountIn
     ) external returns (uint256 _amountBridged);
 
     function bridgeGasToNonEVM(
-        IBridge.SwapParams calldata _initialSwapParams,
         bytes32 _to,
-        uint256 _chainId
+        uint256 _chainId,
+        IBridge.SwapParams calldata _initialSwapParams
     ) external payable returns (uint256 _amountBridged);
 
     // -- BRIDGE FUNCTIONS [destination chain] --
 
     function refundToAddress(
-        address _token,
-        uint256 _amount,
-        address _to
+        address _to,
+        IERC20 _token,
+        uint256 _amount
     ) external;
 
     function postBridgeSwap(
-        uint256 _amountIn,
+        address _to,
         IBridge.SwapParams calldata _swapParams,
-        address _to
+        uint256 _amountIn
     ) external returns (uint256 _amountOut);
 }

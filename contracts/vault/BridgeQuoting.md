@@ -58,14 +58,14 @@ struct Offers.FormattedOffer{
 
 ```solidity
 function findBestPathInitialChain(
-  uint256 amountIn,
   address tokenIn,
+  uint256 amountIn,
   address tokenOut
 ) external view returns (Offers.FormattedOffer memory bestOffer);
 
 function findBestPathDestinationChain(
-  uint256 amountIn,
   address tokenIn,
+  uint256 amountIn,
   address tokenOut
 ) external view returns (Offers.FormattedOffer memory bestOffer);
 
@@ -152,8 +152,8 @@ How much `tokenF` tokens user would have after a `tokenS -> tokenF` cross-chain 
 if (tokenS != bridgeTokenIC) {
   // Ask quoter on initial chain to find the best swap path
   offerIC = BridgeQuoterIC.findBestPathInitialChain(
-    (amountIn = amountS),
     (tokenIn = tokenS),
+    (amountIn = amountS),
     (tokenOut = bridgeTokenIC),
   )
 
@@ -196,8 +196,8 @@ amountInDC = amountOutIC - bridgeFee
 if (tokenF != bridgeTokenDC) {
   // Ask quoter on destination chain to find the best swap path
   offerDC = BridgeQuoterDC.findBestPathDestinationChain(
-    (amountIn = amountInDC),
     (tokenIn = bridgeTokenDC),
+    (amountIn = amountInDC),
     (tokenOut = tokenF),
   )
 
@@ -236,18 +236,18 @@ To submit a **Synapse: Bridge** transaction, consider following pseudo code (ass
 
   // Then, submit a bridge transaction
   BridgeRouterIC.bridgeTokenToEVM(
-    amountIn=amountS,
-    initialSwapParams=swapParamsIC,
     to=userAddress,
     chainId=idDC,
+    initialSwapParams=swapParamsIC,
+    amountIn=amountS,
     destinationSwapParams=swapParamsDC
   )
 
   // Or, if you start from initial chain gas
   BridgeRouterIC.bridgeGasToEVM{value: amountS}(
-    initialSwapParams=swapParamsIC,
     to=userAddress,
     chainId=idDC,
+    initialSwapParams=swapParamsIC,
     destinationSwapParams=swapParamsDC
   )
 ```

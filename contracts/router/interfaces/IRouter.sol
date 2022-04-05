@@ -14,26 +14,26 @@ interface IRouter is IBasicRouter {
     // Single chain swaps
 
     function swap(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
+        address _to,
         address[] calldata _path,
         address[] calldata _adapters,
-        address _to
+        uint256 _amountIn,
+        uint256 _minAmountOut
     ) external returns (uint256 _amountOut);
 
     function swapFromGAS(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
+        address _to,
         address[] calldata _path,
         address[] calldata _adapters,
-        address _to
+        uint256 _amountIn,
+        uint256 _minAmountOut
     ) external payable returns (uint256 _amountOut);
 
     function swapToGAS(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
+        address _to,
         address[] calldata _path,
         address[] calldata _adapters,
-        address _to
+        uint256 _amountIn,
+        uint256 _minAmountOut
     ) external returns (uint256 _amountOut);
 }

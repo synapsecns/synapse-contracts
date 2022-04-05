@@ -112,8 +112,8 @@ describe("Quoter", function () {
     let tokenOutName = tokenNames[tokenNames.length - 1]
 
     let bestPath = await quoter.findBestPath(
-      amountIn,
       thisObject[tokenInName].address,
+      amountIn,
       thisObject[tokenOutName].address,
       maxSwaps,
     )
@@ -171,8 +171,9 @@ describe("Quoter", function () {
   ): Promise<number> {
     let amountIn = getBigNumber(amount, decimals[tokenInName])
     let bestPath = await quoter.findBestPath(
-      amountIn,
       thisObject[tokenInName].address,
+      amountIn,
+
       thisObject[tokenOutName].address,
       maxSwaps,
     )
@@ -186,28 +187,28 @@ describe("Quoter", function () {
     if (checkExactOut) {
       await expect(() =>
         router.swap(
-          amountIn,
-          minAmountOut,
+          ownerAddress,
           bestPath.path,
           bestPath.adapters,
-          ownerAddress,
+          amountIn,
+          minAmountOut,
         ),
       ).to.changeTokenBalance(thisObject[tokenOutName], owner, minAmountOut)
     } else {
       let amountOut = await router.callStatic.swap(
-        amountIn,
-        0,
+        ownerAddress,
         bestPath.path,
         bestPath.adapters,
-        ownerAddress,
+        amountIn,
+        0,
       )
 
       await router.swap(
-        amountIn,
-        0,
+        ownerAddress,
         bestPath.path,
         bestPath.adapters,
-        ownerAddress,
+        amountIn,
+        0,
       )
 
       console.log(

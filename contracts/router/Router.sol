@@ -36,13 +36,13 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         @return _amountOut Final amount of tokens swapped
      */
     function swap(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
+        address _to,
         address[] calldata _path,
         address[] calldata _adapters,
-        address _to
+        uint256 _amountIn,
+        uint256 _minAmountOut
     ) external returns (uint256 _amountOut) {
-        _amountOut = _swap(_amountIn, _minAmountOut, _path, _adapters, _to);
+        _amountOut = _swap(_to, _path, _adapters, _amountIn, _minAmountOut);
     }
 
     /**
@@ -59,17 +59,17 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         @return _amountOut Final amount of tokens swapped
      */
     function swapFromGAS(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
+        address _to,
         address[] calldata _path,
         address[] calldata _adapters,
-        address _to
+        uint256 _amountIn,
+        uint256 _minAmountOut
     ) external payable returns (uint256 _amountOut) {
         require(msg.value == _amountIn, "Router: incorrect amount of GAS");
         require(_path[0] == WGAS, "Router: Path needs to begin with WGAS");
         _wrap(_amountIn);
         // WGAS tokens need to be sent from this contract
-        _amountOut = _selfSwap(_amountIn, _minAmountOut, _path, _adapters, _to);
+        _amountOut = _selfSwap(_to, _path, _adapters, _amountIn, _minAmountOut);
     }
 
     /**
@@ -89,11 +89,11 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         @return _amountOut Final amount of tokens swapped
      */
     function swapToGAS(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
+        address _to,
         address[] calldata _path,
         address[] calldata _adapters,
-        address _to
+        uint256 _amountIn,
+        uint256 _minAmountOut
     ) external returns (uint256 _amountOut) {
         require(
             _path[_path.length - 1] == WGAS,
@@ -101,15 +101,15 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         );
         // This contract needs to receive WGAS in order to unwrap it
         _amountOut = _swap(
-            _amountIn,
-            _minAmountOut,
+            address(this),
             _path,
             _adapters,
-            address(this)
+            _amountIn,
+            _minAmountOut
         );
         // this will unwrap WGAS and return GAS
         // reentrancy not an issue here, as all work is done
-        _returnTokensTo(WGAS, _amountOut, _to);
+        _returnTokensTo(_to, IERC20(WGAS), _amountOut);
     }
 
     // -- INTERNAL SWAP FUNCTIONS --
@@ -128,11 +128,11 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         @return _amountOut Final amount of tokens swapped
      */
     function _swap(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
+        address _to,
         address[] calldata _path,
         address[] calldata _adapters,
-        address _to
+        uint256 _amountIn,
+        uint256 _minAmountOut
     ) internal nonReentrant returns (uint256 _amountOut) {
         require(_path.length > 1, "Router: path too short");
         address _tokenIn = _path[0];
@@ -144,11 +144,11 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         );
 
         _amountOut = _doChainedSwaps(
-            _amountIn,
-            _minAmountOut,
+            _to,
             _path,
             _adapters,
-            _to
+            _amountIn,
+            _minAmountOut
         );
     }
 
@@ -163,11 +163,11 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         @return _amountOut Final amount of tokens swapped
      */
     function _selfSwap(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
+        address _to,
         address[] calldata _path,
         address[] calldata _adapters,
-        address _to
+        uint256 _amountIn,
+        uint256 _minAmountOut
     ) internal nonReentrant returns (uint256 _amountOut) {
         require(_path.length > 1, "Router: path too short");
         address _tokenIn = _path[0];
@@ -178,11 +178,11 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         );
 
         _amountOut = _doChainedSwaps(
-            _amountIn,
-            _minAmountOut,
+            _to,
             _path,
             _adapters,
-            _to
+            _amountIn,
+            _minAmountOut
         );
     }
 
@@ -205,11 +205,11 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         @return _amountOut Final amount of tokens swapped
      */
     function _doChainedSwaps(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
+        address _to,
         address[] calldata _path,
         address[] calldata _adapters,
-        address _to
+        uint256 _amountIn,
+        uint256 _minAmountOut
     ) internal returns (uint256 _amountOut) {
         require(
             _path.length == _adapters.length + 1,

@@ -37,15 +37,9 @@ interface IBridge {
 
     // -- VIEWS
 
-    function getBridgeToken(address _bridgeToken)
-        external
-        view
-        returns (address);
+    function getBridgeToken(IERC20 token) external view returns (IERC20);
 
-    function getUnderlyingToken(address _bridgeToken)
-        external
-        view
-        returns (address);
+    function getUnderlyingToken(IERC20 token) external view returns (IERC20);
 
     function bridgeTokenType(address token) external view returns (TokenType);
 
@@ -84,7 +78,7 @@ interface IBridge {
     function bridgeToEVM(
         address to,
         uint256 chainId,
-        address token,
+        IERC20 token,
         uint256 amount,
         SwapParams calldata destinationSwapParams
     ) external;
@@ -92,7 +86,7 @@ interface IBridge {
     function bridgeMaxToEVM(
         address to,
         uint256 chainId,
-        address token,
+        IERC20 token,
         SwapParams calldata destinationSwapParams
     ) external;
 
@@ -101,14 +95,14 @@ interface IBridge {
     function bridgeToNonEVM(
         bytes32 to,
         uint256 chainId,
-        address token,
+        IERC20 token,
         uint256 amount
     ) external;
 
     function bridgeMaxToNonEVM(
         bytes32 to,
         uint256 chainId,
-        address token
+        IERC20 token
     ) external;
 
     // -- BRIDGE IN FUNCTIONS --

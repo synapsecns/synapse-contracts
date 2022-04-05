@@ -57,37 +57,38 @@ The only modifier present is `payable` for `swapGas<...>()`, to enable paying wi
 
 ```solidity
 function bridgeTokenToEVM(
-  uint256 amountIn,
-  IBridge.SwapParams calldata initialSwapParams,
   address to,
   uint256 chainId,
+  IBridge.SwapParams calldata initialSwapParams,
+  uint256 amountIn,
   IBridge.SwapParams calldata destinationSwapParams
 ) external returns (uint256 amountBridged);
 
 function bridgeTokenToNonEVM(
-  uint256 amountIn,
-  IBridge.SwapParams calldata initialSwapParams,
   bytes32 to,
-  uint256 chainId
+  uint256 chainId,
+  IBridge.SwapParams calldata initialSwapParams,
+  uint256 amountIn
 ) external returns (uint256 amountBridged);
 
 function bridgeGasToEVM(
-  IBridge.SwapParams calldata initialSwapParams,
   address to,
   uint256 chainId,
+  IBridge.SwapParams calldata initialSwapParams,
   IBridge.SwapParams calldata destinationSwapParams
 ) external payable returns (uint256 amountBridged);
 
 function bridgeGasToNonEVM(
-  IBridge.SwapParams calldata initialSwapParams,
   bytes32 to,
-  uint256 chainId
+  uint256 chainId,
+  IBridge.SwapParams calldata initialSwapParams
 ) external payable returns (uint256 amountBridged);
 
 ```
 
-- `amountIn`: amount of tokens to bridge, in `tokenIn` decimals precision.
-  > `msg.value` is used as amount of GAS user is willing to bridge for `bridgeGas<...>()`
+- `to`: address that will receive the tokens on destination chain. Unless user specified a different address, this should be user's address.
+  > UI should have a warning, that is another address is specified for receiving tokens on destination chain, that it should always be the non-custodial wallet, otherwise the funds might be lost (especially when bridging into destination chain's GAS).
+- `chainId`: destination chain's ID.
 - `initialSwapParams`: [valid](#valid-swapparams) parameters for swapping token into bridge token on **initial chain**, if needed. Otherwise, it's [empty](#empty-swapparams).
   - `minAmountOut`: minimum amount of bridge token to receive after swap on **initial chain**, otherwise the transaction **will be reverted**.
   - `path`: list of tokens, specifying the swap route on **initial chain**.
@@ -97,9 +98,8 @@ function bridgeGasToNonEVM(
     - `path[path.length-1]`: token that will be used for bridging on **initial chain**.
   - `adapters`: list of Synapse adapters, that will be used for swaps on **initial chain**.
   - `deadline`: deadline for swap on **initial chain**. If deadline check is failed, the transaction **will be reverted**.
-- `to`: address that will receive the tokens on destination chain. Unless user specified a different address, this should be user's address.
-  > UI should have a warning, that is another address is specified for receiving tokens on destination chain, that it should always be the non-custodial wallet, otherwise the funds might be lost (especially when bridging into destination chain's GAS).
-- `chainId`: destination chain's ID.
+- `amountIn`: amount of tokens to bridge, in `tokenIn` decimals precision.
+  > `msg.value` is used as amount of GAS user is willing to bridge for `bridgeGas<...>()`
 - `destinationSwapParams`: [valid](#valid-swapparams) parameters for swapping token into bridge token on **destination chain**, if needed. Otherwise, it's [empty](#empty-swapparams).
   - `minAmountOut`: minimum amount of bridge token to receive after swap on **initial chain**, otherwise the transaction **will be reverted**.
   - `path`: list of tokens, specifying the swap route on **destination chain**.
