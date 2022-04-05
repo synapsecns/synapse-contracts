@@ -33,10 +33,8 @@ contract Bridge is
     bytes32 public constant NODEGROUP_ROLE = keccak256("NODEGROUP_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
-    /// @notice GAS airdrop amount, that is given for every bridge IN transaction
-    uint128 public chainGasAmount;
     /// @notice Maximum amount of GAS units for Swap part of bridge transaction
-    uint128 public maxGasForSwap;
+    uint256 public maxGasForSwap;
 
     uint256 internal constant UINT_MAX = type(uint256).max;
 
@@ -67,26 +65,14 @@ contract Bridge is
 
         vault = _vault;
         maxGasForSwap = _maxGasForSwap;
-
-        updateChainGasAmount();
-    }
-
-    function updateChainGasAmount() public {
-        chainGasAmount = uint128(vault.chainGasAmount());
     }
 
     // -- MODIFIERS --
 
-    modifier bridgeInTx(
-        uint256 amount,
-        uint256 fee,
-        address to
-    ) {
+    modifier checkFee(uint256 amount, uint256 fee) {
         require(amount > fee, "Amount must be greater than fee");
 
         _;
-
-        _transferGasDrop(to);
     }
 
     modifier checkSwapParams(SwapParams calldata swapParams) {
@@ -402,7 +388,7 @@ contract Bridge is
         onlyRole(NODEGROUP_ROLE)
         nonReentrant
         whenNotPaused
-        bridgeInTx(amount, fee, to)
+        checkFee(amount, fee)
     {
         // First, get the amount post fees
         amount = amount - fee;
@@ -420,6 +406,7 @@ contract Bridge is
                 token,
                 amount,
                 fee,
+                true, // airdropRequested
                 kappa
             );
 
@@ -433,6 +420,7 @@ contract Bridge is
                 token,
                 amount,
                 fee,
+                true, // airdropRequested
                 kappa
             );
 
@@ -495,12 +483,5 @@ contract Bridge is
         returns (bool)
     {
         return params.adapters.length > 0;
-    }
-
-    function _transferGasDrop(address to) internal {
-        if (address(this).balance >= chainGasAmount) {
-            //solhint-disable-next-line
-            (bool success, ) = to.call{value: chainGasAmount}("");
-        }
     }
 }

@@ -28,14 +28,16 @@ interface IVault {
         IERC20 token,
         uint256 amount,
         uint256 fee,
+        bool airdropRequested,
         bytes32 kappa
-    ) external;
+    ) external returns (bool airdropGiven);
 
     function withdrawToken(
         address to,
         IERC20 token,
         uint256 amount,
         uint256 fee,
+        bool airdropRequested,
         bytes32 kappa
-    ) external;
+    ) external returns (bool airdropGiven);
 }
