@@ -67,9 +67,10 @@ interface IBridge {
         IERC20 tokenBridged,
         uint256 amountBridged,
         uint256 bridgeFee,
+        bool isMint,
         IERC20 tokenReceived,
         uint256 amountReceived,
-        bool isMint,
+        bool airdropGiven,
         bytes32 indexed kappa
     );
 
