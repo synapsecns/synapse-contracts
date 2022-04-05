@@ -52,6 +52,7 @@
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "@primitivefi/hardhat-dodoc": "^0.2.3",
+    "@stdlib/time-now": "^0.0.8",
     "@typechain/ethers-v5": "^7.0.0",
     "@typechain/hardhat": "^2.0.1",
     "@types/chai": "^4.2.18",
