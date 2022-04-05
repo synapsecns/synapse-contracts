@@ -39,8 +39,8 @@ contract Quoter is BasicQuoter, IQuoter {
         @param _maxSwaps maximum amount of swaps in the route between initial and final tokens
     */
     function findBestPath(
-        uint256 _amountIn,
         address _tokenIn,
+        uint256 _amountIn,
         address _tokenOut,
         uint8 _maxSwaps
     ) public view returns (Offers.FormattedOffer memory _bestOffer) {

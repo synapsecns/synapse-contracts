@@ -91,29 +91,30 @@ describe("Router", function () {
     if (tokenOutName == "weth") {
       await expect(() =>
         router.swapToGAS(
-          amountIn,
-          0,
+          ownerAddress,
           tokenPath,
           adapterAddresses,
-          ownerAddress,
+          amountIn,
+          0,
         ),
       ).to.changeEtherBalance(owner, amountOut)
       // console.log("From token to GAS")
     } else if (tokenInName == "weth") {
       await expect(() =>
         router.swapFromGAS(
-          amountIn,
-          0,
+          ownerAddress,
+
           tokenPath,
           adapterAddresses,
-          ownerAddress,
+          amountIn,
+          0,
           { value: amountIn },
         ),
       ).to.changeTokenBalance(tokenOut, owner, amountOut)
       // console.log("From GAS to token")
     } else {
       await expect(() =>
-        router.swap(amountIn, 0, tokenPath, adapterAddresses, ownerAddress),
+        router.swap(ownerAddress, tokenPath, adapterAddresses, amountIn, 0),
       ).to.changeTokenBalance(tokenOut, owner, amountOut)
       // console.log("From token to token")
     }

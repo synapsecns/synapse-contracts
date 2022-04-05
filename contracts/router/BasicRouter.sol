@@ -104,18 +104,18 @@ contract BasicRouter is AccessControl, IBasicRouter {
      * @param _to address where funds should be sent to
      */
     function _returnTokensTo(
-        address _token,
-        uint256 _amount,
-        address _to
+        address _to,
+        IERC20 _token,
+        uint256 _amount
     ) internal {
         if (address(this) != _to) {
-            if (_token == WGAS) {
+            if (address(_token) == WGAS) {
                 _unwrap(_amount);
                 // solhint-disable-next-line
                 (bool success, ) = _to.call{value: _amount}("");
                 require(success, "GAS transfer failed");
             } else {
-                IERC20(_token).safeTransfer(_to, _amount);
+                _token.safeTransfer(_to, _amount);
             }
         }
     }

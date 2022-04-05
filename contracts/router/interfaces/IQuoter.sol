@@ -6,8 +6,8 @@ import {Offers} from "../libraries/LibOffers.sol";
 
 interface IQuoter is IBasicQuoter {
     function findBestPath(
-        uint256 _amountIn,
         address _tokenIn,
+        uint256 _amountIn,
         address _tokenOut,
         uint8 _maxSwaps
     ) external view returns (Offers.FormattedOffer memory);

@@ -71,7 +71,7 @@ modifier checkSwapParams(SwapParams calldata swapParams) {
 function bridgeToEVM(
   address to,
   uint256 chainId,
-  address token,
+  IERC20 token,
   uint256 amount,
   SwapParams calldata destinationSwapParams
 ) external;
@@ -79,20 +79,20 @@ function bridgeToEVM(
 function bridgeMaxToEVM(
   address to,
   uint256 chainId,
-  address token,
+  IERC20 token,
   SwapParams calldata destinationSwapParams
 ) external;
 
 function bridgeMaxToNonEVM(
   bytes32 to,
   uint256 chainId,
-  address token
+  IERC20 token
 ) external;
 
 function bridgeToNonEVM(
   bytes32 to,
   uint256 chainId,
-  address token,
+  IERC20 token,
   uint256 amount
 ) external;
 

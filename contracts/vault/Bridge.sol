@@ -98,9 +98,9 @@ contract Bridge is
         _;
     }
 
-    modifier checkTokenSupported(address token) {
+    modifier checkTokenSupported(IERC20 token) {
         require(
-            bridgeTokenType[token] != TokenType.NOT_SUPPORTED,
+            bridgeTokenType[address(token)] != TokenType.NOT_SUPPORTED,
             "Bridge: token is not supported"
         );
 
@@ -109,25 +109,29 @@ contract Bridge is
 
     // -- VIEWS --
 
-    function getBridgeToken(address bridgeToken)
+    function getBridgeToken(IERC20 token)
         public
         view
-        returns (address actualBridgeToken)
+        returns (IERC20 bridgeToken)
     {
-        actualBridgeToken = bridgeWrappers[bridgeToken];
-        if (actualBridgeToken == address(0)) {
-            actualBridgeToken = bridgeToken;
+        address bridgeTokenAddress = bridgeWrappers[address(token)];
+        if (bridgeTokenAddress == address(0)) {
+            bridgeToken = token;
+        } else {
+            bridgeToken = IERC20(bridgeTokenAddress);
         }
     }
 
-    function getUnderlyingToken(address bridgeToken)
+    function getUnderlyingToken(IERC20 token)
         public
         view
-        returns (address actualUnderlyingToken)
+        returns (IERC20 underlyingToken)
     {
-        actualUnderlyingToken = underlyingTokens[bridgeToken];
-        if (actualUnderlyingToken == address(0)) {
-            actualUnderlyingToken = bridgeToken;
+        address underlyingTokenAddress = underlyingTokens[address(token)];
+        if (underlyingTokenAddress == address(0)) {
+            underlyingToken = token;
+        } else {
+            underlyingToken = IERC20(underlyingTokenAddress);
         }
     }
 
@@ -234,19 +238,12 @@ contract Bridge is
         router = _router;
     }
 
-    function setTokenBridgeType(address token, TokenType bridgeType)
-        external
-        onlyRole(GOVERNANCE_ROLE)
-    {
-        bridgeTokenType[token] = bridgeType;
-    }
-
     // -- BRIDGE OUT FUNCTIONS: to EVM chains --
 
     function bridgeToEVM(
         address to,
         uint256 chainId,
-        address token,
+        IERC20 token,
         uint256 amount,
         SwapParams calldata destinationSwapParams
     ) external {
@@ -259,7 +256,7 @@ contract Bridge is
     function bridgeMaxToEVM(
         address to,
         uint256 chainId,
-        address token,
+        IERC20 token,
         SwapParams calldata destinationSwapParams
     ) external {
         // First, use Bridge Wrapper, if there is one for `token`
@@ -273,7 +270,7 @@ contract Bridge is
     function _bridgeToEVM(
         address to,
         uint256 chainId,
-        address token,
+        IERC20 token,
         uint256 amount,
         SwapParams calldata destinationSwapParams
     )
@@ -284,7 +281,7 @@ contract Bridge is
         // First, burn token, or deposit to Vault, depending on bridge token type
         // Use verified burnt/deposited amount for bridging purposes
         amount = (
-            bridgeTokenType[token] == TokenType.MINT_BURN
+            bridgeTokenType[address(token)] == TokenType.MINT_BURN
                 ? _burnFromCaller
                 : _depositToVault
         )(token, amount);
@@ -303,7 +300,7 @@ contract Bridge is
     function bridgeToNonEVM(
         bytes32 to,
         uint256 chainId,
-        address token,
+        IERC20 token,
         uint256 amount
     ) external {
         // First, use Bridge Wrapper, if there is one for `token`
@@ -315,7 +312,7 @@ contract Bridge is
     function bridgeMaxToNonEVM(
         bytes32 to,
         uint256 chainId,
-        address token
+        IERC20 token
     ) external {
         // First, use Bridge Wrapper, if there is one for `token`
         token = getBridgeToken(token);
@@ -328,13 +325,13 @@ contract Bridge is
     function _bridgeToNonEVM(
         bytes32 to,
         uint256 chainId,
-        address token,
+        IERC20 token,
         uint256 amount
     ) internal checkTokenSupported(token) {
         // First, burn token, or deposit to Vault, depending on bridge token type
         // Use verified burnt/deposited amount for bridging purposes
         amount = (
-            bridgeTokenType[token] == TokenType.MINT_BURN
+            bridgeTokenType[address(token)] == TokenType.MINT_BURN
                 ? _burnFromCaller
                 : _depositToVault
         )(token, amount);
@@ -392,8 +389,8 @@ contract Bridge is
             );
 
             // If token is a Bridge Wrapper, use underlying for the Event Log
-            address underlyingToken = getUnderlyingToken(address(token));
-            swapResult = SwapResult(IERC20(underlyingToken), amount);
+            IERC20 underlyingToken = getUnderlyingToken(token);
+            swapResult = SwapResult(underlyingToken, amount);
         }
 
         // Finally, emit BridgeIn Event
@@ -411,34 +408,27 @@ contract Bridge is
 
     // -- INTERNAL HELPERS --
 
-    function _burnFromCaller(address tokenAddress, uint256 amount)
+    function _burnFromCaller(IERC20 token, uint256 amount)
         internal
         returns (uint256 amountBurnt)
     {
-        ERC20Burnable token = ERC20Burnable(tokenAddress);
         uint256 balanceBefore = token.balanceOf(msg.sender);
-        token.burnFrom(msg.sender, amount);
+        ERC20Burnable(address(token)).burnFrom(msg.sender, amount);
         amountBurnt = balanceBefore - token.balanceOf(msg.sender);
         require(amountBurnt > 0, "No burn happened");
     }
 
-    function _depositToVault(address tokenAddress, uint256 amount)
+    function _depositToVault(IERC20 token, uint256 amount)
         internal
         returns (uint256 amountDeposited)
     {
-        IERC20 token = IERC20(tokenAddress);
         uint256 balanceBefore = token.balanceOf(address(vault));
         token.safeTransferFrom(msg.sender, address(vault), amount);
         amountDeposited = token.balanceOf(address(vault)) - balanceBefore;
         require(amountDeposited > 0, "No deposit happened");
     }
 
-    function _getMaxAmount(address tokenAddress)
-        internal
-        view
-        returns (uint256)
-    {
-        IERC20 token = IERC20(tokenAddress);
+    function _getMaxAmount(IERC20 token) internal view returns (uint256) {
         uint256 balance = token.balanceOf(msg.sender);
         uint256 allowance = token.allowance(msg.sender, address(this));
         return balance < allowance ? balance : allowance;
@@ -455,9 +445,9 @@ contract Bridge is
         // bridged token, should the swap run out of gas
         try
             router.postBridgeSwap{gas: maxGasForSwap}(
-                amountPostFee,
+                to,
                 swapParams,
-                to
+                amountPostFee
             )
         returns (uint256 _amountOut) {
             swapResult = SwapResult(
@@ -466,9 +456,9 @@ contract Bridge is
             );
         } catch {
             // If token is a Bridge Wrapper, use underlying for returning
-            address underlyingToken = getUnderlyingToken(address(token));
-            swapResult = SwapResult(IERC20(underlyingToken), amountPostFee);
-            router.refundToAddress(underlyingToken, amountPostFee, to);
+            IERC20 underlyingToken = getUnderlyingToken(token);
+            swapResult = SwapResult(underlyingToken, amountPostFee);
+            router.refundToAddress(to, underlyingToken, amountPostFee);
         }
     }
 
