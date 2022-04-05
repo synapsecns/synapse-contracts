@@ -394,6 +394,7 @@ contract Bridge is
         amount = amount - fee;
 
         SwapResult memory swapResult;
+        bool airdropGiven;
 
         if (
             _isSwapPresent(swapParams) &&
@@ -401,7 +402,7 @@ contract Bridge is
         ) {
             // If there's a swap, and deadline check is passed,
             // mint|withdraw bridged tokens to Router
-            (isMint ? vault.mintToken : vault.withdrawToken)(
+            airdropGiven = (isMint ? vault.mintToken : vault.withdrawToken)(
                 address(router),
                 token,
                 amount,
@@ -415,7 +416,7 @@ contract Bridge is
         } else {
             // If there's no swap, or deadline check is not passed,
             // mint|withdraw bridged token to needed address
-            (isMint ? vault.mintToken : vault.withdrawToken)(
+            airdropGiven = (isMint ? vault.mintToken : vault.withdrawToken)(
                 to,
                 token,
                 amount,
@@ -435,9 +436,10 @@ contract Bridge is
             token,
             amount + fee,
             fee,
+            isMint,
             swapResult.tokenReceived,
             swapResult.amountReceived,
-            isMint,
+            airdropGiven,
             kappa
         );
     }
