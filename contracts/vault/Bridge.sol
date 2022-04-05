@@ -234,8 +234,7 @@ contract Bridge is
         SwapParams calldata destinationSwapParams
     ) external {
         // First, pull tokens from caller.
-        // Use Bridge Wrapper, if there is one for `token`
-        token = _pullFromCaller(token, amount);
+        _pullFromCaller(token, amount);
 
         // Then, do bridging
         _bridgeToEVM(to, chainId, token, amount, destinationSwapParams);
@@ -254,19 +253,10 @@ contract Bridge is
     {
         // First, burn token, or deposit to Vault, depending on bridge token type
         // Use verified burnt/deposited amount for bridging purposes
-        amount = (
-            bridgeTokenType[address(token)] == TokenType.MINT_BURN
-                ? _burnToken
-                : _depositToken
-        )(token, amount);
+        amount = _lockToken(token, amount);
+
         // Then, emit a Bridge Event
-        emit BridgedOutEVM(
-            to,
-            chainId,
-            IERC20(token),
-            amount,
-            destinationSwapParams
-        );
+        emit BridgedOutEVM(to, chainId, token, amount, destinationSwapParams);
     }
 
     // -- BRIDGE OUT FUNCTIONS: to non-EVM chain --
@@ -278,8 +268,7 @@ contract Bridge is
         uint256 amount
     ) external {
         // First, pull tokens from caller.
-        // Use Bridge Wrapper, if there is one for `token`
-        token = _pullFromCaller(token, amount);
+        _pullFromCaller(token, amount);
 
         // Then, do bridging
         _bridgeToNonEVM(to, chainId, token, amount);
@@ -293,13 +282,10 @@ contract Bridge is
     ) internal checkTokenSupported(token) {
         // First, burn token, or deposit to Vault, depending on bridge token type
         // Use verified burnt/deposited amount for bridging purposes
-        amount = (
-            bridgeTokenType[address(token)] == TokenType.MINT_BURN
-                ? _burnToken
-                : _depositToken
-        )(token, amount);
+        amount = _lockToken(token, amount);
+
         // Then, emit a Bridge Event
-        emit BridgedOutNonEVM(to, chainId, IERC20(token), amount);
+        emit BridgedOutNonEVM(to, chainId, token, amount);
     }
 
     // -- BRIDGE OUT : internal helpers --
@@ -309,7 +295,10 @@ contract Bridge is
         returns (uint256 amountBurnt)
     {
         uint256 balanceBefore = token.balanceOf(address(this));
-        ERC20Burnable(address(token)).burn(amount);
+
+        address bridgeTokenAddress = address(getBridgeToken(token));
+        ERC20Burnable(bridgeTokenAddress).burn(amount);
+
         amountBurnt = balanceBefore - token.balanceOf(address(this));
         require(amountBurnt > 0, "No burn happened");
     }
@@ -319,19 +308,28 @@ contract Bridge is
         returns (uint256 amountDeposited)
     {
         uint256 balanceBefore = token.balanceOf(address(vault));
-        token.transfer(address(vault), amount);
+
+        address bridgeTokenAddress = address(getBridgeToken(token));
+        IERC20(bridgeTokenAddress).transfer(address(vault), amount);
+
         amountDeposited = token.balanceOf(address(vault)) - balanceBefore;
         require(amountDeposited > 0, "No deposit happened");
     }
 
-    function _pullFromCaller(IERC20 token, uint256 amount)
+    function _lockToken(IERC20 token, uint256 amount)
         internal
-        returns (IERC20 bridgeToken)
+        returns (uint256 amountVerified)
     {
+        amountVerified = (
+            bridgeTokenType[address(token)] == TokenType.MINT_BURN
+                ? _burnToken
+                : _depositToken
+        )(token, amount);
+    }
+
+    function _pullFromCaller(IERC20 token, uint256 amount) internal {
         // First, pull tokens from caller
         token.safeTransferFrom(msg.sender, address(this), amount);
-        // Then, return  Bridge Wrapper, if there is one for `token`
-        bridgeToken = getBridgeToken(token);
     }
 
     // -- BRIDGE IN FUNCTIONS --
@@ -362,13 +360,13 @@ contract Bridge is
             !_isDeadlineFailed(swapParams.deadline)
         ) {
             // If there's a swap, and deadline check is passed,
-            // mint|withdraw bridged tokens to Router
-            airdropGiven = (isMint ? vault.mintToken : vault.withdrawToken)(
+            // release bridged tokens to Router
+            airdropGiven = _releaseToken(
                 address(router),
                 token,
                 amount,
                 fee,
-                true, // airdropRequested
+                isMint,
                 kappa
             );
 
@@ -376,19 +374,10 @@ contract Bridge is
             swapResult = _handleSwap(to, token, amount, swapParams);
         } else {
             // If there's no swap, or deadline check is not passed,
-            // mint|withdraw bridged token to needed address
-            airdropGiven = (isMint ? vault.mintToken : vault.withdrawToken)(
-                to,
-                token,
-                amount,
-                fee,
-                true, // airdropRequested
-                kappa
-            );
+            // release bridged token to needed address
+            airdropGiven = _releaseToken(to, token, amount, fee, isMint, kappa);
 
-            // If token is a Bridge Wrapper, use underlying for the Event Log
-            IERC20 underlyingToken = getUnderlyingToken(token);
-            swapResult = SwapResult(underlyingToken, amount);
+            swapResult = SwapResult(token, amount);
         }
 
         // Finally, emit BridgeIn Event
@@ -428,10 +417,8 @@ contract Bridge is
                 _amountOut
             );
         } catch {
-            // If token is a Bridge Wrapper, use underlying for returning
-            IERC20 underlyingToken = getUnderlyingToken(token);
-            swapResult = SwapResult(underlyingToken, amountPostFee);
-            router.refundToAddress(to, underlyingToken, amountPostFee);
+            swapResult = SwapResult(token, amountPostFee);
+            router.refundToAddress(to, token, amountPostFee);
         }
     }
 
@@ -446,5 +433,24 @@ contract Bridge is
         returns (bool)
     {
         return params.adapters.length > 0;
+    }
+
+    function _releaseToken(
+        address to,
+        IERC20 token,
+        uint256 amountPostFee,
+        uint256 fee,
+        bool isMint,
+        bytes32 kappa
+    ) internal returns (bool airdropGiven) {
+        IERC20 bridgeToken = getBridgeToken(token);
+        airdropGiven = (isMint ? vault.mintToken : vault.withdrawToken)(
+            to,
+            bridgeToken,
+            amountPostFee,
+            fee,
+            true, // airdropRequested
+            kappa
+        );
     }
 }
