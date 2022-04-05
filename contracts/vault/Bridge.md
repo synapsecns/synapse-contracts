@@ -2,10 +2,8 @@
 
 ## Naming
 
-All functions allowing to bridge funds have the same naming convention: `bridge(Max)[EVM|nonEVM]`.
+All functions allowing to bridge funds have the same naming convention: `bridgeTo[EVM|nonEVM]`.
 
-- (optional) If `Max` is present in the function name, `amount` parameter will be missing, meaning Bridge will pull as many tokens from caller as possible.
-  > This would be the token balance, or the token spending allowance, whichever is **smaller**.
 - `[EVM|nonEVM]` specifies whether the destination chain is EVM-compatible or not. If chain is EVM-compatible, there's an additional parameter passed: `swapParams`,
   containing information about the swap that needs to be made on the destination chain (can be left [empty](#empty-swapparams), if no swap in needed).
 
@@ -76,19 +74,6 @@ function bridgeToEVM(
   SwapParams calldata destinationSwapParams
 ) external;
 
-function bridgeMaxToEVM(
-  address to,
-  uint256 chainId,
-  IERC20 token,
-  SwapParams calldata destinationSwapParams
-) external;
-
-function bridgeMaxToNonEVM(
-  bytes32 to,
-  uint256 chainId,
-  IERC20 token
-) external;
-
 function bridgeToNonEVM(
   bytes32 to,
   uint256 chainId,
@@ -103,7 +88,6 @@ function bridgeToNonEVM(
 - `chainId`: destination chain's ID.
 - `token`: token that will be used for bridging.
 - `amount` is amount of tokens to bridge, in `token` decimals precision.
-  > For functions having `Max` in their name: `amount = min(token.balanceOf(msg.sender), token.allowance(msg.sender, bridge))`
 - `destinationSwapParams`: [valid](#valid-swapparams) parameters for swapping token into bridge token on **destination chain**, if needed. Otherwise, it's [empty](#empty-swapparams).
   - `minAmountOut`: minimum amount of bridge token to receive after swap on **destination chain**, otherwise user **will receive bridge token**.
     > If bridge token on **destination chain** is `WGAS`, it will be automatically unwrapped and sent as native chain `GAS`.

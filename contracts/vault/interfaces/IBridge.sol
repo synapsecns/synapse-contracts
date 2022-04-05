@@ -84,13 +84,6 @@ interface IBridge {
         SwapParams calldata destinationSwapParams
     ) external;
 
-    function bridgeMaxToEVM(
-        address to,
-        uint256 chainId,
-        IERC20 token,
-        SwapParams calldata destinationSwapParams
-    ) external;
-
     // -- BRIDGE OUT FUNCTIONS: to non-EVM chains --
 
     function bridgeToNonEVM(
@@ -98,12 +91,6 @@ interface IBridge {
         uint256 chainId,
         IERC20 token,
         uint256 amount
-    ) external;
-
-    function bridgeMaxToNonEVM(
-        bytes32 to,
-        uint256 chainId,
-        IERC20 token
     ) external;
 
     // -- BRIDGE IN FUNCTIONS --
