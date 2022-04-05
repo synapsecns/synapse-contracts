@@ -5,7 +5,6 @@ import "@openzeppelin/contracts-4.3.1-upgradeable/proxy/utils/Initializable.sol"
 import "@openzeppelin/contracts-4.3.1-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-4.3.1-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/IRateLimiter.sol";
-import "hardhat/console.sol";
 
 // @title RateLimiter
 // @dev a bridge asset rate limiter based on https://github.com/gnosis/safe-modules/blob/master/allowances/contracts/AlowanceModule.sol
@@ -108,7 +107,6 @@ contract RateLimiter is
         returns (Allowance memory allowance)
     {
         allowance = allowances[token];
-
         // solium-disable-next-line security/no-block-members
         uint32 currentMin = uint32(block.timestamp / 60);
         // Check if we should reset the time. We do this on load to minimize storage read/ writes
@@ -137,10 +135,7 @@ contract RateLimiter is
         onlyRole(BRIDGE_ROLE)
         returns (bool)
     {
-        console.log("what");
-        console.log(token);
         Allowance memory allowance = getAllowance(token);
-        console.log(allowance.initialized);
 
         // Update state
         // @dev reverts if amount > (2^96 - 1)
@@ -154,16 +149,11 @@ contract RateLimiter is
 
         // do not proceed. Store the transaction for later
         if (newSpent >= allowance.amount) {
-            console.log(newSpent);
-            console.log(amount);
-            console.log(allowance.amount);
-            console.log("returning false");
             return false;
         }
 
         allowance.spent = newSpent;
         updateAllowance(token, allowance);
-        console.log("returning true");
 
         return true;
     }
