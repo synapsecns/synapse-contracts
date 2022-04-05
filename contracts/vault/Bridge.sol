@@ -50,7 +50,7 @@ contract Bridge is
     mapping(address => address) internal bridgeWrappers;
     mapping(address => address) internal underlyingTokens;
 
-    /// @dev key is bridgeWrapper here,
+    /// @dev key is underlyingToken here,
     mapping(address => TokenType) public bridgeTokenType;
 
     function initialize(IVault _vault, uint128 _maxGasForSwap)
@@ -193,7 +193,6 @@ contract Bridge is
         address _oldWrapper = bridgeWrappers[bridgeToken];
         if (_oldWrapper != address(0) && _oldWrapper != bridgeWrapper) {
             underlyingTokens[_oldWrapper] = address(0);
-            bridgeTokenType[_oldWrapper] = TokenType.NOT_SUPPORTED;
         }
 
         if (tokenType != TokenType.NOT_SUPPORTED) {
@@ -206,7 +205,7 @@ contract Bridge is
             bridgeWrappers[bridgeToken] = address(0);
         }
 
-        bridgeTokenType[bridgeWrapper] = tokenType;
+        bridgeTokenType[bridgeToken] = tokenType;
         emit BridgeTokenRegistered(bridgeToken, bridgeWrapper, tokenType);
     }
 
