@@ -9,108 +9,113 @@ import { CHAIN_ID } from "../../utils/network"
 import { Address } from "hardhat-deploy/dist/types"
 import { faker } from "@faker-js/faker"
 import { includes } from "lodash"
-import {BridgeConfigV3, GenericERC20} from "../../build/typechain";
-import epochSeconds from "@stdlib/time-now";
+import { BridgeConfigV3, GenericERC20 } from "../../build/typechain"
+import epochSeconds from "@stdlib/time-now"
 
 chai.use(solidity)
 const { expect, assert } = chai
 
-
 describe("Rate Limiter", () => {
+  let signers: Array<Signer>
+  let deployer: Signer
+  let owner: Signer
+  let attacker: Signer
+  let rateLimiter: RateLimiter
 
-    let signers: Array<Signer>
-    let deployer: Signer
-    let owner: Signer
-    let attacker: Signer
-    let rateLimiter: RateLimiter
+  let USDC: GenericERC20
+  let USDT: GenericERC20
 
-    let USDC: GenericERC20
-    let USDT: GenericERC20
+  // number of minutes in an hour
+  let hour: number = 60
 
-    // number of minutes in an hour
-    let hour: number = 60
+  const setupTest = deployments.createFixture(
+    async ({ deployments, ethers }) => {
+      await deployments.fixture() // ensure you start from a fresh deployments
+      signers = await ethers.getSigners()
+      deployer = signers[0]
+      owner = signers[1]
+      attacker = signers[10]
 
+      const rateLimiterFactory = await ethers.getContractFactory("RateLimiter")
 
-    const setupTest = deployments.createFixture(
-        async ({ deployments, ethers }) => {
+      const erc20Factory = await ethers.getContractFactory("GenericERC20")
 
-            await deployments.fixture() // ensure you start from a fresh deployments
-            signers = await ethers.getSigners()
-            deployer = signers[0]
-            owner = signers[1]
-            attacker = signers[10]
+      USDC = (await erc20Factory.deploy("USDC", "USDC", "6")) as GenericERC20
+      USDT = (await erc20Factory.deploy("USDT", "USDT", "6")) as GenericERC20
 
-            const rateLimiterFactory = await ethers.getContractFactory(
-                "RateLimiter",
-            )
+      rateLimiter = (await rateLimiterFactory.deploy()) as RateLimiter
+      await rateLimiter.initialize()
 
-            const erc20Factory = await ethers.getContractFactory("GenericERC20")
+      const limiterRole = await rateLimiter.LIMITER_ROLE()
+      await rateLimiter
+        .connect(deployer)
+        .grantRole(limiterRole, await owner.getAddress())
 
-            USDC = (await erc20Factory.deploy("USDC", "USDC", "6")) as GenericERC20
-            USDT = (await erc20Factory.deploy("USDT", "USDT", "6")) as GenericERC20
+      // connect the bridge config v3 with the owner. For unauthorized tests, this can be overriden
+      rateLimiter = rateLimiter.connect(owner)
+    },
+  )
 
-            rateLimiter = (await rateLimiterFactory.deploy()) as RateLimiter
-            await rateLimiter.initialize();
+  beforeEach(async () => {
+    await setupTest()
+  })
 
-            const limiterRole = await rateLimiter.LIMITER_ROLE()
-            await rateLimiter
-                .connect(deployer)
-                .grantRole(limiterRole, await owner.getAddress())
+  describe("set allowance test", () => {
+    it("should set alowance correctly", async () => {
+      const allowance = 100 * Math.pow(10, 6) // allowance of $100
 
-            // connect the bridge config v3 with the owner. For unauthorized tests, this can be overriden
-            rateLimiter = rateLimiter.connect(owner)
-        },
-    )
+      const lastReset = Math.floor(epochSeconds() / hour)
 
-    beforeEach(async () => {
-        await setupTest()
+      // 1 hour
+      await expect(
+        await rateLimiter.setAllowance(USDC.address, allowance, 60, lastReset),
+      ).to.be.not.reverted
+
+      let [amount, spent, resetTimeMin, lastResetMin, nonce] =
+        await rateLimiter.getTokenAllowance(USDC.address)
+      expect(allowance).to.be.eq(amount)
+      expect(spent).to.be.eq(0)
+      expect(resetTimeMin).to.be.eq(60)
+      expect(lastResetMin).to.be.eq(lastReset)
+      // initialized, but with no updates
+      expect(nonce).to.be.eq(1)
     })
 
-    describe("set allowance test", () => {
-        it("should set alowance correctly", async () => {
-            const allowance = 100 * Math.pow(10, 6) // allowance of $100
+    it("should update allowance", async () => {
+      // create a bridge as a signer and grant it the bridge role
+      const bridge: Signer = signers[1]
 
-            const lastReset = Math.floor(epochSeconds()/hour)
+      // grant our new bridge the role
+      await rateLimiter
+        .connect(deployer)
+        .grantRole(await rateLimiter.BRIDGE_ROLE(), await bridge.getAddress())
+      // use rateLimiter as bridge
+      const bridgeRateLimiter: RateLimiter = await rateLimiter.connect(bridge)
 
-            // 1 hour
-            await expect(await rateLimiter.setAllowance(USDC.address, allowance, 60, lastReset)).to.be.not.reverted
+      const allowance = 100 * Math.pow(10, 6) // allowance of $100
+      const lastReset = Math.floor(epochSeconds() / hour)
 
-            let [amount, spent, resetTimeMin, lastResetMin, nonce] = await rateLimiter.getTokenAllowance(USDC.address)
-            expect(allowance).to.be.eq(amount)
-            expect(spent).to.be.eq(0)
-            expect(resetTimeMin).to.be.eq(60)
-            expect(lastResetMin).to.be.eq(lastReset)
-            // initialized, but with no updates
-            expect(nonce).to.be.eq(1)
-        })
+      // reset every hour after current epoch time to an allowance of $100
+      expect(rateLimiter.setAllowance(USDC.address, allowance, hour, lastReset))
+        .to.be.not.reverted
 
-        it("should update allowance", async () => {
-            // create a bridge as a signer and grant it the bridge role
-            const bridge: Signer = signers[1]
+      // draw down $10 from allowance
+      await expect(
+        bridgeRateLimiter.checkAndUpdateAllowance(
+          USDC.address,
+          10 * Math.pow(10, 6),
+        ),
+      ).to.be.not.reverted
+      // console.log(await bridgeRateLimiter.checkAndUpdateAllowance(USDC.address, 10 * Math.pow(10, 6)))
 
-            // grant our new bridge the role
-            await rateLimiter.connect(deployer).grantRole(await rateLimiter.BRIDGE_ROLE(), await bridge.getAddress())
-            // use rateLimiter as bridge
-            const bridgeRateLimiter: RateLimiter = await rateLimiter.connect(bridge)
-
-            const allowance = 100 * Math.pow(10, 6) // allowance of $100
-            const lastReset = Math.floor(epochSeconds()/hour)
-
-            // reset every hour after current epoch time to an allowance of $100
-            expect(rateLimiter.setAllowance(USDC.address, allowance, hour, lastReset)).to.be.not.reverted
-
-            // draw down $10 from allowance
-           await expect(bridgeRateLimiter.checkAndUpdateAllowance(USDC.address, 10 * Math.pow(10, 6))).to.be.not.reverted
-            // console.log(await bridgeRateLimiter.checkAndUpdateAllowance(USDC.address, 10 * Math.pow(10, 6)))
-
-
-            let [amount, spent, resetTimeMin, lastResetMin, nonce] =  await rateLimiter.getTokenAllowance(USDC.address)
-            expect(amount).to.be.eq(amount)
-            expect(spent).to.be.eq(10 * Math.pow(10, 6))
-            expect(resetTimeMin).to.be.eq(60)
-            expect(lastResetMin).to.be.eq(lastReset)
-            // initialized, but with no updates
-            expect(nonce).to.be.eq(2)
-        })
+      let [amount, spent, resetTimeMin, lastResetMin, nonce] =
+        await rateLimiter.getTokenAllowance(USDC.address)
+      expect(amount).to.be.eq(amount)
+      expect(spent).to.be.eq(10 * Math.pow(10, 6))
+      expect(resetTimeMin).to.be.eq(60)
+      expect(lastResetMin).to.be.eq(lastReset)
+      // initialized, but with no updates
+      expect(nonce).to.be.eq(2)
     })
+  })
 })
