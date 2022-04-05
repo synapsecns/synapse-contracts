@@ -98,7 +98,6 @@ interface IBridge {
         IERC20 token,
         uint256 amount,
         uint256 fee,
-        bool isMint,
         SwapParams calldata destinationSwapParams,
         bytes32 kappa
     ) external;

@@ -232,6 +232,7 @@ contract Bridge is
         SwapParams calldata destinationSwapParams
     )
         external
+        checkTokenSupported(token)
         checkSwapParams(destinationSwapParams)
         returns (uint256 amountBridged)
     {
@@ -255,7 +256,7 @@ contract Bridge is
         bytes32 to,
         uint256 chainId,
         IERC20 token
-    ) external returns (uint256 amountBridged) {
+    ) external checkTokenSupported(token) returns (uint256 amountBridged) {
         // First, burn token, or deposit to Vault (depending on bridge token type).
         // Use verified burnt/deposited amount for bridging purposes.
         amountBridged = _lockToken(token);
@@ -294,7 +295,6 @@ contract Bridge is
 
     function _lockToken(IERC20 token)
         internal
-        checkTokenSupported(token)
         returns (uint256 amountVerified)
     {
         // First, figure out how much tokens do we have.
@@ -316,7 +316,6 @@ contract Bridge is
         IERC20 token,
         uint256 amount,
         uint256 fee,
-        bool isMint,
         SwapParams calldata swapParams,
         bytes32 kappa
     )
@@ -325,12 +324,14 @@ contract Bridge is
         nonReentrant
         whenNotPaused
         checkFee(amount, fee)
+        checkTokenSupported(token)
     {
         // First, get the amount post fees
         amount = amount - fee;
 
         SwapResult memory swapResult;
         bool airdropGiven;
+        bool isMint = bridgeTokenType[address(token)] == TokenType.MINT_BURN;
 
         if (
             _isSwapPresent(swapParams) &&

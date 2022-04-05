@@ -57,9 +57,24 @@ modifier checkSwapParams(SwapParams calldata swapParams) {
 
   _;
 }
+
 ```
 
 - `checkSwapParams` is used in `bridgeToEVM`, to check `destinationSwapParams` parameter for being a [valid](#valid-swapparams) swap description.
+
+```solidity
+modifier checkTokenSupported(IERC20 token) {
+    require(
+        bridgeTokenType[address(token)] != TokenType.NOT_SUPPORTED,
+        "Bridge: token is not supported"
+    );
+
+    _;
+}
+
+```
+
+- `checkTokenSupported` is used for every **Bridge In** and **Bridge Out** function to check if a token is supported by the `Bridge`.
 
 - There are no access modifiers, meaning anyone can call **Bridge Out** functions. However, calling `bridgeTo[EVM|NonEVM]` requires transferring bridge token to `Bridge` first. This means one would need to interact with a smart contract, which would load token into `Bridge` and call needed **Bridge Out** function.
 
@@ -127,7 +142,6 @@ function bridgeIn(
   IERC20 token,
   uint256 amount,
   uint256 fee,
-  bool isMint,
   SwapParams calldata swapParams,
   bytes32 kappa
 )
@@ -143,7 +157,6 @@ function bridgeIn(
 - `token`: bridged token.
 - `amount`: total amount bridged, including bridge fee, in `token` decimals precision.
 - `fee`: bridge fee, in `token` decimals precision.
-- `isMint`: refers to whether tokens needs to be minted or withdrawn by `Vault`.
 - `swapParams`: [valid](#valid-swapparams) parameters for swapping token into bridge token on **destination chain**, if needed. Otherwise, it's [empty](#empty-swapparams).
   - `minAmountOut`: minimum amount of bridge token to receive after swap on **destination chain**, otherwise user **will receive bridge token**.
     > If bridge token on **destination chain** is `WGAS`, it will be automatically unwrapped and sent as native chain `GAS`.
