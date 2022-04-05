@@ -103,11 +103,10 @@ let config: HardhatUserConfig = {
     target: "ethers-v5",
   },
   dodoc: {
-    // TODO, re-enable. RateLimiter is breaking this
-    runOnCompile: false,
+    runOnCompile: true,
     debugMode: false,
     // pre solidity 5 breaks docgen
-    exclude: ["MultisigWallet", "WETH9", "RateLimiter"]
+    exclude: ["MultisigWallet", "WETH9"]
     // More options...
   },
   solidity: {

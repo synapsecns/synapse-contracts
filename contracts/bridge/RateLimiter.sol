@@ -5,7 +5,6 @@ import "@openzeppelin/contracts-4.3.1-upgradeable/proxy/utils/Initializable.sol"
 import "@openzeppelin/contracts-4.3.1-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-4.3.1-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "./interfaces/IRateLimiter.sol";
-import "hardhat/console.sol";
 
 // @title RateLimiter
 // @dev a bridge asset rate limiter based on https://github.com/gnosis/safe-modules/blob/master/allowances/contracts/AlowanceModule.sol
@@ -50,7 +49,7 @@ contract RateLimiter is
         uint96 spent;
         uint16 resetTimeMin; // Maximum reset time span is 65k minutes
         uint32 lastResetMin; // epoch/60
-        uint16 nonce;
+        bool initialized;
     }
 
     /*** FUNCTIONS ***/
@@ -74,10 +73,9 @@ contract RateLimiter is
         uint32 resetBaseMin
     ) public onlyRole(LIMITER_ROLE) {
         Allowance memory allowance = getAllowance(token);
-        if (allowance.nonce == 0) {
+        if (!allowance.initialized) {
             // New token
-            // Nonce should never be 0 once allowance has been activated
-            allowance.nonce = 1;
+            allowance.initialized = true;
             tokens.push(token);
         }
         // Divide by 60 to get current time in minutes
@@ -140,7 +138,6 @@ contract RateLimiter is
         Allowance memory allowance = getAllowance(token);
 
         // Update state
-        allowance.nonce = allowance.nonce + 1;
         // @dev reverts if amount > (2^96 - 1)
         uint96 newSpent = allowance.spent + uint96(amount);
 
@@ -156,7 +153,6 @@ contract RateLimiter is
         }
 
         allowance.spent = newSpent;
-        console.log(allowance.spent);
         updateAllowance(token, allowance);
 
         return true;
@@ -186,15 +182,14 @@ contract RateLimiter is
     function getTokenAllowance(address token)
         public
         view
-        returns (uint256[5] memory)
+        returns (uint256[4] memory)
     {
         Allowance memory allowance = getAllowance(token);
         return [
             uint256(allowance.amount),
             uint256(allowance.spent),
             uint256(allowance.resetTimeMin),
-            uint256(allowance.lastResetMin),
-            uint256(allowance.nonce)
+            uint256(allowance.lastResetMin)
         ];
     }
 }
