@@ -281,11 +281,21 @@ contract Bridge is
         checkSwapParams(destinationSwapParams)
         checkTokenSupported(token)
     {
-        (
+        // First, burn token, or deposit to Vault, depending on bridge token type
+        // Use verified burnt/deposited amount for bridging purposes
+        amount = (
             bridgeTokenType[token] == TokenType.MINT_BURN
-                ? _redeemEVM
-                : _depositEVM
-        )(to, chainId, token, amount, destinationSwapParams);
+                ? _burnFromCaller
+                : _depositToVault
+        )(token, amount);
+        // Then, emit a Bridge Event
+        emit BridgedOutEVM(
+            to,
+            chainId,
+            IERC20(token),
+            amount,
+            destinationSwapParams
+        );
     }
 
     // -- BRIDGE OUT FUNCTIONS: to non-EVM chain --
@@ -321,83 +331,15 @@ contract Bridge is
         address token,
         uint256 amount
     ) internal checkTokenSupported(token) {
-        (
+        // First, burn token, or deposit to Vault, depending on bridge token type
+        // Use verified burnt/deposited amount for bridging purposes
+        amount = (
             bridgeTokenType[token] == TokenType.MINT_BURN
-                ? _redeemNonEVM
-                : _depositNonEVM
-        )(to, chainId, token, amount);
-    }
-
-    // -- BRIDGE OUT FUNCTIONS: Deposit internal implementation --
-
-    function _depositEVM(
-        address to,
-        uint256 chainId,
-        address token,
-        uint256 amount,
-        SwapParams calldata destinationSwapParams
-    ) internal {
-        // First, deposit to Vault. Use verified deposit amount for bridging
-        amount = _depositToVault(token, amount);
-        // Then, emit corresponding Bridge Event
-        emit TokenDepositEVM(
-            to,
-            chainId,
-            IERC20(token),
-            amount,
-            destinationSwapParams.minAmountOut,
-            destinationSwapParams.path,
-            destinationSwapParams.adapters,
-            destinationSwapParams.deadline
-        );
-    }
-
-    function _depositNonEVM(
-        bytes32 to,
-        uint256 chainId,
-        address token,
-        uint256 amount
-    ) internal {
-        // First, deposit to Vault. Use verified deposit amount for bridging
-        amount = _depositToVault(token, amount);
-        // Then, emit corresponding Bridge Event
-        emit TokenDepositNonEVM(to, chainId, IERC20(token), amount);
-    }
-
-    // -- BRIDGE OUT FUNCTIONS: Redeem internal implementation --
-
-    function _redeemEVM(
-        address to,
-        uint256 chainId,
-        address token,
-        uint256 amount,
-        SwapParams calldata destinationSwapParams
-    ) internal {
-        // First, burn tokens from caller. Use verified deposit amount for bridging
-        amount = _burnFromCaller(token, amount);
-        // Then, emit corresponding Bridge Event
-        emit TokenRedeemEVM(
-            to,
-            chainId,
-            ERC20Burnable(token),
-            amount,
-            destinationSwapParams.minAmountOut,
-            destinationSwapParams.path,
-            destinationSwapParams.adapters,
-            destinationSwapParams.deadline
-        );
-    }
-
-    function _redeemNonEVM(
-        bytes32 to,
-        uint256 chainId,
-        address token,
-        uint256 amount
-    ) internal {
-        // First, burn tokens from caller. Use verified deposit amount for bridging
-        amount = _burnFromCaller(token, amount);
-        // Then, emit corresponding Bridge Event
-        emit TokenRedeemNonEVM(to, chainId, ERC20Burnable(token), amount);
+                ? _burnFromCaller
+                : _depositToVault
+        )(token, amount);
+        // Then, emit a Bridge Event
+        emit BridgedOutNonEVM(to, chainId, IERC20(token), amount);
     }
 
     // -- BRIDGE IN FUNCTIONS --
