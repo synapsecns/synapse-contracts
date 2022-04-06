@@ -240,7 +240,7 @@ contract Vault is
         internal
         returns (uint256 gasdropAmount)
     {
-        if (address(this).balance >= chainGasAmount) {
+        if (chainGasAmount > 0 && address(this).balance >= chainGasAmount) {
             // solhint-disable avoid-low-level-calls
             (bool success, ) = to.call{value: chainGasAmount}("");
             if (success) {
