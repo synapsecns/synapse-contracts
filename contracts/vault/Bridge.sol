@@ -380,7 +380,6 @@ contract Bridge is
             token,
             amount + fee,
             fee,
-            data.isMint,
             data.tokenReceived,
             data.amountReceived,
             data.gasdropAmount,
