@@ -330,7 +330,7 @@ contract Bridge is
         amount = amount - fee;
 
         SwapResult memory swapResult;
-        bool airdropGiven;
+        uint256 gasdropAmount;
         bool isMint = bridgeTokenType[address(token)] == TokenType.MINT_BURN;
 
         if (
@@ -339,7 +339,7 @@ contract Bridge is
         ) {
             // If there's a swap, and deadline check is passed,
             // release bridged tokens to Router
-            airdropGiven = _releaseToken(
+            gasdropAmount = _releaseToken(
                 address(router),
                 token,
                 amount,
@@ -353,7 +353,14 @@ contract Bridge is
         } else {
             // If there's no swap, or deadline check is not passed,
             // release bridged token to needed address
-            airdropGiven = _releaseToken(to, token, amount, fee, isMint, kappa);
+            gasdropAmount = _releaseToken(
+                to,
+                token,
+                amount,
+                fee,
+                isMint,
+                kappa
+            );
 
             swapResult = SwapResult(token, amount);
         }
@@ -367,7 +374,7 @@ contract Bridge is
             isMint,
             swapResult.tokenReceived,
             swapResult.amountReceived,
-            airdropGiven,
+            gasdropAmount,
             kappa
         );
     }
@@ -420,14 +427,14 @@ contract Bridge is
         uint256 fee,
         bool isMint,
         bytes32 kappa
-    ) internal returns (bool airdropGiven) {
+    ) internal returns (uint256 gasdropAmount) {
         IERC20 bridgeToken = getBridgeToken(token);
-        airdropGiven = (isMint ? vault.mintToken : vault.withdrawToken)(
+        gasdropAmount = (isMint ? vault.mintToken : vault.withdrawToken)(
             to,
             bridgeToken,
             amountPostFee,
             fee,
-            true, // airdropRequested
+            true, // gasdropRequested
             kappa
         );
     }
