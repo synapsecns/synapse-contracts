@@ -87,7 +87,8 @@ function bridgeToEVM(
   address to,
   uint256 chainId,
   IERC20 token,
-  SwapParams calldata destinationSwapParams
+  SwapParams calldata destinationSwapParams,
+  bool gasdropRequested
 ) external;
 
 function bridgeToNonEVM(
@@ -116,6 +117,7 @@ function bridgeToNonEVM(
   - `adapters`: list of Synapse adapters, that will be used for swaps on **initial chain**.
   - `deadline`: deadline for swap on **destination chain**. If deadline check is failed, user **will receive bridge token**.
     > If bridge token on **destination chain** is `WGAS`, it will be automatically unwrapped and sent as native chain `GAS`.
+- `gasdropRequested`: whether receiving address wants to obtain a small gas airdrop (GasDrop) on destination chain. Disabling GasDrop leads to a lower minimum for the bridge fee.
 
 > `token` and `destinationSwapParams.path[0]` are two counterparts of the bridge token, representing its addresses on initial and destination chain respectively.
 

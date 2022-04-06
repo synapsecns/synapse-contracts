@@ -229,7 +229,8 @@ contract Bridge is
         address to,
         uint256 chainId,
         IERC20 token,
-        SwapParams calldata destinationSwapParams
+        SwapParams calldata destinationSwapParams,
+        bool gasdropRequested
     )
         external
         checkTokenSupported(token)
@@ -246,7 +247,8 @@ contract Bridge is
             chainId,
             token,
             amountBridged,
-            destinationSwapParams
+            destinationSwapParams,
+            gasdropRequested
         );
     }
 
@@ -317,6 +319,7 @@ contract Bridge is
         uint256 amount,
         uint256 fee,
         SwapParams calldata swapParams,
+        bool gasdropRequested,
         bytes32 kappa
     )
         external
@@ -329,9 +332,8 @@ contract Bridge is
         // First, get the amount post fees
         amount = amount - fee;
 
-        SwapResult memory swapResult;
-        uint256 gasdropAmount;
-        bool isMint = bridgeTokenType[address(token)] == TokenType.MINT_BURN;
+        _BridgeInData memory data;
+        data.isMint = bridgeTokenType[address(token)] == TokenType.MINT_BURN;
 
         if (
             _isSwapPresent(swapParams) &&
@@ -339,30 +341,37 @@ contract Bridge is
         ) {
             // If there's a swap, and deadline check is passed,
             // release bridged tokens to Router
-            gasdropAmount = _releaseToken(
+            data.gasdropAmount = _releaseToken(
                 address(router),
                 token,
                 amount,
                 fee,
-                isMint,
-                kappa
+                data.isMint,
+                kappa,
+                gasdropRequested
             );
 
             // Then handle the swap part
-            swapResult = _handleSwap(to, token, amount, swapParams);
+            (data.tokenReceived, data.amountReceived) = _handleSwap(
+                to,
+                token,
+                amount,
+                swapParams
+            );
         } else {
             // If there's no swap, or deadline check is not passed,
             // release bridged token to needed address
-            gasdropAmount = _releaseToken(
+            data.gasdropAmount = _releaseToken(
                 to,
                 token,
                 amount,
                 fee,
-                isMint,
-                kappa
+                data.isMint,
+                kappa,
+                gasdropRequested
             );
 
-            swapResult = SwapResult(token, amount);
+            (data.tokenReceived, data.amountReceived) = (token, amount);
         }
 
         // Finally, emit BridgeIn Event
@@ -371,10 +380,10 @@ contract Bridge is
             token,
             amount + fee,
             fee,
-            isMint,
-            swapResult.tokenReceived,
-            swapResult.amountReceived,
-            gasdropAmount,
+            data.isMint,
+            data.tokenReceived,
+            data.amountReceived,
+            data.gasdropAmount,
             kappa
         );
     }
@@ -386,7 +395,7 @@ contract Bridge is
         IERC20 token,
         uint256 amountPostFee,
         SwapParams calldata swapParams
-    ) internal returns (SwapResult memory swapResult) {
+    ) internal returns (IERC20 tokenOut, uint256 amountOut) {
         // We're limiting amount of gas forwarded to Router,
         // so we always have some leftover gas to transfer
         // bridged token, should the swap run out of gas
@@ -397,12 +406,11 @@ contract Bridge is
                 amountPostFee
             )
         returns (uint256 _amountOut) {
-            swapResult = SwapResult(
-                IERC20(swapParams.path[swapParams.path.length - 1]),
-                _amountOut
-            );
+            tokenOut = IERC20(swapParams.path[swapParams.path.length - 1]);
+            amountOut = _amountOut;
         } catch {
-            swapResult = SwapResult(token, amountPostFee);
+            tokenOut = token;
+            amountOut = amountPostFee;
             router.refundToAddress(to, token, amountPostFee);
         }
     }
@@ -426,7 +434,8 @@ contract Bridge is
         uint256 amountPostFee,
         uint256 fee,
         bool isMint,
-        bytes32 kappa
+        bytes32 kappa,
+        bool gasdropRequested
     ) internal returns (uint256 gasdropAmount) {
         IERC20 bridgeToken = getBridgeToken(token);
         gasdropAmount = (isMint ? vault.mintToken : vault.withdrawToken)(
@@ -434,7 +443,7 @@ contract Bridge is
             bridgeToken,
             amountPostFee,
             fee,
-            true, // gasdropRequested
+            gasdropRequested,
             kappa
         );
     }
