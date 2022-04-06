@@ -61,7 +61,8 @@ function bridgeTokenToEVM(
   uint256 chainId,
   IBridge.SwapParams calldata initialSwapParams,
   uint256 amountIn,
-  IBridge.SwapParams calldata destinationSwapParams
+  IBridge.SwapParams calldata destinationSwapParams,
+  bool gasdropRequested
 ) external returns (uint256 amountBridged);
 
 function bridgeTokenToNonEVM(
@@ -75,7 +76,8 @@ function bridgeGasToEVM(
   address to,
   uint256 chainId,
   IBridge.SwapParams calldata initialSwapParams,
-  IBridge.SwapParams calldata destinationSwapParams
+  IBridge.SwapParams calldata destinationSwapParams,
+  bool gasdropRequested
 ) external payable returns (uint256 amountBridged);
 
 function bridgeGasToNonEVM(
@@ -112,6 +114,7 @@ function bridgeGasToNonEVM(
   - `deadline`: deadline for swap on **destination chain**. If deadline check is failed, user **will receive bridge token**.
     > If bridge token on **destination chain** is `WGAS`, it will be automatically unwrapped and sent as native chain `GAS`.
 - `amountBridged`: function returns amount of tokens bridged, in bridge token decimals precision.
+- `gasdropRequested`: whether receiving address wants to obtain a small gas airdrop (GasDrop) on destination chain. Disabling GasDrop leads to a lower minimum for the bridge fee.
 
 > `initialSwapParams.path[N-1]` and `destinationSwapParams.path[0]` are two counterparts of the bridge token, representing its addresses on initial and destination chain respectively.
 

@@ -79,7 +79,8 @@ contract BridgeRouter is Router, IBridgeRouter {
         uint256 _chainId,
         IBridge.SwapParams calldata _initialSwapParams,
         uint256 _amountIn,
-        IBridge.SwapParams calldata _destinationSwapParams
+        IBridge.SwapParams calldata _destinationSwapParams,
+        bool _gasdropRequested
     ) external returns (uint256 _amountBridged) {
         // First, perform swap on initial chain
         // Need to pull tokens from caller => isSelfSwap = false
@@ -94,7 +95,8 @@ contract BridgeRouter is Router, IBridgeRouter {
             _to,
             _chainId,
             _bridgeToken,
-            _destinationSwapParams
+            _destinationSwapParams,
+            _gasdropRequested
         );
     }
 
@@ -102,7 +104,8 @@ contract BridgeRouter is Router, IBridgeRouter {
         address _to,
         uint256 _chainId,
         IBridge.SwapParams calldata _initialSwapParams,
-        IBridge.SwapParams calldata _destinationSwapParams
+        IBridge.SwapParams calldata _destinationSwapParams,
+        bool _gasdropRequested
     ) external payable returns (uint256 _amountBridged) {
         // TODO: enforce consistency?? introduce _amountIn parameter
 
@@ -128,7 +131,8 @@ contract BridgeRouter is Router, IBridgeRouter {
             _to,
             _chainId,
             _bridgeToken,
-            _destinationSwapParams
+            _destinationSwapParams,
+            _gasdropRequested
         );
     }
 

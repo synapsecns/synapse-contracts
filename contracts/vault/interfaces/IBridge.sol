@@ -15,16 +15,20 @@ interface IBridge {
         DEPOSIT_WITHDRAW
     }
 
+    // internal struct to avoid stack too deep error
+    // solhint-disable-next-line
+    struct _BridgeInData {
+        bool isMint;
+        uint256 gasdropAmount;
+        IERC20 tokenReceived;
+        uint256 amountReceived;
+    }
+
     struct SwapParams {
         uint256 minAmountOut;
         address[] path;
         address[] adapters;
         uint256 deadline;
-    }
-
-    struct SwapResult {
-        IERC20 tokenReceived;
-        uint256 amountReceived;
     }
 
     event BridgeTokenRegistered(
@@ -50,7 +54,8 @@ interface IBridge {
         uint256 chainId,
         IERC20 token,
         uint256 amount,
-        SwapParams swapParams
+        SwapParams swapParams,
+        bool gasdropRequested
     );
 
     event BridgedOutNonEVM(
@@ -80,7 +85,8 @@ interface IBridge {
         address to,
         uint256 chainId,
         IERC20 token,
-        SwapParams calldata destinationSwapParams
+        SwapParams calldata destinationSwapParams,
+        bool gasdropRequested
     ) external returns (uint256 amountBridged);
 
     // -- BRIDGE OUT FUNCTIONS: to non-EVM chains --
@@ -99,6 +105,7 @@ interface IBridge {
         uint256 amount,
         uint256 fee,
         SwapParams calldata destinationSwapParams,
+        bool gasdropRequested,
         bytes32 kappa
     ) external;
 
