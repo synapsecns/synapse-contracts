@@ -70,7 +70,7 @@ interface IBridge {
         bool isMint,
         IERC20 tokenReceived,
         uint256 amountReceived,
-        bool airdropGiven,
+        uint256 gasdropAmount,
         bytes32 indexed kappa
     );
 

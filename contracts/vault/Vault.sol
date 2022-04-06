@@ -191,7 +191,7 @@ contract Vault is
         IERC20Mintable token,
         uint256 amount,
         uint256 fee,
-        bool airdropRequested,
+        bool gasdropRequested,
         bytes32 kappa
     )
         external
@@ -200,14 +200,14 @@ contract Vault is
         whenNotPaused
         markKappa(kappa)
         checkReceiver(to)
-        returns (bool airdropGiven)
+        returns (uint256 gasdropAmount)
     {
         fees[address(token)] += fee;
         token.mint(to, amount);
         token.mint(address(this), fee);
 
-        if (airdropRequested) {
-            airdropGiven = _transferGasDrop(to);
+        if (gasdropRequested) {
+            gasdropAmount = _transferGasDrop(to);
         }
     }
 
@@ -216,7 +216,7 @@ contract Vault is
         IERC20 token,
         uint256 amount,
         uint256 fee,
-        bool airdropRequested,
+        bool gasdropRequested,
         bytes32 kappa
     )
         external
@@ -226,20 +226,26 @@ contract Vault is
         markKappa(kappa)
         checkReceiver(to)
         checkTokenRequest(token, amount + fee)
-        returns (bool airdropGiven)
+        returns (uint256 gasdropAmount)
     {
         fees[address(token)] += fee;
         token.safeTransfer(to, amount);
 
-        if (airdropRequested) {
-            airdropGiven = _transferGasDrop(to);
+        if (gasdropRequested) {
+            gasdropAmount = _transferGasDrop(to);
         }
     }
 
-    function _transferGasDrop(address to) internal returns (bool airdropGiven) {
+    function _transferGasDrop(address to)
+        internal
+        returns (uint256 gasdropAmount)
+    {
         if (address(this).balance >= chainGasAmount) {
             // solhint-disable avoid-low-level-calls
-            (airdropGiven, ) = to.call{value: chainGasAmount}("");
+            (bool success, ) = to.call{value: chainGasAmount}("");
+            if (success) {
+                gasdropAmount = chainGasAmount;
+            }
         }
     }
 }
