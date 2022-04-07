@@ -53,6 +53,8 @@ contract Bridge is
     /// @dev key is underlyingToken here,
     mapping(address => TokenType) public bridgeTokenType;
 
+    uint256 internal constant FEE_DENOMINATOR = 10**10;
+
     function initialize(IVault _vault, uint128 _maxGasForSwap)
         external
         initializer
@@ -223,6 +225,15 @@ contract Bridge is
         router = _router;
     }
 
+    // -- BRIDGE CONFIG --
+
+    function calculateBridgeFee(
+        IERC20 token,
+        uint256 amount,
+        bool isGasDropPresent,
+        bool isSwapPresent
+    ) public view returns (uint256 fee) {}
+
     // -- BRIDGE OUT FUNCTIONS: to EVM chains --
 
     function bridgeToEVM(
@@ -241,11 +252,15 @@ contract Bridge is
         // Use verified burnt/deposited amount for bridging purposes.
         amountBridged = _lockToken(token);
 
+        // TODO
+        IERC20 tokenBridgedTo;
+
         // Finally, emit a Bridge Event
         emit BridgedOutEVM(
             to,
             chainId,
             token,
+            tokenBridgedTo,
             amountBridged,
             destinationSwapParams,
             gasdropRequested
@@ -263,8 +278,17 @@ contract Bridge is
         // Use verified burnt/deposited amount for bridging purposes.
         amountBridged = _lockToken(token);
 
+        // TODO
+        string memory tokenBridgedTo;
+
         // Then, emit a Bridge Event
-        emit BridgedOutNonEVM(to, chainId, token, amountBridged);
+        emit BridgedOutNonEVM(
+            to,
+            chainId,
+            token,
+            tokenBridgedTo,
+            amountBridged
+        );
     }
 
     // -- BRIDGE OUT : internal helpers --

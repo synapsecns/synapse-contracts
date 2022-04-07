@@ -31,6 +31,30 @@ interface IBridge {
         uint256 deadline;
     }
 
+    struct TokenConfig {
+        // -- FEES --
+        /// @notice Synapse:bridge fee value(i.e. 0.1%), multiplied by `FEE_DENOMINATOR`
+        uint256 synapseFee;
+        /// @notice Maximum total bridge fee
+        uint256 maxTotalFee;
+        /// @notice Minimum part of the fee covering bridging in (always present)
+        uint256 minBridgeFee;
+        /// @notice Minimum part of the fee covering GasDrop (when gasDrop is present)
+        uint256 minGasDropFee;
+        /// @notice Minimum part of the fee covering further swap (when swap is present)
+        uint256 minSwapFee;
+        // -- TOKEN TYPE --
+        /// @notice Describes how `token` is going to be bridged: mint or withdraw
+        TokenType tokenType;
+        /// @notice Contract responsible for `token` locking/releasing
+        /// @dev If `token` is compatible with Synapse:Bridge directly, this would be `token` address
+        /// Otherwise, it is address of BridgeWrapper for `token`
+        address bridgeToken;
+        // -- TOKEN MAP --
+        /// @notice Token addresses on other chains
+        mapping(uint256 => string) tokenMap;
+    }
+
     event BridgeTokenRegistered(
         address indexed bridgeToken,
         address indexed bridgeWrapper,
@@ -52,7 +76,8 @@ interface IBridge {
     event BridgedOutEVM(
         address indexed to,
         uint256 chainId,
-        IERC20 token,
+        IERC20 tokenBridgedFrom,
+        IERC20 tokenBridgedTo,
         uint256 amount,
         SwapParams swapParams,
         bool gasdropRequested
@@ -61,7 +86,8 @@ interface IBridge {
     event BridgedOutNonEVM(
         bytes32 indexed to,
         uint256 chainId,
-        IERC20 token,
+        IERC20 tokenBridgedFrom,
+        string tokenBridgedTo,
         uint256 amount
     );
 
