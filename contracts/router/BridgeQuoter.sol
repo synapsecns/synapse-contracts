@@ -5,10 +5,13 @@ import {Quoter} from "./Quoter.sol";
 
 import {IBridgeRouter} from "./interfaces/IBridgeRouter.sol";
 import {IBridgeQuoter} from "./interfaces/IBridgeQuoter.sol";
+import {IBridge} from "../vault/interfaces/IBridge.sol";
 
 import {Offers} from "./libraries/LibOffers.sol";
 
 contract BridgeQuoter is Quoter, IBridgeQuoter {
+    IBridge public immutable bridge;
+
     /// @dev Setup flow:
     /// 1. Create BridgeRouter contract
     /// 2. Create BridgeQuoter contract
@@ -22,7 +25,7 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
     constructor(address payable _router, uint8 _maxSwaps)
         Quoter(_router, _maxSwaps)
     {
-        this;
+        bridge = IBridge(IBridgeRouter(_router).bridge());
     }
 
     function findBestPathInitialChain(
@@ -38,16 +41,38 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
     function findBestPathDestinationChain(
         address _tokenIn,
         uint256 _amountIn,
-        address _tokenOut
+        address _tokenOut,
+        bool _gasdropRequested
     ) external view returns (Offers.FormattedOffer memory _bestOffer) {
-        // Relayer pays for gas, so:
-        // use maximum swaps permitted for bridge+swap transaction
-        return
-            findBestPath(
-                _tokenIn,
-                _amountIn,
-                _tokenOut,
-                IBridgeRouter(router).bridgeMaxSwaps()
-            );
+        bool _swapRequested = _tokenIn != _tokenOut;
+        uint256 _fee = bridge.calculateBridgeFee(
+            _tokenIn,
+            _amountIn,
+            _gasdropRequested,
+            _swapRequested
+        );
+
+        if (_amountIn > _fee) {
+            _amountIn = _amountIn - _fee;
+
+            if (_swapRequested) {
+                // Node group pays for gas, so:
+                // use maximum swaps permitted for bridge+swap transaction
+                _bestOffer = findBestPath(
+                    _tokenIn,
+                    _amountIn,
+                    _tokenOut,
+                    IBridgeRouter(router).bridgeMaxSwaps()
+                );
+            } else {
+                _bestOffer.path = new address[](1);
+                _bestOffer.path[0] = _tokenIn;
+
+                _bestOffer.amounts = new uint256[](1);
+                _bestOffer.amounts[0] = _amountIn;
+
+                // bestOffer.adapters is empty
+            }
+        }
     }
 }
