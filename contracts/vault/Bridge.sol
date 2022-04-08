@@ -784,8 +784,9 @@ contract Bridge is
             amount,
             fee,
             data.isMint,
-            kappa,
-            gasdropRequested
+            to, // always send gasDrop to user
+            gasdropRequested,
+            kappa
         );
 
         // If swap is present, do it and gather the info about tokens received
@@ -850,8 +851,9 @@ contract Bridge is
         uint256 amountPostFee,
         uint256 fee,
         bool isMint,
-        bytes32 kappa,
-        bool gasdropRequested
+        address userAddress,
+        bool gasdropRequested,
+        bytes32 kappa
     ) internal returns (uint256 gasdropAmount) {
         address bridgeTokenAddress = _getBridgeToken(token);
         gasdropAmount = (isMint ? vault.mintToken : vault.withdrawToken)(
@@ -859,6 +861,7 @@ contract Bridge is
             IERC20(bridgeTokenAddress),
             amountPostFee,
             fee,
+            userAddress,
             gasdropRequested,
             kappa
         );
