@@ -69,34 +69,22 @@ contract Bridge is
         uint256 chainId,
         bool isEVM
     ) {
-        require(
-            chainId != _getLocalChainId(),
-            "Bridge: can't bridge to the same chain"
-        );
+        require(chainId != _getLocalChainId(), "!chain");
 
         if (isEVM) {
-            require(
-                _getBridgeTokenEVM(token, chainId) != address(0),
-                "Bridge: direction is not supported"
-            );
+            require(_getBridgeTokenEVM(token, chainId) != address(0), "!chain");
         } else {
             TokenConfig memory config = tokenConfig[address(token)];
             bytes memory mapped = bytes(config.bridgeTokenNonEVM);
-            require(mapped.length > 0, "Bridge: direction is not supported");
-            require(
-                config.chainIdNonEVM == chainId,
-                "Bridge: non-EVM chainId is not supported"
-            );
+            require(mapped.length > 0, "!token");
+            require(config.chainIdNonEVM == chainId, "!chain");
         }
 
         _;
     }
 
     modifier checkTokenEnabled(IERC20 token) {
-        require(
-            tokenConfig[address(token)].isEnabled,
-            "Bridge: token is not enabled"
-        );
+        require(tokenConfig[address(token)].isEnabled, "!token");
 
         _;
     }
@@ -104,7 +92,7 @@ contract Bridge is
     modifier checkSwapParams(SwapParams calldata swapParams) {
         require(
             swapParams.path.length == swapParams.adapters.length + 1,
-            "Bridge: len(path)!=len(adapters)+1"
+            "|path|!=|adapters|+1"
         );
 
         _;
@@ -117,12 +105,12 @@ contract Bridge is
      */
     function recoverGAS() external onlyRole(GOVERNANCE_ROLE) {
         uint256 amount = address(this).balance;
-        require(amount != 0, "Nothing to recover");
+        require(amount != 0, "!balance");
 
         emit Recovered(address(0), amount);
         //solhint-disable-next-line
         (bool success, ) = msg.sender.call{value: amount}("");
-        require(success, "GAS transfer failed");
+        require(success, "!xfer");
     }
 
     /**
@@ -131,7 +119,7 @@ contract Bridge is
      */
     function recoverERC20(IERC20 token) external onlyRole(GOVERNANCE_ROLE) {
         uint256 amount = token.balanceOf(address(this));
-        require(amount != 0, "Nothing to recover");
+        require(amount != 0, "!balance");
 
         emit Recovered(address(token), amount);
         //solhint-disable-next-line
@@ -166,7 +154,7 @@ contract Bridge is
         uint256 minGasDropFee,
         uint256 minSwapFee
     ) external onlyRole(GOVERNANCE_ROLE) {
-        require(_getBridgeToken(token) == address(0), "Token already exists");
+        require(_getBridgeToken(token) == address(0), "+token");
 
         _updateTokenFees(
             token,
@@ -188,7 +176,7 @@ contract Bridge is
         uint256 minGasDropFee,
         uint256 minSwapFee
     ) external onlyRole(GOVERNANCE_ROLE) {
-        require(_getBridgeToken(token) != address(0), "Token does not exist");
+        require(_getBridgeToken(token) != address(0), "!token");
 
         _updateTokenFees(
             token,
@@ -205,7 +193,7 @@ contract Bridge is
         address bridgeToken,
         bool isMintBurn
     ) external onlyRole(GOVERNANCE_ROLE) {
-        require(_getBridgeToken(token) != address(0), "Token does not exist");
+        require(_getBridgeToken(token) != address(0), "!token");
 
         _updateTokenSetup(token, bridgeToken, isMintBurn);
     }
@@ -257,16 +245,10 @@ contract Bridge is
         uint256[] calldata chainIdsEVM,
         address[] calldata bridgeTokensEVM
     ) {
-        require(
-            bridgeTokensEVM.length == chainIdsEVM.length,
-            "EVM config length mismatch"
-        );
+        require(bridgeTokensEVM.length == chainIdsEVM.length, "!length");
         for (uint256 i = 0; i < chainIdsEVM.length; ++i) {
-            require(chainIdsEVM[i] != 0, "Chain ID must be non-zero");
-            require(
-                bridgeTokensEVM[i] != address(0),
-                "Bridge token must be non-zero"
-            );
+            require(chainIdsEVM[i] != 0, "!ID");
+            require(bridgeTokensEVM[i] != address(0), "!token");
         }
 
         _;
@@ -312,7 +294,7 @@ contract Bridge is
         checkConfigEVM(chainIdsEVM, bridgeTokensEVM)
     {
         TokenConfig memory config = tokenConfig[token];
-        require(config.chainIdsEVM.length != 0, "Token map is empty");
+        require(config.chainIdsEVM.length != 0, "!Map");
 
         _updateTokenMap(
             token,
@@ -394,8 +376,8 @@ contract Bridge is
         returns (bool)
     {
         TokenConfig storage config = tokenConfig[address(token)];
-        require(config.bridgeToken != address(0), "Token does not exist");
-        require(config.chainIdsEVM.length != 0, "Token map is empty");
+        require(config.bridgeToken != address(0), "!token");
+        require(config.chainIdsEVM.length != 0, "!Map");
 
         if (config.isEnabled == isEnabled) {
             // Y U DO DIS
@@ -431,7 +413,7 @@ contract Bridge is
                 break;
             }
         }
-        require(token != address(0), "Current chain not found");
+        require(token != address(0), "!Found");
     }
 
     function _updateMap(
@@ -444,7 +426,7 @@ contract Bridge is
         address token = _findLocalToken(chainIdsEVM, bridgeTokensEVM);
         require(
             !checkEmpty || tokenConfig[token].chainIdsEVM.length == 0,
-            "Token map already exists"
+            "+Map"
         );
         _updateTokenMap(
             token,
@@ -464,7 +446,7 @@ contract Bridge is
     ) internal {
         TokenConfig storage config = tokenConfig[token];
 
-        require(config.bridgeToken != address(0), "Token does not exist");
+        require(config.bridgeToken != address(0), "!token");
 
         for (uint256 i = 0; i < chainIdsEVM.length; i++) {
             uint256 chainId = chainIdsEVM[i];
@@ -476,10 +458,7 @@ contract Bridge is
         }
 
         if (chainIdNonEVM != 0) {
-            require(
-                config.chainIdNonEVM == 0,
-                "Non-EVM token map already exists"
-            );
+            require(config.chainIdNonEVM == 0, "+chain");
             tokenMapNonEVM[chainIdNonEVM][bridgeTokenNonEVM] = token;
             config.chainIdNonEVM = chainIdNonEVM;
             config.bridgeTokenNonEVM = bridgeTokenNonEVM;
@@ -538,10 +517,7 @@ contract Bridge is
 
     function _isMintBurnWithCheck(IERC20 token) internal view returns (bool) {
         TokenType tokenType = _getTokenType(token);
-        require(
-            tokenType != TokenType.NOT_SUPPORTED,
-            "Bridge: token not supported"
-        );
+        require(tokenType != TokenType.NOT_SUPPORTED, "!token");
         return tokenType == TokenType.MINT_BURN;
     }
 
@@ -618,7 +594,7 @@ contract Bridge is
     {
         // Figure out how much tokens do we have.
         uint256 amount = token.balanceOf(address(this));
-        require(amount > 0, "Bridge: Insufficient token amount");
+        require(amount > 0, "!amount");
 
         address bridgeTokenAddress = _getBridgeToken(token);
 
@@ -638,7 +614,7 @@ contract Bridge is
             amountVerified = token.balanceOf(address(vault)) - balanceBefore;
         }
 
-        require(amountVerified > 0, "Bridge: burn or deposit failed");
+        require(amountVerified > 0, "!locked");
     }
 
     // -- BRIDGE IN FUNCTIONS --
@@ -662,7 +638,7 @@ contract Bridge is
         bytes32 kappa
     ) external onlyRole(NODEGROUP_ROLE) nonReentrant whenNotPaused {
         address token = tokenMapNonEVM[chainIdFrom][bridgeTokenFrom];
-        require(token != address(0), "Bridge: non-EVM token not supported");
+        require(token != address(0), "!token");
 
         address[] memory path = new address[](1);
         path[0] = token;
@@ -700,7 +676,7 @@ contract Bridge is
             gasdropRequested,
             isSwapPresent
         );
-        require(amount > fee, "Amount must be greater than fee");
+        require(amount > fee, "!fee");
 
         // First, get the amount post fees
         amount = amount - fee;
