@@ -48,7 +48,7 @@ contract Bridge is
 
     uint256 internal constant FEE_DENOMINATOR = 10**10;
 
-    function initialize(IVault _vault, uint128 _maxGasForSwap)
+    function initialize(IVault _vault, uint256 _maxGasForSwap)
         external
         initializer
     {
@@ -69,22 +69,34 @@ contract Bridge is
         uint256 chainId,
         bool isEVM
     ) {
-        require(chainId != _getLocalChainId(), "!chain");
+        require(
+            chainId != _getLocalChainId(),
+            "!chain"
+        );
 
         if (isEVM) {
-            require(_getBridgeTokenEVM(token, chainId) != address(0), "!chain");
+            require(
+                _getBridgeTokenEVM(token, chainId) != address(0),
+                "!chain"
+            );
         } else {
             TokenConfig memory config = tokenConfig[address(token)];
             bytes memory mapped = bytes(config.bridgeTokenNonEVM);
             require(mapped.length > 0, "!token");
-            require(config.chainIdNonEVM == chainId, "!chain");
+            require(
+                config.chainIdNonEVM == chainId,
+                "!chain"
+            );
         }
 
         _;
     }
 
     modifier checkTokenEnabled(IERC20 token) {
-        require(tokenConfig[address(token)].isEnabled, "!token");
+        require(
+            tokenConfig[address(token)].isEnabled,
+            "!token"
+        );
 
         _;
     }
@@ -128,7 +140,7 @@ contract Bridge is
 
     // -- RESTRICTED SETTERS --
 
-    function setMaxGasForSwap(uint128 _maxGasForSwap)
+    function setMaxGasForSwap(uint256 _maxGasForSwap)
         external
         onlyRole(GOVERNANCE_ROLE)
     {
@@ -245,10 +257,16 @@ contract Bridge is
         uint256[] calldata chainIdsEVM,
         address[] calldata bridgeTokensEVM
     ) {
-        require(bridgeTokensEVM.length == chainIdsEVM.length, "!length");
+        require(
+            bridgeTokensEVM.length == chainIdsEVM.length,
+            "!length"
+        );
         for (uint256 i = 0; i < chainIdsEVM.length; ++i) {
             require(chainIdsEVM[i] != 0, "!ID");
-            require(bridgeTokensEVM[i] != address(0), "!token");
+            require(
+                bridgeTokensEVM[i] != address(0),
+                "!token"
+            );
         }
 
         _;
@@ -458,7 +476,10 @@ contract Bridge is
         }
 
         if (chainIdNonEVM != 0) {
-            require(config.chainIdNonEVM == 0, "+chain");
+            require(
+                config.chainIdNonEVM == 0,
+                "+chain"
+            );
             tokenMapNonEVM[chainIdNonEVM][bridgeTokenNonEVM] = token;
             config.chainIdNonEVM = chainIdNonEVM;
             config.bridgeTokenNonEVM = bridgeTokenNonEVM;
@@ -517,7 +538,10 @@ contract Bridge is
 
     function _isMintBurnWithCheck(IERC20 token) internal view returns (bool) {
         TokenType tokenType = _getTokenType(token);
-        require(tokenType != TokenType.NOT_SUPPORTED, "!token");
+        require(
+            tokenType != TokenType.NOT_SUPPORTED,
+            "!token"
+        );
         return tokenType == TokenType.MINT_BURN;
     }
 
