@@ -69,34 +69,22 @@ contract Bridge is
         uint256 chainId,
         bool isEVM
     ) {
-        require(
-            chainId != _getLocalChainId(),
-            "!chain"
-        );
+        require(chainId != _getLocalChainId(), "!chain");
 
         if (isEVM) {
-            require(
-                _getBridgeTokenEVM(token, chainId) != address(0),
-                "!chain"
-            );
+            require(_getBridgeTokenEVM(token, chainId) != address(0), "!chain");
         } else {
             TokenConfig memory config = tokenConfig[address(token)];
             bytes memory mapped = bytes(config.bridgeTokenNonEVM);
             require(mapped.length > 0, "!token");
-            require(
-                config.chainIdNonEVM == chainId,
-                "!chain"
-            );
+            require(config.chainIdNonEVM == chainId, "!chain");
         }
 
         _;
     }
 
     modifier checkTokenEnabled(IERC20 token) {
-        require(
-            tokenConfig[address(token)].isEnabled,
-            "!token"
-        );
+        require(tokenConfig[address(token)].isEnabled, "!token");
 
         _;
     }
@@ -156,6 +144,24 @@ contract Bridge is
 
     // -- BRIDGE CONFIG: swap fees --
 
+    /**
+     * @notice Add a new Bridge token config. Called by Governance only.
+     * @dev This will revert if a token has been added before, use {updateTokenFees},
+     * {updateTokenSetup} to update things later.
+     * Most of the time, `token == bridgeToken`. Another contract is used when token.mint(to, amount)
+     * or token.burn(amount) are impossible to call.
+     * In that case, `bridgeToken` should implement such functions to perform mint/burn of `token`.
+     * The concept of `bridgeToken` is isolated in `Bridge` entirely - no one needs to know how
+     * exactly `token` is being bridged.
+     * @param token Token to add: the version that is used on this chain.
+     * @param bridgeToken Bridge token that will be used for bridging `token`.
+     * @param isMintBurn Specifies if token is bridged via mint-burn or deposit-withdraw.
+     * @param synapseFee Synapse:Bridge fee value(i.e. 0.1%), multiplied by `FEE_DENOMINATOR`
+     * @param maxTotalFee Maximum total bridge fee, in `token` decimals
+     * @param minBridgeFee Minimum fee covering bridging in (always present), in `token` decimals
+     * @param minGasDropFee Minimum fee covering covering GasDrop (when GasDrop is present), in `token` decimals
+     * @param minSwapFee Minimum fee covering covering further swap (when swap is present), in `token` decimals
+     */
     function addNewBridgeToken(
         IERC20 token,
         address bridgeToken,
@@ -180,6 +186,16 @@ contract Bridge is
         _updateTokenSetup(token, bridgeToken, isMintBurn);
     }
 
+    /**
+     * @notice Update an existing `token` config. Called by Governance only.
+     * @dev This will revert if `token` wasn't added before.
+     * @param token Token to add: the version that is used on this chain.
+     * @param synapseFee Synapse:Bridge fee value(i.e. 0.1%), multiplied by `FEE_DENOMINATOR`
+     * @param maxTotalFee Maximum total bridge fee, in `token` decimals
+     * @param minBridgeFee Minimum fee covering bridging in (always present), in `token` decimals
+     * @param minGasDropFee Minimum fee covering covering GasDrop (when GasDrop is present), in `token` decimals
+     * @param minSwapFee Minimum fee covering covering further swap (when swap is present), in `token` decimals
+     */
     function updateTokenFees(
         IERC20 token,
         uint256 synapseFee,
@@ -200,6 +216,13 @@ contract Bridge is
         );
     }
 
+    /**
+     * @notice Update an existing `token` config. Called by Governance only.
+     * @dev This will revert if `token` wasn't added before.
+     * @param token Token to add: the version that is used on this chain.
+     * @param bridgeToken Bridge token that will be used for bridging `token`.
+     * @param isMintBurn Specifies if token is bridged via mint-burn or deposit-withdraw.
+     */
     function updateTokenSetup(
         IERC20 token,
         address bridgeToken,
@@ -253,25 +276,36 @@ contract Bridge is
 
     // -- BRIDGE CONFIG: token setup (Governance) --
 
+    /**
+     * @dev Checks whether provided arrays length match,
+     * also checks for blank values.
+     */
     modifier checkConfigEVM(
         uint256[] calldata chainIdsEVM,
         address[] calldata bridgeTokensEVM
     ) {
-        require(
-            bridgeTokensEVM.length == chainIdsEVM.length,
-            "!length"
-        );
+        require(bridgeTokensEVM.length == chainIdsEVM.length, "!length");
         for (uint256 i = 0; i < chainIdsEVM.length; ++i) {
             require(chainIdsEVM[i] != 0, "!ID");
-            require(
-                bridgeTokensEVM[i] != address(0),
-                "!token"
-            );
+            require(bridgeTokensEVM[i] != address(0), "!token");
         }
 
         _;
     }
 
+    /**
+     * @notice Adds a new token Map. Called by Governance only.
+     * @dev This will emit TokenMapUpdated Event, which Validators are supposed to relay
+     * to other chains.
+     * This will revert if:
+     * 1. Current chain ID is not present in the list.
+     * 2. Token wasn't added via {addNewBridgeToken}.
+     * 3. Map was already added, use {addChainsToMap} to update it later.
+     * @param chainIdsEVM IDs of all EVM chains token is deployed on, INCLUDING current one.
+     * @param bridgeTokensEVM Token addresses on all EVM chains token is deployed on, INCLUDING current one.
+     * @param chainIdNonEVM ID of non-EVM chain, token is deployed on. Zero, if not deployed.
+     * @param bridgeTokenNonEVM address of token on non-EVM chain. Ignored, if `chainIdNonEVM==0`.
+     */
     function addNewMap(
         uint256[] calldata chainIdsEVM,
         address[] calldata bridgeTokensEVM,
@@ -300,6 +334,18 @@ contract Bridge is
         );
     }
 
+    /**
+     * @notice Adds chains to an existing token Map. Called by Governance only.
+     * @dev This will emit `TokenMapUpdated` Event, which Validators are supposed to relay
+     * to other chains, both old and new ones.
+     * This will revert if:
+     * 1. Token wasn't added via {addNewBridgeToken}.
+     * 2. Map wasn't added via {addNewMap} or {updateMap}.
+     * @param chainIdsEVM IDs of NEW EVM chains token is deployed on. This excludes any old chains.
+     * @param bridgeTokensEVM Token addresses on NEW EVM chains token is deployed on. This excludes any old chains.
+     * @param chainIdNonEVM ID of NEW non-EVM chain, token is deployed on. Ignored, if zero.
+     * @param bridgeTokenNonEVM address of token on NEW non-EVM chain. Ignored, if `chainIdNonEVM==0`.
+     */
     function addChainsToMap(
         address token,
         uint256[] calldata chainIdsEVM,
@@ -322,11 +368,13 @@ contract Bridge is
             bridgeTokenNonEVM
         );
 
+        // config.chainIdsEVM now contains both old and new chainIds
         address[] memory allTokenAddresses = _getAllTokenAddressesEVM(
             token,
             config.chainIdsEVM
         );
 
+        // Use both old and new chains in the emitted Event
         emit TokenMapUpdated(
             config.chainIdsEVM,
             allTokenAddresses,
@@ -335,6 +383,16 @@ contract Bridge is
         );
     }
 
+    /**
+     * @notice Enable/Disable token bridging. Called by Governance only.
+     * @dev This will emit `TokenStatusUpdated`, which Validators are supposed to relay
+     * to other chains. Wil not emit anything, if token status hasn't changed.
+     * This will revert if:
+     * 1. Token wasn't added via {addNewBridgeToken}.
+     * 2. Map wasn't added via {addNewMap} or {updateMap}.
+     * @param token Token to toggle: the version that is used on this chain.
+     * @param isEnabled New token Bridge status
+     */
     function changeTokenStatus(IERC20 token, bool isEnabled)
         external
         onlyRole(GOVERNANCE_ROLE)
@@ -357,6 +415,17 @@ contract Bridge is
 
     // -- BRIDGE CONFIG: token setup (Node Group) --
 
+    /**
+     * @notice Adds chains to an existing token Map. Called by Node Group only.
+     * @dev This will NOT overwrite data for chains already existing in Map.
+     * This will revert if:
+     * 1. Current chain ID is not present in the list.
+     * 2. Token wasn't added via {addNewBridgeToken}.
+     * @param chainIdsEVM IDs of all EVM chains token is deployed on, INCLUDING current one.
+     * @param bridgeTokensEVM Token addresses on all EVM chains token is deployed on, INCLUDING current one.
+     * @param chainIdNonEVM ID of non-EVM chain, token is deployed on. Zero, if not deployed.
+     * @param bridgeTokenNonEVM address of token on non-EVM chain. Ignored, if `chainIdNonEVM==0`.
+     */
     function updateMap(
         uint256[] calldata chainIdsEVM,
         address[] calldata bridgeTokensEVM,
@@ -378,6 +447,14 @@ contract Bridge is
         // DO NOT emit anything, as this is a relayed setup tx
     }
 
+    /**
+     * @notice Enable/Disable token bridging. Called by Node Group only.
+     * @dev This will revert if:
+     * 1. Token wasn't added via {addNewBridgeToken}.
+     * 2. Map wasn't added via {addNewMap} or {updateMap}.
+     * @param token Token to toggle: the version that is used on this chain.
+     * @param isEnabled New token Bridge status
+     */
     function updateTokenStatus(IERC20 token, bool isEnabled)
         external
         onlyRole(NODEGROUP_ROLE)
@@ -476,10 +553,7 @@ contract Bridge is
         }
 
         if (chainIdNonEVM != 0) {
-            require(
-                config.chainIdNonEVM == 0,
-                "+chain"
-            );
+            require(config.chainIdNonEVM == 0, "+chain");
             tokenMapNonEVM[chainIdNonEVM][bridgeTokenNonEVM] = token;
             config.chainIdNonEVM = chainIdNonEVM;
             config.bridgeTokenNonEVM = bridgeTokenNonEVM;
@@ -538,10 +612,7 @@ contract Bridge is
 
     function _isMintBurnWithCheck(IERC20 token) internal view returns (bool) {
         TokenType tokenType = _getTokenType(token);
-        require(
-            tokenType != TokenType.NOT_SUPPORTED,
-            "!token"
-        );
+        require(tokenType != TokenType.NOT_SUPPORTED, "!token");
         return tokenType == TokenType.MINT_BURN;
     }
 
