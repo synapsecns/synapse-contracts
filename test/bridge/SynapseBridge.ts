@@ -1,188 +1,161 @@
-// import { BigNumber, Signer } from "ethers"
-// import {
-//     MAX_UINT256,
-//     TIME,
-//     ZERO_ADDRESS,
-//     asyncForEach,
-//     getCurrentBlockTimestamp,
-//     setNextTimestamp,
-//     setTimestamp,
-//     forceAdvanceOneBlock,
-// } from "./testUtils"
+import { BigNumber, Signer } from "ethers"
+import {
+  MAX_UINT256,
+  TIME,
+  ZERO_ADDRESS,
+  asyncForEach,
+  getCurrentBlockTimestamp,
+  setNextTimestamp,
+  setTimestamp,
+  forceAdvanceOneBlock,
+} from "./testUtils"
+import { solidity } from "ethereum-waffle"
+import { deployments, ethers } from "hardhat"
 
-// import { solidity } from "ethereum-waffle"
-// import { deployments, ethers } from "hardhat"
+import chai from "chai"
+import { GenericERC20, RateLimiter, SynapseBridge } from "../../build/typechain"
+import epochSeconds from "@stdlib/time-now"
+import { keccak256 } from "ethers/lib/utils"
+import { randomBytes } from "crypto"
 
-// import { SynapseBridge } from "../build/typechain/SynapseBridge"
-// import { SynapseERC20 } from "../build/typechain/SynapseERC20"
+chai.use(solidity)
+const { expect } = chai
 
-// import chai from "chai"
+describe.only("SynapseBridge", async () => {
+  const { get } = deployments
 
-// chai.use(solidity)
-// const { expect } = chai
+  // signers
+  let signers: Array<Signer>
+  let deployer: Signer
+  let owner: Signer
+  let limiter: Signer
+  let nodeGroup: Signer
+  let recipient: Signer
 
-// describe("SynapseBridge", async () => {
-//     const { get } = deployments
-//     let signers: Array<Signer>
-//     let synapseBridge: SynapseBridge
-//     let syntestERC20: SynapseERC20
-//     let testERC20: SynapseERC20
-//     let owner: Signer
-//     let user1: Signer
-//     let user2: Signer
-//     let nodeGroup: Signer
-//     let ownerAddress: string
-//     let user1Address: string
-//     let user2Address: string
-//     let nodeGroupAddress: string
+  // contracts
+  let bridge: SynapseBridge
+  let rateLimiter: RateLimiter
+  let USDC: GenericERC20
 
-//     const setupTest = deployments.createFixture(
-//         async ({ deployments, ethers }) => {
-//             const { get } = deployments
-//             await deployments.fixture() // ensure you start from a fresh deployments
+  const decimals = Math.pow(10, 6)
 
-//             signers = await ethers.getSigners()
-//             owner = signers[0]
-//             user1 = signers[1]
-//             user2 = signers[2]
-//             nodeGroup = signers[3]
-//             ownerAddress = await owner.getAddress()
-//             user1Address = await user1.getAddress()
-//             user2Address = await user2.getAddress()
-//             nodeGroupAddress = await nodeGroup.getAddress()
-//             const SynapseBridgeContract = await ethers.getContractFactory("SynapseBridge")
-//             const synapseERC20Contract = await ethers.getContractFactory("SynapseERC20")
+  // deploy rateLimiter deploys the rate limiter contract, sets it to RateLimiter and
+  // assigns owner the limiter role
+  const deployRateLimiter = async () => {
+    const rateLimiterFactory = await ethers.getContractFactory("RateLimiter")
+    rateLimiter = (await rateLimiterFactory.deploy()) as RateLimiter
+    await rateLimiter.initialize()
 
-//             synapseBridge = await SynapseBridgeContract.deploy()
-//             syntestERC20 = (await synapseERC20Contract.deploy())
-//             testERC20 = (await synapseERC20Contract.deploy())
+    const limiterRole = await rateLimiter.LIMITER_ROLE()
+    await rateLimiter
+      .connect(deployer)
+      .grantRole(limiterRole, await owner.getAddress())
 
-//             await synapseBridge.initialize()
-//             await syntestERC20.initialize(
-//                 "Synapse Test Token",
-//                 "SYNTEST",
-//                 18,
-//                 await owner.getAddress()
-//             )
+    // connect the bridge config v3 with the owner. For unauthorized tests, this can be overriden
+    rateLimiter = rateLimiter.connect(owner)
+  }
 
-//             await testERC20.initialize(
-//                 "Test Token",
-//                 "Test",
-//                 18,
-//                 await owner.getAddress()
-//             )
+  // deploys the bridge, grants role. Rate limiter *must* be deployed first
+  const deployBridge = async () => {
+    if (rateLimiter == null) {
+      throw "rate limiter must be deployed before bridge"
+    }
 
-//             // Set approvals
-//             await asyncForEach([owner, user1, user2], async (signer) => {
-//                 await syntestERC20.connect(signer).approve(synapseBridge.address, MAX_UINT256)
-//                 await testERC20.connect(signer).approve(synapseBridge.address, MAX_UINT256)
-//                 await testERC20.connect(signer).approve(synapseBridge.address, MAX_UINT256)
-//                 await syntestERC20.connect(owner).grantRole(await syntestERC20.MINTER_ROLE(), await owner.getAddress());
-//                 await syntestERC20.connect(owner).grantRole(await syntestERC20.MINTER_ROLE(), await synapseBridge.address);
-//                 await synapseBridge.connect(owner).grantRole(await synapseBridge.NODEGROUP_ROLE(), nodeGroupAddress);
-//                 await testERC20.connect(owner).grantRole(await testERC20.MINTER_ROLE(), await owner.getAddress());
-//                 await syntestERC20.connect(owner).mint(await signer.getAddress(), BigNumber.from(10).pow(18).mul(100000))
-//                 await testERC20.connect(owner).mint(await signer.getAddress(), BigNumber.from(10).pow(18).mul(100000))
-//             })
+    // deploy and initialize the rate limiter
+    const synapseBridgeFactory = await ethers.getContractFactory(
+      "SynapseBridge",
+    )
+    bridge = (await synapseBridgeFactory.deploy()) as SynapseBridge
+    await bridge.initialize()
 
-//         })
+    // grant rate limiter role on bridge to rate limiter
+    const rateLimiterRole = await bridge.RATE_LIMITER_ROLE()
+    await bridge
+      .connect(deployer)
+      .grantRole(rateLimiterRole, rateLimiter.address)
 
-//     beforeEach(async () => {
-//         await setupTest()
-//     })
+    await bridge.setRateLimiter(rateLimiter.address)
 
-//     describe("Bridge", () => {
-//         describe("ERC20", () => {
-//             it("Deposit - return correct balance in bridge contract", async () => {
-//                 await synapseBridge.deposit(user1Address, 56, testERC20.address, String(1e18))
-//                 await expect(await testERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e18))
-//             })
+    const nodeGroupRole = await bridge.NODEGROUP_ROLE()
+    await bridge
+      .connect(deployer)
+      .grantRole(nodeGroupRole, await nodeGroup.getAddress())
 
-//             it("Withdraw - correct balance to user and keep correct fee", async () => {
-//                 //user deposits 1 token
-//                 await synapseBridge.deposit(user1Address, 56, testERC20.address, String(1e18))
-//                 let preWithdraw = await testERC20.balanceOf(user1Address)
+    bridge = await bridge.connect(nodeGroup)
 
-//                 // later, redeems it on a different chain. Node group withdraws w/ a selected fee
-//                 await synapseBridge.connect(nodeGroup).withdraw(user1Address, testERC20.address, String(9e17), String(1e17))
-//                 await expect((await testERC20.balanceOf(user1Address)).sub(preWithdraw)).to.be.eq(String(9e17))
-//                 await expect(await testERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e17))
-//                 await expect(await synapseBridge.getFeeBalance(testERC20.address)).to.be.eq(String(1e17))
+    await rateLimiter
+      .connect(deployer)
+      .grantRole(await rateLimiter.BRIDGE_ROLE(), bridge.address)
+  }
 
-//             })
+  const setupTokens = async () => {
+    const erc20Factory = await ethers.getContractFactory("GenericERC20")
+    USDC = (await erc20Factory.deploy("USDC", "USDC", "6")) as GenericERC20
+  }
 
-//             it("Mint - correct balance to user and keep correct fee", async () => {
-//                 // nodegroup mints after receiving TokenDeposit Event
-//                 let preMint = await syntestERC20.balanceOf(user1Address)
+  const setupTest = deployments.createFixture(
+    async ({ deployments, ethers }) => {
+      await deployments.fixture()
 
-//                 await synapseBridge.connect(nodeGroup).mint(user1Address, syntestERC20.address, String(9e17), String(1e17))
+      signers = await ethers.getSigners()
 
-//                 // checks for mint and fee amounts
+      // assign roles
+      deployer = signers[0]
+      owner = signers[1]
+      limiter = signers[2]
+      nodeGroup = signers[3]
+      recipient = signers[4]
 
-//                 await expect((await syntestERC20.balanceOf(user1Address)).sub(preMint)).to.be.eq(String(9e17))
-//                 await expect(await syntestERC20.balanceOf(synapseBridge.address)).to.be.eq(String(1e17))
-//                 await expect(await synapseBridge.getFeeBalance(syntestERC20.address)).to.be.eq(String(1e17))
+      await deployRateLimiter()
+      await deployBridge()
+      await setupTokens()
+    },
+  )
 
-//             })
+  beforeEach(async () => {
+    await setupTest()
+  })
 
-//             it("Redeem - correct balance to user and keep correct fee", async () => {
-//                 // user decides to redeem back to base chainId
-//                 let preRedeem = await syntestERC20.balanceOf(user1Address)
+  // ammounts are multiplied by 10^6
+  const setupAllowanceTest = async (
+    token: GenericERC20,
+    allowanceAmount: number,
+    mintAmount: number,
+    intervalMin: number = 60,
+  ) => {
+    const lastReset = Math.floor(epochSeconds() / 60)
+    allowanceAmount = allowanceAmount * decimals
 
-//                 await synapseBridge.redeem(user1Address, 1, syntestERC20.address, String(9e17))
-//                 await expect((await syntestERC20.balanceOf(user1Address)).sub(preRedeem)).to.be.eq(String(0))
-//             })
+    await expect(
+      rateLimiter.setAllowance(
+        token.address,
+        allowanceAmount,
+        intervalMin,
+        lastReset,
+      ),
+    ).to.be.not.reverted
+    await expect(USDC.mint(bridge.address, mintAmount * decimals))
+  }
 
-//             it("Withdraw fees", async () => {
-//                 let preWithdrawFees = await syntestERC20.balanceOf(ownerAddress)
-//                 let synTestFees = await synapseBridge.getFeeBalance(syntestERC20.address)
-//                 await synapseBridge.withdrawFees(syntestERC20.address, ownerAddress)
-//                 await expect((await syntestERC20.balanceOf(ownerAddress)).sub(preWithdrawFees)).to.be.eq(synTestFees)
-//             })
-//         })
+  it("should add to retry queue if rate limit hit", async () => {
+    const mintAmount = 50
+    await setupAllowanceTest(USDC, 100, mintAmount)
 
-//         describe("ETH", () => {
-//             it("Deposit ETH", async () => {
-//                 await synapseBridge.depositETH(user1Address, 56, String(1e18), {
-//                     value: String(1e18)
-//                 })
-//                 expect(await ethers.provider.getBalance(synapseBridge.address)).to.be.eq(String(1e18))
-//             })
+    const kappa = keccak256(randomBytes(32))
 
-//             it("Withdraw ETH with correct fees", async () => {
-//                 // someone deposits eth
-//                 await synapseBridge.depositETH(ownerAddress, 56, String(1e18), {
-//                     value: String(1e18)
-//                 })
-//                 expect(await ethers.provider.getBalance(synapseBridge.address)).to.be.eq(String(1e18))
+    await expect(
+      bridge
+        .connect(nodeGroup)
+        .withdraw(await recipient.getAddress(), USDC.address, 101, 50, kappa),
+    ).to.be.not.reverted
 
-//                 // øn a redeem, node group withdraws eth
-//                 let preWithdrawOwner = await ethers.provider.getBalance(ownerAddress)
-//                 expect(await ethers.provider.getBalance(synapseBridge.address)).to.be.eq(String(1e18))
-//                 await synapseBridge.connect(nodeGroup).withdrawETH(ownerAddress, String(9e17), String(1e17))
-//                 expect(await ethers.provider.getBalance(synapseBridge.address)).to.be.eq(String(1e17))
-//                 let postWithdrawOwner = await ethers.provider.getBalance(ownerAddress)
-//                 expect(postWithdrawOwner.sub(preWithdrawOwner)).to.be.eq(String(9e17))
-//             })
+    // make sure withdraw didn't happen
+    expect(await USDC.balanceOf(bridge.address)).to.be.eq(
+      (mintAmount * decimals).toString(),
+    )
 
-//             it("Withdraw ETH fees", async() => {
-//                 // someone deposits eth
-//                 await synapseBridge.depositETH(ownerAddress, 56, String(1e18), {
-//                     value: String(1e18)
-//                 })
+    // now retry. This should bypass the rate limiter
 
-//                 // øn a redeem, node group withdraws eth
-//                 let preWithdrawOwner = await ethers.provider.getBalance(ownerAddress)
-
-//                 await synapseBridge.connect(nodeGroup).withdrawETH(ownerAddress, String(9e17), String(1e17))
-
-//                 let preuser1Address = await ethers.provider.getBalance(user1Address)
-
-//                 await synapseBridge.connect(owner).withdrawETHFees(user1Address)
-//                 expect((await ethers.provider.getBalance(user1Address)).sub(preuser1Address)).to.be.eq(String(1e17))
-//             });
-//         })
-
-//     })
-
-// });
+    await expect(rateLimiter.retryByKappa(kappa)).to.be.not.reverted
+  })
+})

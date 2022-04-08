@@ -19,7 +19,7 @@ import epochSeconds from "@stdlib/time-now"
 chai.use(solidity)
 const { expect, assert } = chai
 
-describe.only("Rate Limiter", () => {
+describe("Rate Limiter", () => {
   let signers: Array<Signer>
   let deployer: Signer
   let owner: Signer
@@ -28,7 +28,6 @@ describe.only("Rate Limiter", () => {
   let rateLimiterTest: RateLimiterTest
 
   let USDC: GenericERC20
-  let USDT: GenericERC20
 
   // number of minutes in an hour
   let hour: number = 60
@@ -41,15 +40,13 @@ describe.only("Rate Limiter", () => {
       owner = signers[1]
       attacker = signers[10]
 
-      const rateLimiterFactory = await ethers.getContractFactory("RateLimiter")
-
-      // deploy 2 test erc-20's
       const erc20Factory = await ethers.getContractFactory("GenericERC20")
 
       USDC = (await erc20Factory.deploy("USDC", "USDC", "6")) as GenericERC20
-      USDT = (await erc20Factory.deploy("USDT", "USDT", "6")) as GenericERC20
 
       // deploy and initialize the rate limiter
+      const rateLimiterFactory = await ethers.getContractFactory("RateLimiter")
+
       rateLimiter = (await rateLimiterFactory.deploy()) as RateLimiter
       await rateLimiter.initialize()
 
