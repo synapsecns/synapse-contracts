@@ -28,6 +28,7 @@ interface IVault {
         IERC20 token,
         uint256 amount,
         uint256 fee,
+        address gasdropAddress,
         bool gasdropRequested,
         bytes32 kappa
     ) external returns (uint256 gasdropAmount);
@@ -37,6 +38,7 @@ interface IVault {
         IERC20 token,
         uint256 amount,
         uint256 fee,
+        address gasdropAddress,
         bool gasdropRequested,
         bytes32 kappa
     ) external returns (uint256 gasdropAmount);

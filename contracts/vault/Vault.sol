@@ -191,6 +191,7 @@ contract Vault is
         IERC20Mintable token,
         uint256 amount,
         uint256 fee,
+        address gasdropAddress,
         bool gasdropRequested,
         bytes32 kappa
     )
@@ -207,7 +208,7 @@ contract Vault is
         token.mint(address(this), fee);
 
         if (gasdropRequested) {
-            gasdropAmount = _transferGasDrop(to);
+            gasdropAmount = _transferGasDrop(gasdropAddress);
         }
     }
 
@@ -216,6 +217,7 @@ contract Vault is
         IERC20 token,
         uint256 amount,
         uint256 fee,
+        address gasdropAddress,
         bool gasdropRequested,
         bytes32 kappa
     )
@@ -232,7 +234,7 @@ contract Vault is
         token.safeTransfer(to, amount);
 
         if (gasdropRequested) {
-            gasdropAmount = _transferGasDrop(to);
+            gasdropAmount = _transferGasDrop(gasdropAddress);
         }
     }
 
