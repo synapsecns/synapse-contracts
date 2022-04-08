@@ -14,6 +14,7 @@ interface IBridgeQuoter is IQuoter {
     function findBestPathDestinationChain(
         address _tokenIn,
         uint256 _amountIn,
-        address _tokenOut
+        address _tokenOut,
+        bool _gasdropRequested
     ) external view returns (Offers.FormattedOffer memory _bestOffer);
 }

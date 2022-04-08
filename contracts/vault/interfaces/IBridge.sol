@@ -46,39 +46,65 @@ interface IBridge {
         // -- TOKEN TYPE --
         /// @notice Describes how `token` is going to be bridged: mint or withdraw
         TokenType tokenType;
-        /// @notice Contract responsible for `token` locking/releasing
-        /// @dev If `token` is compatible with Synapse:Bridge directly, this would be `token` address
-        /// Otherwise, it is address of BridgeWrapper for `token`
+        /// @notice Contract responsible for `token` locking/releasing.
+        /// @dev If `token` is compatible with Synapse:Bridge directly, this would be `token` address.
+        /// Otherwise, it is address of BridgeWrapper for `token`.
+        /// No one (UI, users, validators) needs to know about this extra layer, it is abstracted away
+        /// outside of Bridge contract.
         address bridgeToken;
-        // -- TOKEN MAP --
-        /// @notice Token addresses on other chains
-        mapping(uint256 => string) tokenMap;
+        bool isEnabled;
+        /// @dev If `token` comes from non-EVM chain, these will store the token config there
+        /// Otherwise, these are left empty.
+        uint256 chainIdNonEVM;
+        string bridgeTokenNonEVM;
+        /// @dev List of ALL EVM chains `token` is present on, in no particular order.
+        /// This includes the chain this Bridge is deployed on
+        uint256[] chainIdsEVM;
     }
 
-    event BridgeTokenRegistered(
-        address indexed bridgeToken,
-        address indexed bridgeWrapper,
-        TokenType tokenType
+    event TokenSetupUpdated(IERC20 token, address bridgeToken, bool isMintBurn);
+
+    event TokenFeesUpdated(
+        IERC20 token,
+        uint256 synapseFee,
+        uint256 maxTotalFee,
+        uint256 minBridgeFee,
+        uint256 minGasDropFee,
+        uint256 minSwapFee
+    );
+
+    event TokenMapUpdated(
+        uint256[] chainIdsEVM,
+        address[] bridgeTokensEVM,
+        uint256 chainIdNonEVM,
+        string bridgeTokenNonEVM
+    );
+
+    event TokenStatusUpdated(
+        uint256[] chainIdsEVM,
+        address[] bridgeTokensEVM,
+        bool isEnabled
     );
 
     event Recovered(address indexed asset, uint256 amount);
 
     // -- VIEWS
 
-    function getBridgeToken(IERC20 token) external view returns (IERC20);
+    function calculateBridgeFee(
+        address token,
+        uint256 amount,
+        bool gasdropRequested,
+        bool swapRequested
+    ) external view returns (uint256 fee);
 
-    function getUnderlyingToken(IERC20 token) external view returns (IERC20);
-
-    function bridgeTokenType(address token) external view returns (TokenType);
-
-    // -- BRIDGE EVENTS OUT: Reworked
+    // -- BRIDGE EVENTS OUT:
 
     event BridgedOutEVM(
         address indexed to,
         uint256 chainId,
         IERC20 tokenBridgedFrom,
-        IERC20 tokenBridgedTo,
         uint256 amount,
+        IERC20 tokenBridgedTo,
         SwapParams swapParams,
         bool gasdropRequested
     );
@@ -87,8 +113,8 @@ interface IBridge {
         bytes32 indexed to,
         uint256 chainId,
         IERC20 tokenBridgedFrom,
-        string tokenBridgedTo,
-        uint256 amount
+        uint256 amount,
+        string tokenBridgedTo
     );
 
     // -- BRIDGE EVENTS IN --
@@ -104,7 +130,7 @@ interface IBridge {
         bytes32 indexed kappa
     );
 
-    // -- BRIDGE OUT FUNCTIONS: to EVM chains --
+    // -- BRIDGE OUT FUNCTIONS:
 
     function bridgeToEVM(
         address to,
@@ -114,8 +140,6 @@ interface IBridge {
         bool gasdropRequested
     ) external returns (uint256 amountBridged);
 
-    // -- BRIDGE OUT FUNCTIONS: to non-EVM chains --
-
     function bridgeToNonEVM(
         bytes32 to,
         uint256 chainId,
@@ -124,27 +148,20 @@ interface IBridge {
 
     // -- BRIDGE IN FUNCTIONS --
 
-    function bridgeIn(
+    function bridgeInEVM(
         address to,
         IERC20 token,
         uint256 amount,
-        uint256 fee,
         SwapParams calldata destinationSwapParams,
         bool gasdropRequested,
         bytes32 kappa
     ) external;
 
-    // -- RESTRICTED FUNCTIONS --
-
-    function registerBridgeToken(
-        address bridgeToken,
-        address bridgeWrapper,
-        TokenType tokenType
+    function bridgeInNonEVM(
+        address to,
+        uint256 chainIdFrom,
+        string memory bridgeTokenFrom,
+        uint256 amount,
+        bytes32 kappa
     ) external;
-
-    function recoverGAS() external;
-
-    function recoverERC20(IERC20 token) external;
-
-    function setRouter(IBridgeRouter _router) external;
 }
