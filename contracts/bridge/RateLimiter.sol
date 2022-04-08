@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts-4.3.1-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-4.3.1-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-4.3.1-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-4.3.1-upgradeable/utils/math/MathUpgradeable.sol";
+
+import "./libraries/EnumerableMapUpgradeable.sol";
 import "./interfaces/IRateLimiter.sol";
 
 // @title RateLimiter
@@ -27,7 +30,9 @@ contract RateLimiter is
     // Token -> Allowance
     mapping(address => Allowance) public allowances;
     // Kappa->Retry Selector
-    mapping(bytes32 => bytes) public limited;
+    EnumerableMapUpgradeable.Bytes32ToBytesMap private limited;
+    // Bridge Address
+    address public BRIDGE_ADDRESS;
 
     // List of tokens
     address[] public tokens;
@@ -57,6 +62,13 @@ contract RateLimiter is
     function initialize() external initializer {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         __AccessControl_init();
+    }
+
+    function setBridgeAddress(address bridge)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        BRIDGE_ADDRESS = bridge;
     }
 
     /**
@@ -162,7 +174,40 @@ contract RateLimiter is
         external
         onlyRole(BRIDGE_ROLE)
     {
-        limited[kappa] = rateLimited;
+        EnumerableMapUpgradeable.set(limited, kappa, rateLimited);
+    }
+
+    function retryByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
+        bytes memory toRetry = EnumerableMapUpgradeable.get(limited, kappa);
+        (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(toRetry);
+        require(success, "could not call bridge");
+        EnumerableMapUpgradeable.remove(limited, kappa);
+    }
+
+    function retryCount(uint8 count) external onlyRole(LIMITER_ROLE) {
+        // no issues casting to uint8 here. If length is greater then 255, min is always taken
+        uint8 attempts = uint8(
+            MathUpgradeable.min(
+                uint256(count),
+                EnumerableMapUpgradeable.length(limited)
+            )
+        );
+
+        for (uint8 i = 0; i < attempts; i++) {
+            (bytes32 kappa, bytes memory toRetry) = EnumerableMapUpgradeable.at(
+                limited,
+                i
+            );
+            (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(
+                toRetry
+            );
+            require(success, "could not call bridge");
+            EnumerableMapUpgradeable.remove(limited, kappa);
+        }
+    }
+
+    function deleteByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
+        EnumerableMapUpgradeable.remove(limited, kappa);
     }
 
     /**

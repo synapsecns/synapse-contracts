@@ -34,21 +34,28 @@ contract SynapseBridge is
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
     // selectors
-    bytes4 private constant MINT_SELECTOR =
-        bytes4(
-            keccak256("mint(address,IERC20Mintable,uint256,uint256,bytes32)")
-        );
-    bytes4 private constant MINT_AND_SWAP_SELECTOR =
+    bytes4 private constant RETRY_MINT_SELECTOR =
         bytes4(
             keccak256(
-                "mintAndSwap(address,address,uint256,uint256,address,uint8,uint8,uint256,uint256,bytes32)"
+                "retryMint(address,IERC20Mintable,uint256,uint256,bytes32)"
             )
         );
-    bytes4 private constant WITHDRAW_AND_REMOVE_SELECTOR =
+    bytes4 private constant RETRY_MINT_AND_SWAP_SELECTOR =
         bytes4(
             keccak256(
-                "withdrawAndRemove(address,address,uint256,uint256,address,uint8,uint256,uint256,bytes32)"
+                "retryMintAndSwap(address,address,uint256,uint256,address,uint8,uint8,uint256,uint256,bytes32)"
             )
+        );
+    bytes4 private constant RETRY_WITHDRAW_AND_REMOVE_SELECTOR =
+        bytes4(
+            keccak256(
+                "retryWithdrawAndRemove(address,address,uint256,uint256,address,uint8,uint256,uint256,bytes32)"
+            )
+        );
+
+    bytes4 private constant RETRY_WITHDRAW_SELECTOR =
+        bytes4(
+            keccak256("retryWithdraw(address,address,uint256,uint256,bytes32)")
         );
 
     mapping(address => uint256) private fees;
@@ -270,6 +277,60 @@ contract SynapseBridge is
             hasRole(NODEGROUP_ROLE, msg.sender),
             "Caller is not a node group"
         );
+
+        bool rateLimited = rateLimiter.checkAndUpdateAllowance(
+            address(token),
+            amount
+        );
+        if (rateLimited) {
+            rateLimiter.addToRetryQueue(
+                kappa,
+                abi.encodeWithSelector(
+                    RETRY_WITHDRAW_SELECTOR,
+                    to,
+                    address(token),
+                    amount,
+                    fee,
+                    kappa
+                )
+            );
+            return;
+        }
+
+        doWithdraw(to, token, amount, fee, kappa);
+    }
+
+    /**
+     * @notice Function to be called by the rate limiter to retry a withdraw bypassing the rate limiter
+     * @param to address on chain to send underlying assets to
+     * @param token ERC20 compatible token to withdraw from the bridge
+     * @param amount Amount in native token decimals to withdraw
+     * @param fee Amount in native token decimals to save to the contract as fees
+     * @param kappa kappa
+     **/
+    function retryWithdraw(
+        address to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) external nonReentrant whenNotPaused {
+        require(
+            hasRole(RATE_LIMITER_ROLE, msg.sender),
+            "Caller is not rate limiter"
+        );
+
+        doWithdraw(to, token, amount, fee, kappa);
+    }
+
+    // doWithdraw bypasses the rate limiter. See withdraw for documentation
+    function doWithdraw(
+        address to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) internal {
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
@@ -305,6 +366,60 @@ contract SynapseBridge is
             hasRole(NODEGROUP_ROLE, msg.sender),
             "Caller is not a node group"
         );
+
+        bool rateLimited = rateLimiter.checkAndUpdateAllowance(
+            address(token),
+            amount
+        );
+        if (rateLimited) {
+            rateLimiter.addToRetryQueue(
+                kappa,
+                abi.encodeWithSelector(
+                    RETRY_MINT_SELECTOR,
+                    to,
+                    address(token),
+                    amount,
+                    fee,
+                    kappa
+                )
+            );
+            return;
+        }
+
+        doMint(to, token, amount, fee, kappa);
+    }
+
+    /**
+     * @notice Rate Limiter call this function to retry a mint of a SynERC20 (or any asset that the bridge is given minter access to). This is called by the nodes after a TokenDeposit event is emitted.
+     * @dev This means the SynapseBridge.sol contract must have minter access to the token attempting to be minted
+     * @param to address on other chain to redeem underlying assets to
+     * @param token ERC20 compatible token to deposit into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain post-fees
+     * @param fee Amount in native token decimals to save to the contract as fees
+     * @param kappa kappa
+     **/
+    function retryMint(
+        address payable to,
+        IERC20Mintable token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) external nonReentrant whenNotPaused {
+        require(
+            hasRole(RATE_LIMITER_ROLE, msg.sender),
+            "Caller is not a node group"
+        );
+
+        doMint(to, token, amount, fee, kappa);
+    }
+
+    function doMint(
+        address payable to,
+        IERC20Mintable token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) internal {
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
@@ -446,6 +561,102 @@ contract SynapseBridge is
             hasRole(NODEGROUP_ROLE, msg.sender),
             "Caller is not a node group"
         );
+
+        bool rateLimited = rateLimiter.checkAndUpdateAllowance(
+            address(token),
+            amount
+        );
+        if (rateLimited) {
+            rateLimiter.addToRetryQueue(
+                kappa,
+                abi.encodeWithSelector(
+                    RETRY_MINT_AND_SWAP_SELECTOR,
+                    to,
+                    address(token),
+                    amount,
+                    fee,
+                    address(pool),
+                    tokenIndexFrom,
+                    tokenIndexTo,
+                    minDy,
+                    deadline,
+                    kappa
+                )
+            );
+            return;
+        }
+
+        doMintAndSwap(
+            to,
+            token,
+            amount,
+            fee,
+            pool,
+            tokenIndexFrom,
+            tokenIndexTo,
+            minDy,
+            deadline,
+            kappa
+        );
+    }
+
+    /**
+     * @notice RateLimiter call this function to retry a mint of a SynERC20 (or any asset that the bridge is given minter access to), and then attempt to swap the SynERC20 into the desired destination asset. This is called by the nodes after a TokenDepositAndSwap event is emitted.
+     * @dev This means the BridgeDeposit.sol contract must have minter access to the token attempting to be minted
+     * @param to address on other chain to redeem underlying assets to
+     * @param token ERC20 compatible token to deposit into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain post-fees
+     * @param fee Amount in native token decimals to save to the contract as fees
+     * @param pool Destination chain's pool to use to swap SynERC20 -> Asset. The nodes determine this by using PoolConfig.sol.
+     * @param tokenIndexFrom Index of the SynERC20 asset in the pool
+     * @param tokenIndexTo Index of the desired final asset
+     * @param minDy Minumum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20.
+     * @param deadline Epoch time of the deadline that the swap is allowed to be executed.
+     * @param kappa kappa
+     **/
+    function retryMintAndSwap(
+        address payable to,
+        IERC20Mintable token,
+        uint256 amount,
+        uint256 fee,
+        ISwap pool,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline,
+        bytes32 kappa
+    ) external nonReentrant whenNotPaused {
+        require(
+            hasRole(RATE_LIMITER_ROLE, msg.sender),
+            "Caller is not a node group"
+        );
+
+        doMintAndSwap(
+            to,
+            token,
+            amount,
+            fee,
+            pool,
+            tokenIndexFrom,
+            tokenIndexTo,
+            minDy,
+            deadline,
+            kappa
+        );
+    }
+
+    function doMintAndSwap(
+        address payable to,
+        IERC20Mintable token,
+        uint256 amount,
+        uint256 fee,
+        ISwap pool,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline,
+        bytes32 kappa
+    ) internal {
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
@@ -570,6 +781,97 @@ contract SynapseBridge is
             hasRole(NODEGROUP_ROLE, msg.sender),
             "Caller is not a node group"
         );
+
+        bool rateLimited = rateLimiter.checkAndUpdateAllowance(
+            address(token),
+            amount
+        );
+
+        if (rateLimited) {
+            rateLimiter.addToRetryQueue(
+                kappa,
+                abi.encodeWithSelector(
+                    RETRY_WITHDRAW_AND_REMOVE_SELECTOR,
+                    to,
+                    address(token),
+                    amount,
+                    fee,
+                    address(pool),
+                    swapTokenIndex,
+                    swapMinAmount,
+                    swapDeadline,
+                    kappa
+                )
+            );
+            return;
+        }
+
+        doWithdrawAndRemove(
+            to,
+            token,
+            amount,
+            fee,
+            pool,
+            swapTokenIndex,
+            swapMinAmount,
+            swapDeadline,
+            kappa
+        );
+    }
+
+    /**
+     * @notice Function to be called by the rate limiter to retry a withdraw of the underlying assets from the contract
+     * @param to address on chain to send underlying assets to
+     * @param token ERC20 compatible token to withdraw from the bridge
+     * @param amount Amount in native token decimals to withdraw
+     * @param fee Amount in native token decimals to save to the contract as fees
+     * @param pool Destination chain's pool to use to swap SynERC20 -> Asset. The nodes determine this by using PoolConfig.sol.
+     * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
+     * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
+     * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
+     * @param kappa kappa
+     **/
+    function retryWithdrawAndRemove(
+        address to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        ISwap pool,
+        uint8 swapTokenIndex,
+        uint256 swapMinAmount,
+        uint256 swapDeadline,
+        bytes32 kappa
+    ) external nonReentrant whenNotPaused {
+        require(
+            hasRole(RATE_LIMITER_ROLE, msg.sender),
+            "Caller is not a node group"
+        );
+
+        doWithdrawAndRemove(
+            to,
+            token,
+            amount,
+            fee,
+            pool,
+            swapTokenIndex,
+            swapMinAmount,
+            swapDeadline,
+            kappa
+        );
+    }
+
+    // allows withdrawAndRemove retries to bypass rate limiter
+    function doWithdrawAndRemove(
+        address to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        ISwap pool,
+        uint8 swapTokenIndex,
+        uint256 swapMinAmount,
+        uint256 swapDeadline,
+        bytes32 kappa
+    ) internal {
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
