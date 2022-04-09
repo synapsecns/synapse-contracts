@@ -82,7 +82,7 @@ contract Bridge is
         uint256 chainId,
         bool isEVM
     ) {
-        require(chainId != _getLocalChainId(), "!chain");
+        require(chainId != block.chainid, "!chain");
 
         if (isEVM) {
             require(
@@ -520,10 +520,9 @@ contract Bridge is
         uint256[] calldata chainIdsEVM,
         address[] calldata bridgeTokensEVM
     ) internal view returns (address token) {
-        uint256 chainId = _getLocalChainId();
         // Find bridge token address on this chain
         for (uint256 i = 0; i < chainIdsEVM.length; i++) {
-            if (chainIdsEVM[i] == chainId) {
+            if (chainIdsEVM[i] == block.chainid) {
                 token = bridgeTokensEVM[i];
                 break;
             }
@@ -690,12 +689,6 @@ contract Bridge is
         returns (string memory)
     {
         return tokenConfigs[token].bridgeTokenNonEVM;
-    }
-
-    function _getLocalChainId() internal view returns (uint256 chainId) {
-        assembly {
-            chainId := chainid()
-        }
     }
 
     function _getTokenType(IERC20 token) internal view returns (TokenType) {
