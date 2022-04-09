@@ -433,6 +433,35 @@ contract Bridge is
         }
     }
 
+    /**
+     * @notice Delete this chain's version of token from Bridge on all chains.
+     * Other chains' version of token will remain. Called by Governance only.
+     * @dev This will emit `TokenDeleted`, which validators are supposed to relay
+     * to other chains. This will revert if
+     * 1. Token wasn't added via {addNewBridgeToken}.
+     * @param token Token to delete: the version that is used on this chain.
+     */
+    function deleteTokenEVM(IERC20 token) external onlyRole(GOVERNANCE_ROLE) {
+        _deleteTokenEVM(address(token));
+
+        emit TokenDeleted(block.chainid, address(token));
+    }
+
+    /**
+     * @notice Delete given chain's version of token from Bridge on all chains.
+     * Other chains' version of token will remain. Called by Governance only.
+     * @param chainId Id of chain where token (being deleted) is deployed
+     * @param tokenGlobal Token to delete: the given that is used on given chain
+     */
+    function removeGlobalTokenEVM(uint256 chainId, address tokenGlobal)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        _removeGlobalTokenEVM(chainId, tokenGlobal);
+
+        emit TokenDeleted(chainId, tokenGlobal);
+    }
+
     // -- BRIDGE CONFIG: Token Map (Node Group) --
 
     /**
@@ -482,6 +511,22 @@ contract Bridge is
         _changeTokenStatus(token, isEnabled);
 
         // DO NOT emit anything, as this is a relayed setup tx
+    }
+
+    function removeTokenEVM(uint256 chainId, address tokenAddress)
+        external
+        onlyRole(NODEGROUP_ROLE)
+    {
+        // Check if current chain is the specified one for deleting
+        if (chainId == block.chainid) {
+            // delete token entirely on this chain
+            _deleteTokenEVM(tokenAddress);
+        } else {
+            // remove records about token on given chain
+            _removeGlobalTokenEVM(chainId, tokenAddress);
+        }
+
+        // DO NOT emit anything, as this is a relayed deletion tx
     }
 
     // -- BRIDGE CONFIG: token setup (internal implementation) --
@@ -579,6 +624,70 @@ contract Bridge is
             config.chainIdNonEVM = chainIdNonEVM;
             config.bridgeTokenNonEVM = bridgeTokenNonEVM;
         }
+    }
+
+    function _deleteTokenEVM(address tokenLocal) internal {
+        TokenConfig storage config = tokenConfigs[tokenLocal];
+        require(config.bridgeToken != address(0), "!token");
+
+        {
+            uint256 index = UINT_MAX;
+            uint256 tokensAmount = bridgeTokens.length;
+            for (uint256 i = 0; i < tokensAmount; ++i) {
+                if (bridgeTokens[i] == tokenLocal) {
+                    index = i;
+                    break;
+                }
+            }
+
+            require(index != UINT_MAX, "!found");
+
+            // Replace found token with the last one
+            bridgeTokens[index] = bridgeTokens[tokensAmount - 1];
+            // Remove now duplicated last token from list
+            bridgeTokens.pop();
+        }
+
+        uint256 chainAmount = config.chainIdsEVM.length;
+        for (uint256 i = 0; i < chainAmount; ++i) {
+            uint256 chainId = config.chainIdsEVM[i];
+            address tokenGlobal = localMapEVM[tokenLocal][chainId];
+
+            localMapEVM[tokenLocal][chainId] = address(0);
+            globalMapEVM[chainId][tokenGlobal] = address(0);
+        }
+
+        // Zero out the token config
+        delete tokenConfigs[tokenLocal];
+    }
+
+    function _removeGlobalTokenEVM(uint256 chainId, address tokenGlobal)
+        internal
+    {
+        address tokenLocal = globalMapEVM[chainId][tokenGlobal];
+        require(tokenLocal != address(0), "!token");
+
+        {
+            TokenConfig storage config = tokenConfigs[tokenLocal];
+            uint256 index = UINT_MAX;
+            uint256 chainsAmount = config.chainIdsEVM.length;
+            for (uint256 i = 0; i < chainsAmount; ++i) {
+                if (config.chainIdsEVM[i] == chainId) {
+                    index = i;
+                    break;
+                }
+            }
+
+            require(index != UINT_MAX, "!found");
+
+            // Replace found chain with the last one
+            config.chainIdsEVM[index] = config.chainIdsEVM[chainsAmount - 1];
+            // Remove last chain from list, which is now duplicated
+            config.chainIdsEVM.pop();
+        }
+
+        localMapEVM[tokenLocal][chainId] = address(0);
+        globalMapEVM[chainId][tokenGlobal] = address(0);
     }
 
     // -- BRIDGE CONFIG: views --

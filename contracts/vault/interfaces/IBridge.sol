@@ -80,6 +80,8 @@ interface IBridge {
         string bridgeTokenNonEVM
     );
 
+    event TokenDeleted(uint256 chainIdEVM, address bridgeTokenEVM);
+
     event TokenStatusUpdated(
         uint256[] chainIdsEVM,
         address[] bridgeTokensEVM,
