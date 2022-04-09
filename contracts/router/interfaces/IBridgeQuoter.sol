@@ -17,4 +17,24 @@ interface IBridgeQuoter is IQuoter {
         address _tokenOut,
         bool _gasdropRequested
     ) external view returns (Offers.FormattedOffer memory _bestOffer);
+
+    function getAllBridgeTokensEVM(uint256 chainTo)
+        external
+        view
+        returns (address[] memory tokensLocal, address[] memory tokensGlobal);
+
+    function getAllBridgeTokensNonEVM(uint256 chainTo)
+        external
+        view
+        returns (address[] memory tokensLocal, string[] memory tokensGlobal);
+
+    function getTokenAddressEVM(address tokenLocal, uint256 chainId)
+        external
+        view
+        returns (address tokenGlobal, bool isEnabled);
+
+    function getTokenAddressNonEVM(address tokenLocal, uint256 chainId)
+        external
+        view
+        returns (string memory tokenGlobal, bool isEnabled);
 }

@@ -6,11 +6,12 @@ import {Quoter} from "./Quoter.sol";
 import {IBridgeRouter} from "./interfaces/IBridgeRouter.sol";
 import {IBridgeQuoter} from "./interfaces/IBridgeQuoter.sol";
 import {IBridge} from "../vault/interfaces/IBridge.sol";
+import {IBridgeConfig} from "../vault/interfaces/IBridgeConfig.sol";
 
 import {Offers} from "./libraries/LibOffers.sol";
 
 contract BridgeQuoter is Quoter, IBridgeQuoter {
-    IBridge public immutable bridge;
+    IBridgeConfig public immutable bridgeConfig;
 
     /// @dev Setup flow:
     /// 1. Create BridgeRouter contract
@@ -25,7 +26,7 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
     constructor(address payable _router, uint8 _maxSwaps)
         Quoter(_router, _maxSwaps)
     {
-        bridge = IBridge(IBridgeRouter(_router).bridge());
+        bridgeConfig = IBridge(IBridgeRouter(_router).bridge()).bridgeConfig();
     }
 
     function findBestPathInitialChain(
@@ -45,14 +46,15 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
         bool _gasdropRequested
     ) external view returns (Offers.FormattedOffer memory _bestOffer) {
         bool _swapRequested = _tokenIn != _tokenOut;
-        uint256 _fee = bridge.calculateBridgeFee(
+        uint256 _amountOfSwaps = IBridgeRouter(router).bridgeMaxSwaps();
+        (uint256 _fee, , bool isEnabled, ) = bridgeConfig.calculateBridgeFee(
             _tokenIn,
             _amountIn,
             _gasdropRequested,
-            _swapRequested
+            _swapRequested ? _amountOfSwaps : 0
         );
 
-        if (_amountIn > _fee) {
+        if (isEnabled && _amountIn > _fee) {
             _amountIn = _amountIn - _fee;
 
             if (_swapRequested) {
@@ -74,5 +76,39 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
                 // bestOffer.adapters is empty
             }
         }
+    }
+
+    /// @dev Mirror functions from BridgeConfig, so that UI can only interact with BridgeQuoter
+
+    function getAllBridgeTokensEVM(uint256 chainTo)
+        external
+        view
+        returns (address[] memory tokensLocal, address[] memory tokensGlobal)
+    {
+        return bridgeConfig.getAllBridgeTokensEVM(chainTo);
+    }
+
+    function getAllBridgeTokensNonEVM(uint256 chainTo)
+        external
+        view
+        returns (address[] memory tokensLocal, string[] memory tokensGlobal)
+    {
+        return bridgeConfig.getAllBridgeTokensNonEVM(chainTo);
+    }
+
+    function getTokenAddressEVM(address tokenLocal, uint256 chainId)
+        external
+        view
+        returns (address tokenGlobal, bool isEnabled)
+    {
+        return bridgeConfig.getTokenAddressEVM(tokenLocal, chainId);
+    }
+
+    function getTokenAddressNonEVM(address tokenLocal, uint256 chainId)
+        external
+        view
+        returns (string memory tokenGlobal, bool isEnabled)
+    {
+        return bridgeConfig.getTokenAddressNonEVM(tokenLocal, chainId);
     }
 }
