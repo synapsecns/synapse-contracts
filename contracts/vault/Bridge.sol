@@ -38,13 +38,20 @@ contract Bridge is
 
     uint256 internal constant UINT_MAX = type(uint256).max;
 
-    /// @dev key is tokenAddress
-    mapping(address => TokenConfig) public tokenConfig;
-    /// @dev key is tokenAddress, chainID
-    mapping(address => mapping(uint256 => address)) public tokenMapEVM;
+    /**
+     * @dev In regards to the same `token`:
+     * tokenLocal -> `token` address on this chain
+     * tokenGlobal -> `token` address on another chain
+     */
 
-    /// @dev key is chainIdNonEVM, tokenAddressNonEVM
-    mapping(uint256 => mapping(string => address)) public tokenMapNonEVM;
+    /// @dev [tokenLocal => config]
+    mapping(address => TokenConfig) public tokenConfigs;
+
+    /// @dev [tokenLocal => [chainID => tokenGlobal]]
+    mapping(address => mapping(uint256 => address)) public localMapEVM;
+
+    /// @dev [chainID => [tokenGlobal => tokenLocal]]
+    mapping(uint256 => mapping(string => address)) public globalMapNonEVM;
 
     uint256 internal constant FEE_DENOMINATOR = 10**10;
 
@@ -74,7 +81,7 @@ contract Bridge is
         if (isEVM) {
             require(_getBridgeTokenEVM(token, chainId) != address(0), "!chain");
         } else {
-            TokenConfig memory config = tokenConfig[address(token)];
+            TokenConfig memory config = tokenConfigs[address(token)];
             bytes memory mapped = bytes(config.bridgeTokenNonEVM);
             require(mapped.length > 0, "!token");
             require(config.chainIdNonEVM == chainId, "!chain");
@@ -84,7 +91,7 @@ contract Bridge is
     }
 
     modifier checkTokenEnabled(IERC20 token) {
-        require(tokenConfig[address(token)].isEnabled, "!token");
+        require(tokenConfigs[address(token)].isEnabled, "!token");
 
         _;
     }
@@ -241,7 +248,7 @@ contract Bridge is
         uint256 minGasDropFee,
         uint256 minSwapFee
     ) internal {
-        TokenConfig storage config = tokenConfig[address(token)];
+        TokenConfig storage config = tokenConfigs[address(token)];
 
         config.synapseFee = synapseFee;
         config.maxTotalFee = maxTotalFee;
@@ -264,7 +271,7 @@ contract Bridge is
         address bridgeToken,
         bool isMintBurn
     ) internal {
-        TokenConfig storage config = tokenConfig[address(token)];
+        TokenConfig storage config = tokenConfigs[address(token)];
 
         config.bridgeToken = bridgeToken;
         config.tokenType = isMintBurn
@@ -274,7 +281,7 @@ contract Bridge is
         emit TokenSetupUpdated(token, bridgeToken, isMintBurn);
     }
 
-    // -- BRIDGE CONFIG: token setup (Governance) --
+    // -- BRIDGE CONFIG: Token Map (Governance) --
 
     /**
      * @dev Checks whether provided arrays length match,
@@ -357,7 +364,7 @@ contract Bridge is
         onlyRole(GOVERNANCE_ROLE)
         checkConfigEVM(chainIdsEVM, bridgeTokensEVM)
     {
-        TokenConfig memory config = tokenConfig[token];
+        TokenConfig memory config = tokenConfigs[token];
         require(config.chainIdsEVM.length != 0, "!Map");
 
         _updateTokenMap(
@@ -398,7 +405,7 @@ contract Bridge is
         onlyRole(GOVERNANCE_ROLE)
     {
         if (_changeTokenStatus(token, isEnabled)) {
-            TokenConfig memory config = tokenConfig[address(token)];
+            TokenConfig memory config = tokenConfigs[address(token)];
 
             address[] memory allTokenAddresses = _getAllTokenAddressesEVM(
                 address(token),
@@ -413,7 +420,7 @@ contract Bridge is
         }
     }
 
-    // -- BRIDGE CONFIG: token setup (Node Group) --
+    // -- BRIDGE CONFIG: Token Map (Node Group) --
 
     /**
      * @notice Adds chains to an existing token Map. Called by Node Group only.
@@ -470,7 +477,7 @@ contract Bridge is
         internal
         returns (bool)
     {
-        TokenConfig storage config = tokenConfig[address(token)];
+        TokenConfig storage config = tokenConfigs[address(token)];
         require(config.bridgeToken != address(0), "!token");
         require(config.chainIdsEVM.length != 0, "!Map");
 
@@ -492,7 +499,7 @@ contract Bridge is
         allTokenAddresses = new address[](amount);
 
         for (uint256 i = 0; i < amount; i++) {
-            allTokenAddresses[i] = tokenMapEVM[token][chainIds[i]];
+            allTokenAddresses[i] = localMapEVM[token][chainIds[i]];
         }
     }
 
@@ -520,7 +527,7 @@ contract Bridge is
     ) internal {
         address token = _findLocalToken(chainIdsEVM, bridgeTokensEVM);
         require(
-            !checkEmpty || tokenConfig[token].chainIdsEVM.length == 0,
+            !checkEmpty || tokenConfigs[token].chainIdsEVM.length == 0,
             "+Map"
         );
         _updateTokenMap(
@@ -539,22 +546,22 @@ contract Bridge is
         uint256 chainIdNonEVM,
         string calldata bridgeTokenNonEVM
     ) internal {
-        TokenConfig storage config = tokenConfig[token];
+        TokenConfig storage config = tokenConfigs[token];
 
         require(config.bridgeToken != address(0), "!token");
 
         for (uint256 i = 0; i < chainIdsEVM.length; i++) {
             uint256 chainId = chainIdsEVM[i];
             // Add chain to the map, only if it is currently missing
-            if (tokenMapEVM[token][chainId] == address(0)) {
-                tokenMapEVM[token][chainId] = bridgeTokensEVM[i];
+            if (localMapEVM[token][chainId] == address(0)) {
+                localMapEVM[token][chainId] = bridgeTokensEVM[i];
                 config.chainIdsEVM.push(chainId);
             }
         }
 
         if (chainIdNonEVM != 0) {
             require(config.chainIdNonEVM == 0, "+chain");
-            tokenMapNonEVM[chainIdNonEVM][bridgeTokenNonEVM] = token;
+            globalMapNonEVM[chainIdNonEVM][bridgeTokenNonEVM] = token;
             config.chainIdNonEVM = chainIdNonEVM;
             config.bridgeTokenNonEVM = bridgeTokenNonEVM;
         }
@@ -568,7 +575,7 @@ contract Bridge is
         bool gasdropRequested,
         bool swapRequested
     ) public view returns (uint256 fee) {
-        TokenConfig memory config = tokenConfig[token];
+        TokenConfig memory config = tokenConfigs[token];
         uint256 minFee = config.minBridgeFee +
             (gasdropRequested ? config.minGasDropFee : 0) +
             (swapRequested ? config.minSwapFee : 0);
@@ -581,7 +588,7 @@ contract Bridge is
     }
 
     function _getBridgeToken(IERC20 token) internal view returns (address) {
-        return tokenConfig[address(token)].bridgeToken;
+        return tokenConfigs[address(token)].bridgeToken;
     }
 
     function _getBridgeTokenEVM(IERC20 token, uint256 chainID)
@@ -589,7 +596,7 @@ contract Bridge is
         view
         returns (address)
     {
-        return tokenMapEVM[address(token)][chainID];
+        return localMapEVM[address(token)][chainID];
     }
 
     function _getBridgeTokenNonEVM(IERC20 token)
@@ -597,7 +604,7 @@ contract Bridge is
         view
         returns (string memory)
     {
-        return tokenConfig[address(token)].bridgeTokenNonEVM;
+        return tokenConfigs[address(token)].bridgeTokenNonEVM;
     }
 
     function _getLocalChainId() internal view returns (uint256 chainId) {
@@ -607,7 +614,7 @@ contract Bridge is
     }
 
     function _getTokenType(IERC20 token) internal view returns (TokenType) {
-        return tokenConfig[address(token)].tokenType;
+        return tokenConfigs[address(token)].tokenType;
     }
 
     function _isMintBurnWithCheck(IERC20 token) internal view returns (bool) {
@@ -732,7 +739,7 @@ contract Bridge is
         uint256 amount,
         bytes32 kappa
     ) external onlyRole(NODEGROUP_ROLE) nonReentrant whenNotPaused {
-        address token = tokenMapNonEVM[chainIdFrom][bridgeTokenFrom];
+        address token = globalMapNonEVM[chainIdFrom][bridgeTokenFrom];
         require(token != address(0), "!token");
 
         address[] memory path = new address[](1);
