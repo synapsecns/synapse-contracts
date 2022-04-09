@@ -51,6 +51,9 @@ contract Bridge is
     mapping(address => mapping(uint256 => address)) public localMapEVM;
 
     /// @dev [chainID => [tokenGlobal => tokenLocal]]
+    mapping(uint256 => mapping(address => address)) public globalMapEVM;
+
+    /// @dev [chainID => [tokenGlobal => tokenLocal]]
     mapping(uint256 => mapping(string => address)) public globalMapNonEVM;
 
     uint256 internal constant FEE_DENOMINATOR = 10**10;
@@ -348,29 +351,30 @@ contract Bridge is
      * This will revert if:
      * 1. Token wasn't added via {addNewBridgeToken}.
      * 2. Map wasn't added via {addNewMap} or {updateMap}.
-     * @param chainIdsEVM IDs of NEW EVM chains token is deployed on. This excludes any old chains.
-     * @param bridgeTokensEVM Token addresses on NEW EVM chains token is deployed on. This excludes any old chains.
+     * @param token Token to update: the version that is used on this chain.
+     * @param newChainIdsEVM IDs of NEW EVM chains token is deployed on. This excludes any old chains.
+     * @param newBridgeTokensEVM Token addresses on NEW EVM chains token is deployed on. This excludes any old chains.
      * @param chainIdNonEVM ID of NEW non-EVM chain, token is deployed on. Ignored, if zero.
      * @param bridgeTokenNonEVM address of token on NEW non-EVM chain. Ignored, if `chainIdNonEVM==0`.
      */
     function addChainsToMap(
         address token,
-        uint256[] calldata chainIdsEVM,
-        address[] calldata bridgeTokensEVM,
+        uint256[] calldata newChainIdsEVM,
+        address[] calldata newBridgeTokensEVM,
         uint256 chainIdNonEVM,
         string calldata bridgeTokenNonEVM
     )
         external
         onlyRole(GOVERNANCE_ROLE)
-        checkConfigEVM(chainIdsEVM, bridgeTokensEVM)
+        checkConfigEVM(newChainIdsEVM, newBridgeTokensEVM)
     {
         TokenConfig memory config = tokenConfigs[token];
         require(config.chainIdsEVM.length != 0, "!Map");
 
         _updateTokenMap(
             token,
-            chainIdsEVM,
-            bridgeTokensEVM,
+            newChainIdsEVM,
+            newBridgeTokensEVM,
             chainIdNonEVM,
             bridgeTokenNonEVM
         );
@@ -525,13 +529,13 @@ contract Bridge is
         string calldata bridgeTokenNonEVM,
         bool checkEmpty
     ) internal {
-        address token = _findLocalToken(chainIdsEVM, bridgeTokensEVM);
+        address tokenLocal = _findLocalToken(chainIdsEVM, bridgeTokensEVM);
         require(
-            !checkEmpty || tokenConfigs[token].chainIdsEVM.length == 0,
+            !checkEmpty || tokenConfigs[tokenLocal].chainIdsEVM.length == 0,
             "+Map"
         );
         _updateTokenMap(
-            token,
+            tokenLocal,
             chainIdsEVM,
             bridgeTokensEVM,
             chainIdNonEVM,
@@ -540,28 +544,30 @@ contract Bridge is
     }
 
     function _updateTokenMap(
-        address token,
+        address tokenLocal,
         uint256[] calldata chainIdsEVM,
         address[] calldata bridgeTokensEVM,
         uint256 chainIdNonEVM,
         string calldata bridgeTokenNonEVM
     ) internal {
-        TokenConfig storage config = tokenConfigs[token];
+        TokenConfig storage config = tokenConfigs[tokenLocal];
 
         require(config.bridgeToken != address(0), "!token");
 
         for (uint256 i = 0; i < chainIdsEVM.length; i++) {
             uint256 chainId = chainIdsEVM[i];
             // Add chain to the map, only if it is currently missing
-            if (localMapEVM[token][chainId] == address(0)) {
-                localMapEVM[token][chainId] = bridgeTokensEVM[i];
+            if (localMapEVM[tokenLocal][chainId] == address(0)) {
+                address tokenGlobal = bridgeTokensEVM[i];
+                localMapEVM[tokenLocal][chainId] = tokenGlobal;
+                globalMapEVM[chainId][tokenGlobal] = tokenLocal;
                 config.chainIdsEVM.push(chainId);
             }
         }
 
         if (chainIdNonEVM != 0) {
             require(config.chainIdNonEVM == 0, "+chain");
-            globalMapNonEVM[chainIdNonEVM][bridgeTokenNonEVM] = token;
+            globalMapNonEVM[chainIdNonEVM][bridgeTokenNonEVM] = tokenLocal;
             config.chainIdNonEVM = chainIdNonEVM;
             config.bridgeTokenNonEVM = bridgeTokenNonEVM;
         }
