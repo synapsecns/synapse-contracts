@@ -44,6 +44,9 @@ contract Bridge is
      * tokenGlobal -> `token` address on another chain
      */
 
+    /// @dev List of tokenLocal
+    address[] public bridgeTokens;
+
     /// @dev [tokenLocal => config]
     mapping(address => TokenConfig) public tokenConfigs;
 
@@ -82,7 +85,10 @@ contract Bridge is
         require(chainId != _getLocalChainId(), "!chain");
 
         if (isEVM) {
-            require(_getBridgeTokenEVM(token, chainId) != address(0), "!chain");
+            require(
+                _getBridgeTokenEVM(address(token), chainId) != address(0),
+                "!chain"
+            );
         } else {
             TokenConfig memory config = tokenConfigs[address(token)];
             bytes memory mapped = bytes(config.bridgeTokenNonEVM);
@@ -194,6 +200,9 @@ contract Bridge is
         );
 
         _updateTokenSetup(token, bridgeToken, isMintBurn);
+
+        // Store the token that is used on chain instead of wrapper
+        bridgeTokens.push(address(token));
     }
 
     /**
@@ -503,7 +512,7 @@ contract Bridge is
         allTokenAddresses = new address[](amount);
 
         for (uint256 i = 0; i < amount; i++) {
-            allTokenAddresses[i] = localMapEVM[token][chainIds[i]];
+            allTokenAddresses[i] = _getBridgeTokenEVM(token, chainIds[i]);
         }
     }
 
@@ -557,7 +566,7 @@ contract Bridge is
         for (uint256 i = 0; i < chainIdsEVM.length; i++) {
             uint256 chainId = chainIdsEVM[i];
             // Add chain to the map, only if it is currently missing
-            if (localMapEVM[tokenLocal][chainId] == address(0)) {
+            if (_getBridgeTokenEVM(tokenLocal, chainId) == address(0)) {
                 address tokenGlobal = bridgeTokensEVM[i];
                 localMapEVM[tokenLocal][chainId] = tokenGlobal;
                 globalMapEVM[chainId][tokenGlobal] = tokenLocal;
@@ -593,24 +602,94 @@ contract Bridge is
         }
     }
 
+    /**
+     * @notice Get a list of tokens bridgeable between current and a given EVM chain
+     * @param chainTo EVM chain to bridge to
+     * @return tokensLocal bridge token addresses on this chain
+     * @return tokensGlobal bridge token addresses on `chainTo`
+     */
+    function getAllBridgeTokensEVM(uint256 chainTo)
+        external
+        view
+        returns (address[] memory tokensLocal, address[] memory tokensGlobal)
+    {
+        uint256 amountTo = 0;
+
+        uint256 amountFull = bridgeTokens.length;
+        for (uint256 i = 0; i < amountFull; ++i) {
+            if (_getBridgeTokenEVM(bridgeTokens[i], chainTo) != address(0)) {
+                ++amountTo;
+            }
+        }
+
+        tokensLocal = new address[](amountTo);
+        tokensGlobal = new address[](amountTo);
+        amountTo = 0;
+
+        for (uint256 i = 0; i < amountFull; ++i) {
+            address tokenLocal = bridgeTokens[i];
+            address tokenGlobal = _getBridgeTokenEVM(tokenLocal, chainTo);
+            if (tokenGlobal != address(0)) {
+                tokensLocal[amountTo] = tokenLocal;
+                tokensGlobal[amountTo] = tokenGlobal;
+                ++amountTo;
+            }
+        }
+    }
+
+    /**
+     * @notice Get a list of tokens bridgeable between current and a given non-EVM chain
+     * @param chainTo non-EVM chain to bridge to
+     * @return tokensLocal bridge token addresses on this chain
+     * @return tokensGlobal bridge token addresses on `chainTo`
+     */
+    function getAllBridgeTokensNonEVM(uint256 chainTo)
+        external
+        view
+        returns (address[] memory tokensLocal, string[] memory tokensGlobal)
+    {
+        uint256 amountTo = 0;
+
+        uint256 amountFull = bridgeTokens.length;
+        for (uint256 i = 0; i < amountFull; ++i) {
+            if (tokenConfigs[bridgeTokens[i]].chainIdNonEVM == chainTo) {
+                ++amountTo;
+            }
+        }
+
+        tokensLocal = new address[](amountTo);
+        tokensGlobal = new string[](amountTo);
+        amountTo = 0;
+
+        for (uint256 i = 0; i < amountFull; ++i) {
+            address tokenLocal = bridgeTokens[i];
+            TokenConfig memory config = tokenConfigs[tokenLocal];
+            if (config.chainIdNonEVM == chainTo) {
+                tokensLocal[amountTo] = tokenLocal;
+                tokensGlobal[amountTo] = config.bridgeTokenNonEVM;
+                ++amountTo;
+            }
+        }
+    }
+
     function _getBridgeToken(IERC20 token) internal view returns (address) {
         return tokenConfigs[address(token)].bridgeToken;
     }
 
-    function _getBridgeTokenEVM(IERC20 token, uint256 chainID)
+    function _getBridgeTokenEVM(address token, uint256 chainID)
         internal
         view
         returns (address)
     {
-        return localMapEVM[address(token)][chainID];
+        return localMapEVM[token][chainID];
     }
 
-    function _getBridgeTokenNonEVM(IERC20 token)
+    function _getBridgeTokenNonEVM(address token)
         internal
         view
         returns (string memory)
     {
-        return tokenConfigs[address(token)].bridgeTokenNonEVM;
+        return tokenConfigs[token].bridgeTokenNonEVM;
     }
 
     function _getLocalChainId() internal view returns (uint256 chainId) {
@@ -650,7 +729,7 @@ contract Bridge is
 
         // Then, get token address on destination chain
         // checked for not being zero in checkDirectionSupported
-        address tokenBridgedTo = _getBridgeTokenEVM(token, chainId);
+        address tokenBridgedTo = _getBridgeTokenEVM(address(token), chainId);
 
         // Finally, emit a Bridge Event
         emit BridgedOutEVM(
@@ -682,7 +761,7 @@ contract Bridge is
 
         // Then, get token address on destination chain
         // chainId and address was checked in checkDirectionSupported
-        string memory tokenBridgedTo = _getBridgeTokenNonEVM(token);
+        string memory tokenBridgedTo = _getBridgeTokenNonEVM(address(token));
 
         // Finally, emit a Bridge Event
         emit BridgedOutNonEVM(
