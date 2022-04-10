@@ -70,11 +70,3 @@ export async function setupForkedBridge(rateLimiter: RateLimiter, bridgeAddress:
 
     return bridge
 }
-
-const BRIDGE_CONFIGS = {
-    1: {
-        bridge: "0x2796317b0fF8538F253012862c06787Adfb8cEb6",
-        nusd: "0x1B84765dE8B7566e4cEAF4D0fD3c5aF52D3DdE4F",
-        nusd_pool: "0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8"
-    }
-}
