@@ -157,3 +157,17 @@ export async function asyncForEach<T>(
     await callback(array[index], index)
   }
 }
+
+export async function forkChain(apiUrl: String, blockNumber: Number) {
+  await network.provider.request({
+    method: "hardhat_reset",
+    params: [
+      {
+        forking: {
+          jsonRpcUrl: apiUrl,
+          blockNumber: blockNumber,
+        },
+      },
+    ],
+  })
+}

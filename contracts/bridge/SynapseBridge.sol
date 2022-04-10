@@ -14,6 +14,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/ISwap.sol";
 import "./interfaces/IWETH9.sol";
 import "./interfaces/IRateLimiter.sol";
+import "hardhat/console.sol";
 
 interface IERC20Mintable is IERC20 {
     function mint(address to, uint256 amount) external;
@@ -310,7 +311,7 @@ contract SynapseBridge is
      **/
     function retryWithdraw(
         address to,
-        IERC20 token,
+        address token,
         uint256 amount,
         uint256 fee,
         bytes32 kappa
@@ -320,7 +321,7 @@ contract SynapseBridge is
             "Caller is not rate limiter"
         );
 
-        doWithdraw(to, token, amount, fee, kappa);
+        doWithdraw(to, IERC20(token), amount, fee, kappa);
     }
 
     // doWithdraw bypasses the rate limiter. See withdraw for documentation
