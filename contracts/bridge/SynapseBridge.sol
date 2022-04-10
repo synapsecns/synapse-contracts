@@ -662,6 +662,7 @@ contract SynapseBridge is
         if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
             to.call.value(chainGasAmount)("");
         }
+
         // first check to make sure more will be given than min amount required
         uint256 expectedOutput = ISwap(pool).calculateSwap(
             tokenIndexFrom,
