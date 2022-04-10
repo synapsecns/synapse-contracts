@@ -14,7 +14,7 @@ import { deployRateLimiter, setupForkedBridge } from "./utilities/bridge"
 chai.use(solidity)
 const { expect } = chai
 
-describe("SynapseBridgeETH", async () => {
+describe("SynapseBridgeAvax", async () => {
   // signers
   let signers: Array<Signer>
   let deployer: Signer
@@ -23,23 +23,15 @@ describe("SynapseBridgeETH", async () => {
   let nodeGroup: Signer
   let recipient: Signer
 
+  const decimals = Math.pow(10, 6)
+  const NUSD = "0xCFc37A6AB183dd4aED08C204D1c2773c0b1BDf46"
+  const NUSD_POOL = "0xED2a7edd7413021d440b09D654f3b87712abAB66"
+
   // contracts
   let bridge: SynapseBridge
   let rateLimiter: RateLimiter
-  let USDC: GenericERC20
 
-  const BRIDGE_ADDRESS = "0x2796317b0fF8538F253012862c06787Adfb8cEb6"
-  const NUSD = "0x1B84765dE8B7566e4cEAF4D0fD3c5aF52D3DdE4F"
-  const NUSD_POOL = "0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8"
-  const SYN = "0x0f2D719407FdBeFF09D87557AbB7232601FD9F29"
-
-  const decimals = Math.pow(10, 6)
-
-  // deploys the bridge, grants role. Rate limiter *must* be deployed first
-  const setupTokens = async () => {
-    const erc20Factory = await ethers.getContractFactory("GenericERC20")
-    USDC = (await erc20Factory.deploy("USDC", "USDC", "6")) as GenericERC20
-  }
+  const BRIDGE_ADDRESS = "0xC05e61d0E7a63D27546389B7aD62FdFf5A91aACE"
 
   const setupTest = deployments.createFixture(
     async ({ deployments, ethers }) => {
@@ -61,13 +53,12 @@ describe("SynapseBridgeETH", async () => {
         deployer,
         nodeGroup,
       )
-      await setupTokens()
     },
   )
 
   beforeEach(async () => {
     // fork the chain
-    await forkChain(process.env.ALCHEMY_API, 14555470)
+    await forkChain(process.env.AVAX_API, 13229005)
     await setupTest()
   })
 
@@ -90,33 +81,9 @@ describe("SynapseBridgeETH", async () => {
     ).to.be.not.reverted
   }
 
-  it("Withdraw: should add to retry queue if rate limit hit", async () => {
-    const mintAmount = 50
-
-    await expect(USDC.mint(bridge.address, mintAmount * decimals))
-    await setupAllowanceTest(USDC.address, 100)
-
-    const kappa = keccak256(randomBytes(32))
-
-    await expect(
-      bridge
-        .connect(nodeGroup)
-        .withdraw(await recipient.getAddress(), USDC.address, 101, 50, kappa),
-    ).to.be.not.reverted
-
-    // make sure withdraw didn't happen
-    expect(await USDC.balanceOf(bridge.address)).to.be.eq(
-      (mintAmount * decimals).toString(),
-    )
-
-    // now retry. This should bypass the rate limiter
-    await expect(rateLimiter.retryByKappa(kappa)).to.be.not.reverted
-    expect(await bridge.kappaExists(kappa)).to.be.true
-  })
-
-  it("WithdrawAndRemove: should add to retry queue if rate limit hit", async () => {
+  it("MintAndSwap: should add to retry queue if rate limit hit", async () => {
     const allowanceAmount = 500
-    const withdrawAmount = 1000
+    const mintAmount = 1000
 
     await setupAllowanceTest(NUSD, allowanceAmount)
     const kappa = keccak256(randomBytes(32))
@@ -124,35 +91,18 @@ describe("SynapseBridgeETH", async () => {
     await expect(
       bridge
         .connect(nodeGroup)
-        .withdrawAndRemove(
+        .mintAndSwap(
           await recipient.getAddress(),
           NUSD,
-          withdrawAmount,
+          mintAmount,
           10,
           NUSD_POOL,
-          1,
-          withdrawAmount,
+          0,
+          2,
+          mintAmount,
           epochSeconds(),
           kappa,
         ),
-    ).to.be.not.reverted
-
-    expect(await bridge.kappaExists(kappa)).to.be.false
-    await expect(rateLimiter.retryByKappa(kappa)).to.be.not.reverted
-    expect(await bridge.kappaExists(kappa)).to.be.true
-  })
-
-  it("Mint: should add to retry queue if rate limit hit", async () => {
-    const allowanceAmount = 500
-    const mintAmount = 1000
-
-    await setupAllowanceTest(SYN, allowanceAmount)
-    const kappa = keccak256(randomBytes(32))
-
-    await expect(
-      bridge
-        .connect(nodeGroup)
-        .mint(await recipient.getAddress(), SYN, mintAmount, 10, kappa),
     ).to.be.not.reverted
 
     expect(await bridge.kappaExists(kappa)).to.be.false

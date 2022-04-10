@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-4.3.1-upgradeable/utils/math/MathUpgradeable.sol
 
 import "./libraries/EnumerableMapUpgradeable.sol";
 import "./interfaces/IRateLimiter.sol";
+import "hardhat/console.sol";
 
 // @title RateLimiter
 // @dev a bridge asset rate limiter based on https://github.com/gnosis/safe-modules/blob/master/allowances/contracts/AlowanceModule.sol
@@ -180,7 +181,10 @@ contract RateLimiter is
     function retryByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
         bytes memory toRetry = EnumerableMapUpgradeable.get(limited, kappa);
         (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(toRetry);
-        require(success, "could not call bridge");
+        require(
+            success,
+            append("could not call bridge:", _getRevertMsg(returnData))
+        );
         EnumerableMapUpgradeable.remove(limited, kappa);
     }
 
@@ -201,7 +205,10 @@ contract RateLimiter is
             (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(
                 toRetry
             );
-            require(success, "could not call bridge");
+            require(
+                success,
+                append("could not call bridge: ", _getRevertMsg(returnData))
+            );
             EnumerableMapUpgradeable.remove(limited, kappa);
         }
     }
@@ -236,5 +243,28 @@ contract RateLimiter is
             uint256(allowance.resetTimeMin),
             uint256(allowance.lastResetMin)
         ];
+    }
+
+    function _getRevertMsg(bytes memory _returnData)
+        internal
+        pure
+        returns (string memory)
+    {
+        // If the _res length is less than 68, then the transaction failed silently (without a revert message)
+        if (_returnData.length < 68) return "Transaction reverted silently";
+
+        assembly {
+            // Slice the sighash.
+            _returnData := add(_returnData, 0x04)
+        }
+        return abi.decode(_returnData, (string)); // All that remains is the revert string
+    }
+
+    function append(string memory a, string memory b)
+        internal
+        pure
+        returns (string memory)
+    {
+        return string(abi.encodePacked(a, b));
     }
 }
