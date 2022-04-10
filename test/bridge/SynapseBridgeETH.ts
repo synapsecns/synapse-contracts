@@ -19,12 +19,12 @@ import { keccak256 } from "ethers/lib/utils"
 import { randomBytes } from "crypto"
 import { forkChain } from "../utils"
 import { addBridgeOwner, upgradeBridgeProxy } from "./utilities/fork"
-import {deployRateLimiter, setupForkedBridge} from "./utilities/bridge";
+import { deployRateLimiter, setupForkedBridge } from "./utilities/bridge"
 
 chai.use(solidity)
 const { expect } = chai
 
-describe.only("SynapseBridge", async () => {
+describe("SynapseBridge", async () => {
   const { get } = deployments
 
   // signers
@@ -39,12 +39,13 @@ describe.only("SynapseBridge", async () => {
   let bridge: SynapseBridge
   let rateLimiter: RateLimiter
   let USDC: GenericERC20
+
   const BRIDGE_ADDRESS = "0x2796317b0fF8538F253012862c06787Adfb8cEb6"
   const NUSD = "0x1B84765dE8B7566e4cEAF4D0fD3c5aF52D3DdE4F"
   const NUSD_POOL = "0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8"
+  const SYN = "0x0f2D719407FdBeFF09D87557AbB7232601FD9F29"
 
   const decimals = Math.pow(10, 6)
-
 
   // deploys the bridge, grants role. Rate limiter *must* be deployed first
   const upgradeBridge = async () => {
@@ -106,7 +107,12 @@ describe.only("SynapseBridge", async () => {
       recipient = signers[4]
 
       rateLimiter = await deployRateLimiter(deployer, owner)
-      bridge = await setupForkedBridge(rateLimiter, BRIDGE_ADDRESS, deployer, nodeGroup)
+      bridge = await setupForkedBridge(
+        rateLimiter,
+        BRIDGE_ADDRESS,
+        deployer,
+        nodeGroup,
+      )
       await setupTokens()
     },
   )
@@ -160,7 +166,7 @@ describe.only("SynapseBridge", async () => {
     expect(await bridge.kappaExists(kappa)).to.be.true
   })
 
-  it('WithdrawAndRemove: should add to retry queue if rate limit hit', async () => {
+  it("WithdrawAndRemove: should add to retry queue if rate limit hit", async () => {
     const allowanceAmount = 500
     const withdrawAmount = 1000
 
@@ -168,13 +174,41 @@ describe.only("SynapseBridge", async () => {
     const kappa = keccak256(randomBytes(32))
 
     await expect(
-        bridge
-            .connect(nodeGroup)
-            .withdrawAndRemove(await recipient.getAddress(), NUSD, withdrawAmount, 10, NUSD_POOL, 1, withdrawAmount, epochSeconds(), kappa)
+      bridge
+        .connect(nodeGroup)
+        .withdrawAndRemove(
+          await recipient.getAddress(),
+          NUSD,
+          withdrawAmount,
+          10,
+          NUSD_POOL,
+          1,
+          withdrawAmount,
+          epochSeconds(),
+          kappa,
+        ),
     ).to.be.not.reverted
 
     expect(await bridge.kappaExists(kappa)).to.be.false
     await expect(rateLimiter.retryByKappa(kappa)).to.be.not.reverted
     expect(await bridge.kappaExists(kappa)).to.be.true
-  });
+  })
+
+  it.only("Mint: should add to retry queue if rate limit hit", async () => {
+    const allowanceAmount = 500
+    const mintAmount = 1000
+
+    await setupAllowanceTest(SYN, allowanceAmount)
+    const kappa = keccak256(randomBytes(32))
+
+    await expect(
+      bridge
+        .connect(nodeGroup)
+        .mint(await recipient.getAddress(), SYN, mintAmount, 10, kappa),
+    ).to.be.not.reverted
+
+    expect(await bridge.kappaExists(kappa)).to.be.false
+    await expect(rateLimiter.retryByKappa(kappa)).to.be.not.reverted
+    expect(await bridge.kappaExists(kappa)).to.be.true
+  })
 })

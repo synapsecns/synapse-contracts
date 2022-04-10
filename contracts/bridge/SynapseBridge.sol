@@ -36,11 +36,7 @@ contract SynapseBridge is
 
     // selectors
     bytes4 private constant RETRY_MINT_SELECTOR =
-        bytes4(
-            keccak256(
-                "retryMint(address,IERC20Mintable,uint256,uint256,bytes32)"
-            )
-        );
+        bytes4(keccak256("retryMint(address,address,uint256,uint256,bytes32)"));
     bytes4 private constant RETRY_MINT_AND_SWAP_SELECTOR =
         bytes4(
             keccak256(
