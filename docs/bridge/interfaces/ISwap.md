@@ -34,28 +34,6 @@ function addLiquidity(uint256[] amounts, uint256 minToMint, uint256 deadline) ex
 |---|---|---|
 | _0 | uint256 | undefined |
 
-### calculateRemoveLiquidity
-
-```solidity
-function calculateRemoveLiquidity(uint256 amount) external view returns (uint256[])
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| amount | uint256 | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256[] | undefined |
-
 ### calculateRemoveLiquidityOneToken
 
 ```solidity
@@ -126,23 +104,6 @@ function calculateTokenAmount(uint256[] amounts, bool deposit) external view ret
 |---|---|---|
 | _0 | uint256 | undefined |
 
-### getA
-
-```solidity
-function getA() external view returns (uint256)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
-
 ### getToken
 
 ```solidity
@@ -164,114 +125,6 @@ function getToken(uint8 index) external view returns (contract IERC20)
 | Name | Type | Description |
 |---|---|---|
 | _0 | contract IERC20 | undefined |
-
-### getTokenBalance
-
-```solidity
-function getTokenBalance(uint8 index) external view returns (uint256)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| index | uint8 | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
-
-### getTokenIndex
-
-```solidity
-function getTokenIndex(address tokenAddress) external view returns (uint8)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| tokenAddress | address | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint8 | undefined |
-
-### getVirtualPrice
-
-```solidity
-function getVirtualPrice() external view returns (uint256)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
-
-### initialize
-
-```solidity
-function initialize(contract IERC20[] pooledTokens, uint8[] decimals, string lpTokenName, string lpTokenSymbol, uint256 a, uint256 fee, uint256 adminFee, address lpTokenTargetAddress) external nonpayable
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| pooledTokens | contract IERC20[] | undefined |
-| decimals | uint8[] | undefined |
-| lpTokenName | string | undefined |
-| lpTokenSymbol | string | undefined |
-| a | uint256 | undefined |
-| fee | uint256 | undefined |
-| adminFee | uint256 | undefined |
-| lpTokenTargetAddress | address | undefined |
-
-### removeLiquidity
-
-```solidity
-function removeLiquidity(uint256 amount, uint256[] minAmounts, uint256 deadline) external nonpayable returns (uint256[])
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| amount | uint256 | undefined |
-| minAmounts | uint256[] | undefined |
-| deadline | uint256 | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256[] | undefined |
 
 ### removeLiquidityImbalance
 

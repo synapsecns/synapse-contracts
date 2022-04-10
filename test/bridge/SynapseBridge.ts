@@ -10,13 +10,15 @@ import {
   forceAdvanceOneBlock,
 } from "./testUtils"
 import { solidity } from "ethereum-waffle"
-import { deployments, ethers } from "hardhat"
+import { deployments, ethers, upgrades } from "hardhat"
 
 import chai from "chai"
 import { GenericERC20, RateLimiter, SynapseBridge } from "../../build/typechain"
 import epochSeconds from "@stdlib/time-now"
 import { keccak256 } from "ethers/lib/utils"
 import { randomBytes } from "crypto"
+import { forkChain } from "../utils"
+import { addBridgeOwner, upgradeBridgeProxy } from "./utilities/fork"
 
 chai.use(solidity)
 const { expect } = chai
@@ -36,6 +38,7 @@ describe.only("SynapseBridge", async () => {
   let bridge: SynapseBridge
   let rateLimiter: RateLimiter
   let USDC: GenericERC20
+  const BRIDGE_ADDRESS = "0x2796317b0fF8538F253012862c06787Adfb8cEb6"
 
   const decimals = Math.pow(10, 6)
 
@@ -51,12 +54,18 @@ describe.only("SynapseBridge", async () => {
       .connect(deployer)
       .grantRole(limiterRole, await owner.getAddress())
 
+    const governanceRole = await rateLimiter.GOVERNANCE_ROLE()
+
+    await rateLimiter
+      .connect(deployer)
+      .grantRole(governanceRole, await owner.getAddress())
+
     // connect the bridge config v3 with the owner. For unauthorized tests, this can be overriden
     rateLimiter = rateLimiter.connect(owner)
   }
 
   // deploys the bridge, grants role. Rate limiter *must* be deployed first
-  const deployBridge = async () => {
+  const upgradeBridge = async () => {
     if (rateLimiter == null) {
       throw "rate limiter must be deployed before bridge"
     }
@@ -65,8 +74,14 @@ describe.only("SynapseBridge", async () => {
     const synapseBridgeFactory = await ethers.getContractFactory(
       "SynapseBridge",
     )
-    bridge = (await synapseBridgeFactory.deploy()) as SynapseBridge
-    await bridge.initialize()
+
+    await upgradeBridgeProxy(BRIDGE_ADDRESS)
+
+    // attach to the deployed bridge
+    bridge = (await synapseBridgeFactory.attach(
+      BRIDGE_ADDRESS,
+    )) as SynapseBridge
+    await addBridgeOwner(BRIDGE_ADDRESS, await deployer.getAddress())
 
     // grant rate limiter role on bridge to rate limiter
     const rateLimiterRole = await bridge.RATE_LIMITER_ROLE()
@@ -86,6 +101,8 @@ describe.only("SynapseBridge", async () => {
     await rateLimiter
       .connect(deployer)
       .grantRole(await rateLimiter.BRIDGE_ROLE(), bridge.address)
+
+    await rateLimiter.setBridgeAddress(bridge.address)
   }
 
   const setupTokens = async () => {
@@ -107,12 +124,14 @@ describe.only("SynapseBridge", async () => {
       recipient = signers[4]
 
       await deployRateLimiter()
-      await deployBridge()
+      await upgradeBridge()
       await setupTokens()
     },
   )
 
   beforeEach(async () => {
+    // fork the chain
+    await forkChain(process.env.ALCHEMY_API, 14555470)
     await setupTest()
   })
 
@@ -123,7 +142,7 @@ describe.only("SynapseBridge", async () => {
     mintAmount: number,
     intervalMin: number = 60,
   ) => {
-    const lastReset = Math.floor(epochSeconds() / 60)
+    const lastReset = Math.floor((await getCurrentBlockTimestamp()) / 60)
     allowanceAmount = allowanceAmount * decimals
 
     await expect(
@@ -137,7 +156,7 @@ describe.only("SynapseBridge", async () => {
     await expect(USDC.mint(bridge.address, mintAmount * decimals))
   }
 
-  it("should add to retry queue if rate limit hit", async () => {
+  it("Withdraw: should add to retry queue if rate limit hit", async () => {
     const mintAmount = 50
     await setupAllowanceTest(USDC, 100, mintAmount)
 
@@ -157,5 +176,7 @@ describe.only("SynapseBridge", async () => {
     // now retry. This should bypass the rate limiter
 
     await expect(rateLimiter.retryByKappa(kappa)).to.be.not.reverted
+
+    expect(await bridge.kappaExists(kappa)).to.be.true
   })
 })

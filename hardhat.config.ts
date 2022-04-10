@@ -8,8 +8,9 @@ import "hardhat-gas-reporter"
 import "solidity-coverage"
 import "hardhat-deploy"
 import "hardhat-spdx-license-identifier"
-import "hardhat-interface-generator";
-import "@primitivefi/hardhat-dodoc";
+import "hardhat-interface-generator"
+import "@primitivefi/hardhat-dodoc"
+import "@openzeppelin/hardhat-upgrades"
 
 import { HardhatUserConfig } from "hardhat/config"
 import dotenv from "dotenv"
@@ -103,7 +104,7 @@ let config: HardhatUserConfig = {
     target: "ethers-v5",
   },
   dodoc: {
-    runOnCompile: true,
+    runOnCompile: false,
     debugMode: false,
     // pre solidity 5 breaks docgen
     exclude: ["MultisigWallet", "WETH9"]

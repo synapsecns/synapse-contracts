@@ -587,7 +587,7 @@ RateLimiter call this function to retry a mint of a SynERC20 (or any asset that 
 ### retryWithdraw
 
 ```solidity
-function retryWithdraw(address to, contract IERC20 token, uint256 amount, uint256 fee, bytes32 kappa) external nonpayable
+function retryWithdraw(address to, address token, uint256 amount, uint256 fee, bytes32 kappa) external nonpayable
 ```
 
 Function to be called by the rate limiter to retry a withdraw bypassing the rate limiter
@@ -599,7 +599,7 @@ Function to be called by the rate limiter to retry a withdraw bypassing the rate
 | Name | Type | Description |
 |---|---|---|
 | to | address | address on chain to send underlying assets to |
-| token | contract IERC20 | ERC20 compatible token to withdraw from the bridge |
+| token | address | ERC20 compatible token to withdraw from the bridge |
 | amount | uint256 | Amount in native token decimals to withdraw |
 | fee | uint256 | Amount in native token decimals to save to the contract as fees |
 | kappa | bytes32 | kappa* |
