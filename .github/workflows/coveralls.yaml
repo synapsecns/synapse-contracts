@@ -7,6 +7,9 @@ jobs:
   coverage:
     name: Build
     runs-on: ubuntu-18.04
+    env:
+      AVAX_API: https://api.avax.network/ext/bc/C/rpc
+      ALCHEMY_API: ${{ secrets.ALCHEMY_API }}
 
     steps:
       - uses: actions/checkout@v2

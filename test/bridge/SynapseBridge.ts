@@ -19,6 +19,7 @@ import { keccak256 } from "ethers/lib/utils"
 import { randomBytes } from "crypto"
 import { forkChain } from "../utils"
 import { addBridgeOwner, upgradeBridgeProxy } from "./utilities/fork"
+import {deployRateLimiter, setupForkedBridge} from "./utilities/bridge";
 
 chai.use(solidity)
 const { expect } = chai
@@ -39,30 +40,11 @@ describe.only("SynapseBridge", async () => {
   let rateLimiter: RateLimiter
   let USDC: GenericERC20
   const BRIDGE_ADDRESS = "0x2796317b0fF8538F253012862c06787Adfb8cEb6"
+  const NUSD = "0x1B84765dE8B7566e4cEAF4D0fD3c5aF52D3DdE4F"
+  const NUSD_POOL = "0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8"
 
   const decimals = Math.pow(10, 6)
 
-  // deploy rateLimiter deploys the rate limiter contract, sets it to RateLimiter and
-  // assigns owner the limiter role
-  const deployRateLimiter = async () => {
-    const rateLimiterFactory = await ethers.getContractFactory("RateLimiter")
-    rateLimiter = (await rateLimiterFactory.deploy()) as RateLimiter
-    await rateLimiter.initialize()
-
-    const limiterRole = await rateLimiter.LIMITER_ROLE()
-    await rateLimiter
-      .connect(deployer)
-      .grantRole(limiterRole, await owner.getAddress())
-
-    const governanceRole = await rateLimiter.GOVERNANCE_ROLE()
-
-    await rateLimiter
-      .connect(deployer)
-      .grantRole(governanceRole, await owner.getAddress())
-
-    // connect the bridge config v3 with the owner. For unauthorized tests, this can be overriden
-    rateLimiter = rateLimiter.connect(owner)
-  }
 
   // deploys the bridge, grants role. Rate limiter *must* be deployed first
   const upgradeBridge = async () => {
@@ -123,8 +105,8 @@ describe.only("SynapseBridge", async () => {
       nodeGroup = signers[3]
       recipient = signers[4]
 
-      await deployRateLimiter()
-      await upgradeBridge()
+      rateLimiter = await deployRateLimiter(deployer, owner)
+      bridge = await setupForkedBridge(rateLimiter, BRIDGE_ADDRESS, deployer, nodeGroup)
       await setupTokens()
     },
   )
@@ -137,9 +119,8 @@ describe.only("SynapseBridge", async () => {
 
   // ammounts are multiplied by 10^6
   const setupAllowanceTest = async (
-    token: GenericERC20,
+    tokenAddress: string,
     allowanceAmount: number,
-    mintAmount: number,
     intervalMin: number = 60,
   ) => {
     const lastReset = Math.floor((await getCurrentBlockTimestamp()) / 60)
@@ -147,18 +128,19 @@ describe.only("SynapseBridge", async () => {
 
     await expect(
       rateLimiter.setAllowance(
-        token.address,
+        tokenAddress,
         allowanceAmount,
         intervalMin,
         lastReset,
       ),
     ).to.be.not.reverted
-    await expect(USDC.mint(bridge.address, mintAmount * decimals))
   }
 
   it("Withdraw: should add to retry queue if rate limit hit", async () => {
     const mintAmount = 50
-    await setupAllowanceTest(USDC, 100, mintAmount)
+
+    await expect(USDC.mint(bridge.address, mintAmount * decimals))
+    await setupAllowanceTest(USDC.address, 100)
 
     const kappa = keccak256(randomBytes(32))
 
@@ -174,9 +156,25 @@ describe.only("SynapseBridge", async () => {
     )
 
     // now retry. This should bypass the rate limiter
-
     await expect(rateLimiter.retryByKappa(kappa)).to.be.not.reverted
-
     expect(await bridge.kappaExists(kappa)).to.be.true
   })
+
+  it('WithdrawAndRemove: should add to retry queue if rate limit hit', async () => {
+    const allowanceAmount = 500
+    const withdrawAmount = 1000
+
+    await setupAllowanceTest(NUSD, allowanceAmount)
+    const kappa = keccak256(randomBytes(32))
+
+    await expect(
+        bridge
+            .connect(nodeGroup)
+            .withdrawAndRemove(await recipient.getAddress(), NUSD, withdrawAmount, 10, NUSD_POOL, 1, withdrawAmount, epochSeconds(), kappa)
+    ).to.be.not.reverted
+
+    expect(await bridge.kappaExists(kappa)).to.be.false
+    await expect(rateLimiter.retryByKappa(kappa)).to.be.not.reverted
+    expect(await bridge.kappaExists(kappa)).to.be.true
+  });
 })
