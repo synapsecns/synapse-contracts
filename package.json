@@ -78,6 +78,7 @@
     "hardhat-spdx-license-identifier": "^2.0.3",
     "husky": "^6.0.0",
     "lint-staged": "^11.0.0",
+    "mocha": "^9.2.1",
     "prettier": "^2.3.0",
     "prettier-plugin-solidity": "^1.0.0-beta.11",
     "shelljs": "^0.8.4",
