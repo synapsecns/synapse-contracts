@@ -104,7 +104,8 @@ let config: HardhatUserConfig = {
     target: "ethers-v5",
   },
   dodoc: {
-    runOnCompile: true,
+    // skip doc generation on ci
+    runOnCompile: process.env.CI == "",
     debugMode: false,
     // pre solidity 5 breaks docgen
     exclude: ["MultisigWallet", "WETH9"]
