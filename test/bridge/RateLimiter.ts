@@ -2,15 +2,9 @@ import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { deployments, ethers } from "hardhat"
 import { BigNumber, BigNumberish, Signer } from "ethers"
-import Wallet from "ethereumjs-wallet"
 
 import { RateLimiter } from "../../build/typechain/RateLimiter"
-import { CHAIN_ID } from "../../utils/network"
-import { Address } from "hardhat-deploy/dist/types"
-import { faker } from "@faker-js/faker"
-import { includes } from "lodash"
 import {
-  BridgeConfigV3,
   GenericERC20,
   RateLimiterTest,
 } from "../../build/typechain"
