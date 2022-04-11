@@ -42,6 +42,9 @@ jobs:
       - name: build
         run: npm run build
 
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+
       - name: run test:coverage
         run: npm run test:coverage
 
