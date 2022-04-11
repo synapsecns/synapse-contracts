@@ -5,35 +5,35 @@ import {IBasicRouter} from "./IBasicRouter.sol";
 
 interface IRouter is IBasicRouter {
     event Swap(
-        address indexed _tokenIn,
-        address indexed _tokenOut,
-        uint256 _amountIn,
-        uint256 _amountOut
+        address indexed tokenIn,
+        address indexed tokenOut,
+        uint256 amountIn,
+        uint256 amountOut
     );
 
     // Single chain swaps
 
     function swap(
-        address _to,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        uint256 _amountIn,
-        uint256 _minAmountOut
-    ) external returns (uint256 _amountOut);
+        address to,
+        address[] calldata path,
+        address[] calldata adapters,
+        uint256 amountIn,
+        uint256 minAmountOut
+    ) external returns (uint256 amountOut);
 
     function swapFromGAS(
-        address _to,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        uint256 _amountIn,
-        uint256 _minAmountOut
-    ) external payable returns (uint256 _amountOut);
+        address to,
+        address[] calldata path,
+        address[] calldata adapters,
+        uint256 amountIn,
+        uint256 minAmountOut
+    ) external payable returns (uint256 amountOut);
 
     function swapToGAS(
-        address _to,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        uint256 _amountIn,
-        uint256 _minAmountOut
-    ) external returns (uint256 _amountOut);
+        address to,
+        address[] calldata path,
+        address[] calldata adapters,
+        uint256 amountIn,
+        uint256 minAmountOut
+    ) external returns (uint256 amountOut);
 }

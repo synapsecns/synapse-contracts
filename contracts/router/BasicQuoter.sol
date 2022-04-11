@@ -21,7 +21,8 @@ contract BasicQuoter is Ownable, IBasicQuoter {
     /// 1. Too many swaps in the path make very little sense
     /// 2. Every extra swap increases the amount of possible paths exponentially,
     ///    so we need some sensible limitation.
-    uint8 public maxSwaps;
+    // solhint-disable-next-line
+    uint8 public MAX_SWAPS;
 
     address payable public immutable router;
 
@@ -32,34 +33,34 @@ contract BasicQuoter is Ownable, IBasicQuoter {
 
     // -- MODIFIERS --
 
-    modifier checkTokenIndex(uint8 _index) {
-        require(_index < trustedTokens.length, "Token index out of range");
+    modifier checkTokenIndex(uint8 index) {
+        require(index < trustedTokens.length, "Token index out of range");
         _;
     }
 
-    modifier checkAdapterIndex(uint8 _index) {
-        require(_index < trustedAdapters.length, "Adapter index out of range");
+    modifier checkAdapterIndex(uint8 index) {
+        require(index < trustedAdapters.length, "Adapter index out of range");
         _;
     }
 
     //  -- VIEWS --
 
-    function getTrustedAdapter(uint8 _index)
+    function getTrustedAdapter(uint8 index)
         external
         view
-        checkAdapterIndex(_index)
+        checkAdapterIndex(index)
         returns (address)
     {
-        return trustedAdapters[_index];
+        return trustedAdapters[index];
     }
 
-    function getTrustedToken(uint8 _index)
+    function getTrustedToken(uint8 index)
         external
         view
-        checkTokenIndex(_index)
+        checkTokenIndex(index)
         returns (address)
     {
-        return trustedTokens[_index];
+        return trustedTokens[index];
     }
 
     function trustedAdaptersCount() external view returns (uint256) {
@@ -72,19 +73,19 @@ contract BasicQuoter is Ownable, IBasicQuoter {
 
     // -- RESTRICTED ADAPTER FUNCTIONS --
 
-    function addTrustedAdapter(address _adapter) external onlyOwner {
+    function addTrustedAdapter(address adapter) external onlyOwner {
         for (uint8 i = 0; i < trustedAdapters.length; i++) {
-            require(trustedAdapters[i] != _adapter, "Adapter already added");
+            require(trustedAdapters[i] != adapter, "Adapter already added");
         }
-        trustedAdapters.push(_adapter);
+        trustedAdapters.push(adapter);
         // Add Adapter to Router as well
-        IBasicRouter(router).addTrustedAdapter(_adapter);
-        emit AddedTrustedAdapter(_adapter);
+        IBasicRouter(router).addTrustedAdapter(adapter);
+        emit AddedTrustedAdapter(adapter);
     }
 
-    function removeAdapter(address _adapter) external onlyOwner {
+    function removeAdapter(address adapter) external onlyOwner {
         for (uint8 i = 0; i < trustedAdapters.length; i++) {
-            if (trustedAdapters[i] == _adapter) {
+            if (trustedAdapters[i] == adapter) {
                 _removeAdapterByIndex(i);
                 return;
             }
@@ -92,23 +93,23 @@ contract BasicQuoter is Ownable, IBasicQuoter {
         revert("Adapter not found");
     }
 
-    function removeAdapterByIndex(uint8 _index) external onlyOwner {
-        _removeAdapterByIndex(_index);
+    function removeAdapterByIndex(uint8 index) external onlyOwner {
+        _removeAdapterByIndex(index);
     }
 
     // -- RESTRICTED TOKEN FUNCTIONS --
 
-    function addTrustedToken(address _token) external onlyOwner {
+    function addTrustedToken(address token) external onlyOwner {
         for (uint8 i = 0; i < trustedTokens.length; i++) {
-            require(trustedTokens[i] != _token, "Token already added");
+            require(trustedTokens[i] != token, "Token already added");
         }
-        trustedTokens.push(_token);
-        emit AddedTrustedToken(_token);
+        trustedTokens.push(token);
+        emit AddedTrustedToken(token);
     }
 
-    function removeToken(address _token) external onlyOwner {
+    function removeToken(address token) external onlyOwner {
         for (uint8 i = 0; i < trustedTokens.length; i++) {
-            if (trustedTokens[i] == _token) {
+            if (trustedTokens[i] == token) {
                 _removeTokenByIndex(i);
                 return;
             }
@@ -116,62 +117,62 @@ contract BasicQuoter is Ownable, IBasicQuoter {
         revert("Token not found");
     }
 
-    function removeTokenByIndex(uint8 _index) external onlyOwner {
-        _removeTokenByIndex(_index);
+    function removeTokenByIndex(uint8 index) external onlyOwner {
+        _removeTokenByIndex(index);
     }
 
     // -- RESTRICTED SETTERS
 
     /// @dev This doesn't check if any of the adapters are duplicated,
     /// so make sure to check the data for duplicates
-    function setAdapters(address[] calldata _adapters) external onlyOwner {
+    function setAdapters(address[] calldata adapters) external onlyOwner {
         // First, remove old Adapters, if there are any
         if (trustedAdapters.length > 0) {
             IBasicRouter(router).setAdapters(trustedAdapters, false);
         }
-        trustedAdapters = _adapters;
-        IBasicRouter(router).setAdapters(_adapters, true);
-        emit UpdatedTrustedAdapters(_adapters);
+        trustedAdapters = adapters;
+        IBasicRouter(router).setAdapters(adapters, true);
+        emit UpdatedTrustedAdapters(adapters);
     }
 
     function setMaxSwaps(uint8 _maxSwaps) public onlyOwner {
-        maxSwaps = _maxSwaps;
+        MAX_SWAPS = _maxSwaps;
     }
 
     /// @dev This doesn't check if any of the tokens are duplicated,
     /// so make sure to check the data for duplicates
-    function setTokens(address[] calldata _tokens) public onlyOwner {
-        trustedTokens = _tokens;
-        emit UpdatedTrustedTokens(_tokens);
+    function setTokens(address[] calldata tokens) public onlyOwner {
+        trustedTokens = tokens;
+        emit UpdatedTrustedTokens(tokens);
     }
 
     // -- PRIVATE FUNCTIONS --
 
-    function _removeAdapterByIndex(uint8 _index)
+    function _removeAdapterByIndex(uint8 index)
         private
-        checkAdapterIndex(_index)
+        checkAdapterIndex(index)
     {
-        address _removedAdapter = trustedAdapters[_index];
+        address removedAdapter = trustedAdapters[index];
 
         // We don't care about adapters order, so we replace the
         // selected adapter with the last one
-        trustedAdapters[_index] = trustedAdapters[trustedAdapters.length - 1];
+        trustedAdapters[index] = trustedAdapters[trustedAdapters.length - 1];
         trustedAdapters.pop();
 
         // Remove Adapter from Router as well
-        IBasicRouter(router).removeAdapter(_removedAdapter);
+        IBasicRouter(router).removeAdapter(removedAdapter);
 
-        emit RemovedAdapter(_removedAdapter);
+        emit RemovedAdapter(removedAdapter);
     }
 
-    function _removeTokenByIndex(uint8 _index) private checkTokenIndex(_index) {
-        address _removedToken = trustedTokens[_index];
+    function _removeTokenByIndex(uint8 index) private checkTokenIndex(index) {
+        address removedToken = trustedTokens[index];
 
         // We don't care about tokens order, so we replace the
         // selected token with the last one
-        trustedTokens[_index] = trustedTokens[trustedTokens.length - 1];
+        trustedTokens[index] = trustedTokens[trustedTokens.length - 1];
         trustedTokens.pop();
 
-        emit RemovedToken(_removedToken);
+        emit RemovedToken(removedToken);
     }
 }
