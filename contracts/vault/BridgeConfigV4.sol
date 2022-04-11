@@ -148,12 +148,26 @@ contract BridgeConfig is
     }
 
     /**
-     * @notice Find address of given token from non-EVM chain on this chain.
-     * @param tokenGlobal Token address on non-EVM chain.
-     * @param chainId Id of non-EVM chain.
+     * @notice Find address of given token from EVM chain on this chain.
+     * @param chainId Id of EVM chain.
+     * @param tokenGlobal Token address on EVM chain.
      * @return tokenLocal Bridge token address on this chain.
      */
-    function findTokenNonEVM(string memory tokenGlobal, uint256 chainId)
+    function findTokenEVM(uint256 chainId, address tokenGlobal)
+        external
+        view
+        returns (address tokenLocal)
+    {
+        tokenLocal = globalMapEVM[chainId][tokenGlobal];
+    }
+
+    /**
+     * @notice Find address of given token from non-EVM chain on this chain.
+     * @param chainId Id of non-EVM chain.
+     * @param tokenGlobal Token address on non-EVM chain.
+     * @return tokenLocal Bridge token address on this chain.
+     */
+    function findTokenNonEVM(uint256 chainId, string calldata tokenGlobal)
         external
         view
         returns (address tokenLocal)
@@ -229,6 +243,14 @@ contract BridgeConfig is
                 ++amountTo;
             }
         }
+    }
+
+    /**
+     * @notice Check is bridging for given token is currently enabled.
+     * @param bridgeToken Token in question.
+     */
+    function isTokenEnabled(address bridgeToken) external view returns (bool) {
+        return tokenConfigs[bridgeToken].isEnabled;
     }
 
     // -- BRIDGE CONFIG: swap fees --

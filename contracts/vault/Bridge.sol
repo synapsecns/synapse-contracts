@@ -225,13 +225,13 @@ contract Bridge is
     function bridgeInNonEVM(
         address to,
         uint256 chainIdFrom,
-        string memory bridgeTokenFrom,
+        string calldata bridgeTokenFrom,
         uint256 amount,
         bytes32 kappa
     ) external onlyRole(NODEGROUP_ROLE) nonReentrant whenNotPaused {
         address token = bridgeConfig.findTokenNonEVM(
-            bridgeTokenFrom,
-            chainIdFrom
+            chainIdFrom,
+            bridgeTokenFrom
         );
         require(token != address(0), "!token");
 

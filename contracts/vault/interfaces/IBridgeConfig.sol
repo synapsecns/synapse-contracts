@@ -123,8 +123,15 @@ interface IBridgeConfig {
         view
         returns (string memory tokenGlobal, bool isEnabled);
 
-    function findTokenNonEVM(string memory tokenGlobal, uint256 chainId)
+    function findTokenEVM(uint256 chainId, address tokenGlobal)
         external
         view
         returns (address tokenLocal);
+
+    function findTokenNonEVM(uint256 chainId, string calldata tokenGlobal)
+        external
+        view
+        returns (address tokenLocal);
+
+    function isTokenEnabled(address bridgeToken) external view returns (bool);
 }

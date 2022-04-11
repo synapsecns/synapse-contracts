@@ -104,7 +104,7 @@ interface IBridge {
     function bridgeInNonEVM(
         address to,
         uint256 chainIdFrom,
-        string memory bridgeTokenFrom,
+        string calldata bridgeTokenFrom,
         uint256 amount,
         bytes32 kappa
     ) external;
