@@ -172,11 +172,11 @@ contract RateLimiter is
         return true;
     }
 
-    function addToRetryQueue(bytes32 kappa, bytes memory rateLimited)
+    function addToRetryQueue(bytes32 kappa, bytes memory toRetry)
         external
         onlyRole(BRIDGE_ROLE)
     {
-        rateLimited.set(kappa, rateLimited);
+        rateLimited.set(kappa, toRetry);
     }
 
     function retryByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
