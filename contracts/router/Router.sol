@@ -20,6 +20,13 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         this;
     }
 
+    modifier deadlineCheck(uint256 deadline) {
+        // solhint-disable-next-line
+        require(block.timestamp <= deadline, "Router: past deadline");
+
+        _;
+    }
+
     // -- SWAPPERS [single chain swaps] --
 
     /**
@@ -40,8 +47,9 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         address[] calldata path,
         address[] calldata adapters,
         uint256 amountIn,
-        uint256 minAmountOut
-    ) external returns (uint256 amountOut) {
+        uint256 minAmountOut,
+        uint256 deadline
+    ) external deadlineCheck(deadline) returns (uint256 amountOut) {
         amountOut = _swap(to, path, adapters, amountIn, minAmountOut);
     }
 
@@ -63,8 +71,9 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         address[] calldata path,
         address[] calldata adapters,
         uint256 amountIn,
-        uint256 minAmountOut
-    ) external payable returns (uint256 amountOut) {
+        uint256 minAmountOut,
+        uint256 deadline
+    ) external payable deadlineCheck(deadline) returns (uint256 amountOut) {
         require(msg.value == amountIn, "Router: incorrect amount of GAS");
         require(path[0] == WGAS, "Router: Path needs to begin with WGAS");
         _wrap(amountIn);
@@ -93,8 +102,9 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         address[] calldata path,
         address[] calldata adapters,
         uint256 amountIn,
-        uint256 minAmountOut
-    ) external returns (uint256 amountOut) {
+        uint256 minAmountOut,
+        uint256 deadline
+    ) external deadlineCheck(deadline) returns (uint256 amountOut) {
         require(
             path[path.length - 1] == WGAS,
             "Router: Path needs to end with WGAS"

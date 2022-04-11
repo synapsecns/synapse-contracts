@@ -66,7 +66,11 @@ contract BridgeRouter is Router, IBridgeRouter {
         uint256 amountIn,
         IBridge.SwapParams calldata destinationSwapParams,
         bool gasdropRequested
-    ) external returns (uint256 amountBridged) {
+    )
+        external
+        deadlineCheck(initialSwapParams.deadline)
+        returns (uint256 amountBridged)
+    {
         // First, perform swap on initial chain
         // Need to pull tokens from caller => isSelfSwap = false
         IERC20 bridgeToken = _swapToBridge(initialSwapParams, amountIn, false);
@@ -87,7 +91,12 @@ contract BridgeRouter is Router, IBridgeRouter {
         IBridge.SwapParams calldata initialSwapParams,
         IBridge.SwapParams calldata destinationSwapParams,
         bool gasdropRequested
-    ) external payable returns (uint256 amountBridged) {
+    )
+        external
+        payable
+        deadlineCheck(initialSwapParams.deadline)
+        returns (uint256 amountBridged)
+    {
         // TODO: enforce consistency?? introduce amountIn parameter
 
         require(
@@ -120,7 +129,11 @@ contract BridgeRouter is Router, IBridgeRouter {
         uint256 chainId,
         IBridge.SwapParams calldata initialSwapParams,
         uint256 amountIn
-    ) external returns (uint256 amountBridged) {
+    )
+        external
+        deadlineCheck(initialSwapParams.deadline)
+        returns (uint256 amountBridged)
+    {
         // First, perform swap on initial chain
         // Need to pull tokens from caller => isSelfSwap = false
         IERC20 bridgeToken = _swapToBridge(initialSwapParams, amountIn, false);
@@ -137,7 +150,12 @@ contract BridgeRouter is Router, IBridgeRouter {
         bytes32 to,
         uint256 chainId,
         IBridge.SwapParams calldata initialSwapParams
-    ) external payable returns (uint256 amountBridged) {
+    )
+        external
+        payable
+        deadlineCheck(initialSwapParams.deadline)
+        returns (uint256 amountBridged)
+    {
         // TODO: enforce consistency?? introduce amountIn parameter
 
         require(

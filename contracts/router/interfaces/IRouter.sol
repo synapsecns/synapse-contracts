@@ -18,7 +18,8 @@ interface IRouter is IBasicRouter {
         address[] calldata path,
         address[] calldata adapters,
         uint256 amountIn,
-        uint256 minAmountOut
+        uint256 minAmountOut,
+        uint256 deadline
     ) external returns (uint256 amountOut);
 
     function swapFromGAS(
@@ -26,7 +27,8 @@ interface IRouter is IBasicRouter {
         address[] calldata path,
         address[] calldata adapters,
         uint256 amountIn,
-        uint256 minAmountOut
+        uint256 minAmountOut,
+        uint256 deadline
     ) external payable returns (uint256 amountOut);
 
     function swapToGAS(
@@ -34,6 +36,7 @@ interface IRouter is IBasicRouter {
         address[] calldata path,
         address[] calldata adapters,
         uint256 amountIn,
-        uint256 minAmountOut
+        uint256 minAmountOut,
+        uint256 deadline
     ) external returns (uint256 amountOut);
 }
