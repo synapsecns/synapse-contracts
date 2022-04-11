@@ -57,21 +57,6 @@ contract BridgeRouter is Router, IBridgeRouter {
         bridgeMaxSwaps = _bridgeMaxSwaps;
     }
 
-    function setInfiniteTokenAllowance(IERC20 token, address spender)
-        external
-        onlyRole(GOVERNANCE_ROLE)
-    {
-        require(spender != bridge, "Bridge doesn't need infinite allowance");
-        _setTokenAllowance(token, UINT_MAX, spender);
-    }
-
-    function revokeTokenAllowance(IERC20 token, address spender)
-        external
-        onlyRole(GOVERNANCE_ROLE)
-    {
-        token.safeApprove(spender, 0);
-    }
-
     // -- BRIDGE FUNCTIONS [initial chain]: to EVM chains --
 
     function bridgeTokenToEVM(
@@ -294,22 +279,5 @@ contract BridgeRouter is Router, IBridgeRouter {
         returns (bool)
     {
         return swapParams.adapters.length > 0;
-    }
-
-    function _setTokenAllowance(
-        IERC20 token,
-        uint256 amount,
-        address spender
-    ) internal {
-        uint256 allowance = token.allowance(address(this), spender);
-        if (allowance == amount) {
-            return;
-        }
-        // safeApprove should only be called when setting an initial allowance,
-        // or when resetting it to zero. (c) openzeppelin
-        if (allowance != 0) {
-            token.safeApprove(spender, 0);
-        }
-        token.safeApprove(spender, amount);
     }
 }
