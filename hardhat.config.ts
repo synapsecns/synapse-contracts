@@ -63,7 +63,7 @@ let config: HardhatUserConfig = {
       gasPrice: 200 * 1000000000,
     },
     harmony: {
-      url: "https://harmony-0-rpc.gateway.pokt.network/",
+      url: "https://a.api.s0.t.hmny.io/",
     },
     boba: {
       url: "https://mainnet.boba.network",
