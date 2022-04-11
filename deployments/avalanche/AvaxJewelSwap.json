@@ -1,0 +1,108 @@
+{
+  "address": "0xa6Fa14A446B1b86619De3c27D10eeaAd84a0FcCd",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tokenIndexFrom",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "tokenIndexTo",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "dx",
+          "type": "uint256"
+        }
+      ],
+      "name": "calculateSwap",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "tokenIndexFrom",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "tokenIndexTo",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "dx",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "minDy",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "deadline",
+          "type": "uint256"
+        }
+      ],
+      "name": "swap",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x871bb8b0daddd98c4d0bf453fcdaad6ff0bdf6f615af8f60ec519ad2fc8606be",
+  "receipt": {
+    "to": null,
+    "from": "0x0AF91FA049A7e1894F480bFE5bBa20142C6c29a9",
+    "contractAddress": "0xa6Fa14A446B1b86619De3c27D10eeaAd84a0FcCd",
+    "transactionIndex": 0,
+    "gasUsed": "129079",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0xee7a6c980955caedd3eb0f68c0b85da588ea02c86194440c9c0476bfe003e316",
+    "transactionHash": "0x871bb8b0daddd98c4d0bf453fcdaad6ff0bdf6f615af8f60ec519ad2fc8606be",
+    "logs": [],
+    "blockNumber": 12926465,
+    "cumulativeGasUsed": "129079",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "solcInputHash": "176148eace03d1f556691bfef59d8130",
+  "metadata": "{\"compiler\":{\"version\":\"0.6.12+commit.27d51765\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"tokenIndexFrom\",\"type\":\"uint8\"},{\"internalType\":\"uint8\",\"name\":\"tokenIndexTo\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"dx\",\"type\":\"uint256\"}],\"name\":\"calculateSwap\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"tokenIndexFrom\",\"type\":\"uint8\"},{\"internalType\":\"uint8\",\"name\":\"tokenIndexTo\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"dx\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"minDy\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"deadline\",\"type\":\"uint256\"}],\"name\":\"swap\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/bridge/wrappers/AvaxJewelSwap.sol\":\"AvaxJewelSwap\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":10000},\"remappings\":[]},\"sources\":{\"contracts/bridge/wrappers/AvaxJewelSwap.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.6.12;\\n\\ncontract AvaxJewelSwap {\\n    function calculateSwap(\\n        uint8 tokenIndexFrom,\\n        uint8 tokenIndexTo,\\n        uint256 dx\\n    ) external view returns (uint256) {\\n        return 0;\\n    }\\n\\n    function swap(\\n        uint8 tokenIndexFrom,\\n        uint8 tokenIndexTo,\\n        uint256 dx,\\n        uint256 minDy,\\n        uint256 deadline\\n    ) external returns (uint256) {\\n        revert(\\\"There is no swap\\\");\\n    }\\n}\\n\",\"keccak256\":\"0x7bd0bceec25b4fc104bbeac9100769edda876fdd6374bd7e6960906953236355\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b50610161806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c8063916955861461003b578063a95b089f14610089575b600080fd5b610077600480360360a081101561005157600080fd5b5060ff8135811691602081013590911690604081013590606081013590608001356100b9565b60408051918252519081900360200190f35b6100776004803603606081101561009f57600080fd5b5060ff813581169160208101359091169060400135610122565b604080517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601060248201527f5468657265206973206e6f2073776170000000000000000000000000000000006044820152905160009181900360640190fd5b6000939250505056fea2646970667358221220587701cd875f8b5f9906572337091506b89e9b0b6dc6cb7ecbdd7d115437221064736f6c634300060c0033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106100365760003560e01c8063916955861461003b578063a95b089f14610089575b600080fd5b610077600480360360a081101561005157600080fd5b5060ff8135811691602081013590911690604081013590606081013590608001356100b9565b60408051918252519081900360200190f35b6100776004803603606081101561009f57600080fd5b5060ff813581169160208101359091169060400135610122565b604080517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601060248201527f5468657265206973206e6f2073776170000000000000000000000000000000006044820152905160009181900360640190fd5b6000939250505056fea2646970667358221220587701cd875f8b5f9906572337091506b89e9b0b6dc6cb7ecbdd7d115437221064736f6c634300060c0033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  }
+}
