@@ -18,7 +18,7 @@ contract RateLimiter is
     ReentrancyGuardUpgradeable,
     IRateLimiter
 {
-    using EnumerableMapUpgradeable for EnumerableMapUpgradeable.Bytes32ToBytesMap;
+    using EnumerableMapUpgradeable for EnumerableMapUpgradeable.Bytes32ToStructMap;
     /*** STATE ***/
 
     string public constant NAME = "Rate Limiter";
@@ -32,7 +32,7 @@ contract RateLimiter is
     // Token -> Allowance
     mapping(address => Allowance) public allowances;
     // Kappa->Retry Selector
-    EnumerableMapUpgradeable.Bytes32ToBytesMap private limited;
+    EnumerableMapUpgradeable.Bytes32ToStructMap private rateLimited;
     // Bridge Address
     address public BRIDGE_ADDRESS;
 
@@ -176,27 +176,27 @@ contract RateLimiter is
         external
         onlyRole(BRIDGE_ROLE)
     {
-        limited.set(kappa, rateLimited);
+        rateLimited.set(kappa, rateLimited);
     }
 
     function retryByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
-        bytes memory toRetry = limited.get(kappa);
+        (bytes memory toRetry, ) = rateLimited.get(kappa);
         (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(toRetry);
         require(
             success,
             append("could not call bridge:", _getRevertMsg(returnData))
         );
-        limited.remove(kappa);
+        rateLimited.remove(kappa);
     }
 
     function retryCount(uint8 count) external onlyRole(LIMITER_ROLE) {
         // no issues casting to uint8 here. If length is greater then 255, min is always taken
         uint8 attempts = uint8(
-            MathUpgradeable.min(uint256(count), limited.length())
+            MathUpgradeable.min(uint256(count), rateLimited.length())
         );
 
         for (uint8 i = 0; i < attempts; i++) {
-            (bytes32 kappa, bytes memory toRetry) = limited.at(i);
+            (bytes32 kappa, bytes memory toRetry, ) = rateLimited.at(i);
             (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(
                 toRetry
             );
@@ -204,12 +204,12 @@ contract RateLimiter is
                 success,
                 append("could not call bridge: ", _getRevertMsg(returnData))
             );
-            limited.remove(kappa);
+            rateLimited.remove(kappa);
         }
     }
 
     function deleteByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
-        limited.remove(kappa);
+        rateLimited.remove(kappa);
     }
 
     /**
