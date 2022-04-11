@@ -254,34 +254,6 @@
     {
       "inputs": [
         {
-          "internalType": "bytes32",
-          "name": "to",
-          "type": "bytes32"
-        },
-        {
-          "internalType": "uint256",
-          "name": "chainId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "contract IERC20",
-          "name": "token",
-          "type": "address"
-        },
-        {
-          "internalType": "uint256",
-          "name": "amount",
-          "type": "uint256"
-        }
-      ],
-      "name": "redeemv2",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "address",
           "name": "to",
           "type": "address"
@@ -914,14 +886,6 @@
           "tokenIndexFrom": "the token the user wants to swap from",
           "tokenIndexTo": "the token the user wants to swap to"
         }
-      },
-      "redeemv2(bytes32,uint256,address,uint256)": {
-        "params": {
-          "amount": "Amount in native token decimals to transfer cross-chain pre-fees*",
-          "chainId": "which chain to bridge assets onto",
-          "to": "address on other chain to bridge assets to",
-          "token": "ERC20 compatible token to redeem into the bridge"
-        }
       }
     },
     "version": 1
@@ -943,9 +907,6 @@
       },
       "redeemAndSwap(address,uint256,address,uint256,uint8,uint8,uint256,uint256)": {
         "notice": "Wraps redeemAndSwap on SynapseBridge.sol Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g \"swap\" out of the LP token)"
-      },
-      "redeemv2(bytes32,uint256,address,uint256)": {
-        "notice": "Wraps SynapseBridge redeemv2() function"
       }
     },
     "version": 1
@@ -953,15 +914,15 @@
   "storageLayout": {
     "storage": [
       {
-        "astId": 23269,
+        "astId": 26096,
         "contract": "contracts/bridge/wrappers/HarmonyBridgeZap.sol:HarmonyBridgeZap",
         "label": "synapseBridge",
         "offset": 0,
         "slot": "0",
-        "type": "t_contract(ISynapseBridge)20970"
+        "type": "t_contract(ISynapseBridge)25334"
       },
       {
-        "astId": 23285,
+        "astId": 26112,
         "contract": "contracts/bridge/wrappers/HarmonyBridgeZap.sol:HarmonyBridgeZap",
         "label": "swapMap",
         "offset": 0,
@@ -969,7 +930,7 @@
         "type": "t_mapping(t_address,t_address)"
       },
       {
-        "astId": 23290,
+        "astId": 26117,
         "contract": "contracts/bridge/wrappers/HarmonyBridgeZap.sol:HarmonyBridgeZap",
         "label": "swapTokensMap",
         "offset": 0,
@@ -994,7 +955,7 @@
         "label": "contract IERC20",
         "numberOfBytes": "20"
       },
-      "t_contract(ISynapseBridge)20970": {
+      "t_contract(ISynapseBridge)25334": {
         "encoding": "inplace",
         "label": "contract ISynapseBridge",
         "numberOfBytes": "20"

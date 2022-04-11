@@ -6,6 +6,8 @@ on: ["push", "pull_request"]
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      AVAX_API: https://api.avax.network/ext/bc/C/rpc
 
     steps:
       - uses: actions/checkout@v2
