@@ -30,48 +30,48 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
     }
 
     function findBestPathInitialChain(
-        address _tokenIn,
-        uint256 _amountIn,
-        address _tokenOut
-    ) external view returns (Offers.FormattedOffer memory _bestOffer) {
+        address tokenIn,
+        uint256 amountIn,
+        address tokenOut
+    ) external view returns (Offers.FormattedOffer memory bestOffer) {
         // User pays for gas, so:
         // use maximum swaps permitted for the search
-        return findBestPath(_tokenIn, _amountIn, _tokenOut, maxSwaps);
+        return findBestPath(tokenIn, amountIn, tokenOut, MAX_SWAPS);
     }
 
     function findBestPathDestinationChain(
-        address _tokenIn,
-        uint256 _amountIn,
-        address _tokenOut,
-        bool _gasdropRequested
-    ) external view returns (Offers.FormattedOffer memory _bestOffer) {
-        bool _swapRequested = _tokenIn != _tokenOut;
-        uint256 _amountOfSwaps = IBridgeRouter(router).bridgeMaxSwaps();
-        (uint256 _fee, , bool isEnabled, ) = bridgeConfig.calculateBridgeFee(
-            _tokenIn,
-            _amountIn,
-            _gasdropRequested,
-            _swapRequested ? _amountOfSwaps : 0
+        address tokenIn,
+        uint256 amountIn,
+        address tokenOut,
+        bool gasdropRequested
+    ) external view returns (Offers.FormattedOffer memory bestOffer) {
+        bool swapRequested = tokenIn != tokenOut;
+        uint256 amountOfSwaps = IBridgeRouter(router).bridgeMaxSwaps();
+        (uint256 fee, , bool isEnabled, ) = bridgeConfig.calculateBridgeFee(
+            tokenIn,
+            amountIn,
+            gasdropRequested,
+            swapRequested ? amountOfSwaps : 0
         );
 
-        if (isEnabled && _amountIn > _fee) {
-            _amountIn = _amountIn - _fee;
+        if (isEnabled && amountIn > fee) {
+            amountIn = amountIn - fee;
 
-            if (_swapRequested) {
+            if (swapRequested) {
                 // Node group pays for gas, so:
                 // use maximum swaps permitted for bridge+swap transaction
-                _bestOffer = findBestPath(
-                    _tokenIn,
-                    _amountIn,
-                    _tokenOut,
+                bestOffer = findBestPath(
+                    tokenIn,
+                    amountIn,
+                    tokenOut,
                     IBridgeRouter(router).bridgeMaxSwaps()
                 );
             } else {
-                _bestOffer.path = new address[](1);
-                _bestOffer.path[0] = _tokenIn;
+                bestOffer.path = new address[](1);
+                bestOffer.path[0] = tokenIn;
 
-                _bestOffer.amounts = new uint256[](1);
-                _bestOffer.amounts[0] = _amountIn;
+                bestOffer.amounts = new uint256[](1);
+                bestOffer.amounts[0] = amountIn;
 
                 // bestOffer.adapters is empty
             }

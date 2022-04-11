@@ -6,17 +6,17 @@ import {Offers} from "../libraries/LibOffers.sol";
 
 interface IBridgeQuoter is IQuoter {
     function findBestPathInitialChain(
-        address _tokenIn,
-        uint256 _amountIn,
-        address _tokenOut
-    ) external view returns (Offers.FormattedOffer memory _bestOffer);
+        address tokenIn,
+        uint256 amountIn,
+        address tokenOut
+    ) external view returns (Offers.FormattedOffer memory bestOffer);
 
     function findBestPathDestinationChain(
-        address _tokenIn,
-        uint256 _amountIn,
-        address _tokenOut,
-        bool _gasdropRequested
-    ) external view returns (Offers.FormattedOffer memory _bestOffer);
+        address tokenIn,
+        uint256 amountIn,
+        address tokenOut,
+        bool gasdropRequested
+    ) external view returns (Offers.FormattedOffer memory bestOffer);
 
     function getAllBridgeTokensEVM(uint256 chainTo)
         external
