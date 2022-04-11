@@ -19,7 +19,7 @@ import epochSeconds from "@stdlib/time-now"
 chai.use(solidity)
 const { expect, assert } = chai
 
-describe("Rate Limiter", () => {
+describe.only("Rate Limiter", () => {
   let signers: Array<Signer>
   let deployer: Signer
   let owner: Signer
