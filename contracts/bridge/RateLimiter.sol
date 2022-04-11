@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-4.3.1-upgradeable/utils/math/MathUpgradeable.sol
 
 import "./libraries/EnumerableMapUpgradeable.sol";
 import "./interfaces/IRateLimiter.sol";
+import "./libraries/Strings.sol";
 import "hardhat/console.sol";
 
 // @title RateLimiter
@@ -184,7 +185,7 @@ contract RateLimiter is
         (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(toRetry);
         require(
             success,
-            append("could not call bridge:", _getRevertMsg(returnData))
+            Strings.append("could not call bridge:", _getRevertMsg(returnData))
         );
         rateLimited.remove(kappa);
     }
@@ -202,8 +203,14 @@ contract RateLimiter is
             );
             require(
                 success,
-                append("could not call bridge: ", _getRevertMsg(returnData))
+                Strings.append(
+                    "could not call bridge for kappa: ",
+                    Strings.toHex(kappa),
+                    " reverted with: ",
+                    _getRevertMsg(returnData)
+                )
             );
+
             rateLimited.remove(kappa);
         }
     }
