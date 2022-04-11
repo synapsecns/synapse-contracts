@@ -221,6 +221,20 @@ contract SynapseBridge is
         _unpause();
     }
 
+    // RATE LIMITER FUNCTIONS ***/
+    // @dev check and update the rate limiter allowances. Bypass the rate limiter
+    // if it is a 0-address
+    function isRateLimited(address token, uint256 amount) internal returns (bool) {
+        if (address(rateLimiter) == address (0)) {
+            return false;
+        }
+
+        return rateLimiter.checkAndUpdateAllowance(
+            address(token),
+            amount
+        );
+    }
+
     /**
      * @notice Relays to nodes to transfers an ERC20 token cross-chain
      * @param to address on other chain to bridge assets to
@@ -275,7 +289,7 @@ contract SynapseBridge is
             "Caller is not a node group"
         );
 
-        bool rateLimited = rateLimiter.checkAndUpdateAllowance(
+        bool rateLimited = isRateLimited(
             address(token),
             amount
         );
@@ -364,7 +378,7 @@ contract SynapseBridge is
             "Caller is not a node group"
         );
 
-        bool rateLimited = rateLimiter.checkAndUpdateAllowance(
+        bool rateLimited = isRateLimited(
             address(token),
             amount
         );
@@ -559,7 +573,7 @@ contract SynapseBridge is
             "Caller is not a node group"
         );
 
-        bool rateLimited = rateLimiter.checkAndUpdateAllowance(
+        bool rateLimited = isRateLimited(
             address(token),
             amount
         );
@@ -780,7 +794,7 @@ contract SynapseBridge is
             "Caller is not a node group"
         );
 
-        bool rateLimited = rateLimiter.checkAndUpdateAllowance(
+        bool rateLimited = isRateLimited(
             address(token),
             amount
         );
