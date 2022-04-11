@@ -77,6 +77,8 @@ contract BridgeConfig is
 
             if (minFee > fee) {
                 fee = minFee;
+            } else if (fee > config.maxTotalFee) {
+                fee = config.maxTotalFee;
             }
 
             bridgeToken = config.bridgeToken;
