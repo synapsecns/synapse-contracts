@@ -58,7 +58,7 @@ contract SynapseBridge is
     mapping(address => uint256) private fees;
 
     uint256 public startBlockNumber;
-    uint256 public constant bridgeVersion = 6;
+    uint256 public constant bridgeVersion = 7;
     uint256 public chainGasAmount;
     address payable public WETH_ADDRESS;
     IRateLimiter public rateLimiter;
@@ -224,15 +224,15 @@ contract SynapseBridge is
     // RATE LIMITER FUNCTIONS ***/
     // @dev check and update the rate limiter allowances. Bypass the rate limiter
     // if it is a 0-address
-    function isRateLimited(address token, uint256 amount) internal returns (bool) {
-        if (address(rateLimiter) == address (0)) {
+    function isRateLimited(address token, uint256 amount)
+        internal
+        returns (bool)
+    {
+        if (address(rateLimiter) == address(0)) {
             return false;
         }
 
-        return rateLimiter.checkAndUpdateAllowance(
-            address(token),
-            amount
-        );
+        return rateLimiter.checkAndUpdateAllowance(address(token), amount);
     }
 
     /**
@@ -289,10 +289,7 @@ contract SynapseBridge is
             "Caller is not a node group"
         );
 
-        bool rateLimited = isRateLimited(
-            address(token),
-            amount
-        );
+        bool rateLimited = isRateLimited(address(token), amount);
         if (rateLimited) {
             rateLimiter.addToRetryQueue(
                 kappa,
@@ -378,10 +375,7 @@ contract SynapseBridge is
             "Caller is not a node group"
         );
 
-        bool rateLimited = isRateLimited(
-            address(token),
-            amount
-        );
+        bool rateLimited = isRateLimited(address(token), amount);
         if (rateLimited) {
             rateLimiter.addToRetryQueue(
                 kappa,
@@ -573,10 +567,7 @@ contract SynapseBridge is
             "Caller is not a node group"
         );
 
-        bool rateLimited = isRateLimited(
-            address(token),
-            amount
-        );
+        bool rateLimited = isRateLimited(address(token), amount);
         if (rateLimited) {
             rateLimiter.addToRetryQueue(
                 kappa,
@@ -794,10 +785,7 @@ contract SynapseBridge is
             "Caller is not a node group"
         );
 
-        bool rateLimited = isRateLimited(
-            address(token),
-            amount
-        );
+        bool rateLimited = isRateLimited(address(token), amount);
 
         if (rateLimited) {
             rateLimiter.addToRetryQueue(
