@@ -93,7 +93,7 @@ describe("SynapseBridgeETH", async () => {
     ).to.be.not.reverted
   }
 
-  it("Withdraw: should add to retry queue if rate limit hit", async () => {
+  it.only("Withdraw: should add to retry queue if rate limit hit", async () => {
     const mintAmount = 50
 
     await expect(USDC.mint(bridge.address, mintAmount * decimals))
@@ -111,6 +111,7 @@ describe("SynapseBridgeETH", async () => {
     expect(await USDC.balanceOf(bridge.address)).to.be.eq(
       (mintAmount * decimals).toString(),
     )
+    console.log(kappa)
 
     // now retry. This should bypass the rate limiter
     await expect(rateLimiter.retryByKappa(kappa)).to.be.not.reverted

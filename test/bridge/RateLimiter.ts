@@ -4,10 +4,7 @@ import { deployments, ethers } from "hardhat"
 import { BigNumber, BigNumberish, Signer } from "ethers"
 
 import { RateLimiter } from "../../build/typechain/RateLimiter"
-import {
-  GenericERC20,
-  RateLimiterTest,
-} from "../../build/typechain"
+import { GenericERC20, RateLimiterTest } from "../../build/typechain"
 import epochSeconds from "@stdlib/time-now"
 
 chai.use(solidity)
