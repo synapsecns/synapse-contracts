@@ -18,6 +18,7 @@ contract RateLimiter is
     ReentrancyGuardUpgradeable,
     IRateLimiter
 {
+    using EnumerableMapUpgradeable for EnumerableMapUpgradeable.Bytes32ToBytesMap;
     /*** STATE ***/
 
     string public constant NAME = "Rate Limiter";
@@ -175,33 +176,27 @@ contract RateLimiter is
         external
         onlyRole(BRIDGE_ROLE)
     {
-        EnumerableMapUpgradeable.set(limited, kappa, rateLimited);
+        limited.set(kappa, rateLimited);
     }
 
     function retryByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
-        bytes memory toRetry = EnumerableMapUpgradeable.get(limited, kappa);
+        bytes memory toRetry = limited.get(kappa);
         (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(toRetry);
         require(
             success,
             append("could not call bridge:", _getRevertMsg(returnData))
         );
-        EnumerableMapUpgradeable.remove(limited, kappa);
+        limited.remove(kappa);
     }
 
     function retryCount(uint8 count) external onlyRole(LIMITER_ROLE) {
         // no issues casting to uint8 here. If length is greater then 255, min is always taken
         uint8 attempts = uint8(
-            MathUpgradeable.min(
-                uint256(count),
-                EnumerableMapUpgradeable.length(limited)
-            )
+            MathUpgradeable.min(uint256(count), limited.length())
         );
 
         for (uint8 i = 0; i < attempts; i++) {
-            (bytes32 kappa, bytes memory toRetry) = EnumerableMapUpgradeable.at(
-                limited,
-                i
-            );
+            (bytes32 kappa, bytes memory toRetry) = limited.at(i);
             (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(
                 toRetry
             );
@@ -209,12 +204,12 @@ contract RateLimiter is
                 success,
                 append("could not call bridge: ", _getRevertMsg(returnData))
             );
-            EnumerableMapUpgradeable.remove(limited, kappa);
+            limited.remove(kappa);
         }
     }
 
     function deleteByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
-        EnumerableMapUpgradeable.remove(limited, kappa);
+        limited.remove(kappa);
     }
 
     /**
