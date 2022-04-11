@@ -132,7 +132,7 @@ function VERSION() external view returns (string)
 ### addToRetryQueue
 
 ```solidity
-function addToRetryQueue(bytes32 kappa, bytes rateLimited) external nonpayable
+function addToRetryQueue(bytes32 kappa, bytes toRetry) external nonpayable
 ```
 
 
@@ -144,7 +144,7 @@ function addToRetryQueue(bytes32 kappa, bytes rateLimited) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | kappa | bytes32 | undefined |
-| rateLimited | bytes | undefined |
+| toRetry | bytes | undefined |
 
 ### allowances
 

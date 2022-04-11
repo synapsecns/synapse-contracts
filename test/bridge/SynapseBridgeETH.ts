@@ -22,6 +22,7 @@ describe("SynapseBridgeETH", async () => {
   let limiter: Signer
   let nodeGroup: Signer
   let recipient: Signer
+  let attacker: Signer
 
   // contracts
   let bridge: SynapseBridge
@@ -32,6 +33,7 @@ describe("SynapseBridgeETH", async () => {
   const NUSD = "0x1B84765dE8B7566e4cEAF4D0fD3c5aF52D3DdE4F"
   const NUSD_POOL = "0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8"
   const SYN = "0x0f2D719407FdBeFF09D87557AbB7232601FD9F29"
+  const WETH = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
 
   const decimals = Math.pow(10, 6)
 
@@ -53,6 +55,7 @@ describe("SynapseBridgeETH", async () => {
       limiter = signers[2]
       nodeGroup = signers[3]
       recipient = signers[4]
+      attacker = signers[5]
 
       rateLimiter = await deployRateLimiter(deployer, owner)
       bridge = await setupForkedBridge(
@@ -158,5 +161,54 @@ describe("SynapseBridgeETH", async () => {
     expect(await bridge.kappaExists(kappa)).to.be.false
     await expect(rateLimiter.retryByKappa(kappa)).to.be.not.reverted
     expect(await bridge.kappaExists(kappa)).to.be.true
+  })
+
+  // check permissions
+  it("SetChainGasAmount: should reject non-admin roles", async () => {
+    await expect(
+      bridge.connect(attacker).setChainGasAmount(1000),
+    ).to.be.revertedWith("Not governance")
+  })
+
+  it("SetWethAddress: should reject non-admin roles", async () => {
+    await expect(
+      bridge.connect(attacker).setWethAddress(WETH),
+    ).to.be.revertedWith("Not admin")
+  })
+
+  it.skip("SetRateLimiter: should reject non-governance roles", async () => {
+    await expect(
+      bridge
+        .connect(attacker)
+        .withdrawFees(USDC.address, await recipient.getAddress()),
+    ).to.be.revertedWith("Not governance")
+  })
+
+  it("AddKappas: should reject non-admin roles", async () => {
+    const kappas = [keccak256(randomBytes(32)), keccak256(randomBytes(32))]
+
+    await expect(bridge.connect(attacker).addKappas(kappas)).to.be.revertedWith(
+      "Not governance",
+    )
+  })
+
+  it("WithdrawFees: should reject non-governance roles", async () => {
+    await expect(
+      bridge
+        .connect(attacker)
+        .withdrawFees(USDC.address, await recipient.getAddress()),
+    ).to.be.revertedWith("Not governance")
+  })
+
+  it("Pause: should reject non-governance roles", async () => {
+    await expect(bridge.connect(attacker).pause()).to.be.revertedWith(
+      "Not governance",
+    )
+  })
+
+  it("Unpause: should reject non-governance roles", async () => {
+    await expect(bridge.connect(attacker).unpause()).to.be.revertedWith(
+      "Not governance",
+    )
   })
 })
