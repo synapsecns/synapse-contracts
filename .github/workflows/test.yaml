@@ -30,6 +30,6 @@ jobs:
           npm install
           npm run build
 
-      - name: Test and Coverage
+      - name: Test
         run: |
           npm run test
