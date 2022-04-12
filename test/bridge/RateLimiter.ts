@@ -70,7 +70,7 @@ describe("Rate Limiter", () => {
   })
 
   describe("set allowance test", () => {
-    it("should set alowance correctly", async () => {
+    it("should set allowance correctly", async () => {
       const allowance = 100 * Math.pow(10, 6) // allowance of $100
 
       const lastReset = Math.floor(epochSeconds() / hour)
