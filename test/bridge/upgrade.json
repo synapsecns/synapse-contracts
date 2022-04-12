@@ -2,6 +2,7 @@
   "1": {
     "bridge_artifact": "SynapseBridge",
     "bridge_address": "0x2796317b0fF8538F253012862c06787Adfb8cEb6",
+    "rpcKey": "ALCHEMY_API",
     "kappas": [
       "0x58b29a4cf220b60a7e46b76b9831686c0bfbdbfea19721ef8f2192ba28514485",
       "0x3745754e018ed57dce0feda8b027f04b7e1369e7f74f1a247f5f7352d519021c",

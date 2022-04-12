@@ -78,7 +78,7 @@ describe("Rate Limiter", () => {
       // 1 hour
       await expect(
         rateLimiter.setAllowance(USDC.address, allowance, 60, lastReset),
-      ).to.be.not.reverted
+      ).to.be.revertedWith("test")
 
       let [amount, spent, resetTimeMin, lastResetMin] =
         await rateLimiter.getTokenAllowance(USDC.address)
