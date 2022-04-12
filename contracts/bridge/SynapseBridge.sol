@@ -355,15 +355,9 @@ contract SynapseBridge is
         // apply fee
         amount = amount.sub(fee);
 
-        if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
-            IWETH9(WETH_ADDRESS).withdraw(amount);
-            (bool success, ) = to.call{value: amount}("");
-            require(success, "ETH_TRANSFER_FAILED");
-            emit TokenWithdraw(to, token, amount, fee, kappa);
-        } else {
-            emit TokenWithdraw(to, token, amount, fee, kappa);
-            token.safeTransfer(to, amount);
-        }
+        // If token is WGAS, this will send native chain GAS
+        transferTokenWithUnwrap(to, token, amount);
+        emit TokenWithdraw(to, token, amount, fee, kappa);
     }
 
     /**
@@ -696,40 +690,20 @@ contract SynapseBridge is
         returns (uint256 finalSwappedAmount) {
             // Swap succeeded, transfer swapped asset
             IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
-            if (
-                address(swappedTokenTo) == WETH_ADDRESS &&
-                WETH_ADDRESS != address(0)
-            ) {
-                IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
-                (bool success, ) = to.call{value: finalSwappedAmount}("");
-                require(success, "ETH_TRANSFER_FAILED");
-                emit TokenMintAndSwap(
-                    to,
-                    token,
-                    finalSwappedAmount,
-                    fee,
-                    tokenIndexFrom,
-                    tokenIndexTo,
-                    minDy,
-                    deadline,
-                    true,
-                    kappa
-                );
-            } else {
-                swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-                emit TokenMintAndSwap(
-                    to,
-                    token,
-                    finalSwappedAmount,
-                    fee,
-                    tokenIndexFrom,
-                    tokenIndexTo,
-                    minDy,
-                    deadline,
-                    true,
-                    kappa
-                );
-            }
+            // If token is WGAS, this will send native chain GAS
+            transferTokenWithUnwrap(to, swappedTokenTo, finalSwappedAmount);
+            emit TokenMintAndSwap(
+                to,
+                token,
+                finalSwappedAmount,
+                fee,
+                tokenIndexFrom,
+                tokenIndexTo,
+                minDy,
+                deadline,
+                true,
+                kappa
+            );
         } catch {
             token.safeTransfer(to, amount);
             emit TokenMintAndSwap(
@@ -907,6 +881,22 @@ contract SynapseBridge is
                 false,
                 kappa
             );
+        }
+    }
+
+    // TOKEN TRANSFER
+
+    function transferTokenWithUnwrap(
+        address to,
+        IERC20 token,
+        uint256 amount
+    ) internal {
+        if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
+            IWETH9(WETH_ADDRESS).withdraw(amount);
+            (bool success, ) = to.call{value: amount}("");
+            require(success, "ETH_TRANSFER_FAILED");
+        } else {
+            token.safeTransfer(to, amount);
         }
     }
 
