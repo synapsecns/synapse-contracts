@@ -465,79 +465,56 @@ contract HarmonySynapseBridge is
         if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
             to.call.value(chainGasAmount)("");
         }
-        // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = ISwap(pool).calculateSwap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            amount.sub(fee)
-        );
 
-        if (expectedOutput >= minDy) {
-            // proceed with swap
-            token.mint(address(this), amount);
-            token.safeIncreaseAllowance(address(pool), amount);
-            try
-                ISwap(pool).swap(
-                    tokenIndexFrom,
-                    tokenIndexTo,
-                    amount.sub(fee),
-                    minDy,
-                    deadline
-                )
-            returns (uint256 finalSwappedAmount) {
-                // Swap succeeded, transfer swapped asset
-                IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
-                if (
-                    address(swappedTokenTo) == WETH_ADDRESS &&
-                    WETH_ADDRESS != address(0)
-                ) {
-                    IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
-                    (bool success, ) = to.call{value: finalSwappedAmount}("");
-                    require(success, "ETH_TRANSFER_FAILED");
-                    emit TokenMintAndSwap(
-                        to,
-                        token,
-                        finalSwappedAmount,
-                        fee,
-                        tokenIndexFrom,
-                        tokenIndexTo,
-                        minDy,
-                        deadline,
-                        true,
-                        kappa
-                    );
-                } else {
-                    swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-                    emit TokenMintAndSwap(
-                        to,
-                        token,
-                        finalSwappedAmount,
-                        fee,
-                        tokenIndexFrom,
-                        tokenIndexTo,
-                        minDy,
-                        deadline,
-                        true,
-                        kappa
-                    );
-                }
-            } catch {
-                IERC20(token).safeTransfer(to, amount.sub(fee));
+        // proceed with swap
+        token.mint(address(this), amount);
+        token.safeIncreaseAllowance(address(pool), amount.sub(fee));
+        try
+            ISwap(pool).swap(
+                tokenIndexFrom,
+                tokenIndexTo,
+                amount.sub(fee),
+                minDy,
+                deadline
+            )
+        returns (uint256 finalSwappedAmount) {
+            // Swap succeeded, transfer swapped asset
+            IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
+            if (
+                address(swappedTokenTo) == WETH_ADDRESS &&
+                WETH_ADDRESS != address(0)
+            ) {
+                IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
+                (bool success, ) = to.call{value: finalSwappedAmount}("");
+                require(success, "ETH_TRANSFER_FAILED");
                 emit TokenMintAndSwap(
                     to,
                     token,
-                    amount.sub(fee),
+                    finalSwappedAmount,
                     fee,
                     tokenIndexFrom,
                     tokenIndexTo,
                     minDy,
                     deadline,
-                    false,
+                    true,
+                    kappa
+                );
+            } else {
+                swappedTokenTo.safeTransfer(to, finalSwappedAmount);
+                emit TokenMintAndSwap(
+                    to,
+                    token,
+                    finalSwappedAmount,
+                    fee,
+                    tokenIndexFrom,
+                    tokenIndexTo,
+                    minDy,
+                    deadline,
+                    true,
                     kappa
                 );
             }
-        } else {
-            token.mint(address(this), amount);
+        } catch {
             IERC20(token).safeTransfer(to, amount.sub(fee));
             emit TokenMintAndSwap(
                 to,
@@ -585,52 +562,32 @@ contract HarmonySynapseBridge is
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
-        // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
-            amount.sub(fee),
-            swapTokenIndex
-        );
 
-        if (expectedOutput >= swapMinAmount) {
-            token.safeIncreaseAllowance(address(pool), amount.sub(fee));
-            try
-                ISwap(pool).removeLiquidityOneToken(
-                    amount.sub(fee),
-                    swapTokenIndex,
-                    swapMinAmount,
-                    swapDeadline
-                )
-            returns (uint256 finalSwappedAmount) {
-                // Swap succeeded, transfer swapped asset
-                IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
-                swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-                emit TokenWithdrawAndRemove(
-                    to,
-                    token,
-                    finalSwappedAmount,
-                    fee,
-                    swapTokenIndex,
-                    swapMinAmount,
-                    swapDeadline,
-                    true,
-                    kappa
-                );
-            } catch {
-                IERC20(token).safeTransfer(to, amount.sub(fee));
-                emit TokenWithdrawAndRemove(
-                    to,
-                    token,
-                    amount.sub(fee),
-                    fee,
-                    swapTokenIndex,
-                    swapMinAmount,
-                    swapDeadline,
-                    false,
-                    kappa
-                );
-            }
-        } else {
-            token.safeTransfer(to, amount.sub(fee));
+        token.safeIncreaseAllowance(address(pool), amount.sub(fee));
+        try
+            ISwap(pool).removeLiquidityOneToken(
+                amount.sub(fee),
+                swapTokenIndex,
+                swapMinAmount,
+                swapDeadline
+            )
+        returns (uint256 finalSwappedAmount) {
+            // Swap succeeded, transfer swapped asset
+            IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
+            swappedTokenTo.safeTransfer(to, finalSwappedAmount);
+            emit TokenWithdrawAndRemove(
+                to,
+                token,
+                finalSwappedAmount,
+                fee,
+                swapTokenIndex,
+                swapMinAmount,
+                swapDeadline,
+                true,
+                kappa
+            );
+        } catch {
+            IERC20(token).safeTransfer(to, amount.sub(fee));
             emit TokenWithdrawAndRemove(
                 to,
                 token,
