@@ -255,6 +255,10 @@ contract HarmonySynapseBridge is
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
+
+        // withdraw can happen on chains other than mainnet
+        doGasAirdrop(to);
+
         if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
             IWETH9(WETH_ADDRESS).withdraw(amount.sub(fee));
             (bool success, ) = to.call{value: amount.sub(fee)}("");
@@ -323,9 +327,8 @@ contract HarmonySynapseBridge is
         } else {
             IERC20(token).safeTransfer(to, amount.sub(fee));
         }
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call.value(chainGasAmount)("");
-        }
+        // Transfer gas airdrop
+        doGasAirdrop(to);
     }
 
     /**
@@ -462,9 +465,7 @@ contract HarmonySynapseBridge is
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
         // Transfer gas airdrop
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call.value(chainGasAmount)("");
-        }
+        doGasAirdrop(to);
 
         // proceed with swap
         token.mint(address(this), amount);
@@ -563,6 +564,8 @@ contract HarmonySynapseBridge is
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
 
+        // withdrawAndRemove only on Mainnet => no airdrop
+
         token.safeIncreaseAllowance(address(pool), amount.sub(fee));
         try
             ISwap(pool).removeLiquidityOneToken(
@@ -599,6 +602,14 @@ contract HarmonySynapseBridge is
                 false,
                 kappa
             );
+        }
+    }
+
+    // GAS AIRDROP
+
+    function doGasAirdrop(address to) internal {
+        if (chainGasAmount != 0 && address(this).balance >= chainGasAmount) {
+            to.call{value: chainGasAmount}("");
         }
     }
 
