@@ -27,7 +27,7 @@ type BridgeOptions = {
   block_number: number
 }
 
-describe.only("Upgradeable", async () => {
+describe("Upgradeable", async () => {
   // signers
   let signers: Array<Signer>
   let deployer: Signer
