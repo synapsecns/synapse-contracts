@@ -259,14 +259,17 @@ contract MRSynapseBridge is
         // withdraw can happen on chains other than mainnet
         doGasAirdrop(to);
 
+        // apply fee
+        amount = amount.sub(fee);
+
         if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
-            IWETH9(WETH_ADDRESS).withdraw(amount.sub(fee));
-            (bool success, ) = to.call{value: amount.sub(fee)}("");
+            IWETH9(WETH_ADDRESS).withdraw(amount);
+            (bool success, ) = to.call{value: amount}("");
             require(success, "ETH_TRANSFER_FAILED");
             emit TokenWithdraw(to, token, amount, fee, kappa);
         } else {
             emit TokenWithdraw(to, token, amount, fee, kappa);
-            token.safeTransfer(to, amount.sub(fee));
+            token.safeTransfer(to, amount);
         }
     }
 
@@ -294,30 +297,34 @@ contract MRSynapseBridge is
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
-        emit TokenMint(to, token, amount.sub(fee), fee, kappa);
+        // Transfer gas airdrop
+        doGasAirdrop(to);
+
         token.mint(address(this), amount);
+        // apply fee
+        amount = amount.sub(fee);
+
         // checks if synFRAX
         if (address(token) == 0xE96AC70907ffF3Efee79f502C985A7A21Bce407d) {
             token.safeIncreaseAllowance(
                 0x1A93B23281CC1CDE4C4741353F3064709A16197d,
-                amount.sub(fee)
+                amount
             );
             try
                 IFrax(0x1A93B23281CC1CDE4C4741353F3064709A16197d)
-                    .exchangeOldForCanonical(address(token), amount.sub(fee))
+                    .exchangeOldForCanonical(address(token), amount)
             returns (uint256 canolical_tokens_out) {
                 IERC20(0x1A93B23281CC1CDE4C4741353F3064709A16197d).safeTransfer(
                     to,
                     canolical_tokens_out
                 );
             } catch {
-                IERC20(token).safeTransfer(to, amount.sub(fee));
+                IERC20(token).safeTransfer(to, amount);
             }
         } else {
-            IERC20(token).safeTransfer(to, amount.sub(fee));
+            IERC20(token).safeTransfer(to, amount);
         }
-        // Transfer gas airdrop
-        doGasAirdrop(to);
+        emit TokenMint(to, token, amount, fee, kappa);
     }
 
     /**
@@ -458,12 +465,15 @@ contract MRSynapseBridge is
 
         // proceed with swap
         token.mint(address(this), amount);
-        token.safeIncreaseAllowance(address(pool), amount.sub(fee));
+        // apply fee
+        amount = amount.sub(fee);
+
+        token.safeIncreaseAllowance(address(pool), amount);
         try
             ISwap(pool).swap(
                 tokenIndexFrom,
                 tokenIndexTo,
-                amount.sub(fee),
+                amount,
                 minDy,
                 deadline
             )
@@ -505,11 +515,11 @@ contract MRSynapseBridge is
                 );
             }
         } catch {
-            IERC20(token).safeTransfer(to, amount.sub(fee));
+            IERC20(token).safeTransfer(to, amount);
             emit TokenMintAndSwap(
                 to,
                 token,
-                amount.sub(fee),
+                amount,
                 fee,
                 tokenIndexFrom,
                 tokenIndexTo,
@@ -555,10 +565,13 @@ contract MRSynapseBridge is
 
         // withdrawAndRemove only on Mainnet => no airdrop
 
-        token.safeIncreaseAllowance(address(pool), amount.sub(fee));
+        // apply fee
+        amount = amount.sub(fee);
+
+        token.safeIncreaseAllowance(address(pool), amount);
         try
             ISwap(pool).removeLiquidityOneToken(
-                amount.sub(fee),
+                amount,
                 swapTokenIndex,
                 swapMinAmount,
                 swapDeadline
@@ -579,11 +592,11 @@ contract MRSynapseBridge is
                 kappa
             );
         } catch {
-            IERC20(token).safeTransfer(to, amount.sub(fee));
+            IERC20(token).safeTransfer(to, amount);
             emit TokenWithdrawAndRemove(
                 to,
                 token,
-                amount.sub(fee),
+                amount,
                 fee,
                 swapTokenIndex,
                 swapMinAmount,

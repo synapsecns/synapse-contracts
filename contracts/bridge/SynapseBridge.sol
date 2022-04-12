@@ -352,14 +352,17 @@ contract SynapseBridge is
         // withdraw can happen on chains other than mainnet
         doGasAirdrop(to);
 
+        // apply fee
+        amount = amount.sub(fee);
+
         if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
-            IWETH9(WETH_ADDRESS).withdraw(amount.sub(fee));
-            (bool success, ) = to.call{value: amount.sub(fee)}("");
+            IWETH9(WETH_ADDRESS).withdraw(amount);
+            (bool success, ) = to.call{value: amount}("");
             require(success, "ETH_TRANSFER_FAILED");
             emit TokenWithdraw(to, token, amount, fee, kappa);
         } else {
             emit TokenWithdraw(to, token, amount, fee, kappa);
-            token.safeTransfer(to, amount.sub(fee));
+            token.safeTransfer(to, amount);
         }
     }
 
@@ -438,10 +441,14 @@ contract SynapseBridge is
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
-        emit TokenMint(to, token, amount.sub(fee), fee, kappa);
-        token.mint(address(this), amount);
-        IERC20(token).safeTransfer(to, amount.sub(fee));
         doGasAirdrop(to);
+
+        token.mint(address(this), amount);
+        // apply fee
+        amount = amount.sub(fee);
+        IERC20(token).safeTransfer(to, amount);
+
+        emit TokenMint(to, token, amount, fee, kappa);
     }
 
     /**
@@ -675,12 +682,14 @@ contract SynapseBridge is
 
         // proceed with swap
         token.mint(address(this), amount);
-        token.safeIncreaseAllowance(address(pool), amount.sub(fee));
+        // apply fee
+        amount = amount.sub(fee);
+        token.safeIncreaseAllowance(address(pool), amount);
         try
             ISwap(pool).swap(
                 tokenIndexFrom,
                 tokenIndexTo,
-                amount.sub(fee),
+                amount,
                 minDy,
                 deadline
             )
@@ -722,11 +731,11 @@ contract SynapseBridge is
                 );
             }
         } catch {
-            token.safeTransfer(to, amount.sub(fee));
+            token.safeTransfer(to, amount);
             emit TokenMintAndSwap(
                 to,
                 token,
-                amount.sub(fee),
+                amount,
                 fee,
                 tokenIndexFrom,
                 tokenIndexTo,
@@ -856,14 +865,16 @@ contract SynapseBridge is
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
+        // apply fees
         fees[address(token)] = fees[address(token)].add(fee);
+        amount = amount.sub(fee);
 
         // withdrawAndRemove only on Mainnet => no airdrop
 
-        token.safeIncreaseAllowance(address(pool), amount.sub(fee));
+        token.safeIncreaseAllowance(address(pool), amount);
         try
             ISwap(pool).removeLiquidityOneToken(
-                amount.sub(fee),
+                amount,
                 swapTokenIndex,
                 swapMinAmount,
                 swapDeadline
@@ -884,11 +895,11 @@ contract SynapseBridge is
                 kappa
             );
         } catch {
-            token.safeTransfer(to, amount.sub(fee));
+            token.safeTransfer(to, amount);
             emit TokenWithdrawAndRemove(
                 to,
                 token,
-                amount.sub(fee),
+                amount,
                 fee,
                 swapTokenIndex,
                 swapMinAmount,
