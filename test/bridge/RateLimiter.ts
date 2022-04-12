@@ -10,7 +10,7 @@ import epochSeconds from "@stdlib/time-now"
 chai.use(solidity)
 const { expect, assert } = chai
 
-describe.skip("Rate Limiter", () => {
+describe("Rate Limiter", () => {
   let signers: Array<Signer>
   let deployer: Signer
   let owner: Signer
@@ -78,7 +78,7 @@ describe.skip("Rate Limiter", () => {
       // 1 hour
       await expect(
         rateLimiter.setAllowance(USDC.address, allowance, 60, lastReset),
-      ).to.be.revertedWith("test")
+      ).to.be.not.reverted
 
       let [amount, spent, resetTimeMin, lastResetMin] =
         await rateLimiter.getTokenAllowance(USDC.address)
