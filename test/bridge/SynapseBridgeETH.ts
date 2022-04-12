@@ -112,7 +112,6 @@ describe("SynapseBridgeETH", async () => {
       (mintAmount * decimals).toString(),
     )
 
-
     // now retry. This should bypass the rate limiter
     await expect(rateLimiter.retryByKappa(kappa)).to.be.not.reverted
     expect(await bridge.kappaExists(kappa)).to.be.true
