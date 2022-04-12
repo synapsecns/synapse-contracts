@@ -42,27 +42,6 @@ contract SynapseBridge is
 
     mapping(bytes32 => bool) private kappaMap;
 
-    // selectors
-    bytes4 private constant RETRY_MINT_SELECTOR =
-        bytes4(keccak256("retryMint(address,address,uint256,uint256,bytes32)"));
-    bytes4 private constant RETRY_MINT_AND_SWAP_SELECTOR =
-        bytes4(
-            keccak256(
-                "retryMintAndSwap(address,address,uint256,uint256,address,uint8,uint8,uint256,uint256,bytes32)"
-            )
-        );
-    bytes4 private constant RETRY_WITHDRAW_AND_REMOVE_SELECTOR =
-        bytes4(
-            keccak256(
-                "retryWithdrawAndRemove(address,address,uint256,uint256,address,uint8,uint256,uint256,bytes32)"
-            )
-        );
-
-    bytes4 private constant RETRY_WITHDRAW_SELECTOR =
-        bytes4(
-            keccak256("retryWithdraw(address,address,uint256,uint256,bytes32)")
-        );
-
     // rate limiter
     IRateLimiter public rateLimiter;
 
@@ -299,7 +278,7 @@ contract SynapseBridge is
             rateLimiter.addToRetryQueue(
                 kappa,
                 abi.encodeWithSelector(
-                    RETRY_WITHDRAW_SELECTOR,
+                    this.retryWithdraw.selector,
                     to,
                     address(token),
                     amount,
@@ -386,7 +365,7 @@ contract SynapseBridge is
             rateLimiter.addToRetryQueue(
                 kappa,
                 abi.encodeWithSelector(
-                    RETRY_MINT_SELECTOR,
+                    this.retryMint.selector,
                     to,
                     address(token),
                     amount,
@@ -580,7 +559,7 @@ contract SynapseBridge is
             rateLimiter.addToRetryQueue(
                 kappa,
                 abi.encodeWithSelector(
-                    RETRY_MINT_AND_SWAP_SELECTOR,
+                    this.retryMintAndSwap.selector,
                     to,
                     address(token),
                     amount,
@@ -755,7 +734,7 @@ contract SynapseBridge is
             rateLimiter.addToRetryQueue(
                 kappa,
                 abi.encodeWithSelector(
-                    RETRY_WITHDRAW_AND_REMOVE_SELECTOR,
+                    this.retryWithdrawAndRemove.selector,
                     to,
                     address(token),
                     amount,
