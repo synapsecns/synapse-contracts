@@ -2,7 +2,7 @@ import chai from "chai"
 import { solidity } from "ethereum-waffle"
 import { deployments, ethers } from "hardhat"
 import { BigNumber, BigNumberish, Signer } from "ethers"
-
+import { getCurrentBlockTimestamp } from "./testUtils"
 import { RateLimiter } from "../../build/typechain/RateLimiter"
 import { GenericERC20, RateLimiterTest } from "../../build/typechain"
 import epochSeconds from "@stdlib/time-now"
@@ -73,7 +73,7 @@ describe("Rate Limiter", () => {
     it("should set allowance correctly", async () => {
       const allowance = 100 * Math.pow(10, 6) // allowance of $100
 
-      const lastReset = Math.floor(epochSeconds() / hour)
+      const lastReset = Math.floor((await getCurrentBlockTimestamp()) / 60)
 
       // 1 hour
       await expect(
@@ -90,7 +90,7 @@ describe("Rate Limiter", () => {
 
     it("should update allowance", async () => {
       const allowance = 100 * Math.pow(10, 6) // allowance of $100
-      const lastReset = Math.floor(epochSeconds() / hour)
+      const lastReset = Math.floor((await getCurrentBlockTimestamp()) / 60)
 
       // reset every hour after current epoch time to an allowance of $100
       expect(rateLimiter.setAllowance(USDC.address, allowance, hour, lastReset))
@@ -116,7 +116,7 @@ describe("Rate Limiter", () => {
 
     it("should return false if newSpent > allowance amount", async () => {
       const allowance = 1000 * Math.pow(10, 6) // allowance of $100
-      const lastReset = Math.floor(epochSeconds() / hour)
+      const lastReset = Math.floor((await getCurrentBlockTimestamp()) / 60)
 
       // reset every hour after current epoch time to an allowance of $100
       expect(rateLimiter.setAllowance(USDC.address, allowance, hour, lastReset))
@@ -141,7 +141,7 @@ describe("Rate Limiter", () => {
 
     it("should reset allowance", async () => {
       const allowance = 100 * Math.pow(10, 6) // allowance of $100
-      const lastReset = Math.floor(epochSeconds() / hour)
+      const lastReset = Math.floor((await getCurrentBlockTimestamp()) / 60)
 
       // reset every hour after current epoch time to an allowance of $100
       expect(rateLimiter.setAllowance(USDC.address, allowance, hour, lastReset))
