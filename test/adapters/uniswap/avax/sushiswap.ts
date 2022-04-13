@@ -13,12 +13,19 @@ import chai from "chai"
 import { getBigNumber } from "../../../bridge/utilities"
 import { forkChain, setBalance } from "../../utils/helpers"
 
+import adapters from "../../adapters.json"
 import config from "../../../config.json"
 
 chai.use(solidity)
 const { expect } = chai
 
-describe("SushiSwap Adapter", async function () {
+const CHAIN = 43114
+const DEX = "uniswap"
+const POOL = "sushiswap"
+const ADAPTER = adapters[CHAIN][DEX][POOL]
+const ADAPTER_NAME = String(ADAPTER.params[0])
+
+describe(ADAPTER_NAME, async function () {
   let signers: Array<Signer>
 
   let owner: Signer
@@ -32,10 +39,6 @@ describe("SushiSwap Adapter", async function () {
 
   let baseTokens: Array<number>
   let allTokens: Array<number>
-
-  const CHAIN = 43114
-  const DEX = "sushiswap"
-  const FEE = 30 // 0.3%
 
   const TOKENS: GenericERC20[] = []
   const TOKENS_DECIMALS = []
@@ -106,21 +109,17 @@ describe("SushiSwap Adapter", async function () {
       dudeAddress = await dude.getAddress()
 
       const uniswapAdapterFactory = await ethers.getContractFactory(
-        "UniswapV2Adapter",
+        ADAPTER.contract,
       )
 
       uniswapV2Adapter = (await uniswapAdapterFactory.deploy(
-        "UniswapV2Adapter",
-        160000,
-        config[CHAIN][DEX].factory,
-        config[CHAIN][DEX].hash,
-        FEE,
+        ...ADAPTER.params,
       )) as UniswapV2Adapter
 
       const testFactory = await ethers.getContractFactory("TestUniswapAdapter")
 
       testAdapterSwap = (await testFactory.deploy(
-        config[CHAIN][DEX].router,
+        config[CHAIN][POOL].router,
       )) as TestUniswapAdapter
 
       for (let symbol of tokenSymbols) {
@@ -154,7 +153,7 @@ describe("SushiSwap Adapter", async function () {
   describe("Sanity checks", () => {
     it("UniswapV2 Adapter is properly set up", async function () {
       expect(await uniswapV2Adapter.uniswapV2Factory()).to.eq(
-        config[CHAIN][DEX].factory,
+        config[CHAIN][POOL].factory,
       )
     })
 

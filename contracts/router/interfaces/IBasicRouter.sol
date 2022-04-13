@@ -4,32 +4,32 @@ pragma solidity ^0.8.0;
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 
 interface IBasicRouter {
-    event Recovered(address indexed _asset, uint256 amount);
+    event Recovered(address indexed asset, uint256 amount);
 
-    event AddedTrustedAdapter(address _newTrustedAdapter);
+    event AddedTrustedAdapter(address newTrustedAdapter);
 
-    event RemovedAdapter(address _removedAdapter);
+    event RemovedAdapter(address removedAdapter);
 
-    event UpdatedAdapters(address[] _adapters, bool _isTrusted);
+    event UpdatedAdapters(address[] adapters, bool isTrusted);
 
     // -- VIEWS --
 
-    function isTrustedAdapter(address _adapter) external view returns (bool);
+    function isTrustedAdapter(address adapter) external view returns (bool);
 
     // solhint-disable-next-line
     function WGAS() external view returns (address payable);
 
     // -- ADAPTER FUNCTIONS --
 
-    function addTrustedAdapter(address _adapter) external;
+    function addTrustedAdapter(address adapter) external;
 
-    function removeAdapter(address _adapter) external;
+    function removeAdapter(address adapter) external;
 
-    function setAdapters(address[] memory _adapters, bool _status) external;
+    function setAdapters(address[] memory adapters, bool status) external;
 
     // -- RECOVER FUNCTIONS --
 
-    function recoverERC20(IERC20 _token) external;
+    function recoverERC20(IERC20 token) external;
 
     function recoverGAS() external;
 

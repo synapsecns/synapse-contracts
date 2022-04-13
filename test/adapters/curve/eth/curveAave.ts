@@ -17,7 +17,7 @@ import {
 } from "../../utils/helpers"
 
 import config from "../../../config.json"
-import adapters from "../adapters.json"
+import adapters from "../../adapters.json"
 
 chai.use(solidity)
 const { expect } = chai
@@ -26,7 +26,7 @@ const CHAIN = 1
 const DEX = "curve"
 const POOL = "aave"
 const STORAGE = "aave"
-const ADAPTER = adapters[CHAIN][POOL]
+const ADAPTER = adapters[CHAIN][DEX][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
 describe(ADAPTER_NAME, function () {
