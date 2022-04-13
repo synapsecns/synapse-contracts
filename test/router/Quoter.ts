@@ -192,6 +192,7 @@ describe("Quoter", function () {
           bestPath.adapters,
           amountIn,
           minAmountOut,
+          MAX_UINT256,
         ),
       ).to.changeTokenBalance(thisObject[tokenOutName], owner, minAmountOut)
     } else {
@@ -201,6 +202,7 @@ describe("Quoter", function () {
         bestPath.adapters,
         amountIn,
         0,
+        MAX_UINT256,
       )
 
       await router.swap(
@@ -209,6 +211,7 @@ describe("Quoter", function () {
         bestPath.adapters,
         amountIn,
         0,
+        MAX_UINT256,
       )
 
       console.log(

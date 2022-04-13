@@ -5,19 +5,19 @@ pragma solidity >=0.8.11;
 import {ERC20Burnable} from "@openzeppelin/contracts-solc8/token/ERC20/extensions/ERC20Burnable.sol";
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 
+import {IVault} from "./IVault.sol";
+import {IBridgeConfig} from "./IBridgeConfig.sol";
+
 import {IBridgeRouter} from "../../router/interfaces/IBridgeRouter.sol";
 
 interface IBridge {
-    /// @dev NOT_SUPPORTED would be default value
-    enum TokenType {
-        NOT_SUPPORTED,
-        MINT_BURN,
-        DEPOSIT_WITHDRAW
-    }
-
     // internal struct to avoid stack too deep error
     // solhint-disable-next-line
     struct _BridgeInData {
+        address bridgeToken;
+        uint256 fee;
+        uint256 amountOfSwaps;
+        bool isEnabled;
         bool isMint;
         uint256 gasdropAmount;
         IERC20 tokenReceived;
@@ -31,29 +31,24 @@ interface IBridge {
         uint256 deadline;
     }
 
-    event BridgeTokenRegistered(
-        address indexed bridgeToken,
-        address indexed bridgeWrapper,
-        TokenType tokenType
-    );
-
     event Recovered(address indexed asset, uint256 amount);
 
-    // -- VIEWS
+    // -- VIEWS --
 
-    function getBridgeToken(IERC20 token) external view returns (IERC20);
+    function bridgeConfig() external view returns (IBridgeConfig);
 
-    function getUnderlyingToken(IERC20 token) external view returns (IERC20);
+    function router() external view returns (IBridgeRouter);
 
-    function bridgeTokenType(address token) external view returns (TokenType);
+    function vault() external view returns (IVault);
 
-    // -- BRIDGE EVENTS OUT: Reworked
+    // -- BRIDGE EVENTS OUT:
 
     event BridgedOutEVM(
         address indexed to,
         uint256 chainId,
-        IERC20 token,
+        IERC20 tokenBridgedFrom,
         uint256 amount,
+        IERC20 tokenBridgedTo,
         SwapParams swapParams,
         bool gasdropRequested
     );
@@ -61,8 +56,9 @@ interface IBridge {
     event BridgedOutNonEVM(
         bytes32 indexed to,
         uint256 chainId,
-        IERC20 token,
-        uint256 amount
+        IERC20 tokenBridgedFrom,
+        uint256 amount,
+        string tokenBridgedTo
     );
 
     // -- BRIDGE EVENTS IN --
@@ -78,7 +74,7 @@ interface IBridge {
         bytes32 indexed kappa
     );
 
-    // -- BRIDGE OUT FUNCTIONS: to EVM chains --
+    // -- BRIDGE OUT FUNCTIONS:
 
     function bridgeToEVM(
         address to,
@@ -88,8 +84,6 @@ interface IBridge {
         bool gasdropRequested
     ) external returns (uint256 amountBridged);
 
-    // -- BRIDGE OUT FUNCTIONS: to non-EVM chains --
-
     function bridgeToNonEVM(
         bytes32 to,
         uint256 chainId,
@@ -98,27 +92,20 @@ interface IBridge {
 
     // -- BRIDGE IN FUNCTIONS --
 
-    function bridgeIn(
+    function bridgeInEVM(
         address to,
         IERC20 token,
         uint256 amount,
-        uint256 fee,
         SwapParams calldata destinationSwapParams,
         bool gasdropRequested,
         bytes32 kappa
     ) external;
 
-    // -- RESTRICTED FUNCTIONS --
-
-    function registerBridgeToken(
-        address bridgeToken,
-        address bridgeWrapper,
-        TokenType tokenType
+    function bridgeInNonEVM(
+        address to,
+        uint256 chainIdFrom,
+        string calldata bridgeTokenFrom,
+        uint256 amount,
+        bytes32 kappa
     ) external;
-
-    function recoverGAS() external;
-
-    function recoverERC20(IERC20 token) external;
-
-    function setRouter(IBridgeRouter _router) external;
 }

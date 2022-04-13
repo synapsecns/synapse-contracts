@@ -96,6 +96,7 @@ describe("Router", function () {
           adapterAddresses,
           amountIn,
           0,
+          MAX_UINT256,
         ),
       ).to.changeEtherBalance(owner, amountOut)
       // console.log("From token to GAS")
@@ -108,13 +109,21 @@ describe("Router", function () {
           adapterAddresses,
           amountIn,
           0,
+          MAX_UINT256,
           { value: amountIn },
         ),
       ).to.changeTokenBalance(tokenOut, owner, amountOut)
       // console.log("From GAS to token")
     } else {
       await expect(() =>
-        router.swap(ownerAddress, tokenPath, adapterAddresses, amountIn, 0),
+        router.swap(
+          ownerAddress,
+          tokenPath,
+          adapterAddresses,
+          amountIn,
+          0,
+          MAX_UINT256,
+        ),
       ).to.changeTokenBalance(tokenOut, owner, amountOut)
       // console.log("From token to token")
     }

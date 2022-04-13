@@ -16,7 +16,7 @@ import {
 } from "../../utils/helpers"
 
 import config from "../../../config.json"
-import adapters from "../adapters.json"
+import adapters from "../../adapters.json"
 import { CurveBaseAdapter } from "../../../../build/typechain"
 
 chai.use(solidity)
@@ -27,7 +27,7 @@ const CHAIN = 1
 const DEX = "curve"
 const POOL = "tricrypto"
 const STORAGE = "tricrypto"
-const ADAPTER = adapters[CHAIN][POOL]
+const ADAPTER = adapters[CHAIN][DEX][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
 describe(ADAPTER_NAME, async function () {
