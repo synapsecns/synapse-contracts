@@ -69,6 +69,7 @@
     "ethlint": "^1.2.5",
     "hardhat": "^2.9.0",
     "hardhat-deploy": "^0.9.6",
+    "hardhat-foundry": "^0.0.5",
     "hardhat-gas-reporter": "^1.0.8",
     "hardhat-interface-generator": "0.0.6",
     "hardhat-spdx-license-identifier": "^2.0.3",

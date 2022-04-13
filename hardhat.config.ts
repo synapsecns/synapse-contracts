@@ -8,13 +8,18 @@ import "hardhat-gas-reporter"
 import "solidity-coverage"
 import "hardhat-deploy"
 import "hardhat-spdx-license-identifier"
-import "hardhat-interface-generator";
-import "@primitivefi/hardhat-dodoc";
+import "hardhat-interface-generator"
+import "@primitivefi/hardhat-dodoc"
+import "hardhat-foundry"
+
 
 import { HardhatUserConfig } from "hardhat/config"
 import dotenv from "dotenv"
 
 dotenv.config()
+
+// optionally, any of these variables can be pulled from foudnry.toml. See: https://github.com/gaslimitreached/foundry-hardhat-template/blob/main/hardhat.config.ts#L19
+// for details
 
 let config: HardhatUserConfig = {
   defaultNetwork: "hardhat",

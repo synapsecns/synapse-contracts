@@ -19,49 +19,49 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
  */
 
 interface IERC20Mintable is IERC20 {
-    function mint(address to, uint256 amount) external;
+  function mint(address to, uint256 amount) external;
 }
 
 contract ERC20Migrator {
-    using SafeERC20 for IERC20;
-    using SafeMath for uint256;
+  using SafeERC20 for IERC20;
+  using SafeMath for uint256;
 
-    // Address of the old token contract
-    IERC20 private _legacyToken;
+  // Address of the old token contract
+  IERC20 private _legacyToken;
 
-    // Address of the new token contract
-    IERC20Mintable private _newToken;
+  // Address of the new token contract
+  IERC20Mintable private _newToken;
 
-    /**
-     * @param legacyToken address of the old token contract
-     */
-    constructor(IERC20 legacyToken, IERC20Mintable newToken) public {
-        _legacyToken = legacyToken;
-        _newToken = newToken;
-    }
+  /**
+   * @param legacyToken address of the old token contract
+   */
+  constructor(IERC20 legacyToken, IERC20Mintable newToken) public {
+    _legacyToken = legacyToken;
+    _newToken = newToken;
+  }
 
-    /**
-     * @dev Returns the legacy token that is being migrated.
-     */
-    function legacyToken() external view returns (IERC20) {
-        return _legacyToken;
-    }
+  /**
+   * @dev Returns the legacy token that is being migrated.
+   */
+  function legacyToken() external view returns (IERC20) {
+    return _legacyToken;
+  }
 
-    /**
-     * @dev Returns the new token to which we are migrating.
-     */
-    function newToken() external view returns (IERC20) {
-        return _newToken;
-    }
+  /**
+   * @dev Returns the new token to which we are migrating.
+   */
+  function newToken() external view returns (IERC20) {
+    return _newToken;
+  }
 
-    /**
-     * @dev Transfers part of an account's balance in the old token to this
-     * contract, and mints the same amount of new tokens for that account.
-     * @param amount amount of tokens to be migrated
-     */
-    function migrate(uint256 amount) external {
-        _legacyToken.safeTransferFrom(msg.sender, address(this), amount);
-        uint256 amountToMint = amount.mul(5).div(2);
-        _newToken.mint(msg.sender, amountToMint);
-    }
+  /**
+   * @dev Transfers part of an account's balance in the old token to this
+   * contract, and mints the same amount of new tokens for that account.
+   * @param amount amount of tokens to be migrated
+   */
+  function migrate(uint256 amount) external {
+    _legacyToken.safeTransferFrom(msg.sender, address(this), amount);
+    uint256 amountToMint = amount.mul(5).div(2);
+    _newToken.mint(msg.sender, amountToMint);
+  }
 }
