@@ -16,14 +16,14 @@ contract CurveBaseAdapter is CurveAbstractAdapter {
 
     constructor(
         string memory _name,
-        address _pool,
         uint256 _swapGasEstimate,
+        address _pool,
         bool _directSwapSupported
     )
         CurveAbstractAdapter(
             _name,
-            _pool,
             _swapGasEstimate,
+            _pool,
             _directSwapSupported
         )
     {

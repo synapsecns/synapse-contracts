@@ -13,10 +13,10 @@ contract CurveLendingAdapter is CurveBaseAdapter {
 
     constructor(
         string memory _name,
-        address _pool,
         uint256 _swapGasEstimate,
+        address _pool,
         bool _directSwapSupported
-    ) CurveBaseAdapter(_name, _pool, _swapGasEstimate, _directSwapSupported) {
+    ) CurveBaseAdapter(_name, _swapGasEstimate, _pool, _directSwapSupported) {
         this;
     }
 
