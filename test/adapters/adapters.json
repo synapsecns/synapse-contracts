@@ -1,0 +1,139 @@
+{
+  "1": {
+    "curve": {
+      "aave": {
+        "contract": "CurveLendingAdapter",
+        "params": [
+          "Curve AavePool on Ethereum",
+          0,
+          "0xDeBF20617708857ebe4F679508E7b7863a8A8EeE",
+          false
+        ]
+      },
+      "basepool": {
+        "contract": "CurveBaseAdapter",
+        "params": [
+          "Curve 3pool on Ethereum",
+          0,
+          "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7",
+          false
+        ]
+      },
+      "frax": {
+        "contract": "CurveMetaAdapter",
+        "params": [
+          "Curve FRAX on Ethereum",
+          0,
+          "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
+          true,
+          "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
+        ]
+      },
+      "tricrypto": {
+        "contract": "CurveTriCryptoAdapter",
+        "params": [
+          "Curve TriCrypto on Ethereum",
+          0,
+          "0xD51a44d3FaE010294C616388b506AcdA1bfAAE46",
+          false
+        ]
+      }
+    }
+  },
+  "43114": {
+    "curve": {
+      "aave": {
+        "contract": "CurveLendingAdapter",
+        "params": [
+          "Curve AavePool on Avalanche",
+          0,
+          "0x7f90122BF0700F9E7e1F688fe926940E8839F353",
+          false
+        ]
+      },
+      "mim": {
+        "contract": "CurveBaseAdapter",
+        "params": [
+          "Curve MIM pool on Avalanche",
+          0,
+          "0xAEA2E71b631fA93683BCF256A8689dFa0e094fcD",
+          true
+        ]
+      },
+      "tricrypto": {
+        "contract": "CurveLendingTriCryptoAdapter",
+        "params": [
+          "Curve TriCrypto on Avalanche",
+          0,
+          "0x58e57cA18B7A47112b877E31929798Cd3D703b0f",
+          true,
+          "0x7f90122BF0700F9E7e1F688fe926940E8839F353"
+        ]
+      },
+      "usdc": {
+        "contract": "CurveBaseAdapter",
+        "params": [
+          "Curve USDC pool on Avalanche",
+          0,
+          "0x3a43A5851A3e3E0e25A3c1089670269786be1577",
+          true
+        ]
+      }
+    },
+    "synapse": {
+      "eth": {
+        "contract": "SynapseAavePoolAdapter",
+        "params": [
+          "Synapse ETH on Avalanche",
+          0,
+          "0x77a7e60555bC18B4Be44C181b2575eee46212d44",
+          "0x4F01AeD16D97E3aB5ab2B501154DC9bb0F1A5A2C",
+          [
+            "0x19E1ae0eE35c0404f835521146206595d37981ae",
+            "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB"
+          ]
+        ]
+      },
+      "usd": {
+        "contract": "SynapseBasePoolAdapter",
+        "params": [
+          "Synapse USD on Avalanche",
+          0,
+          "0xED2a7edd7413021d440b09D654f3b87712abAB66"
+        ]
+      }
+    },
+    "uniswap": {
+      "pangolin": {
+        "contract": "UniswapV2Adapter",
+        "params": [
+          "Pangolin on Avalanche",
+          0,
+          "0xefa94DE7a4656D787667C749f7E1223D71E9FD88",
+          "0x40231f6b438bce0797c9ada29b718a87ea0a5cea3fe9a771abdd76bd41a3e545",
+          30
+        ]
+      },
+      "sushiswap": {
+        "contract": "UniswapV2Adapter",
+        "params": [
+          "SushiSwap on Avalanche",
+          0,
+          "0xc35DADB65012eC5796536bD9864eD8773aBc74C4",
+          "0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303",
+          30
+        ]
+      },
+      "traderjoe": {
+        "contract": "UniswapV2Adapter",
+        "params": [
+          "TraderJoe on Avalanche",
+          0,
+          "0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10",
+          "0x0bbca9af0511ad1a1da383135cf3a8d2ac620e549ef9f6ae3a4c33c2fed0af91",
+          30
+        ]
+      }
+    }
+  }
+}
