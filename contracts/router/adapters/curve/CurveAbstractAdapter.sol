@@ -15,8 +15,8 @@ abstract contract CurveAbstractAdapter is Adapter {
 
     constructor(
         string memory _name,
-        address _pool,
         uint256 _swapGasEstimate,
+        address _pool,
         bool _directSwapSupported
     ) Adapter(_name, _swapGasEstimate) {
         pool = ICurvePool(_pool);

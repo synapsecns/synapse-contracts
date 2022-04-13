@@ -15,7 +15,7 @@ contract CurveMetaAdapter is CurveLendingAdapter {
         Exactly the same as Lending Adapter,
         so _swap() implementation stays the same
     */
-    
+
     // (MetaPoolToken, BasePool LP Token)
     // (MetaPoolToken, [BasePoolToken 1, BasePoolToken 2, BasePoolToken 3])
     //                      ^
@@ -25,15 +25,15 @@ contract CurveMetaAdapter is CurveLendingAdapter {
 
     constructor(
         string memory _name,
-        address _pool,
         uint256 _swapGasEstimate,
+        address _pool,
         bool _directSwapSupported,
         address _basePool
     )
         CurveLendingAdapter(
             _name,
-            _pool,
             _swapGasEstimate,
+            _pool,
             _directSwapSupported
         )
     {
