@@ -5,6 +5,7 @@ import {ILendingPool} from "../interfaces/ILendingPool.sol";
 import {SynapseBaseAdapter} from "./SynapseBaseAdapter.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
+import {IWETH9} from "@synapseprotocol/sol-lib/contracts/universal/interfaces/IWETH9.sol";
 
 interface AaveToken is IERC20 {
     function scaledBalanceOf(address user) external view returns (uint256);
@@ -15,6 +16,8 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
 
     mapping(address => address) public aaveToken;
     mapping(address => bool) public isUnderlying;
+
+    IERC20[] public underlyingTokens;
 
     uint256 internal constant RAY = 1e27;
     uint256 internal constant HALF_RAY = RAY / 2;
@@ -38,9 +41,11 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
 
         for (uint8 i = 0; i < _underlyingTokens.length; i++) {
             address _poolToken = address(poolTokens[i]);
-            if (_poolToken != _underlyingTokens[i]) {
-                _registerUnderlyingToken(_underlyingTokens[i], _poolToken);
+            address _underlyingToken = _underlyingTokens[i];
+            if (_poolToken != _underlyingToken) {
+                _registerUnderlyingToken(_underlyingToken, _poolToken);
             }
+            underlyingTokens.push(IERC20(_underlyingToken));
         }
     }
 
@@ -129,6 +134,136 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
                 _tokenOut
             );
         }
+    }
+
+    // -- LIQUIDITY MANAGEMENT: modifiers --
+
+    modifier checkPoolToken(IERC20 token) virtual override {
+        require(
+            isPoolToken[address(token)] || isUnderlying[address(token)],
+            "Unknown token"
+        );
+
+        _;
+    }
+
+    // -- LIQUIDITY MANAGEMENT: views --
+
+    function calculateRemoveLiquidityOneToken(
+        IERC20 _lpToken,
+        uint256 lpTokenAmount,
+        IERC20 token
+    )
+        external
+        view
+        virtual
+        override
+        checkLpToken(_lpToken)
+        checkPoolToken(token)
+        returns (uint256 tokenAmount)
+    {
+        address poolToken = address(token);
+        if (isUnderlying[poolToken]) {
+            poolToken = aaveToken[poolToken];
+        }
+        tokenAmount = pool.calculateRemoveLiquidityOneToken(
+            lpTokenAmount,
+            uint8(tokenIndex[poolToken])
+        );
+    }
+
+    function getTokens(IERC20 _lpToken)
+        external
+        view
+        virtual
+        override
+        checkLpToken(_lpToken)
+        returns (IERC20[] memory tokens)
+    {
+        tokens = underlyingTokens;
+    }
+
+    function addLiquidity(
+        address to,
+        IERC20[] calldata tokens,
+        uint256[] calldata amounts,
+        uint256 minLpTokensAmount
+    )
+        external
+        virtual
+        override
+        checkAmounts(amounts)
+        returns (uint256 lpTokenAmount)
+    {
+        require(tokens.length == numTokens, "Wrong amount of tokens");
+        uint256[] memory poolAmounts = new uint256[](numTokens);
+        for (uint256 index = 0; index < tokens.length; ++index) {
+            address token = address(tokens[index]);
+            if (isUnderlying[token]) {
+                poolAmounts[index] = _aaveDeposit(token, amounts[index]);
+                token = aaveToken[token];
+            } else if (isPoolToken[token]) {
+                poolAmounts[index] = amounts[index];
+            } else {
+                revert("Unknown token");
+            }
+            require(tokenIndex[token] == index, "Wrong tokens order");
+        }
+
+        // deposit to pool deadlines are checked in Router
+        lpTokenAmount = pool.addLiquidity(
+            poolAmounts,
+            minLpTokensAmount,
+            UINT_MAX
+        );
+
+        // transfer lp tokens to user
+        _returnTo(address(lpToken), lpTokenAmount, to);
+    }
+
+    function removeLiquidity(
+        address to,
+        IERC20 _lpToken,
+        uint256 lpTokenAmount,
+        uint256[] calldata minTokenAmounts,
+        bool unwrapGas,
+        IWETH9 wgas
+    )
+        external
+        virtual
+        override
+        checkLpToken(_lpToken)
+        checkAmounts(minTokenAmounts)
+        returns (uint256[] memory tokenAmounts)
+    {
+        tokenAmounts = pool.removeLiquidity(
+            lpTokenAmount,
+            minTokenAmounts,
+            UINT_MAX
+        );
+
+        for (uint256 index = 0; index < tokenAmounts.length; ++index) {
+            _returnUnwrappedToken(
+                to,
+                underlyingTokens[index],
+                tokenAmounts[index],
+                unwrapGas,
+                wgas
+            );
+        }
+    }
+
+    function _returnUnwrappedToken(
+        address to,
+        IERC20 token,
+        uint256 amount,
+        bool unwrapGas,
+        IWETH9 wgas
+    ) internal virtual override {
+        if (isUnderlying[address(token)]) {
+            amount = _aaveWithdraw(address(token), UINT_MAX, address(this));
+        }
+        super._returnUnwrappedToken(to, token, amount, unwrapGas, wgas);
     }
 
     // -- AAVE FUNCTIONS
