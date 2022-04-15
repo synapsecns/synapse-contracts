@@ -126,7 +126,7 @@ contract Bridge is
     {
         // First, get token address on destination chain and check if it is enabled
         (address tokenBridgedTo, bool isEnabled) = bridgeConfig
-            .getTokenAddressEVM(address(token), chainId);
+        .getTokenAddressEVM(address(token), chainId);
 
         require(tokenBridgedTo != address(0), "!token");
         require(isEnabled, "!isEnabled");
@@ -157,7 +157,7 @@ contract Bridge is
     ) external returns (uint256 amountBridged) {
         // First, get token address on destination chain and check if it is enabled
         (string memory tokenBridgedTo, bool isEnabled) = bridgeConfig
-            .getTokenAddressNonEVM(address(token), chainId);
+        .getTokenAddressNonEVM(address(token), chainId);
         require(bytes(tokenBridgedTo).length > 0, "!token");
         require(isEnabled, "!isEnabled");
 
@@ -186,7 +186,7 @@ contract Bridge is
         require(amount > 0, "!amount");
 
         (address bridgeToken, bool isEnabled, bool isMintBurn) = bridgeConfig
-            .getBridgeToken(address(token));
+        .getBridgeToken(address(token));
 
         require(isEnabled, "!enabled");
 
@@ -266,12 +266,12 @@ contract Bridge is
             : 0;
 
         (data.fee, data.bridgeToken, data.isEnabled, data.isMint) = bridgeConfig
-            .calculateBridgeFee(
-                address(token),
-                amount,
-                gasdropRequested,
-                data.amountOfSwaps
-            );
+        .calculateBridgeFee(
+            address(token),
+            amount,
+            gasdropRequested,
+            data.amountOfSwaps
+        );
 
         require(amount > data.fee, "!fee");
         require(data.isEnabled, "!enabled");
