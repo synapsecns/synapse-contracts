@@ -82,7 +82,7 @@
     },
     "synapse": {
       "eth": {
-        "contract": "SynapseAavePoolAdapter",
+        "contract": "SynapseAaveAdapter",
         "params": [
           "Synapse ETH on Avalanche",
           0,
@@ -95,7 +95,7 @@
         ]
       },
       "usd": {
-        "contract": "SynapseBasePoolAdapter",
+        "contract": "SynapseBaseAdapter",
         "params": [
           "Synapse USD on Avalanche",
           0,

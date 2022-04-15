@@ -28,7 +28,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       from: deployer,
       log: true,
       skipIfAlreadyDeployed: true,
-      args: [((await get("Router")).address, 4)],
+      args: [((await get("Router")).address), 4],
     })
 
     let deployedAdapters = []
@@ -63,7 +63,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       "Quoter",
       { from: deployer, log: true },
       "setAdapters",
-      ...deployedAdapters,
+      deployedAdapters,
     )
 
     let tokens = CONFIG_ALL[CHAIN_ID.AVALANCHE].assets
@@ -83,7 +83,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       "Quoter",
       { from: deployer, log: true },
       "setTokens",
-      ...trustedTokens,
+      trustedTokens,
     )
   }
 }
