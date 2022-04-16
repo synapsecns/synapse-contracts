@@ -40,14 +40,14 @@ contract SynapseBaseAdapter is SwapCalculator, Adapter, LiquidityAdapter {
         _setInfiniteAllowance(token, address(pool));
     }
 
-    function _checkTokens(address _tokenIn, address _tokenOut)
+    function _checkTokens(address tokenIn, address tokenOut)
         internal
         view
         virtual
         override
         returns (bool)
     {
-        return isPoolToken[_tokenIn] && isPoolToken[_tokenOut];
+        return isPoolToken[tokenIn] && isPoolToken[tokenOut];
     }
 
     function _depositAddress(address, address)
@@ -60,38 +60,38 @@ contract SynapseBaseAdapter is SwapCalculator, Adapter, LiquidityAdapter {
     }
 
     function _swap(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut,
-        address _to
-    ) internal virtual override returns (uint256 _amountOut) {
-        _amountOut = pool.swap(
-            uint8(tokenIndex[_tokenIn]),
-            uint8(tokenIndex[_tokenOut]),
-            _amountIn,
+        uint256 amountIn,
+        address tokenIn,
+        address tokenOut,
+        address to
+    ) internal virtual override returns (uint256 amountOut) {
+        amountOut = pool.swap(
+            uint8(tokenIndex[tokenIn]),
+            uint8(tokenIndex[tokenOut]),
+            amountIn,
             0,
             block.timestamp
         );
 
-        _returnTo(_tokenOut, _amountOut, _to);
+        _returnTo(tokenOut, amountOut, to);
     }
 
     function _query(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut
-    ) internal view virtual override returns (uint256 _amountOut) {
+        uint256 amountIn,
+        address tokenIn,
+        address tokenOut
+    ) internal view virtual override returns (uint256 amountOut) {
         if (pool.paused()) {
             return 0;
         }
         try
             pool.calculateSwap(
-                uint8(tokenIndex[_tokenIn]),
-                uint8(tokenIndex[_tokenOut]),
-                _amountIn
+                uint8(tokenIndex[tokenIn]),
+                uint8(tokenIndex[tokenOut]),
+                amountIn
             )
-        returns (uint256 amountOut) {
-            _amountOut = amountOut;
+        returns (uint256 _amountOut) {
+            amountOut = _amountOut;
         } catch {
             return 0;
         }

@@ -40,24 +40,24 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
         lendingPool = ILendingPool(_lendingPool);
 
         for (uint8 i = 0; i < _underlyingTokens.length; i++) {
-            address _poolToken = address(poolTokens[i]);
-            address _underlyingToken = _underlyingTokens[i];
-            if (_poolToken != _underlyingToken) {
-                _registerUnderlyingToken(_underlyingToken, _poolToken);
+            address poolToken = address(poolTokens[i]);
+            address underlyingToken = _underlyingTokens[i];
+            if (poolToken != underlyingToken) {
+                _registerUnderlying(underlyingToken, poolToken);
             }
-            underlyingTokens.push(IERC20(_underlyingToken));
+            underlyingTokens.push(IERC20(underlyingToken));
         }
     }
 
-    function _registerUnderlyingToken(address _underlying, address _poolToken)
+    function _registerUnderlying(address underlyingToken, address poolToken)
         internal
     {
-        aaveToken[_underlying] = _poolToken;
-        isUnderlying[_underlying] = true;
-        _setInfiniteAllowance(IERC20(_underlying), address(lendingPool));
+        aaveToken[underlyingToken] = poolToken;
+        isUnderlying[underlyingToken] = true;
+        _setInfiniteAllowance(IERC20(underlyingToken), address(lendingPool));
     }
 
-    function _checkTokens(address _tokenIn, address _tokenOut)
+    function _checkTokens(address tokenIn, address tokenOut)
         internal
         view
         virtual
@@ -66,73 +66,65 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
     {
         // Swaps are supported between both pool and underlying tokens
         return
-            (isUnderlying[_tokenIn] || isPoolToken[_tokenIn]) &&
-            (isUnderlying[_tokenOut] || isPoolToken[_tokenOut]);
+            (isUnderlying[tokenIn] || isPoolToken[tokenIn]) &&
+            (isUnderlying[tokenOut] || isPoolToken[tokenOut]);
     }
 
     function _swap(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut,
-        address _to
-    ) internal virtual override returns (uint256 _amountOut) {
-        if (isUnderlying[_tokenIn]) {
+        uint256 amountIn,
+        address tokenIn,
+        address tokenOut,
+        address to
+    ) internal virtual override returns (uint256 amountOut) {
+        if (isUnderlying[tokenIn]) {
             // Approval already granted in _approveIfNeeded()
-            _amountIn = _aaveDeposit(_tokenIn, _amountIn);
+            amountIn = _aaveDeposit(tokenIn, amountIn);
             // Swap pool can only trade aToken
-            _tokenIn = aaveToken[_tokenIn];
+            tokenIn = aaveToken[tokenIn];
         }
-        if (isUnderlying[_tokenOut]) {
+        if (isUnderlying[tokenOut]) {
             // User needs to receive underlying token, so we ask the aToken to be sent to this contract
             SynapseBaseAdapter._swap(
-                _amountIn,
-                _tokenIn,
-                aaveToken[_tokenOut],
+                amountIn,
+                tokenIn,
+                aaveToken[tokenOut],
                 address(this)
             );
             // Withdraw underlying token directly to user
-            _amountOut = _aaveWithdraw(_tokenOut, UINT_MAX, _to);
+            amountOut = _aaveWithdraw(tokenOut, UINT_MAX, to);
         } else {
             // User needs to receive pool token, so we can use parent's logic
-            _amountOut = SynapseBaseAdapter._swap(
-                _amountIn,
-                _tokenIn,
-                _tokenOut,
-                _to
+            amountOut = SynapseBaseAdapter._swap(
+                amountIn,
+                tokenIn,
+                tokenOut,
+                to
             );
         }
     }
 
     function _query(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut
-    ) internal view virtual override returns (uint256 _amountOut) {
-        if (isUnderlying[_tokenIn]) {
+        uint256 amountIn,
+        address tokenIn,
+        address tokenOut
+    ) internal view virtual override returns (uint256 amountOut) {
+        if (isUnderlying[tokenIn]) {
             // figure out how much aTokens will be transferred
             // as pool contract is comparing balances pre/post transfer
-            _amountIn = _calcTransferredIn(_amountIn, _tokenIn);
-            // replace _tokenIn with actual pool token
-            _tokenIn = aaveToken[_tokenIn];
+            amountIn = _calcTransferredIn(amountIn, tokenIn);
+            // replace tokenIn with actual pool token
+            tokenIn = aaveToken[tokenIn];
         }
 
-        if (isUnderlying[_tokenOut]) {
-            uint256 _index = lendingPool.getReserveNormalizedIncome(_tokenOut);
-            // replace _tokenOut with actual pool token
-            _tokenOut = aaveToken[_tokenOut];
-            _amountOut = SynapseBaseAdapter._query(
-                _amountIn,
-                _tokenIn,
-                _tokenOut
-            );
+        if (isUnderlying[tokenOut]) {
+            uint256 _index = lendingPool.getReserveNormalizedIncome(tokenOut);
+            // replace tokenOut with actual pool token
+            tokenOut = aaveToken[tokenOut];
+            amountOut = SynapseBaseAdapter._query(amountIn, tokenIn, tokenOut);
 
-            _amountOut = _calcTransferredOut(_amountOut, _index);
+            amountOut = _calcTransferredOut(amountOut, _index);
         } else {
-            _amountOut = SynapseBaseAdapter._query(
-                _amountIn,
-                _tokenIn,
-                _tokenOut
-            );
+            amountOut = SynapseBaseAdapter._query(amountIn, tokenIn, tokenOut);
         }
     }
 
@@ -319,20 +311,20 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
      * @notice Withdraw token from Aave and send underlying token to user
      *
      * @dev Chad (lendingPool) doesn't need your approval to spend your aToken.
-     * 		Use [_to = address(this);] if token needs further (un)wrapping
+     * 		Use [to = address(this);] if token needs further (un)wrapping
      *      Use [_amount = UINT_MAX] to withdraw all aToken balance
      *
      * @param _token underlying token to withdraw
      * @param _amount amount of token to withdraw
-     * @param _to address that will receive underlying token
+     * @param to address that will receive underlying token
      *
      * @return amount of underlying token withdrawn
      */
     function _aaveWithdraw(
         address _token,
         uint256 _amount,
-        address _to
+        address to
     ) internal returns (uint256) {
-        return lendingPool.withdraw(_token, _amount, _to);
+        return lendingPool.withdraw(_token, _amount, to);
     }
 }
