@@ -8,13 +8,13 @@ interface IEndpoint {
      * @notice Sends a message to a receiving contract address on another chain. 
      * Sender must make sure that the message is unique and not a duplicate message.
      * @param _receiver The bytes32 address of the destination contract to be called
-     * @param _chainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
+     * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
      * @param _message The arbitrary payload to pass to the destination chain receiver
      * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits
      */
     function sendMessage(
         bytes32 _receiver,
-        uint256 _chainId,
+        uint256 _dstChainId,
         bytes calldata _message,
         bytes calldata _options
     ) external;
