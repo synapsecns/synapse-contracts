@@ -135,6 +135,9 @@ let config: HardhatUserConfig = {
       {
         version: "0.4.24"
       },
+      {
+        version: "0.8.13"
+      }
     ],
   },
   namedAccounts: {
