@@ -3,15 +3,7 @@
 pragma solidity 0.8.13;
 
 interface IEndpoint {
-
-    struct MsgInfo {
-        address sender;
-        address receiver;
-        uint64 srcChainId;
-        bytes32 srcTxHash; // src chain msg tx hash
-        uint32 srcNonce;
-    }
-
+    
     /**
      * @notice Sends a message to a receiving contract address on another chain. 
      * Sender must make sure that the message is unique and not a duplicate message.
@@ -43,7 +35,7 @@ interface IEndpoint {
         uint256 _gasLimit,
         uint256 _nonce,
         bytes calldata _message
-    ) external payable;
+    ) external;
 
     /**
      * @notice Withdraws message fee in the form of native gas token.
