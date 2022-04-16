@@ -126,11 +126,11 @@ contract SynapseBaseAdapter is SwapCalculator, Adapter, LiquidityAdapter {
         external
         view
         checkAmounts(amountsMax)
-        returns (uint256 lpTokenAmount, uint256[] memory refund)
+        returns (uint256 lpTokenAmount, uint256[] memory amounts)
     {
         lpTokenAmount = calculateAddLiquidity(amountsMax);
         // All tokens are provided to the pool => no refund
-        refund = new uint256[](numTokens);
+        amounts = amountsMax;
     }
 
     function calculateRemoveLiquidity(IERC20 _lpToken, uint256 lpTokenAmount)
@@ -165,9 +165,13 @@ contract SynapseBaseAdapter is SwapCalculator, Adapter, LiquidityAdapter {
         view
         virtual
         checkLpToken(_lpToken)
-        returns (IERC20[] memory tokens)
+        returns (IERC20[] memory tokens, uint256[] memory balances)
     {
         tokens = poolTokens;
+        balances = new uint256[](numTokens);
+        for (uint256 index = 0; index < numTokens; ++index) {
+            balances[index] = pool.getTokenBalance(uint8(index));
+        }
     }
 
     function getTokensDepositInfo(
@@ -176,9 +180,9 @@ contract SynapseBaseAdapter is SwapCalculator, Adapter, LiquidityAdapter {
     )
         external
         view
-        returns (address liquidityDepositAddress, uint256[] memory amounts)
+        returns (address tokensDepositAddress, uint256[] memory amounts)
     {
-        liquidityDepositAddress = address(this);
+        tokensDepositAddress = address(this);
         // All tokens are provided to the pool
         amounts = amountsMax;
     }
@@ -186,9 +190,9 @@ contract SynapseBaseAdapter is SwapCalculator, Adapter, LiquidityAdapter {
     function getLpTokenDepositAddress(IERC20)
         external
         view
-        returns (address liquidityDepositAddress)
+        returns (address lpTokenDepositAddress)
     {
-        return address(this);
+        lpTokenDepositAddress = address(this);
     }
 
     // -- LIQUIDITY MANAGEMENT: interactions --

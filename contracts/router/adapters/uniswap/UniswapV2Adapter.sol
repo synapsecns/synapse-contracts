@@ -162,16 +162,9 @@ contract UniswapV2Adapter is Adapter, LiquidityAdapter {
         external
         view
         checkAmounts(tokens, amountsMax)
-        returns (uint256 lpTokenAmount, uint256[] memory refund)
+        returns (uint256 lpTokenAmount, uint256[] memory amounts)
     {
-        uint256[] memory amounts;
         (, lpTokenAmount, amounts) = _getFullDepositInfo(tokens, amountsMax);
-
-        refund = new uint256[](2);
-        (refund[0], refund[1]) = (
-            amountsMax[0] - amounts[0],
-            amountsMax[1] - amounts[1]
-        );
     }
 
     function calculateRemoveLiquidity(IERC20 lpToken, uint256 lpTokenAmount)
@@ -223,10 +216,15 @@ contract UniswapV2Adapter is Adapter, LiquidityAdapter {
     function getTokens(IERC20 lpToken)
         public
         view
-        returns (IERC20[] memory tokens)
+        returns (IERC20[] memory tokens, uint256[] memory balances)
     {
         tokens = new IERC20[](2);
         (tokens[0], tokens[1]) = _getTokens(lpToken);
+
+        balances = new uint256[](2);
+        (balances[0], balances[1], ) = Address.isContract(address(lpToken))
+            ? IUniswapV2Pair(address(lpToken)).getReserves()
+            : (uint112(0), uint112(0), uint32(0));
     }
 
     function _getTokens(IERC20 lpToken)
@@ -445,6 +443,7 @@ contract UniswapV2Adapter is Adapter, LiquidityAdapter {
             revert("Unknown token");
         }
 
+        // return withdrawn + swapped tokens ot user
         _returnUnwrappedToken(to, token, tokenAmount, unwrapGas, wgas);
     }
 }
