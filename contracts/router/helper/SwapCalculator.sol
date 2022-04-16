@@ -47,13 +47,13 @@ contract SwapCalculator {
         _setSwapFee(_swapFee);
     }
 
-    function calculateAddLiquidity(uint256[] memory _amounts)
+    function calculateAddLiquidity(uint256[] memory amounts)
         public
         view
         returns (uint256)
     {
         require(
-            _amounts.length == numTokens,
+            amounts.length == numTokens,
             "Amounts must match pooled tokens"
         );
         uint256 _numTokens = numTokens;
@@ -71,7 +71,7 @@ contract SwapCalculator {
 
         for (uint8 _i = 0; _i < _numTokens; _i++) {
             v.balances[_i] = ISynapse(pool).getTokenBalance(_i);
-            newBalances[_i] = v.balances[_i] + _amounts[_i];
+            newBalances[_i] = v.balances[_i] + amounts[_i];
         }
 
         if (v.totalSupply != 0) {
@@ -79,7 +79,7 @@ contract SwapCalculator {
         } else {
             // pool is empty => all amounts must be >0
             for (uint8 i = 0; i < _numTokens; i++) {
-                require(_amounts[i] > 0, "Must supply all tokens in pool");
+                require(amounts[i] > 0, "Must supply all tokens in pool");
             }
         }
 
@@ -127,13 +127,13 @@ contract SwapCalculator {
 
     /**
      * @notice Get absolute difference between two values
-     * @return abs(_a - _b)
+     * @return abs(a - b)
      */
-    function _diff(uint256 _a, uint256 _b) internal pure returns (uint256) {
-        if (_a > _b) {
-            return _a - _b;
+    function _diff(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a > b) {
+            return a - b;
         } else {
-            return _b - _a;
+            return b - a;
         }
     }
 
