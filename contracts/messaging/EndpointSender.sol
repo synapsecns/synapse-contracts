@@ -3,22 +3,31 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
+import "./interfaces/IGasFeePricing.sol";
 
 contract EndpointSender is Ownable {
+    constructor() public {}
 
-    constructor() public {
+    event MessageSent(
+        address indexed sender,
+        uint256 srcChainID,
+        bytes32 receiver,
+        uint256 indexed dstChainId,
+        bytes messages,
+        bytes options,
+        uint256 fee
+    );
 
-    }
-    
-    event MessageSent(address indexed sender, uint256 srcChainID, 
-    bytes32 receiver, uint256 dstChainId, bytes messages, bytes options, uint256 fee);
-
-    function estimateFee(bytes calldata _message, bytes calldata _options) public pure returns (uint256) {
+    function estimateFee(uint256 _dstChainId, bytes calldata _options)
+        public
+        pure
+        returns (uint256)
+    {
         return 0;
     }
 
     /**
-     * @notice Sends a message to a receiving contract address on another chain. 
+     * @notice Sends a message to a receiving contract address on another chain.
      * Sender must make sure that the message is unique and not a duplicate message.
      * @param _receiver The bytes32 address of the destination contract to be called
      * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
@@ -30,8 +39,16 @@ contract EndpointSender is Ownable {
         uint256 _dstChainId,
         bytes calldata _message,
         bytes calldata _options
-    ) external {
-        uint256 fee = estimateFee(_message, _options);
-        emit MessageSent(msg.sender, block.chainid, _receiver, _dstChainId, _message, _options, fee);
+    ) external payable {
+        uint256 fee = estimateFee(_dstChainId, _options);
+        emit MessageSent(
+            msg.sender,
+            block.chainid,
+            _receiver,
+            _dstChainId,
+            _message,
+            _options,
+            fee
+        );
     }
 }
