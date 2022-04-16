@@ -290,25 +290,26 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         require(depositAddress != address(0), "Adapter: unknown tokens");
     }
 
-    // -- LIQUIDITY MANAGEMENT
+    // -- LIQUIDITY MANAGEMENT: views
 
     /**
-     * @notice Calculate amount of LP tokens gained after
-     * providing given amount of tokens via selected {Adapter}.
+     * @notice Calculate amount of LP tokens received after providing given amounts of tokens.
+     * Some pools (Uniswap) require balanced deposits, so actual added amounts are returned as well.
+     * @dev As much tokens as possible will be used for the deposit, but not more than amount specified.
      * @param adapter Adapter for the given pool.
-     * @param tokens Tokens to add to the given pool.
-     * @param amounts Amount of tokens to add.
-     * @return lpTokenAmount Estimated amount of LP tokens to gain.
-     * @return refund Estimated amount of token refunds, if given pool only allows balanced deposits.
+     * @param tokens List of tokens to deposit. Should be the same list as `getTokens(adapter, lpToken)`.
+     * @param amountsMax Maximum amount of tokens user is willing to deposit.
+     * @return lpTokenAmount Amount of LP tokens to gain after deposit to pool.
+     * @return amounts Actual amounts of tokens that will be deposited.
      */
     function calculateAddLiquidity(
         ILiquidityAdapter adapter,
         IERC20[] calldata tokens,
-        uint256[] calldata amounts
-    ) external view returns (uint256 lpTokenAmount, uint256[] memory refund) {
-        (lpTokenAmount, refund) = adapter.calculateAddLiquidity(
+        uint256[] calldata amountsMax
+    ) external view returns (uint256 lpTokenAmount, uint256[] memory amounts) {
+        (lpTokenAmount, amounts) = adapter.calculateAddLiquidity(
             tokens,
-            amounts
+            amountsMax
         );
     }
 
@@ -328,12 +329,12 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     }
 
     /**
-     * @notice Calculate amount of tokens gained after burning a given
-     * amount of LP tokens to withdraw all pool tokens in a balanced way.
+     * @notice Calculate amounts of tokens received after burning given amount of LP tokens,
+     * in order to withdraw tokens from the pool in a balanced way.
      * @param adapter Adapter for the given pool.
-     * @param lpToken LP token for the given pool.
+     * @param lpToken LP token for the pool.
      * @param lpTokenAmount Amount of LP tokens to burn.
-     * @return tokenAmounts Estimated amounts of pools tokens to receive after withdrawal.
+     * @return tokenAmounts Amounts of tokens to gain after doing a balanced withdrawal.
      */
     function calculateRemoveLiquidity(
         ILiquidityAdapter adapter,
@@ -344,13 +345,13 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     }
 
     /**
-     * @notice Calculate amount of tokens gained after burning a given
-     * amount of LP tokens to withdraw a single token.
+     * @notice Calculate amount of tokens received after burning given amount of LP tokens,
+     * in order to withdraw a single token from the pool.
      * @param adapter Adapter for the given pool.
-     * @param lpToken LP token for the given pool.
+     * @param lpToken LP token for the pool.
      * @param lpTokenAmount Amount of LP tokens to burn.
      * @param token Token to withdraw.
-     * @return tokenAmount Estimated amount of given token to receive after withdrawal.
+     * @return tokenAmount Amount of token to gain after after doing an unbalanced withdrawal.
      */
     function calculateRemoveLiquidityOneToken(
         ILiquidityAdapter adapter,
@@ -366,15 +367,34 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     }
 
     /**
+     * @notice Get a list of tokens from the pool, and their balances.
+     * @dev All functions accepting `tokens[]` will require
+     * providing exactly this list in the exact same order.
+     * @param adapter Adapter for the given pool.
+     * @param lpToken LP token for the pool.
+     * @return tokens List of pool tokens.
+     * @return balances Pool balance for each token in the list.
+     */
+    function getTokens(ILiquidityAdapter adapter, IERC20 lpToken)
+        external
+        view
+        returns (IERC20[] memory tokens, uint256[] memory balances)
+    {
+        (tokens, balances) = adapter.getTokens(lpToken);
+    }
+
+    // -- LIQUIDITY MANAGEMENT: interactions
+
+    /**
      * @notice Add liquidity to the given pool and receive LP tokens.
      * As much tokens as possible will be used, but not more than specified amounts.
      * @dev This will require allowing Router to spend pool tokens from user.
      * @param adapter Adapter for the given pool.
-     * @param tokens Tokens to add to the given pool.
-     * @param amountsMax Maximum amount of tokens to add.
-     * @param minLpTokensAmount Minimum amount of LP tokens to receive, or the tx will fail.
+     * @param tokens List of tokens to deposit. Should be the same list as `getTokens(adapter, lpToken)`.
+     * @param amountsMax Maximum amount of tokens to deposit in the pool.
+     * @param minLpTokensAmount Minimum amount of LP tokens to receive, or tx will fail.
      * @param deadline Deadline for the pool deposit to happen, or the tx will fail.
-     * @return lpTokenAmount Amount of LP tokens gained.
+     * @return lpTokenAmount Amount of LP tokens gained after the deposit.
      */
     function addLiquidity(
         ILiquidityAdapter adapter,
@@ -424,11 +444,11 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
      * @dev This will require allowing Router to spend pool tokens from user. This will fail,
      * if WGAS is not in the `tokens` list, or if amount of WGAS is different from `msg.value`.
      * @param adapter Adapter for the given pool.
-     * @param tokens Tokens to add to the given pool.
-     * @param amountsMax Maximum amount of tokens to add.
-     * @param minLpTokensAmount Minimum amount of LP tokens to receive, or the tx will fail.
+     * @param tokens List of tokens to deposit. Should be the same list as `getTokens(adapter, lpToken)`.
+     * @param amountsMax Maximum amount of tokens to deposit in the pool.
+     * @param minLpTokensAmount Minimum amount of LP tokens to receive, or tx will fail.
      * @param deadline Deadline for the pool deposit to happen, or the tx will fail.
-     * @return lpTokenAmount Amount of LP tokens gained.
+     * @return lpTokenAmount Amount of LP tokens gained after the deposit.
      */
     function addLiquidityGAS(
         ILiquidityAdapter adapter,
@@ -493,16 +513,16 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     }
 
     /**
-     * @notice Remove liquidity from a given pool by burning its LP tokens to withdraw all pool tokens in a balanced way.
-     * If one of the tokens was WGAS, user will receive native GAS alongside other tokens.
+     * @notice Make a withdrawal from the pool to receive all pool tokens in a balanced way.
      * @dev This will require allowing Router to spend LP token from user.
+     * `unwrapGas` is ignored, if WGAS is not a pool token.
      * @param adapter Adapter for the given pool.
-     * @param lpToken LP token for the given pool.
-     * @param lpTokenAmount Amount of LP tokens to burn.
-     * @param minTokenAmounts Minimum amounts of pool tokens to receive, or the tx will fail.
-     * @param unwrapGas Whether to send native GAS instead of WGAS, if it's in the pool
+     * @param lpToken LP token for the pool.
+     * @param lpTokenAmount Exact amount of LP tokens to burn.
+     * @param minTokenAmounts Minimum amounts of tokens to receive, or tx will fail.
+     * @param unwrapGas Whether user wants to receive native GAS instead of WGAS.
      * @param deadline Deadline for the pool deposit to happen, or the tx will fail.
-     * @return tokenAmounts Amounts of pools tokens withdrawn.
+     * @return tokenAmounts Amounts of tokens withdrawn.
      */
     function removeLiquidity(
         ILiquidityAdapter adapter,
@@ -534,17 +554,17 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     }
 
     /**
-     * @notice Remove liquidity from a given pool by burning its LP tokens to withdraw a single pool token.
-     * If that token is WGAS, user will receive native GAS.
+     * @notice Make a withdrawal from the pool to receive a single pool token.
      * @dev This will require allowing Router to spend LP token from user.
+     * `unwrapGas` is ignored, if WGAS is not a pool token.
      * @param adapter Adapter for the given pool.
-     * @param lpToken LP token for the given pool.
-     * @param lpTokenAmount Amount of LP tokens to burn.
-     * @param token Token to withdraw.
-     * @param minTokenAmount Minimum amount of pool token to receive, or the tx will fail.
-     * @param unwrapGas Whether to send native GAS instead of WGAS, if it's in the pool
+     * @param lpToken LP token for the pool.
+     * @param lpTokenAmount Exact amount of LP tokens to burn.
+     * @param token Token to withdraw from the pool.
+     * @param minTokenAmount Minimum amount of tokens to receive, or tx will fail.
+     * @param unwrapGas Whether user wants to receive native GAS instead of WGAS.
      * @param deadline Deadline for the pool deposit to happen, or the tx will fail.
-     * @return tokenAmount Amount of pools token withdrawn.
+     * @return tokenAmount Amount of tokens withdrawn.
      */
     function removeLiquidityOneToken(
         ILiquidityAdapter adapter,
