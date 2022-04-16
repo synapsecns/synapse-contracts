@@ -40,7 +40,9 @@ contract EndpointSender is Ownable {
         bytes calldata _message,
         bytes calldata _options
     ) external payable {
+        require(_dstChainId != block.chainid, "Invalid chainId");
         uint256 fee = estimateFee(_dstChainId, _options);
+        require(msg.value >= fee, "Insuffient gas fee");
         emit MessageSent(
             msg.sender,
             block.chainid,

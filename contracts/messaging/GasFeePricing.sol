@@ -9,6 +9,8 @@ contract GasFeePricing is Ownable {
     mapping(uint256 => uint256) public dstGasPriceInWei;
     // DstChainId => USD gas ratio of dstGasToken / srcGasToken
     mapping(uint256 => uint256) public dstGasTokenRatio;
+    
+    constructor() public {}
 
     /**
      * @notice Permissioned method to allow an off-chain party to set what each dstChain's
