@@ -9,6 +9,7 @@ interface IEndpoint {
         address receiver;
         uint64 srcChainId;
         bytes32 srcTxHash; // src chain msg tx hash
+        uint32 srcNonce;
     }
 
     /**
@@ -17,11 +18,13 @@ interface IEndpoint {
      * @param _receiver The bytes32 address of the destination contract to be called
      * @param _chainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
      * @param _message The arbitrary payload to pass to the destination chain receiver
+     * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits
      */
     function sendMessage(
         bytes32 _receiver,
         uint256 _chainId,
-        bytes calldata _message
+        bytes calldata _message,
+        bytes calldata _options
     ) external;
 
     /**
@@ -37,7 +40,8 @@ interface IEndpoint {
         uint256 _srcChainId,
         bytes32 _srcAddress,
         address _dstAddress,
-        uint _gasLimit,
+        uint256 _gasLimit,
+        uint256 _nonce,
         bytes calldata _message
     ) external payable;
 
