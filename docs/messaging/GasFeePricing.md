@@ -1,4 +1,4 @@
-# EndpointSender
+# GasFeePricing
 
 
 
@@ -10,10 +10,10 @@
 
 ## Methods
 
-### estimateFee
+### dstGasPriceInWei
 
 ```solidity
-function estimateFee(uint256 _dstChainId, bytes _options) external pure returns (uint256)
+function dstGasPriceInWei(uint256) external view returns (uint256)
 ```
 
 
@@ -24,8 +24,52 @@ function estimateFee(uint256 _dstChainId, bytes _options) external pure returns 
 
 | Name | Type | Description |
 |---|---|---|
+| _0 | uint256 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
+### dstGasTokenRatio
+
+```solidity
+function dstGasTokenRatio(uint256) external view returns (uint256)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
+### estimateGasFee
+
+```solidity
+function estimateGasFee(uint256 _dstChainId, bytes _options) external view returns (uint256)
+```
+
+Returns srcGasToken fee to charge in wei for the cross-chain message based on the gas limit
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
 | _dstChainId | uint256 | undefined |
-| _options | bytes | undefined |
+| _options | bytes | Versioned struct used to instruct relayer on how to proceed with gas limits. Contains data on gas limit to submit tx with. |
 
 #### Returns
 
@@ -61,13 +105,13 @@ function renounceOwnership() external nonpayable
 *Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.*
 
 
-### sendMessage
+### setCostPerChain
 
 ```solidity
-function sendMessage(bytes32 _receiver, uint256 _dstChainId, bytes _message, bytes _options) external payable
+function setCostPerChain(uint256 _dstChainId, uint256 _gasUnitPrice, uint256 _gasTokenPriceRatio) external nonpayable
 ```
 
-Sends a message to a receiving contract address on another chain. Sender must make sure that the message is unique and not a duplicate message.
+Permissioned method to allow an off-chain party to set what each dstChain&#39;s gas cost is priced in the srcChain&#39;s native gas currency. Example: call on ETH, setCostPerChain(43114, 30000000000, 25180000000000000) chain ID 43114 Average of 30 gwei cost to transaction on 43114 AVAX/ETH = 0.02518, scaled to gas in wei = 25180000000000000
 
 
 
@@ -75,10 +119,9 @@ Sends a message to a receiving contract address on another chain. Sender must ma
 
 | Name | Type | Description |
 |---|---|---|
-| _receiver | bytes32 | The bytes32 address of the destination contract to be called |
 | _dstChainId | uint256 | The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains |
-| _message | bytes | The arbitrary payload to pass to the destination chain receiver |
-| _options | bytes | Versioned struct used to instruct relayer on how to proceed with gas limits |
+| _gasUnitPrice | uint256 | The estimated current gas price in wei of the destination chain |
+| _gasTokenPriceRatio | uint256 | USD gas ratio of dstGasToken / srcGasToken |
 
 ### transferOwnership
 
@@ -99,28 +142,6 @@ function transferOwnership(address newOwner) external nonpayable
 
 
 ## Events
-
-### MessageSent
-
-```solidity
-event MessageSent(address indexed sender, uint256 srcChainID, bytes32 receiver, uint256 indexed dstChainId, bytes messages, bytes options, uint256 fee)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| sender `indexed` | address | undefined |
-| srcChainID  | uint256 | undefined |
-| receiver  | bytes32 | undefined |
-| dstChainId `indexed` | uint256 | undefined |
-| messages  | bytes | undefined |
-| options  | bytes | undefined |
-| fee  | uint256 | undefined |
 
 ### OwnershipTransferred
 

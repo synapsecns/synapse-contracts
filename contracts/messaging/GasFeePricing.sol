@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
 contract GasFeePricing is Ownable {
     // DstChainId => The estimated current gas price in wei of the destination chain
-    mapping(uint256 => uint256) public dstGasPrice;
+    mapping(uint256 => uint256) public dstGasPriceInWei;
     // DstChainId => USD gas ratio of dstGasToken / srcGasToken
     mapping(uint256 => uint256) public dstGasTokenRatio;
 
@@ -26,7 +26,7 @@ contract GasFeePricing is Ownable {
         uint256 _gasUnitPrice,
         uint256 _gasTokenPriceRatio
     ) external onlyOwner {
-        dstGasPrice[_dstChainId] = _gasUnitPrice;
+        dstGasPriceInWei[_dstChainId] = _gasUnitPrice;
         dstGasTokenRatio[_dstChainId] = _gasTokenPriceRatio;
     }
 
@@ -41,7 +41,7 @@ contract GasFeePricing is Ownable {
     {
         // temporary gas limit set
         uint256 gasLimit = 200000;
-        return ((dstGasPrice[_dstChainId] *
+        return ((dstGasPriceInWei[_dstChainId] *
             dstGasTokenRatio[_dstChainId] *
             gasLimit) / 10**18);
     }
