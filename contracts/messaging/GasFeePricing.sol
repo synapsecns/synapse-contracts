@@ -8,11 +8,11 @@ contract GasFeePricing is Ownable {
     // DstChainId => The estimated current gas price in wei of the destination chain
     mapping(uint256 => uint256) public dstGasPrice;
     // DstChainId => USD gas ratio of dstGasToken / srcGasToken
-    mapping(uint256 => uint256) public dstGasTokenRatio; 
+    mapping(uint256 => uint256) public dstGasTokenRatio;
 
     /**
      * @notice Permissioned method to allow an off-chain party to set what each dstChain's
-     * gas cost is priced in the srcChain's native gas currency. 
+     * gas cost is priced in the srcChain's native gas currency.
      * Example: call on ETH, setCostPerChain(43114, 30000000000, 25180000000000000)
      * chain ID 43114
      * Average of 30 gwei cost to transaction on 43114
@@ -21,7 +21,11 @@ contract GasFeePricing is Ownable {
      * @param _gasUnitPrice The estimated current gas price in wei of the destination chain
      * @param _gasTokenPriceRatio USD gas ratio of dstGasToken / srcGasToken
      */
-    function setCostPerChain(uint256 _dstChainId, uint256 _gasUnitPrice, uint256 _gasTokenPriceRatio) external onlyOwner {
+    function setCostPerChain(
+        uint256 _dstChainId,
+        uint256 _gasUnitPrice,
+        uint256 _gasTokenPriceRatio
+    ) external onlyOwner {
         dstGasPrice[_dstChainId] = _gasUnitPrice;
         dstGasTokenRatio[_dstChainId] = _gasTokenPriceRatio;
     }
@@ -30,10 +34,15 @@ contract GasFeePricing is Ownable {
      * @notice Returns srcGasToken fee to charge in wei for the cross-chain message based on the gas limit
      * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits. Contains data on gas limit to submit tx with.
      */
-    function estimateGasFee(uint256 _dstChainId, bytes calldata _options) external view returns (uint256) {
+    function estimateGasFee(uint256 _dstChainId, bytes calldata _options)
+        external
+        view
+        returns (uint256)
+    {
         // temporary gas limit set
         uint256 gasLimit = 200000;
-        return (dstGasPrice[_dstChainId] * dstGasTokenRatio[_dstChainId] * gasLimit / 10**18);
+        return ((dstGasPrice[_dstChainId] *
+            dstGasTokenRatio[_dstChainId] *
+            gasLimit) / 10**18);
     }
-    
 }
