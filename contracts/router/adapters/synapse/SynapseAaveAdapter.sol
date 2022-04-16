@@ -170,9 +170,13 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
         virtual
         override
         checkLpToken(_lpToken)
-        returns (IERC20[] memory tokens)
+        returns (IERC20[] memory tokens, uint256[] memory balances)
     {
         tokens = underlyingTokens;
+        balances = new uint256[](numTokens);
+        for (uint256 index = 0; index < numTokens; ++index) {
+            balances[index] = pool.getTokenBalance(uint8(index));
+        }
     }
 
     function addLiquidity(
@@ -243,6 +247,36 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
                 wgas
             );
         }
+    }
+
+    function removeLiquidityOneToken(
+        address to,
+        IERC20 _lpToken,
+        uint256 lpTokenAmount,
+        IERC20 token,
+        uint256 minTokenAmount,
+        bool unwrapGas,
+        IWETH9 wgas
+    )
+        external
+        virtual
+        override
+        checkLpToken(_lpToken)
+        checkPoolToken(token)
+        returns (uint256 tokenAmount)
+    {
+        address poolToken = address(token);
+        if (isUnderlying[poolToken]) {
+            poolToken = aaveToken[poolToken];
+        }
+        tokenAmount = pool.removeLiquidityOneToken(
+            lpTokenAmount,
+            uint8(tokenIndex[poolToken]),
+            minTokenAmount,
+            UINT_MAX
+        );
+
+        _returnUnwrappedToken(to, token, tokenAmount, unwrapGas, wgas);
     }
 
     function _returnUnwrappedToken(
