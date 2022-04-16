@@ -2,12 +2,7 @@
 pragma solidity ^0.8.0;
 
 interface IUniswapV2Pair {
-    function swap(
-        uint256 amount0Out,
-        uint256 amount1Out,
-        address to,
-        bytes calldata data
-    ) external;
+    // -- VIEWS --
 
     function getReserves()
         external
@@ -18,5 +13,25 @@ interface IUniswapV2Pair {
             uint32 blockTimestampLast
         );
 
+    // solhint-disable-next-line
+    function MINIMUM_LIQUIDITY() external view returns (uint256);
+
+    function token0() external view returns (address);
+
+    function token1() external view returns (address);
+
+    // -- INTERACTIONS --
+
+    function burn(address to)
+        external
+        returns (uint256 amount0, uint256 amount1);
+
     function mint(address to) external returns (uint256 liquidity);
+
+    function swap(
+        uint256 amount0Out,
+        uint256 amount1Out,
+        address to,
+        bytes calldata data
+    ) external;
 }
