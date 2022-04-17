@@ -7,8 +7,8 @@ import "./EndpointSender.sol";
 import "./EndpointReceiver.sol";
 
 contract Endpoint is EndpointSender, EndpointReceiver {
-    constructor(address _gasFeePricing)
+    constructor(address _gasFeePricing, address _authVerifier)
         EndpointSender(_gasFeePricing)
-        EndpointReceiver()
+        EndpointReceiver(_authVerifier)
     {}
 }
