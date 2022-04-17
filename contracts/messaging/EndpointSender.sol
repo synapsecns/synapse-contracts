@@ -8,14 +8,14 @@ import "./interfaces/IGasFeePricing.sol";
 contract EndpointSender is Ownable {
     address public gasFeePricing;
 
-    constructor(address _gasFeePricing) public {
+    constructor(address _gasFeePricing) {
         gasFeePricing = _gasFeePricing;
     }
 
     event MessageSent(
         address indexed sender,
         uint256 srcChainID,
-        bytes receiver,
+        bytes32 receiver,
         uint256 indexed dstChainId,
         bytes messages,
         bytes options,
@@ -43,7 +43,7 @@ contract EndpointSender is Ownable {
      * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits
      */
     function sendMessage(
-        bytes calldata _receiver,
+        bytes32 _receiver,
         uint256 _dstChainId,
         bytes calldata _message,
         bytes calldata _options
