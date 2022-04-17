@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.0;
 
-interface ISynMessagingApp {
+interface ISynMessagingReceiver {
 
     /** 
      * @notice MsgExecutionStatus state

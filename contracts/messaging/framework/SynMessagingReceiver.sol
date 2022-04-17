@@ -2,11 +2,11 @@
 
 pragma solidity 0.8.13;
 
-import "../interfaces/ISynMessagingApp.sol";
+import "../interfaces/ISynMessagingReceiver.sol";
 import "../interfaces/IMessageBus.sol";
 import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
-abstract contract SynMessagingApp is ISynMessagingApp, Ownable {
+abstract contract SynMessagingReceiver is ISynMessagingReceiver, Ownable {
     
     address public messageBus;
 
