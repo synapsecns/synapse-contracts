@@ -14,17 +14,22 @@ contract EndpointSenderTest is Test {
     event MessageSent(
         address indexed sender,
         uint256 srcChainID,
-        bytes receiver,
+        bytes32 receiver,
         uint256 indexed dstChainId,
         bytes messages,
         bytes options,
         uint256 fee
     );
 
+    function addressToBytes32(address _addr) pure public returns (bytes32) {
+        return bytes32(uint256(uint160(_addr)));
+    }
+
     function setUp() public {
         gasFeePricing = new GasFeePricing();
         gasFeePricingTest = new GasFeePricingTest();
-        gasFeePricing.setCostPerChain(gasFeePricingTest.expectedDstChainId(), gasFeePricingTest.expectedDstGasPrice(), gasFeePricingTest.expectedGasTokenPriceRatio());
+        gasFeePricing.setCostPerChain(gasFeePricingTest.expectedDstChainId(), gasFeePricingTest.expectedDstGasPrice(), 
+            gasFeePricingTest.expectedGasTokenPriceRatio());
         endpointSender = new EndpointSender(address(gasFeePricing));
     }
 
@@ -45,7 +50,7 @@ contract EndpointSenderTest is Test {
     }
 
     function testFailSendMessageWrongChainID() public {
-        bytes memory receiverAddress = abi.encodePacked(address(1337));
+        bytes32 receiverAddress = addressToBytes32(address(1337));
         // 99 is default foundry chain id
         endpointSender.sendMessage(receiverAddress, 99, bytes(""), bytes(""));
     }
@@ -53,21 +58,21 @@ contract EndpointSenderTest is Test {
     // Enforce fees above returned fee amount from fee calculator
     function testFailSendMessageWithLowFees() public {
         uint256 estimatedFee = endpointSender.estimateFee(gasFeePricingTest.expectedDstChainId(), bytes(""));
-        bytes memory receiverAddress = abi.encodePacked(address(1337));
+        bytes32 receiverAddress = addressToBytes32(address(1337));
         endpointSender.sendMessage{value: estimatedFee - 1}(receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), bytes(""));
     }
 
     // Fee calculator reverts upon 0 fees (Fee is unset)
     function testFailMessageOnUnsetFees() public {
         uint256 estimatedFee = endpointSender.estimateFee(gasFeePricingTest.expectedDstChainId() - 1, bytes(""));
-        bytes memory receiverAddress = abi.encodePacked(address(1337));
+        bytes32 receiverAddress = addressToBytes32(address(1337));
         endpointSender.sendMessage{value: estimatedFee}(receiverAddress, gasFeePricingTest.expectedDstChainId() - 1, bytes(""), bytes(""));
     }
 
     // Send message without reversion, pay correct amount of fees, emit correct event
     function testSendMessage() public {
         uint256 estimatedFee = endpointSender.estimateFee(gasFeePricingTest.expectedDstChainId(), bytes(""));
-        bytes memory receiverAddress = abi.encodePacked(address(1337));
+        bytes32 receiverAddress = addressToBytes32(address(1337));
         vm.expectEmit(true, true, false, true);
         emit MessageSent(address(this), 99, receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), bytes(""), estimatedFee);
         endpointSender.sendMessage{value: estimatedFee}(receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), bytes(""));
