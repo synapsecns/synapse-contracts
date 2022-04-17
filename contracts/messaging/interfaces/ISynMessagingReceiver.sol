@@ -11,8 +11,8 @@ interface ISynMessagingReceiver {
      * @return Retry // execution failed or rejected, set to be retryable
     */ 
     enum MsgExecutionStatus {
-        Fail, 
-        Success,
+        Success, 
+        Fail,
         Retry
     }
 

@@ -7,6 +7,14 @@ import "forge-std/Test.sol";
 contract Utilities is Test {
     bytes32 internal nextUser = keccak256(abi.encodePacked("user address"));
 
+    function addressToBytes32(address _addr) pure public returns (bytes32) {
+        return bytes32(uint256(uint160(_addr)));
+    }
+
+    function bytes32ToAddress(bytes32 bys) pure public returns(address) {
+        return address(uint160(uint256(bys)));
+    }
+
     function getNextUserAddress() external returns (address payable) {
         //bytes32 to address conversion
         address payable user = payable(address(uint160(uint256(nextUser))));

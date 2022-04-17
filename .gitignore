@@ -3,7 +3,6 @@ cache/*
 /coverage.json
 /coverage
 node_modules/*
-lib
 /dist
 .idea/*
 .eslintcache
