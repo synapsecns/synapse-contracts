@@ -138,14 +138,16 @@ contract EndpointReceiver is Ownable {
                 (reason),
                 (IMessageReceiverApp.MsgExecutionStatus)
             );
-                if (execStatus == IMessageReceiverApp.MsgExecutionStatus.Success) {
-                    status = TxStatus.Success;
+            if (execStatus == IMessageReceiverApp.MsgExecutionStatus.Success) {
+                status = TxStatus.Success;
                 // TODO This state is not fully managed yet
-                } else if (execStatus == IMessageReceiverApp.MsgExecutionStatus.Retry) {
-                     // handle permissionless retries or delete and only allow Success / Revert
-                    executedMessages[messageId] = TxStatus.Null;
-                    emit NeedRetry(messageId, uint64(_srcChainId), uint64(_nonce));
-                }
+            } else if (
+                execStatus == IMessageReceiverApp.MsgExecutionStatus.Retry
+            ) {
+                // handle permissionless retries or delete and only allow Success / Revert
+                executedMessages[messageId] = TxStatus.Null;
+                emit NeedRetry(messageId, uint64(_srcChainId), uint64(_nonce));
+            }
         } else {
             emit CallReverted(getRevertMsg(reason));
             status = TxStatus.Fail;
