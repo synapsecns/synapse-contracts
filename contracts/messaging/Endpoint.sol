@@ -6,4 +6,9 @@ import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import "./EndpointSender.sol";
 import "./EndpointReceiver.sol";
 
-contract Endpoint is EndpointSender, EndpointReceiver {}
+contract Endpoint is EndpointSender, EndpointReceiver {
+    constructor(address _gasFeePricing)
+        EndpointSender(_gasFeePricing)
+        EndpointReceiver()
+    {}
+}

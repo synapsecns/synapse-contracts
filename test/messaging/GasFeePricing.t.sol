@@ -1,25 +1,23 @@
 pragma solidity 0.8.13;
 
-import "ds-test/test.sol";
+import "forge-std/Test.sol";
+
 import "../../contracts/messaging/GasFeePricing.sol";
 
-interface CheatCodes {
-    function prank(address) external;
-}
-
-contract GasFeePricingTest is DSTest {
-    CheatCodes public cheats = CheatCodes(HEVM_ADDRESS);
-    GasFeePricing gasFeePricing;
-    uint256 expectedDstChainId = 43114;
-    uint256 expectedDstGasPrice = 30000000000;
-    uint256 expectedGasTokenPriceRatio = 25180000000000000;
+contract GasFeePricingTest is Test {
+    GasFeePricing public gasFeePricing;
+    uint256 public expectedDstChainId = 43114;
+    uint256 public expectedDstGasPrice = 30000000000;
+    uint256 public expectedGasTokenPriceRatio = 25180000000000000;
+    uint256 public currentGasLimit = 200000;
+    uint256 public expectedFeeDst43114 = (expectedDstGasPrice*expectedGasTokenPriceRatio*currentGasLimit / 10**18);
 
     function setUp() public {
         gasFeePricing = new GasFeePricing();
     }
 
     function testFailSetCostAsNotOwner() public {
-        cheats.prank(address(0));
+        vm.prank(address(0));
         gasFeePricing.setCostPerChain(expectedDstChainId, expectedDstGasPrice, expectedGasTokenPriceRatio);
     }
 
@@ -40,7 +38,6 @@ contract GasFeePricingTest is DSTest {
     function testSetData() public {
         // set data
         testSetCostAsOwner();
-        uint256 currentGasLimit = 200000;
         uint256 fee = gasFeePricing.estimateGasFee(43114, bytes("0"));
         uint256 expectedFee = (expectedDstGasPrice*expectedGasTokenPriceRatio*currentGasLimit / 10**18);
         assertEq(fee, expectedFee);

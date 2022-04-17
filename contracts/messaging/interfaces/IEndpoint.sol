@@ -30,7 +30,7 @@ interface IEndpoint {
      */
     function executeMessage(
         uint256 _srcChainId,
-        bytes32 _srcAddress,
+        bytes calldata _srcAddress,
         address _dstAddress,
         uint256 _gasLimit,
         uint256 _nonce,

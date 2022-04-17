@@ -6,12 +6,16 @@ import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import "./interfaces/IGasFeePricing.sol";
 
 contract EndpointSender is Ownable {
-    constructor() public {}
+    address public gasFeePricing;
+
+    constructor(address _gasFeePricing) public {
+        gasFeePricing = _gasFeePricing;
+    }
 
     event MessageSent(
         address indexed sender,
         uint256 srcChainID,
-        bytes32 receiver,
+        bytes receiver,
         uint256 indexed dstChainId,
         bytes messages,
         bytes options,
@@ -20,10 +24,11 @@ contract EndpointSender is Ownable {
 
     function estimateFee(uint256 _dstChainId, bytes calldata _options)
         public
-        pure
         returns (uint256)
     {
-        return 0;
+        uint256 fee = IGasFeePricing(gasFeePricing).estimateGasFee(_dstChainId, _options);
+        require(fee != 0, "Fee not set");
+        return fee;
     }
 
     /**
@@ -35,7 +40,7 @@ contract EndpointSender is Ownable {
      * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits
      */
     function sendMessage(
-        bytes32 _receiver,
+        bytes calldata _receiver,
         uint256 _dstChainId,
         bytes calldata _message,
         bytes calldata _options
