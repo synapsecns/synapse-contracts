@@ -216,7 +216,8 @@ contract SynapseBridge is
             return false;
         }
 
-        return rateLimiter.checkAndUpdateAllowance(address(token), amount);
+        // rate limiter returns true on the successful allowance update
+        return !rateLimiter.checkAndUpdateAllowance(address(token), amount);
     }
 
     /**
