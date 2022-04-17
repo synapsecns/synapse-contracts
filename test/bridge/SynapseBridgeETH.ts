@@ -205,6 +205,68 @@ describe("SynapseBridgeETH", async () => {
     expect(await bridge.kappaExists(kappa)).to.be.true
   })
 
+  it("RetryCount: should be able to clear the Retry Queue", async () => {
+    const allowanceAmount = getBigNumber(100)
+    const amount = allowanceAmount.add(1)
+    const kappas = [
+      keccak256(randomBytes(32)),
+      keccak256(randomBytes(32)),
+      keccak256(randomBytes(32)),
+      keccak256(randomBytes(32)),
+    ]
+
+    await setupAllowanceTest(SYN, allowanceAmount)
+
+    for (let kappa of kappas) {
+      await bridge
+        .connect(nodeGroup)
+        .mint(await recipient.getAddress(), SYN, amount, 0, kappa)
+
+      // This should BE rate limited
+      expect(await bridge.kappaExists(kappa)).to.be.false
+    }
+
+    await rateLimiter.retryCount(kappas.length)
+
+    for (let kappa of kappas) {
+      expect(await bridge.kappaExists(kappa)).to.be.true
+    }
+  })
+
+  it("RetryCount: should work correctly after retryByKappa", async () => {
+    const allowanceAmount = getBigNumber(100)
+    const amount = allowanceAmount.add(1)
+    const kappas = [
+      keccak256(randomBytes(32)),
+      keccak256(randomBytes(32)),
+      keccak256(randomBytes(32)),
+      keccak256(randomBytes(32)),
+    ]
+
+    await setupAllowanceTest(SYN, allowanceAmount)
+
+    for (let kappa of kappas) {
+      await bridge
+        .connect(nodeGroup)
+        .mint(await recipient.getAddress(), SYN, amount, 0, kappa)
+
+      // This should BE rate limited
+      expect(await bridge.kappaExists(kappa)).to.be.false
+    }
+
+    await rateLimiter.retryByKappa(kappas[1])
+    expect(await bridge.kappaExists(kappas[1])).to.be.true
+
+    await rateLimiter.retryByKappa(kappas[3])
+    expect(await bridge.kappaExists(kappas[3])).to.be.true
+
+    await rateLimiter.retryCount(kappas.length)
+
+    for (let kappa of kappas) {
+      expect(await bridge.kappaExists(kappa)).to.be.true
+    }
+  })
+
   // check permissions
   it("SetChainGasAmount: should reject non-admin roles", async () => {
     await expect(

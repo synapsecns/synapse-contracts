@@ -197,7 +197,8 @@ contract RateLimiter is
         );
 
         for (uint8 i = 0; i < attempts; i++) {
-            (bytes32 kappa, bytes memory toRetry, ) = rateLimited.at(i);
+            // check out the first element
+            (bytes32 kappa, bytes memory toRetry, ) = rateLimited.at(0);
             (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(
                 toRetry
             );
