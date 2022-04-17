@@ -7,6 +7,7 @@ import "./interfaces/IGasFeePricing.sol";
 
 contract MessageBusSender is Ownable {
     address public gasFeePricing;
+    uint256 public nonce;
 
     constructor(address _gasFeePricing) {
         gasFeePricing = _gasFeePricing;
@@ -18,6 +19,7 @@ contract MessageBusSender is Ownable {
         bytes32 receiver,
         uint256 indexed dstChainId,
         bytes message,
+        uint256 indexed nonce,
         bytes options,
         uint256 fee
     );
@@ -51,12 +53,14 @@ contract MessageBusSender is Ownable {
         require(_dstChainId != block.chainid, "Invalid chainId");
         uint256 fee = estimateFee(_dstChainId, _options);
         require(msg.value >= fee, "Insuffient gas fee");
+        ++nonce;
         emit MessageSent(
             msg.sender,
             block.chainid,
             _receiver,
             _dstChainId,
             _message,
+            nonce,
             _options,
             fee
         );
