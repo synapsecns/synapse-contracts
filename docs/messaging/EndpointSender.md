@@ -1,4 +1,4 @@
-# EndpointSender
+# MessageBusSender
 
 
 

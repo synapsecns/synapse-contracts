@@ -1,4 +1,4 @@
-# EndpointReceiver
+# MessageBusReceiver
 
 
 

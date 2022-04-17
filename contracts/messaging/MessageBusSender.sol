@@ -5,7 +5,7 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import "./interfaces/IGasFeePricing.sol";
 
-contract EndpointSender is Ownable {
+contract MessageBusSender is Ownable {
     address public gasFeePricing;
 
     constructor(address _gasFeePricing) {
