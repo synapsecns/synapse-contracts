@@ -5,11 +5,11 @@ import { deployments, ethers } from "hardhat"
 
 import chai from "chai"
 import { GenericERC20, RateLimiter, SynapseBridge } from "../../build/typechain"
-import epochSeconds from "@stdlib/time-now"
 import { keccak256 } from "ethers/lib/utils"
 import { randomBytes } from "crypto"
-import { forkChain } from "../utils"
+import { forkChain, MAX_UINT256 } from "../utils"
 import { deployRateLimiter, setupForkedBridge } from "./utilities/bridge"
+import { getBigNumber } from "./utilities"
 
 chai.use(solidity)
 const { expect } = chai
@@ -23,7 +23,6 @@ describe("SynapseBridgeAvax", async () => {
   let nodeGroup: Signer
   let recipient: Signer
 
-  const decimals = Math.pow(10, 6)
   const NUSD = "0xCFc37A6AB183dd4aED08C204D1c2773c0b1BDf46"
   const NUSD_POOL = "0xED2a7edd7413021d440b09D654f3b87712abAB66"
 
@@ -62,48 +61,62 @@ describe("SynapseBridgeAvax", async () => {
     await setupTest()
   })
 
-  // ammounts are multiplied by 10^6
   const setupAllowanceTest = async (
     tokenAddress: string,
     allowanceAmount: number,
     intervalMin: number = 60,
   ) => {
     const lastReset = Math.floor((await getCurrentBlockTimestamp()) / 60)
-    allowanceAmount = allowanceAmount * decimals
 
-    await expect(
-      rateLimiter.setAllowance(
-        tokenAddress,
-        allowanceAmount,
-        intervalMin,
-        lastReset,
-      ),
-    ).to.be.not.reverted
+    await rateLimiter.setAllowance(
+      tokenAddress,
+      allowanceAmount,
+      intervalMin,
+      lastReset,
+    )
   }
 
-  it("MintAndSwap: should add to retry queue if rate limit hit", async () => {
-    const allowanceAmount = 500
-    const mintAmount = 1000
+  it("MintAndSwap: should add to retry queue only if rate limit hit", async () => {
+    const allowanceAmount = getBigNumber(100)
+    const firstAmount = allowanceAmount.sub(1)
+    const secondAmount = allowanceAmount.sub(firstAmount).add(1)
 
     await setupAllowanceTest(NUSD, allowanceAmount)
-    const kappa = keccak256(randomBytes(32))
+    let kappa = keccak256(randomBytes(32))
 
-    await expect(
-      bridge
-        .connect(nodeGroup)
-        .mintAndSwap(
-          await recipient.getAddress(),
-          NUSD,
-          mintAmount,
-          10,
-          NUSD_POOL,
-          0,
-          2,
-          mintAmount,
-          epochSeconds(),
-          kappa,
-        ),
-    ).to.be.not.reverted
+    await bridge
+      .connect(nodeGroup)
+      .mintAndSwap(
+        await recipient.getAddress(),
+        NUSD,
+        firstAmount,
+        0,
+        NUSD_POOL,
+        0,
+        2,
+        0,
+        MAX_UINT256,
+        kappa,
+      )
+    // This should NOT BE rate limited
+    expect(await bridge.kappaExists(kappa)).to.be.true
+
+    kappa = keccak256(randomBytes(32))
+
+    await bridge
+      .connect(nodeGroup)
+      .mintAndSwap(
+        await recipient.getAddress(),
+        NUSD,
+        secondAmount,
+        0,
+        NUSD_POOL,
+        0,
+        2,
+        0,
+        MAX_UINT256,
+        kappa,
+      )
 
     expect(await bridge.kappaExists(kappa)).to.be.false
     await expect(rateLimiter.retryByKappa(kappa)).to.be.not.reverted
