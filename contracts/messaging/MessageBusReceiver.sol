@@ -5,8 +5,9 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import "./interfaces/IAuthVerifier.sol";
 import "./interfaces/ISynMessagingReceiver.sol";
+import "forge-std/Test.sol";
 
-contract MessageBusReceiver is Ownable {
+contract MessageBusReceiver is Ownable, Test {
     address public authVerifier;
 
     enum TxStatus {
@@ -91,6 +92,7 @@ contract MessageBusReceiver is Ownable {
         );
         require(messageId == _messageId, "Incorrect messageId submitted");
         // enforce that this message ID hasn't already been tried ever
+        // console.log(uint256(executedMessages[messageId]));
         require(
             executedMessages[messageId] == TxStatus.Null,
             "Message already executed"
@@ -109,17 +111,16 @@ contract MessageBusReceiver is Ownable {
                 msg.sender
             )
         returns (ISynMessagingReceiver.MsgExecutionStatus execStatus) {
+            // TODO: This state is not fully managed yet - May not even need return variables. 
             if (
-                execStatus == ISynMessagingReceiver.MsgExecutionStatus.Success
-            ) {
-                status = TxStatus.Success;
-                // TODO This state is not fully managed yet
-            } else if (
                 execStatus == ISynMessagingReceiver.MsgExecutionStatus.Retry
             ) {
                 // handle permissionless retries or delete and only allow Success / Revert
                 executedMessages[messageId] = TxStatus.Null;
                 emit NeedRetry(messageId, uint64(_srcChainId), uint64(_nonce));
+            } else {
+                // Currently assuming success state if no returned variable & no revert?
+                status = TxStatus.Success;
             }
         } catch (bytes memory reason) {
             // call hard reverted & failed
