@@ -18,14 +18,14 @@ interface IMessageReceiverApp {
 
      /**
      * @notice Called by MessageBus (MessageBusReceiver)
-     * @param _srcSender The bytes address of the source app contract
+     * @param _srcAddress The bytes32 address of the source app contract
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
      * @param _executor Address who called the MessageBus execution function
      */
     function executeMessage(
-        bytes calldata _srcSender,
-        uint64 _srcChainId,
+        bytes32 _srcAddress,
+        uint256 _srcChainId,
         bytes calldata _message,
         address _executor
     ) external payable returns (MsgExecutionStatus);
