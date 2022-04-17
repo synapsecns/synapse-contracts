@@ -290,6 +290,21 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         require(depositAddress != address(0), "Adapter: unknown tokens");
     }
 
+    // -- LIQUIDITY MANAGEMENT: governance
+
+    /**
+     * @notice Add or remove a Liquidity Adapter to trusted liquidity adapters list.
+     * Only Router's governance is allowed to do so.
+     * @param adapter Adapter to change status
+     * @param status Whether Adapter is trusted or not
+     */
+    function updateLiquidityAdapter(ILiquidityAdapter adapter, bool status)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        isTrustedLiquidityAdapter[address(adapter)] = status;
+    }
+
     // -- LIQUIDITY MANAGEMENT: views
 
     /**
