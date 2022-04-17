@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.13;
 
-interface IEndpoint {
+interface IMessageBus {
     
     /**
      * @notice Sends a message to a receiving contract address on another chain. 
@@ -17,7 +17,7 @@ interface IEndpoint {
         uint256 _dstChainId,
         bytes calldata _message,
         bytes calldata _options
-    ) external;
+    ) external payable;
 
     /**
      * @notice Relayer executes messages through an authenticated method to the destination receiver

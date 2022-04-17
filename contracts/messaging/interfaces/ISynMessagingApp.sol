@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.0;
 
-interface IMessageReceiverApp {
+interface ISynMessagingApp {
 
     /** 
      * @notice MsgExecutionStatus state
@@ -28,6 +28,6 @@ interface IMessageReceiverApp {
         uint256 _srcChainId,
         bytes calldata _message,
         address _executor
-    ) external payable returns (MsgExecutionStatus);
+    ) external returns (MsgExecutionStatus);
 }
     

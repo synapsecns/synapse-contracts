@@ -1,4 +1,4 @@
-# IEndpoint
+# IMessageBus
 
 
 

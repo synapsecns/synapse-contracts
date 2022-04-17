@@ -4,9 +4,9 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import "./interfaces/IAuthVerifier.sol";
-import "./interfaces/IMessageReceiverApp.sol";
+import "./interfaces/ISynMessagingApp.sol";
 
-contract EndpointReceiver is Ownable {
+contract MessageBusReceiver is Ownable {
     address public authVerifier;
 
     enum TxStatus {
@@ -101,18 +101,18 @@ contract EndpointReceiver is Ownable {
 
         TxStatus status;
         try
-            IMessageReceiverApp(_dstAddress).executeMessage{gas: _gasLimit}(
+            ISynMessagingApp(_dstAddress).executeMessage{gas: _gasLimit}(
                 _srcAddress,
                 _srcChainId,
                 _message,
                 msg.sender
             )
-        returns (IMessageReceiverApp.MsgExecutionStatus execStatus) {
-            if (execStatus == IMessageReceiverApp.MsgExecutionStatus.Success) {
+        returns (ISynMessagingApp.MsgExecutionStatus execStatus) {
+            if (execStatus == ISynMessagingApp.MsgExecutionStatus.Success) {
                 status = TxStatus.Success;
                 // TODO This state is not fully managed yet
             } else if (
-                execStatus == IMessageReceiverApp.MsgExecutionStatus.Retry
+                execStatus == ISynMessagingApp.MsgExecutionStatus.Retry
             ) {
                 // handle permissionless retries or delete and only allow Success / Revert
                 executedMessages[messageId] = TxStatus.Null;
