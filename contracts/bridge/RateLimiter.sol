@@ -13,6 +13,10 @@ import "hardhat/console.sol";
 
 // solhint-disable not-rely-on-time
 
+interface IBridge {
+    function kappaExists(bytes32 kappa) external view returns (bool);
+}
+
 // @title RateLimiter
 // @dev a bridge asset rate limiter based on https://github.com/gnosis/safe-modules/blob/master/allowances/contracts/AlowanceModule.sol
 contract RateLimiter is
@@ -36,6 +40,7 @@ contract RateLimiter is
     mapping(address => Allowance) public allowances;
     // Kappa->Retry Selector
     EnumerableQueueUpgradeable.KappaQueue private rateLimitedQueue;
+    mapping(bytes32 => bytes) private failedRetries;
     // Bridge Address
     address public BRIDGE_ADDRESS;
     // Time period after anyone can retry a rate limited tx
@@ -221,17 +226,32 @@ contract RateLimiter is
         }
     }
 
+    function retryFailed(bytes32 kappa) external {
+        bytes memory toRetry = failedRetries[kappa];
+        if (toRetry.length > 0) {
+            (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(
+                toRetry
+            );
+            require(
+                success,
+                Strings.append(
+                    "could not call bridge for kappa: ",
+                    Strings.toHex(kappa),
+                    " reverted with: ",
+                    _getRevertMsg(returnData)
+                )
+            );
+        }
+        failedRetries[kappa] = bytes("");
+    }
+
     function _retry(bytes32 kappa, bytes memory toRetry) internal {
-        (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(toRetry);
-        require(
-            success,
-            Strings.append(
-                "could not call bridge for kappa: ",
-                Strings.toHex(kappa),
-                " reverted with: ",
-                _getRevertMsg(returnData)
-            )
-        );
+        (bool success, ) = BRIDGE_ADDRESS.call(toRetry);
+        if (!success && !IBridge(BRIDGE_ADDRESS).kappaExists(kappa)) {
+            // save payload for failed transactions
+            // that haven't been processed by Bridge yet
+            failedRetries[kappa] = toRetry;
+        }
     }
 
     function deleteByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
