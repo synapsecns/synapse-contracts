@@ -9,7 +9,7 @@ import { keccak256 } from "ethers/lib/utils"
 import { randomBytes } from "crypto"
 import { forkChain, MAX_UINT256 } from "../utils"
 import { deployRateLimiter, setupForkedBridge } from "./utilities/bridge"
-import { getBigNumber } from "./utilities"
+import { advanceTime, getBigNumber } from "./utilities"
 
 chai.use(solidity)
 const { expect } = chai
@@ -270,6 +270,31 @@ describe("SynapseBridgeETH", async () => {
     }
   })
 
+  it("Permissionless timeout for retryByKappa", async () => {
+    const allowanceAmount = getBigNumber(100)
+    const amount = allowanceAmount.add(1)
+
+    const kappa = keccak256(randomBytes(32))
+    await setupAllowanceTest(SYN, allowanceAmount)
+
+    await bridge
+      .connect(nodeGroup)
+      .mint(await recipient.getAddress(), SYN, amount, 0, kappa)
+
+    // This should BE rate limited
+    expect(await bridge.kappaExists(kappa)).to.be.false
+
+    await expect(
+      rateLimiter.connect(deployer).retryByKappa(kappa),
+    ).to.be.revertedWith("Retry timeout not finished")
+
+    await advanceTime(360 * 60)
+
+    await rateLimiter.connect(deployer).retryByKappa(kappa)
+    // Timeout finished, should be good to go
+    expect(await bridge.kappaExists(kappa)).to.be.true
+  })
+
   // check permissions
   it("SetChainGasAmount: should reject non-admin roles", async () => {
     await expect(
@@ -283,12 +308,10 @@ describe("SynapseBridgeETH", async () => {
     ).to.be.revertedWith("Not admin")
   })
 
-  it.skip("SetRateLimiter: should reject non-governance roles", async () => {
+  it("SetRateLimiter: should reject non-admin roles", async () => {
     await expect(
-      bridge
-        .connect(attacker)
-        .withdrawFees(USDC.address, await recipient.getAddress()),
-    ).to.be.revertedWith("Not governance")
+      bridge.connect(attacker).setRateLimiter(rateLimiter.address),
+    ).to.be.revertedWith("Not admin")
   })
 
   it("AddKappas: should reject non-admin roles", async () => {

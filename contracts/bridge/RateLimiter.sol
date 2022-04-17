@@ -11,6 +11,8 @@ import "./interfaces/IRateLimiter.sol";
 import "./libraries/Strings.sol";
 import "hardhat/console.sol";
 
+// solhint-disable not-rely-on-time
+
 // @title RateLimiter
 // @dev a bridge asset rate limiter based on https://github.com/gnosis/safe-modules/blob/master/allowances/contracts/AlowanceModule.sol
 contract RateLimiter is
@@ -36,6 +38,9 @@ contract RateLimiter is
     EnumerableQueueUpgradeable.KappaQueue private rateLimitedQueue;
     // Bridge Address
     address public BRIDGE_ADDRESS;
+    // Time period after anyone can retry a rate limited tx
+    uint32 public retryTimeout = 360;
+    uint32 public constant MIN_RETRY_TIMEOUT = 60;
 
     // List of tokens
     address[] public tokens;
@@ -72,6 +77,14 @@ contract RateLimiter is
         onlyRole(GOVERNANCE_ROLE)
     {
         BRIDGE_ADDRESS = bridge;
+    }
+
+    function setRetryTimeout(uint32 _retryTimeout)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        require(_retryTimeout >= MIN_RETRY_TIMEOUT, "Timeout too short");
+        retryTimeout = _retryTimeout;
     }
 
     /**
@@ -174,9 +187,19 @@ contract RateLimiter is
         rateLimitedQueue.add(kappa, toRetry);
     }
 
-    function retryByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
-        (bytes memory toRetry, ) = rateLimitedQueue.get(kappa);
+    function retryByKappa(bytes32 kappa) external {
+        (bytes memory toRetry, uint32 storedAtMin) = rateLimitedQueue.get(
+            kappa
+        );
         if (toRetry.length > 0) {
+            if (!hasRole(LIMITER_ROLE, msg.sender)) {
+                // Permissionless retry is only available once timeout is finished
+                uint32 currentMin = uint32(block.timestamp / 60);
+                require(
+                    currentMin >= storedAtMin + retryTimeout,
+                    "Retry timeout not finished"
+                );
+            }
             _retry(kappa, toRetry);
             rateLimitedQueue.deleteKey(kappa);
         }
