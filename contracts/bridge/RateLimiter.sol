@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-4.3.1-upgradeable/access/AccessControlUpgradeabl
 import "@openzeppelin/contracts-4.3.1-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-4.3.1-upgradeable/utils/math/MathUpgradeable.sol";
 
-import "./libraries/EnumerableMapUpgradeable.sol";
+import "./libraries/EnumerableQueueUpgradeable.sol";
 import "./interfaces/IRateLimiter.sol";
 import "./libraries/Strings.sol";
 import "hardhat/console.sol";
@@ -19,7 +19,7 @@ contract RateLimiter is
     ReentrancyGuardUpgradeable,
     IRateLimiter
 {
-    using EnumerableMapUpgradeable for EnumerableMapUpgradeable.Bytes32ToStructMap;
+    using EnumerableQueueUpgradeable for EnumerableQueueUpgradeable.KappaQueue;
     /*** STATE ***/
 
     string public constant NAME = "Rate Limiter";
@@ -33,7 +33,7 @@ contract RateLimiter is
     // Token -> Allowance
     mapping(address => Allowance) public allowances;
     // Kappa->Retry Selector
-    EnumerableMapUpgradeable.Bytes32ToStructMap private rateLimited;
+    EnumerableQueueUpgradeable.KappaQueue private rateLimitedQueue;
     // Bridge Address
     address public BRIDGE_ADDRESS;
 
@@ -177,47 +177,48 @@ contract RateLimiter is
         external
         onlyRole(BRIDGE_ROLE)
     {
-        rateLimited.set(kappa, toRetry);
+        rateLimitedQueue.add(kappa, toRetry);
     }
 
     function retryByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
-        (bytes memory toRetry, ) = rateLimited.get(kappa);
-        (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(toRetry);
-        require(
-            success,
-            Strings.append("could not call bridge:", _getRevertMsg(returnData))
-        );
-        rateLimited.remove(kappa);
+        (bytes memory toRetry, ) = rateLimitedQueue.get(kappa);
+        if (toRetry.length > 0) {
+            _retry(kappa, toRetry);
+            rateLimitedQueue.deleteKey(kappa);
+        }
     }
 
     function retryCount(uint8 count) external onlyRole(LIMITER_ROLE) {
         // no issues casting to uint8 here. If length is greater then 255, min is always taken
         uint8 attempts = uint8(
-            MathUpgradeable.min(uint256(count), rateLimited.length())
+            MathUpgradeable.min(uint256(count), rateLimitedQueue.length())
         );
 
         for (uint8 i = 0; i < attempts; i++) {
             // check out the first element
-            (bytes32 kappa, bytes memory toRetry, ) = rateLimited.at(0);
-            (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(
-                toRetry
-            );
-            require(
-                success,
-                Strings.append(
-                    "could not call bridge for kappa: ",
-                    Strings.toHex(kappa),
-                    " reverted with: ",
-                    _getRevertMsg(returnData)
-                )
-            );
+            (bytes32 kappa, bytes memory toRetry, ) = rateLimitedQueue.poll();
 
-            rateLimited.remove(kappa);
+            if (toRetry.length > 0) {
+                _retry(kappa, toRetry);
+            }
         }
     }
 
+    function _retry(bytes32 kappa, bytes memory toRetry) internal {
+        (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(toRetry);
+        require(
+            success,
+            Strings.append(
+                "could not call bridge for kappa: ",
+                Strings.toHex(kappa),
+                " reverted with: ",
+                _getRevertMsg(returnData)
+            )
+        );
+    }
+
     function deleteByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
-        rateLimited.remove(kappa);
+        rateLimitedQueue.deleteKey(kappa);
     }
 
     /**

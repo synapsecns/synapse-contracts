@@ -208,28 +208,31 @@ describe("SynapseBridgeETH", async () => {
   it("RetryCount: should be able to clear the Retry Queue", async () => {
     const allowanceAmount = getBigNumber(100)
     const amount = allowanceAmount.add(1)
-    const kappas = [
-      keccak256(randomBytes(32)),
-      keccak256(randomBytes(32)),
-      keccak256(randomBytes(32)),
-      keccak256(randomBytes(32)),
-    ]
-
     await setupAllowanceTest(SYN, allowanceAmount)
 
-    for (let kappa of kappas) {
-      await bridge
-        .connect(nodeGroup)
-        .mint(await recipient.getAddress(), SYN, amount, 0, kappa)
+    // Should be able to fully clear twice
+    for (let i = 0; i <= 1; ++i) {
+      const kappas = [
+        keccak256(randomBytes(32)),
+        keccak256(randomBytes(32)),
+        keccak256(randomBytes(32)),
+        keccak256(randomBytes(32)),
+      ]
 
-      // This should BE rate limited
-      expect(await bridge.kappaExists(kappa)).to.be.false
-    }
+      for (let kappa of kappas) {
+        await bridge
+          .connect(nodeGroup)
+          .mint(await recipient.getAddress(), SYN, amount, 0, kappa)
 
-    await rateLimiter.retryCount(kappas.length)
+        // This should BE rate limited
+        expect(await bridge.kappaExists(kappa)).to.be.false
+      }
 
-    for (let kappa of kappas) {
-      expect(await bridge.kappaExists(kappa)).to.be.true
+      await rateLimiter.retryCount(kappas.length)
+
+      for (let kappa of kappas) {
+        expect(await bridge.kappaExists(kappa)).to.be.true
+      }
     }
   })
 
