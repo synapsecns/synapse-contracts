@@ -17,7 +17,7 @@ contract MessageBusSender is Ownable {
         uint256 srcChainID,
         bytes32 receiver,
         uint256 indexed dstChainId,
-        bytes messages,
+        bytes message,
         bytes options,
         uint256 fee
     );
