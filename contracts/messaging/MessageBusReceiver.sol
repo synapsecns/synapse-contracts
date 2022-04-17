@@ -20,6 +20,7 @@ contract MessageBusReceiver is Ownable {
     // Store all successfully executed messages
     mapping(bytes32 => TxStatus) public executedMessages;
 
+    // TODO: Rename to follow one standard convention -> Send -> Receive?
     event Executed(
         bytes32 msgId,
         TxStatus status,
@@ -108,7 +109,9 @@ contract MessageBusReceiver is Ownable {
                 msg.sender
             )
         returns (ISynMessagingReceiver.MsgExecutionStatus execStatus) {
-            if (execStatus == ISynMessagingReceiver.MsgExecutionStatus.Success) {
+            if (
+                execStatus == ISynMessagingReceiver.MsgExecutionStatus.Success
+            ) {
                 status = TxStatus.Success;
                 // TODO This state is not fully managed yet
             } else if (

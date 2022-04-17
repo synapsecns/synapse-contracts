@@ -37,6 +37,15 @@ interface IMessageBus {
         bytes calldata _message
     ) external;
 
+
+    /**
+     * @notice Returns srcGasToken fee to charge in wei for the cross-chain message based on the gas limit
+     * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits. Contains data on gas limit to submit tx with.
+     */
+    function estimateFee(uint256 _dstChainId, bytes calldata _options)
+        external
+        returns (uint256);
+
     /**
      * @notice Withdraws message fee in the form of native gas token.
      * @param _account The address receiving the fee.
@@ -44,5 +53,7 @@ interface IMessageBus {
     function withdrawFee(
         address _account
     ) external;
+
+
 
 }
