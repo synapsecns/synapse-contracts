@@ -50,6 +50,19 @@ contract EndpointReceiverTest is Test {
         endpointReceiver.updateMessageStatus(messageId, EndpointReceiver.TxStatus.Success);
     }
 
+    // Authorized actor can update AuthVerifeir library, and it sets correctly
+    function testAuthorizedUpdateAuthVerifier() public {
+        endpointReceiver.updateAuthVerifier(address(1));
+        assertEq(endpointReceiver.authVerifier(), address(1));
+    }
+
+    function testUnauthorizedUpdateAuthVerifier() public {
+        vm.prank(address(9999));
+        vm.expectRevert("Ownable: caller is not the owner");
+        endpointReceiver.updateAuthVerifier(address(1));
+    }
+
+
     function testUnauthorizedMessageSender() public {
         uint256 srcChainId = 1; 
         bytes32 srcAddress = addressToBytes32(address(1338));
@@ -58,11 +71,8 @@ contract EndpointReceiverTest is Test {
         bytes memory message = bytes("");
         bytes32 messageId = testComputeMessageId();
 
-        vm.prank(address(1337));
-        // vm.expectRevert("Unauthenticated caller");
+        vm.prank(address(999));
+        vm.expectRevert("Unauthenticated caller");
         endpointReceiver.executeMessage(srcChainId, srcAddress, dstAddress, 200000, nonce, message, messageId);
-
-        // vm.expectCall(address(authVerifier), abi.encodeCall(authVerifier.msgAuth, (abi.encode(address(1337)))));
-
     }
 }
