@@ -163,7 +163,7 @@ contract RateLimiter is
         );
 
         // do not proceed. Store the transaction for later
-        if (newSpent >= allowance.amount) {
+        if (newSpent > allowance.amount) {
             return false;
         }
 
