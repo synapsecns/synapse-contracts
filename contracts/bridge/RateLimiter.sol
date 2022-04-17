@@ -156,12 +156,6 @@ contract RateLimiter is
         // @dev reverts if amount > (2^96 - 1)
         uint96 newSpent = allowance.spent + uint96(amount);
 
-        // Check overflow
-        require(
-            newSpent > allowance.spent,
-            "overflow detected: newSpent > allowance.spent"
-        );
-
         // do not proceed. Store the transaction for later
         if (newSpent > allowance.amount) {
             return false;
