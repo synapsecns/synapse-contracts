@@ -146,7 +146,7 @@ library EnumerableQueueUpgradeable {
      */
     function length(KappaQueue storage queue) internal view returns (uint256) {
         // This never underflows
-        return queue._head - queue._tail;
+        return queue._tail - queue._head;
     }
 
     /**
@@ -160,9 +160,10 @@ library EnumerableQueueUpgradeable {
     function peek(KappaQueue storage queue)
         internal
         view
-        returns (bytes memory value, uint32 storedAtMin)
+        returns (bytes32 key, bytes memory value, uint32 storedAtMin)
     {
-        (value, storedAtMin) = get(queue, queue._keys[queue._head]);
+        key = queue._keys[queue._head];
+        (value, storedAtMin) = get(queue, key);
     }
 
     /**
