@@ -36,7 +36,6 @@ contract PingPong is ISynMessagingReceiver {
         bytes memory message = abi.encode(pings);
 
         // this will have to be changed soon (WIP, options disabled)
-
         uint256 fee = messageBus.estimateFee(_dstChainId, bytes(""));
         require(address(this).balance >= fee, "not enough gas for fees");
 
@@ -70,7 +69,7 @@ contract PingPong is ISynMessagingReceiver {
         numPings = pings;
 
         ping(_srcChainId, fromAddress, pings);
-        return ISynMessagingReceiver.MsgExecutionStatus.Success;
+        // return ISynMessagingReceiver.MsgExecutionStatus.Success;
     }
 
     // allow this contract to receive ether

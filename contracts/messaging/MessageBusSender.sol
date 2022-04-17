@@ -7,7 +7,7 @@ import "./interfaces/IGasFeePricing.sol";
 
 contract MessageBusSender is Ownable {
     address public gasFeePricing;
-    uint256 public nonce;
+    uint64 public nonce;
 
     constructor(address _gasFeePricing) {
         gasFeePricing = _gasFeePricing;
@@ -19,7 +19,7 @@ contract MessageBusSender is Ownable {
         bytes32 receiver,
         uint256 indexed dstChainId,
         bytes message,
-        uint256 indexed nonce,
+        uint64 indexed nonce,
         bytes options,
         uint256 fee
     );
