@@ -26,7 +26,10 @@ contract EndpointSender is Ownable {
         public
         returns (uint256)
     {
-        uint256 fee = IGasFeePricing(gasFeePricing).estimateGasFee(_dstChainId, _options);
+        uint256 fee = IGasFeePricing(gasFeePricing).estimateGasFee(
+            _dstChainId,
+            _options
+        );
         require(fee != 0, "Fee not set");
         return fee;
     }
