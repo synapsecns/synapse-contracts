@@ -6,8 +6,6 @@ import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import "./interfaces/IAuthVerifier.sol";
 import "./interfaces/IMessageReceiverApp.sol";
 
-import "forge-std/Test.sol";
-
 contract EndpointReceiver is Ownable {
     address public authVerifier;
 
@@ -102,42 +100,14 @@ contract EndpointReceiver is Ownable {
         // executedMessages[messageId] = TxStatus.Pending;
 
         TxStatus status;
-        console.log("Getting to here");
-        // try
-        //     IMessageReceiverApp(_dstAddress).executeMessage{gas: _gasLimit}(_srcAddress, _srcChainId, _message, msg.sender) returns (IMessageReceiverApp.MsgExecutionStatus execStatus) {
-        //     if (execStatus == IMessageReceiverApp.MsgExecutionStatus.Success) {
-        //         status = TxStatus.Success;
-        //     // TODO This state is not fully managed yet
-        //     } else if (execStatus == IMessageReceiverApp.MsgExecutionStatus.Retry) {
-        //          // handle permissionless retries or delete and only allow Success / Revert
-        //         executedMessages[messageId] = TxStatus.Null;
-        //         emit NeedRetry(messageId, uint64(_srcChainId), uint64(_nonce));
-        //     }
-        // } catch (
-        //     bytes memory reason
-        // ) {
-        //     // call hard reverted & failed
-        //     emit CallReverted(getRevertMsg(reason));
-        //     status = TxStatus.Fail;
-        // }
-
-        (bool ok, bytes memory reason) = address(_dstAddress).call{
-            gas: _gasLimit
-        }(
-            abi.encodeWithSelector(
-                IMessageReceiverApp.executeMessage.selector,
+        try
+            IMessageReceiverApp(_dstAddress).executeMessage{gas: _gasLimit}(
                 _srcAddress,
                 _srcChainId,
                 _message,
                 msg.sender
             )
-        );
-        if (ok) {
-            console.log(reason.length);
-            IMessageReceiverApp.MsgExecutionStatus execStatus = abi.decode(
-                (reason),
-                (IMessageReceiverApp.MsgExecutionStatus)
-            );
+        returns (IMessageReceiverApp.MsgExecutionStatus execStatus) {
             if (execStatus == IMessageReceiverApp.MsgExecutionStatus.Success) {
                 status = TxStatus.Success;
                 // TODO This state is not fully managed yet
@@ -148,7 +118,8 @@ contract EndpointReceiver is Ownable {
                 executedMessages[messageId] = TxStatus.Null;
                 emit NeedRetry(messageId, uint64(_srcChainId), uint64(_nonce));
             }
-        } else {
+        } catch (bytes memory reason) {
+            // call hard reverted & failed
             emit CallReverted(getRevertMsg(reason));
             status = TxStatus.Fail;
         }
@@ -187,5 +158,10 @@ contract EndpointReceiver is Ownable {
         onlyOwner
     {
         executedMessages[_messageId] = _status;
+    }
+
+    function updateAuthVerifier(address _authVerifier) public onlyOwner {
+        require(_authVerifier != address(0), "Cannot set to 0");
+        authVerifier = _authVerifier;
     }
 }
