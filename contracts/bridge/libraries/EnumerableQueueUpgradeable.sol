@@ -92,8 +92,8 @@ library EnumerableQueueUpgradeable {
     /**
      * @notice Returns data for N-th element of the Queue:
      * key, value and the time it was stored.
-     *
-     * Will return zero values, if `index >= queue.length()`.
+     * @dev All return variables will be zero, if `index >= queue.length()`.
+     * `value` will be zero, if `deleteKey(key)` was called previously.
      */
     function at(KappaQueue storage queue, uint256 index)
         internal
@@ -116,7 +116,18 @@ library EnumerableQueueUpgradeable {
         view
         returns (bool)
     {
-        return queue._data[key].toRetry.length > 0;
+        return queue._data[key].storedAtMin != 0;
+    }
+
+    /**
+     * @notice Delete key from the Queue.
+     * @dev For gas efficiency we don't use the double-linked queue implementation,
+     * allowing to remove an arbitrary element. All we're doing is setting
+     * the stored value for the given key to zero.
+     * It means, that one should check value obtained by `get(key)` before using it.
+     */
+    function deleteKey(KappaQueue storage queue, bytes32 key) internal {
+        queue._data[key].toRetry = bytes("");
     }
 
     /**
@@ -127,18 +138,19 @@ library EnumerableQueueUpgradeable {
     }
 
     /**
-     * @notice Gets data associated with the given `key`:
-     * value and the time it was stored.
-     *
-     * Will return zero values for `key` that is not the Queue.
+     * @notice Gets data associated with the given `key`: value and the time it was stored.
+     * @dev All return variables will be zero, if `key` is not added to the Queue.
+     * `value` will be zero, if `deleteKey(key)` was called previously.
      */
     function get(KappaQueue storage queue, bytes32 key)
         internal
         view
         returns (bytes memory value, uint32 storedAtMin)
     {
-        RetryableTx memory data = queue._data[key];
-        (value, storedAtMin) = (data.toRetry, data.storedAtMin);
+        (value, storedAtMin) = (
+            queue._data[key].toRetry,
+            queue._data[key].storedAtMin
+        );
     }
 
     /**
@@ -150,39 +162,49 @@ library EnumerableQueueUpgradeable {
     }
 
     /**
-     * @notice Returns the head of Queue, without removing it:
-     * value and the time it was stored. 
-     
-     * Will return zero values, if Queue is empty.
-     * 
-     * Head is always the element that has been added first.
+     * @notice Returns data for the first (head) element from
+     * the Queue, without removing it.
+     * Data: key, value and the time it was stored.
+     * @dev All return variables will be zero, Queue is empty.
+     * `value` will be zero, if `deleteKey(key)` was called previously.
      */
     function peek(KappaQueue storage queue)
         internal
         view
-        returns (bytes32 key, bytes memory value, uint32 storedAtMin)
+        returns (
+            bytes32 key,
+            bytes memory value,
+            uint32 storedAtMin
+        )
     {
         key = queue._keys[queue._head];
         (value, storedAtMin) = get(queue, key);
     }
 
     /**
-     * @notice Removes the first (head) element from the Queue.
-     *
-     * Returns true, only if element was deleted.
-     * Returns false, if Queue was empty.
+     * @notice Returns data for the first (head) element from
+     * the Queue and removes the element from Queue.
+     * Data: key, value and the time it was stored.
+     * @dev All return variables will be zero, Queue is empty.
+     * `value` will be zero, if `deleteKey(key)` was called previously.
      */
-    function poll(KappaQueue storage queue) internal returns (bool) {
+    function poll(KappaQueue storage queue)
+        internal
+        returns (
+            bytes32 key,
+            bytes memory value,
+            uint32 storedAtMin
+        )
+    {
         uint256 head = queue._head;
         uint256 tail = queue._tail;
         if (head != tail) {
-            bytes32 headKey = queue._keys[head];
+            key = queue._keys[head];
+            (value, storedAtMin) = get(queue, key);
 
             queue._head++;
             delete queue._keys[head];
-            delete queue._data[headKey];
-            return true;
+            delete queue._data[key];
         }
-        return false;
     }
 }
