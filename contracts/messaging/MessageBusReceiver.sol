@@ -111,10 +111,8 @@ contract MessageBusReceiver is Ownable, Test {
                 msg.sender
             )
         returns (ISynMessagingReceiver.MsgExecutionStatus execStatus) {
-            // TODO: This state is not fully managed yet - May not even need return variables. 
-            if (
-                execStatus == ISynMessagingReceiver.MsgExecutionStatus.Retry
-            ) {
+            // TODO: This state is not fully managed yet - May not even need return variables.
+            if (execStatus == ISynMessagingReceiver.MsgExecutionStatus.Retry) {
                 // handle permissionless retries or delete and only allow Success / Revert
                 executedMessages[messageId] = TxStatus.Null;
                 emit NeedRetry(messageId, uint64(_srcChainId), uint64(_nonce));

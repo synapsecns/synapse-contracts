@@ -70,7 +70,7 @@ contract PingPong is ISynMessagingReceiver {
         numPings = pings;
 
         ping(_srcChainId, fromAddress, pings);
-        // return ISynMessagingReceiver.MsgExecutionStatus.Success;
+        return ISynMessagingReceiver.MsgExecutionStatus.Success;
     }
 
     // allow this contract to receive ether
