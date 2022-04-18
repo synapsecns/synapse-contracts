@@ -4,10 +4,15 @@ import { solidity } from "ethereum-waffle"
 import { deployments, ethers } from "hardhat"
 
 import chai from "chai"
-import { GenericERC20, RateLimiter, SynapseBridge } from "../../build/typechain"
+import {
+  GenericERC20,
+  RateLimiter,
+  SynapseBridge,
+  SynapseERC20,
+} from "../../build/typechain"
 import { keccak256 } from "ethers/lib/utils"
 import { randomBytes } from "crypto"
-import { forkChain, MAX_UINT256 } from "../utils"
+import { forkChain, impersonateAccount, MAX_UINT256 } from "../utils"
 import { deployRateLimiter, setupForkedBridge } from "./utilities/bridge"
 import { advanceTime, getBigNumber } from "./utilities"
 
@@ -293,6 +298,57 @@ describe("SynapseBridgeETH", async () => {
     await rateLimiter.connect(deployer).retryByKappa(kappa)
     // Timeout finished, should be good to go
     expect(await bridge.kappaExists(kappa)).to.be.true
+  })
+
+  it("Failed retried txs are saved for later use", async () => {
+    let syn = (await ethers.getContractAt("SynapseERC20", SYN)) as SynapseERC20
+    const adminAddress = await syn.getRoleMember(
+      await syn.DEFAULT_ADMIN_ROLE(),
+      0,
+    )
+    const admin = await impersonateAccount(adminAddress)
+    syn = syn.connect(admin)
+
+    const allowanceAmount = getBigNumber(100)
+    const amount = allowanceAmount.add(1)
+
+    await setupAllowanceTest(SYN, allowanceAmount)
+    await setupAllowanceTest(NUSD, allowanceAmount)
+
+    const kappas = [
+      keccak256(randomBytes(32)),
+      keccak256(randomBytes(32)),
+      keccak256(randomBytes(32)),
+    ]
+
+    // [withdraw NUSD, mint SYN, withdraw NUSD]
+    for (let index in kappas) {
+      const kappa = kappas[index]
+      if (index === "1") {
+        await bridge
+          .connect(nodeGroup)
+          .mint(await recipient.getAddress(), SYN, amount, 0, kappa)
+      } else {
+        await bridge
+          .connect(nodeGroup)
+          .withdraw(await recipient.getAddress(), NUSD, amount, 0, kappa)
+      }
+      // This should BE rate limited
+      expect(await bridge.kappaExists(kappa)).to.be.false
+    }
+
+    // Minting SYN is not possible => minting tx will fail on retry
+    await syn.revokeRole(await syn.MINTER_ROLE(), bridge.address)
+
+    await rateLimiter.retryCount(kappas.length)
+    expect(await bridge.kappaExists(kappas[0])).to.be.true
+    expect(await bridge.kappaExists(kappas[1])).to.be.false
+    expect(await bridge.kappaExists(kappas[2])).to.be.true
+
+    await syn.grantRole(await syn.MINTER_ROLE(), bridge.address)
+
+    await rateLimiter.retryByKappa(kappas[1])
+    expect(await bridge.kappaExists(kappas[1])).to.be.true
   })
 
   // check permissions

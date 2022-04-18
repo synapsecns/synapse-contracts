@@ -207,6 +207,10 @@ contract RateLimiter is
             }
             _retry(kappa, toRetry);
             rateLimitedQueue.deleteKey(kappa);
+        } else {
+            // Try looking up in the failed txs:
+            // anyone should be able to do so, with no timeout
+            _retryFailed(kappa);
         }
     }
 
@@ -226,7 +230,7 @@ contract RateLimiter is
         }
     }
 
-    function retryFailed(bytes32 kappa) external {
+    function _retryFailed(bytes32 kappa) internal {
         bytes memory toRetry = failedRetries[kappa];
         if (toRetry.length > 0) {
             (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(
@@ -241,8 +245,8 @@ contract RateLimiter is
                     _getRevertMsg(returnData)
                 )
             );
+            failedRetries[kappa] = bytes("");
         }
-        failedRetries[kappa] = bytes("");
     }
 
     function _retry(bytes32 kappa, bytes memory toRetry) internal {
