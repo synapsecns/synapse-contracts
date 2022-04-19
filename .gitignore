@@ -6,6 +6,8 @@ node_modules/*
 /dist
 .idea/*
 .eslintcache
+/out
+/lib
 
 ### macOS ###
 # General
