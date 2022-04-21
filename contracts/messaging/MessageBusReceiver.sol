@@ -14,8 +14,7 @@ contract MessageBusReceiver is Ownable, Test {
         Null,
         Success,
         Fail,
-        Fallback,
-        Pending
+        Retry
     }
 
     // Store all successfully executed messages
