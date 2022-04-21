@@ -14,7 +14,7 @@ contract AuthVerifier is Ownable {
     /**
      * @notice Authentication library to allow the validator network to execute cross-chain messages.
      * @param _authData A bytes32 address encoded via abi.encode(address)
-     * @return authenticated returns true if bytes data submitted and decoded to the address is correct
+     * @return authenticated returns true if bytes data submitted and decoded to the address is correct. Reverts if check fails.
      */
     function msgAuth(bytes calldata _authData)
         external
