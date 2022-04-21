@@ -18,7 +18,7 @@ contract MessageBusReceiver is Ownable, Test {
     }
 
     // Store all successfully executed messages
-    mapping(bytes32 => TxStatus) public executedMessages;
+    mapping(bytes32 => TxStatus) executedMessages;
 
     // TODO: Rename to follow one standard convention -> Send -> Receive?
     event Executed(
@@ -56,7 +56,7 @@ contract MessageBusReceiver is Ownable, Test {
     }
 
     function getExecutedMessage(bytes32 _messageId)
-        public
+        external
         view
         returns (TxStatus)
     {

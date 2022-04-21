@@ -8,7 +8,8 @@ import "./interfaces/IGasFeePricing.sol";
 contract MessageBusSender is Ownable {
     address public gasFeePricing;
     uint64 public nonce;
-
+    uint256 internal fees;
+    
     constructor(address _gasFeePricing) {
         gasFeePricing = _gasFeePricing;
     }
@@ -53,7 +54,6 @@ contract MessageBusSender is Ownable {
         require(_dstChainId != block.chainid, "Invalid chainId");
         uint256 fee = estimateFee(_dstChainId, _options);
         require(msg.value >= fee, "Insuffient gas fee");
-        ++nonce;
         emit MessageSent(
             msg.sender,
             block.chainid,
@@ -62,7 +62,19 @@ contract MessageBusSender is Ownable {
             _message,
             nonce,
             _options,
-            fee
+            msg.value
         );
+        fees += msg.value;
+        ++nonce;
+    }
+
+    /**
+     * @notice Withdraws accumulated fees in native gas token, based on fees variable.
+     * @param to Address to withdraw gas fees to, which can be specified in the event owner() can't receive native gas
+     */
+    function withdrawGasFees(address payable to) external onlyOwner {
+        to.call{value: fees}("");
+        // Reset fees to 0
+        delete fees;
     }
 }
