@@ -30,7 +30,7 @@ abstract contract SynMessagingReceiver is ISynMessagingReceiver, Ownable {
         uint256 _srcChainId,
         bytes calldata _message,
         address _executor
-    ) external override returns (MsgExecutionStatus) {
+    ) external returns (MsgExecutionStatus) {
         // Must be called by the MessageBus/MessageBus for security
         require(msg.sender == messageBus, "caller is not message bus");
         // Must also be from a trusted source app
