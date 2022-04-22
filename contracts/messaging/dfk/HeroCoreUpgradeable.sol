@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
-import "@openzeppelin/contracts-upgradeable-4.5/token/ERC721/ERC721Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable-4.5/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable-4.5/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable-4.5/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/access/AccessControlUpgradeable.sol";
 import "./IStatScienceUpgradeable.sol";
 import {HeroStatus} from "./types/HeroTypes.sol";
 /// @title Core contract for Heroes.
