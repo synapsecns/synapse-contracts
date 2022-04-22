@@ -56,10 +56,12 @@ describe("Bridge Config V3", () => {
     it("should set max gas price for multiple chains", async () => {
       const mainnetGasPrice = BigNumber.from(10 ** 9)
 
-      expect(bridgeConfigV3.setMaxGasPrice(CHAIN_ID.BSC, bscGasPrice)).to.be.not
-        .reverted
-      expect(bridgeConfigV3.setMaxGasPrice(CHAIN_ID.MAINNET, mainnetGasPrice))
-        .to.be.not.reverted
+      await expect(bridgeConfigV3.setMaxGasPrice(CHAIN_ID.BSC, bscGasPrice)).to
+        .be.not.reverted
+
+      await expect(
+        bridgeConfigV3.setMaxGasPrice(CHAIN_ID.MAINNET, mainnetGasPrice),
+      ).to.be.not.reverted
 
       expect(await bridgeConfigV3.getMaxGasPrice(CHAIN_ID.BSC)).to.be.eq(
         bscGasPrice,
@@ -362,7 +364,7 @@ describe("Bridge Config V3", () => {
       testToken.minSwapFee = BigNumber.from("1000000000000000000")
       testToken.maxSwapFee = BigNumber.from("10000000000000000000")
 
-      expect(
+      await expect(
         bridgeConfigV3[
           "setTokenConfig(string,uint256,string,uint8,uint256,uint256,uint256,uint256,uint256,bool,bool)"
         ](
