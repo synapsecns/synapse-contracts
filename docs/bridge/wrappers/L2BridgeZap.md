@@ -89,6 +89,28 @@ Wraps SynapseBridge deposit() function to make it compatible w/ ETH -&gt; WETH c
 | chainId | uint256 | which chain to bridge assets onto |
 | amount | uint256 | Amount in native token decimals to transfer cross-chain pre-fees* |
 
+### depositETHAndSwap
+
+```solidity
+function depositETHAndSwap(address to, uint256 chainId, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline) external payable
+```
+
+Wraps SynapseBridge depositAndSwap() function to make it compatible w/ ETH -&gt; WETH conversions
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| to | address | address on other chain to bridge assets to |
+| chainId | uint256 | which chain to bridge assets onto |
+| amount | uint256 | Amount in native token decimals to transfer cross-chain pre-fees |
+| tokenIndexFrom | uint8 | the token the user wants to swap from |
+| tokenIndexTo | uint8 | the token the user wants to swap to |
+| minDy | uint256 | the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain. |
+| deadline | uint256 | latest timestamp to accept this transaction* |
+
 ### redeem
 
 ```solidity
