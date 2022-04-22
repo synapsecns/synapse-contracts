@@ -17,6 +17,14 @@ contract HeroBridge is SynMessagingReceiver {
         heroes = _heroes;
     }
 
+    function _createMessage(uint256 _heroId) internal {
+        // create the message here from the nested struct
+    }
+
+    function _decodeMessage(bytes calldata _message) internal {
+
+    }
+
     /** 
      * @notice User must have an existing hero minted to bridge it. 
      * @param heroId specifics which hero msg.sender already holds and will transfer to the bridge contract
@@ -25,24 +33,41 @@ contract HeroBridge is SynMessagingReceiver {
      * @param _message The arbitrary payload to pass to the destination chain receiver
      * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits
      */
-    function sendHero(uint256 heroId, bytes32 _receiver, uint256 _dstChainId, bytes calldata _message, bytes calldata _options) external {
-        // Transfer Hero IHeroCoreUpgradeable(heroes).safeTransferFrom(msg.sender, address(this), heroId);
+    function sendHero(uint256 _heroId, uint256 _dstChainId) external payable {
+        // What all to create the message with
+        Hero memory heroToBridge = IHeroCoreUpgradeable(heroes).getHero(_heroId);
+        address dstUserAddress = msg.sender;
+        uint256 dstHeroId = _heroId;
+        bytes32 receiver = trustedRemoteLookup[_dstChainId];
+
+        // Create _options
+        // Insert logic here 
+
+        IHeroCoreUpgradeable(heroes).safeTransferFrom(msg.sender, address(this), _heroId);
         // Hero now locked, message can be safely emitted
+
         // _send(_receiver, _dstChainId, _message, _options);
     }
 
     // Function called by executeMessage() - handleMessage will handle the hero bridge mint 
+    // executeMessage() handles permissioning checks
     function _handleMessage(bytes32 _srcAddress,
         uint256 _srcChainId,
         bytes calldata _message,
         address _executor) internal override returns (MsgExecutionStatus) {
             // Decode _message, depending on exactly how the originating message is structured
+            /** 
+            Message data: 
+                Hero memory heroToBridge = IHeroCoreUpgradeable(heroes).getHero(_heroId);
+                address dstUserAddress = msg.sender;
+                uint256 dstHeroId = _heroId;
+                bytes32 receiver = trustedRemoteLookup[_dstChainId];
+             */
 
             /** 
              If hero ID doesn't exist: 
-             1. Mint a hero with most recent atttributes from the message, and the correct hero ID
-             2. Transfer the newly minted hero to msg.dstUserAddress
-             3. Tx completed, return Success
+             1. Mint a hero to msg.dstUserAddress with most recent attributes from the message, and the correct hero ID
+             2. Tx completed, return Success
              */
 
 
