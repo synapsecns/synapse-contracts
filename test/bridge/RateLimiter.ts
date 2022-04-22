@@ -5,7 +5,6 @@ import { BigNumber, BigNumberish, Signer } from "ethers"
 import { getCurrentBlockTimestamp } from "./testUtils"
 import { RateLimiter } from "../../build/typechain/RateLimiter"
 import { GenericERC20, RateLimiterTest } from "../../build/typechain"
-import epochSeconds from "@stdlib/time-now"
 
 chai.use(solidity)
 const { expect, assert } = chai
