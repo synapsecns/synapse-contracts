@@ -62,4 +62,4 @@ jobs:
           version: nightly
 
       - name: Run tests
-        run: forge test -vvv
+        run: ./scripts/foundry.sh
