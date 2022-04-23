@@ -42,9 +42,6 @@ jobs:
       - name: build
         run: npm run build
 
-#      - name: Setup tmate session
-#        uses: mxschmitt/action-tmate@v3
-
       - name: run test:coverage
         run: npm run test:coverage
 
