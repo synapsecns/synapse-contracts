@@ -54,11 +54,11 @@ library EnumerableQueueUpgradeable {
         /// @dev Data map for each key.
         mapping(bytes32 => RetryableTx) _data;
         /// @dev Index of the first Queue key.
-        uint256 _head;
+        uint128 _head;
         /// @dev Index following the last Queue key, i.e.
         /// index, where newly added key would reside.
         /// _head == _tail => Queue is empty
-        uint256 _tail;
+        uint128 _tail;
     }
 
     /**
@@ -77,14 +77,13 @@ library EnumerableQueueUpgradeable {
             return false;
         }
 
-        uint256 toInsert = queue._tail;
-
-        queue._tail++;
-        queue._keys[toInsert] = key;
+        queue._keys[queue._tail] = key;
         queue._data[key] = RetryableTx({
             storedAtMin: uint32(block.timestamp / 60),
             toRetry: value
         });
+
+        ++queue._tail;
 
         return true;
     }
@@ -196,15 +195,20 @@ library EnumerableQueueUpgradeable {
             uint32 storedAtMin
         )
     {
-        uint256 head = queue._head;
-        uint256 tail = queue._tail;
+        (uint256 head, uint256 tail) = (queue._head, queue._tail);
         if (head != tail) {
             key = queue._keys[head];
             (value, storedAtMin) = get(queue, key);
 
-            queue._head++;
             delete queue._keys[head];
             delete queue._data[key];
+
+            ++head;
+            if (head == tail) {
+                (queue._head, queue._tail) = (0, 0);
+            } else {
+                queue._head = uint128(head);
+            }
         }
     }
 }
