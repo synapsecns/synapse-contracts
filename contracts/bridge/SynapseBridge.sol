@@ -44,6 +44,7 @@ contract SynapseBridge is
 
     // rate limiter
     IRateLimiter public rateLimiter;
+    bool rateLimiterEnabled;
 
     // new role
 
@@ -68,8 +69,13 @@ contract SynapseBridge is
     }
 
     function setRateLimiter(IRateLimiter _rateLimiter) external {
-        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
+        require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
         rateLimiter = _rateLimiter;
+    }
+
+    function setRateLimiterEnabled(bool enabled) external {
+        require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+        rateLimiterEnabled = enabled;
     }
 
     function addKappas(bytes32[] calldata kappas) external {
@@ -212,7 +218,7 @@ contract SynapseBridge is
         internal
         returns (bool)
     {
-        if (address(rateLimiter) == address(0)) {
+        if (!rateLimiterEnabled || address(rateLimiter) == address(0)) {
             return false;
         }
 
