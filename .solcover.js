@@ -2,7 +2,7 @@
 // this does not work as .solcover.ts
 module.exports = {
     norpc: true,
-    skipFiles: ["mocks/", "interfaces/", "MultisigWallet/", "auxiliary/", "testing/"],
+    skipFiles: ["mocks/", "interfaces/", "MultisigWallet/", "auxiliary/", "testing/", "*.t.sol"],
     // see: https://github.com/sc-forks/solidity-coverage/blob/57319fae7e021cbe0f9a818100563f68b1fe6739/docs/faq.md
     configureYulOptimizer: true
 }
