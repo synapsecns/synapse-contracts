@@ -196,6 +196,51 @@ Wraps SynapseBridge redeem() function
 | token | contract IERC20 | ERC20 compatible token to redeem into the bridge |
 | amount | uint256 | Amount in native token decimals to transfer cross-chain pre-fees* |
 
+### redeemAndRemove
+
+```solidity
+function redeemAndRemove(address to, uint256 chainId, contract IERC20 token, uint256 amount, uint8 liqTokenIndex, uint256 liqMinAmount, uint256 liqDeadline) external nonpayable
+```
+
+Wraps redeemAndRemove on SynapseBridge Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| to | address | address on other chain to redeem underlying assets to |
+| chainId | uint256 | which underlying chain to bridge assets onto |
+| token | contract IERC20 | ERC20 compatible token to deposit into the bridge |
+| amount | uint256 | Amount of (typically) LP token to pass to the nodes to attempt to removeLiquidity() with to redeem for the underlying assets of the LP token |
+| liqTokenIndex | uint8 | Specifies which of the underlying LP assets the nodes should attempt to redeem for |
+| liqMinAmount | uint256 | Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap |
+| liqDeadline | uint256 | Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token* |
+
+### redeemAndSwap
+
+```solidity
+function redeemAndSwap(address to, uint256 chainId, contract IERC20 token, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline) external nonpayable
+```
+
+Wraps redeemAndSwap on SynapseBridge.sol Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| to | address | address on other chain to redeem underlying assets to |
+| chainId | uint256 | which underlying chain to bridge assets onto |
+| token | contract IERC20 | ERC20 compatible token to deposit into the bridge |
+| amount | uint256 | Amount in native token decimals to transfer cross-chain pre-fees |
+| tokenIndexFrom | uint8 | the token the user wants to swap from |
+| tokenIndexTo | uint8 | the token the user wants to swap to |
+| minDy | uint256 | the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain. |
+| deadline | uint256 | latest timestamp to accept this transaction* |
+
 ### redeemv2
 
 ```solidity
