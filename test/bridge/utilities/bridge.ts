@@ -53,7 +53,14 @@ export async function setupForkedBridge(rateLimiter: RateLimiter, bridgeAddress:
         .connect(deployer)
         .grantRole(rateLimiterRole, rateLimiter.address)
 
+    // grant governance role so rate limiter can be set
+    const governanceRole = await bridge.GOVERNANCE_ROLE()
+    await bridge
+        .connect(deployer)
+        .grantRole(governanceRole, await deployer.getAddress())
+
     await bridge.setRateLimiter(rateLimiter.address)
+    await bridge.setRateLimiterEnabled(true)
 
     const nodeGroupRole = await bridge.NODEGROUP_ROLE()
     await bridge
