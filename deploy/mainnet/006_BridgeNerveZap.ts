@@ -19,6 +19,20 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       gasLimit: 5000000
     })
   }
+
+  if ((await getChainId()) === CHAIN_ID.DFK) {
+    await deploy('L1BridgeZap', {
+      from: deployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+      args: [
+        (await get('WJEWEL')).address,
+        "0x0000000000000000000000000000000000000000",
+        (await get('SynapseBridge')).address,
+      ],
+      gasLimit: 5000000
+    })
+  }
 }
 export default func
 func.tags = ['NerveBridgeZap']

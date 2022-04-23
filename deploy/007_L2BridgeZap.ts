@@ -86,6 +86,23 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     })
   }
 
+  if ((await getChainId()) === CHAIN_ID.DFK) {
+    await deploy("L2BridgeZap", {
+      from: deployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+      args: [
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        (await get("SynapseBridge")).address,
+      ],
+    })
+  }
+
+
   if ((await getChainId()) === CHAIN_ID.METIS) {
     await deploy("L2BridgeZap", {
       from: deployer,
@@ -164,10 +181,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (await get("WETH")).address,
         (await get("ETHPool")).address,
         (await get("nETH")).address,
-        "0x0000000000000000000000000000000000000000",
-        "0x0000000000000000000000000000000000000000",
+        (await get("nUSDPoolV3")).address,
+        (await get("nUSD")).address,
         (await get("SynapseBridge")).address,
       ],
+      gasLimit: 5000000,
     })
   }
 
@@ -184,6 +202,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (await get("nUSD")).address,
         (await get("ETHPool")).address,
         (await get("nETH")).address,
+        (await get("JewelBridgeSwap")).address,
+        (await get("synJEWEL")).address,
+        (await get("BridgedAVAXPool")).address,
+        (await get("AVAX")).address,
         (await get("SynapseBridge")).address,
       ],
     })

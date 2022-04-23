@@ -61,10 +61,10 @@ let config: HardhatUserConfig = {
     },
     avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
-      // gasPrice: 750 * 1000000000,
+      gasPrice: 200 * 1000000000,
     },
     harmony: {
-      url: "https://harmony-0-rpc.gateway.pokt.network/",
+      url: "https://a.api.s0.t.hmny.io/",
     },
     boba: {
       url: "https://mainnet.boba.network",
@@ -81,6 +81,9 @@ let config: HardhatUserConfig = {
     },
     metis: {
       url: 'https://andromeda.metis.io/?owner=1088',
+    },
+    dfk: {
+      url: 'https://subnets.avax.network/defi-kingdoms/dfk-chain/rpc',
     },
     mainnet: {
       url: process.env.ALCHEMY_API || "https://main-light.eth.linkpool.io/",
@@ -150,6 +153,7 @@ let config: HardhatUserConfig = {
       default: 0, // here this will by default take the first account as deployer
       1: 0, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
       42161: 0,
+      53935: 3
     },
     libraryDeployer: {
       default: 0, // use a different account for deploying libraries on the hardhat network
@@ -189,7 +193,8 @@ if (process.env.PRIVATE_KEYS) {
     "optimism",
     "aurora",
     "cronos",
-    "metis"
+    "metis",
+    "dfk"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
