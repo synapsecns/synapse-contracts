@@ -21,52 +21,42 @@ contract L2BridgeZap {
 
     constructor(
         address payable _wethAddress,
-        address _swapOne,
-        address tokenOne,
-        address _swapTwo,
-        address tokenTwo,
+        address[] memory _swaps,
+        address[] memory _tokens,
         ISynapseBridge _synapseBridge
     ) public {
+        require(_swaps.length == _tokens.length, "Arrays length differs");
         WETH_ADDRESS = _wethAddress;
         synapseBridge = _synapseBridge;
-        swapMap[tokenOne] = _swapOne;
-        swapMap[tokenTwo] = _swapTwo;
         if (_wethAddress != address(0)) {
             IERC20(_wethAddress).safeIncreaseAllowance(
                 address(_synapseBridge),
                 MAX_UINT256
             );
         }
-        if (address(_swapOne) != address(0)) {
-            {
-                uint8 i;
-                for (; i < 32; i++) {
-                    try ISwap(_swapOne).getToken(i) returns (IERC20 token) {
-                        swapTokensMap[_swapOne].push(token);
-                        token.safeApprove(address(_swapOne), MAX_UINT256);
-                        token.safeApprove(address(_synapseBridge), MAX_UINT256);
-                    } catch {
-                        break;
-                    }
-                }
-                require(i > 1, "swap must have at least 2 tokens");
+        for (uint256 i = 0; i < _swaps.length; ++i) {
+            _saveSwap(_swaps[i], _tokens[i], address(_synapseBridge));
+        }
+    }
+
+    function _saveSwap(
+        address _swap,
+        address _token,
+        address _synapseBridge
+    ) internal {
+        swapMap[_token] = _swap;
+
+        uint8 i;
+        for (; i < 32; i++) {
+            try ISwap(_swap).getToken(i) returns (IERC20 token) {
+                swapTokensMap[_swap].push(token);
+                token.safeApprove(address(_swap), MAX_UINT256);
+                token.safeApprove(_synapseBridge, MAX_UINT256);
+            } catch {
+                break;
             }
         }
-        if (address(_swapTwo) != address(0)) {
-            {
-                uint8 i;
-                for (; i < 32; i++) {
-                    try ISwap(_swapTwo).getToken(i) returns (IERC20 token) {
-                        swapTokensMap[_swapTwo].push(token);
-                        token.safeApprove(address(_swapTwo), MAX_UINT256);
-                        token.safeApprove(address(_synapseBridge), MAX_UINT256);
-                    } catch {
-                        break;
-                    }
-                }
-                require(i > 1, "swap must have at least 2 tokens");
-            }
-        }
+        require(i > 1, "swap must have at least 2 tokens");
     }
 
     /**
