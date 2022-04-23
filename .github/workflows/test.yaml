@@ -36,6 +36,10 @@ jobs:
   foundry-test:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
       - name: Cache node modules
         uses: actions/cache@v2
         env:
@@ -51,10 +55,6 @@ jobs:
 
       - name: Installing dependencies
         run: npm install
-
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
