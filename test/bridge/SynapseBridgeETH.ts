@@ -364,7 +364,7 @@ describe("SynapseBridgeETH", async () => {
     ).to.be.revertedWith("Not admin")
   })
 
-  it("SetRateLimiter: should reject non-admin roles", async () => {
+  it("SetRateLimiter: should reject non-governance roles", async () => {
     await expect(
       bridge.connect(attacker).setRateLimiter(rateLimiter.address),
     ).to.be.revertedWith("Not admin")
