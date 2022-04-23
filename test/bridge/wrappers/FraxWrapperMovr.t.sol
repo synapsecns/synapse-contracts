@@ -135,6 +135,7 @@ contract FraxMovrTest is Test {
     }
 
     function testSwapFromFrax(uint256 amount) public {
+        vm.assume(amount > 0);
         vm.assume(amount <= TEST_AMOUNT);
 
         uint256 expected = amount - (amount * SWAP_FEE) / SWAP_DENOMINATOR;
@@ -152,6 +153,7 @@ contract FraxMovrTest is Test {
     }
 
     function testSwapFromSynFrax(uint256 amount) public {
+        vm.assume(amount > 0);
         vm.assume(amount <= TEST_AMOUNT);
 
         uint256 expected = amount - (amount * SWAP_FEE) / SWAP_DENOMINATOR;
@@ -174,7 +176,6 @@ contract FraxMovrTest is Test {
         vm.assume(amount > 0);
         vm.assume(amount <= TEST_AMOUNT);
 
-        console.log(address(zap));
         IERC20(FRAX).approve(address(zap), amount);
 
         vm.expectEmit(true, false, false, true);
