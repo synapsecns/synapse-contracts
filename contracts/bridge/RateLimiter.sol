@@ -6,10 +6,16 @@ import "@openzeppelin/contracts-4.3.1-upgradeable/access/AccessControlUpgradeabl
 import "@openzeppelin/contracts-4.3.1-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-4.3.1-upgradeable/utils/math/MathUpgradeable.sol";
 
-import "./libraries/EnumerableMapUpgradeable.sol";
+import "./libraries/EnumerableQueueUpgradeable.sol";
 import "./interfaces/IRateLimiter.sol";
 import "./libraries/Strings.sol";
 import "hardhat/console.sol";
+
+// solhint-disable not-rely-on-time
+
+interface IBridge {
+    function kappaExists(bytes32 kappa) external view returns (bool);
+}
 
 // @title RateLimiter
 // @dev a bridge asset rate limiter based on https://github.com/gnosis/safe-modules/blob/master/allowances/contracts/AlowanceModule.sol
@@ -19,7 +25,7 @@ contract RateLimiter is
     ReentrancyGuardUpgradeable,
     IRateLimiter
 {
-    using EnumerableMapUpgradeable for EnumerableMapUpgradeable.Bytes32ToStructMap;
+    using EnumerableQueueUpgradeable for EnumerableQueueUpgradeable.KappaQueue;
     /*** STATE ***/
 
     string public constant NAME = "Rate Limiter";
@@ -33,9 +39,13 @@ contract RateLimiter is
     // Token -> Allowance
     mapping(address => Allowance) public allowances;
     // Kappa->Retry Selector
-    EnumerableMapUpgradeable.Bytes32ToStructMap private rateLimited;
+    EnumerableQueueUpgradeable.KappaQueue private rateLimitedQueue;
+    mapping(bytes32 => bytes) private failedRetries;
     // Bridge Address
     address public BRIDGE_ADDRESS;
+    // Time period after anyone can retry a rate limited tx
+    uint32 public retryTimeout = 360;
+    uint32 public constant MIN_RETRY_TIMEOUT = 60;
 
     // List of tokens
     address[] public tokens;
@@ -72,6 +82,14 @@ contract RateLimiter is
         onlyRole(GOVERNANCE_ROLE)
     {
         BRIDGE_ADDRESS = bridge;
+    }
+
+    function setRetryTimeout(uint32 _retryTimeout)
+        external
+        onlyRole(GOVERNANCE_ROLE)
+    {
+        require(_retryTimeout >= MIN_RETRY_TIMEOUT, "Timeout too short");
+        retryTimeout = _retryTimeout;
     }
 
     /**
@@ -156,14 +174,8 @@ contract RateLimiter is
         // @dev reverts if amount > (2^96 - 1)
         uint96 newSpent = allowance.spent + uint96(amount);
 
-        // Check overflow
-        require(
-            newSpent > allowance.spent,
-            "overflow detected: newSpent > allowance.spent"
-        );
-
         // do not proceed. Store the transaction for later
-        if (newSpent >= allowance.amount) {
+        if (newSpent > allowance.amount) {
             return false;
         }
 
@@ -177,27 +189,50 @@ contract RateLimiter is
         external
         onlyRole(BRIDGE_ROLE)
     {
-        rateLimited.set(kappa, toRetry);
+        rateLimitedQueue.add(kappa, toRetry);
     }
 
-    function retryByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
-        (bytes memory toRetry, ) = rateLimited.get(kappa);
-        (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(toRetry);
-        require(
-            success,
-            Strings.append("could not call bridge:", _getRevertMsg(returnData))
+    function retryByKappa(bytes32 kappa) external {
+        (bytes memory toRetry, uint32 storedAtMin) = rateLimitedQueue.get(
+            kappa
         );
-        rateLimited.remove(kappa);
+        if (toRetry.length > 0) {
+            if (!hasRole(LIMITER_ROLE, msg.sender)) {
+                // Permissionless retry is only available once timeout is finished
+                uint32 currentMin = uint32(block.timestamp / 60);
+                require(
+                    currentMin >= storedAtMin + retryTimeout,
+                    "Retry timeout not finished"
+                );
+            }
+            _retry(kappa, toRetry);
+            rateLimitedQueue.deleteKey(kappa);
+        } else {
+            // Try looking up in the failed txs:
+            // anyone should be able to do so, with no timeout
+            _retryFailed(kappa);
+        }
     }
 
     function retryCount(uint8 count) external onlyRole(LIMITER_ROLE) {
         // no issues casting to uint8 here. If length is greater then 255, min is always taken
         uint8 attempts = uint8(
-            MathUpgradeable.min(uint256(count), rateLimited.length())
+            MathUpgradeable.min(uint256(count), rateLimitedQueue.length())
         );
 
         for (uint8 i = 0; i < attempts; i++) {
-            (bytes32 kappa, bytes memory toRetry, ) = rateLimited.at(i);
+            // check out the first element
+            (bytes32 kappa, bytes memory toRetry, ) = rateLimitedQueue.poll();
+
+            if (toRetry.length > 0) {
+                _retry(kappa, toRetry);
+            }
+        }
+    }
+
+    function _retryFailed(bytes32 kappa) internal {
+        bytes memory toRetry = failedRetries[kappa];
+        if (toRetry.length > 0) {
             (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(
                 toRetry
             );
@@ -210,13 +245,21 @@ contract RateLimiter is
                     _getRevertMsg(returnData)
                 )
             );
+            failedRetries[kappa] = bytes("");
+        }
+    }
 
-            rateLimited.remove(kappa);
+    function _retry(bytes32 kappa, bytes memory toRetry) internal {
+        (bool success, ) = BRIDGE_ADDRESS.call(toRetry);
+        if (!success && !IBridge(BRIDGE_ADDRESS).kappaExists(kappa)) {
+            // save payload for failed transactions
+            // that haven't been processed by Bridge yet
+            failedRetries[kappa] = toRetry;
         }
     }
 
     function deleteByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
-        rateLimited.remove(kappa);
+        rateLimitedQueue.deleteKey(kappa);
     }
 
     /**
