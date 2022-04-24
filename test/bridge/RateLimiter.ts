@@ -122,7 +122,10 @@ describe("Rate Limiter", () => {
         .to.be.not.reverted
 
       await expect(
-        rateLimiterTest.storeCheckAndUpdateAllowance(USDC.address, allowance),
+        rateLimiterTest.storeCheckAndUpdateAllowance(
+          USDC.address,
+          allowance + 1,
+        ),
       ).to.be.not.reverted
 
       // make sure method returned false
