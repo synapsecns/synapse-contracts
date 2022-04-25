@@ -9,8 +9,14 @@ jobs:
     env:
       AVAX_API: https://api.avax.network/ext/bc/C/rpc
       ALCHEMY_API: ${{ secrets.ALCHEMY_API }}
+      DD_ENV: ci
 
     steps:
+      - name: Datadog Agent
+        uses: DataDog/agent-github-action@v1
+        with:
+          api_key: ${{ secrets.DD_API_KEY }}
+
       - uses: actions/checkout@v2
         with:
           ref: ${{github.event.pull_request.head.ref}}
