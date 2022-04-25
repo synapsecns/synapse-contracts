@@ -71,8 +71,12 @@ contract HeroBridge is SynMessagingReceiver {
                 Hero memory heroToBridge = IHeroCoreUpgradeable(heroes).getHero(_heroId);
                 address dstUserAddress = msg.sender;
                 uint256 dstHeroId = _heroId;
-                bytes32 receiver = trustedRemoteLookup[_dstChainId];
              */
+             MessageFormat memory passedMsg = _decodeMessage(_message);
+             
+             Hero memory dstHero = passedMsg.dstHero;
+             address dstUser = passedMsg.dstUser;
+             uint256 dstHeroId = passedMsg.dstHero;
 
             /** 
              If hero ID doesn't exist: 
