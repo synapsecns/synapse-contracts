@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 
-import {KappaMapUpgradeable} from "contracts/bridge/libraries/KappaMapUpgradeable.sol";
+import {KappaMapUpgradeable} from "src-bridge/libraries/KappaMapUpgradeable.sol";
 
 contract FasterMapTest is Test {
     using KappaMapUpgradeable for KappaMapUpgradeable.KappaMap;

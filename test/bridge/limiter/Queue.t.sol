@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 
-import {EnumerableQueueUpgradeable} from "contracts/bridge/libraries/EnumerableQueueUpgradeable.sol";
+import {EnumerableQueueUpgradeable} from "src-bridge/libraries/EnumerableQueueUpgradeable.sol";
 
 contract QueueTest is Test {
     using EnumerableQueueUpgradeable for EnumerableQueueUpgradeable.KappaQueue;
