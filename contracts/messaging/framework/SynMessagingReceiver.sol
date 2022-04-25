@@ -49,7 +49,7 @@ abstract contract SynMessagingReceiver is ISynMessagingReceiver, Ownable {
     function _send(bytes32 _receiver,
         uint256 _dstChainId,
         bytes calldata _message,
-        bytes calldata _options) internal {
+        bytes calldata _options) internal virtual {
             require(trustedRemoteLookup[_dstChainId] != bytes32(0));
             IMessageBus(messageBus).sendMessage{value: msg.value}(_receiver, _dstChainId, _message, _options);
     }

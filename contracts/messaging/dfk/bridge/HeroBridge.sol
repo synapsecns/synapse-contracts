@@ -11,42 +11,52 @@ pragma solidity 0.8.13;
 
 contract HeroBridge is SynMessagingReceiver {
     address public heroes;
+    
+    struct MessageFormat {
+        Hero dstHero;
+        address dstUser;
+        uint256 dstHeroId;
+
+    }
 
     constructor(address _messageBus, address _heroes) {
         messageBus = _messageBus;
         heroes = _heroes;
     }
 
-    function _createMessage(uint256 _heroId) internal {
+    function _createMessage(uint256 _heroId, address _dstUserAddress, Hero memory _heroToBridge) internal pure returns (bytes calldata {
         // create the message here from the nested struct
+        MessageFormat memory msgFormat = MessageFormat({
+            dstHeroId: _heroId,
+            dstHero: _heroToBridge,
+            dstUser: _dstUserAddress
+        });
+        return abi.encode(msgFormat);
     }
 
-    function _decodeMessage(bytes calldata _message) internal {
-
+    function _decodeMessage(bytes calldata _message) internal pure returns (MessageFormat memory) {
+        (MessageFormat memory decodedMessage) = abi.decode(_message, (MessageFormat));
+        return decodedMessage;
     }
 
     /** 
      * @notice User must have an existing hero minted to bridge it. 
-     * @param heroId specifics which hero msg.sender already holds and will transfer to the bridge contract
-     * @param _receiver The bytes32 address of the destination contract to be called
+     * @param _heroId specifics which hero msg.sender already holds and will transfer to the bridge contract
      * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
-     * @param _message The arbitrary payload to pass to the destination chain receiver
-     * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits
      */
     function sendHero(uint256 _heroId, uint256 _dstChainId) external payable {
-        // What all to create the message with
         Hero memory heroToBridge = IHeroCoreUpgradeable(heroes).getHero(_heroId);
-        address dstUserAddress = msg.sender;
-        uint256 dstHeroId = _heroId;
         bytes32 receiver = trustedRemoteLookup[_dstChainId];
-
+        // _createMessage(heroId, dstUserAddress, Hero);
+        bytes calldata msgToPass = _createMessage(_heroId, msg.sender, heroToBridge);
         // Create _options
-        // Insert logic here 
+        // temporarily empty
+        bytes calldata options = bytes("");
 
         IHeroCoreUpgradeable(heroes).safeTransferFrom(msg.sender, address(this), _heroId);
         // Hero now locked, message can be safely emitted
 
-        // _send(_receiver, _dstChainId, _message, _options);
+        _send(receiver, _dstChainId, msgToPass, bytes(""));
     }
 
     // Function called by executeMessage() - handleMessage will handle the hero bridge mint 
@@ -85,6 +95,7 @@ contract HeroBridge is SynMessagingReceiver {
         bytes calldata _message,
         bytes calldata _options) internal override {
             require(trustedRemoteLookup[_dstChainId] != bytes32(0));
+            require(trustedRemoteLookup[_dstChainId] == _receiver);
             IMessageBus(messageBus).sendMessage{value: msg.value}(_receiver, _dstChainId, _message, _options);
     }
 
