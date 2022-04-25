@@ -53,7 +53,7 @@ interface IBridge {
     ) external;
 }
 
-contract FraxMovrTest is Test {
+contract FraxWrapperTestMovr is Test {
     uint256 private constant SWAP_FEE = 4; // in bps
     uint256 private constant SWAP_DENOMINATOR = 10000;
 
