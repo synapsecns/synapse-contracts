@@ -167,6 +167,7 @@ let config: HardhatUserConfig = {
   },
   mocha: {
     timeout: 200000,
+    require: ['dd-trace/ci/init']
   },
   spdxLicenseIdentifier: {
     overwrite: false,
