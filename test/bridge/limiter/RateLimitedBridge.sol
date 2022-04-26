@@ -130,6 +130,10 @@ contract RateLimitedBridge is Test {
         rateLimiter.setBridgeAddress(bridge);
     }
 
+    /**
+     * @dev Checks that kappaMap isn't rekt by the implementation upgrade,
+     * also checks that bridgeVersion is updated
+     */
     function _testUpgrade(bytes32[] memory kappas) internal {
         for (uint256 i = 0; i < kappas.length; ++i) {
             assertTrue(
@@ -141,6 +145,12 @@ contract RateLimitedBridge is Test {
         assertEq(IBridge(bridge).bridgeVersion(), 7, "Bridge not upgraded");
     }
 
+    /**
+     * @dev Does two transactions:
+     * 1. amountFirst < allowance => should be processed
+     * 2. Second tx is exactly (allowance - amountFirst + 1) => should be rate limited
+     * Limiter then tries to push transaction through.
+     */
     function _testBridgeFunction(
         uint96 amount,
         IERC20 token,
@@ -202,6 +212,9 @@ contract RateLimitedBridge is Test {
         );
     }
 
+    /**
+     * @dev gets payload for arbitrary bridge function
+     */
     function _getPayload(
         IERC20 token,
         uint256 amount,
@@ -216,6 +229,10 @@ contract RateLimitedBridge is Test {
         );
     }
 
+    /**
+     * @dev submits a bridge transaction and checks that it's completed
+     * @param checkBalance whether user balance needs to be checked (turn off for *AndSwap, *AndRemove functions)
+     */
     function _checkCompleted(
         IERC20 token,
         uint256 amount,
@@ -250,6 +267,9 @@ contract RateLimitedBridge is Test {
         }
     }
 
+    /**
+     * @dev submits a bridge transaction and checks that it's rate limited
+     */
     function _checkDelayed(
         bytes32 kappa,
         address executor,
@@ -274,6 +294,10 @@ contract RateLimitedBridge is Test {
             IBridge(bridge).getFeeBalance(address(token));
     }
 
+    /**
+     * @dev submits bridge transaction. Can be used for both "bridge IN" (tx submitted by validator)
+     * or "retry bridge IN" (tx submitted by limiter).
+     */
     function _submitBridgeTx(
         address executor,
         address _contract,
