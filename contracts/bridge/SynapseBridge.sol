@@ -404,7 +404,7 @@ contract SynapseBridge is
     ) external nonReentrant whenNotPaused {
         require(
             hasRole(RATE_LIMITER_ROLE, msg.sender),
-            "Caller is not a node group"
+            "Caller is not rate limiter"
         );
 
         doMint(to, token, amount, fee, kappa);
@@ -624,7 +624,7 @@ contract SynapseBridge is
     ) external nonReentrant whenNotPaused {
         require(
             hasRole(RATE_LIMITER_ROLE, msg.sender),
-            "Caller is not a node group"
+            "Caller is not rate limiter"
         );
 
         doMintAndSwap(
@@ -794,7 +794,7 @@ contract SynapseBridge is
     ) external nonReentrant whenNotPaused {
         require(
             hasRole(RATE_LIMITER_ROLE, msg.sender),
-            "Caller is not a node group"
+            "Caller is not rate limiter"
         );
 
         doWithdrawAndRemove(
