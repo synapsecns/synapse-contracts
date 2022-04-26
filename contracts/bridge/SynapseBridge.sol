@@ -404,7 +404,7 @@ contract SynapseBridge is
     ) external nonReentrant whenNotPaused {
         require(
             hasRole(RATE_LIMITER_ROLE, msg.sender),
-            "Caller is not a node group"
+            "Caller is not rate limiter"
         );
 
         doMint(to, token, amount, fee, kappa);
@@ -624,7 +624,7 @@ contract SynapseBridge is
     ) external nonReentrant whenNotPaused {
         require(
             hasRole(RATE_LIMITER_ROLE, msg.sender),
-            "Caller is not a node group"
+            "Caller is not rate limiter"
         );
 
         doMintAndSwap(
@@ -794,7 +794,7 @@ contract SynapseBridge is
     ) external nonReentrant whenNotPaused {
         require(
             hasRole(RATE_LIMITER_ROLE, msg.sender),
-            "Caller is not a node group"
+            "Caller is not rate limiter"
         );
 
         doWithdrawAndRemove(
@@ -877,8 +877,10 @@ contract SynapseBridge is
         IERC20 token,
         uint256 amount
     ) internal {
-        if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
-            IWETH9(WETH_ADDRESS).withdraw(amount);
+        // save gas on reads
+        address payable weth = WETH_ADDRESS;
+        if (address(token) == weth && weth != address(0)) {
+            IWETH9(weth).withdraw(amount);
             (bool success, ) = to.call{value: amount}("");
             require(success, "ETH_TRANSFER_FAILED");
         } else {
@@ -889,8 +891,10 @@ contract SynapseBridge is
     // GAS AIRDROP
 
     function doGasAirdrop(address to) internal {
-        if (chainGasAmount != 0 && address(this).balance >= chainGasAmount) {
-            to.call{value: chainGasAmount}("");
+        // save gas on reads
+        uint256 amount = chainGasAmount;
+        if (amount != 0 && address(this).balance >= amount) {
+            to.call{value: amount}("");
         }
     }
 

@@ -2,9 +2,9 @@
 pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
-import {FraxWrapper} from "contracts/bridge/wrappers/FraxWrapper.sol";
-import {IFrax} from "contracts/bridge/interfaces/IFrax.sol";
-import {IERC20} from "@openzeppelin/contracts-4.3.1/token/ERC20/IERC20.sol";
+import {FraxWrapper} from "src-bridge/wrappers/FraxWrapper.sol";
+import {IFrax} from "src-bridge/interfaces/IFrax.sol";
+import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 /**
  * Usage: forge test --match-path "test/bridge/wrappers/*" --fork-url https://moonriver.api.onfinality.io/public --fork-block-number 1730000
