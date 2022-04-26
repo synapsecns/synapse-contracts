@@ -16,9 +16,9 @@ interface IProxy {
 
 // Common utilities for forge tests
 contract Utilities is Test {
-    bytes32 internal nextUser = keccak256(abi.encodePacked("user address"));
+    bytes32 internal nextUser = keccak256("user address");
 
-    bytes32 internal nextKappa = keccak256(abi.encodePacked("kappa"));
+    bytes32 internal nextKappa = keccak256("kappa");
 
     bytes32 internal constant ADMIN_SLOT =
         0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
