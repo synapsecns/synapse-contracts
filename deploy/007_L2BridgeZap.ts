@@ -181,10 +181,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (await get("WETH")).address,
         (await get("ETHPool")).address,
         (await get("nETH")).address,
-        "0x0000000000000000000000000000000000000000",
-        "0x0000000000000000000000000000000000000000",
+        (await get("nUSDPoolV3")).address,
+        (await get("nUSD")).address,
         (await get("SynapseBridge")).address,
       ],
+      gasLimit: 5000000,
     })
   }
 

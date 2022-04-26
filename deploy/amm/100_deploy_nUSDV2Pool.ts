@@ -103,7 +103,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const ADMIN_FEE = 6000000000
 
     const receipt = await execute(
-      "SwapDeployer", 
+      "SwapDeployer",
       { from: deployer, log: true },
       "deploy",
       (
@@ -137,7 +137,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log(`USD pool LP Token at ${lpTokenAddress}`)
 
     await save("nUSDPoolV2-LPToken", {
-      abi: (await get("nUSD")).abi, // Generic ERC20 ABI
+      abi: (await get("LPToken")).abi,
       address: lpTokenAddress,
     })
 
