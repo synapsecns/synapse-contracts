@@ -75,7 +75,8 @@ contract BridgeRateLimiterTestEth is RateLimitedBridge {
                 NODE_GROUP,
                 BRIDGE,
                 IBridge.withdraw.selector,
-                abi.encode(user, NUSD, amountBridged, 0, kappa)
+                abi.encode(user, NUSD, amountBridged, 0, kappa),
+                true
             );
         }
     }
@@ -87,6 +88,7 @@ contract BridgeRateLimiterTestEth is RateLimitedBridge {
             false,
             true,
             IBridge.mint.selector,
+            IBridge.retryMint.selector,
             bytes("")
         );
     }
@@ -98,6 +100,7 @@ contract BridgeRateLimiterTestEth is RateLimitedBridge {
             true,
             true,
             IBridge.withdraw.selector,
+            IBridge.retryWithdraw.selector,
             bytes("")
         );
     }
@@ -109,7 +112,144 @@ contract BridgeRateLimiterTestEth is RateLimitedBridge {
             true,
             false,
             IBridge.withdrawAndRemove.selector,
+            IBridge.retryWithdrawAndRemove.selector,
             abi.encode(NUSD_POOL, 0, 0, type(uint256).max)
+        );
+    }
+
+    function testAccessChecksRateLimiter() public {
+        address _rl = address(rateLimiter);
+        address trap = utils.getNextUserAddress();
+        bytes32 fakeKappa = utils.getNextKappa();
+
+        _checkAccess(
+            _rl,
+            rateLimiter.initialize.selector,
+            bytes(""),
+            "Initializable: contract is already initialized"
+        );
+
+        _checkAccessControl(
+            _rl,
+            rateLimiter.setBridgeAddress.selector,
+            abi.encode(trap),
+            rateLimiter.GOVERNANCE_ROLE()
+        );
+
+        _checkAccessControl(
+            _rl,
+            rateLimiter.setRetryTimeout.selector,
+            abi.encode(0),
+            rateLimiter.GOVERNANCE_ROLE()
+        );
+
+        _checkAccessControl(
+            _rl,
+            rateLimiter.setAllowance.selector,
+            abi.encode(NUSD, type(uint96).max, 1, 0),
+            rateLimiter.LIMITER_ROLE()
+        );
+
+        _checkAccessControl(
+            _rl,
+            rateLimiter.checkAndUpdateAllowance.selector,
+            abi.encode(NUSD, 42),
+            rateLimiter.BRIDGE_ROLE()
+        );
+
+        _checkAccessControl(
+            _rl,
+            rateLimiter.addToRetryQueue.selector,
+            abi.encode(fakeKappa, bytes("I AM HACKOOOOR")),
+            rateLimiter.BRIDGE_ROLE()
+        );
+
+        _checkAccessControl(
+            _rl,
+            rateLimiter.retryCount.selector,
+            abi.encode(1),
+            rateLimiter.LIMITER_ROLE()
+        );
+
+        _checkAccessControl(
+            _rl,
+            rateLimiter.deleteByKappa.selector,
+            abi.encode(fakeKappa),
+            rateLimiter.LIMITER_ROLE()
+        );
+
+        _checkAccessControl(
+            _rl,
+            rateLimiter.resetAllowance.selector,
+            abi.encode(NUSD),
+            rateLimiter.LIMITER_ROLE()
+        );
+    }
+
+    function testAccessChecksBridge() public {
+        address trap = utils.getNextUserAddress();
+
+        _checkAccess(
+            bridge,
+            IBridge.initialize.selector,
+            bytes(""),
+            "Initializable: contract is already initialized"
+        );
+
+        _checkAccess(
+            bridge,
+            IBridge.setChainGasAmount.selector,
+            abi.encode(69),
+            "Not governance"
+        );
+
+        _checkAccess(
+            bridge,
+            IBridge.setWethAddress.selector,
+            abi.encode(trap),
+            "Not admin"
+        );
+
+        _checkAccess(
+            bridge,
+            IBridge.setRateLimiter.selector,
+            abi.encode(trap),
+            "Not governance"
+        );
+
+        _checkAccess(
+            bridge,
+            IBridge.setRateLimiterEnabled.selector,
+            abi.encode(false),
+            "Not governance"
+        );
+
+        _checkAccess(
+            bridge,
+            IBridge.addKappas.selector,
+            abi.encode(new bytes32[](1)),
+            "Not governance"
+        );
+
+        _checkAccess(
+            bridge,
+            IBridge.withdrawFees.selector,
+            abi.encode(NUSD, attacker),
+            "Not governance"
+        );
+
+        _checkAccess(
+            bridge,
+            IBridge.pause.selector,
+            bytes(""),
+            "Not governance"
+        );
+
+        _checkAccess(
+            bridge,
+            IBridge.unpause.selector,
+            bytes(""),
+            "Not governance"
         );
     }
 }
