@@ -227,7 +227,7 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
         );
     }
 
-    function testFailedRetries(uint96 amount, uint8 txs) public {
+    function testRetriesWithFailedTxs(uint96 amount, uint8 txs) public {
         vm.assume(amount > 0);
         vm.assume(amount < type(uint96).max);
 
@@ -249,6 +249,8 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
             bytes32[] memory kappas = new bytes32[](txs);
 
             for (uint256 t = 0; t < txs; t++) {
+                kappas[t] = utils.getNextKappa();
+
                 if (t % 3 == 1) {
                     _checkDelayed(
                         kappas[t],
@@ -269,6 +271,11 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
                     );
                 }
             }
+            assertEq(
+                rateLimiter.retryQueueLength(),
+                txs,
+                "RateLimiter Queue wrong length"
+            );
 
             hoax(admin);
             // bridge can no longer mint SYN => part of txs will fail
