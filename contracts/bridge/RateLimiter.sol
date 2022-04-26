@@ -9,7 +9,6 @@ import "@openzeppelin/contracts-4.3.1-upgradeable/utils/math/MathUpgradeable.sol
 import "./libraries/EnumerableQueueUpgradeable.sol";
 import "./interfaces/IRateLimiter.sol";
 import "./libraries/Strings.sol";
-import "hardhat/console.sol";
 
 // solhint-disable not-rely-on-time
 
@@ -190,6 +189,10 @@ contract RateLimiter is
         onlyRole(BRIDGE_ROLE)
     {
         rateLimitedQueue.add(kappa, toRetry);
+    }
+
+    function retryQueueLength() external view returns (uint256 length) {
+        length = rateLimitedQueue.length();
     }
 
     function retryByKappa(bytes32 kappa) external {
