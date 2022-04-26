@@ -7,8 +7,8 @@ import {Utilities} from "../utilities/Utilities.sol";
 
 import {RateLimiter} from "src-bridge/RateLimiter.sol";
 
-import {IERC20} from "@openzeppelin/contracts-4.3.1/token/ERC20/IERC20.sol";
-import {StringsUpgradeable} from "@openzeppelin/contracts-4.3.1-upgradeable/utils/StringsUpgradeable.sol";
+import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
+import {StringsUpgradeable} from "@openzeppelin/contracts-4.5.0-upgradeable/utils/StringsUpgradeable.sol";
 
 interface IBridge {
     function bridgeVersion() external view returns (uint256);

@@ -4,8 +4,8 @@ pragma solidity 0.8.11;
 
 import {IFrax} from "../interfaces/IFrax.sol";
 
-import {IERC20} from "@openzeppelin/contracts-4.3.1/token/ERC20/IERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts-4.3.1/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
 contract FraxWrapper {
     using SafeERC20 for IERC20;

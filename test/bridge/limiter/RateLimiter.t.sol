@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 
 import {RateLimiter} from "src-bridge/RateLimiter.sol";
 
-import {IERC20} from "@openzeppelin/contracts-4.3.1/token/ERC20/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 contract RateLimiterFoundryTest is Test {
     RateLimiter internal immutable rateLimiter;
