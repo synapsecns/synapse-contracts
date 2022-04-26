@@ -8,7 +8,8 @@ import "@openzeppelin/contracts-4.3.1-upgradeable/utils/math/MathUpgradeable.sol
 
 import "./libraries/EnumerableQueueUpgradeable.sol";
 import "./interfaces/IRateLimiter.sol";
-import "./libraries/Strings.sol";
+
+import {StringsUpgradeable} from "@openzeppelin/contracts-4.3.1-upgradeable/utils/StringsUpgradeable.sol";
 
 // solhint-disable not-rely-on-time
 
@@ -241,11 +242,13 @@ contract RateLimiter is
             );
             require(
                 success,
-                Strings.append(
-                    "could not call bridge for kappa: ",
-                    Strings.toHex(kappa),
-                    " reverted with: ",
-                    _getRevertMsg(returnData)
+                string(
+                    abi.encodePacked(
+                        "Could not call bridge for kappa: ",
+                        StringsUpgradeable.toHexString(uint256(kappa), 32),
+                        " reverted with: ",
+                        _getRevertMsg(returnData)
+                    )
                 )
             );
             failedRetries[kappa] = bytes("");
