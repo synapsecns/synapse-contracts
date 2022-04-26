@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-4.3.1-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-4.3.1-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-4.3.1-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-4.3.1-upgradeable/utils/math/MathUpgradeable.sol";
+import "@openzeppelin/contracts-4.5.0-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-4.5.0-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-4.5.0-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-4.5.0-upgradeable/utils/math/MathUpgradeable.sol";
 
 import "./libraries/EnumerableQueueUpgradeable.sol";
 import "./interfaces/IRateLimiter.sol";
-import "./libraries/Strings.sol";
-import "hardhat/console.sol";
+
+import {StringsUpgradeable} from "@openzeppelin/contracts-4.5.0-upgradeable/utils/StringsUpgradeable.sol";
 
 // solhint-disable not-rely-on-time
 
@@ -192,6 +192,10 @@ contract RateLimiter is
         rateLimitedQueue.add(kappa, toRetry);
     }
 
+    function retryQueueLength() external view returns (uint256 length) {
+        length = rateLimitedQueue.length();
+    }
+
     function retryByKappa(bytes32 kappa) external {
         (bytes memory toRetry, uint32 storedAtMin) = rateLimitedQueue.get(
             kappa
@@ -238,11 +242,13 @@ contract RateLimiter is
             );
             require(
                 success,
-                Strings.append(
-                    "could not call bridge for kappa: ",
-                    Strings.toHex(kappa),
-                    " reverted with: ",
-                    _getRevertMsg(returnData)
+                string(
+                    abi.encodePacked(
+                        "Could not call bridge for kappa: ",
+                        StringsUpgradeable.toHexString(uint256(kappa), 32),
+                        " reverted with: ",
+                        _getRevertMsg(returnData)
+                    )
                 )
             );
             failedRetries[kappa] = bytes("");
