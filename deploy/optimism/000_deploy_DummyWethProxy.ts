@@ -7,17 +7,17 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get } = deployments
   const { deployer } = await getNamedAccounts()
 
-  if ((await getChainId()) === CHAIN_ID.OPTIMISM) {
-    await deploy("DummyWethProxy", {
-        from: deployer,
-        log: true,
-        skipIfAlreadyDeployed: true,
-        proxy: {
-            owner: deployer,
-            proxyContract: "OpenZeppelinTransparentProxy",
-        },
-    })
-}
+//   if ((await getChainId()) === CHAIN_ID.OPTIMISM) {
+//     await deploy("DummyWethProxy", {
+//         from: deployer,
+//         log: true,
+//         skipIfAlreadyDeployed: true,
+//         proxy: {
+//             owner: deployer,
+//             proxyContract: "OpenZeppelinTransparentProxy",
+//         },
+//     })
+// }
 }
 export default func
 func.tags = ["DummyWeth"]
