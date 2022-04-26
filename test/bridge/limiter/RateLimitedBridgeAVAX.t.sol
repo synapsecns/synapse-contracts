@@ -227,6 +227,85 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
         );
     }
 
+    function testRetryFailedTx(uint96 amount) public {
+        vm.assume(amount > 0);
+        vm.assume(amount < type(uint96).max);
+
+        _setAllowance(SYN, amount);
+        // use (allowance + 1) to get tx rate limited
+        ++amount;
+
+        address admin = utils.getRoleMember(address(SYN), 0x00);
+        bytes32 minterRole = ISynapseERC20(address(SYN)).MINTER_ROLE();
+
+        bytes32 kappa = utils.getNextKappa();
+
+        _checkDelayed(
+            kappa,
+            NODE_GROUP,
+            bridge,
+            IBridge.mint.selector,
+            _getPayload(SYN, amount, 0, bytes(""), kappa),
+            true
+        );
+
+        assertEq(
+            rateLimiter.retryQueueLength(),
+            1,
+            "RateLimiter Queue wrong length"
+        );
+
+        hoax(admin);
+        // bridge can no longer mint SYN => part of txs will fail
+        ISynapseERC20(address(SYN)).revokeRole(minterRole, bridge);
+
+        hoax(limiter);
+        rateLimiter.retryCount(1);
+        assertEq(
+            rateLimiter.retryQueueLength(),
+            0,
+            "RateLimiter Queue should be empty"
+        );
+
+        assertTrue(
+            !IBridge(bridge).kappaExists(kappa),
+            "SYN kappa should not exist"
+        );
+
+        hoax(user);
+        try rateLimiter.retryByKappa(kappa) {
+            revert("This should've failed");
+        } catch Error(string memory reason) {
+            assertEq(
+                reason,
+                string(
+                    abi.encodePacked(
+                        "Could not call bridge for kappa: ",
+                        StringsUpgradeable.toHexString(uint256(kappa), 32),
+                        " reverted with: Not a minter"
+                    )
+                ),
+                "Unexpected revert message"
+            );
+        }
+
+        hoax(admin);
+        ISynapseERC20(address(SYN)).grantRole(minterRole, bridge);
+
+        // user should be able to push a failed tx once the issue is solved
+        _checkCompleted(
+            SYN,
+            amount,
+            0,
+            kappa,
+            user,
+            address(rateLimiter),
+            rateLimiter.retryByKappa.selector,
+            abi.encode(kappa),
+            true
+        );
+    }
+
     function testRetriesWithFailedTxs(uint96 amount, uint8 txs) public {
         vm.assume(amount > 0);
         vm.assume(amount < type(uint96).max);
