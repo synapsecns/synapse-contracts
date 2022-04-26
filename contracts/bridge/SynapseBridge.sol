@@ -878,7 +878,7 @@ contract SynapseBridge is
         uint256 amount
     ) internal {
         // save gas on reads
-        address weth = WETH_ADDRESS;
+        address payable weth = WETH_ADDRESS;
         if (address(token) == weth && weth != address(0)) {
             IWETH9(weth).withdraw(amount);
             (bool success, ) = to.call{value: amount}("");
