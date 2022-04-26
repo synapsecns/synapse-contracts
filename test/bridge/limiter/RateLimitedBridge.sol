@@ -2,11 +2,13 @@
 pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
+
 import {Utilities} from "../utilities/Utilities.sol";
 
 import {RateLimiter} from "src-bridge/RateLimiter.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.3.1/token/ERC20/IERC20.sol";
+import {StringsUpgradeable} from "@openzeppelin/contracts-4.3.1-upgradeable/utils/StringsUpgradeable.sol";
 
 interface IBridge {
     function bridgeVersion() external view returns (uint256);
@@ -19,19 +21,43 @@ interface IBridge {
 
     function RATE_LIMITER_ROLE() external view returns (bytes32);
 
+    // Restricted functions: initializer
+
+    function initialize() external;
+
     // Restricted functions: admin
+
+    function setWethAddress(address payable _wethAddress) external;
 
     function grantRole(bytes32 role, address account) external;
 
     // Restricted functions: governance
 
+    function addKappas(bytes32[] calldata kappas) external;
+
+    function withdrawFees(IERC20 token, address to) external;
+
+    function setChainGasAmount(uint256 amount) external;
+
     function setRateLimiter(address _rateLimiter) external;
 
     function setRateLimiterEnabled(bool enabled) external;
 
+    function pause() external;
+
+    function unpause() external;
+
     // bridge functions
 
     function mint(
+        address payable to,
+        address token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) external;
+
+    function retryMint(
         address payable to,
         address token,
         uint256 amount,
@@ -52,11 +78,44 @@ interface IBridge {
         bytes32 kappa
     ) external;
 
+    function retryMintAndSwap(
+        address payable to,
+        address token,
+        uint256 amount,
+        uint256 fee,
+        address pool,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline,
+        bytes32 kappa
+    ) external;
+
     function withdraw(
         address to,
         IERC20 token,
         uint256 amount,
         uint256 fee,
+        bytes32 kappa
+    ) external;
+
+    function retryWithdraw(
+        address to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) external;
+
+    function retryWithdrawAndRemove(
+        address to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        address pool,
+        uint8 swapTokenIndex,
+        uint256 swapMinAmount,
+        uint256 swapDeadline,
         bytes32 kappa
     ) external;
 
@@ -71,6 +130,14 @@ interface IBridge {
         uint256 swapDeadline,
         bytes32 kappa
     ) external;
+}
+
+interface ISynapseERC20 {
+    function MINTER_ROLE() external view returns (bytes32);
+
+    function grantRole(bytes32 role, address account) external;
+
+    function revokeRole(bytes32 role, address account) external;
 }
 
 contract RateLimitedBridge is Test {
@@ -150,6 +217,8 @@ contract RateLimitedBridge is Test {
      * 1. amountFirst < allowance => should be processed
      * 2. Second tx is exactly (allowance - amountFirst + 1) => should be rate limited
      * Limiter then tries to push transaction through.
+     *
+     * Also checks if attacker can call bridge using bridge function, or retry bridge function
      */
     function _testBridgeFunction(
         uint96 amount,
@@ -157,6 +226,7 @@ contract RateLimitedBridge is Test {
         bool isWithdraw,
         bool checkBalance,
         bytes4 bridgeSelector,
+        bytes4 retrySelector,
         bytes memory extraParams
     ) internal {
         vm.assume(amount >= 3);
@@ -180,6 +250,19 @@ contract RateLimitedBridge is Test {
             kappa
         );
 
+        _checkAccess(
+            bridge,
+            bridgeSelector,
+            payload,
+            "Caller is not a node group"
+        );
+        _checkAccess(
+            bridge,
+            retrySelector,
+            payload,
+            "Caller is not rate limiter"
+        );
+
         _checkCompleted(
             token,
             amountBridged,
@@ -196,7 +279,7 @@ contract RateLimitedBridge is Test {
         kappa = utils.getNextKappa();
         payload = _getPayload(token, amountBridged, 0, extraParams, kappa);
         // This should be rate limited
-        _checkDelayed(kappa, NODE_GROUP, bridge, bridgeSelector, payload);
+        _checkDelayed(kappa, NODE_GROUP, bridge, bridgeSelector, payload, true);
 
         // Limiter should be able to push tx through
         _checkCompleted(
@@ -229,6 +312,50 @@ contract RateLimitedBridge is Test {
         );
     }
 
+    function _checkAccess(
+        address _contract,
+        bytes4 selector,
+        bytes memory payload,
+        string memory revertMsg
+    ) internal {
+        hoax(attacker);
+        (bool success, bytes memory returnData) = _contract.call(
+            abi.encodePacked(selector, payload)
+        );
+        assertTrue(!success, "Attacker gained access");
+        string memory _revertMsg = _getRevertMsg(returnData);
+        assertEq(revertMsg, _revertMsg, "Unexpected revert message");
+    }
+
+    function _checkAccessControl(
+        address _contract,
+        bytes4 selector,
+        bytes memory payload,
+        bytes32 neededRole
+    ) internal {
+        _checkAccess(
+            _contract,
+            selector,
+            payload,
+            _getAccessControlRevertMsg(neededRole, attacker)
+        );
+    }
+
+    function _getAccessControlRevertMsg(bytes32 role, address account)
+        internal
+        pure
+        returns (string memory revertMsg)
+    {
+        revertMsg = string(
+            abi.encodePacked(
+                "AccessControl: account ",
+                StringsUpgradeable.toHexString(uint160(account), 20),
+                " is missing role ",
+                StringsUpgradeable.toHexString(uint256(role), 32)
+            )
+        );
+    }
+
     /**
      * @dev submits a bridge transaction and checks that it's completed
      * @param checkBalance whether user balance needs to be checked (turn off for *AndSwap, *AndRemove functions)
@@ -250,7 +377,7 @@ contract RateLimitedBridge is Test {
             !IBridge(bridge).kappaExists(kappa),
             "Kappa exists pre-bridge"
         );
-        _submitBridgeTx(executor, _contract, selector, payload);
+        _submitBridgeTx(executor, _contract, selector, payload, true);
         assertTrue(
             IBridge(bridge).kappaExists(kappa),
             "Kappa doesn't exist post-bridge"
@@ -275,13 +402,14 @@ contract RateLimitedBridge is Test {
         address executor,
         address _contract,
         bytes4 selector,
-        bytes memory payload
+        bytes memory payload,
+        bool callSuccess
     ) internal {
         assertTrue(
             !IBridge(bridge).kappaExists(kappa),
             "Kappa exists pre-bridge"
         );
-        _submitBridgeTx(executor, _contract, selector, payload);
+        _submitBridgeTx(executor, _contract, selector, payload, callSuccess);
         assertTrue(
             !IBridge(bridge).kappaExists(kappa),
             "Transaction wasn't delayed"
@@ -302,13 +430,18 @@ contract RateLimitedBridge is Test {
         address executor,
         address _contract,
         bytes4 selector,
-        bytes memory payload
+        bytes memory payload,
+        bool callSuccess
     ) internal {
         hoax(executor);
         (bool success, bytes memory returnData) = _contract.call(
             abi.encodePacked(selector, payload)
         );
-        assertTrue(success, _getRevertMsg(returnData));
+        if (callSuccess) {
+            assertTrue(success, _getRevertMsg(returnData));
+        } else {
+            assertTrue(!success, "Transaction should have reverted");
+        }
     }
 
     function _setAllowance(IERC20 token, uint96 amount) internal {
