@@ -6,6 +6,9 @@ import {Hero, HeroInfo, HeroState, SummoningInfo, HeroProfessions, Rarity} from 
 import {HeroCrystal} from "./types/CrystalTypes.sol";
 
 interface IHeroCoreUpgradeable {
+    // NOT FINAL 
+    function bridgeMint(Hero memory _hero, address dstAddress) external;
+    
     function DEFAULT_ADMIN_ROLE() external view returns (bytes32);
 
     function MINTER_ROLE() external view returns (bytes32);
