@@ -104,7 +104,7 @@ contract RateLimiter is
         uint96 allowanceAmount,
         uint16 resetTimeMin,
         uint32 resetBaseMin
-    ) public onlyRole(LIMITER_ROLE) {
+    ) external onlyRole(LIMITER_ROLE) {
         Allowance memory allowance = _getAllowance(token);
         if (!allowance.initialized) {
             // New token
