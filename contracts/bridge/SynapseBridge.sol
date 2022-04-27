@@ -213,7 +213,7 @@ contract SynapseBridge is
     // RATE LIMITER FUNCTIONS ***/
     // @dev check and update the rate limiter allowances. Bypass the rate limiter
     // if it is a 0-address
-    function isRateLimited(address token, uint256 amount)
+    function _isRateLimited(address token, uint256 amount)
         internal
         returns (bool)
     {
@@ -279,7 +279,7 @@ contract SynapseBridge is
             "Caller is not a node group"
         );
 
-        bool rateLimited = isRateLimited(address(token), amount);
+        bool rateLimited = _isRateLimited(address(token), amount);
         if (rateLimited) {
             rateLimiter.addToRetryQueue(
                 kappa,
@@ -295,7 +295,7 @@ contract SynapseBridge is
             return;
         }
 
-        doWithdraw(to, token, amount, fee, kappa);
+        _doWithdraw(to, token, amount, fee, kappa);
     }
 
     /**
@@ -318,11 +318,11 @@ contract SynapseBridge is
             "Caller is not rate limiter"
         );
 
-        doWithdraw(to, IERC20(token), amount, fee, kappa);
+        _doWithdraw(to, IERC20(token), amount, fee, kappa);
     }
 
-    // doWithdraw bypasses the rate limiter. See withdraw for documentation
-    function doWithdraw(
+    // _doWithdraw bypasses the rate limiter. See withdraw for documentation
+    function _doWithdraw(
         address to,
         IERC20 token,
         uint256 amount,
@@ -335,13 +335,13 @@ contract SynapseBridge is
         fees[address(token)] = fees[address(token)].add(fee);
 
         // withdraw can happen on chains other than mainnet
-        doGasAirdrop(to);
+        _doGasAirdrop(to);
 
         // apply fee
         amount = amount.sub(fee);
 
         // If token is WGAS, this will send native chain GAS
-        transferTokenWithUnwrap(to, token, amount);
+        _transferTokenWithUnwrap(to, token, amount);
         emit TokenWithdraw(to, token, amount, fee, kappa);
     }
 
@@ -366,7 +366,7 @@ contract SynapseBridge is
             "Caller is not a node group"
         );
 
-        bool rateLimited = isRateLimited(address(token), amount);
+        bool rateLimited = _isRateLimited(address(token), amount);
         if (rateLimited) {
             rateLimiter.addToRetryQueue(
                 kappa,
@@ -382,7 +382,7 @@ contract SynapseBridge is
             return;
         }
 
-        doMint(to, token, amount, fee, kappa);
+        _doMint(to, token, amount, fee, kappa);
     }
 
     /**
@@ -406,10 +406,10 @@ contract SynapseBridge is
             "Caller is not rate limiter"
         );
 
-        doMint(to, token, amount, fee, kappa);
+        _doMint(to, token, amount, fee, kappa);
     }
 
-    function doMint(
+    function _doMint(
         address payable to,
         IERC20Mintable token,
         uint256 amount,
@@ -420,7 +420,7 @@ contract SynapseBridge is
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
-        doGasAirdrop(to);
+        _doGasAirdrop(to);
 
         token.mint(address(this), amount);
         // apply fee
@@ -560,7 +560,7 @@ contract SynapseBridge is
             "Caller is not a node group"
         );
 
-        bool rateLimited = isRateLimited(address(token), amount);
+        bool rateLimited = _isRateLimited(address(token), amount);
         if (rateLimited) {
             rateLimiter.addToRetryQueue(
                 kappa,
@@ -581,7 +581,7 @@ contract SynapseBridge is
             return;
         }
 
-        doMintAndSwap(
+        _doMintAndSwap(
             to,
             token,
             amount,
@@ -626,7 +626,7 @@ contract SynapseBridge is
             "Caller is not rate limiter"
         );
 
-        doMintAndSwap(
+        _doMintAndSwap(
             to,
             token,
             amount,
@@ -640,7 +640,7 @@ contract SynapseBridge is
         );
     }
 
-    function doMintAndSwap(
+    function _doMintAndSwap(
         address payable to,
         IERC20Mintable token,
         uint256 amount,
@@ -657,7 +657,7 @@ contract SynapseBridge is
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
         // Transfer gas airdrop
-        doGasAirdrop(to);
+        _doGasAirdrop(to);
 
         // proceed with swap
         token.mint(address(this), amount);
@@ -676,7 +676,7 @@ contract SynapseBridge is
             // Swap succeeded, transfer swapped asset
             IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
             // If token is WGAS, this will send native chain GAS
-            transferTokenWithUnwrap(to, swappedTokenTo, finalSwappedAmount);
+            _transferTokenWithUnwrap(to, swappedTokenTo, finalSwappedAmount);
             emit TokenMintAndSwap(
                 to,
                 token,
@@ -734,7 +734,7 @@ contract SynapseBridge is
             "Caller is not a node group"
         );
 
-        bool rateLimited = isRateLimited(address(token), amount);
+        bool rateLimited = _isRateLimited(address(token), amount);
 
         if (rateLimited) {
             rateLimiter.addToRetryQueue(
@@ -755,7 +755,7 @@ contract SynapseBridge is
             return;
         }
 
-        doWithdrawAndRemove(
+        _doWithdrawAndRemove(
             to,
             token,
             amount,
@@ -796,7 +796,7 @@ contract SynapseBridge is
             "Caller is not rate limiter"
         );
 
-        doWithdrawAndRemove(
+        _doWithdrawAndRemove(
             to,
             token,
             amount,
@@ -810,7 +810,7 @@ contract SynapseBridge is
     }
 
     // allows withdrawAndRemove retries to bypass rate limiter
-    function doWithdrawAndRemove(
+    function _doWithdrawAndRemove(
         address to,
         IERC20 token,
         uint256 amount,
@@ -871,7 +871,7 @@ contract SynapseBridge is
 
     // TOKEN TRANSFER
 
-    function transferTokenWithUnwrap(
+    function _transferTokenWithUnwrap(
         address to,
         IERC20 token,
         uint256 amount
@@ -889,7 +889,7 @@ contract SynapseBridge is
 
     // GAS AIRDROP
 
-    function doGasAirdrop(address to) internal {
+    function _doGasAirdrop(address to) internal {
         // save gas on reads
         uint256 amount = chainGasAmount;
         if (amount != 0 && address(this).balance >= amount) {
