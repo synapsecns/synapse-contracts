@@ -11,13 +11,21 @@ import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 import {StringsUpgradeable} from "@openzeppelin/contracts-4.5.0-upgradeable/utils/StringsUpgradeable.sol";
 
 interface IBridge {
+    function NODEGROUP_ROLE() external view returns (bytes32);
+
+    function GOVERNANCE_ROLE() external view returns (bytes32);
+
+    function startBlockNumber() external view returns (uint256);
+
     function bridgeVersion() external view returns (uint256);
+
+    function chainGasAmount() external view returns (uint256);
+
+    function WETH_ADDRESS() external view returns (address payable);
 
     function getFeeBalance(address token) external view returns (uint256);
 
     function kappaExists(bytes32 kappa) external view returns (bool);
-
-    function GOVERNANCE_ROLE() external view returns (bytes32);
 
     function RATE_LIMITER_ROLE() external view returns (bytes32);
 
@@ -141,7 +149,19 @@ interface ISynapseERC20 {
 }
 
 contract RateLimitedBridge is Test {
+    struct BridgeState {
+        bytes32 nodeGroupRole;
+        bytes32 governanceRole;
+        uint256 startBlockNumber;
+        uint256 chainGasAmount;
+        address payable wethAddress;
+        address[2] tokens;
+        uint256[] fees;
+    }
+
     address public immutable bridge;
+
+    BridgeState public state;
 
     address public constant NODE_GROUP =
         0x230A1AC45690B9Ae1176389434610B9526d2f21b;
@@ -155,8 +175,10 @@ contract RateLimitedBridge is Test {
     address payable public immutable user;
     address payable public immutable governance;
 
-    constructor(address _bridge) {
+    constructor(address _bridge, address[2] memory tokens) {
         bridge = _bridge;
+
+        _saveState(tokens);
 
         utils = new Utilities();
         address impl = deployCode(
@@ -172,6 +194,23 @@ contract RateLimitedBridge is Test {
         limiter = users[1];
         user = users[2];
         governance = users[3];
+    }
+
+    function _saveState(address[2] memory tokens) internal {
+        uint256[] memory fees = new uint256[](tokens.length);
+        for (uint256 i = 0; i < fees.length; i++) {
+            fees[i] = IBridge(bridge).getFeeBalance(tokens[i]);
+        }
+
+        state = BridgeState({
+            nodeGroupRole: IBridge(bridge).NODEGROUP_ROLE(),
+            governanceRole: IBridge(bridge).GOVERNANCE_ROLE(),
+            startBlockNumber: IBridge(bridge).startBlockNumber(),
+            chainGasAmount: IBridge(bridge).chainGasAmount(),
+            wethAddress: IBridge(bridge).WETH_ADDRESS(),
+            tokens: tokens,
+            fees: fees
+        });
     }
 
     function setUp() public {
@@ -206,6 +245,41 @@ contract RateLimitedBridge is Test {
             assertTrue(
                 IBridge(bridge).kappaExists(kappas[i]),
                 "Kappa is missing post-upgrade"
+            );
+        }
+
+        assertEq(
+            state.nodeGroupRole,
+            IBridge(bridge).NODEGROUP_ROLE(),
+            "NODEGROUP_ROLE rekt post-upgrade"
+        );
+        assertEq(
+            state.governanceRole,
+            IBridge(bridge).GOVERNANCE_ROLE(),
+            "GOVERNANCE_ROLE rekt post-upgrade"
+        );
+        assertEq(
+            state.startBlockNumber,
+            IBridge(bridge).startBlockNumber(),
+            "startBlockNumber rekt post-upgrade"
+        );
+        assertEq(
+            state.chainGasAmount,
+            IBridge(bridge).chainGasAmount(),
+            "chainGasAmount rekt post-upgrade"
+        );
+        assertEq(
+            state.wethAddress,
+            IBridge(bridge).WETH_ADDRESS(),
+            "WETH_ADDRESS rekt post-upgrade"
+        );
+
+        uint256 length = state.tokens.length;
+        for (uint256 i = 0; i < length; ++i) {
+            assertEq(
+                state.fees[i],
+                IBridge(bridge).getFeeBalance(state.tokens[i]),
+                "fees rekt post-upgrade"
             );
         }
 
