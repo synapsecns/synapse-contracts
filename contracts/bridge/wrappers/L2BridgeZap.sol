@@ -426,7 +426,7 @@ contract L2BridgeZap {
      * @param token ERC20 compatible token to redeem into the bridge
      * @param amount Amount in native token decimals to transfer cross-chain pre-fees
      **/
-    function redeemv2(
+    function redeemV2(
         bytes32 to,
         uint256 chainId,
         IERC20 token,
@@ -435,7 +435,7 @@ contract L2BridgeZap {
         token.safeTransferFrom(msg.sender, address(this), amount);
         // token might have not been approved in _saveSwap()
         _approveIfNeeded(token, amount);
-        synapseBridge.redeemv2(to, chainId, token, amount);
+        synapseBridge.redeemV2(to, chainId, token, amount);
     }
 
     /**
