@@ -254,8 +254,8 @@ contract RateLimiter is
                     "Retry timeout not finished"
                 );
             }
-            _retry(kappa, toRetry);
             rateLimitedQueue.deleteKey(kappa);
+            _retry(kappa, toRetry);
         } else {
             // Try looking up in the failed txs:
             // anyone should be able to do so, with no timeout
@@ -291,6 +291,7 @@ contract RateLimiter is
     function _retryFailed(bytes32 kappa) internal {
         bytes memory toRetry = failedRetries[kappa];
         if (toRetry.length > 0) {
+            failedRetries[kappa] = bytes("");
             (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(
                 toRetry
             );
@@ -305,7 +306,6 @@ contract RateLimiter is
                     )
                 )
             );
-            failedRetries[kappa] = bytes("");
         }
     }
 
