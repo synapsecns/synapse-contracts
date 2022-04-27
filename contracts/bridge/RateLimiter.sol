@@ -44,8 +44,8 @@ contract RateLimiter is
     // Bridge Address
     address public BRIDGE_ADDRESS;
     // Time period after anyone can retry a rate limited tx
-    uint32 public retryTimeout = 360;
-    uint32 public constant MIN_RETRY_TIMEOUT = 60;
+    uint32 public retryTimeout;
+    uint32 public constant MIN_RETRY_TIMEOUT = 10;
 
     // List of tokens
     address[] public tokens;
@@ -75,6 +75,7 @@ contract RateLimiter is
     function initialize() external initializer {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         __AccessControl_init();
+        retryTimeout = MIN_RETRY_TIMEOUT;
     }
 
     function setBridgeAddress(address bridge)
