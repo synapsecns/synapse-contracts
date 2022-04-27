@@ -77,12 +77,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if (await getChainId() === CHAIN_ID.CRONOS) {
       TOKEN_ADDRESSES = [
         (await get("nUSD")).address,
-        (await get("DAI")).address,
         (await get("USDC")).address,
-        (await get("USDT")).address,
       ]
-      TOKEN_DECIMALS = [18, 18, 6, 6]
-      INITIAL_A = 600
+      TOKEN_DECIMALS = [18, 6]
+      INITIAL_A = 800
     }
 
     if (await getChainId() === CHAIN_ID.OPTIMISM) {
