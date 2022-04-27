@@ -105,7 +105,7 @@ contract RateLimiter is
         uint16 resetTimeMin,
         uint32 resetBaseMin
     ) public onlyRole(LIMITER_ROLE) {
-        Allowance memory allowance = getAllowance(token);
+        Allowance memory allowance = _getAllowance(token);
         if (!allowance.initialized) {
             // New token
             allowance.initialized = true;
@@ -124,18 +124,18 @@ contract RateLimiter is
         }
         allowance.resetTimeMin = resetTimeMin;
         allowance.amount = allowanceAmount;
-        updateAllowance(token, allowance);
+        _updateAllowance(token, allowance);
         emit SetAllowance(token, allowanceAmount, resetTimeMin);
     }
 
-    function updateAllowance(address token, Allowance memory allowance)
-        private
+    function _updateAllowance(address token, Allowance memory allowance)
+        internal
     {
         allowances[token] = allowance;
     }
 
-    function getAllowance(address token)
-        private
+    function _getAllowance(address token)
+        internal
         view
         returns (Allowance memory allowance)
     {
@@ -168,7 +168,7 @@ contract RateLimiter is
         onlyRole(BRIDGE_ROLE)
         returns (bool)
     {
-        Allowance memory allowance = getAllowance(token);
+        Allowance memory allowance = _getAllowance(token);
 
         // Update state
         // @dev reverts if amount > (2^96 - 1)
@@ -180,7 +180,7 @@ contract RateLimiter is
         }
 
         allowance.spent = newSpent;
-        updateAllowance(token, allowance);
+        _updateAllowance(token, allowance);
 
         return true;
     }
@@ -271,23 +271,23 @@ contract RateLimiter is
     /**
      * @notice Gets a  list of tokens with allowances
      **/
-    function getTokens() public view returns (address[] memory) {
+    function getTokens() external view returns (address[] memory) {
         return tokens;
     }
 
-    function resetAllowance(address token) public onlyRole(LIMITER_ROLE) {
-        Allowance memory allowance = getAllowance(token);
+    function resetAllowance(address token) external onlyRole(LIMITER_ROLE) {
+        Allowance memory allowance = _getAllowance(token);
         allowance.spent = 0;
-        updateAllowance(token, allowance);
+        _updateAllowance(token, allowance);
         emit ResetAllowance(token);
     }
 
     function getTokenAllowance(address token)
-        public
+        external
         view
         returns (uint256[4] memory)
     {
-        Allowance memory allowance = getAllowance(token);
+        Allowance memory allowance = _getAllowance(token);
         return [
             uint256(allowance.amount),
             uint256(allowance.spent),
