@@ -78,6 +78,35 @@ contract RateLimiter is
         retryTimeout = MIN_RETRY_TIMEOUT;
     }
 
+    /*** VIEWS ***/
+
+    function getTokenAllowance(address token)
+        external
+        view
+        returns (uint256[4] memory)
+    {
+        Allowance memory allowance = _getAllowance(token);
+        return [
+            uint256(allowance.amount),
+            uint256(allowance.spent),
+            uint256(allowance.resetTimeMin),
+            uint256(allowance.lastResetMin)
+        ];
+    }
+
+    /**
+     * @notice Gets a  list of tokens with allowances
+     **/
+    function getTokens() external view returns (address[] memory) {
+        return tokens;
+    }
+
+    function retryQueueLength() external view returns (uint256 length) {
+        length = rateLimitedQueue.length();
+    }
+
+    /*** RESTRICTED: GOVERNANCE ***/
+
     function setBridgeAddress(address bridge)
         external
         onlyRole(GOVERNANCE_ROLE)
@@ -91,6 +120,19 @@ contract RateLimiter is
     {
         require(_retryTimeout >= MIN_RETRY_TIMEOUT, "Timeout too short");
         retryTimeout = _retryTimeout;
+    }
+
+    /*** RESTRICTED: LIMITER ***/
+
+    function deleteByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
+        rateLimitedQueue.deleteKey(kappa);
+    }
+
+    function resetAllowance(address token) external onlyRole(LIMITER_ROLE) {
+        Allowance memory allowance = _getAllowance(token);
+        allowance.spent = 0;
+        _updateAllowance(token, allowance);
+        emit ResetAllowance(token);
     }
 
     /**
@@ -129,33 +171,13 @@ contract RateLimiter is
         emit SetAllowance(token, allowanceAmount, resetTimeMin);
     }
 
-    function _updateAllowance(address token, Allowance memory allowance)
-        internal
-    {
-        allowances[token] = allowance;
-    }
+    /*** RESTRICTED: BRIDGE ***/
 
-    function _getAllowance(address token)
-        internal
-        view
-        returns (Allowance memory allowance)
+    function addToRetryQueue(bytes32 kappa, bytes memory toRetry)
+        external
+        onlyRole(BRIDGE_ROLE)
     {
-        allowance = allowances[token];
-        // solium-disable-next-line security/no-block-members
-        uint32 currentMin = uint32(block.timestamp / 60);
-        // Check if we should reset the time. We do this on load to minimize storage read/ writes
-        if (
-            allowance.resetTimeMin > 0 &&
-            allowance.lastResetMin <= currentMin - allowance.resetTimeMin
-        ) {
-            allowance.spent = 0;
-            // Resets happen in regular intervals and `lastResetMin` should be aligned to that
-            allowance.lastResetMin =
-                currentMin -
-                ((currentMin - allowance.lastResetMin) %
-                    allowance.resetTimeMin);
-        }
-        return allowance;
+        rateLimitedQueue.add(kappa, toRetry);
     }
 
     /**
@@ -186,16 +208,38 @@ contract RateLimiter is
         return true;
     }
 
-    function addToRetryQueue(bytes32 kappa, bytes memory toRetry)
-        external
-        onlyRole(BRIDGE_ROLE)
+    /*** INTERNAL: ALLOWANCE ***/
+
+    function _getAllowance(address token)
+        internal
+        view
+        returns (Allowance memory allowance)
     {
-        rateLimitedQueue.add(kappa, toRetry);
+        allowance = allowances[token];
+        // solium-disable-next-line security/no-block-members
+        uint32 currentMin = uint32(block.timestamp / 60);
+        // Check if we should reset the time. We do this on load to minimize storage read/ writes
+        if (
+            allowance.resetTimeMin > 0 &&
+            allowance.lastResetMin <= currentMin - allowance.resetTimeMin
+        ) {
+            allowance.spent = 0;
+            // Resets happen in regular intervals and `lastResetMin` should be aligned to that
+            allowance.lastResetMin =
+                currentMin -
+                ((currentMin - allowance.lastResetMin) %
+                    allowance.resetTimeMin);
+        }
+        return allowance;
     }
 
-    function retryQueueLength() external view returns (uint256 length) {
-        length = rateLimitedQueue.length();
+    function _updateAllowance(address token, Allowance memory allowance)
+        internal
+    {
+        allowances[token] = allowance;
     }
+
+    /*** RETRY FUNCTIONS ***/
 
     function retryByKappa(bytes32 kappa) external {
         (bytes memory toRetry, uint32 storedAtMin) = rateLimitedQueue.get(
@@ -235,6 +279,15 @@ contract RateLimiter is
         }
     }
 
+    function _retry(bytes32 kappa, bytes memory toRetry) internal {
+        (bool success, ) = BRIDGE_ADDRESS.call(toRetry);
+        if (!success && !IBridge(BRIDGE_ADDRESS).kappaExists(kappa)) {
+            // save payload for failed transactions
+            // that haven't been processed by Bridge yet
+            failedRetries[kappa] = toRetry;
+        }
+    }
+
     function _retryFailed(bytes32 kappa) internal {
         bytes memory toRetry = failedRetries[kappa];
         if (toRetry.length > 0) {
@@ -254,47 +307,6 @@ contract RateLimiter is
             );
             failedRetries[kappa] = bytes("");
         }
-    }
-
-    function _retry(bytes32 kappa, bytes memory toRetry) internal {
-        (bool success, ) = BRIDGE_ADDRESS.call(toRetry);
-        if (!success && !IBridge(BRIDGE_ADDRESS).kappaExists(kappa)) {
-            // save payload for failed transactions
-            // that haven't been processed by Bridge yet
-            failedRetries[kappa] = toRetry;
-        }
-    }
-
-    function deleteByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
-        rateLimitedQueue.deleteKey(kappa);
-    }
-
-    /**
-     * @notice Gets a  list of tokens with allowances
-     **/
-    function getTokens() external view returns (address[] memory) {
-        return tokens;
-    }
-
-    function resetAllowance(address token) external onlyRole(LIMITER_ROLE) {
-        Allowance memory allowance = _getAllowance(token);
-        allowance.spent = 0;
-        _updateAllowance(token, allowance);
-        emit ResetAllowance(token);
-    }
-
-    function getTokenAllowance(address token)
-        external
-        view
-        returns (uint256[4] memory)
-    {
-        Allowance memory allowance = _getAllowance(token);
-        return [
-            uint256(allowance.amount),
-            uint256(allowance.spent),
-            uint256(allowance.resetTimeMin),
-            uint256(allowance.lastResetMin)
-        ];
     }
 
     function _getRevertMsg(bytes memory _returnData)
