@@ -187,7 +187,7 @@ contract SynapseBridge is
     // FEE FUNCTIONS ***/
     /**
      * * @notice withdraw specified ERC20 token fees to a given address
-     * * @param token ERC20 token in which fees acccumulated to transfer
+     * * @param token ERC20 token in which fees accumulated to transfer
      * * @param to Address to send the fees to
      */
     function withdrawFees(IERC20 token, address to) external whenNotPaused {
@@ -245,7 +245,7 @@ contract SynapseBridge is
     }
 
     /**
-     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain
      * @param to address on other chain to redeem underlying assets to
      * @param chainId which underlying chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
@@ -296,7 +296,7 @@ contract SynapseBridge is
     }
 
     /**
-     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
+     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
      * @param to address on other chain to redeem underlying assets to
      * @param chainId which underlying chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
@@ -330,14 +330,14 @@ contract SynapseBridge is
     }
 
     /**
-     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
+     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
      * @param to address on other chain to redeem underlying assets to
      * @param chainId which underlying chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
      * @param amount Amount in native token decimals to transfer cross-chain pre-fees
      * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
      * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
-     * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
+     * @param swapDeadline Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token
      **/
     function redeemAndRemove(
         address to,
@@ -363,7 +363,7 @@ contract SynapseBridge is
     // BRIDGE FUNCTIONS: SOURCE CHAIN (diff addresses) ***/
 
     /**
-     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain
      * @param to address on other chain to redeem underlying assets to
      * @param chainId which underlying chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
@@ -468,7 +468,7 @@ contract SynapseBridge is
      * @param pool Destination chain's pool to use to swap SynERC20 -> Asset. The nodes determine this by using PoolConfig.sol.
      * @param tokenIndexFrom Index of the SynERC20 asset in the pool
      * @param tokenIndexTo Index of the desired final asset
-     * @param minDy Minumum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20.
+     * @param minDy Minimum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20.
      * @param deadline Epoch time of the deadline that the swap is allowed to be executed.
      * @param kappa kappa
      **/
@@ -532,7 +532,7 @@ contract SynapseBridge is
      * @param pool Destination chain's pool to use to swap SynERC20 -> Asset. The nodes determine this by using PoolConfig.sol.
      * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
      * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
-     * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
+     * @param swapDeadline Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token
      * @param kappa kappa
      **/
     function withdrawAndRemove(
@@ -643,7 +643,7 @@ contract SynapseBridge is
      * @param pool Destination chain's pool to use to swap SynERC20 -> Asset. The nodes determine this by using PoolConfig.sol.
      * @param tokenIndexFrom Index of the SynERC20 asset in the pool
      * @param tokenIndexTo Index of the desired final asset
-     * @param minDy Minumum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20.
+     * @param minDy Minimum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20.
      * @param deadline Epoch time of the deadline that the swap is allowed to be executed.
      * @param kappa kappa
      **/
@@ -687,7 +687,7 @@ contract SynapseBridge is
      * @param pool Destination chain's pool to use to swap SynERC20 -> Asset. The nodes determine this by using PoolConfig.sol.
      * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
      * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
-     * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
+     * @param swapDeadline Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token
      * @param kappa kappa
      **/
     function retryWithdrawAndRemove(
