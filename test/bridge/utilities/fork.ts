@@ -23,7 +23,7 @@ export async function upgradeBridgeProxy(bridgeAddress: string){
     await proxyAdmin.connect(signer).upgrade(bridgeAddress, (await synapseBridge.deploy()).address)
 }
 
-// addBridgeOwner adds a new bridge owner to a deployede bridge contract for forking
+// addBridgeOwner adds a new bridge owner to a deployed bridge contract for forking
 export async function addBridgeOwner(bridgeAddress: string, newOwner: string) {
     // set the current bridge to a SynapseBridge type so we can pull out the owner
     const synapseBridge = await ethers.getContractFactory("SynapseBridge");

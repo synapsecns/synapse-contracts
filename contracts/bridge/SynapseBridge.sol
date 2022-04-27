@@ -14,7 +14,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/ISwap.sol";
 import "./interfaces/IWETH9.sol";
 import "./interfaces/IRateLimiter.sol";
-import "hardhat/console.sol";
 
 interface IERC20Mintable is IERC20 {
     function mint(address to, uint256 amount) external;
