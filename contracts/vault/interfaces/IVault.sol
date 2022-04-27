@@ -19,6 +19,9 @@ interface IVault {
     function kappaExists(bytes32 kappa) external view returns (bool);
 
     // solhint-disable-next-line
+    function BRIDGE_ROLE() external view returns (bytes32);
+
+    // solhint-disable-next-line
     function WETH_ADDRESS() external returns (address payable);
 
     // -- VAULT FUNCTIONS --
