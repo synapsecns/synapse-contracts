@@ -45,6 +45,7 @@ jobs:
       ALCHEMY_API: ${{ secrets.ALCHEMY_API }}
       AVAX_API: https://api.avax.network/ext/bc/C/rpc
       MOVR_API: https://moonriver.api.onfinality.io/public
+      ARBITRUM_API: https://rpc.ankr.com/arbitrum
 
     steps:
       - uses: actions/checkout@v3
