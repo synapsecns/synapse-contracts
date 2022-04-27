@@ -42,6 +42,8 @@ contract Vault is
 
     // -- END OF Synapse:Bridge V1 state variables --
 
+    bytes32 public constant BRIDGE_ROLE = keccak256("BRIDGE_ROLE");
+
     receive() external payable {
         this;
     }
@@ -98,8 +100,8 @@ contract Vault is
 
     /// @notice This is role for Synapse: Bridge contract
     /// It's able to withdraw assets by providing valid kappa
-    modifier onlyNodeGroup() {
-        require(hasRole(NODEGROUP_ROLE, msg.sender), "Not governance");
+    modifier onlyBridge() {
+        require(hasRole(BRIDGE_ROLE, msg.sender), "Not bridge");
         _;
     }
 
@@ -196,7 +198,7 @@ contract Vault is
         bytes32 kappa
     )
         external
-        onlyNodeGroup
+        onlyBridge
         nonReentrant
         whenNotPaused
         markKappa(kappa)
@@ -222,7 +224,7 @@ contract Vault is
         bytes32 kappa
     )
         external
-        onlyNodeGroup
+        onlyBridge
         nonReentrant
         whenNotPaused
         markKappa(kappa)
