@@ -414,10 +414,9 @@ contract SynapseBridge is
                     kappa
                 )
             );
-            return;
+        } else {
+            _doWithdraw(to, token, amount, fee, kappa);
         }
-
-        _doWithdraw(to, token, amount, fee, kappa);
     }
 
     /**
@@ -454,10 +453,9 @@ contract SynapseBridge is
                     kappa
                 )
             );
-            return;
+        } else {
+            _doMint(to, token, amount, fee, kappa);
         }
-
-        _doMint(to, token, amount, fee, kappa);
     }
 
     /**
@@ -509,21 +507,20 @@ contract SynapseBridge is
                     kappa
                 )
             );
-            return;
+        } else {
+            _doMintAndSwap(
+                to,
+                token,
+                amount,
+                fee,
+                pool,
+                tokenIndexFrom,
+                tokenIndexTo,
+                minDy,
+                deadline,
+                kappa
+            );
         }
-
-        _doMintAndSwap(
-            to,
-            token,
-            amount,
-            fee,
-            pool,
-            tokenIndexFrom,
-            tokenIndexTo,
-            minDy,
-            deadline,
-            kappa
-        );
     }
 
     /**
@@ -572,20 +569,19 @@ contract SynapseBridge is
                     kappa
                 )
             );
-            return;
+        } else {
+            _doWithdrawAndRemove(
+                to,
+                token,
+                amount,
+                fee,
+                pool,
+                swapTokenIndex,
+                swapMinAmount,
+                swapDeadline,
+                kappa
+            );
         }
-
-        _doWithdrawAndRemove(
-            to,
-            token,
-            amount,
-            fee,
-            pool,
-            swapTokenIndex,
-            swapMinAmount,
-            swapDeadline,
-            kappa
-        );
     }
 
     // RATE LIMITER FUNCTIONS: DESTINATION CHAIN ***/
