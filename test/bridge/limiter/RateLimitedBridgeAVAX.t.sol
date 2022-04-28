@@ -37,7 +37,8 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
         _testUpgrade(kappas);
     }
 
-    function testMintAndSwap(uint96 amount) public {
+    function testMintAndSwap() public {
+        uint96 amount = 10**18;
         _testBridgeFunction(
             amount,
             NUSD,
@@ -50,6 +51,7 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
     }
 
     function testRetryCount(uint96 amount, uint8 txs) public {
+        // might as well fuzz amount here
         vm.assume(amount > 0);
         vm.assume(amount < type(uint96).max);
         vm.assume(txs >= 1);
@@ -106,6 +108,7 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
     }
 
     function testRetryBoth(uint96 amount, uint8 txs) public {
+        // might as well fuzz amount here
         vm.assume(amount > 0);
         vm.assume(amount < type(uint96).max);
         vm.assume(txs >= 5);
@@ -172,9 +175,8 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
         }
     }
 
-    function testPermissionlessRetry(uint96 amount) public {
-        vm.assume(amount > 0);
-        vm.assume(amount < type(uint96).max);
+    function testPermissionlessRetry() public {
+        uint96 amount = 10**18;
 
         _setAllowance(NUSD, amount);
         // use (allowance + 1) to get tx rate limited
@@ -227,9 +229,8 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
         );
     }
 
-    function testRetryFailedTx(uint96 amount) public {
-        vm.assume(amount > 0);
-        vm.assume(amount < type(uint96).max);
+    function testRetryFailedTx() public {
+        uint96 amount = 10**18;
 
         _setAllowance(SYN, amount);
         // use (allowance + 1) to get tx rate limited
@@ -307,16 +308,16 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
     }
 
     function testRetriesWithFailedTxs(uint96 amount, uint8 txs) public {
+        // might as well fuzz amount here
         vm.assume(amount > 0);
         vm.assume(amount < type(uint96).max);
+        vm.assume(txs >= 5);
+        vm.assume(txs <= 11);
 
         _setAllowance(NUSD, amount);
         _setAllowance(SYN, amount);
         // use (allowance + 1) to get tx rate limited
         ++amount;
-
-        vm.assume(txs >= 5);
-        vm.assume(txs <= 11);
 
         address admin = utils.getRoleMember(address(SYN), 0x00);
         bytes32 minterRole = ISynapseERC20(address(SYN)).MINTER_ROLE();

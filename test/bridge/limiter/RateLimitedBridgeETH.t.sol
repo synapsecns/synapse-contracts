@@ -36,9 +36,9 @@ contract BridgeRateLimiterTestEth is RateLimitedBridge {
         _testUpgrade(kappas);
     }
 
-    function testExactAllowance(uint96 amount) public {
-        vm.assume(amount >= 3);
-        vm.assume(amount <= _getBridgeBalance(NUSD));
+    function testExactAllowance() public {
+        // let's withdraw 1% of TVL
+        uint96 amount = uint96(_getBridgeBalance(NUSD) / 100);
 
         _setAllowance(NUSD, amount);
 
@@ -81,7 +81,8 @@ contract BridgeRateLimiterTestEth is RateLimitedBridge {
         }
     }
 
-    function testMint(uint96 amount) public {
+    function testMint() public {
+        uint96 amount = 10**18;
         _testBridgeFunction(
             amount,
             SYN,
@@ -93,7 +94,9 @@ contract BridgeRateLimiterTestEth is RateLimitedBridge {
         );
     }
 
-    function testWithdraw(uint96 amount) public {
+    function testWithdraw() public {
+        // let's withdraw 1% of TVL
+        uint96 amount = uint96(_getBridgeBalance(NUSD) / 100);
         _testBridgeFunction(
             amount,
             NUSD,
@@ -105,7 +108,9 @@ contract BridgeRateLimiterTestEth is RateLimitedBridge {
         );
     }
 
-    function testWithdrawAndRemove(uint96 amount) public {
+    function testWithdrawAndRemove() public {
+        // let's withdraw 1% of TVL
+        uint96 amount = uint96(_getBridgeBalance(NUSD) / 100);
         _testBridgeFunction(
             amount,
             NUSD,
