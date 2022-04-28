@@ -44,8 +44,8 @@ contract RateLimiter is
     // Bridge Address
     address public BRIDGE_ADDRESS;
     // Time period after anyone can retry a rate limited tx
-    uint32 public retryTimeout = 360;
-    uint32 public constant MIN_RETRY_TIMEOUT = 60;
+    uint32 public retryTimeout;
+    uint32 public constant MIN_RETRY_TIMEOUT = 10;
 
     // List of tokens
     address[] public tokens;
@@ -75,7 +75,37 @@ contract RateLimiter is
     function initialize() external initializer {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         __AccessControl_init();
+        retryTimeout = MIN_RETRY_TIMEOUT;
     }
+
+    /*** VIEWS ***/
+
+    function getTokenAllowance(address token)
+        external
+        view
+        returns (uint256[4] memory)
+    {
+        Allowance memory allowance = _getAllowance(token);
+        return [
+            uint256(allowance.amount),
+            uint256(allowance.spent),
+            uint256(allowance.resetTimeMin),
+            uint256(allowance.lastResetMin)
+        ];
+    }
+
+    /**
+     * @notice Gets a  list of tokens with allowances
+     **/
+    function getTokens() external view returns (address[] memory) {
+        return tokens;
+    }
+
+    function retryQueueLength() external view returns (uint256 length) {
+        length = rateLimitedQueue.length();
+    }
+
+    /*** RESTRICTED: GOVERNANCE ***/
 
     function setBridgeAddress(address bridge)
         external
@@ -92,6 +122,19 @@ contract RateLimiter is
         retryTimeout = _retryTimeout;
     }
 
+    /*** RESTRICTED: LIMITER ***/
+
+    function deleteByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
+        rateLimitedQueue.deleteKey(kappa);
+    }
+
+    function resetAllowance(address token) external onlyRole(LIMITER_ROLE) {
+        Allowance memory allowance = _getAllowance(token);
+        allowance.spent = 0;
+        _updateAllowance(token, allowance);
+        emit ResetAllowance(token);
+    }
+
     /**
      * @notice Updates the allowance for a given token
      * @param token to update the allowance for
@@ -104,7 +147,7 @@ contract RateLimiter is
         uint96 allowanceAmount,
         uint16 resetTimeMin,
         uint32 resetBaseMin
-    ) public onlyRole(LIMITER_ROLE) {
+    ) external onlyRole(LIMITER_ROLE) {
         Allowance memory allowance = _getAllowance(token);
         if (!allowance.initialized) {
             // New token
@@ -128,33 +171,13 @@ contract RateLimiter is
         emit SetAllowance(token, allowanceAmount, resetTimeMin);
     }
 
-    function _updateAllowance(address token, Allowance memory allowance)
-        internal
-    {
-        allowances[token] = allowance;
-    }
+    /*** RESTRICTED: BRIDGE ***/
 
-    function _getAllowance(address token)
-        internal
-        view
-        returns (Allowance memory allowance)
+    function addToRetryQueue(bytes32 kappa, bytes memory toRetry)
+        external
+        onlyRole(BRIDGE_ROLE)
     {
-        allowance = allowances[token];
-        // solium-disable-next-line security/no-block-members
-        uint32 currentMin = uint32(block.timestamp / 60);
-        // Check if we should reset the time. We do this on load to minimize storage read/ writes
-        if (
-            allowance.resetTimeMin > 0 &&
-            allowance.lastResetMin <= currentMin - allowance.resetTimeMin
-        ) {
-            allowance.spent = 0;
-            // Resets happen in regular intervals and `lastResetMin` should be aligned to that
-            allowance.lastResetMin =
-                currentMin -
-                ((currentMin - allowance.lastResetMin) %
-                    allowance.resetTimeMin);
-        }
-        return allowance;
+        rateLimitedQueue.add(kappa, toRetry);
     }
 
     /**
@@ -185,16 +208,38 @@ contract RateLimiter is
         return true;
     }
 
-    function addToRetryQueue(bytes32 kappa, bytes memory toRetry)
-        external
-        onlyRole(BRIDGE_ROLE)
+    /*** INTERNAL: ALLOWANCE ***/
+
+    function _getAllowance(address token)
+        internal
+        view
+        returns (Allowance memory allowance)
     {
-        rateLimitedQueue.add(kappa, toRetry);
+        allowance = allowances[token];
+        // solium-disable-next-line security/no-block-members
+        uint32 currentMin = uint32(block.timestamp / 60);
+        // Check if we should reset the time. We do this on load to minimize storage read/ writes
+        if (
+            allowance.resetTimeMin > 0 &&
+            allowance.lastResetMin <= currentMin - allowance.resetTimeMin
+        ) {
+            allowance.spent = 0;
+            // Resets happen in regular intervals and `lastResetMin` should be aligned to that
+            allowance.lastResetMin =
+                currentMin -
+                ((currentMin - allowance.lastResetMin) %
+                    allowance.resetTimeMin);
+        }
+        return allowance;
     }
 
-    function retryQueueLength() external view returns (uint256 length) {
-        length = rateLimitedQueue.length();
+    function _updateAllowance(address token, Allowance memory allowance)
+        internal
+    {
+        allowances[token] = allowance;
     }
+
+    /*** RETRY FUNCTIONS ***/
 
     function retryByKappa(bytes32 kappa) external {
         (bytes memory toRetry, uint32 storedAtMin) = rateLimitedQueue.get(
@@ -209,8 +254,8 @@ contract RateLimiter is
                     "Retry timeout not finished"
                 );
             }
-            _retry(kappa, toRetry);
             rateLimitedQueue.deleteKey(kappa);
+            _retry(kappa, toRetry);
         } else {
             // Try looking up in the failed txs:
             // anyone should be able to do so, with no timeout
@@ -234,9 +279,19 @@ contract RateLimiter is
         }
     }
 
+    function _retry(bytes32 kappa, bytes memory toRetry) internal {
+        (bool success, ) = BRIDGE_ADDRESS.call(toRetry);
+        if (!success && !IBridge(BRIDGE_ADDRESS).kappaExists(kappa)) {
+            // save payload for failed transactions
+            // that haven't been processed by Bridge yet
+            failedRetries[kappa] = toRetry;
+        }
+    }
+
     function _retryFailed(bytes32 kappa) internal {
         bytes memory toRetry = failedRetries[kappa];
         if (toRetry.length > 0) {
+            failedRetries[kappa] = bytes("");
             (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(
                 toRetry
             );
@@ -251,49 +306,7 @@ contract RateLimiter is
                     )
                 )
             );
-            failedRetries[kappa] = bytes("");
         }
-    }
-
-    function _retry(bytes32 kappa, bytes memory toRetry) internal {
-        (bool success, ) = BRIDGE_ADDRESS.call(toRetry);
-        if (!success && !IBridge(BRIDGE_ADDRESS).kappaExists(kappa)) {
-            // save payload for failed transactions
-            // that haven't been processed by Bridge yet
-            failedRetries[kappa] = toRetry;
-        }
-    }
-
-    function deleteByKappa(bytes32 kappa) external onlyRole(LIMITER_ROLE) {
-        rateLimitedQueue.deleteKey(kappa);
-    }
-
-    /**
-     * @notice Gets a  list of tokens with allowances
-     **/
-    function getTokens() external view returns (address[] memory) {
-        return tokens;
-    }
-
-    function resetAllowance(address token) external onlyRole(LIMITER_ROLE) {
-        Allowance memory allowance = _getAllowance(token);
-        allowance.spent = 0;
-        _updateAllowance(token, allowance);
-        emit ResetAllowance(token);
-    }
-
-    function getTokenAllowance(address token)
-        external
-        view
-        returns (uint256[4] memory)
-    {
-        Allowance memory allowance = _getAllowance(token);
-        return [
-            uint256(allowance.amount),
-            uint256(allowance.spent),
-            uint256(allowance.resetTimeMin),
-            uint256(allowance.lastResetMin)
-        ];
     }
 
     function _getRevertMsg(bytes memory _returnData)

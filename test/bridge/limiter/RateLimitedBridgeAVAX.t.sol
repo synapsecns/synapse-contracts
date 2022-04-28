@@ -15,7 +15,7 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
     IERC20 public constant SYN =
         IERC20(0x1f1E7c893855525b303f99bDF5c3c05Be09ca251);
 
-    constructor() RateLimitedBridge(BRIDGE) {
+    constructor() RateLimitedBridge(BRIDGE, [address(SYN), address(NUSD)]) {
         this;
     }
 
