@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import "./L2BridgeZapTest.sol";
 
-contract L2ZapTestOptimism is L2BridgeZapTest {
+contract L2ZapTestOpt is L2BridgeZapTest {
     address public constant WETH = 0x121ab82b49B2BC4c7901CA46B8277962b4350204;
     address public constant BRIDGE = 0xAf41a65F786339e7911F4acDAD6BD49426F2Dc6b;
 
@@ -16,7 +16,7 @@ contract L2ZapTestOptimism is L2BridgeZapTest {
     address public constant NUSD_POOL =
         0xF44938b0125A6662f9536281aD2CD6c499F22004;
     address public constant NETH_POOL =
-        0x8c7d5f8A8e154e1B59C92D8FB71314A43F32ef7B;
+        0xE27BFf97CE92C3e1Ff7AA9f86781FDd6D48F5eE9;
 
     constructor() L2BridgeZapTest() {
         IERC20(SYN).approve(address(zap), MAX_UINT256);
