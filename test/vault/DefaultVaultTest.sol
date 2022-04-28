@@ -143,7 +143,7 @@ contract DefaultVaultTest is Test {
     function _saveState() internal {
         uint256[] memory fees = new uint256[](_config.tokens.length);
         for (uint256 i = 0; i < fees.length; i++) {
-            fees[i] = vault.getFeeBalance(_config.tokens[i]);
+            fees[i] = vault.getFeeBalance(IERC20(_config.tokens[i]));
         }
 
         _state = BridgeState({
@@ -195,7 +195,7 @@ contract DefaultVaultTest is Test {
         for (uint256 i = 0; i < length; ++i) {
             assertEq(
                 _state.fees[i],
-                vault.getFeeBalance(_state.tokens[i]),
+                vault.getFeeBalance(IERC20(_state.tokens[i])),
                 "fees rekt post-upgrade"
             );
         }

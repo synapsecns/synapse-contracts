@@ -107,12 +107,8 @@ contract Vault is
 
     // -- VIEWS --
 
-    function getFeeBalance(address tokenAddress)
-        external
-        view
-        returns (uint256)
-    {
-        return fees[tokenAddress];
+    function getFeeBalance(IERC20 token) external view returns (uint256) {
+        return fees[address(token)];
     }
 
     function getTokenBalance(IERC20 token) public view returns (uint256) {
@@ -147,13 +143,13 @@ contract Vault is
     /**
         @notice Recover GAS from the contract
      */
-    function recoverGAS() external onlyGovernance {
+    function recoverGAS(address to) external onlyGovernance {
         uint256 amount = address(this).balance;
         require(amount != 0, "Nothing to recover");
 
         emit GasRecovered(amount);
         //solhint-disable-next-line
-        (bool success, ) = msg.sender.call{value: amount}("");
+        (bool success, ) = to.call{value: amount}("");
         require(success, "GAS transfer failed");
     }
 
