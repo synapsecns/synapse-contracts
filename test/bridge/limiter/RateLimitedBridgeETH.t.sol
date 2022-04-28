@@ -14,7 +14,7 @@ contract BridgeRateLimiterTestEth is RateLimitedBridge {
     IERC20 public constant SYN =
         IERC20(0x0f2D719407FdBeFF09D87557AbB7232601FD9F29);
 
-    constructor() RateLimitedBridge(BRIDGE) {
+    constructor() RateLimitedBridge(BRIDGE, [address(SYN), address(NUSD)]) {
         this;
     }
 

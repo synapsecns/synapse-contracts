@@ -17,7 +17,7 @@ contract L2BridgeZap {
     mapping(address => address) public swapMap;
     mapping(address => IERC20[]) public swapTokensMap;
 
-    uint256 private constant MAX_UINT256 = 2**256 - 1;
+    uint256 internal constant MAX_UINT256 = type(uint256).max;
 
     constructor(
         address payable _wethAddress,
@@ -29,20 +29,26 @@ contract L2BridgeZap {
         WETH_ADDRESS = _wethAddress;
         synapseBridge = _synapseBridge;
         if (_wethAddress != address(0)) {
-            IERC20(_wethAddress).safeIncreaseAllowance(
+            IERC20(_wethAddress).safeApprove(
                 address(_synapseBridge),
                 MAX_UINT256
             );
         }
         for (uint256 i = 0; i < _swaps.length; ++i) {
-            _saveSwap(_swaps[i], _tokens[i], address(_synapseBridge));
+            _saveSwap(
+                _swaps[i],
+                _tokens[i],
+                address(_synapseBridge),
+                _wethAddress
+            );
         }
     }
 
     function _saveSwap(
         address _swap,
         address _token,
-        address _synapseBridge
+        address _synapseBridge,
+        address payable _wethAddress
     ) internal {
         swapMap[_token] = _swap;
 
@@ -51,7 +57,10 @@ contract L2BridgeZap {
             try ISwap(_swap).getToken(i) returns (IERC20 token) {
                 swapTokensMap[_swap].push(token);
                 token.safeApprove(address(_swap), MAX_UINT256);
-                token.safeApprove(_synapseBridge, MAX_UINT256);
+                // Bridge is already allowed to spend WETH
+                if (address(token) != _wethAddress) {
+                    token.safeApprove(_synapseBridge, MAX_UINT256);
+                }
             } catch {
                 break;
             }
@@ -100,13 +109,7 @@ contract L2BridgeZap {
             minDy,
             deadline
         );
-        // deposit into bridge, gets nUSD
-        if (
-            token.allowance(address(this), address(synapseBridge)) <
-            swappedAmount
-        ) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // token already approved for spending in _saveSwap()
         synapseBridge.redeem(to, chainId, token, swappedAmount);
     }
 
@@ -136,13 +139,7 @@ contract L2BridgeZap {
             minDy,
             deadline
         );
-        // deposit into bridge, gets nUSD
-        if (
-            token.allowance(address(this), address(synapseBridge)) <
-            swappedAmount
-        ) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // token already approved for spending in _saveSwap()
         synapseBridge.redeemAndSwap(
             to,
             chainId,
@@ -181,13 +178,7 @@ contract L2BridgeZap {
             minDy,
             deadline
         );
-        // deposit into bridge, gets nUSD
-        if (
-            token.allowance(address(this), address(synapseBridge)) <
-            swappedAmount
-        ) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // token already approved for spending in _saveSwap()
         synapseBridge.redeemAndRemove(
             to,
             chainId,
@@ -213,9 +204,8 @@ contract L2BridgeZap {
         uint256 amount
     ) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
-        if (token.allowance(address(this), address(synapseBridge)) < amount) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // token might have not been approved in _saveSwap()
+        _approveIfNeeded(token, amount);
         synapseBridge.redeem(to, chainId, token, amount);
     }
 
@@ -233,9 +223,8 @@ contract L2BridgeZap {
         uint256 amount
     ) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
-        if (token.allowance(address(this), address(synapseBridge)) < amount) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // token might have not been approved in _saveSwap()
+        _approveIfNeeded(token, amount);
         synapseBridge.deposit(to, chainId, token, amount);
     }
 
@@ -252,6 +241,7 @@ contract L2BridgeZap {
     ) external payable {
         require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+        // WETH was approved for spending in constructor
         synapseBridge.deposit(to, chainId, IERC20(WETH_ADDRESS), amount);
     }
 
@@ -276,6 +266,7 @@ contract L2BridgeZap {
     ) external payable {
         require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+        // WETH was approved for spending in constructor
         synapseBridge.depositAndSwap(
             to,
             chainId,
@@ -312,6 +303,7 @@ contract L2BridgeZap {
             minDy,
             deadline
         );
+        // token already approved for spending in _saveSwap()
         synapseBridge.redeem(to, chainId, token, swappedAmount);
     }
 
@@ -343,6 +335,7 @@ contract L2BridgeZap {
             minDy,
             deadline
         );
+        // token already approved for spending in _saveSwap()
         synapseBridge.redeemAndSwap(
             to,
             chainId,
@@ -357,7 +350,7 @@ contract L2BridgeZap {
 
     /**
      * @notice Wraps redeemAndSwap on SynapseBridge.sol
-     * Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
+     * Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
      * @param to address on other chain to redeem underlying assets to
      * @param chainId which underlying chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
@@ -378,9 +371,8 @@ contract L2BridgeZap {
         uint256 deadline
     ) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
-        if (token.allowance(address(this), address(synapseBridge)) < amount) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // token might have not been approved in _saveSwap()
+        _approveIfNeeded(token, amount);
         synapseBridge.redeemAndSwap(
             to,
             chainId,
@@ -395,14 +387,14 @@ contract L2BridgeZap {
 
     /**
      * @notice Wraps redeemAndRemove on SynapseBridge
-     * Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
+     * Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
      * @param to address on other chain to redeem underlying assets to
      * @param chainId which underlying chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
      * @param amount Amount of (typically) LP token to pass to the nodes to attempt to removeLiquidity() with to redeem for the underlying assets of the LP token
      * @param liqTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
      * @param liqMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
-     * @param liqDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
+     * @param liqDeadline Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token
      **/
     function redeemAndRemove(
         address to,
@@ -414,9 +406,8 @@ contract L2BridgeZap {
         uint256 liqDeadline
     ) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
-        if (token.allowance(address(this), address(synapseBridge)) < amount) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // token might have not been approved in _saveSwap()
+        _approveIfNeeded(token, amount);
         synapseBridge.redeemAndRemove(
             to,
             chainId,
@@ -429,23 +420,31 @@ contract L2BridgeZap {
     }
 
     /**
-     * @notice Wraps SynapseBridge redeemv2() function
+     * @notice Wraps SynapseBridge redeemV2() function
      * @param to address on other chain to bridge assets to
      * @param chainId which chain to bridge assets onto
      * @param token ERC20 compatible token to redeem into the bridge
      * @param amount Amount in native token decimals to transfer cross-chain pre-fees
      **/
-    function redeemv2(
+    function redeemV2(
         bytes32 to,
         uint256 chainId,
         IERC20 token,
         uint256 amount
     ) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
+        // token might have not been approved in _saveSwap()
+        _approveIfNeeded(token, amount);
+        synapseBridge.redeemV2(to, chainId, token, amount);
+    }
 
+    /**
+     * @notice Allow Synapse:Bridge to spend token, 
+     * if existing allowance is not big enough
+     */
+    function _approveIfNeeded(IERC20 token, uint256 amount) internal {
         if (token.allowance(address(this), address(synapseBridge)) < amount) {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
         }
-        synapseBridge.redeemv2(to, chainId, token, amount);
     }
 }
