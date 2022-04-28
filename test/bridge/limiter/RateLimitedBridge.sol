@@ -303,11 +303,11 @@ contract RateLimitedBridge is Test {
         bytes4 retrySelector,
         bytes memory extraParams
     ) internal {
-        vm.assume(amount >= 3);
+        assertTrue(amount >= 3, "amount too small");
         if (isWithdraw) {
-            vm.assume(amount <= _getBridgeBalance(token));
+            assertTrue(amount <= _getBridgeBalance(token), "amount too big");
         } else {
-            vm.assume(amount < type(uint96).max);
+            assertTrue(amount < type(uint96).max, "amount too big");
         }
 
         _setAllowance(token, amount);

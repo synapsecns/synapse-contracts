@@ -170,11 +170,10 @@ contract FraxWrapperTestMovr is Test {
         assertEq(received, quote, "Failed to give correct quote");
     }
 
-    function testSwapAndRedeem(uint256 amountOut) public {
-        vm.assume(amountOut <= TEST_AMOUNT);
-        uint256 amount = _getAmountIn(amountOut);
-        vm.assume(amount > 0);
-        vm.assume(amount <= TEST_AMOUNT);
+    function testSwapAndRedeem() public {
+        uint256 amount = TEST_AMOUNT;
+        uint256 amountOut = pool.calculateSwap(0, 1, amount);
+        assertTrue(amountOut > 0, "Test amount is too big");
 
         IERC20(FRAX).approve(address(zap), amount);
 
@@ -193,17 +192,15 @@ contract FraxWrapperTestMovr is Test {
         );
     }
 
-    function testMintAndSwap(uint256 amount) public {
-        vm.assume(amount > 0);
-        vm.assume(amount <= TEST_AMOUNT);
+    function testMintAndSwap() public {
+        uint256 amount = TEST_AMOUNT;
         uint256 amountOut = pool.calculateSwap(0, 1, amount);
-        vm.assume(amountOut > 0);
-
-        vm.startPrank(NODE);
+        assertTrue(amountOut > 0, "Test amount is too big");
 
         uint256 pre = IERC20(FRAX).balanceOf(address(this));
-
         bytes32 kappa = keccak256(bytes("much kappa very wow"));
+        
+        hoax(NODE);
         IBridge(BRIDGE).mintAndSwap(
             address(this),
             SYN_FRAX,
@@ -216,7 +213,6 @@ contract FraxWrapperTestMovr is Test {
             UINT_MAX,
             kappa
         );
-        vm.stopPrank();
 
         assertTrue(
             IERC20(FRAX).balanceOf(address(this)) > pre,
