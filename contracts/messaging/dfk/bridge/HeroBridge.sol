@@ -13,7 +13,6 @@ pragma solidity 0.8.13;
 contract HeroBridge is SynMessagingReceiver {
     address public heroes;
     address public assistingAuction;
-    address public admin;
 
     struct MessageFormat {
         Hero dstHero;
@@ -162,8 +161,7 @@ contract HeroBridge is SynMessagingReceiver {
         );
     }
 
-    function setAssistingAuctionAddress(address _assistingAuction) external {
-        require(msg.sender == admin, "not admin");
+    function setAssistingAuctionAddress(address _assistingAuction) external onlyOwner {
         assistingAuction = _assistingAuction;
     }
 }
