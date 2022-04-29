@@ -129,7 +129,7 @@ contract Bridge is
         .getTokenAddressEVM(address(token), chainId);
 
         require(tokenBridgedTo != address(0), "!token");
-        require(isEnabled, "!isEnabled");
+        require(isEnabled, "!enabled");
         require(tokenBridgedTo == destinationSwapParams.path[0], "!swap");
 
         // Then, burn token, or deposit to Vault (depending on bridge token type).
@@ -159,7 +159,7 @@ contract Bridge is
         (string memory tokenBridgedTo, bool isEnabled) = bridgeConfig
         .getTokenAddressNonEVM(address(token), chainId);
         require(bytes(tokenBridgedTo).length > 0, "!token");
-        require(isEnabled, "!isEnabled");
+        require(isEnabled, "!enabled");
 
         // Then, burn token, or deposit to Vault (depending on bridge token type).
         // Use verified burnt/deposited amount for bridging purposes.
