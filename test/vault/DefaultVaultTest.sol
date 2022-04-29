@@ -35,6 +35,50 @@ contract DefaultVaultTest is Test {
         uint256[] fees;
     }
 
+    // -- BRIDGE EVENTS OUT:
+
+    event BridgedOutEVM(
+        address indexed to,
+        uint256 chainId,
+        IERC20 tokenBridgedFrom,
+        uint256 amount,
+        IERC20 tokenBridgedTo,
+        Bridge.SwapParams swapParams,
+        bool gasdropRequested
+    );
+
+    event BridgedOutNonEVM(
+        bytes32 indexed to,
+        uint256 chainId,
+        IERC20 tokenBridgedFrom,
+        uint256 amount,
+        string tokenBridgedTo
+    );
+
+    // -- BRIDGE EVENTS IN --
+
+    event TokenBridgedIn(
+        address indexed to,
+        IERC20 tokenBridged,
+        uint256 amountBridged,
+        uint256 bridgeFee,
+        IERC20 tokenReceived,
+        uint256 amountReceived,
+        uint256 gasdropAmount,
+        bytes32 indexed kappa
+    );
+
+    TestSetup public defaultConfig =
+        TestSetup({
+            needsUpgrade: false,
+            tokens: [address(0), address(0)],
+            oldBridgeAddress: address(0),
+            bridgeMaxSwaps: 2,
+            maxSwaps: 4,
+            maxGasForSwap: 10**6,
+            wgas: payable(0)
+        });
+
     Utilities internal immutable utils;
 
     Bridge public bridge;
@@ -53,6 +97,9 @@ contract DefaultVaultTest is Test {
     address payable public immutable node;
     address payable public immutable dude;
 
+    uint256 public constant TEST_AMOUNT = 133742069;
+    uint256 public constant MAX_UINT = type(uint256).max;
+
     constructor(TestSetup memory config) {
         utils = new Utilities();
         _config = config;
@@ -63,6 +110,14 @@ contract DefaultVaultTest is Test {
         governance = users[2];
         node = users[3];
         dude = users[4];
+
+        vm.label(attacker, "attacker");
+        vm.label(user, "user");
+        vm.label(governance, "gov");
+        vm.label(node, "node");
+        vm.label(dude, "dude");
+
+        vm.label(address(utils), "Utils");
     }
 
     function setUp() public virtual {
@@ -78,10 +133,12 @@ contract DefaultVaultTest is Test {
             _saveState();
             utils.upgradeTo(_config.oldBridgeAddress, _vault);
             vault = IVault(_config.oldBridgeAddress);
+            vm.label(_vault, "Vault impl");
         } else {
             vault = IVault(_vault);
             vault.initialize();
         }
+        vm.label(address(vault), "Vault");
 
         hoax(utils.getRoleMember(address(vault), 0x00));
         IAccessControl(address(vault)).grantRole(
@@ -93,6 +150,8 @@ contract DefaultVaultTest is Test {
     function _setupBridge() private {
         bridgeConfig = new BridgeConfig();
         bridge = new Bridge();
+        vm.label(address(bridge), "Bridge");
+        vm.label(address(bridgeConfig), "BridgeConfig");
 
         bridgeConfig.initialize();
         bridge.initialize(vault, bridgeConfig, _config.maxGasForSwap);
@@ -117,6 +176,8 @@ contract DefaultVaultTest is Test {
             _config.bridgeMaxSwaps
         );
         quoter = new BridgeQuoter(payable(router), _config.maxSwaps);
+        vm.label(address(router), "Router");
+        vm.label(address(quoter), "Quoter");
 
         router.grantRole(router.ADAPTERS_STORAGE_ROLE(), address(quoter));
         router.grantRole(router.GOVERNANCE_ROLE(), governance);
@@ -127,17 +188,14 @@ contract DefaultVaultTest is Test {
         bridge.setRouter(router);
     }
 
-    function _deployERC20(string memory name, string memory symbol)
-        internal
-        returns (IERC20 token)
-    {
-        return
-            IERC20(
-                deployCode(
-                    "./artifacts/ERC20Mock.sol/ERC20Mock.json",
-                    abi.encode(name, symbol, 0)
-                )
-            );
+    function _deployERC20(string memory name) internal returns (IERC20 token) {
+        token = IERC20(
+            deployCode(
+                "./artifacts/ERC20Mock.sol/ERC20Mock.json",
+                abi.encode(name, name, 0)
+            )
+        );
+        vm.label(address(token), name);
     }
 
     function _saveState() internal {
