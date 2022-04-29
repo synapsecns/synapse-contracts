@@ -43,10 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ALCHEMY_API: ${{ secrets.ALCHEMY_API }}
-      ARBITRUM_API: ${{ secrets.ARBITRUM_API }}
+      ARBITRUM_API: https://rpc.ankr.com/arbitrum # ${{ secrets.ARBITRUM_API }} # alchemy rate limiter issue
       AVAX_API: https://api.avax.network/ext/bc/C/rpc
       MOVR_API: https://moonriver.api.onfinality.io/public
-      OPTIMISM_API: https://mainnet.optimism.io # ${{ secrets.OPTIMISM_API }} # alchemy issue
+      OPTIMISM_API: ${{ secrets.OPTIMISM_API }}
       FOUNDRY_FUZZ_RUNS: 64
 
     steps:
