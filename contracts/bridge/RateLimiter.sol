@@ -271,7 +271,7 @@ contract RateLimiter is
 
         for (uint8 i = 0; i < attempts; i++) {
             // check out the first element
-            (bytes32 kappa, bytes memory toRetry, ) = rateLimitedQueue.poll();
+            (bytes32 kappa, bytes memory toRetry, ) = rateLimitedQueue.pop_front();
 
             if (toRetry.length > 0) {
                 _retry(kappa, toRetry);
