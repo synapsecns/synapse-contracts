@@ -4,22 +4,9 @@ pragma solidity >=0.8.0;
 import "./DefaultVaultTest.sol";
 
 contract VaultUnitTest is DefaultVaultTest {
-    TestSetup public config =
-        TestSetup({
-            needsUpgrade: false,
-            tokens: [address(0), address(0)],
-            oldBridgeAddress: address(0),
-            bridgeMaxSwaps: 2,
-            maxSwaps: 4,
-            maxGasForSwap: 10**6,
-            wgas: payable(0)
-        });
-
     IERC20 public syn;
 
-    uint256 public constant TEST_AMOUNT = 133742069;
-
-    constructor() DefaultVaultTest(config) {
+    constructor() DefaultVaultTest(defaultConfig) {
         this;
     }
 
@@ -29,7 +16,7 @@ contract VaultUnitTest is DefaultVaultTest {
 
     function setUp() public override {
         super.setUp();
-        syn = _deployERC20("SYN", "SYN");
+        syn = _deployERC20("SYN");
     }
 
     /**
