@@ -60,6 +60,16 @@ contract Utilities is Test {
         return users;
     }
 
+    function createEmptyUsers(uint256 userNum)
+        external
+        returns (address[] memory users)
+    {
+        users = new address[](userNum);
+        for (uint256 i = 0; i < userNum; ++i) {
+            users[i] = this.getNextUserAddress();
+        }
+    }
+
     // generate fresh address
     function getNextUserAddress() external returns (address payable) {
         //bytes32 to address conversion

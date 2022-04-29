@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "./DefaultVaultTest.sol";
+import "../utils/DefaultVaultTest.sol";
 
 contract VaultUnitTest is DefaultVaultTest {
     IERC20 public syn;
