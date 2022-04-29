@@ -243,8 +243,8 @@ contract Bridge is
             to,
             IERC20(token),
             amount,
-            // (minAmountOut, path, adapters, deadline)
-            SwapParams(0, path, new address[](0), UINT_MAX),
+            // (minAmountOut, path, adapters, swapDeadline)
+            SwapParams(0, path, new address[](0), 0),
             // gasdropEnabled = true
             true,
             kappa
