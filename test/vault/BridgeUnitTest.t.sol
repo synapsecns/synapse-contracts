@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "./DefaultVaultTest.sol";
+import "../utils/DefaultVaultTest.sol";
 
 import {IBridgeRouter} from "src-router/interfaces/IBridgeRouter.sol";
 import {IBridge} from "src-vault/interfaces/IBridge.sol";
