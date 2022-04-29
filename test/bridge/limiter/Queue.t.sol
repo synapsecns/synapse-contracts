@@ -20,7 +20,7 @@ contract QueueTest is Test {
     function testAdd1F(bytes32 key) public {
         vm.assume(key != bytes32(0));
         _add(key, 4 * AMOUNT);
-        _poll(4 * AMOUNT);
+        _poll_front(4 * AMOUNT);
     }
 
     // Add to queue, then poll until it's empty (E) two times
@@ -28,7 +28,7 @@ contract QueueTest is Test {
         vm.assume(key != bytes32(0));
         for (uint256 i = 0; i < 2; ++i) {
             key = _add(key, 2 * AMOUNT);
-            _poll(2 * AMOUNT);
+            _poll_front(2 * AMOUNT);
         }
     }
 
@@ -38,7 +38,7 @@ contract QueueTest is Test {
         for (uint256 i = 0; i < 3; ++i) {
             uint256 amount = i == 0 ? 2 * AMOUNT : AMOUNT;
             key = _add(key, amount);
-            _poll(amount);
+            _poll_front(amount);
         }
     }
 
@@ -47,7 +47,7 @@ contract QueueTest is Test {
         vm.assume(key != bytes32(0));
         for (uint256 i = 0; i < 4; ++i) {
             key = _add(key, AMOUNT);
-            _poll(AMOUNT);
+            _poll_front(AMOUNT);
         }
     }
 
@@ -82,15 +82,15 @@ contract QueueTest is Test {
         return key;
     }
 
-    function _poll(uint256 amount) internal {
+    function _poll_front(uint256 amount) internal {
         for (uint256 i = 0; i < amount; i++) {
-            queue.poll();
+            queue.pop_front();
         }
     }
 
     function _pollCheck(uint256 amount) internal {
         for (uint256 i = 0; i < amount; i++) {
-            (bytes32 key, bytes memory value, ) = queue.poll();
+            (bytes32 key, bytes memory value, ) = queue.pop_front();
 
             assertTrue(!queue.contains(key), "Key not deleted");
             assertTrue(

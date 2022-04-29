@@ -187,7 +187,7 @@ library EnumerableQueueUpgradeable {
      * @dev All return variables will be zero, Queue is empty.
      * `value` will be zero, if `deleteKey(key)` was called previously.
      */
-    function poll(KappaQueue storage queue)
+    function pop_front(KappaQueue storage queue)
         internal
         returns (
             bytes32 key,
