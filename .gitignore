@@ -56,3 +56,5 @@ tenderly.yaml
 .env
 doc/
 .openzeppelin
+
+report.*.json
