@@ -136,6 +136,7 @@ contract BasicQuoter is Ownable, IBasicQuoter {
     }
 
     function setMaxSwaps(uint8 _maxSwaps) public onlyOwner {
+        require(_maxSwaps != 0, "Amount of swaps can't be zero");
         MAX_SWAPS = _maxSwaps;
     }
 
