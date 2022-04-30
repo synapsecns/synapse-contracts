@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ALCHEMY_API: ${{ secrets.ALCHEMY_API }}
-      ARBITRUM_API: https://rpc.ankr.com/arbitrum # ${{ secrets.ARBITRUM_API }} # alchemy rate limit issue
+      ARBITRUM_API: ${{ secrets.ARBITRUM_API }}
       AVAX_API: https://api.avax.network/ext/bc/C/rpc
       MOVR_API: https://moonriver.api.onfinality.io/public
       OPTIMISM_API: ${{ secrets.OPTIMISM_API }}
