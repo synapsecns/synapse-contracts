@@ -73,7 +73,7 @@ contract Vault is
     }
 
     /// @notice Check if possible to withdraw amount of token
-    modifier checkTokenRequest(IERC20 token, uint256 amount) {
+    modifier checkWithdrawRequest(IERC20 token, uint256 amount) {
         require(amount != 0, "Amount is zero");
         require(getTokenBalance(token) >= amount, "Withdraw amount is too big");
         _;
@@ -225,7 +225,7 @@ contract Vault is
         whenNotPaused
         markKappa(kappa)
         checkReceiver(to)
-        checkTokenRequest(token, amount + fee)
+        checkWithdrawRequest(token, amount + fee)
         returns (uint256 gasdropAmount)
     {
         fees[address(token)] += fee;
