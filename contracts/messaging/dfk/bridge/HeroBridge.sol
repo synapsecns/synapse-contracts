@@ -120,29 +120,33 @@ contract HeroBridge is SynMessagingReceiver {
         uint256 dstHeroId = passedMsg.dstHeroId;
 
         // will revert if non-existant Hero
-        try IHeroCoreUpgradeable(heroes).ownerOf(dstHeroId) {
+        try IHeroCoreUpgradeable(heroes).ownerOf(dstHeroId) returns (
+            address owner
+        ) {
             /** 
                 If heroId does exist (which means it should be locked on this contract), as it was bridged before.
-                1. first update the hero attributes based on the attributes in the message (Assumes the message has more recent attributes)
+                Transfer it to message.dstUserAddress
                 */
-            IHeroCoreUpgradeable(heroes).updateHero(dstHero);
-            // 2. Then transfer it to message.dstUserAddress
-            IHeroCoreUpgradeable(heroes).safeTransferFrom(
-                address(this),
-                dstUser,
-                dstHeroId
-            );
-            // 3. Tx completed, return Success
-            return MsgExecutionStatus.Success;
+
+            if (owner == address(this)) {
+                IHeroCoreUpgradeable(heroes).safeTransferFrom(
+                    address(this),
+                    dstUser,
+                    dstHeroId
+                );
+            }
         } catch {
             /** 
                 If hero ID doesn't exist: 
-                1. Mint a hero to msg.dstUserAddress with most recent attributes from the message, and the correct hero ID
-                2. Tx completed, return Success
+                Mint a hero to msg.dstUserAddress
                 */
             IHeroCoreUpgradeable(heroes).bridgeMint(dstHero, dstUser);
-            return MsgExecutionStatus.Success;
         }
+
+        // update the hero attributes based on the attributes in the message (Assumes the message has more recent attributes)
+        IHeroCoreUpgradeable(heroes).updateHero(dstHero);
+        // Tx completed, return Success
+        return MsgExecutionStatus.Success;
     }
 
     function _send(
