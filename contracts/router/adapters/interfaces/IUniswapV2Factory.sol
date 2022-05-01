@@ -10,4 +10,7 @@ interface IUniswapV2Factory {
         external
         view
         returns (address pair);
+
+    // exists only for test deploys
+    function pairCodeHash() external pure returns (bytes32);
 }

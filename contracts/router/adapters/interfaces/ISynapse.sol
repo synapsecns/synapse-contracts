@@ -19,6 +19,18 @@ interface ISynapse {
 
     function paused() external view returns (bool);
 
+    // used for testing deploys
+    function initialize(
+        IERC20[] memory _pooledTokens,
+        uint8[] memory decimals,
+        string memory lpTokenName,
+        string memory lpTokenSymbol,
+        uint256 _a,
+        uint256 _fee,
+        uint256 _adminFee,
+        address lpTokenTargetAddress
+    ) external;
+
     // min return calculation functions
     function calculateSwap(
         uint8 tokenIndexFrom,
