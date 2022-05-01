@@ -1,0 +1,206 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.0;
+
+import "../utils/DefaultRouterTest.t.sol";
+
+contract RouterTest is DefaultRouterTest {
+    function testExecuteBestPath1(
+        uint256 indexFrom,
+        uint256 indexTo,
+        uint64 amountIn
+    ) public {
+        uint8 maxSwaps = 1;
+        _checkExecution(maxSwaps, indexFrom, indexTo, amountIn);
+    }
+
+    function testExecuteBestPath2(
+        uint256 indexFrom,
+        uint256 indexTo,
+        uint64 amountIn
+    ) public {
+        uint8 maxSwaps = 2;
+        _checkExecution(maxSwaps, indexFrom, indexTo, amountIn);
+    }
+
+    function testExecuteBestPath3(
+        uint256 indexFrom,
+        uint256 indexTo,
+        uint64 amountIn
+    ) public {
+        uint8 maxSwaps = 3;
+        _checkExecution(maxSwaps, indexFrom, indexTo, amountIn);
+    }
+
+    function testExecuteBestPath4(
+        uint256 indexFrom,
+        uint256 indexTo,
+        uint64 amountIn
+    ) public {
+        uint8 maxSwaps = 4;
+        _checkExecution(maxSwaps, indexFrom, indexTo, amountIn);
+    }
+
+    function testExecuteBestPathFromGAS1(uint256 indexTo, uint64 amountIn) public {
+        uint8 maxSwaps = 1;
+        _checkExecutionFromGAS(maxSwaps, indexTo, amountIn);
+    }
+
+    function testExecuteBestPathFromGAS2(uint256 indexTo, uint64 amountIn) public {
+        uint8 maxSwaps = 2;
+        _checkExecutionFromGAS(maxSwaps, indexTo, amountIn);
+    }
+
+    function testExecuteBestPathFromGAS3(uint256 indexTo, uint64 amountIn) public {
+        uint8 maxSwaps = 3;
+        _checkExecutionFromGAS(maxSwaps, indexTo, amountIn);
+    }
+
+    function testExecuteBestPathFromGAS4(uint256 indexTo, uint64 amountIn) public {
+        uint8 maxSwaps = 4;
+        _checkExecutionFromGAS(maxSwaps, indexTo, amountIn);
+    }
+
+    function testExecuteBestPathToGAS1(uint256 indexFrom, uint64 amountIn) public {
+        uint8 maxSwaps = 1;
+        _checkExecutionToGAS(maxSwaps, indexFrom, amountIn);
+    }
+
+    function testExecuteBestPathToGAS2(uint256 indexFrom, uint64 amountIn) public {
+        uint8 maxSwaps = 2;
+        _checkExecutionToGAS(maxSwaps, indexFrom, amountIn);
+    }
+
+    function testExecuteBestPathToGAS3(uint256 indexFrom, uint64 amountIn) public {
+        uint8 maxSwaps = 3;
+        _checkExecutionToGAS(maxSwaps, indexFrom, amountIn);
+    }
+
+    function testExecuteBestPathToGAS4(uint256 indexFrom, uint64 amountIn) public {
+        uint8 maxSwaps = 4;
+        _checkExecutionToGAS(maxSwaps, indexFrom, amountIn);
+    }
+
+    function _checkExecution(
+        uint8 maxSwaps,
+        uint256 indexFrom,
+        uint256 indexTo,
+        uint64 _amountIn
+    ) internal {
+        (Offers.FormattedOffer memory offer, uint256 amountIn, uint256 amountOut) = _askQuoter(
+            maxSwaps,
+            indexFrom,
+            indexTo,
+            _amountIn
+        );
+
+        deal(allTokens[indexFrom], user, amountIn);
+        startHoax(user);
+        IERC20(allTokens[indexFrom]).approve(address(router), amountIn);
+
+        uint256 userPre = IERC20(allTokens[indexTo]).balanceOf(user);
+        uint256 reportedOut = router.swap(user, offer.path, offer.adapters, amountIn, 0, block.timestamp);
+        vm.stopPrank();
+        assertEq(
+            IERC20(allTokens[indexTo]).balanceOf(user) - userPre,
+            reportedOut,
+            "Failed to report amount of tokens sent to user"
+        );
+        assertEq(amountOut, reportedOut, "Failed to provide accurate quote");
+        if (amountOut != reportedOut) {
+            _logOffer(offer);
+        }
+    }
+
+    function _checkExecutionFromGAS(
+        uint8 maxSwaps,
+        uint256 indexTo,
+        uint64 _amountIn
+    ) internal {
+        uint256 indexFrom = WETH_INDEX;
+        (Offers.FormattedOffer memory offer, uint256 amountIn, uint256 amountOut) = _askQuoter(
+            maxSwaps,
+            indexFrom,
+            indexTo,
+            _amountIn
+        );
+
+        deal(user, amountIn);
+        startHoax(user);
+
+        uint256 userPre = IERC20(allTokens[indexTo]).balanceOf(user);
+        uint256 reportedOut = router.swapFromGAS{value: amountIn}(
+            user,
+            offer.path,
+            offer.adapters,
+            amountIn,
+            0,
+            block.timestamp
+        );
+        vm.stopPrank();
+        assertEq(
+            IERC20(allTokens[indexTo]).balanceOf(user) - userPre,
+            reportedOut,
+            "Failed to report amount of tokens sent to user"
+        );
+        assertEq(amountOut, reportedOut, "Failed to provide accurate quote");
+        if (amountOut != reportedOut) {
+            _logOffer(offer);
+        }
+    }
+
+    function _checkExecutionToGAS(
+        uint8 maxSwaps,
+        uint256 indexFrom,
+        uint64 _amountIn
+    ) internal {
+        uint256 indexTo = WETH_INDEX;
+        (Offers.FormattedOffer memory offer, uint256 amountIn, uint256 amountOut) = _askQuoter(
+            maxSwaps,
+            indexFrom,
+            indexTo,
+            _amountIn
+        );
+
+        deal(allTokens[indexFrom], user, amountIn);
+        startHoax(user);
+        IERC20(allTokens[indexFrom]).approve(address(router), amountIn);
+
+        uint256 userPre = user.balance;
+        uint256 reportedOut = router.swapToGAS(user, offer.path, offer.adapters, amountIn, 0, block.timestamp);
+        vm.stopPrank();
+        assertEq(user.balance - userPre, reportedOut, "Failed to report amount of tokens sent to user");
+        assertEq(amountOut, reportedOut, "Failed to provide accurate quote");
+        if (amountOut != reportedOut) {
+            _logOffer(offer);
+        }
+    }
+
+    function _askQuoter(
+        uint8 maxSwaps,
+        uint256 indexFrom,
+        uint256 indexTo,
+        uint64 _amountIn
+    )
+        internal
+        returns (
+            Offers.FormattedOffer memory offer,
+            uint256 amountIn,
+            uint256 amountOut
+        )
+    {
+        vm.assume(indexFrom < allTokens.length);
+        vm.assume(indexTo < allTokens.length);
+        vm.assume(indexFrom != indexTo);
+        vm.assume(_amountIn > 0);
+
+        // use at least 1<<20 (~1e6) for amountIn
+        amountIn = _amountIn << 20;
+
+        offer = quoter.findBestPath(allTokens[indexFrom], amountIn, allTokens[indexTo], maxSwaps);
+
+        // Ignore runs where there is no path between tokens
+        vm.assume(offer.path.length > 0);
+
+        amountOut = offer.amounts[offer.amounts.length - 1];
+    }
+}
