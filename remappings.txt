@@ -4,3 +4,4 @@ forge-std=lib/forge-std/src
 src-bridge=contracts/bridge
 src-router=contracts/router
 src-vault=contracts/vault
+src-amm08=contracts/amm08

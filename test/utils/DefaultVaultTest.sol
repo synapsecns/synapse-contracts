@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
-import "../utils/Utilities.sol";
+import "./Utilities.sol";
 
 import {Bridge} from "src-vault/Bridge.sol";
 import {BridgeConfig} from "src-vault/BridgeConfigV4.sol";
@@ -12,7 +12,11 @@ import {BridgeQuoter} from "src-router/BridgeQuoter.sol";
 
 import {IVault} from "src-vault/interfaces/IVault.sol";
 
-import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
+import {IERC20 as _IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
+
+interface IERC20 is _IERC20 {
+    function decimals() external view returns (uint8);
+}
 
 contract DefaultVaultTest is Test {
     struct TestSetup {
@@ -90,6 +94,8 @@ contract DefaultVaultTest is Test {
 
     TestSetup private _config;
     BridgeState private _state;
+
+    address[] public allTokens;
 
     address payable public immutable attacker;
     address payable public immutable user;
@@ -196,6 +202,27 @@ contract DefaultVaultTest is Test {
             )
         );
         vm.label(address(token), name);
+        allTokens.push(address(token));
+    }
+
+    function _deployERC20Decimals(string memory name, uint8 decimals)
+        internal
+        returns (IERC20 token)
+    {
+        token = IERC20(
+            deployCode(
+                "./artifacts/ERC20MockDecimals.sol/ERC20MockDecimals.json",
+                abi.encode(name, name, 0, decimals)
+            )
+        );
+        vm.label(address(token), name);
+        allTokens.push(address(token));
+    }
+
+    function _deployWETH(string memory name) internal returns (IERC20 token) {
+        token = IERC20(deployCode("./artifacts/WETH9.sol/WETH9.json"));
+        vm.label(address(token), name);
+        allTokens.push(address(token));
     }
 
     function _saveState() internal {
