@@ -113,8 +113,8 @@ contract Utilities is Test {
         address _contract,
         bytes memory payload,
         string memory revertMsg
-    ) public {
-        checkRevert(
+    ) external {
+        this.checkRevert(
             attacker,
             _contract,
             payload,
@@ -128,7 +128,7 @@ contract Utilities is Test {
         bytes memory payload,
         bytes32 neededRole
     ) external {
-        checkAccess(
+        this.checkAccess(
             _contract,
             payload,
             _getAccessControlRevertMsg(neededRole, attacker)
@@ -141,12 +141,12 @@ contract Utilities is Test {
         bytes memory payload,
         string memory failReason,
         string memory revertMsg
-    ) public {
+    ) external {
         hoax(executor);
         (bool success, bytes memory returnData) = _contract.call(payload);
         assertTrue(!success, failReason);
         assertEq(
-            _getRevertMsg(returnData),
+            this.getRevertMsg(returnData),
             revertMsg,
             "Unexpected revert message"
         );
@@ -169,8 +169,8 @@ contract Utilities is Test {
         );
     }
 
-    function _getRevertMsg(bytes memory _returnData)
-        internal
+    function getRevertMsg(bytes memory _returnData)
+        external
         pure
         returns (string memory)
     {
