@@ -92,7 +92,7 @@ contract DefaultVaultTest is Test {
     BridgeRouter public router;
     BridgeQuoter public quoter;
 
-    TestSetup private _config;
+    TestSetup internal _config;
     BridgeState private _state;
 
     address[] public allTokens;
@@ -200,6 +200,7 @@ contract DefaultVaultTest is Test {
 
     function _deployWETH(string memory name) internal returns (IERC20 token) {
         token = IERC20(deployCode("./artifacts/WETH9.sol/WETH9.json"));
+        deal(address(token), 10**30);
         vm.label(address(token), name);
         allTokens.push(address(token));
     }
