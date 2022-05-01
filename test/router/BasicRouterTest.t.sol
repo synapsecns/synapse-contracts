@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "../utils/DefaultVaultTest.sol";
+import "../utils/DefaultVaultTest.t.sol";
 
-contract BasicRouterUnitTest is DefaultVaultTest {
+contract BasicRouterTest is DefaultVaultTest {
     IERC20 public syn;
 
     constructor() DefaultVaultTest(defaultConfig) {
@@ -22,10 +22,7 @@ contract BasicRouterUnitTest is DefaultVaultTest {
         address _r = address(router);
         utils.checkAccessControl(
             _r,
-            abi.encodeWithSelector(
-                router.addTrustedAdapter.selector,
-                address(0)
-            ),
+            abi.encodeWithSelector(router.addTrustedAdapter.selector, address(0)),
             router.ADAPTERS_STORAGE_ROLE()
         );
         utils.checkAccessControl(
@@ -35,11 +32,7 @@ contract BasicRouterUnitTest is DefaultVaultTest {
         );
         utils.checkAccessControl(
             _r,
-            abi.encodeWithSelector(
-                router.setAdapters.selector,
-                new address[](1),
-                false
-            ),
+            abi.encodeWithSelector(router.setAdapters.selector, new address[](1), false),
             router.ADAPTERS_STORAGE_ROLE()
         );
 
@@ -48,11 +41,7 @@ contract BasicRouterUnitTest is DefaultVaultTest {
             abi.encodeWithSelector(router.recoverERC20.selector, address(0)),
             router.GOVERNANCE_ROLE()
         );
-        utils.checkAccessControl(
-            _r,
-            abi.encodeWithSelector(router.recoverGAS.selector),
-            router.GOVERNANCE_ROLE()
-        );
+        utils.checkAccessControl(_r, abi.encodeWithSelector(router.recoverGAS.selector), router.GOVERNANCE_ROLE());
     }
 
     /**
@@ -78,10 +67,6 @@ contract BasicRouterUnitTest is DefaultVaultTest {
 
         hoax(governance);
         router.recoverERC20(syn);
-        assertEq(
-            syn.balanceOf(governance),
-            pre + amount,
-            "Failed to recover ERC20"
-        );
+        assertEq(syn.balanceOf(governance), pre + amount, "Failed to recover ERC20");
     }
 }

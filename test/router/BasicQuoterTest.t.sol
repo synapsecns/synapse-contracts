@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "../utils/DefaultVaultTest.sol";
+import "../utils/DefaultVaultTest.t.sol";
 
-contract BasicRouterUnitTest is DefaultVaultTest {
+contract BasicQuoterTest is DefaultVaultTest {
     IERC20 public syn;
 
     constructor() DefaultVaultTest(defaultConfig) {
@@ -22,10 +22,7 @@ contract BasicRouterUnitTest is DefaultVaultTest {
         address _q = address(quoter);
         utils.checkAccess(
             _q,
-            abi.encodeWithSelector(
-                quoter.addTrustedAdapter.selector,
-                address(0)
-            ),
+            abi.encodeWithSelector(quoter.addTrustedAdapter.selector, address(0)),
             "Ownable: caller is not the owner"
         );
         utils.checkAccess(
@@ -57,10 +54,7 @@ contract BasicRouterUnitTest is DefaultVaultTest {
 
         utils.checkAccess(
             _q,
-            abi.encodeWithSelector(
-                quoter.setAdapters.selector,
-                new address[](1)
-            ),
+            abi.encodeWithSelector(quoter.setAdapters.selector, new address[](1)),
             "Ownable: caller is not the owner"
         );
         utils.checkAccess(
@@ -106,10 +100,7 @@ contract BasicRouterUnitTest is DefaultVaultTest {
             utils.checkRevert(
                 governance,
                 address(quoter),
-                abi.encodeWithSelector(
-                    quoter.addTrustedAdapter.selector,
-                    adapters[i]
-                ),
+                abi.encodeWithSelector(quoter.addTrustedAdapter.selector, adapters[i]),
                 "Should not be able to add duplicate adapter",
                 "Adapter already added"
             );
@@ -123,15 +114,9 @@ contract BasicRouterUnitTest is DefaultVaultTest {
         for (uint256 i = 0; i < adapters.length; ++i) {
             hoax(governance);
             quoter.removeAdapter(adapters[i]);
-            assertTrue(
-                !router.isTrustedAdapter(adapters[i]),
-                "Failed to remove adapter"
-            );
+            assertTrue(!router.isTrustedAdapter(adapters[i]), "Failed to remove adapter");
             for (uint256 j = i + 1; j < adapters.length; ++j) {
-                assertTrue(
-                    router.isTrustedAdapter(adapters[j]),
-                    "Removed more than one adapter"
-                );
+                assertTrue(router.isTrustedAdapter(adapters[j]), "Removed more than one adapter");
             }
         }
     }
@@ -155,10 +140,7 @@ contract BasicRouterUnitTest is DefaultVaultTest {
         _setAdapters(newAdapters);
 
         for (uint256 i = 0; i < adapters.length; ++i) {
-            assertTrue(
-                !router.isTrustedAdapter(adapters[i]),
-                "Failed to remove old adapter"
-            );
+            assertTrue(!router.isTrustedAdapter(adapters[i]), "Failed to remove old adapter");
         }
     }
 
@@ -167,31 +149,18 @@ contract BasicRouterUnitTest is DefaultVaultTest {
         uint8 indexToRemove,
         uint8 indexToCheck
     ) internal {
-        assertTrue(
-            router.isTrustedAdapter(adapters[indexToCheck]),
-            "Adapter removed too early"
-        );
+        assertTrue(router.isTrustedAdapter(adapters[indexToCheck]), "Adapter removed too early");
         hoax(governance);
         quoter.removeAdapterByIndex(indexToRemove);
-        assertTrue(
-            !router.isTrustedAdapter(adapters[indexToCheck]),
-            "Adapter not removed"
-        );
+        assertTrue(!router.isTrustedAdapter(adapters[indexToCheck]), "Adapter not removed");
     }
 
     function _addAdapters(address[] memory adapters) internal {
         startHoax(governance);
         for (uint256 i = 0; i < adapters.length; ++i) {
             quoter.addTrustedAdapter(adapters[i]);
-            assertTrue(
-                router.isTrustedAdapter(adapters[i]),
-                "Failed to add adapter"
-            );
-            assertEq(
-                quoter.trustedAdaptersCount(),
-                i + 1,
-                "Wrong amount of adapters"
-            );
+            assertTrue(router.isTrustedAdapter(adapters[i]), "Failed to add adapter");
+            assertEq(quoter.trustedAdaptersCount(), i + 1, "Wrong amount of adapters");
         }
         vm.stopPrank();
     }
@@ -200,16 +169,9 @@ contract BasicRouterUnitTest is DefaultVaultTest {
         hoax(governance);
         quoter.setAdapters(adapters);
         for (uint256 i = 0; i < adapters.length; ++i) {
-            assertTrue(
-                router.isTrustedAdapter(adapters[i]),
-                "Failed to add adapter"
-            );
+            assertTrue(router.isTrustedAdapter(adapters[i]), "Failed to add adapter");
         }
-        assertEq(
-            quoter.trustedAdaptersCount(),
-            adapters.length,
-            "Wrong amount of adapters"
-        );
+        assertEq(quoter.trustedAdaptersCount(), adapters.length, "Wrong amount of adapters");
     }
 
     // -- ADD | REMOVE TOKENS --
@@ -229,11 +191,7 @@ contract BasicRouterUnitTest is DefaultVaultTest {
             hoax(governance);
             quoter.removeToken(tokens[i]);
 
-            assertEq(
-                quoter.trustedTokensCount(),
-                tokens.length - i - 1,
-                "Wrong amount of tokens"
-            );
+            assertEq(quoter.trustedTokensCount(), tokens.length - i - 1, "Wrong amount of tokens");
             _checkIfTokenAbsent(tokens[i]);
         }
     }
@@ -289,11 +247,7 @@ contract BasicRouterUnitTest is DefaultVaultTest {
         startHoax(governance);
         for (uint256 i = 0; i < tokens.length; ++i) {
             quoter.addTrustedToken(tokens[i]);
-            assertEq(
-                quoter.trustedTokensCount(),
-                amount + i + 1,
-                "Wrong amount of tokens"
-            );
+            assertEq(quoter.trustedTokensCount(), amount + i + 1, "Wrong amount of tokens");
         }
         vm.stopPrank();
     }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "./DefaultVaultTest.sol";
+import "./DefaultVaultTest.t.sol";
 
 import {IAdapter} from "src-router/interfaces/IAdapter.sol";
 import {ISynapse} from "src-router/adapters/interfaces/ISynapse.sol";
@@ -120,120 +120,23 @@ contract DefaultRouterTest is DefaultVaultTest {
             );
         }
 
-        (
-            _pools.uniswapFactoryAAA,
-            _adapters.uniswapAAA
-        ) = _deployUniswapFactory("Factory AAA", "Uniswap AAA");
-        (
-            _pools.uniswapFactoryBBB,
-            _adapters.uniswapBBB
-        ) = _deployUniswapFactory("Factory BBB", "Uniswap BBB");
+        (_pools.uniswapFactoryAAA, _adapters.uniswapAAA) = _deployUniswapFactory("Factory AAA", "Uniswap AAA");
+        (_pools.uniswapFactoryBBB, _adapters.uniswapBBB) = _deployUniswapFactory("Factory BBB", "Uniswap BBB");
 
-        _deployUniswapPair(
-            _pools.uniswapFactoryAAA,
-            "AAA: WETH/USDC",
-            _tokens.wETH,
-            _tokens.usdc,
-            100,
-            100 * 100
-        );
-        _deployUniswapPair(
-            _pools.uniswapFactoryAAA,
-            "AAA: WBTC/DAI",
-            _tokens.wBTC,
-            _tokens.dai,
-            50,
-            50 * 1000
-        );
-        _deployUniswapPair(
-            _pools.uniswapFactoryAAA,
-            "AAA: WETH/SYN",
-            _tokens.wETH,
-            _tokens.syn,
-            200,
-            200 * 10
-        );
-        _deployUniswapPair(
-            _pools.uniswapFactoryAAA,
-            "AAA: DAI/USDC",
-            _tokens.dai,
-            _tokens.usdc,
-            100,
-            110
-        );
-        _deployUniswapPair(
-            _pools.uniswapFactoryAAA,
-            "AAA: WETH/FRAX",
-            _tokens.wETH,
-            _tokens.frax,
-            100,
-            100 * 99
-        );
-        _deployUniswapPair(
-            _pools.uniswapFactoryAAA,
-            "AAA: SYN/FRAX",
-            _tokens.syn,
-            _tokens.frax,
-            1000,
-            1000 * 10
-        );
-        _deployUniswapPair(
-            _pools.uniswapFactoryAAA,
-            "AAA: gOHM/DAI",
-            _tokens.gOHM,
-            _tokens.dai,
-            100000,
-            110000
-        );
+        _deployUniswapPair(_pools.uniswapFactoryAAA, "AAA: WETH/USDC", _tokens.wETH, _tokens.usdc, 100, 100 * 100);
+        _deployUniswapPair(_pools.uniswapFactoryAAA, "AAA: WBTC/DAI", _tokens.wBTC, _tokens.dai, 50, 50 * 1000);
+        _deployUniswapPair(_pools.uniswapFactoryAAA, "AAA: WETH/SYN", _tokens.wETH, _tokens.syn, 200, 200 * 10);
+        _deployUniswapPair(_pools.uniswapFactoryAAA, "AAA: DAI/USDC", _tokens.dai, _tokens.usdc, 100, 110);
+        _deployUniswapPair(_pools.uniswapFactoryAAA, "AAA: WETH/FRAX", _tokens.wETH, _tokens.frax, 100, 100 * 99);
+        _deployUniswapPair(_pools.uniswapFactoryAAA, "AAA: SYN/FRAX", _tokens.syn, _tokens.frax, 1000, 1000 * 10);
+        _deployUniswapPair(_pools.uniswapFactoryAAA, "AAA: gOHM/DAI", _tokens.gOHM, _tokens.dai, 100000, 110000);
 
-        _deployUniswapPair(
-            _pools.uniswapFactoryBBB,
-            "BBB: WETH/DAI",
-            _tokens.wETH,
-            _tokens.dai,
-            50,
-            50 * 105
-        );
-        _deployUniswapPair(
-            _pools.uniswapFactoryBBB,
-            "BBB: WBTC/USDC",
-            _tokens.wBTC,
-            _tokens.usdc,
-            100,
-            100 * 980
-        );
-        _deployUniswapPair(
-            _pools.uniswapFactoryBBB,
-            "BBB: WETH/SYN",
-            _tokens.wETH,
-            _tokens.syn,
-            50,
-            50 * 11
-        );
-        _deployUniswapPair(
-            _pools.uniswapFactoryBBB,
-            "BBB: DAI/USDC",
-            _tokens.dai,
-            _tokens.usdc,
-            1000,
-            990
-        );
-        _deployUniswapPair(
-            _pools.uniswapFactoryBBB,
-            "BBB: WBTC/FRAX",
-            _tokens.wBTC,
-            _tokens.frax,
-            10,
-            10 * 1005
-        );
-        _deployUniswapPair(
-            _pools.uniswapFactoryBBB,
-            "BBB: WETH/gOHM",
-            _tokens.wETH,
-            _tokens.gOHM,
-            1000,
-            1000 * 95
-        );
+        _deployUniswapPair(_pools.uniswapFactoryBBB, "BBB: WETH/DAI", _tokens.wETH, _tokens.dai, 50, 50 * 105);
+        _deployUniswapPair(_pools.uniswapFactoryBBB, "BBB: WBTC/USDC", _tokens.wBTC, _tokens.usdc, 100, 100 * 980);
+        _deployUniswapPair(_pools.uniswapFactoryBBB, "BBB: WETH/SYN", _tokens.wETH, _tokens.syn, 50, 50 * 11);
+        _deployUniswapPair(_pools.uniswapFactoryBBB, "BBB: DAI/USDC", _tokens.dai, _tokens.usdc, 1000, 990);
+        _deployUniswapPair(_pools.uniswapFactoryBBB, "BBB: WBTC/FRAX", _tokens.wBTC, _tokens.frax, 10, 10 * 1005);
+        _deployUniswapPair(_pools.uniswapFactoryBBB, "BBB: WETH/gOHM", _tokens.wETH, _tokens.gOHM, 1000, 1000 * 95);
 
         startHoax(governance);
         quoter.setAdapters(allAdapters);
@@ -292,15 +195,12 @@ contract DefaultRouterTest is DefaultVaultTest {
         vm.label(address(adapter), adapterName);
     }
 
-    function _deployUniswapFactory(
-        string memory factoryName,
-        string memory adapterName
-    ) internal returns (IUniswapV2Factory factory, IAdapter adapter) {
+    function _deployUniswapFactory(string memory factoryName, string memory adapterName)
+        internal
+        returns (IUniswapV2Factory factory, IAdapter adapter)
+    {
         factory = IUniswapV2Factory(
-            deployCode(
-                "./artifacts/UniswapV2Factory.sol/UniswapV2Factory.json",
-                abi.encode(0)
-            )
+            deployCode("./artifacts/UniswapV2Factory.sol/UniswapV2Factory.json", abi.encode(0))
         );
         adapter = new UniswapV2Adapter(
             adapterName,
@@ -324,23 +224,9 @@ contract DefaultRouterTest is DefaultVaultTest {
         uint256 amountB
     ) internal {
         if (address(tokenA) < address(tokenB)) {
-            _deployUniswapSortedPair(
-                factory,
-                pairName,
-                tokenA,
-                tokenB,
-                amountA,
-                amountB
-            );
+            _deployUniswapSortedPair(factory, pairName, tokenA, tokenB, amountA, amountB);
         } else {
-            _deployUniswapSortedPair(
-                factory,
-                pairName,
-                tokenB,
-                tokenA,
-                amountB,
-                amountA
-            );
+            _deployUniswapSortedPair(factory, pairName, tokenB, tokenA, amountB, amountA);
         }
     }
 
@@ -369,10 +255,7 @@ contract DefaultRouterTest is DefaultVaultTest {
         uint256 amountCur
     ) internal {
         if (tokenOut == tokenCur) {
-            assertTrue(
-                amountCur <= bestAmountOut,
-                "Managed to find better path"
-            );
+            assertTrue(amountCur <= bestAmountOut, "Managed to find better path");
             return;
         }
         if (swapsLeft == 0 || amountCur == 0) {
@@ -393,19 +276,9 @@ contract DefaultRouterTest is DefaultVaultTest {
                 if (tokenNext == tokenCur) {
                     continue;
                 }
-                uint256 amountOut = IAdapter(allAdapters[a]).query(
-                    amountCur,
-                    tokenCur,
-                    tokenNext
-                );
+                uint256 amountOut = IAdapter(allAdapters[a]).query(amountCur, tokenCur, tokenNext);
                 if (amountOut > 0) {
-                    _bruteForcePath(
-                        swapsLeft - 1,
-                        tokenOut,
-                        bestAmountOut,
-                        tokenNext,
-                        amountOut
-                    );
+                    _bruteForcePath(swapsLeft - 1, tokenOut, bestAmountOut, tokenNext, amountOut);
                 }
             }
         }
