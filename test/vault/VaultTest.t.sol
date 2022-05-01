@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "../utils/DefaultVaultTest.sol";
+import "../utils/DefaultVaultTest.t.sol";
 
 contract VaultUnitTest is DefaultVaultTest {
     IERC20 public syn;
@@ -9,10 +9,6 @@ contract VaultUnitTest is DefaultVaultTest {
     constructor() DefaultVaultTest(defaultConfig) {
         this;
     }
-
-    // receive() external payable {
-    //     this;
-    // }
 
     function setUp() public override {
         super.setUp();
@@ -30,51 +26,23 @@ contract VaultUnitTest is DefaultVaultTest {
             "Initializable: contract is already initialized"
         );
 
-        utils.checkAccess(
-            _v,
-            abi.encodeWithSelector(IVault.setChainGasAmount.selector, 0),
-            "Not governance"
-        );
+        utils.checkAccess(_v, abi.encodeWithSelector(IVault.setChainGasAmount.selector, 0), "Not governance");
+
+        utils.checkAccess(_v, abi.encodeWithSelector(IVault.setWethAddress.selector, address(0)), "Not admin");
+
+        utils.checkAccess(_v, abi.encodeWithSelector(IVault.addKappas.selector, new bytes32[](1)), "Not governance");
+
+        utils.checkAccess(_v, abi.encodeWithSelector(IVault.recoverGAS.selector, attacker), "Not governance");
 
         utils.checkAccess(
             _v,
-            abi.encodeWithSelector(IVault.setWethAddress.selector, address(0)),
-            "Not admin"
-        );
-
-        utils.checkAccess(
-            _v,
-            abi.encodeWithSelector(IVault.addKappas.selector, new bytes32[](1)),
+            abi.encodeWithSelector(IVault.withdrawFees.selector, address(0), attacker),
             "Not governance"
         );
 
-        utils.checkAccess(
-            _v,
-            abi.encodeWithSelector(IVault.recoverGAS.selector, attacker),
-            "Not governance"
-        );
+        utils.checkAccess(_v, abi.encodeWithSelector(IVault.pause.selector), "Not governance");
 
-        utils.checkAccess(
-            _v,
-            abi.encodeWithSelector(
-                IVault.withdrawFees.selector,
-                address(0),
-                attacker
-            ),
-            "Not governance"
-        );
-
-        utils.checkAccess(
-            _v,
-            abi.encodeWithSelector(IVault.pause.selector),
-            "Not governance"
-        );
-
-        utils.checkAccess(
-            _v,
-            abi.encodeWithSelector(IVault.unpause.selector),
-            "Not governance"
-        );
+        utils.checkAccess(_v, abi.encodeWithSelector(IVault.unpause.selector), "Not governance");
 
         utils.checkAccess(
             _v,
@@ -113,11 +81,7 @@ contract VaultUnitTest is DefaultVaultTest {
     function testSetChainGasAmount(uint256 amount) public {
         hoax(governance);
         vault.setChainGasAmount(amount);
-        assertEq(
-            amount,
-            vault.chainGasAmount(),
-            "Failed to set gas airdrop amount"
-        );
+        assertEq(amount, vault.chainGasAmount(), "Failed to set gas airdrop amount");
     }
 
     /**
@@ -177,11 +141,7 @@ contract VaultUnitTest is DefaultVaultTest {
         hoax(governance);
         vault.withdrawFees(syn, governance);
 
-        assertEq(
-            syn.balanceOf(governance),
-            pre + fee,
-            "Failed to withdraw fees"
-        );
+        assertEq(syn.balanceOf(governance), pre + fee, "Failed to withdraw fees");
         assertEq(vault.getFeeBalance(syn), 0, "Failed to reset fees");
         assertEq(vault.getTokenBalance(syn), amount, "Wrong vault balance");
     }
@@ -208,32 +168,14 @@ contract VaultUnitTest is DefaultVaultTest {
         utils.checkRevert(
             address(bridge),
             address(vault),
-            abi.encodeWithSelector(
-                vault.mintToken.selector,
-                user,
-                syn,
-                amount,
-                0,
-                user,
-                false,
-                kappa
-            ),
+            abi.encodeWithSelector(vault.mintToken.selector, user, syn, amount, 0, user, false, kappa),
             "Should have failed due to being paused",
             "Pausable: paused"
         );
         utils.checkRevert(
             address(bridge),
             address(vault),
-            abi.encodeWithSelector(
-                vault.withdrawToken.selector,
-                user,
-                syn,
-                amount,
-                0,
-                user,
-                false,
-                kappa
-            ),
+            abi.encodeWithSelector(vault.withdrawToken.selector, user, syn, amount, 0, user, false, kappa),
             "Should have failed due to being paused",
             "Pausable: paused"
         );
@@ -265,16 +207,8 @@ contract VaultUnitTest is DefaultVaultTest {
             vault.mintToken(user, syn, amount, fee, user, false, kappa);
 
             assertEq(syn.balanceOf(user), pre + amount, "Mint is not complete");
-            assertEq(
-                vault.getFeeBalance(syn),
-                totalFee,
-                "Bridge fee is not collected"
-            );
-            assertEq(
-                vault.getTokenBalance(syn),
-                0,
-                "Wrong vault balance post-mint"
-            );
+            assertEq(vault.getFeeBalance(syn), totalFee, "Bridge fee is not collected");
+            assertEq(vault.getTokenBalance(syn), 0, "Wrong vault balance post-mint");
         }
         vm.stopPrank();
     }
@@ -305,21 +239,9 @@ contract VaultUnitTest is DefaultVaultTest {
 
             vault.withdrawToken(user, syn, amount, fee, user, false, kappa);
 
-            assertEq(
-                syn.balanceOf(user),
-                pre + amount,
-                "Withdraw is not complete"
-            );
-            assertEq(
-                vault.getFeeBalance(syn),
-                totalFee,
-                "Bridge fee is not collected"
-            );
-            assertEq(
-                vault.getTokenBalance(syn),
-                totalAmount,
-                "Wrong vault balance post-withdraw"
-            );
+            assertEq(syn.balanceOf(user), pre + amount, "Withdraw is not complete");
+            assertEq(vault.getFeeBalance(syn), totalFee, "Bridge fee is not collected");
+            assertEq(vault.getTokenBalance(syn), totalAmount, "Wrong vault balance post-withdraw");
         }
         vm.stopPrank();
     }
@@ -334,41 +256,20 @@ contract VaultUnitTest is DefaultVaultTest {
         bytes32 kappa = utils.getNextKappa();
         deal(address(syn), address(vault), amount + fee);
 
-        assertEq(
-            vault.getTokenBalance(syn),
-            amount + fee,
-            "Failed to top up bridge"
-        );
+        assertEq(vault.getTokenBalance(syn), amount + fee, "Failed to top up bridge");
         assertEq(vault.getFeeBalance(syn), 0, "Wrong initial fee balance");
 
         hoax(address(bridge));
         vault.mintToken(user, syn, amount, fee, user, false, kappa);
 
-        assertEq(
-            vault.getFeeBalance(syn),
-            fee,
-            "Wrong fee balance after 1st tx"
-        );
-        assertEq(
-            vault.getTokenBalance(syn),
-            amount + fee,
-            "Wrong vault balance after 1st tx"
-        );
+        assertEq(vault.getFeeBalance(syn), fee, "Wrong fee balance after 1st tx");
+        assertEq(vault.getTokenBalance(syn), amount + fee, "Wrong vault balance after 1st tx");
 
         kappa = utils.getNextKappa();
         utils.checkRevert(
             address(bridge),
             address(vault),
-            abi.encodeWithSelector(
-                vault.withdrawToken.selector,
-                user,
-                syn,
-                amount + 1,
-                fee,
-                user,
-                false,
-                kappa
-            ),
+            abi.encodeWithSelector(vault.withdrawToken.selector, user, syn, amount + 1, fee, user, false, kappa),
             "Should not be able to withdraw fees by bridging",
             "Withdraw amount is too big"
         );
@@ -376,30 +277,14 @@ contract VaultUnitTest is DefaultVaultTest {
         hoax(address(bridge));
         vault.withdrawToken(user, syn, amount, fee, user, false, kappa);
 
-        assertEq(
-            vault.getFeeBalance(syn),
-            2 * fee,
-            "Wrong fee balance after 2nd tx"
-        );
-        assertEq(
-            vault.getTokenBalance(syn),
-            0,
-            "Wrong vault balance after 2nd tx"
-        );
+        assertEq(vault.getFeeBalance(syn), 2 * fee, "Wrong fee balance after 2nd tx");
+        assertEq(vault.getTokenBalance(syn), 0, "Wrong vault balance after 2nd tx");
 
         hoax(governance);
         vault.withdrawFees(syn, governance);
 
-        assertEq(
-            vault.getFeeBalance(syn),
-            0,
-            "Failed to update accumulated fees"
-        );
-        assertEq(
-            syn.balanceOf(governance),
-            2 * fee,
-            "Failed to withdraw accumulated fees"
-        );
+        assertEq(vault.getFeeBalance(syn), 0, "Failed to update accumulated fees");
+        assertEq(syn.balanceOf(governance), 2 * fee, "Failed to withdraw accumulated fees");
     }
 
     /**
@@ -451,43 +336,19 @@ contract VaultUnitTest is DefaultVaultTest {
 
         startHoax(address(bridge));
         vault.mintToken(tokensTo, syn, amount, fee, gasDropTo, false, kappa);
-        assertEq(
-            gasDropTo.balance,
-            pre,
-            "Wrong user gas balance: mint w/o gasDrop"
-        );
+        assertEq(gasDropTo.balance, pre, "Wrong user gas balance: mint w/o gasDrop");
 
         kappa = utils.getNextKappa();
-        vault.withdrawToken(
-            tokensTo,
-            syn,
-            amount,
-            fee,
-            gasDropTo,
-            false,
-            kappa
-        );
-        assertEq(
-            gasDropTo.balance,
-            pre,
-            "Wrong user gas balance: withdraw w/o gasDrop"
-        );
+        vault.withdrawToken(tokensTo, syn, amount, fee, gasDropTo, false, kappa);
+        assertEq(gasDropTo.balance, pre, "Wrong user gas balance: withdraw w/o gasDrop");
 
         kappa = utils.getNextKappa();
         vault.mintToken(tokensTo, syn, amount, fee, gasDropTo, true, kappa);
-        assertEq(
-            gasDropTo.balance,
-            pre + gasDrop,
-            "Wrong user gas balance: mint with gasDrop"
-        );
+        assertEq(gasDropTo.balance, pre + gasDrop, "Wrong user gas balance: mint with gasDrop");
 
         kappa = utils.getNextKappa();
         vault.withdrawToken(tokensTo, syn, amount, fee, gasDropTo, true, kappa);
-        assertEq(
-            gasDropTo.balance,
-            pre + 2 * gasDrop,
-            "Wrong user gas balance: withdraw with gasDrop"
-        );
+        assertEq(gasDropTo.balance, pre + 2 * gasDrop, "Wrong user gas balance: withdraw with gasDrop");
         vm.stopPrank();
     }
 }

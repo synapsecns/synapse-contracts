@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "../utils/DefaultVaultTest.sol";
+import "../utils/DefaultVaultTest.t.sol";
 
 import {IBridgeRouter} from "src-router/interfaces/IBridgeRouter.sol";
 import {IBridge} from "src-vault/interfaces/IBridge.sol";
@@ -34,26 +34,10 @@ contract BridgeUnitTest is DefaultVaultTest {
      * @notice Check that initializing was done correctly
      */
     function testCorrectInit() public {
-        assertEq(
-            address(bridge.bridgeConfig()),
-            address(bridgeConfig),
-            "Failed to setup bridgeConfig"
-        );
-        assertEq(
-            address(bridge.vault()),
-            address(vault),
-            "Failed to setup vault"
-        );
-        assertEq(
-            address(bridge.router()),
-            address(router),
-            "Failed to setup router"
-        );
-        assertEq(
-            bridge.maxGasForSwap(),
-            defaultConfig.maxGasForSwap,
-            "Failed to setup maxGasForSwap"
-        );
+        assertEq(address(bridge.bridgeConfig()), address(bridgeConfig), "Failed to setup bridgeConfig");
+        assertEq(address(bridge.vault()), address(vault), "Failed to setup vault");
+        assertEq(address(bridge.router()), address(router), "Failed to setup router");
+        assertEq(bridge.maxGasForSwap(), defaultConfig.maxGasForSwap, "Failed to setup maxGasForSwap");
     }
 
     /**
@@ -63,20 +47,11 @@ contract BridgeUnitTest is DefaultVaultTest {
         address _b = address(bridge);
         utils.checkAccess(
             _b,
-            abi.encodeWithSelector(
-                bridge.initialize.selector,
-                address(0),
-                address(0),
-                0
-            ),
+            abi.encodeWithSelector(bridge.initialize.selector, address(0), address(0), 0),
             "Initializable: contract is already initialized"
         );
 
-        utils.checkAccessControl(
-            _b,
-            abi.encodeWithSelector(bridge.recoverGAS.selector),
-            bridge.GOVERNANCE_ROLE()
-        );
+        utils.checkAccessControl(_b, abi.encodeWithSelector(bridge.recoverGAS.selector), bridge.GOVERNANCE_ROLE());
         utils.checkAccessControl(
             _b,
             abi.encodeWithSelector(bridge.recoverERC20.selector, address(0)),
@@ -97,26 +72,12 @@ contract BridgeUnitTest is DefaultVaultTest {
 
         utils.checkAccessControl(
             _b,
-            abi.encodeWithSelector(
-                bridge.bridgeInEVM.selector,
-                address(0),
-                address(0),
-                0,
-                params,
-                false,
-                bytes32(0)
-            ),
+            abi.encodeWithSelector(bridge.bridgeInEVM.selector, address(0), address(0), 0, params, false, bytes32(0)),
             bridge.NODEGROUP_ROLE()
         );
         utils.checkAccessControl(
             _b,
-            abi.encodeWithSelector(
-                bridge.bridgeInNonEVM.selector,
-                0,
-                "",
-                0,
-                bytes32(0)
-            ),
+            abi.encodeWithSelector(bridge.bridgeInNonEVM.selector, 0, "", 0, bytes32(0)),
             bridge.NODEGROUP_ROLE()
         );
     }
@@ -144,11 +105,7 @@ contract BridgeUnitTest is DefaultVaultTest {
 
         hoax(governance);
         bridge.recoverERC20(syn);
-        assertEq(
-            syn.balanceOf(governance),
-            pre + amount,
-            "Failed to recover ERC20"
-        );
+        assertEq(syn.balanceOf(governance), pre + amount, "Failed to recover ERC20");
     }
 
     /**
@@ -190,11 +147,7 @@ contract BridgeUnitTest is DefaultVaultTest {
         _setupBridging(false);
         uint256 pre = syn.balanceOf(address(vault));
         _checkBridgeToEVM(TEST_AMOUNT);
-        assertEq(
-            vault.getTokenBalance(syn),
-            pre + TEST_AMOUNT,
-            "No deposit happened"
-        );
+        assertEq(vault.getTokenBalance(syn), pre + TEST_AMOUNT, "No deposit happened");
     }
 
     /**
@@ -216,11 +169,7 @@ contract BridgeUnitTest is DefaultVaultTest {
         _setupBridging(false);
         uint256 pre = syn.balanceOf(address(vault));
         _checkBridgeToNonEVM(TEST_AMOUNT);
-        assertEq(
-            vault.getTokenBalance(syn),
-            pre + TEST_AMOUNT,
-            "No deposit happened"
-        );
+        assertEq(vault.getTokenBalance(syn), pre + TEST_AMOUNT, "No deposit happened");
     }
 
     /**
@@ -290,12 +239,7 @@ contract BridgeUnitTest is DefaultVaultTest {
         hoax(governance);
         bridgeConfig.changeTokenStatus(address(syn), false);
 
-        _checkAllBridgingDisabled(
-            "!enabled",
-            "!enabled",
-            "!enabled",
-            "!enabled"
-        );
+        _checkAllBridgingDisabled("!enabled", "!enabled", "!enabled", "!enabled");
 
         hoax(governance);
         bridgeConfig.changeTokenStatus(address(syn), true);
@@ -330,29 +274,14 @@ contract BridgeUnitTest is DefaultVaultTest {
         utils.checkRevert(
             node,
             address(bridge),
-            abi.encodeWithSelector(
-                bridge.bridgeInEVM.selector,
-                user,
-                syn,
-                amount,
-                swapParams,
-                false,
-                kappa
-            ),
+            abi.encodeWithSelector(bridge.bridgeInEVM.selector, user, syn, amount, swapParams, false, kappa),
             "Should have failed due to being disabled",
             revertMsgInEVM
         );
         utils.checkRevert(
             node,
             address(bridge),
-            abi.encodeWithSelector(
-                bridge.bridgeInNonEVM.selector,
-                user,
-                CHAIN_ID_NON_EVM,
-                SYN_NON_EVM,
-                amount,
-                kappa
-            ),
+            abi.encodeWithSelector(bridge.bridgeInNonEVM.selector, user, CHAIN_ID_NON_EVM, SYN_NON_EVM, amount, kappa),
             "Should have failed due to being disabled",
             revertMsgInNonEVM
         );
@@ -360,26 +289,14 @@ contract BridgeUnitTest is DefaultVaultTest {
         utils.checkRevert(
             user,
             address(bridge),
-            abi.encodeWithSelector(
-                bridge.bridgeToEVM.selector,
-                user,
-                CHAIN_ID_EVM,
-                syn,
-                destSwapParams,
-                false
-            ),
+            abi.encodeWithSelector(bridge.bridgeToEVM.selector, user, CHAIN_ID_EVM, syn, destSwapParams, false),
             "Should have failed due to being disabled",
             revertMsgOutEVM
         );
         utils.checkRevert(
             user,
             address(bridge),
-            abi.encodeWithSelector(
-                bridge.bridgeToNonEVM.selector,
-                keccak256("user"),
-                CHAIN_ID_NON_EVM,
-                syn
-            ),
+            abi.encodeWithSelector(bridge.bridgeToNonEVM.selector, keccak256("user"), CHAIN_ID_NON_EVM, syn),
             "Should have failed due to being disabled",
             revertMsgOutNonEVM
         );
@@ -396,15 +313,7 @@ contract BridgeUnitTest is DefaultVaultTest {
         swapParams.path[0] = SYN_EVM;
 
         vm.expectEmit(true, false, false, true);
-        emit BridgedOutEVM(
-            user,
-            CHAIN_ID_EVM,
-            syn,
-            amount,
-            IERC20(SYN_EVM),
-            swapParams,
-            false
-        );
+        emit BridgedOutEVM(user, CHAIN_ID_EVM, syn, amount, IERC20(SYN_EVM), swapParams, false);
 
         hoax(user);
         bridge.bridgeToEVM(user, CHAIN_ID_EVM, syn, swapParams, false);
@@ -476,25 +385,12 @@ contract BridgeUnitTest is DefaultVaultTest {
         uint256 userPre = syn.balanceOf(user);
 
         startHoax(node);
-        bridge.bridgeInEVM(
-            user,
-            syn,
-            amount + 1,
-            swapParams,
-            gasdropRequested,
-            kappa
-        );
+        bridge.bridgeInEVM(user, syn, amount + 1, swapParams, gasdropRequested, kappa);
         assertEq(syn.balanceOf(user), userPre + 1, "Bridge incomplete");
 
         if (gasdropRequested) {
             kappa = utils.getNextKappa();
-            bridge.bridgeInNonEVM(
-                user,
-                CHAIN_ID_NON_EVM,
-                SYN_NON_EVM,
-                amount + 1,
-                kappa
-            );
+            bridge.bridgeInNonEVM(user, CHAIN_ID_NON_EVM, SYN_NON_EVM, amount + 1, kappa);
             assertEq(syn.balanceOf(user), userPre + 2, "Bridge incomplete");
         }
         vm.stopPrank();
@@ -510,16 +406,7 @@ contract BridgeUnitTest is DefaultVaultTest {
         uint256 gasdropAmount = gasdropRequested ? GAS_DROP : 0;
 
         vm.expectEmit(true, true, false, true);
-        emit TokenBridgedIn(
-            user,
-            syn,
-            amount,
-            fee,
-            syn,
-            amount - fee,
-            gasdropAmount,
-            kappa
-        );
+        emit TokenBridgedIn(user, syn, amount, fee, syn, amount - fee, gasdropAmount, kappa);
 
         uint256 vaultPre = syn.balanceOf(address(vault));
         uint256 supplyPre = syn.totalSupply();
@@ -528,25 +415,9 @@ contract BridgeUnitTest is DefaultVaultTest {
         uint256 gasPre = user.balance;
 
         hoax(node);
-        bridge.bridgeInEVM(
-            user,
-            syn,
-            amount,
-            swapParams,
-            gasdropRequested,
-            kappa
-        );
+        bridge.bridgeInEVM(user, syn, amount, swapParams, gasdropRequested, kappa);
 
-        _checkPostBridgeIn(
-            isMint,
-            userPre,
-            amount,
-            fee,
-            gasPre,
-            gasdropAmount,
-            vaultPre,
-            supplyPre
-        );
+        _checkPostBridgeIn(isMint, userPre, amount, fee, gasPre, gasdropAmount, vaultPre, supplyPre);
     }
 
     function _checkBridgeInNonEVM(bool isMint) internal {
@@ -556,16 +427,7 @@ contract BridgeUnitTest is DefaultVaultTest {
         uint256 gasdropAmount = GAS_DROP;
 
         vm.expectEmit(true, true, false, true);
-        emit TokenBridgedIn(
-            user,
-            syn,
-            amount,
-            fee,
-            syn,
-            amount - fee,
-            gasdropAmount,
-            kappa
-        );
+        emit TokenBridgedIn(user, syn, amount, fee, syn, amount - fee, gasdropAmount, kappa);
 
         uint256 vaultPre = syn.balanceOf(address(vault));
         uint256 supplyPre = syn.totalSupply();
@@ -574,24 +436,9 @@ contract BridgeUnitTest is DefaultVaultTest {
         uint256 gasPre = user.balance;
 
         hoax(node);
-        bridge.bridgeInNonEVM(
-            user,
-            CHAIN_ID_NON_EVM,
-            SYN_NON_EVM,
-            amount,
-            kappa
-        );
+        bridge.bridgeInNonEVM(user, CHAIN_ID_NON_EVM, SYN_NON_EVM, amount, kappa);
 
-        _checkPostBridgeIn(
-            isMint,
-            userPre,
-            amount,
-            fee,
-            gasPre,
-            gasdropAmount,
-            vaultPre,
-            supplyPre
-        );
+        _checkPostBridgeIn(isMint, userPre, amount, fee, gasPre, gasdropAmount, vaultPre, supplyPre);
     }
 
     function _checkPostBridgeIn(
@@ -604,34 +451,14 @@ contract BridgeUnitTest is DefaultVaultTest {
         uint256 vaultPre,
         uint256 supplyPre
     ) internal {
-        assertEq(
-            syn.balanceOf(user),
-            userPre + amount - fee,
-            "Failed to credit tokens to user"
-        );
-        assertEq(
-            user.balance,
-            gasPre + gasdropAmount,
-            "Failed to credit gas drop to user"
-        );
+        assertEq(syn.balanceOf(user), userPre + amount - fee, "Failed to credit tokens to user");
+        assertEq(user.balance, gasPre + gasdropAmount, "Failed to credit gas drop to user");
 
         if (isMint) {
-            assertEq(
-                syn.balanceOf(address(vault)),
-                vaultPre + fee,
-                "Failed to accrue fee"
-            );
-            assertEq(
-                syn.totalSupply(),
-                supplyPre + amount,
-                "Failed to mint tokens"
-            );
+            assertEq(syn.balanceOf(address(vault)), vaultPre + fee, "Failed to accrue fee");
+            assertEq(syn.totalSupply(), supplyPre + amount, "Failed to mint tokens");
         } else {
-            assertEq(
-                syn.balanceOf(address(vault)),
-                vaultPre + fee - amount,
-                "Failed to accrue fee"
-            );
+            assertEq(syn.balanceOf(address(vault)), vaultPre + fee - amount, "Failed to accrue fee");
             assertEq(syn.totalSupply(), supplyPre, "Unauthorized minting");
         }
     }
@@ -647,16 +474,7 @@ contract BridgeUnitTest is DefaultVaultTest {
     function _setupBridging(bool isMintBurn) internal {
         startHoax(governance);
         // 0.1% fee with 1 SYN min fee for bridge/airdrop/swap
-        bridgeConfig.addNewToken(
-            address(syn),
-            address(syn),
-            isMintBurn,
-            FEE,
-            MAX_UINT,
-            MIN_FEE,
-            MIN_FEE,
-            MIN_FEE
-        );
+        bridgeConfig.addNewToken(address(syn), address(syn), isMintBurn, FEE, MAX_UINT, MIN_FEE, MIN_FEE, MIN_FEE);
 
         uint256[] memory chainIdsEVM = new uint256[](2);
         chainIdsEVM[0] = block.chainid;
@@ -666,12 +484,7 @@ contract BridgeUnitTest is DefaultVaultTest {
         bridgeTokensEVM[0] = address(syn);
         bridgeTokensEVM[1] = SYN_EVM;
 
-        bridgeConfig.addNewMap(
-            chainIdsEVM,
-            bridgeTokensEVM,
-            CHAIN_ID_NON_EVM,
-            SYN_NON_EVM
-        );
+        bridgeConfig.addNewMap(chainIdsEVM, bridgeTokensEVM, CHAIN_ID_NON_EVM, SYN_NON_EVM);
 
         bridgeConfig.changeTokenStatus(address(syn), true);
         vm.stopPrank();

@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
-import "./Utilities.sol";
+import "./Utilities.t.sol";
 
 import {Bridge} from "src-vault/Bridge.sol";
 import {BridgeConfig} from "src-vault/BridgeConfigV4.sol";
@@ -147,10 +147,7 @@ contract DefaultVaultTest is Test {
         vm.label(address(vault), "Vault");
 
         hoax(utils.getRoleMember(address(vault), 0x00));
-        IAccessControl(address(vault)).grantRole(
-            vault.GOVERNANCE_ROLE(),
-            governance
-        );
+        IAccessControl(address(vault)).grantRole(vault.GOVERNANCE_ROLE(), governance);
     }
 
     function _setupBridge() private {
@@ -169,18 +166,11 @@ contract DefaultVaultTest is Test {
         bridge.grantRole(bridge.NODEGROUP_ROLE(), node);
 
         hoax(utils.getRoleMember(address(vault), 0x00));
-        IAccessControl(address(vault)).grantRole(
-            vault.BRIDGE_ROLE(),
-            address(bridge)
-        );
+        IAccessControl(address(vault)).grantRole(vault.BRIDGE_ROLE(), address(bridge));
     }
 
     function _setupRouter() private {
-        router = new BridgeRouter(
-            _config.wgas,
-            address(bridge),
-            _config.bridgeMaxSwaps
-        );
+        router = new BridgeRouter(_config.wgas, address(bridge), _config.bridgeMaxSwaps);
         quoter = new BridgeQuoter(payable(router), _config.maxSwaps);
         vm.label(address(router), "Router");
         vm.label(address(quoter), "Quoter");
@@ -195,25 +185,14 @@ contract DefaultVaultTest is Test {
     }
 
     function _deployERC20(string memory name) internal returns (IERC20 token) {
-        token = IERC20(
-            deployCode(
-                "./artifacts/ERC20Mock.sol/ERC20Mock.json",
-                abi.encode(name, name, 0)
-            )
-        );
+        token = IERC20(deployCode("./artifacts/ERC20Mock.sol/ERC20Mock.json", abi.encode(name, name, 0)));
         vm.label(address(token), name);
         allTokens.push(address(token));
     }
 
-    function _deployERC20Decimals(string memory name, uint8 decimals)
-        internal
-        returns (IERC20 token)
-    {
+    function _deployERC20Decimals(string memory name, uint8 decimals) internal returns (IERC20 token) {
         token = IERC20(
-            deployCode(
-                "./artifacts/ERC20MockDecimals.sol/ERC20MockDecimals.json",
-                abi.encode(name, name, 0, decimals)
-            )
+            deployCode("./artifacts/ERC20MockDecimals.sol/ERC20MockDecimals.json", abi.encode(name, name, 0, decimals))
         );
         vm.label(address(token), name);
         allTokens.push(address(token));
@@ -244,45 +223,18 @@ contract DefaultVaultTest is Test {
 
     function _testUpgrade(bytes32[] memory kappas) internal {
         for (uint256 i = 0; i < kappas.length; ++i) {
-            assertTrue(
-                vault.kappaExists(kappas[i]),
-                "Kappa is missing post-upgrade"
-            );
+            assertTrue(vault.kappaExists(kappas[i]), "Kappa is missing post-upgrade");
         }
 
-        assertEq(
-            _state.nodeGroupRole,
-            vault.NODEGROUP_ROLE(),
-            "NODEGROUP_ROLE rekt post-upgrade"
-        );
-        assertEq(
-            _state.governanceRole,
-            vault.GOVERNANCE_ROLE(),
-            "GOVERNANCE_ROLE rekt post-upgrade"
-        );
-        assertEq(
-            _state.startBlockNumber,
-            vault.startBlockNumber(),
-            "startBlockNumber rekt post-upgrade"
-        );
-        assertEq(
-            _state.chainGasAmount,
-            vault.chainGasAmount(),
-            "chainGasAmount rekt post-upgrade"
-        );
-        assertEq(
-            _state.wethAddress,
-            vault.WETH_ADDRESS(),
-            "WETH_ADDRESS rekt post-upgrade"
-        );
+        assertEq(_state.nodeGroupRole, vault.NODEGROUP_ROLE(), "NODEGROUP_ROLE rekt post-upgrade");
+        assertEq(_state.governanceRole, vault.GOVERNANCE_ROLE(), "GOVERNANCE_ROLE rekt post-upgrade");
+        assertEq(_state.startBlockNumber, vault.startBlockNumber(), "startBlockNumber rekt post-upgrade");
+        assertEq(_state.chainGasAmount, vault.chainGasAmount(), "chainGasAmount rekt post-upgrade");
+        assertEq(_state.wethAddress, vault.WETH_ADDRESS(), "WETH_ADDRESS rekt post-upgrade");
 
         uint256 length = _state.tokens.length;
         for (uint256 i = 0; i < length; ++i) {
-            assertEq(
-                _state.fees[i],
-                vault.getFeeBalance(IERC20(_state.tokens[i])),
-                "fees rekt post-upgrade"
-            );
+            assertEq(_state.fees[i], vault.getFeeBalance(IERC20(_state.tokens[i])), "fees rekt post-upgrade");
         }
 
         assertEq(vault.bridgeVersion(), 7, "Bridge not upgraded");

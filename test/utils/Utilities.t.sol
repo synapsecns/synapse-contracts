@@ -5,10 +5,7 @@ import "forge-std/Test.sol";
 import {StringsUpgradeable} from "@openzeppelin/contracts-upgradeable-solc8/utils/StringsUpgradeable.sol";
 
 interface IAccessControl {
-    function getRoleMember(bytes32 role, uint256 index)
-        external
-        view
-        returns (address);
+    function getRoleMember(bytes32 role, uint256 index) external view returns (address);
 
     function grantRole(bytes32 role, address account) external;
 
@@ -25,8 +22,7 @@ contract Utilities is Test {
 
     bytes32 internal nextKappa = keccak256("kappa");
 
-    bytes32 internal constant ADMIN_SLOT =
-        0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
+    bytes32 internal constant ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
     address internal immutable attacker;
 
@@ -47,10 +43,7 @@ contract Utilities is Test {
     // -- SETUP FUNCTIONS --
 
     // create users with 100 ether balance
-    function createUsers(uint256 userNum)
-        external
-        returns (address payable[] memory)
-    {
+    function createUsers(uint256 userNum) external returns (address payable[] memory) {
         address payable[] memory users = new address payable[](userNum);
         for (uint256 i = 0; i < userNum; i++) {
             address payable user = this.getNextUserAddress();
@@ -60,10 +53,7 @@ contract Utilities is Test {
         return users;
     }
 
-    function createEmptyUsers(uint256 userNum)
-        external
-        returns (address[] memory users)
-    {
+    function createEmptyUsers(uint256 userNum) external returns (address[] memory users) {
         users = new address[](userNum);
         for (uint256 i = 0; i < userNum; ++i) {
             users[i] = this.getNextUserAddress();
@@ -93,11 +83,7 @@ contract Utilities is Test {
 
     // -- VIEW FUNCTIONS --
 
-    function getRoleMember(address accessControlled, bytes32 role)
-        external
-        view
-        returns (address)
-    {
+    function getRoleMember(address accessControlled, bytes32 role) external view returns (address) {
         return IAccessControl(accessControlled).getRoleMember(role, 0);
     }
 
@@ -114,13 +100,7 @@ contract Utilities is Test {
         bytes memory payload,
         string memory revertMsg
     ) external {
-        this.checkRevert(
-            attacker,
-            _contract,
-            payload,
-            "Attacker gained access",
-            revertMsg
-        );
+        this.checkRevert(attacker, _contract, payload, "Attacker gained access", revertMsg);
     }
 
     function checkAccessControl(
@@ -128,11 +108,7 @@ contract Utilities is Test {
         bytes memory payload,
         bytes32 neededRole
     ) external {
-        this.checkAccess(
-            _contract,
-            payload,
-            _getAccessControlRevertMsg(neededRole, attacker)
-        );
+        this.checkAccess(_contract, payload, _getAccessControlRevertMsg(neededRole, attacker));
     }
 
     function checkRevert(
@@ -145,20 +121,12 @@ contract Utilities is Test {
         hoax(executor);
         (bool success, bytes memory returnData) = _contract.call(payload);
         assertTrue(!success, failReason);
-        assertEq(
-            this.getRevertMsg(returnData),
-            revertMsg,
-            "Unexpected revert message"
-        );
+        assertEq(this.getRevertMsg(returnData), revertMsg, "Unexpected revert message");
     }
 
     // -- INTERNAL STUFF --
 
-    function _getAccessControlRevertMsg(bytes32 role, address account)
-        internal
-        pure
-        returns (string memory revertMsg)
-    {
+    function _getAccessControlRevertMsg(bytes32 role, address account) internal pure returns (string memory revertMsg) {
         revertMsg = string(
             abi.encodePacked(
                 "AccessControl: account ",
@@ -169,11 +137,7 @@ contract Utilities is Test {
         );
     }
 
-    function getRevertMsg(bytes memory _returnData)
-        external
-        pure
-        returns (string memory)
-    {
+    function getRevertMsg(bytes memory _returnData) external pure returns (string memory) {
         // If the _res length is less than 68, then the transaction failed silently (without a revert message)
         if (_returnData.length < 68) return "Transaction reverted silently";
 
