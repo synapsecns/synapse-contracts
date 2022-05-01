@@ -103,9 +103,12 @@ contract Quoter is BasicQuoter, IQuoter {
             // Check for paths that pass through trusted tokens
             for (uint256 i = 0; i < trustedTokens.length; i++) {
                 address trustedToken = trustedTokens[i];
-                // trustedToken == tokenIn  means swap isn't possible
+                // ignore tokens already present in path
+                if (Offers.containsToken(queries.path, trustedToken)) {
+                    continue;
+                }
                 // trustedToken == tokenOut was checked above in _checkDirectSwap
-                if (trustedToken == tokenIn || trustedToken == tokenOut) {
+                if (trustedToken == tokenOut) {
                     continue;
                 }
                 // Loop through all adapters to find the best one
