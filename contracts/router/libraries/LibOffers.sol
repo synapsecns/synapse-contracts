@@ -67,6 +67,20 @@ library Offers {
         return amountsFormatted;
     }
 
+    function containsToken(bytes memory addresses, address token)
+        internal
+        pure
+        returns (bool)
+    {
+        uint256 chunks = addresses.length / 32;
+        for (uint256 i = 0; i < chunks; i++) {
+            if (Bytes.toAddress(i * 32 + 32, addresses) == token) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Converts byte-array to an array of addresses
      */

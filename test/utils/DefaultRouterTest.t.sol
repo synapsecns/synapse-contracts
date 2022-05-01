@@ -3,6 +3,7 @@ pragma solidity >=0.8.0;
 
 import "./DefaultVaultTest.t.sol";
 
+import {Offers} from "src-router/libraries/LibOffers.sol";
 import {IAdapter} from "src-router/interfaces/IAdapter.sol";
 import {ISynapse} from "src-router/adapters/interfaces/ISynapse.sol";
 import {IUniswapV2Factory} from "src-router/adapters/interfaces/IUniswapV2Factory.sol";
@@ -49,6 +50,8 @@ contract DefaultRouterTest is DefaultVaultTest {
     address[] public allAdapters;
     address[] public routeTokens;
 
+    mapping(address => uint256) public routeIndex;
+
     constructor() DefaultVaultTest(defaultConfig) {
         this;
     }
@@ -70,10 +73,10 @@ contract DefaultRouterTest is DefaultVaultTest {
 
         // using only ETH and stables as intermediate tokens
         routeTokens = new address[](4);
-        routeTokens[0] = address(_tokens.wETH);
-        routeTokens[1] = address(_tokens.dai);
-        routeTokens[2] = address(_tokens.usdc);
-        routeTokens[3] = address(_tokens.frax);
+        _saveRouteToken(address(_tokens.wETH), 0);
+        _saveRouteToken(address(_tokens.dai), 1);
+        _saveRouteToken(address(_tokens.usdc), 2);
+        _saveRouteToken(address(_tokens.frax), 3);
 
         address lpToken = deployCode("./artifacts/LPToken.sol/LPToken.json");
 
@@ -142,6 +145,12 @@ contract DefaultRouterTest is DefaultVaultTest {
         quoter.setAdapters(allAdapters);
         quoter.setTokens(routeTokens);
         vm.stopPrank();
+    }
+
+    function _saveRouteToken(address token, uint256 index) internal {
+        routeTokens[index] = token;
+        // start from 1, so default zero value => not a route token
+        routeIndex[token] = index + 1;
     }
 
     function _deploySynapsePool(
@@ -249,17 +258,16 @@ contract DefaultRouterTest is DefaultVaultTest {
 
     function _bruteForcePath(
         uint256 swapsLeft,
-        address tokenOut,
-        uint256 bestAmountOut,
         address tokenCur,
-        uint256 amountCur
-    ) internal {
+        uint256 amountCur,
+        address tokenOut,
+        bool[] memory isTokenUsed
+    ) internal returns (uint256 foundAmountOut) {
         if (tokenOut == tokenCur) {
-            assertTrue(amountCur <= bestAmountOut, "Managed to find better path");
-            return;
+            return amountCur;
         }
         if (swapsLeft == 0 || amountCur == 0) {
-            return;
+            return 0;
         }
 
         /**
@@ -271,16 +279,46 @@ contract DefaultRouterTest is DefaultVaultTest {
          * already being done in Quoter.findBestPath(), so we're using a dumber yet simpler approach.
          */
         for (uint256 a = 0; a < allAdapters.length; a++) {
+            bool wasTokenOut = false;
             for (uint256 t = 0; t < routeTokens.length; t++) {
-                address tokenNext = routeTokens[t];
-                if (tokenNext == tokenCur) {
+                if (isTokenUsed[t]) {
                     continue;
+                }
+                address tokenNext = routeTokens[t];
+                if (tokenNext == tokenOut) {
+                    wasTokenOut = true;
                 }
                 uint256 amountOut = IAdapter(allAdapters[a]).query(amountCur, tokenCur, tokenNext);
                 if (amountOut > 0) {
-                    _bruteForcePath(swapsLeft - 1, tokenOut, bestAmountOut, tokenNext, amountOut);
+                    isTokenUsed[t] = true;
+                    uint256 finalOut = _bruteForcePath(swapsLeft - 1, tokenNext, amountOut, tokenOut, isTokenUsed);
+                    if (finalOut > foundAmountOut) {
+                        foundAmountOut = finalOut;
+                    }
+                    isTokenUsed[t] = false;
                 }
             }
+            {
+                uint256 amountOut = IAdapter(allAdapters[a]).query(amountCur, tokenCur, tokenOut);
+                if (amountOut > 0) {
+                    uint256 finalOut = _bruteForcePath(swapsLeft - 1, tokenOut, amountOut, tokenOut, isTokenUsed);
+                    if (finalOut > foundAmountOut) {
+                        foundAmountOut = finalOut;
+                    }
+                }
+            }
+        }
+    }
+
+    function _logOffer(Offers.FormattedOffer memory offer) internal {
+        for (uint256 i = 0; i < offer.path.length; ++i) {
+            emit log_address(offer.path[i]);
+        }
+        for (uint256 i = 0; i < offer.adapters.length; ++i) {
+            emit log_address(offer.adapters[i]);
+        }
+        for (uint256 i = 0; i < offer.amounts.length; ++i) {
+            emit log_uint(offer.amounts[i]);
         }
     }
 }
