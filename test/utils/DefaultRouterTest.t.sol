@@ -51,15 +51,18 @@ contract DefaultRouterTest is DefaultVaultTest {
     address[] public routeTokens;
 
     mapping(address => uint256) public routeIndex;
+    uint256 public constant WETH_INDEX = 0;
 
     constructor() DefaultVaultTest(defaultConfig) {
         this;
     }
 
     function setUp() public virtual override {
-        super.setUp();
-        _tokens.nETH = _deployERC20("nETH");
         _tokens.wETH = _deployWETH("wETH");
+        _config.wgas = payable(address(_tokens.wETH));
+        super.setUp();
+
+        _tokens.nETH = _deployERC20("nETH");
 
         _tokens.nUSD = _deployERC20("nUSD");
         _tokens.dai = _deployERC20("DAI");
