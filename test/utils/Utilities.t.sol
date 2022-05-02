@@ -115,6 +115,15 @@ contract Utilities is Test {
         address executor,
         address _contract,
         bytes memory payload,
+        string memory revertMsg
+    ) external {
+        this.checkRevert(executor, _contract, payload, revertMsg, revertMsg);
+    }
+
+    function checkRevert(
+        address executor,
+        address _contract,
+        bytes memory payload,
         string memory failReason,
         string memory revertMsg
     ) external {
