@@ -44,6 +44,83 @@ contract BridgeRouterTest is DefaultBridgeTest {
         );
     }
 
+    // -- TEST: FAKE TOKENS
+
+    function testBridgeOutFakeTokenToEVM() public {
+        IERC20 fake = _deployERC20("FAKE");
+        uint256 amount = 10**18;
+        _dealToken(fake, user, amount);
+
+        hoax(user);
+        fake.approve(address(router), amount);
+
+        IBridge.SwapParams memory swapParams = _constructEmptySwapParams(address(fake));
+        swapParams.deadline = MAX_UINT;
+
+        utils.checkRevert(
+            user,
+            address(router),
+            abi.encodeWithSelector(
+                router.bridgeTokenToEVM.selector,
+                user,
+                ID_EVM,
+                swapParams,
+                amount,
+                swapParams,
+                false
+            ),
+            "!token"
+        );
+    }
+
+    function testBridgeOutFakeTokenToNonEVM() public {
+        bytes32 to = keccak256(abi.encode(user));
+        IERC20 fake = _deployERC20("FAKE");
+        uint256 amount = 10**18;
+        _dealToken(fake, user, amount);
+
+        hoax(user);
+        fake.approve(address(router), amount);
+
+        IBridge.SwapParams memory swapParams = _constructEmptySwapParams(address(fake));
+        swapParams.deadline = MAX_UINT;
+
+        utils.checkRevert(
+            user,
+            address(router),
+            abi.encodeWithSelector(router.bridgeTokenToNonEVM.selector, to, ID_NON_EVM, swapParams, amount),
+            "!token"
+        );
+    }
+
+    function testBridgeInFakeSwap() public {
+        uint256 amount = 10**20;
+
+        IBridge.SwapParams memory swapParams;
+        swapParams.path = new address[](2);
+        swapParams.path[0] = address(_tokens.nETH);
+        swapParams.path[1] = address(_tokens.wETH);
+        swapParams.adapters = new address[](1);
+        swapParams.adapters[0] = address(_adapters.nETHAdapter);
+        swapParams.deadline = MAX_UINT;
+
+        bytes32 kappa = utils.getNextKappa();
+
+        uint256 userPre = _tokens.nUSD.balanceOf(attacker);
+
+        (uint256 fee, , , ) = bridgeConfig.calculateBridgeFee(
+            address(_tokens.nUSD),
+            amount,
+            false,
+            swapParams.adapters.length
+        );
+
+        hoax(node);
+        bridge.bridgeInEVM(attacker, _tokens.nUSD, amount, swapParams, false, kappa);
+
+        assertEq(_tokens.nUSD.balanceOf(attacker) - userPre, amount - fee, "Attacker managed to receive not nUSD");
+    }
+
     // -- TEST: BRIDGE TO EVM
 
     function testBridgeOutTokenNoSwapToEVM(uint8 _indexTo, uint64 _amountIn) public {
