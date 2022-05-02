@@ -154,7 +154,6 @@ contract VaultUnitTest is DefaultVaultTest {
             governance,
             address(vault),
             abi.encodeWithSelector(vault.unpause.selector),
-            "Should have failed due to not being paused",
             "Pausable: not paused"
         );
 
@@ -169,14 +168,12 @@ contract VaultUnitTest is DefaultVaultTest {
             address(bridge),
             address(vault),
             abi.encodeWithSelector(vault.mintToken.selector, user, syn, amount, 0, user, false, kappa),
-            "Should have failed due to being paused",
             "Pausable: paused"
         );
         utils.checkRevert(
             address(bridge),
             address(vault),
             abi.encodeWithSelector(vault.withdrawToken.selector, user, syn, amount, 0, user, false, kappa),
-            "Should have failed due to being paused",
             "Pausable: paused"
         );
 

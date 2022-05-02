@@ -77,7 +77,6 @@ contract BasicQuoterTest is DefaultVaultTest {
             governance,
             address(quoter),
             abi.encodeWithSelector(quoter.setMaxSwaps.selector, 0),
-            "Can't set maxSwaps to 0",
             "Amount of swaps can't be zero"
         );
 
@@ -101,7 +100,6 @@ contract BasicQuoterTest is DefaultVaultTest {
                 governance,
                 address(quoter),
                 abi.encodeWithSelector(quoter.addTrustedAdapter.selector, adapters[i]),
-                "Should not be able to add duplicate adapter",
                 "Adapter already added"
             );
         }
@@ -230,7 +228,6 @@ contract BasicQuoterTest is DefaultVaultTest {
             governance,
             address(quoter),
             abi.encodeWithSelector(quoter.addTrustedToken.selector, token),
-            "Should not be able to add duplicate token",
             "Token already added"
         );
     }
