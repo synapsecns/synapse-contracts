@@ -3,7 +3,7 @@ import { Signer } from "ethers"
 import { getUserTokenBalance } from "../../../utils"
 import { solidity } from "ethereum-waffle"
 
-import { CurveBasePoolAdapter } from "../../../../build/typechain/CurveBasePoolAdapter"
+import { CurveBaseAdapter } from "../../../../build/typechain/CurveBaseAdapter"
 import chai from "chai"
 import { getBigNumber } from "../../../bridge/utilities"
 import {
@@ -17,7 +17,7 @@ import {
 } from "../../utils/helpers"
 
 import config from "../../../config.json"
-import adapters from "../adapters.json"
+import adapters from "../../adapters.json"
 
 chai.use(solidity)
 const { expect } = chai
@@ -26,7 +26,7 @@ const CHAIN = 1
 const DEX = "curve"
 const POOL = "basepool"
 const STORAGE = "basepool"
-const ADAPTER = adapters[CHAIN][POOL]
+const ADAPTER = adapters[CHAIN][DEX][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
 describe(ADAPTER_NAME, function () {
@@ -35,7 +35,7 @@ describe(ADAPTER_NAME, function () {
   let dude: Signer
   let dudeAddress: string
 
-  let adapter: CurveBasePoolAdapter
+  let adapter: CurveBaseAdapter
 
   // Test Values
   const TOKENS = []
@@ -52,11 +52,11 @@ describe(ADAPTER_NAME, function () {
 
   let swapsPerTime: Number =
     SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
-  const timesSmall: Number = Math.floor(125 / swapsPerTime) + 1
+  const timesSmall: Number = Math.floor(40 / swapsPerTime) + 1
   const swapsAmountSmall: Number = timesSmall * swapsPerTime
 
   swapsPerTime = SHARE_BIG.length * getSwapsAmount(tokenSymbols.length)
-  const timesBig: Number = Math.floor(50 / swapsPerTime) + 1
+  const timesBig: Number = Math.floor(30 / swapsPerTime) + 1
   const swapsAmountBig: Number = timesBig * swapsPerTime
 
   const AMOUNTS: Array<BigNumber>

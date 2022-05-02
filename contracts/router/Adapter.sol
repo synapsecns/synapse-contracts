@@ -34,49 +34,57 @@ abstract contract Adapter is Ownable, IAdapter {
     }
 
     /// @dev this is estimated amount of gas that's used by swap() implementation
-    function setSwapGasEstimate(uint256 _estimate) public onlyOwner {
-        swapGasEstimate = _estimate;
-        emit UpdatedGasEstimate(address(this), _estimate);
+    function setSwapGasEstimate(uint256 _swapGasEstimate) public onlyOwner {
+        swapGasEstimate = _swapGasEstimate;
+        emit UpdatedGasEstimate(address(this), _swapGasEstimate);
+    }
+
+    // -- RESTRICTED ALLOWANCE FUNCTIONS --
+
+    function setInfiniteAllowance(IERC20 token, address spender)
+        external
+        onlyOwner
+    {
+        _setInfiniteAllowance(token, spender);
     }
 
     /**
      * @notice Revoke token allowance
      *
-     * @param _token address
-     * @param _spender address
+     * @param token address
+     * @param spender address
      */
-    function revokeAllowance(address _token, address _spender)
+    function revokeTokenAllowance(IERC20 token, address spender)
         external
         onlyOwner
     {
-        IERC20 _t = IERC20(_token);
-        _t.safeApprove(_spender, 0);
+        token.safeApprove(spender, 0);
     }
 
     // -- RESTRICTED RECOVER TOKEN FUNCTIONS --
 
     /**
      * @notice Recover ERC20 from contract
-     * @param _token token to recover
+     * @param token token to recover
      */
-    function recoverERC20(IERC20 _token) external onlyOwner {
-        uint256 _amount = _token.balanceOf(address(this));
-        require(_amount > 0, "Adapter: Nothing to recover");
+    function recoverERC20(IERC20 token) external onlyOwner {
+        uint256 amount = token.balanceOf(address(this));
+        require(amount > 0, "Adapter: Nothing to recover");
 
-        emit Recovered(address(_token), _amount);
-        _token.safeTransfer(msg.sender, _amount);
+        emit Recovered(address(token), amount);
+        token.safeTransfer(msg.sender, amount);
     }
 
     /**
      * @notice Recover GAS from contract
      */
     function recoverGAS() external onlyOwner {
-        uint256 _amount = address(this).balance;
-        require(_amount > 0, "Adapter: Nothing to recover");
+        uint256 amount = address(this).balance;
+        require(amount > 0, "Adapter: Nothing to recover");
 
-        emit Recovered(address(0), _amount);
+        emit Recovered(address(0), amount);
         //solhint-disable-next-line
-        (bool success, ) = msg.sender.call{value: _amount}("");
+        (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "GAS transfer failed");
     }
 
@@ -84,60 +92,59 @@ abstract contract Adapter is Ownable, IAdapter {
      * @return Address to transfer tokens in order for swap() to work
      */
 
-    function depositAddress(address _tokenIn, address _tokenOut)
+    function depositAddress(address tokenIn, address tokenOut)
         external
         view
         returns (address)
     {
-        return _depositAddress(_tokenIn, _tokenOut);
+        return _depositAddress(tokenIn, tokenOut);
     }
 
     /**
      * @notice Get query for a swap through this adapter
      *
-     * @param _amountIn input amount in starting token
-     * @param _tokenIn ERC20 token being sold
-     * @param _tokenOut ERC20 token being bought
+     * @param amountIn input amount in starting token
+     * @param tokenIn ERC20 token being sold
+     * @param tokenOut ERC20 token being bought
      */
     function query(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut
+        uint256 amountIn,
+        address tokenIn,
+        address tokenOut
     ) external view returns (uint256) {
         if (
-            _amountIn == 0 ||
-            _tokenIn == _tokenOut ||
-            !_checkTokens(_tokenIn, _tokenOut)
+            amountIn == 0 ||
+            tokenIn == tokenOut ||
+            !_checkTokens(tokenIn, tokenOut)
         ) {
             return 0;
         }
-        return _query(_amountIn, _tokenIn, _tokenOut);
+        return _query(amountIn, tokenIn, tokenOut);
     }
 
     /**
      * @notice Execute a swap with given input amount of tokens from tokenIn to tokenOut,
-     *         assuming input tokens were transferred to depositAddress(_tokenIn, _tokenOut)
+     *         assuming input tokens were transferred to depositAddress(tokenIn, tokenOut)
      *
-     * @param _amountIn input amount in starting token
-     * @param _tokenIn ERC20 token being sold
-     * @param _tokenOut ERC20 token being bought
-     * @param _to address where swapped funds should be sent to
+     * @param amountIn input amount in starting token
+     * @param tokenIn ERC20 token being sold
+     * @param tokenOut ERC20 token being bought
+     * @param to address where swapped funds should be sent to
      *
-     * @return _amountOut amount of _tokenOut tokens received in swap
+     * @return amountOut amount of tokenOut tokens received in swap
      */
     function swap(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut,
-        address _to
-    ) external returns (uint256 _amountOut) {
-        require(_amountIn != 0, "Adapter: Insufficient input amount");
-        require(_to != address(0), "Adapter: _to cannot be zero address");
-        require(_tokenIn != _tokenOut, "Adapter: Tokens must differ");
-        require(_checkTokens(_tokenIn, _tokenOut), "Adapter: unknown tokens");
-        _approveIfNeeded(_tokenIn, _amountIn);
-        _amountOut = _swap(_amountIn, _tokenIn, _tokenOut, _to);
-        emit AdapterSwap(_tokenIn, _tokenOut, _amountIn, _amountOut);
+        uint256 amountIn,
+        address tokenIn,
+        address tokenOut,
+        address to
+    ) external returns (uint256 amountOut) {
+        require(amountIn != 0, "Adapter: Insufficient input amount");
+        require(to != address(0), "Adapter: to cannot be zero address");
+        require(tokenIn != tokenOut, "Adapter: Tokens must differ");
+        require(_checkTokens(tokenIn, tokenOut), "Adapter: unknown tokens");
+        _approveIfNeeded(tokenIn, amountIn);
+        amountOut = _swap(amountIn, tokenIn, tokenOut, to);
     }
 
     // -- INTERNAL FUNCTIONS
@@ -147,41 +154,45 @@ abstract contract Adapter is Ownable, IAdapter {
      *
      * @dev this will do nothing, if funds need to stay in this contract
      *
-     * @param _token address
-     * @param _amount tokens to return
-     * @param _to address where funds should be sent to
+     * @param token address
+     * @param amount tokens to return
+     * @param to address where funds should be sent to
      */
     function _returnTo(
-        address _token,
-        uint256 _amount,
-        address _to
+        address token,
+        uint256 amount,
+        address to
     ) internal {
-        if (address(this) != _to) {
-            IERC20(_token).safeTransfer(_to, _amount);
+        if (address(this) != to) {
+            IERC20(token).safeTransfer(to, amount);
         }
     }
 
     /**
      * @notice Check allowance, and update if it is not big enough
      *
-     * @param _token token to check
-     * @param _amount minimum allowance that we need
-     * @param _spender address that will be given allowance
+     * @param token token to check
+     * @param amount minimum allowance that we need
+     * @param spender address that will be given allowance
      */
     function _checkAllowance(
-        IERC20 _token,
-        uint256 _amount,
-        address _spender
+        IERC20 token,
+        uint256 amount,
+        address spender
     ) internal {
-        uint256 _allowance = _token.allowance(address(this), _spender);
-        if (_allowance < _amount) {
+        uint256 _allowance = token.allowance(address(this), spender);
+        if (_allowance < amount) {
             // safeApprove should only be called when setting an initial allowance,
             // or when resetting it to zero. (c) openzeppelin
             if (_allowance != 0) {
-                _token.safeApprove(_spender, 0);
+                token.safeApprove(spender, 0);
             }
-            _token.safeApprove(_spender, UINT_MAX);
+            token.safeApprove(spender, UINT_MAX);
         }
+    }
+
+    function _setInfiniteAllowance(IERC20 token, address spender) internal {
+        _checkAllowance(token, UINT_MAX, spender);
     }
 
     // -- INTERNAL VIRTUAL FUNCTIONS
@@ -189,25 +200,24 @@ abstract contract Adapter is Ownable, IAdapter {
     /**
      * @notice Approves token for the underneath swapper to use
      *
-     * @dev Implement via _checkAllowance(_tokenIn, _amount, POOL)
-     *
-     * @param _tokenIn ERC20 token to approve
-     * @param _amount token amount to approve
+     * @dev Implement via _checkAllowance(tokenIn, amount, POOL)
+     *      if actually needed
      */
-    function _approveIfNeeded(address _tokenIn, uint256 _amount)
-        internal
-        virtual;
+    function _approveIfNeeded(address, uint256) internal virtual {
+        this;
+    }
 
     /**
      * @notice Checks if a swap between two tokens is supported by adapter
-     * @param _tokenIn ERC20 token to check
-     * @param _tokenOut ERC20 token to check
      */
-    function _checkTokens(address _tokenIn, address _tokenOut)
+    function _checkTokens(address, address)
         internal
         view
         virtual
-        returns (bool);
+        returns (bool)
+    {
+        return true;
+    }
 
     /**
      * @notice Internal implementation for depositAddress
@@ -217,7 +227,7 @@ abstract contract Adapter is Ownable, IAdapter {
      *      while some (2) will only be able to pull tokens while swapping.
      *      Use swapper address for (1) and Adapter address for (2)
      */
-    function _depositAddress(address _tokenIn, address _tokenOut)
+    function _depositAddress(address tokenIn, address tokenOut)
         internal
         view
         virtual
@@ -227,41 +237,41 @@ abstract contract Adapter is Ownable, IAdapter {
      * @notice Internal implementation of a swap
      *
      * @dev 1. All variables are already checked
-     *      2. Use _returnTo(_tokenOut, _amountOut, _to) to return tokens, only if
+     *      2. Use _returnTo(tokenOut, amountOut, to) to return tokens, only if
      *         underneath swapper can't send swapped tokens to arbitrary address.
      *      3. Wrapping is handled external to this function
      *
-     * @param _amountIn amount being sold
-     * @param _tokenIn ERC20 token being sold
-     * @param _tokenOut ERC20 token being bought
-     * @param _to Where received tokens are sent to
+     * @param amountIn amount being sold
+     * @param tokenIn ERC20 token being sold
+     * @param tokenOut ERC20 token being bought
+     * @param to Where received tokens are sent to
      *
-     * @return Amount of _tokenOut tokens received in swap
+     * @return Amount of tokenOut tokens received in swap
      */
     function _swap(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut,
-        address _to
+        uint256 amountIn,
+        address tokenIn,
+        address tokenOut,
+        address to
     ) internal virtual returns (uint256);
 
     /**
      * @notice Internal implementation of query
      *
      * @dev All variables are already checked.
-     *      This should ALWAYS return _amountOut such as: the swapper underneath
-     *      is able to produce AT LEAST _amountOut in exchange for EXACTLY _amountIn
+     *      This should ALWAYS return amountOut such as: the swapper underneath
+     *      is able to produce AT LEAST amountOut in exchange for EXACTLY amountIn
      *      For efficiency reasons, returning the exact quote is preferable,
      *      however, if the swapper doesn't have a reliable quoting method,
      *      it's safe to underquote the swapped amount
      *
-     * @param _amountIn input amount in starting token
-     * @param _tokenIn ERC20 token being sold
-     * @param _tokenOut ERC20 token being bought
+     * @param amountIn input amount in starting token
+     * @param tokenIn ERC20 token being sold
+     * @param tokenOut ERC20 token being bought
      */
     function _query(
-        uint256 _amountIn,
-        address _tokenIn,
-        address _tokenOut
+        uint256 amountIn,
+        address tokenIn,
+        address tokenOut
     ) internal view virtual returns (uint256);
 }

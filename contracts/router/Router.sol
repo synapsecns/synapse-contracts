@@ -20,6 +20,13 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         this;
     }
 
+    modifier deadlineCheck(uint256 deadline) {
+        // solhint-disable-next-line
+        require(block.timestamp <= deadline, "Router: past deadline");
+
+        _;
+    }
+
     // -- SWAPPERS [single chain swaps] --
 
     /**
@@ -27,56 +34,51 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         @dev 1. Tokens will be pulled from msg.sender, so make sure Router has enough allowance to 
                 spend initial token. 
              2. Use Quoter.getTradeDataAmountOut() -> _tradeData to find best route with preset slippage.
-             3. len(_path) = N, len(_adapters) = N - 1
-        @param _amountIn amount of initial tokens to swap
-        @param _minAmountOut minimum amount of final tokens for a swap to be successful
-        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
-        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
-        @param _to address to receive final tokens
-        @return _amountOut Final amount of tokens swapped
+             3. len(path) = N, len(adapters) = N - 1
+        @param amountIn amount of initial tokens to swap
+        @param minAmountOut minimum amount of final tokens for a swap to be successful
+        @param path token path for the swap, path[0] = initial token, path[N - 1] = final token
+        @param adapters adapters that will be used for swap. adapters[i]: swap path[i] -> path[i + 1]
+        @param to address to receive final tokens
+        @return amountOut Final amount of tokens swapped
      */
     function swap(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        address _to
-    ) external returns (uint256 _amountOut) {
-        _amountOut = _swap(
-            _amountIn,
-            _minAmountOut,
-            _path,
-            _adapters,
-            msg.sender,
-            _to
-        );
+        address to,
+        address[] calldata path,
+        address[] calldata adapters,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        uint256 deadline
+    ) external deadlineCheck(deadline) returns (uint256 amountOut) {
+        amountOut = _swap(to, path, adapters, amountIn, minAmountOut);
     }
 
     /**
         @notice Perform a series of swaps along the token path, starting with
                 chain's native currency (GAS), using the provided Adapters.
-        @dev 1. Make sure to set _amountIn = msg.value, _path[0] = WGAS
+        @dev 1. Make sure to set amountIn = msg.value, path[0] = WGAS
              2. Use Quoter.getTradeDataAmountOut() -> _tradeData to find best route with preset slippage.
-             3. len(_path) = N, len(_adapters) = N - 1
-        @param _amountIn amount of initial tokens to swap
-        @param _minAmountOut minimum amount of final tokens for a swap to be successful
-        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
-        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
-        @param _to address to receive final tokens
-        @return _amountOut Final amount of tokens swapped
+             3. len(path) = N, len(adapters) = N - 1
+        @param amountIn amount of initial tokens to swap
+        @param minAmountOut minimum amount of final tokens for a swap to be successful
+        @param path token path for the swap, path[0] = initial token, path[N - 1] = final token
+        @param adapters adapters that will be used for swap. adapters[i]: swap path[i] -> path[i + 1]
+        @param to address to receive final tokens
+        @return amountOut Final amount of tokens swapped
      */
     function swapFromGAS(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        address _to
-    ) external payable returns (uint256 _amountOut) {
-        require(msg.value == _amountIn, "Router: incorrect amount of GAS");
-        require(_path[0] == WGAS, "Router: Path needs to begin with WGAS");
-        _wrap(_amountIn);
+        address to,
+        address[] calldata path,
+        address[] calldata adapters,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        uint256 deadline
+    ) external payable deadlineCheck(deadline) returns (uint256 amountOut) {
+        require(msg.value == amountIn, "Router: incorrect amount of GAS");
+        require(path[0] == WGAS, "Router: Path needs to begin with WGAS");
+        _wrap(amountIn);
         // WGAS tokens need to be sent from this contract
-        _amountOut = _selfSwap(_amountIn, _minAmountOut, _path, _adapters, _to);
+        amountOut = _selfSwap(to, path, adapters, amountIn, minAmountOut);
     }
 
     /**
@@ -84,40 +86,40 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
                 chain's native currency (GAS), using the provided Adapters.
         @dev 1. Tokens will be pulled from msg.sender, so make sure Router has enough allowance to 
                 spend initial token.
-             2. Make sure to set _path[N-1] = WGAS
-             3. Address _to needs to be able to accept native GAS
+             2. Make sure to set path[N-1] = WGAS
+             3. Address to needs to be able to accept native GAS
              4. Use Quoter.getTradeDataAmountOut() -> _tradeData to find best route with preset slippage.
-             5. len(_path) = N, len(_adapters) = N - 1
-        @param _amountIn amount of initial tokens to swap
-        @param _minAmountOut minimum amount of final tokens for a swap to be successful
-        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
-        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
-        @param _to address to receive final tokens
-        @return _amountOut Final amount of tokens swapped
+             5. len(path) = N, len(adapters) = N - 1
+        @param amountIn amount of initial tokens to swap
+        @param minAmountOut minimum amount of final tokens for a swap to be successful
+        @param path token path for the swap, path[0] = initial token, path[N - 1] = final token
+        @param adapters adapters that will be used for swap. adapters[i]: swap path[i] -> path[i + 1]
+        @param to address to receive final tokens
+        @return amountOut Final amount of tokens swapped
      */
     function swapToGAS(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        address _to
-    ) external returns (uint256 _amountOut) {
+        address to,
+        address[] calldata path,
+        address[] calldata adapters,
+        uint256 amountIn,
+        uint256 minAmountOut,
+        uint256 deadline
+    ) external deadlineCheck(deadline) returns (uint256 amountOut) {
         require(
-            _path[_path.length - 1] == WGAS,
+            path[path.length - 1] == WGAS,
             "Router: Path needs to end with WGAS"
         );
         // This contract needs to receive WGAS in order to unwrap it
-        _amountOut = _swap(
-            _amountIn,
-            _minAmountOut,
-            _path,
-            _adapters,
-            msg.sender,
-            address(this)
+        amountOut = _swap(
+            address(this),
+            path,
+            adapters,
+            amountIn,
+            minAmountOut
         );
         // this will unwrap WGAS and return GAS
         // reentrancy not an issue here, as all work is done
-        _returnTokensTo(WGAS, _amountOut, _to);
+        _returnTokensTo(to, IERC20(WGAS), amountOut);
     }
 
     // -- INTERNAL SWAP FUNCTIONS --
@@ -125,135 +127,153 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
     /// @dev All internal swap functions have a reentrancy guard
 
     /**
-        @notice Pull tokens from user and perform a series of swaps
+        @notice Pull tokens from msg.sender and perform a series of swaps
         @dev Use _selfSwap if tokens are already in the contract
              Don't do this: _from = address(this);
-        @param _amountIn amount of initial tokens to swap
-        @param _minAmountOut minimum amount of final tokens for a swap to be successful
-        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
-        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
-        @param _from address to pull initial tokens from
-        @param _to address to receive final tokens
-        @return _amountOut Final amount of tokens swapped
+        @param amountIn amount of initial tokens to swap
+        @param minAmountOut minimum amount of final tokens for a swap to be successful
+        @param path token path for the swap, path[0] = initial token, path[N - 1] = final token
+        @param adapters adapters that will be used for swap. adapters[i]: swap path[i] -> path[i + 1]
+        @param to address to receive final tokens
+        @return amountOut Final amount of tokens swapped
      */
     function _swap(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        address _from,
-        address _to
-    ) internal nonReentrant returns (uint256 _amountOut) {
-        IERC20(_path[0]).safeTransferFrom(
-            _from,
-            _getDepositAddress(_path, _adapters, 0),
-            _amountIn
+        address to,
+        address[] calldata path,
+        address[] calldata adapters,
+        uint256 amountIn,
+        uint256 minAmountOut
+    ) internal nonReentrant returns (uint256 amountOut) {
+        require(path.length > 1, "Router: path too short");
+        address tokenIn = path[0];
+        address tokenNext = path[1];
+        IERC20(tokenIn).safeTransferFrom(
+            msg.sender,
+            _getDepositAddress(adapters[0], tokenIn, tokenNext),
+            amountIn
         );
 
-        _amountOut = _doChainedSwaps(
-            _amountIn,
-            _minAmountOut,
-            _path,
-            _adapters,
-            _to
-        );
+        amountOut = _doChainedSwaps(to, path, adapters, amountIn, minAmountOut);
     }
 
     /**
         @notice Perform a series of swaps, assuming the starting tokens
                 are already deposited in this contract
-        @param _amountIn amount of initial tokens to swap
-        @param _minAmountOut minimum amount of final tokens for a swap to be successful
-        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
-        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
-        @param _to address to receive final tokens
-        @return _amountOut Final amount of tokens swapped
+        @param amountIn amount of initial tokens to swap
+        @param minAmountOut minimum amount of final tokens for a swap to be successful
+        @param path token path for the swap, path[0] = initial token, path[N - 1] = final token
+        @param adapters adapters that will be used for swap. adapters[i]: swap path[i] -> path[i + 1]
+        @param to address to receive final tokens
+        @return amountOut Final amount of tokens swapped
      */
     function _selfSwap(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        address _to
-    ) internal nonReentrant returns (uint256 _amountOut) {
-        IERC20(_path[0]).safeTransfer(
-            _getDepositAddress(_path, _adapters, 0),
-            _amountIn
+        address to,
+        address[] calldata path,
+        address[] calldata adapters,
+        uint256 amountIn,
+        uint256 minAmountOut
+    ) internal nonReentrant returns (uint256 amountOut) {
+        require(path.length > 1, "Router: path too short");
+        address tokenIn = path[0];
+        address tokenNext = path[1];
+        IERC20(tokenIn).safeTransfer(
+            _getDepositAddress(adapters[0], tokenIn, tokenNext),
+            amountIn
         );
 
-        _amountOut = _doChainedSwaps(
-            _amountIn,
-            _minAmountOut,
-            _path,
-            _adapters,
-            _to
-        );
+        amountOut = _doChainedSwaps(to, path, adapters, amountIn, minAmountOut);
+    }
+
+    struct ChainedSwapData {
+        address tokenIn;
+        address tokenOut;
+        address tokenNext;
+        IAdapter adapterNext;
+        address targetAddress;
     }
 
     /**
         @notice Perform a series of swaps, assuming the starting tokens
                 have already been deposited in the first adapter
-        @param _amountIn amount of initial tokens to swap
-        @param _minAmountOut minimum amount of final tokens for a swap to be successful
-        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
-        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
-        @param _to address to receive final tokens
-        @return _amountOut Final amount of tokens swapped
+        @param amountIn amount of initial tokens to swap
+        @param minAmountOut minimum amount of final tokens for a swap to be successful
+        @param path token path for the swap, path[0] = initial token, path[N - 1] = final token
+        @param adapters adapters that will be used for swap. adapters[i]: swap path[i] -> path[i + 1]
+        @param to address to receive final tokens
+        @return amountOut Final amount of tokens swapped
      */
     function _doChainedSwaps(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        address _to
-    ) internal returns (uint256 _amountOut) {
+        address to,
+        address[] calldata path,
+        address[] calldata adapters,
+        uint256 amountIn,
+        uint256 minAmountOut
+    ) internal returns (uint256 amountOut) {
         require(
-            _path.length == _adapters.length + 1,
+            path.length == adapters.length + 1,
             "Router: wrong amount of adapters/tokens"
         );
-        require(_to != address(0), "Router: _to cannot be zero address");
-        for (uint8 i = 0; i < _adapters.length; ++i) {
-            require(isTrustedAdapter[_adapters[i]], "Router: unknown adapter");
+        require(to != address(0), "Router: to cannot be zero address");
+        for (uint256 i = 0; i < adapters.length; ++i) {
+            require(isTrustedAdapter[adapters[i]], "Router: unknown adapter");
         }
-        _amountOut = _amountIn;
-        for (uint8 i = 0; i < _adapters.length; ++i) {
-            address _targetAddress = i < _adapters.length - 1
-                ? _getDepositAddress(_path, _adapters, i + 1)
-                : _to;
-            _amountOut = IAdapter(_adapters[i]).swap(
-                _amountOut,
-                _path[i],
-                _path[i + 1],
-                _targetAddress
+
+        // yo mama's too deep
+        ChainedSwapData memory data;
+        data.tokenOut = path[0];
+        data.tokenNext = path[1];
+        data.adapterNext = IAdapter(adapters[0]);
+
+        amountOut = IERC20(path[path.length - 1]).balanceOf(to);
+
+        for (uint256 i = 0; i < adapters.length; ++i) {
+            data.tokenIn = data.tokenOut;
+            data.tokenOut = data.tokenNext;
+
+            IAdapter adapter = data.adapterNext;
+            if (i < adapters.length - 1) {
+                data.adapterNext = IAdapter(adapters[i + 1]);
+                data.tokenNext = path[i + 2];
+                data.targetAddress = data.adapterNext.depositAddress(
+                    data.tokenOut,
+                    data.tokenNext
+                );
+            } else {
+                data.targetAddress = to;
+            }
+
+            amountIn = adapter.swap(
+                amountIn,
+                data.tokenIn,
+                data.tokenOut,
+                data.targetAddress
             );
         }
+        // figure out how much tokens user received exactly
+        amountOut = IERC20(data.tokenOut).balanceOf(to) - amountOut;
         require(
-            _amountOut >= _minAmountOut,
+            amountOut >= minAmountOut,
             "Router: Insufficient output amount"
         );
-        emit Swap(_path[0], _path[_path.length - 1], _amountIn, _amountOut);
+        emit Swap(path[0], data.tokenOut, amountIn, amountOut);
     }
 
     // -- INTERNAL HELPERS
 
     /**
         @notice Get selected adapter's deposit address
-        @param _path token path for the swap, path[0] = initial token, path[N - 1] = final token
-        @param _adapters adapters that will be used for swap. _adapters[i]: swap _path[i] -> _path[i + 1]
-        @param _index index of adapter to get deposit address
-    
-        @dev Return value of address(0) means that
-             adapter doesn't support this pair of tokens
+        @dev Return value of address(0) means that adapter
+             doesn't support this pair of tokens, thus revert
+        @param adapter Adapter in question
+        @param tokenIn token to sell
+        @param tokenOut token to buy
      */
     function _getDepositAddress(
-        address[] calldata _path,
-        address[] calldata _adapters,
-        uint8 _index
-    ) internal view returns (address _depositAddress) {
-        _depositAddress = IAdapter(_adapters[_index]).depositAddress(
-            _path[_index],
-            _path[_index + 1]
-        );
-        require(_depositAddress != address(0), "Adapter: unknown tokens");
+        address adapter,
+        address tokenIn,
+        address tokenOut
+    ) internal view returns (address depositAddress) {
+        depositAddress = IAdapter(adapter).depositAddress(tokenIn, tokenOut);
+        require(depositAddress != address(0), "Adapter: unknown tokens");
     }
 }

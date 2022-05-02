@@ -2,55 +2,66 @@
 pragma solidity ^0.8.0;
 
 import {IRouter} from "./IRouter.sol";
+import {IBridge} from "../../vault/interfaces/IBridge.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
 
 interface IBridgeRouter is IRouter {
+    // -- VIEWS --
+
     function bridgeMaxSwaps() external view returns (uint8);
 
     function bridge() external view returns (address);
 
     // -- SETTERS --
 
-    function setBridgeMaxSwaps(uint8 _bridgeMaxSwaps) external;
+    function setBridgeMaxSwaps(uint8 bridgeMaxSwaps) external;
 
-    // -- BRIDGE FUNCTIONS [initial chain] --
+    // -- BRIDGE FUNCTIONS [initial chain]: to EVM chains --
 
-    function bridgeToken(
-        IERC20 _bridgeToken,
-        uint256 _bridgeAmount,
-        bytes calldata _bridgeData
-    ) external;
+    function bridgeTokenToEVM(
+        address to,
+        uint256 chainId,
+        IBridge.SwapParams calldata initialSwapParams,
+        uint256 amountIn,
+        IBridge.SwapParams calldata destinationSwapParams,
+        bool gasdropRequested
+    ) external returns (uint256 amountBridged);
 
-    function swapAndBridge(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        bytes calldata _bridgeData
-    ) external returns (uint256 _amountOut);
+    function bridgeGasToEVM(
+        address to,
+        uint256 chainId,
+        IBridge.SwapParams calldata initialSwapParams,
+        IBridge.SwapParams calldata destinationSwapParams,
+        bool gasdropRequested
+    ) external payable returns (uint256 amountBridged);
 
-    function swapFromGasAndBridge(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        bytes calldata _bridgeData
-    ) external payable returns (uint256 _amountOut);
+    // -- BRIDGE FUNCTIONS [initial chain]: to non-EVM chains --
+
+    function bridgeTokenToNonEVM(
+        bytes32 to,
+        uint256 chainId,
+        IBridge.SwapParams calldata initialSwapParams,
+        uint256 amountIn
+    ) external returns (uint256 amountBridged);
+
+    function bridgeGasToNonEVM(
+        bytes32 to,
+        uint256 chainId,
+        IBridge.SwapParams calldata initialSwapParams
+    ) external payable returns (uint256 amountBridged);
 
     // -- BRIDGE FUNCTIONS [destination chain] --
 
     function refundToAddress(
-        address _token,
-        uint256 _amount,
-        address _to
+        address to,
+        IERC20 token,
+        uint256 amount
     ) external;
 
-    function selfSwap(
-        uint256 _amountIn,
-        uint256 _minAmountOut,
-        address[] calldata _path,
-        address[] calldata _adapters,
-        address _to
-    ) external returns (uint256 _amountOut);
+    function postBridgeSwap(
+        address to,
+        IBridge.SwapParams calldata swapParams,
+        uint256 amountIn
+    ) external returns (uint256 amountOut);
 }

@@ -1,8 +1,9 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
+import { CHAIN_ID } from "../../utils/network"
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts } = hre
+  const { deployments, getNamedAccounts, getChainId } = hre
   const { deploy, execute, getOrNull } = deployments
   const { libraryDeployer } = await getNamedAccounts()
 
@@ -21,6 +22,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       "Synapse LP Token (Target)",
       "synapseLPTokenTarget",
     )
+  }
+
+  if ((await getChainId()) == CHAIN_ID.HARDHAT) {
+    await deploy("LPToken08", {
+      from: libraryDeployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+    })
   }
 }
 export default func
