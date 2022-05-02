@@ -4,6 +4,9 @@ pragma solidity >=0.8.0;
 import "../utils/DefaultBridgeTest.t.sol";
 
 contract BridgeRouterTest is DefaultBridgeTest {
+    /**
+     * @notice Checks all functions with restricted access.
+     */
     function testAccessControl() public {
         address _r = address(router);
         utils.checkAccessControl(
@@ -24,6 +27,9 @@ contract BridgeRouterTest is DefaultBridgeTest {
         );
     }
 
+    /**
+     * @notice Checks that governance can set bridgeMaxSwaps.
+     */
     function testSetBridgeMaxSwaps() public {
         for (uint8 i = 1; i <= 4; ++i) {
             hoax(governance);
@@ -46,6 +52,9 @@ contract BridgeRouterTest is DefaultBridgeTest {
 
     // -- TEST: FAKE TOKENS
 
+    /**
+     * @notice Checks that bridging out unrecognized token to EVM-chain fails.
+     */
     function testBridgeOutFakeTokenToEVM() public {
         IERC20 fake = _deployERC20("FAKE");
         uint256 amount = 10**18;
@@ -73,6 +82,9 @@ contract BridgeRouterTest is DefaultBridgeTest {
         );
     }
 
+    /**
+     * @notice Checks that bridging out unrecognized token to non-EVM chain fails.
+     */
     function testBridgeOutFakeTokenToNonEVM() public {
         bytes32 to = keccak256(abi.encode(user));
         IERC20 fake = _deployERC20("FAKE");
@@ -93,6 +105,10 @@ contract BridgeRouterTest is DefaultBridgeTest {
         );
     }
 
+    /**
+     * @notice Checks that bridging in nUSD, but requesting nETH -> wETH swap
+     * leads to attacker receiving bridged nUSD.
+     */
     function testBridgeInFakeSwap() public {
         uint256 amount = 10**20;
 
@@ -123,6 +139,10 @@ contract BridgeRouterTest is DefaultBridgeTest {
 
     // -- TEST: BRIDGE TO EVM
 
+    /**
+     * @notice Checks that bridging a token to EVM chain w/o swap on src chain
+     * works as intended.
+     */
     function testBridgeOutTokenNoSwapToEVM(uint8 _indexTo, uint64 _amountIn) public {
         vm.assume(_amountIn > 0);
         uint256 amountIn = uint256(_amountIn) << 20;
@@ -143,6 +163,10 @@ contract BridgeRouterTest is DefaultBridgeTest {
         );
     }
 
+    /**
+     * @notice Checks that bridging a token to EVM chain with a swap on src chain
+     * works as intended.
+     */
     function testBridgeOutTokenToEVM(
         uint8 indexFrom,
         uint8 _indexTo,
@@ -170,6 +194,10 @@ contract BridgeRouterTest is DefaultBridgeTest {
         );
     }
 
+    /**
+     * @notice Submits a bridge out transaction to EVM chain.
+     * Checks that the correct event is emitted.
+     */
     function _checkBridgeTokenToEVM(
         IERC20 tokenFrom,
         uint256 amountIn,
@@ -196,6 +224,10 @@ contract BridgeRouterTest is DefaultBridgeTest {
         vm.stopPrank();
     }
 
+    /**
+     * @notice Checks that bridging GAS to EVM chain with a swap on src chain
+     * works as intended. Checks that the correct event is emitted.
+     */
     function testBridgeOutGasToEVM(uint8 _indexTo, uint64 _amountIn) public {
         uint8 indexFrom = WETH_INDEX;
         (address bridgeToken, uint8 indexTo) = _getBridgeToken(_indexTo);
@@ -229,6 +261,10 @@ contract BridgeRouterTest is DefaultBridgeTest {
 
     // -- TEST: BRIDGE TO NON-EVM
 
+    /**
+     * @notice Checks that bridging a token to non-EVM chain w/o swap on src chain
+     * works as intended.
+     */
     function testBridgeOutTokenNoSwapToNonEVM(uint8 _indexTo, uint64 _amountIn) public {
         vm.assume(_amountIn > 0);
         uint256 amountIn = uint256(_amountIn) << 20;
@@ -241,6 +277,10 @@ contract BridgeRouterTest is DefaultBridgeTest {
         _checkBridgeTokenToNonEVM(to, IERC20(bridgeToken), amountIn, IERC20(bridgeToken), amountIn, srcSwapParams);
     }
 
+    /**
+     * @notice Checks that bridging a token to non-EVM chain with swap on src chain
+     * works as intended.
+     */
     function testBridgeOutTokenToNonEVM(
         uint8 indexFrom,
         uint8 _indexTo,
@@ -266,6 +306,10 @@ contract BridgeRouterTest is DefaultBridgeTest {
         );
     }
 
+    /**
+     * @notice Submits a bridge out transaction to EVM chain.
+     * Checks that the correct event is emitted.
+     */
     function _checkBridgeTokenToNonEVM(
         bytes32 to,
         IERC20 tokenFrom,
@@ -285,6 +329,10 @@ contract BridgeRouterTest is DefaultBridgeTest {
         vm.stopPrank();
     }
 
+    /**
+     * @notice Checks that bridging GAS to EVM chain with a swap on src chain
+     * works as intended. Checks that the correct event is emitted.
+     */
     function testBridgeOutGasToNonEVM(uint8 _indexTo, uint64 _amountIn) public {
         uint8 indexFrom = WETH_INDEX;
         bytes32 to = keccak256(abi.encode(user));
@@ -308,6 +356,10 @@ contract BridgeRouterTest is DefaultBridgeTest {
 
     // -- TEST: BRIDGE IN & SWAP
 
+    /**
+     * @notice Checks that bridge in transaction with swap works as intended.
+     * Checks that the correct fee was applied and correct event was emitted.
+     */
     function testBridgeInWithSwap(
         uint8 _indexFrom,
         uint8 indexTo,
@@ -341,6 +393,11 @@ contract BridgeRouterTest is DefaultBridgeTest {
         _checkPostBridgeIn(indexTo, data);
     }
 
+    /**
+     * @notice Checks that bridge in transaction with swap, that has
+     * too big minAmountOut, results in user receiving bridged tokens (instead of requested).
+     * Checks that the correct fee was applied and correct event was emitted.
+     */
     function testBridgeInSwapFailed(
         uint8 _indexFrom,
         uint8 indexTo,
@@ -354,6 +411,11 @@ contract BridgeRouterTest is DefaultBridgeTest {
         _checkBridgeInDirectEVM(data, gasdropRequested, _config.bridgeMaxSwaps);
     }
 
+    /**
+     * @notice Checks that bridge in transaction with swap, that has
+     * deadline failed, results in user receiving bridged tokens (instead of requested).
+     * Checks that the correct fee was applied (deadline fail leads to lower minFee) and correct event was emitted.
+     */
     function testBridgeInDeadlineFailed(
         uint8 _indexFrom,
         uint8 indexTo,
@@ -368,6 +430,10 @@ contract BridgeRouterTest is DefaultBridgeTest {
         _checkBridgeInDirectEVM(data, gasdropRequested, 0);
     }
 
+    /**
+     * @notice Checks that bridge in transaction with no swap works as intended.
+     * Checks that the correct fee was applied and correct event was emitted.
+     */
     function testBridgeInNoSwap(
         uint8 _indexTo,
         uint64 _amountIn,
@@ -389,6 +455,9 @@ contract BridgeRouterTest is DefaultBridgeTest {
         _checkBridgeInDirectEVM(data, gasdropRequested, 0);
     }
 
+    /**
+     * @notice Submits a bridge in tx and checks all invariants.
+     */
     function _checkBridgeInDirectEVM(
         _TestData memory data,
         bool gasdropRequested,
@@ -442,6 +511,9 @@ contract BridgeRouterTest is DefaultBridgeTest {
         uint256 gasPre;
     }
 
+    /**
+     * @notice Constructs parameters for a test berdige in transaction.
+     */
     function _getParamsForBridgeSwap(
         uint8 _indexFrom,
         uint8 indexTo,
@@ -480,6 +552,10 @@ contract BridgeRouterTest is DefaultBridgeTest {
         data.gasPre = user.balance;
     }
 
+    /**
+     * @notice Checks invariants post bridge in transaction.
+     * User token and gas balance is checked.
+     */
     function _checkPostBridgeIn(uint8 indexTo, _TestData memory data) internal {
         emit log_uint(indexTo);
         if (indexTo == WETH_INDEX) {
@@ -494,6 +570,9 @@ contract BridgeRouterTest is DefaultBridgeTest {
         }
     }
 
+    /**
+     * @notice Finds a test bridge token, and returns its index in allTokens array.
+     */
     function _getBridgeToken(uint8 _indexTo) internal returns (address bridgeToken, uint8 indexTo) {
         vm.assume(_indexTo < bridgeTokens.length);
         bridgeToken = bridgeTokens[_indexTo];
@@ -503,6 +582,9 @@ contract BridgeRouterTest is DefaultBridgeTest {
         --indexTo;
     }
 
+    /**
+     * @notice Constructs swapParams for src (from offer) and dst (empty swap) chain
+     */
     function _getSwapParams(address bridgeToken, Offers.FormattedOffer memory offer)
         internal
         view
@@ -517,6 +599,9 @@ contract BridgeRouterTest is DefaultBridgeTest {
         dstSwapParams = _constructDestinationSwapParams(bridgeToken);
     }
 
+    /**
+     * @notice Sets up GasDrop and returns amount of GAS user will receive,
+     */
     function _setupGasDrop(bool gasdropRequested) internal returns (uint256 gasdropAmount) {
         if (gasdropRequested) {
             gasdropAmount = TEST_AMOUNT;
