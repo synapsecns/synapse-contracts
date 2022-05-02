@@ -174,33 +174,4 @@ contract RouterTest is DefaultRouterTest {
             _logOffer(offer);
         }
     }
-
-    function _askQuoter(
-        uint8 maxSwaps,
-        uint8 indexFrom,
-        uint8 indexTo,
-        uint64 _amountIn
-    )
-        internal
-        returns (
-            Offers.FormattedOffer memory offer,
-            uint256 amountIn,
-            uint256 amountOut
-        )
-    {
-        vm.assume(indexFrom < allTokens.length);
-        vm.assume(indexTo < allTokens.length);
-        vm.assume(indexFrom != indexTo);
-        vm.assume(_amountIn > 0);
-
-        // use at least 1<<20 (~1e6) for amountIn
-        amountIn = _amountIn << 20;
-
-        offer = quoter.findBestPath(allTokens[indexFrom], amountIn, allTokens[indexTo], maxSwaps);
-
-        // Ignore runs where there is no path between tokens
-        vm.assume(offer.path.length > 0);
-
-        amountOut = offer.amounts[offer.amounts.length - 1];
-    }
 }
