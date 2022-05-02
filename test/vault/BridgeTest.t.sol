@@ -396,70 +396,121 @@ contract BridgeUnitTest is DefaultVaultTest {
         vm.stopPrank();
     }
 
+    struct _BridgeInTestData {
+        bytes32 kappa;
+        Bridge.SwapParams swapParams;
+        uint256 amount;
+        uint256 fee;
+        uint256 gasdropAmount;
+        uint256 vaultPre;
+        uint256 supplyPre;
+        uint256 userPre;
+        uint256 gasPre;
+    }
+
     function _checkBridgeInEVM(bool isMint, bool gasdropRequested) internal {
-        bytes32 kappa = utils.getNextKappa();
-        Bridge.SwapParams memory swapParams;
-        swapParams.path = new address[](1);
-        swapParams.path[0] = address(syn);
-        uint256 amount = (MIN_FEE * FEE_DENOMINATOR) / FEE;
-        uint256 fee = gasdropRequested ? 2 * MIN_FEE : MIN_FEE;
-        uint256 gasdropAmount = gasdropRequested ? GAS_DROP : 0;
+        _BridgeInTestData memory data;
+        data.kappa = utils.getNextKappa();
+        data.swapParams.path = new address[](1);
+        data.swapParams.path[0] = address(syn);
+        data.amount = (MIN_FEE * FEE_DENOMINATOR) / FEE;
+        data.fee = gasdropRequested ? 2 * MIN_FEE : MIN_FEE;
+        data.gasdropAmount = gasdropRequested ? GAS_DROP : 0;
 
         vm.expectEmit(true, true, false, true);
-        emit TokenBridgedIn(user, syn, amount, fee, syn, amount - fee, gasdropAmount, kappa);
+        emit TokenBridgedIn(
+            user,
+            syn,
+            data.amount,
+            data.fee,
+            syn,
+            data.amount - data.fee,
+            data.gasdropAmount,
+            data.kappa
+        );
 
-        uint256 vaultPre = syn.balanceOf(address(vault));
-        uint256 supplyPre = syn.totalSupply();
+        data.vaultPre = syn.balanceOf(address(vault));
+        data.supplyPre = syn.totalSupply();
 
-        uint256 userPre = syn.balanceOf(user);
-        uint256 gasPre = user.balance;
+        data.userPre = syn.balanceOf(user);
+        data.gasPre = user.balance;
 
         hoax(node);
-        bridge.bridgeInEVM(user, syn, amount, swapParams, gasdropRequested, kappa);
+        bridge.bridgeInEVM(user, syn, data.amount, data.swapParams, gasdropRequested, data.kappa);
 
-        _checkPostBridgeIn(isMint, userPre, amount, fee, gasPre, gasdropAmount, vaultPre, supplyPre);
+        _checkPostBridgeIn(isMint, data);
+
+        utils.checkRevert(
+            node,
+            address(bridge),
+            abi.encodeWithSelector(
+                bridge.bridgeInEVM.selector,
+                user,
+                syn,
+                data.amount,
+                data.swapParams,
+                gasdropRequested,
+                data.kappa
+            ),
+            "Kappa already exists"
+        );
     }
 
     function _checkBridgeInNonEVM(bool isMint) internal {
-        bytes32 kappa = utils.getNextKappa();
-        uint256 amount = (MIN_FEE * FEE_DENOMINATOR) / FEE;
-        uint256 fee = 2 * MIN_FEE;
-        uint256 gasdropAmount = GAS_DROP;
+        _BridgeInTestData memory data;
+        data.kappa = utils.getNextKappa();
+        data.amount = (MIN_FEE * FEE_DENOMINATOR) / FEE;
+        data.fee = 2 * MIN_FEE;
+        data.gasdropAmount = GAS_DROP;
 
         vm.expectEmit(true, true, false, true);
-        emit TokenBridgedIn(user, syn, amount, fee, syn, amount - fee, gasdropAmount, kappa);
+        emit TokenBridgedIn(
+            user,
+            syn,
+            data.amount,
+            data.fee,
+            syn,
+            data.amount - data.fee,
+            data.gasdropAmount,
+            data.kappa
+        );
 
-        uint256 vaultPre = syn.balanceOf(address(vault));
-        uint256 supplyPre = syn.totalSupply();
+        data.vaultPre = syn.balanceOf(address(vault));
+        data.supplyPre = syn.totalSupply();
 
-        uint256 userPre = syn.balanceOf(user);
-        uint256 gasPre = user.balance;
+        data.userPre = syn.balanceOf(user);
+        data.gasPre = user.balance;
 
         hoax(node);
-        bridge.bridgeInNonEVM(user, CHAIN_ID_NON_EVM, SYN_NON_EVM, amount, kappa);
+        bridge.bridgeInNonEVM(user, CHAIN_ID_NON_EVM, SYN_NON_EVM, data.amount, data.kappa);
 
-        _checkPostBridgeIn(isMint, userPre, amount, fee, gasPre, gasdropAmount, vaultPre, supplyPre);
+        _checkPostBridgeIn(isMint, data);
+
+        utils.checkRevert(
+            node,
+            address(bridge),
+            abi.encodeWithSelector(
+                bridge.bridgeInNonEVM.selector,
+                user,
+                CHAIN_ID_NON_EVM,
+                SYN_NON_EVM,
+                data.amount,
+                data.kappa
+            ),
+            "Kappa already exists"
+        );
     }
 
-    function _checkPostBridgeIn(
-        bool isMint,
-        uint256 userPre,
-        uint256 amount,
-        uint256 fee,
-        uint256 gasPre,
-        uint256 gasdropAmount,
-        uint256 vaultPre,
-        uint256 supplyPre
-    ) internal {
-        assertEq(syn.balanceOf(user), userPre + amount - fee, "Failed to credit tokens to user");
-        assertEq(user.balance, gasPre + gasdropAmount, "Failed to credit gas drop to user");
+    function _checkPostBridgeIn(bool isMint, _BridgeInTestData memory data) internal {
+        assertEq(syn.balanceOf(user), data.userPre + data.amount - data.fee, "Failed to credit tokens to user");
+        assertEq(user.balance, data.gasPre + data.gasdropAmount, "Failed to credit gas drop to user");
 
         if (isMint) {
-            assertEq(syn.balanceOf(address(vault)), vaultPre + fee, "Failed to accrue fee");
-            assertEq(syn.totalSupply(), supplyPre + amount, "Failed to mint tokens");
+            assertEq(syn.balanceOf(address(vault)), data.vaultPre + data.fee, "Failed to accrue fee");
+            assertEq(syn.totalSupply(), data.supplyPre + data.amount, "Failed to mint tokens");
         } else {
-            assertEq(syn.balanceOf(address(vault)), vaultPre + fee - amount, "Failed to accrue fee");
-            assertEq(syn.totalSupply(), supplyPre, "Unauthorized minting");
+            assertEq(syn.balanceOf(address(vault)), data.vaultPre + data.fee - data.amount, "Failed to accrue fee");
+            assertEq(syn.totalSupply(), data.supplyPre, "Unauthorized minting");
         }
     }
 

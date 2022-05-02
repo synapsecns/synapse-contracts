@@ -189,10 +189,10 @@ contract VaultUnitTest is DefaultVaultTest {
     }
 
     /**
-     * @notice Check that mintToken mints token to user and collects bridge fee
+     * @notice Check that mintToken mints token to user and collects bridge fee,
+     * Also checks that it's not possible to reuse any of the kappas.
      */
     function testMintToken() public {
-        startHoax(address(bridge));
         uint256 totalFee = 0;
         for (uint256 i = 0; i < 5; ++i) {
             uint256 amount = TEST_AMOUNT * (i + 1);
@@ -201,17 +201,25 @@ contract VaultUnitTest is DefaultVaultTest {
             uint256 pre = syn.balanceOf(user);
             totalFee += fee;
 
+            hoax(address(bridge));
             vault.mintToken(user, syn, amount, fee, user, false, kappa);
 
             assertEq(syn.balanceOf(user), pre + amount, "Mint is not complete");
             assertEq(vault.getFeeBalance(syn), totalFee, "Bridge fee is not collected");
             assertEq(vault.getTokenBalance(syn), 0, "Wrong vault balance post-mint");
+
+            utils.checkRevert(
+                address(bridge),
+                address(vault),
+                abi.encodeWithSelector(vault.mintToken.selector, user, syn, amount, fee, user, false, kappa),
+                "Kappa already exists"
+            );
         }
-        vm.stopPrank();
     }
 
     /**
-     * @notice Check that mintToken withdraws token to user and collects bridge fee
+     * @notice Check that mintToken withdraws token to user and collects bridge fee.
+     * Also checks that it's not possible to reuse any of the kappas.
      */
     function testWithdrawToken() public {
         uint256 totalFee = 0;
@@ -224,7 +232,6 @@ contract VaultUnitTest is DefaultVaultTest {
         totalAmount += totalFee;
         totalFee = 0;
         deal(address(syn), address(vault), totalAmount, true);
-        startHoax(address(bridge));
 
         for (uint256 i = 0; i < 5; ++i) {
             uint256 amount = TEST_AMOUNT * (i + 1);
@@ -234,13 +241,20 @@ contract VaultUnitTest is DefaultVaultTest {
             totalFee += fee;
             totalAmount -= (amount + fee);
 
+            hoax(address(bridge));
             vault.withdrawToken(user, syn, amount, fee, user, false, kappa);
 
             assertEq(syn.balanceOf(user), pre + amount, "Withdraw is not complete");
             assertEq(vault.getFeeBalance(syn), totalFee, "Bridge fee is not collected");
             assertEq(vault.getTokenBalance(syn), totalAmount, "Wrong vault balance post-withdraw");
+
+            utils.checkRevert(
+                address(bridge),
+                address(vault),
+                abi.encodeWithSelector(vault.withdrawToken.selector, user, syn, amount, fee, user, false, kappa),
+                "Kappa already exists"
+            );
         }
-        vm.stopPrank();
     }
 
     /**
