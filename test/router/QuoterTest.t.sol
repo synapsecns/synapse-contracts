@@ -5,8 +5,8 @@ import "../utils/DefaultRouterTest.t.sol";
 
 contract QuoterTest is DefaultRouterTest {
     function testFindBestPath1(
-        uint256 indexFrom,
-        uint256 indexTo,
+        uint8 indexFrom,
+        uint8 indexTo,
         uint64 amountIn
     ) public {
         uint8 maxSwaps = 1;
@@ -14,8 +14,8 @@ contract QuoterTest is DefaultRouterTest {
     }
 
     function testFindBestPath2(
-        uint256 indexFrom,
-        uint256 indexTo,
+        uint8 indexFrom,
+        uint8 indexTo,
         uint64 amountIn
     ) public {
         uint8 maxSwaps = 2;
@@ -23,8 +23,8 @@ contract QuoterTest is DefaultRouterTest {
     }
 
     function testFindBestPath3(
-        uint256 indexFrom,
-        uint256 indexTo,
+        uint8 indexFrom,
+        uint8 indexTo,
         uint64 amountIn
     ) public {
         uint8 maxSwaps = 3;
@@ -32,8 +32,8 @@ contract QuoterTest is DefaultRouterTest {
     }
 
     function testFindBestPath4(
-        uint256 indexFrom,
-        uint256 indexTo,
+        uint8 indexFrom,
+        uint8 indexTo,
         uint64 amountIn
     ) public {
         uint8 maxSwaps = 4;
@@ -42,8 +42,8 @@ contract QuoterTest is DefaultRouterTest {
 
     function _checkFindBestPath(
         uint8 maxSwaps,
-        uint256 indexFrom,
-        uint256 indexTo,
+        uint8 indexFrom,
+        uint8 indexTo,
         uint64 _amountIn
     ) internal {
         vm.assume(indexFrom < allTokens.length);
