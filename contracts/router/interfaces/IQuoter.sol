@@ -11,4 +11,10 @@ interface IQuoter is IBasicQuoter {
         address tokenOut,
         uint8 maxSwaps
     ) external view returns (Offers.FormattedOffer memory);
+
+    function findBestPathMaxSwaps(
+        address tokenIn,
+        uint256 amountIn,
+        address tokenOut
+    ) external view returns (Offers.FormattedOffer memory);
 }
