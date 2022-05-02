@@ -49,6 +49,7 @@ contract DefaultRouterTest is DefaultVaultTest {
 
     address[] public allAdapters;
     address[] public routeTokens;
+    address[] public bridgeTokens;
 
     mapping(address => uint256) public routeIndex;
     uint256 public constant WETH_INDEX = 0;
@@ -80,6 +81,10 @@ contract DefaultRouterTest is DefaultVaultTest {
         _saveRouteToken(address(_tokens.dai), 1);
         _saveRouteToken(address(_tokens.usdc), 2);
         _saveRouteToken(address(_tokens.frax), 3);
+
+        bridgeTokens.push(address(_tokens.nETH));
+        bridgeTokens.push(address(_tokens.nUSD));
+        bridgeTokens.push(address(_tokens.syn));
 
         address lpToken = deployCode("./artifacts/LPToken.sol/LPToken.json");
 
