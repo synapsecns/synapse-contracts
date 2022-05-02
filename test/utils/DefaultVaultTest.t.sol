@@ -96,6 +96,7 @@ contract DefaultVaultTest is Test {
     BridgeState private _state;
 
     address[] public allTokens;
+    mapping(address => uint8) public tokenIndexes;
 
     address payable public immutable attacker;
     address payable public immutable user;
@@ -187,7 +188,7 @@ contract DefaultVaultTest is Test {
     function _deployERC20(string memory name) internal returns (IERC20 token) {
         token = IERC20(deployCode("./artifacts/ERC20Mock.sol/ERC20Mock.json", abi.encode(name, name, 0)));
         vm.label(address(token), name);
-        allTokens.push(address(token));
+        _addToken(address(token));
     }
 
     function _deployERC20Decimals(string memory name, uint8 decimals) internal returns (IERC20 token) {
@@ -195,14 +196,20 @@ contract DefaultVaultTest is Test {
             deployCode("./artifacts/ERC20MockDecimals.sol/ERC20MockDecimals.json", abi.encode(name, name, 0, decimals))
         );
         vm.label(address(token), name);
-        allTokens.push(address(token));
+        _addToken(address(token));
     }
 
     function _deployWETH(string memory name) internal returns (IERC20 token) {
         token = IERC20(deployCode("./artifacts/WETH9.sol/WETH9.json"));
         deal(address(token), 10**30);
         vm.label(address(token), name);
-        allTokens.push(address(token));
+        _addToken(address(token));
+    }
+
+    function _addToken(address token) internal {
+        allTokens.push(token);
+        // store index + 1, so that default 0 value => token not found
+        tokenIndexes[token] = uint8(allTokens.length);
     }
 
     function _saveState() internal {
