@@ -54,6 +54,8 @@ contract BridgeRouter is Router, IBridgeRouter {
         public
         onlyRole(GOVERNANCE_ROLE)
     {
+        require(_bridgeMaxSwaps != 0, "Max swaps can't be 0");
+        require(_bridgeMaxSwaps <= 4, "Max swaps too big");
         bridgeMaxSwaps = _bridgeMaxSwaps;
     }
 
