@@ -6,7 +6,7 @@ import "../utils/DefaultVaultTest.t.sol";
 import {IBridgeRouter} from "src-router/interfaces/IBridgeRouter.sol";
 import {IBridge} from "src-vault/interfaces/IBridge.sol";
 
-contract BridgeUnitTest is DefaultVaultTest {
+contract BridgeTest is DefaultVaultTest {
     IERC20 public syn;
 
     address public constant SYN_EVM = address(1337420);

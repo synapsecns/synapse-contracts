@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import "../utils/DefaultVaultTest.t.sol";
 
-contract VaultUnitTest is DefaultVaultTest {
+contract VaultTest is DefaultVaultTest {
     IERC20 public syn;
 
     constructor() DefaultVaultTest(defaultConfig) {
