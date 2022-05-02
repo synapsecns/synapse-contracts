@@ -128,6 +128,8 @@ contract DefaultVaultTest is Test {
     }
 
     function setUp() public virtual {
+        // Roads? Where we're going, we don't need roads. 
+        vm.warp(2345678901);
         _setupVault();
         _setupBridge();
         _setupRouter();
