@@ -72,6 +72,9 @@ contract BasicQuoterTest is DefaultVaultTest {
 
     // -- CHECK GENERAL SETTERS --
 
+    /**
+     * @notice Checks that maxSwaps can be set by governance
+     */
     function testSetMaxSwaps() public {
         utils.checkRevert(
             governance,
@@ -90,6 +93,10 @@ contract BasicQuoterTest is DefaultVaultTest {
 
     // -- ADD | REMOVE ADAPTERS --
 
+    /**
+     * @notice Checks addTrustedAdapter adds Adapter to both Quoter and Router.
+     * Also checks that it's not possible to add duplicate adapters.
+     */
     function testAddTrustedAdapter() public {
         address[] memory adapters = utils.createEmptyUsers(5);
 
@@ -105,6 +112,9 @@ contract BasicQuoterTest is DefaultVaultTest {
         }
     }
 
+    /**
+     * @notice Checks removeAdapter removes Adapter from both Quoter and Router.
+     */
     function testRemoveAdapter() public {
         address[] memory adapters = utils.createEmptyUsers(5);
         _addAdapters(adapters);
@@ -119,6 +129,9 @@ contract BasicQuoterTest is DefaultVaultTest {
         }
     }
 
+    /**
+     * @notice Checks removeAdapterByIndex removes Adapter from both Quoter and Router.
+     */
     function testRemoveAdapterByIndex() public {
         address[] memory adapters = utils.createEmptyUsers(5);
         _addAdapters(adapters); // [0, 1, 2, 3, 4]
@@ -130,6 +143,10 @@ contract BasicQuoterTest is DefaultVaultTest {
         _removeAdapterByIndex(adapters, 0, 2);
     }
 
+    /**
+     * @notice Checks that setAdapters sets a list of adapters.
+     * Also checks that setAdapters removes all old adapters.
+     */
     function testSetAdapters() public {
         address[] memory adapters = utils.createEmptyUsers(5);
         _setAdapters(adapters);
@@ -142,6 +159,10 @@ contract BasicQuoterTest is DefaultVaultTest {
         }
     }
 
+    /**
+     * @notice Removes adapter by its index. Checks that adapter hasn't been mistakenly removed
+     * earlier, and that it was removed afterwards.
+     */
     function _removeAdapterByIndex(
         address[] memory adapters,
         uint8 indexToRemove,
@@ -153,6 +174,10 @@ contract BasicQuoterTest is DefaultVaultTest {
         assertTrue(!router.isTrustedAdapter(adapters[indexToCheck]), "Adapter not removed");
     }
 
+    /**
+     * @notice Adds adapters one by one, using addTrustedAdapter.
+     * Checks that Adapter was added both to Quoter and Router.
+     */
     function _addAdapters(address[] memory adapters) internal {
         startHoax(governance);
         for (uint256 i = 0; i < adapters.length; ++i) {
@@ -163,6 +188,10 @@ contract BasicQuoterTest is DefaultVaultTest {
         vm.stopPrank();
     }
 
+    /**
+     * @notice Replaces adapters with the new list.
+     * Checks that new adapters have been added to both Router and Quoter.
+     */
     function _setAdapters(address[] memory adapters) internal {
         hoax(governance);
         quoter.setAdapters(adapters);
@@ -174,6 +203,10 @@ contract BasicQuoterTest is DefaultVaultTest {
 
     // -- ADD | REMOVE TOKENS --
 
+    /**
+     * @notice Adds a few tokens to Quoter one by one using addTrustedToken.
+     * Checks that all tokens were added afterwards.
+     */
     function testAddTrustedToken() public {
         address[] memory tokens = utils.createEmptyUsers(5);
 
@@ -181,6 +214,10 @@ contract BasicQuoterTest is DefaultVaultTest {
         _checkAddDuplicateTokens(tokens);
     }
 
+    /**
+     * @notice Removes tokens from Quoter using removeToken.
+     * Checks that the tokens were correctly removed.
+     */
     function testRemoveToken() public {
         address[] memory tokens = utils.createEmptyUsers(5);
         _addTokens(tokens);
@@ -194,6 +231,10 @@ contract BasicQuoterTest is DefaultVaultTest {
         }
     }
 
+    /**
+     * @notice Removes tokens from Quoter using removeTokenByIndex.
+     * Checks that the tokens were correctly removed.
+     */
     function testRemoveTokenByIndex() public {
         address[] memory tokens = utils.createEmptyUsers(5);
         _addTokens(tokens);
@@ -205,6 +246,10 @@ contract BasicQuoterTest is DefaultVaultTest {
         _removeTokenByIndex(tokens, 0, 2);
     }
 
+    /**
+     * @notice Checks that setTokens sets a list of tokens.
+     * Also checks that setTokens removes all old tokens from Quoter.
+     */
     function testSetTokens() public {
         address[] memory tokens = utils.createEmptyUsers(5);
 
@@ -217,12 +262,19 @@ contract BasicQuoterTest is DefaultVaultTest {
         _addTokens(tokens);
     }
 
+    /**
+     * @notice Checks that provided tokens have been already added to Quoter.
+     */
     function _checkAddDuplicateTokens(address[] memory tokens) internal {
         for (uint256 i = 0; i < tokens.length; ++i) {
             _checkIfTokenPresent(tokens[i]);
         }
     }
 
+    /**
+     * @notice Checks that provided token has been already added to Quoter.
+     * addTrustedToken reverts => token has been added
+     */
     function _checkIfTokenPresent(address token) internal {
         utils.checkRevert(
             governance,
@@ -232,6 +284,11 @@ contract BasicQuoterTest is DefaultVaultTest {
         );
     }
 
+    /**
+     * @notice Checks that provided token has not been already added to Quoter.
+     * addTrustedToken succeeds => token has not been added
+     * Removes token afterwards, so the state is unchanged.
+     */
     function _checkIfTokenAbsent(address token) internal {
         startHoax(governance);
         quoter.addTrustedToken(token);
@@ -239,6 +296,9 @@ contract BasicQuoterTest is DefaultVaultTest {
         vm.stopPrank();
     }
 
+    /**
+     * @notice Adds token one by one and checks that the amount of tokens is updated.
+     */
     function _addTokens(address[] memory tokens) internal {
         uint256 amount = quoter.trustedTokensCount();
         startHoax(governance);
@@ -249,12 +309,21 @@ contract BasicQuoterTest is DefaultVaultTest {
         vm.stopPrank();
     }
 
+    /**
+     * @notice Replaces current tokens with the new list.
+     * Checks that all tokens from the list were added afterwards.
+     */
     function _setTokens(address[] memory tokens) internal {
         hoax(governance);
         quoter.setTokens(tokens);
         _checkAddDuplicateTokens(tokens);
     }
 
+    /**
+     * @notice Removes token using removeTokenByIndex
+     * Checks that the token hasn't been mistakenly removed earlier.
+     * Checks that token was removed afterwards.
+     */
     function _removeTokenByIndex(
         address[] memory tokens,
         uint8 indexToRemove,

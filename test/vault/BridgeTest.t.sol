@@ -175,6 +175,7 @@ contract BridgeUnitTest is DefaultVaultTest {
     /**
      * @notice Check that "mint" bridging from EVM chain works,
      * both with gasDrop or without.
+     * Also checks that any of the kappas can not be reused.
      */
     function testMintBridgeInFromEVM() public {
         _setupBridgingIn(true);
@@ -186,6 +187,7 @@ contract BridgeUnitTest is DefaultVaultTest {
     /**
      * @notice Check that "withdraw" bridging from EVM chain works,
      * both with gasDrop or without.
+     * Also checks that any of the kappas can not be reused.
      */
     function testWithdrawBridgeInFromEVM() public {
         _setupBridgingIn(false);
@@ -199,6 +201,7 @@ contract BridgeUnitTest is DefaultVaultTest {
     /**
      * @notice Check that "mint" bridging from non-EVM chain works,
      * with gasDrop (gasDrop is always enabled from non-EVM atm).
+     * Also checks that kappa can not be reused.
      */
     function testMintBridgeInFromNonEVM() public {
         _setupBridgingIn(true);
@@ -209,6 +212,7 @@ contract BridgeUnitTest is DefaultVaultTest {
     /**
      * @notice Check that "withdraw" bridging from non-EVM chain works,
      * with gasDrop (gasDrop is always enabled from non-EVM atm).
+     * Also checks that kappa can not be reused.
      */
     function testWithdrawBridgeInFromNonEVM() public {
         _setupBridgingIn(false);
@@ -250,10 +254,20 @@ contract BridgeUnitTest is DefaultVaultTest {
         _checkBridgeToNonEVM(TEST_AMOUNT);
     }
 
+    /**
+     * @notice Check that bridging unrecognised token is not possible,
+     * both IN and OUT.
+     */
     function testBridgeInOutUnknownToken() public {
+        // No setup is being done => SYN is not registered => should fail
         _checkAllBridgingDisabled("!enabled", "!token", "!token", "!token");
     }
 
+    /**
+     * @notice Checks that bridging in all directions is not possible, both
+     * to EVM and non-EVM chain.
+     * Also checks that revert message on bridging is the same as provided.
+     */
     function _checkAllBridgingDisabled(
         string memory revertMsgInEVM,
         string memory revertMsgInNonEVM,
@@ -304,6 +318,10 @@ contract BridgeUnitTest is DefaultVaultTest {
 
     // -- INTERNAL: BRIDGE OUT --
 
+    /**
+     * @notice Loads tokens into Bridge and invokes bridging to EVM chain.
+     * Checks that there are no revert, and that there are no leftover tokens in Bridge.
+     */
     function _checkBridgeToEVM(uint256 amount) internal {
         // deal tokens directly to bridge, and update totalSupply
         deal(address(syn), address(bridge), amount, true);
@@ -320,6 +338,10 @@ contract BridgeUnitTest is DefaultVaultTest {
         assertEq(syn.balanceOf(address(bridge)), 0, "Tokens left in Bridge");
     }
 
+    /**
+     * @notice Loads tokens into Bridge and invokes bridging to non-EVM chain.
+     * Checks that there are no revert, and that there are no leftover tokens in Bridge.
+     */
     function _checkBridgeToNonEVM(uint256 amount) internal {
         bytes32 to = keccak256("user");
         // deal tokens directly to bridge, and update totalSupply
@@ -339,6 +361,11 @@ contract BridgeUnitTest is DefaultVaultTest {
 
     // -- INTERNAL: BRIDGE IN --
 
+    /**
+     * @notice Tries bridging in amounts <= minFee: 0, minFee/2 and minFee.
+     * Checks that these transaction revert and checks the revert message.
+     * Also checks that amount=minFee+1 is a successful bridge in transaction.
+     */
     function _checkBridgeInTooSmall(bool gasdropRequested) internal {
         uint256 amount = gasdropRequested ? 2 * MIN_FEE : MIN_FEE;
         bytes32 kappa = utils.getNextKappa();
@@ -408,6 +435,10 @@ contract BridgeUnitTest is DefaultVaultTest {
         uint256 gasPre;
     }
 
+    /**
+     * @notice Does a valid bridge in transaction from EVM either via mint or withdraw.
+     * Checks emitted event, user balance and token supply post-bridge tx.
+     */
     function _checkBridgeInEVM(bool isMint, bool gasdropRequested) internal {
         _BridgeInTestData memory data;
         data.kappa = utils.getNextKappa();
@@ -456,6 +487,10 @@ contract BridgeUnitTest is DefaultVaultTest {
         );
     }
 
+    /**
+     * @notice Does a valid bridge in transaction from non-EVM either via mint or withdraw.
+     * Checks emitted event, user balance and token supply post-bridge tx.
+     */
     function _checkBridgeInNonEVM(bool isMint) internal {
         _BridgeInTestData memory data;
         data.kappa = utils.getNextKappa();
@@ -501,6 +536,14 @@ contract BridgeUnitTest is DefaultVaultTest {
         );
     }
 
+    /**
+     * @notice Checks invariants after bridging in:
+     * 1. User should receive exact amount of tokens
+     * 2. User should receive gas airdrop only when requested.
+     * 3. Vault should accrue fees from bridging.
+     * 4. (for minted token): token total supply should be increased by exactly amount+fee.
+     * 5. (for withdrawn token): token total supply should stay the same.
+     */
     function _checkPostBridgeIn(bool isMint, _BridgeInTestData memory data) internal {
         assertEq(syn.balanceOf(user), data.userPre + data.amount - data.fee, "Failed to credit tokens to user");
         assertEq(user.balance, data.gasPre + data.gasdropAmount, "Failed to credit gas drop to user");
@@ -514,6 +557,10 @@ contract BridgeUnitTest is DefaultVaultTest {
         }
     }
 
+    /**
+     * @notice Sets up SYN tokens for bridging.
+     * Also enables gas airdrop and loads Vault with GAS.
+     */
     function _setupBridgingIn(bool isMintBurn) internal {
         _setupBridging(isMintBurn);
 
@@ -522,6 +569,10 @@ contract BridgeUnitTest is DefaultVaultTest {
         vault.setChainGasAmount(GAS_DROP);
     }
 
+    /**
+     * @notice Sets up SYN token for bridging.
+     * Default fee scheme is used.
+     */
     function _setupBridging(bool isMintBurn) internal {
         startHoax(governance);
         // 0.1% fee with 1 SYN min fee for bridge/airdrop/swap
