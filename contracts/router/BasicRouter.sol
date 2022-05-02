@@ -43,49 +43,49 @@ contract BasicRouter is AccessControl, IBasicRouter {
 
     // -- RESTRICTED ADAPTER FUNCTIONS --
 
-    function addTrustedAdapter(address _adapter)
+    function addTrustedAdapter(address adapter)
         external
         onlyRole(ADAPTERS_STORAGE_ROLE)
     {
-        isTrustedAdapter[_adapter] = true;
-        emit AddedTrustedAdapter(_adapter);
+        isTrustedAdapter[adapter] = true;
+        emit AddedTrustedAdapter(adapter);
     }
 
-    function removeAdapter(address _adapter)
+    function removeAdapter(address adapter)
         external
         onlyRole(ADAPTERS_STORAGE_ROLE)
     {
-        isTrustedAdapter[_adapter] = false;
-        emit RemovedAdapter(_adapter);
+        isTrustedAdapter[adapter] = false;
+        emit RemovedAdapter(adapter);
     }
 
-    function setAdapters(address[] calldata _adapters, bool _status)
+    function setAdapters(address[] calldata adapters, bool status)
         external
         onlyRole(ADAPTERS_STORAGE_ROLE)
     {
-        for (uint8 i = 0; i < _adapters.length; ++i) {
-            isTrustedAdapter[_adapters[i]] = _status;
+        for (uint8 i = 0; i < adapters.length; ++i) {
+            isTrustedAdapter[adapters[i]] = status;
         }
-        emit UpdatedAdapters(_adapters, _status);
+        emit UpdatedAdapters(adapters, status);
     }
 
     // -- RESTRICTED RECOVER TOKEN FUNCTIONS --
 
-    function recoverERC20(IERC20 _token) external onlyRole(GOVERNANCE_ROLE) {
-        uint256 _amount = _token.balanceOf(address(this));
-        require(_amount > 0, "Adapter: Nothing to recover");
+    function recoverERC20(IERC20 token) external onlyRole(GOVERNANCE_ROLE) {
+        uint256 amount = token.balanceOf(address(this));
+        require(amount > 0, "Adapter: Nothing to recover");
 
-        emit Recovered(address(_token), _amount);
-        _token.safeTransfer(msg.sender, _amount);
+        emit Recovered(address(token), amount);
+        token.safeTransfer(msg.sender, amount);
     }
 
     function recoverGAS() external onlyRole(GOVERNANCE_ROLE) {
-        uint256 _amount = address(this).balance;
-        require(_amount > 0, "Adapter: Nothing to recover");
+        uint256 amount = address(this).balance;
+        require(amount > 0, "Adapter: Nothing to recover");
 
-        emit Recovered(address(0), _amount);
+        emit Recovered(address(0), amount);
         //solhint-disable-next-line
-        (bool success, ) = msg.sender.call{value: _amount}("");
+        (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "GAS transfer failed");
     }
 
@@ -99,32 +99,32 @@ contract BasicRouter is AccessControl, IBasicRouter {
             1. Return WGAS as last operation to avoid reentrancy issues
             2. Add nonReentrant modifier otherwise
      *
-     * @param _token address
-     * @param _amount tokens to return
-     * @param _to address where funds should be sent to
+     * @param token address
+     * @param amount tokens to return
+     * @param to address where funds should be sent to
      */
     function _returnTokensTo(
-        address _token,
-        uint256 _amount,
-        address _to
+        address to,
+        IERC20 token,
+        uint256 amount
     ) internal {
-        if (address(this) != _to) {
-            if (_token == WGAS) {
-                _unwrap(_amount);
+        if (address(this) != to) {
+            if (address(token) == WGAS) {
+                _unwrap(amount);
                 // solhint-disable-next-line
-                (bool success, ) = _to.call{value: _amount}("");
+                (bool success, ) = to.call{value: amount}("");
                 require(success, "GAS transfer failed");
             } else {
-                IERC20(_token).safeTransfer(_to, _amount);
+                token.safeTransfer(to, amount);
             }
         }
     }
 
-    function _wrap(uint256 _amount) internal {
-        IWETH9(WGAS).deposit{value: _amount}();
+    function _wrap(uint256 amount) internal {
+        IWETH9(WGAS).deposit{value: amount}();
     }
 
-    function _unwrap(uint256 _amount) internal {
-        IWETH9(WGAS).withdraw(_amount);
+    function _unwrap(uint256 amount) internal {
+        IWETH9(WGAS).withdraw(amount);
     }
 }

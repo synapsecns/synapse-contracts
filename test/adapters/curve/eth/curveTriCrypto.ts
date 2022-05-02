@@ -16,8 +16,8 @@ import {
 } from "../../utils/helpers"
 
 import config from "../../../config.json"
-import adapters from "../adapters.json"
-import { CurveBasePoolAdapter } from "../../../../build/typechain"
+import adapters from "../../adapters.json"
+import { CurveBaseAdapter } from "../../../../build/typechain"
 
 chai.use(solidity)
 
@@ -27,16 +27,16 @@ const CHAIN = 1
 const DEX = "curve"
 const POOL = "tricrypto"
 const STORAGE = "tricrypto"
-const ADAPTER = adapters[CHAIN][POOL]
+const ADAPTER = adapters[CHAIN][DEX][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
-describe(ADAPTER_NAME, async function() {
+describe(ADAPTER_NAME, async function () {
   let owner: Signer
   let ownerAddress: string
   let dude: Signer
   let dudeAddress: string
 
-  let adapter: CurveBasePoolAdapter
+  let adapter: CurveBaseAdapter
 
   const TOKENS_DECIMALS = []
   const TOKENS = []
@@ -51,11 +51,11 @@ describe(ADAPTER_NAME, async function() {
 
   let swapsPerTime: Number =
     SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
-  const timesSmall: Number = Math.floor(125 / swapsPerTime) + 1
+  const timesSmall: Number = Math.floor(40 / swapsPerTime) + 1
   const swapsAmountSmall: Number = timesSmall * swapsPerTime
 
   swapsPerTime = SHARE_BIG.length * getSwapsAmount(tokenSymbols.length)
-  const timesBig: Number = Math.floor(50 / swapsPerTime) + 1
+  const timesBig: Number = Math.floor(30 / swapsPerTime) + 1
   const swapsAmountBig: Number = timesBig * swapsPerTime
 
   const AMOUNTS: Array<Number> = []
@@ -110,7 +110,7 @@ describe(ADAPTER_NAME, async function() {
   })
 
   describe("Sanity checks", () => {
-    it("Curve Adapter is properly set up", async function() {
+    it("Curve Adapter is properly set up", async function () {
       expect(await adapter.pool()).to.eq(config[CHAIN][DEX][POOL])
 
       for (let i in TOKENS) {
@@ -120,7 +120,7 @@ describe(ADAPTER_NAME, async function() {
       }
     })
 
-    it("Swap fails if transfer amount is too little", async function() {
+    it("Swap fails if transfer amount is too little", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let depositAddress = await adapter.depositAddress(
         TOKENS[0].address,
@@ -137,7 +137,7 @@ describe(ADAPTER_NAME, async function() {
       ).to.be.reverted
     })
 
-    it("Only Owner can rescue overprovided swap tokens", async function() {
+    it("Only Owner can rescue overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await adapter.depositAddress(
@@ -161,7 +161,7 @@ describe(ADAPTER_NAME, async function() {
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
-    it("Anyone can take advantage of overprovided swap tokens", async function() {
+    it("Anyone can take advantage of overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await adapter.depositAddress(
@@ -190,7 +190,7 @@ describe(ADAPTER_NAME, async function() {
       ).to.changeTokenBalance(TOKENS[1], dude, swapQuote.add(MAX_UNDERQUOTE))
     })
 
-    it("Only Owner can rescue GAS from Adapter", async function() {
+    it("Only Owner can rescue GAS from Adapter", async function () {
       let amount = 42690
       await expect(() =>
         owner.sendTransaction({

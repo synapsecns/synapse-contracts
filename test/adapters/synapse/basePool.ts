@@ -9,14 +9,14 @@ import { TestAdapterSwap } from "../build/typechain/TestAdapterSwap"
 import { GenericERC20 } from "../../../build/typechain/GenericERC20"
 import { LPToken } from "../../../build/typechain/LPToken"
 import { Swap } from "../../../build/typechain/Swap"
-import { SynapseBasePoolAdapter } from "../../../build/typechain/SynapseBasePoolAdapter"
+import { SynapseBaseAdapter } from "../../../build/typechain/SynapseBaseAdapter"
 import chai from "chai"
 import { getBigNumber } from "../../bridge/utilities"
 
 chai.use(solidity)
 const { expect } = chai
 
-describe("Base Pool Adapter", async function() {
+describe("Base Pool Adapter", async function () {
   let signers: Array<Signer>
   let swap: Swap
   let DAI: GenericERC20
@@ -29,7 +29,7 @@ describe("Base Pool Adapter", async function() {
   let dude: Signer
   let dudeAddress: string
 
-  let basePoolAdapter: SynapseBasePoolAdapter
+  let basePoolAdapter: SynapseBaseAdapter
 
   let testAdapterSwap: TestAdapterSwap
 
@@ -56,7 +56,7 @@ describe("Base Pool Adapter", async function() {
   const CHECK_UNDERQUOTING = true
 
   async function testAdapter(
-    adapter: SynapseBasePoolAdapter,
+    adapter: SynapseBaseAdapter,
     tokensFrom: Array<number>,
     tokensTo: Array<number>,
     times = 1,
@@ -85,6 +85,7 @@ describe("Base Pool Adapter", async function() {
           }
         }
       }
+    console.log("Swaps: %s", swapsAmount)
   }
 
   const setupTest = deployments.createFixture(
@@ -145,7 +146,7 @@ describe("Base Pool Adapter", async function() {
         swapStorage.lpToken,
       )) as LPToken
 
-      TOKENS.push(DAI, USDC, USDT, swapToken)
+      TOKENS.push(DAI, USDC, USDT)
 
       for (let token of TOKENS) {
         await token.approve(swap.address, MAX_UINT256)
@@ -153,14 +154,14 @@ describe("Base Pool Adapter", async function() {
       }
 
       const basePoolAdapterFactory = await ethers.getContractFactory(
-        "SynapseBasePoolAdapter",
+        "SynapseBaseAdapter",
       )
 
       basePoolAdapter = (await basePoolAdapterFactory.deploy(
         "BasePoolAdapter",
-        swap.address,
         160000,
-      )) as SynapseBasePoolAdapter
+        swap.address,
+      )) as SynapseBaseAdapter
 
       let amounts = [
         getBigNumber(2000, TOKENS_DECIMALS[0]),
@@ -181,15 +182,15 @@ describe("Base Pool Adapter", async function() {
     },
   )
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     await setupTest()
   })
 
   describe("Setup", () => {
-    it("BasePool Adapter is properly set up", async function() {
+    it("BasePool Adapter is properly set up", async function () {
       expect(await basePoolAdapter.pool()).to.be.eq(swap.address)
       expect(await basePoolAdapter.lpToken()).to.be.eq(swapToken.address)
-      expect(await basePoolAdapter.numTokens()).to.be.eq(TOKENS.length - 1)
+      expect(await basePoolAdapter.numTokens()).to.be.eq(TOKENS.length)
       expect(await basePoolAdapter.swapFee()).to.be.eq(SWAP_FEE)
 
       for (let i in TOKENS) {
@@ -200,35 +201,17 @@ describe("Base Pool Adapter", async function() {
   })
 
   describe("Adapter Swaps", () => {
-    it("Swaps between tokens [48 small-medium sized swaps]", async function() {
+    it("Swap stress test [48 small-medium sized swaps]", async function () {
       await testAdapter(basePoolAdapter, [0, 1, 2], [0, 1, 2], 2)
     })
 
-    it("Zap into LP token [48 small-medium sized swaps]", async function() {
-      await testAdapter(basePoolAdapter, [0, 1, 2], [3], 4)
-    })
-
-    it("Withdraw from LP token [48 small-medium sized swaps]", async function() {
-      await testAdapter(basePoolAdapter, [3], [0, 1, 2], 4)
-    })
-
-    it("Swap stress test [240 small-medium sized swaps]", async function() {
-      await testAdapter(basePoolAdapter, [0, 1, 2, 3], [0, 1, 2, 3], 5)
-    })
-
-    it("Swap stress test [180 big sized swaps]", async function() {
-      await testAdapter(
-        basePoolAdapter,
-        [0, 1, 2, 3],
-        [0, 1, 2, 3],
-        5,
-        AMOUNTS_BIG,
-      )
+    it("Swap stress test [36 big sized swaps]", async function () {
+      await testAdapter(basePoolAdapter, [0, 1, 2], [0, 1, 2], 2, AMOUNTS_BIG)
     })
   })
 
   describe("Wrong amount transferred", () => {
-    it("Swap fails if transfer amount is too little", async function() {
+    it("Swap fails if transfer amount is too little", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let depositAddress = await basePoolAdapter.depositAddress(
         TOKENS[0].address,
@@ -245,7 +228,7 @@ describe("Base Pool Adapter", async function() {
       ).to.be.reverted
     })
 
-    it("Only Owner can rescue overprovided swap tokens", async function() {
+    it("Only Owner can rescue overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await basePoolAdapter.depositAddress(
@@ -269,7 +252,7 @@ describe("Base Pool Adapter", async function() {
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
-    it("Anyone can take advantage of overprovided swap tokens", async function() {
+    it("Anyone can take advantage of overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await basePoolAdapter.depositAddress(
@@ -297,7 +280,7 @@ describe("Base Pool Adapter", async function() {
       ).to.changeTokenBalance(TOKENS[1], dude, swapQuote)
     })
 
-    it("Only Owner can rescue GAS from Adapter", async function() {
+    it("Only Owner can rescue GAS from Adapter", async function () {
       let amount = 42690
       await expect(() =>
         owner.sendTransaction({ to: basePoolAdapter.address, value: amount }),
@@ -307,9 +290,10 @@ describe("Base Pool Adapter", async function() {
         basePoolAdapter.connect(dude).recoverGAS(),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
-      await expect(() =>
-        basePoolAdapter.recoverGAS(),
-      ).to.changeEtherBalances([basePoolAdapter, owner], [-amount, amount])
+      await expect(() => basePoolAdapter.recoverGAS()).to.changeEtherBalances(
+        [basePoolAdapter, owner],
+        [-amount, amount],
+      )
     })
   })
 })

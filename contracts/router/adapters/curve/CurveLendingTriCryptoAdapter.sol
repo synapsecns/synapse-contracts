@@ -1,30 +1,33 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Adapter} from "../../Adapter.sol";
+import {CurveAbstractAdapter} from "./CurveAbstractAdapter.sol";
+
+import {ICurvePool} from "../interfaces/ICurvePool.sol";
 
 import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
-import {ICurvePool} from "../../interfaces/ICurvePool.sol";
-
-import {CurveAbstractAdapter} from "./CurveAbstractAdapter.sol";
-import {SafeCast} from "@openzeppelin/contracts-4.4.2/utils/math/SafeCast.sol";
 
 contract CurveLendingTriCryptoAdapter is CurveAbstractAdapter {
+    /**
+        @dev Lending TriCrypto Adapter is using uint256 for indexes
+        and is using exchange_underlying() for swaps
+     */
+
     uint256 private immutable numberStablecoins;
 
     mapping(address => uint256) public tokenIndex;
 
     constructor(
         string memory _name,
-        address _pool,
         uint256 _swapGasEstimate,
+        address _pool,
         bool _directSwapSupported,
         address _basePool
     )
         CurveAbstractAdapter(
             _name,
-            _pool,
             _swapGasEstimate,
+            _pool,
             _directSwapSupported
         )
     {
@@ -35,6 +38,7 @@ contract CurveLendingTriCryptoAdapter is CurveAbstractAdapter {
         for (uint8 i = 0; true; i++) {
             try pool.underlying_coins(i) returns (address _tokenAddress) {
                 _addPoolToken(_tokenAddress, i);
+                _setInfiniteAllowance(IERC20(_tokenAddress), address(pool));
             } catch {
                 break;
             }
@@ -71,7 +75,8 @@ contract CurveLendingTriCryptoAdapter is CurveAbstractAdapter {
         address _tokenIn,
         address _tokenOut,
         address _to
-    ) internal virtual override {
+    ) internal virtual override returns (uint256 _amountOut) {
+        _amountOut = IERC20(_tokenOut).balanceOf(_to);
         pool.exchange_underlying(
             tokenIndex[_tokenIn],
             tokenIndex[_tokenOut],
@@ -79,6 +84,7 @@ contract CurveLendingTriCryptoAdapter is CurveAbstractAdapter {
             0,
             _to
         );
+        _amountOut = IERC20(_tokenOut).balanceOf(_to) - _amountOut;
     }
 
     function _doIndirectSwap(

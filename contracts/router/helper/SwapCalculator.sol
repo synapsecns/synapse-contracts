@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "../interfaces/ISynapse.sol";
+import "../adapters/interfaces/ISynapse.sol";
 
 interface IERC20Decimals is IERC20 {
     function decimals() external view returns (uint8);
@@ -112,7 +112,7 @@ contract SwapCalculator {
         return tokenPrecisionMultipliers.length;
     }
 
-    function _addPoolToken(IERC20 token, uint8) internal virtual {
+    function _addPoolToken(IERC20 token, uint256) internal virtual {
         IERC20Decimals _token = IERC20Decimals(address(token));
         tokenPrecisionMultipliers.push(
             10**uint256(POOL_PRECISION_DECIMALS - _token.decimals())

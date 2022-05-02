@@ -16,7 +16,7 @@ import {
 } from "../../utils/helpers"
 
 import config from "../../../config.json"
-import adapters from "../adapters.json"
+import adapters from "../../adapters.json"
 
 chai.use(solidity)
 const { expect } = chai
@@ -25,7 +25,7 @@ const CHAIN = 43114
 const DEX = "curve"
 const POOL = "aave"
 const STORAGE = "aave"
-const ADAPTER = adapters[CHAIN][POOL]
+const ADAPTER = adapters[CHAIN][DEX][POOL]
 const ADAPTER_NAME = String(ADAPTER.params[0])
 
 describe(ADAPTER_NAME, function () {
@@ -41,11 +41,11 @@ describe(ADAPTER_NAME, function () {
   const SHARE_BIG = [66, 121]
 
   let swapsPerTime = SHARE_SMALL.length * getSwapsAmount(tokenSymbols.length)
-  const timesSmall = Math.floor(125 / swapsPerTime) + 1
+  const timesSmall = Math.floor(40 / swapsPerTime) + 1
   const swapsAmount = timesSmall * swapsPerTime
 
   swapsPerTime = SHARE_BIG.length * getSwapsAmount(tokenSymbols.length)
-  const timesBig = Math.floor(50 / swapsPerTime) + 1
+  const timesBig = Math.floor(30 / swapsPerTime) + 1
   const swapsAmountBig = timesBig * swapsPerTime
 
   const AMOUNTS = []
@@ -164,9 +164,10 @@ describe(ADAPTER_NAME, function () {
         this.adapter.connect(this.dude).recoverGAS(),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
-      await expect(() =>
-        this.adapter.recoverGAS(),
-      ).to.changeEtherBalances([this.adapter, this.owner], [-amount, amount])
+      await expect(() => this.adapter.recoverGAS()).to.changeEtherBalances(
+        [this.adapter, this.owner],
+        [-amount, amount],
+      )
     })
   })
 

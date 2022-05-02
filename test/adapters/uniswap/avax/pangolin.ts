@@ -10,14 +10,21 @@ import { IERC20Decimals } from "../../../../build/typechain/IERC20Decimals"
 
 import chai from "chai"
 import { getBigNumber } from "../../../bridge/utilities"
-import {forkChain, setBalance} from "../../utils/helpers"
+import { forkChain, setBalance } from "../../utils/helpers"
 
+import adapters from "../../adapters.json"
 import config from "../../../config.json"
 
 chai.use(solidity)
 const { expect } = chai
 
-describe("Pangolin Adapter", async function() {
+const CHAIN = 43114
+const DEX = "uniswap"
+const POOL = "pangolin"
+const ADAPTER = adapters[CHAIN][DEX][POOL]
+const ADAPTER_NAME = String(ADAPTER.params[0])
+
+describe(ADAPTER_NAME, async function () {
   let signers: Array<Signer>
 
   let owner: Signer
@@ -32,17 +39,13 @@ describe("Pangolin Adapter", async function() {
   let baseTokens: Array<number>
   let allTokens: Array<number>
 
-  const CHAIN = 43114
-  const DEX = "pangolin"
-  const FEE = 30 // 0.3%
-
   const TOKENS: GenericERC20[] = []
   const TOKENS_DECIMALS = []
 
   const AMOUNTS = [1, 6, 13, 37]
   const CHECK_UNDERQUOTING = true
 
-  const range = n => Array.from({length: n}, (value, key) => key)
+  const range = (n) => Array.from({ length: n }, (value, key) => key)
 
   const tokenSymbols = [
     "WAVAX",
@@ -52,7 +55,7 @@ describe("Pangolin Adapter", async function() {
     "WETHe",
     "WBTCe",
     "LINKe",
-    "alexarUST"
+    "alexarUST",
   ]
 
   const baseTokens = [0]
@@ -90,6 +93,7 @@ describe("Pangolin Adapter", async function() {
           }
         }
       }
+    console.log("Swaps: %s", swapsAmount)
   }
 
   const setupTest = deployments.createFixture(
@@ -105,20 +109,17 @@ describe("Pangolin Adapter", async function() {
       dudeAddress = await dude.getAddress()
 
       const uniswapAdapterFactory = await ethers.getContractFactory(
-        "UniswapV2Adapter",
+        ADAPTER.contract,
       )
 
       uniswapV2Adapter = (await uniswapAdapterFactory.deploy(
-        "UniswapV2Adapter",
-        config[CHAIN][DEX].factory,
-        160000,
-        FEE
+        ...ADAPTER.params,
       )) as UniswapV2Adapter
 
       const testFactory = await ethers.getContractFactory("TestUniswapAdapter")
 
       testAdapterSwap = (await testFactory.deploy(
-        config[CHAIN][DEX].router,
+        config[CHAIN][POOL].router,
       )) as TestUniswapAdapter
 
       for (let symbol of tokenSymbols) {
@@ -140,23 +141,23 @@ describe("Pangolin Adapter", async function() {
     },
   )
 
-  before(async function() {
+  before(async function () {
     // 2022-01-24
     await forkChain(process.env.AVAX_API, 10000000)
   })
 
-  beforeEach(async function() {
+  beforeEach(async function () {
     await setupTest()
   })
 
   describe("Sanity checks", () => {
-    it("UniswapV2 Adapter is properly set up", async function() {
+    it("UniswapV2 Adapter is properly set up", async function () {
       expect(await uniswapV2Adapter.uniswapV2Factory()).to.eq(
-        config[CHAIN][DEX].factory,
+        config[CHAIN][POOL].factory,
       )
     })
 
-    it("Swap fails when there is no direct path between tokens", async function() {
+    it("Swap fails when there is no direct path between tokens", async function () {
       // DAIe -> WETHe
       let tokenFrom = 2
       let tokenTo = 4
@@ -177,10 +178,10 @@ describe("Pangolin Adapter", async function() {
           TOKENS[tokenTo].address,
           ownerAddress,
         ),
-      ).to.be.revertedWith("Adapter: unknown tokens")
+      ).to.be.revertedWith("Adapter: Insufficient output amount")
     })
 
-    it("Swap fails if transfer amount is too little", async function() {
+    it("Swap fails if transfer amount is too little", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let depositAddress = await uniswapV2Adapter.depositAddress(
         TOKENS[0].address,
@@ -198,7 +199,7 @@ describe("Pangolin Adapter", async function() {
       ).to.be.reverted
     })
 
-    it("Noone can rescue overprovided swap tokens", async function() {
+    it("Noone can rescue overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await uniswapV2Adapter.depositAddress(
@@ -222,7 +223,7 @@ describe("Pangolin Adapter", async function() {
         .reverted
     })
 
-    it("Noone can take advantage of overprovided swap tokens", async function() {
+    it("Noone can take advantage of overprovided swap tokens", async function () {
       let amount = getBigNumber(10, TOKENS_DECIMALS[0])
       let extra = getBigNumber(42, TOKENS_DECIMALS[0] - 1)
       let depositAddress = await uniswapV2Adapter.depositAddress(
@@ -246,7 +247,7 @@ describe("Pangolin Adapter", async function() {
       ).to.be.reverted
     })
 
-    it("Only Owner can rescue tokens sent to Adapter", async function() {
+    it("Only Owner can rescue tokens sent to Adapter", async function () {
       let extra = getBigNumber(10, TOKENS_DECIMALS[0])
       await TOKENS[0].transfer(uniswapV2Adapter.address, extra)
 
@@ -259,7 +260,7 @@ describe("Pangolin Adapter", async function() {
       ).to.changeTokenBalance(TOKENS[0], owner, extra)
     })
 
-    it("Only Owner can rescue GAS from Adapter", async function() {
+    it("Only Owner can rescue GAS from Adapter", async function () {
       let amount = 42690
       await expect(() =>
         owner.sendTransaction({ to: uniswapV2Adapter.address, value: amount }),
@@ -269,21 +270,22 @@ describe("Pangolin Adapter", async function() {
         uniswapV2Adapter.connect(dude).recoverGAS(),
       ).to.be.revertedWith("Ownable: caller is not the owner")
 
-      await expect(() =>
-        uniswapV2Adapter.recoverGAS(),
-      ).to.changeEtherBalances([uniswapV2Adapter, owner], [-amount, amount])
+      await expect(() => uniswapV2Adapter.recoverGAS()).to.changeEtherBalances(
+        [uniswapV2Adapter, owner],
+        [-amount, amount],
+      )
     })
   })
 
   describe("Adapter Swaps from Base tokens", () => {
-    it("Swaps and Queries from Base (140 swaps)", async function() {
-      await testAdapter(uniswapV2Adapter, baseTokens, allTokens, 5)
+    it("Swaps and Queries from Base (28 swaps)", async function () {
+      await testAdapter(uniswapV2Adapter, baseTokens, allTokens, 1)
     })
   })
 
   describe("Adapter Swaps to Base tokens", () => {
-    it("Swaps and Queries to Base (140 swaps)", async function() {
-      await testAdapter(uniswapV2Adapter, allTokens, baseTokens, 5)
+    it("Swaps and Queries to Base (28 swaps)", async function () {
+      await testAdapter(uniswapV2Adapter, allTokens, baseTokens, 1)
     })
   })
 })

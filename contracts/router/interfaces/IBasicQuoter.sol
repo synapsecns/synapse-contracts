@@ -2,19 +2,19 @@
 pragma solidity ^0.8.0;
 
 interface IBasicQuoter {
-    event UpdatedTrustedAdapters(address[] _newTrustedAdapters);
+    event UpdatedTrustedAdapters(address[] newTrustedAdapters);
 
-    event AddedTrustedAdapter(address _newTrustedAdapter);
+    event AddedTrustedAdapter(address newTrustedAdapter);
 
-    event RemovedAdapter(address _removedAdapter);
+    event RemovedAdapter(address removedAdapter);
 
-    event RemovedAdapters(address[] _removedAdapters);
+    event RemovedAdapters(address[] removedAdapters);
 
-    event UpdatedTrustedTokens(address[] _newTrustedTokens);
+    event UpdatedTrustedTokens(address[] newTrustedTokens);
 
-    event AddedTrustedToken(address _newTrustedToken);
+    event AddedTrustedToken(address newTrustedToken);
 
-    event RemovedToken(address _removedToken);
+    event RemovedToken(address removedToken);
 
     struct Query {
         address adapter;
@@ -32,9 +32,9 @@ interface IBasicQuoter {
 
     //  -- VIEWS --
 
-    function getTrustedAdapter(uint8 _index) external view returns (address);
+    function getTrustedAdapter(uint8 index) external view returns (address);
 
-    function getTrustedToken(uint8 _index) external view returns (address);
+    function getTrustedToken(uint8 index) external view returns (address);
 
     function trustedAdaptersCount() external view returns (uint256);
 
@@ -42,25 +42,25 @@ interface IBasicQuoter {
 
     // -- ADAPTER FUNCTIONS --
 
-    function addTrustedAdapter(address _adapter) external;
+    function addTrustedAdapter(address adapter) external;
 
-    function removeAdapter(address _adapter) external;
+    function removeAdapter(address adapter) external;
 
-    function removeAdapterByIndex(uint8 _index) external;
+    function removeAdapterByIndex(uint8 index) external;
 
     // -- TOKEN FUNCTIONS --
 
-    function addTrustedToken(address _token) external;
+    function addTrustedToken(address token) external;
 
-    function removeToken(address _token) external;
+    function removeToken(address token) external;
 
-    function removeTokenByIndex(uint8 _index) external;
+    function removeTokenByIndex(uint8 index) external;
 
     // -- SETTERS --
 
-    function setAdapters(address[] calldata _adapters) external;
+    function setAdapters(address[] calldata adapters) external;
 
-    function setMaxSwaps(uint8 _maxSwaps) external;
+    function setMaxSwaps(uint8 maxSwaps) external;
 
-    function setTokens(address[] memory _tokens) external;
+    function setTokens(address[] memory tokens) external;
 }
