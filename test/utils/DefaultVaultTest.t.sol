@@ -199,13 +199,6 @@ contract DefaultVaultTest is Test {
         _addToken(address(token));
     }
 
-    function _deployWETH(string memory name) internal returns (IERC20 token) {
-        token = IERC20(deployCode("./artifacts/WETH9.sol/WETH9.json"));
-        deal(address(token), 10**30);
-        vm.label(address(token), name);
-        _addToken(address(token));
-    }
-
     function _addToken(address token) internal {
         allTokens.push(token);
         // store index + 1, so that default 0 value => token not found

@@ -13,6 +13,7 @@ import {SynapseBaseAdapter} from "src-router/adapters/synapse/SynapseBaseAdapter
 import {UniswapV2Adapter} from "src-router/adapters/uniswap/UniswapV2Adapter.sol";
 
 import {Swap08} from "src-amm08/Swap08.sol";
+import {IWETH9} from "@synapseprotocol/sol-lib/contracts/universal/interfaces/IWETH9.sol";
 
 contract DefaultRouterTest is DefaultVaultTest {
     struct Tokens {
@@ -155,6 +156,24 @@ contract DefaultRouterTest is DefaultVaultTest {
         vm.stopPrank();
     }
 
+    function _deployWETH(string memory name) internal returns (IERC20 token) {
+        token = IERC20(deployCode("./artifacts/WETH9.sol/WETH9.json"));
+        vm.label(address(token), name);
+        _addToken(address(token));
+    }
+
+    // deal token and update totalSupply
+    // custom logic for wETH, as totalSupply is amount of ether stored in WETH contract
+    function _dealToken(IERC20 token, address who, uint256 amount) internal {
+        if (address(token) == address(_tokens.wETH)) {
+            deal(who, amount);
+            hoax(who);
+            IWETH9(payable(address(token))).deposit{value: amount}();
+        } else {
+            deal(address(token), who, amount, true);
+        }
+    }
+
     function _getMinFee(address bridgeToken) internal view returns (uint256 minFee) {
         // minFee is approx $1 for each token
         if (bridgeToken == address(_tokens.nETH)) {
@@ -213,7 +232,7 @@ contract DefaultRouterTest is DefaultVaultTest {
 
         for (uint256 i = 0; i < tokens.length; ++i) {
             amounts[i] = initialLiq * 10**decimals[i];
-            deal(address(tokens[i]), address(this), amounts[i]);
+            _dealToken(tokens[i], address(this), amounts[i]);
             tokens[i].approve(address(pool), MAX_UINT);
         }
 
@@ -271,8 +290,8 @@ contract DefaultRouterTest is DefaultVaultTest {
     ) internal {
         address pair = factory.createPair(address(token0), address(token1));
         // provide initial liquidity
-        deal(address(token0), pair, amount0 * 10**token0.decimals());
-        deal(address(token1), pair, amount1 * 10**token1.decimals());
+        _dealToken(token0, pair, amount0 * 10**token0.decimals());
+        _dealToken(token1, pair, amount1 * 10**token1.decimals());
         IUniswapV2Pair(pair).mint(address(this));
 
         vm.label(pair, pairName);

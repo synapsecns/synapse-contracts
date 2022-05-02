@@ -130,7 +130,7 @@ contract VaultUnitTest is DefaultVaultTest {
     function testWithdrawFees() public {
         uint256 amount = TEST_AMOUNT;
         uint256 fee = TEST_AMOUNT / 7;
-        deal(address(syn), address(vault), 2 * amount + fee);
+        deal(address(syn), address(vault), 2 * amount + fee, true);
         assertEq(vault.getFeeBalance(syn), 0, "Wrong initial fee");
 
         bytes32 kappa = utils.getNextKappa();
@@ -162,7 +162,7 @@ contract VaultUnitTest is DefaultVaultTest {
 
         uint256 amount = TEST_AMOUNT;
         bytes32 kappa = utils.getNextKappa();
-        deal(address(syn), address(vault), amount);
+        deal(address(syn), address(vault), amount, true);
 
         utils.checkRevert(
             address(bridge),
@@ -223,7 +223,7 @@ contract VaultUnitTest is DefaultVaultTest {
 
         totalAmount += totalFee;
         totalFee = 0;
-        deal(address(syn), address(vault), totalAmount);
+        deal(address(syn), address(vault), totalAmount, true);
         startHoax(address(bridge));
 
         for (uint256 i = 0; i < 5; ++i) {
@@ -251,7 +251,7 @@ contract VaultUnitTest is DefaultVaultTest {
         uint256 amount = TEST_AMOUNT;
         uint256 fee = TEST_AMOUNT / 10;
         bytes32 kappa = utils.getNextKappa();
-        deal(address(syn), address(vault), amount + fee);
+        deal(address(syn), address(vault), amount + fee, true);
 
         assertEq(vault.getTokenBalance(syn), amount + fee, "Failed to top up bridge");
         assertEq(vault.getFeeBalance(syn), 0, "Wrong initial fee balance");

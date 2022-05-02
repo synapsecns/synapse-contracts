@@ -63,7 +63,7 @@ contract BasicRouterTest is DefaultVaultTest {
     function testRecoverERC20() public {
         uint256 amount = TEST_AMOUNT;
         uint256 pre = syn.balanceOf(governance);
-        deal(address(syn), address(router), amount);
+        deal(address(syn), address(router), amount, true);
 
         hoax(governance);
         router.recoverERC20(syn);

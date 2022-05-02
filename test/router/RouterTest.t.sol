@@ -93,7 +93,7 @@ contract RouterTest is DefaultRouterTest {
             _amountIn
         );
 
-        deal(allTokens[indexFrom], user, amountIn);
+        _dealToken(IERC20(allTokens[indexFrom]), user, amountIn);
         startHoax(user);
         IERC20(allTokens[indexFrom]).approve(address(router), amountIn);
 
@@ -161,7 +161,7 @@ contract RouterTest is DefaultRouterTest {
             _amountIn
         );
 
-        deal(allTokens[indexFrom], user, amountIn);
+        _dealToken(IERC20(allTokens[indexFrom]), user, amountIn);
         startHoax(user);
         IERC20(allTokens[indexFrom]).approve(address(router), amountIn);
 
