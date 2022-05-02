@@ -101,7 +101,7 @@ contract BridgeUnitTest is DefaultVaultTest {
     function testRecoverERC20() public {
         uint256 amount = TEST_AMOUNT;
         uint256 pre = syn.balanceOf(governance);
-        deal(address(syn), address(bridge), amount);
+        deal(address(syn), address(bridge), amount, true);
 
         hoax(governance);
         bridge.recoverERC20(syn);
