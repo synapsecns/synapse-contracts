@@ -29,32 +29,28 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
         bridgeConfig = IBridge(IBridgeRouter(_router).bridge()).bridgeConfig();
     }
 
-    // -- BEST PATH: initial chain --
+    // -- BEST PATH: source chain --
 
     function bestPathToBridge(
         address tokenIn,
         uint256 amountIn,
-        address bridgeTokenLocal
+        address bridgeTokenSrc
     ) external view returns (Offers.FormattedOffer memory bestOffer) {
-        bestOffer = _findBestPathInitial(tokenIn, amountIn, bridgeTokenLocal);
+        bestOffer = _findBestPathSrc(tokenIn, amountIn, bridgeTokenSrc);
     }
 
     function bestPathToBridgeEVM(
         address tokenIn,
         uint256 amountIn,
         uint256 chainId,
-        address bridgeTokenGlobal
+        address bridgeTokenDst
     ) external view returns (Offers.FormattedOffer memory bestOffer) {
-        address bridgeTokenLocal = bridgeConfig.findTokenEVM(
+        address bridgeTokenSrc = bridgeConfig.findTokenEVM(
             chainId,
-            bridgeTokenGlobal
+            bridgeTokenDst
         );
-        if (bridgeTokenLocal != address(0)) {
-            bestOffer = _findBestPathInitial(
-                tokenIn,
-                amountIn,
-                bridgeTokenLocal
-            );
+        if (bridgeTokenSrc != address(0)) {
+            bestOffer = _findBestPathSrc(tokenIn, amountIn, bridgeTokenSrc);
         }
     }
 
@@ -62,31 +58,27 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
         address tokenIn,
         uint256 amountIn,
         uint256 chainId,
-        string calldata bridgeTokenGlobal
+        string calldata bridgeTokenDst
     ) external view returns (Offers.FormattedOffer memory bestOffer) {
-        address bridgeTokenLocal = bridgeConfig.findTokenNonEVM(
+        address bridgeTokenSrc = bridgeConfig.findTokenNonEVM(
             chainId,
-            bridgeTokenGlobal
+            bridgeTokenDst
         );
-        if (bridgeTokenLocal != address(0)) {
-            bestOffer = _findBestPathInitial(
-                tokenIn,
-                amountIn,
-                bridgeTokenLocal
-            );
+        if (bridgeTokenSrc != address(0)) {
+            bestOffer = _findBestPathSrc(tokenIn, amountIn, bridgeTokenSrc);
         }
     }
 
-    function _findBestPathInitial(
+    function _findBestPathSrc(
         address tokenIn,
         uint256 amountIn,
-        address bridgeTokenLocal
+        address bridgeTokenSrc
     ) internal view returns (Offers.FormattedOffer memory bestOffer) {
-        if (bridgeConfig.isTokenEnabled(bridgeTokenLocal)) {
+        if (bridgeConfig.isTokenEnabled(bridgeTokenSrc)) {
             bestOffer = findBestPath(
                 tokenIn,
                 amountIn,
-                bridgeTokenLocal,
+                bridgeTokenSrc,
                 MAX_SWAPS
             );
         }
@@ -95,13 +87,13 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
     // -- BEST PATH: destination chain --
 
     function bestPathFromBridge(
-        address bridgeTokenLocal,
+        address bridgeTokenDst,
         uint256 amountIn,
         address tokenOut,
         bool gasdropRequested
     ) external view returns (Offers.FormattedOffer memory bestOffer) {
-        bestOffer = _findBestPathDestination(
-            bridgeTokenLocal,
+        bestOffer = _findBestPathDst(
+            bridgeTokenDst,
             amountIn,
             tokenOut,
             gasdropRequested
@@ -110,17 +102,17 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
 
     function bestPathFromBridgeEVM(
         uint256 chainId,
-        address bridgeTokenGlobal,
+        address bridgeTokenSrc,
         uint256 amountIn,
         address tokenOut,
         bool gasdropRequested
     ) external view returns (Offers.FormattedOffer memory bestOffer) {
-        address bridgeTokenLocal = bridgeConfig.findTokenEVM(
+        address bridgeTokenDst = bridgeConfig.findTokenEVM(
             chainId,
-            bridgeTokenGlobal
+            bridgeTokenSrc
         );
-        bestOffer = _findBestPathDestination(
-            bridgeTokenLocal,
+        bestOffer = _findBestPathDst(
+            bridgeTokenDst,
             amountIn,
             tokenOut,
             gasdropRequested
@@ -129,52 +121,52 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
 
     function bestPathFromBridgeNonEVM(
         uint256 chainId,
-        string calldata bridgeTokenGlobal,
+        string calldata bridgeTokenSrc,
         uint256 amountIn
     ) external view returns (Offers.FormattedOffer memory bestOffer) {
-        address bridgeToken = bridgeConfig.findTokenNonEVM(
+        address bridgeTokenDst = bridgeConfig.findTokenNonEVM(
             chainId,
-            bridgeTokenGlobal
+            bridgeTokenSrc
         );
         // Default setting for bridging from non-EVM is no swap, GasDrop enabled
-        bestOffer = _findBestPathDestination(
-            bridgeToken,
+        bestOffer = _findBestPathDst(
+            bridgeTokenDst,
             amountIn,
-            bridgeToken,
+            bridgeTokenDst,
             true
         );
     }
 
     function bestPathFromBridgeNonEVM(
         uint256 chainId,
-        string calldata bridgeTokenGlobal,
+        string calldata bridgeTokenSrc,
         uint256 amountIn,
         address tokenOut,
         bool gasdropRequested
     ) external view returns (Offers.FormattedOffer memory bestOffer) {
-        address bridgeToken = bridgeConfig.findTokenNonEVM(
+        address bridgeTokenDst = bridgeConfig.findTokenNonEVM(
             chainId,
-            bridgeTokenGlobal
+            bridgeTokenSrc
         );
 
-        bestOffer = _findBestPathDestination(
-            bridgeToken,
+        bestOffer = _findBestPathDst(
+            bridgeTokenDst,
             amountIn,
             tokenOut,
             gasdropRequested
         );
     }
 
-    function _findBestPathDestination(
-        address bridgeTokenLocal,
+    function _findBestPathDst(
+        address bridgeTokenDst,
         uint256 amountIn,
         address tokenOut,
         bool gasdropRequested
     ) internal view returns (Offers.FormattedOffer memory bestOffer) {
-        bool swapRequested = bridgeTokenLocal != tokenOut;
+        bool swapRequested = bridgeTokenDst != tokenOut;
         uint8 amountOfSwaps = IBridgeRouter(router).bridgeMaxSwaps();
         (uint256 fee, , bool isEnabled, ) = bridgeConfig.calculateBridgeFee(
-            bridgeTokenLocal,
+            bridgeTokenDst,
             amountIn,
             gasdropRequested,
             swapRequested ? amountOfSwaps : 0
@@ -187,14 +179,14 @@ contract BridgeQuoter is Quoter, IBridgeQuoter {
                 // Node group pays for gas, so:
                 // use maximum swaps permitted for bridge+swap transaction
                 bestOffer = findBestPath(
-                    bridgeTokenLocal,
+                    bridgeTokenDst,
                     amountIn,
                     tokenOut,
                     amountOfSwaps
                 );
             } else {
                 bestOffer.path = new address[](1);
-                bestOffer.path[0] = bridgeTokenLocal;
+                bestOffer.path[0] = bridgeTokenDst;
 
                 bestOffer.amounts = new uint256[](1);
                 bestOffer.amounts[0] = amountIn;
