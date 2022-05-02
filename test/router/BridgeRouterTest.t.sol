@@ -359,6 +359,7 @@ contract BridgeRouterTest is DefaultBridgeTest {
     /**
      * @notice Checks that bridge in transaction with swap works as intended.
      * Checks that the correct fee was applied and correct event was emitted.
+     * Also checks that kappa can not be reused.
      */
     function testBridgeInWithSwap(
         uint8 _indexFrom,
@@ -390,6 +391,21 @@ contract BridgeRouterTest is DefaultBridgeTest {
             data.kappa
         );
 
+        utils.checkRevert(
+            node,
+            address(bridge),
+            abi.encodeWithSelector(
+                bridge.bridgeInEVM.selector,
+                user,
+                IERC20(data.bridgeToken),
+                data.amountIn,
+                data.swapParams,
+                gasdropRequested,
+                data.kappa
+            ),
+            "Kappa already exists"
+        );
+
         _checkPostBridgeIn(indexTo, data);
     }
 
@@ -408,7 +424,7 @@ contract BridgeRouterTest is DefaultBridgeTest {
         // this should get swap failed
         data.swapParams.minAmountOut = data.amountOut + 1;
 
-        _checkBridgeInDirectEVM(data, gasdropRequested, _config.bridgeMaxSwaps);
+        _checkBridgeInNoSwapEVM(data, gasdropRequested, _config.bridgeMaxSwaps);
     }
 
     /**
@@ -427,7 +443,7 @@ contract BridgeRouterTest is DefaultBridgeTest {
         --data.swapParams.deadline;
 
         // Deadline check is failed => 0 swaps is used for fee calculation
-        _checkBridgeInDirectEVM(data, gasdropRequested, 0);
+        _checkBridgeInNoSwapEVM(data, gasdropRequested, 0);
     }
 
     /**
@@ -452,13 +468,14 @@ contract BridgeRouterTest is DefaultBridgeTest {
         data.gasPre = user.balance;
 
         // Direct bridging => 0 swaps
-        _checkBridgeInDirectEVM(data, gasdropRequested, 0);
+        _checkBridgeInNoSwapEVM(data, gasdropRequested, 0);
     }
 
     /**
      * @notice Submits a bridge in tx and checks all invariants.
+     * Also checks that kappa can not be reused.
      */
-    function _checkBridgeInDirectEVM(
+    function _checkBridgeInNoSwapEVM(
         _TestData memory data,
         bool gasdropRequested,
         uint256 amountOfSwaps
@@ -493,6 +510,21 @@ contract BridgeRouterTest is DefaultBridgeTest {
             data.swapParams,
             gasdropRequested,
             data.kappa
+        );
+
+        utils.checkRevert(
+            node,
+            address(bridge),
+            abi.encodeWithSelector(
+                bridge.bridgeInEVM.selector,
+                user,
+                IERC20(data.bridgeToken),
+                data.amountIn,
+                data.swapParams,
+                gasdropRequested,
+                data.kappa
+            ),
+            "Kappa already exists"
         );
 
         _checkPostBridgeIn(data.indexFrom, data);
