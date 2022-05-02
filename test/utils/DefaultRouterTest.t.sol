@@ -155,6 +155,20 @@ contract DefaultRouterTest is DefaultVaultTest {
         vm.stopPrank();
     }
 
+    function _getMinFee(address bridgeToken) internal view returns (uint256 minFee) {
+        // minFee is approx $1 for each token
+        if (bridgeToken == address(_tokens.nETH)) {
+            // ETH costs ~$100 in this testing suite
+            minFee = 10**16;
+        } else if (bridgeToken == address(_tokens.syn)) {
+            // SYN costs ~$10 in this testing suite
+            minFee = 10**17;
+        } else if (bridgeToken == address(_tokens.nUSD)) {
+            // nUSD costs exactly $1 even in timeline where Thanos wins
+            minFee = 10**18;
+        }
+    }
+
     function _saveRouteToken(address token, uint256 index) internal {
         routeTokens[index] = token;
         // start from 1, so default zero value => not a route token
