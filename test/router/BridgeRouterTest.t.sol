@@ -143,7 +143,11 @@ contract BridgeRouterTest is DefaultBridgeTest {
      * @notice Checks that bridging a token to EVM chain w/o swap on src chain
      * works as intended.
      */
-    function testBridgeOutTokenNoSwapToEVM(uint8 _indexTo, uint64 _amountIn) public {
+    function testBridgeOutTokenNoSwapToEVM(
+        uint8 _indexTo,
+        uint64 _amountIn,
+        bool gasdropRequested
+    ) public {
         vm.assume(_amountIn > 0);
         uint256 amountIn = uint256(_amountIn) << 20;
 
@@ -159,7 +163,8 @@ contract BridgeRouterTest is DefaultBridgeTest {
             IERC20(bridgeToken),
             amountIn,
             srcSwapParams,
-            dstSwapParams
+            dstSwapParams,
+            gasdropRequested
         );
     }
 
@@ -170,7 +175,8 @@ contract BridgeRouterTest is DefaultBridgeTest {
     function testBridgeOutTokenToEVM(
         uint8 indexFrom,
         uint8 _indexTo,
-        uint64 _amountIn
+        uint64 _amountIn,
+        bool gasdropRequested
     ) public {
         (address bridgeToken, uint8 indexTo) = _getBridgeToken(_indexTo);
         (Offers.FormattedOffer memory offer, uint256 amountIn, uint256 amountOut) = _askQuoter(
@@ -190,7 +196,8 @@ contract BridgeRouterTest is DefaultBridgeTest {
             IERC20(bridgeToken),
             amountOut,
             srcSwapParams,
-            dstSwapParams
+            dstSwapParams,
+            gasdropRequested
         );
     }
 
@@ -204,7 +211,8 @@ contract BridgeRouterTest is DefaultBridgeTest {
         IERC20 bridgeToken,
         uint256 amountOut,
         IBridge.SwapParams memory srcSwapParams,
-        IBridge.SwapParams memory dstSwapParams
+        IBridge.SwapParams memory dstSwapParams,
+        bool gasdropRequested
     ) internal {
         _dealToken(tokenFrom, user, amountIn);
         startHoax(user);
@@ -218,9 +226,9 @@ contract BridgeRouterTest is DefaultBridgeTest {
             amountOut,
             IERC20(tokenAddressEVM[address(bridgeToken)]),
             dstSwapParams,
-            false
+            gasdropRequested
         );
-        router.bridgeTokenToEVM(user, ID_EVM, srcSwapParams, amountIn, dstSwapParams, false);
+        router.bridgeTokenToEVM(user, ID_EVM, srcSwapParams, amountIn, dstSwapParams, gasdropRequested);
         vm.stopPrank();
     }
 
@@ -312,7 +320,11 @@ contract BridgeRouterTest is DefaultBridgeTest {
      * @notice Checks that bridging GAS to EVM chain with a swap on src chain
      * works as intended. Checks that the correct event is emitted.
      */
-    function testBridgeOutGasToEVM(uint8 _indexTo, uint64 _amountIn) public {
+    function testBridgeOutGasToEVM(
+        uint8 _indexTo,
+        uint64 _amountIn,
+        bool gasdropRequested
+    ) public {
         uint8 indexFrom = WETH_INDEX;
         (address bridgeToken, uint8 indexTo) = _getBridgeToken(_indexTo);
         (Offers.FormattedOffer memory offer, uint256 amountIn, uint256 amountOut) = _askQuoter(
@@ -336,11 +348,11 @@ contract BridgeRouterTest is DefaultBridgeTest {
             amountOut,
             IERC20(tokenAddressEVM[bridgeToken]),
             dstSwapParams,
-            false
+            gasdropRequested
         );
 
         hoax(user);
-        router.bridgeGasToEVM{value: amountIn}(user, ID_EVM, srcSwapParams, dstSwapParams, false);
+        router.bridgeGasToEVM{value: amountIn}(user, ID_EVM, srcSwapParams, dstSwapParams, gasdropRequested);
     }
 
     // -- TEST: BRIDGE TO NON-EVM
