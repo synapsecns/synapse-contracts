@@ -76,9 +76,23 @@ contract MessageBusSenderTest is Test {
         uint64 currentNonce = messageBusSender.nonce();
         bytes32 receiverAddress = addressToBytes32(address(1337));
         vm.expectEmit(true, true, true, true);
-        emit MessageSent(address(this), 99, receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), currentNonce+1, bytes(""), estimatedFee);
+        emit MessageSent(address(this), 99, receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), currentNonce, bytes(""), estimatedFee);
         messageBusSender.sendMessage{value: estimatedFee}(receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), bytes(""));
     }
+
+
+    // Send message without reversion, pay correct amount of fees, emit correct event
+    function testWithdrawFees() public {
+        uint256 estimatedFee = messageBusSender.estimateFee(gasFeePricingTest.expectedDstChainId(), bytes(""));
+        uint64 currentNonce = messageBusSender.nonce();
+        bytes32 receiverAddress = addressToBytes32(address(1337));
+        vm.expectEmit(true, true, true, true);
+        emit MessageSent(address(this), 99, receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), currentNonce, bytes(""), estimatedFee);
+        messageBusSender.sendMessage{value: estimatedFee}(receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), bytes(""));
+        messageBusSender.withdrawGasFees(payable(address(1000)));
+        assertEq(address(1000).balance, estimatedFee);
+    }
+
 
 }
 
