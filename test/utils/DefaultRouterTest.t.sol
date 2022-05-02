@@ -363,6 +363,18 @@ contract DefaultRouterTest is DefaultVaultTest {
         }
     }
 
+    /**
+     * @notice Finds a test bridge token, and returns its index in allTokens array.
+     */
+    function _getBridgeToken(uint8 _indexTo) internal returns (address bridgeToken, uint8 indexTo) {
+        vm.assume(_indexTo < bridgeTokens.length);
+        bridgeToken = bridgeTokens[_indexTo];
+
+        indexTo = tokenIndexes[bridgeToken];
+        require(indexTo > 0, "Unknown token found");
+        --indexTo;
+    }
+
     function _askQuoter(
         uint8 maxSwaps,
         uint8 indexFrom,
