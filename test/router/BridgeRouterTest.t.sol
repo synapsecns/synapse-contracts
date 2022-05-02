@@ -225,6 +225,90 @@ contract BridgeRouterTest is DefaultBridgeTest {
     }
 
     /**
+     * @notice Checks that bridging out with swap, that has too big minAmountOut, fails.
+     */
+    function testBridgeOutTokenSwapFailed(
+        uint8 indexFrom,
+        uint8 _indexTo,
+        uint64 _amountIn
+    ) public {
+        (address bridgeToken, uint8 indexTo) = _getBridgeToken(_indexTo);
+        (Offers.FormattedOffer memory offer, uint256 amountIn, uint256 amountOut) = _askQuoter(
+            _config.maxSwaps,
+            indexFrom,
+            indexTo,
+            _amountIn
+        );
+        (IBridge.SwapParams memory srcSwapParams, IBridge.SwapParams memory dstSwapParams) = _getSwapParams(
+            bridgeToken,
+            offer
+        );
+
+        srcSwapParams.minAmountOut = amountOut + 1;
+
+        _dealToken(IERC20(allTokens[indexFrom]), user, amountIn);
+        hoax(user);
+        IERC20(allTokens[indexFrom]).approve(address(router), amountIn);
+
+        utils.checkRevert(
+            user,
+            address(router),
+            abi.encodeWithSelector(
+                router.bridgeTokenToEVM.selector,
+                user,
+                ID_EVM,
+                srcSwapParams,
+                amountIn,
+                dstSwapParams,
+                false
+            ),
+            "Router: Insufficient output amount"
+        );
+    }
+
+    /**
+     * @notice Checks that bridging out with swap, that has deadline passed, on src chain fails.
+     */
+    function testBridgeOutTokenDeadlineFailed(
+        uint8 indexFrom,
+        uint8 _indexTo,
+        uint64 _amountIn
+    ) public {
+        (address bridgeToken, uint8 indexTo) = _getBridgeToken(_indexTo);
+        (Offers.FormattedOffer memory offer, uint256 amountIn, ) = _askQuoter(
+            _config.maxSwaps,
+            indexFrom,
+            indexTo,
+            _amountIn
+        );
+        (IBridge.SwapParams memory srcSwapParams, IBridge.SwapParams memory dstSwapParams) = _getSwapParams(
+            bridgeToken,
+            offer
+        );
+
+        srcSwapParams.deadline = block.timestamp - 1;
+
+        _dealToken(IERC20(allTokens[indexFrom]), user, amountIn);
+        hoax(user);
+        IERC20(allTokens[indexFrom]).approve(address(router), amountIn);
+
+        utils.checkRevert(
+            user,
+            address(router),
+            abi.encodeWithSelector(
+                router.bridgeTokenToEVM.selector,
+                user,
+                ID_EVM,
+                srcSwapParams,
+                amountIn,
+                dstSwapParams,
+                false
+            ),
+            "Router: past deadline"
+        );
+    }
+
+    /**
      * @notice Checks that bridging GAS to EVM chain with a swap on src chain
      * works as intended. Checks that the correct event is emitted.
      */
