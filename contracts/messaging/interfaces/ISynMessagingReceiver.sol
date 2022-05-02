@@ -7,7 +7,6 @@ interface ISynMessagingReceiver {
     // Maps chain ID to the bytes32 trusted addresses allowed to be source senders
     // mapping(uint256 => bytes32) internal trustedRemoteLookup;
 
-    event SetTrustedRemote(uint256 _srcChainId, bytes32 _srcAddress);
 
     /** 
      * @notice MsgExecutionStatus state

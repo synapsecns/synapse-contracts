@@ -77,18 +77,18 @@ contract PingPongTest is Test {
 
     function testPingPongE2E() public {
         // Chain A - 1000 chain ID. Call ping, message gets sent, processed, and event gets emitted. 
-        vm.travel(chainA);
+        vm.chainId(chainA);
         pingPongChainA.ping(chainB, address(pingPongChainB), 0);
         // TODO: Check that fee was transferred & enforced on MsgBus
         // Ping hit, event emitted, move to next chain, 
         vm.startPrank(address(node));
-        vm.travel(2000);
+        vm.chainId(2000);
         // Relay tx construction
         bytes32 firstMessageId = messageBusChainB.computeMessageId(chainA, pingPongChainABytes, address(pingPongChainB), 0, abi.encode(0));
         // Nodes execute first message with first ID, successful
         messageBusChainB.executeMessage(chainA, pingPongChainABytes, address(pingPongChainB), 200000, 0, abi.encode(0), firstMessageId);
         console.log(pingPongChainB.numPings());
-        vm.travel(1000);
+        vm.chainId(1000);
         bytes32 secondMessageId = messageBusChainA.computeMessageId(chainB, pingPongChainBBytes, address(pingPongChainA), 0, abi.encode(2));
         messageBusChainA.executeMessage(chainB, pingPongChainBBytes, address(pingPongChainA), 200000, 0, abi.encode(2), secondMessageId);
         console.log(pingPongChainA.numPings());
