@@ -382,7 +382,7 @@ contract DefaultRouterTest is DefaultVaultTest {
         vm.assume(_amountIn > 0);
 
         // use at least 1<<20 (~1e6) for amountIn
-        amountIn = _amountIn << 20;
+        amountIn = uint256(_amountIn) << 20;
 
         offer = quoter.findBestPath(allTokens[indexFrom], amountIn, allTokens[indexTo], maxSwaps);
 
