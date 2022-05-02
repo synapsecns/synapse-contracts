@@ -70,6 +70,9 @@ contract BasicRouterTest is DefaultVaultTest {
         assertEq(syn.balanceOf(governance), pre + amount, "Failed to recover ERC20");
     }
 
+    /** 
+     * @notice Checks that Router can receive Ether.
+     */
     function testReceiveEther() public {
         deal(address(this), 42);
         payable(router).transfer(21);

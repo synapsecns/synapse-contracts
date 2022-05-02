@@ -147,7 +147,8 @@ contract VaultUnitTest is DefaultVaultTest {
     }
 
     /**
-     * @notice Check that pause() pauses all vault functions
+     * @notice Check that pause() pauses all vault functions,
+     * Also checks that unpause() unpauses such functions.
      */
     function testPause() public {
         utils.checkRevert(
@@ -335,6 +336,13 @@ contract VaultUnitTest is DefaultVaultTest {
         _checkDrop(dude, user, 0);
     }
 
+    /**
+     * @notice Checks receiving of gasDrop for following txs:
+     * 1. Mint token w/o gasDrop.
+     * 2. Withdraw token w/o gasDrop.
+     * 3. Mint token with gasDrop.
+     * 4. Withdraw token with gasDrop.
+     */
     function _checkDrop(
         address tokensTo,
         address gasDropTo,

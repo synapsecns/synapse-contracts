@@ -4,6 +4,12 @@ pragma solidity >=0.8.0;
 import "../utils/DefaultRouterTest.t.sol";
 
 contract RouterTest is DefaultRouterTest {
+    /**
+     * @notice Checks that Router is able to execute the best path
+     * between two tokens, found by Quoter with a max length of 1.
+     * Checks that actual amountOut is the same as quote.
+     * Checks that user receives the token.
+     */
     function testExecuteBestPath1(
         uint8 indexFrom,
         uint8 indexTo,
@@ -13,6 +19,12 @@ contract RouterTest is DefaultRouterTest {
         _checkExecution(maxSwaps, indexFrom, indexTo, amountIn);
     }
 
+    /**
+     * @notice Checks that Router is able to execute the best path
+     * between two tokens, found by Quoter with a max length of 2.
+     * Checks that actual amountOut is the same as quote.
+     * Checks that user receives the token.
+     */
     function testExecuteBestPath2(
         uint8 indexFrom,
         uint8 indexTo,
@@ -22,6 +34,12 @@ contract RouterTest is DefaultRouterTest {
         _checkExecution(maxSwaps, indexFrom, indexTo, amountIn);
     }
 
+    /**
+     * @notice Checks that Router is able to execute the best path
+     * between two tokens, found by Quoter with a max length of 3.
+     * Checks that actual amountOut is the same as quote.
+     * Checks that user receives the token.
+     */
     function testExecuteBestPath3(
         uint8 indexFrom,
         uint8 indexTo,
@@ -31,6 +49,12 @@ contract RouterTest is DefaultRouterTest {
         _checkExecution(maxSwaps, indexFrom, indexTo, amountIn);
     }
 
+    /**
+     * @notice Checks that Router is able to execute the best path
+     * between two tokens, found by Quoter with a max length of 4.
+     * Checks that actual amountOut is the same as quote.
+     * Checks that user receives the token.
+     */
     function testExecuteBestPath4(
         uint8 indexFrom,
         uint8 indexTo,
@@ -40,46 +64,97 @@ contract RouterTest is DefaultRouterTest {
         _checkExecution(maxSwaps, indexFrom, indexTo, amountIn);
     }
 
+    /**
+     * @notice Checks that Router is able to execute the best path
+     * between GAS and a token, found by Quoter with a max length of 1.
+     * Checks that actual amountOut is the same as quote.
+     * Checks that user receives the token.
+     */
     function testExecuteBestPathFromGAS1(uint8 indexTo, uint64 amountIn) public {
         uint8 maxSwaps = 1;
         _checkExecutionFromGAS(maxSwaps, indexTo, amountIn);
     }
 
+    /**
+     * @notice Checks that Router is able to execute the best path
+     * between GAS and a token, found by Quoter with a max length of 2.
+     * Checks that actual amountOut is the same as quote.
+     * Checks that user receives the token.
+     */
     function testExecuteBestPathFromGAS2(uint8 indexTo, uint64 amountIn) public {
         uint8 maxSwaps = 2;
         _checkExecutionFromGAS(maxSwaps, indexTo, amountIn);
     }
 
+    /**
+     * @notice Checks that Router is able to execute the best path
+     * between GAS and a token, found by Quoter with a max length of 3.
+     * Checks that actual amountOut is the same as quote.
+     * Checks that user receives the token.
+     */
     function testExecuteBestPathFromGAS3(uint8 indexTo, uint64 amountIn) public {
         uint8 maxSwaps = 3;
         _checkExecutionFromGAS(maxSwaps, indexTo, amountIn);
     }
 
+    /**
+     * @notice Checks that Router is able to execute the best path
+     * between GAS and a token, found by Quoter with a max length of 4.
+     * Checks that actual amountOut is the same as quote.
+     * Checks that user receives the token.
+     */
     function testExecuteBestPathFromGAS4(uint8 indexTo, uint64 amountIn) public {
         uint8 maxSwaps = 4;
         _checkExecutionFromGAS(maxSwaps, indexTo, amountIn);
     }
 
+    /**
+     * @notice Checks that Router is able to execute the best path
+     * between a token and GAS, found by Quoter with a max length of 1.
+     * Checks that actual amountOut is the same as quote.
+     * Checks that user receives GAS.
+     */
     function testExecuteBestPathToGAS1(uint8 indexFrom, uint64 amountIn) public {
         uint8 maxSwaps = 1;
         _checkExecutionToGAS(maxSwaps, indexFrom, amountIn);
     }
 
+    /**
+     * @notice Checks that Router is able to execute the best path
+     * between a token and GAS, found by Quoter with a max length of 1.
+     * Checks that actual amountOut is the same as quote.
+     * Checks that user receives GAS.
+     */
     function testExecuteBestPathToGAS2(uint8 indexFrom, uint64 amountIn) public {
         uint8 maxSwaps = 2;
         _checkExecutionToGAS(maxSwaps, indexFrom, amountIn);
     }
 
+    /**
+     * @notice Checks that Router is able to execute the best path
+     * between a token and GAS, found by Quoter with a max length of 1.
+     * Checks that actual amountOut is the same as quote.
+     * Checks that user receives GAS.
+     */
     function testExecuteBestPathToGAS3(uint8 indexFrom, uint64 amountIn) public {
         uint8 maxSwaps = 3;
         _checkExecutionToGAS(maxSwaps, indexFrom, amountIn);
     }
 
+    /**
+     * @notice Checks that Router is able to execute the best path
+     * between a token and GAS, found by Quoter with a max length of 1.
+     * Checks that actual amountOut is the same as quote.
+     * Checks that user receives GAS.
+     */
     function testExecuteBestPathToGAS4(uint8 indexFrom, uint64 amountIn) public {
         uint8 maxSwaps = 4;
         _checkExecutionToGAS(maxSwaps, indexFrom, amountIn);
     }
 
+    /**
+     * @notice Checks correct execute of trade between two tokens.
+     */
     function _checkExecution(
         uint8 maxSwaps,
         uint8 indexFrom,
@@ -111,6 +186,9 @@ contract RouterTest is DefaultRouterTest {
         }
     }
 
+    /**
+     * @notice Checks correct execute of trade from GAS to token.
+     */
     function _checkExecutionFromGAS(
         uint8 maxSwaps,
         uint8 indexTo,
@@ -148,6 +226,9 @@ contract RouterTest is DefaultRouterTest {
         }
     }
 
+    /**
+     * @notice Checks correct execute of trade from token to GAS.
+     */
     function _checkExecutionToGAS(
         uint8 maxSwaps,
         uint8 indexFrom,

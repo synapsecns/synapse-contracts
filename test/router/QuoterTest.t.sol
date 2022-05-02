@@ -4,6 +4,10 @@ pragma solidity >=0.8.0;
 import "../utils/DefaultRouterTest.t.sol";
 
 contract QuoterTest is DefaultRouterTest {
+    /**
+     * @notice Checks that Quoter is able to find best path between tokens
+     * with a max length of 1.
+     */
     function testFindBestPath1(
         uint8 indexFrom,
         uint8 indexTo,
@@ -13,6 +17,10 @@ contract QuoterTest is DefaultRouterTest {
         _checkFindBestPath(maxSwaps, indexFrom, indexTo, amountIn);
     }
 
+    /**
+     * @notice Checks that Quoter is able to find best path between tokens
+     * with a max length of 2.
+     */
     function testFindBestPath2(
         uint8 indexFrom,
         uint8 indexTo,
@@ -22,6 +30,10 @@ contract QuoterTest is DefaultRouterTest {
         _checkFindBestPath(maxSwaps, indexFrom, indexTo, amountIn);
     }
 
+    /**
+     * @notice Checks that Quoter is able to find best path between tokens
+     * with a max length of 3.
+     */
     function testFindBestPath3(
         uint8 indexFrom,
         uint8 indexTo,
@@ -31,6 +43,10 @@ contract QuoterTest is DefaultRouterTest {
         _checkFindBestPath(maxSwaps, indexFrom, indexTo, amountIn);
     }
 
+    /**
+     * @notice Checks that Quoter is able to find best path between tokens
+     * with a max length of 4.
+     */
     function testFindBestPath4(
         uint8 indexFrom,
         uint8 indexTo,
@@ -40,6 +56,10 @@ contract QuoterTest is DefaultRouterTest {
         _checkFindBestPath(maxSwaps, indexFrom, indexTo, amountIn);
     }
 
+    /**
+     * @notice Checks the best path that Quoter was able to find against
+     * the best path that bruteForce algorithm was able to find.
+     */
     function _checkFindBestPath(
         uint8 maxSwaps,
         uint8 indexFrom,
