@@ -699,18 +699,6 @@ contract BridgeRouterTest is DefaultBridgeTest {
     }
 
     /**
-     * @notice Finds a test bridge token, and returns its index in allTokens array.
-     */
-    function _getBridgeToken(uint8 _indexTo) internal returns (address bridgeToken, uint8 indexTo) {
-        vm.assume(_indexTo < bridgeTokens.length);
-        bridgeToken = bridgeTokens[_indexTo];
-
-        indexTo = tokenIndexes[bridgeToken];
-        require(indexTo > 0, "Unknown token found");
-        --indexTo;
-    }
-
-    /**
      * @notice Constructs swapParams for src (from offer) and dst (empty swap) chain
      */
     function _getSwapParams(address bridgeToken, Offers.FormattedOffer memory offer)
