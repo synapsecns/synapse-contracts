@@ -5,8 +5,8 @@ import "../utils/DefaultRouterTest.t.sol";
 
 contract RouterTest is DefaultRouterTest {
     function testExecuteBestPath1(
-        uint256 indexFrom,
-        uint256 indexTo,
+        uint8 indexFrom,
+        uint8 indexTo,
         uint64 amountIn
     ) public {
         uint8 maxSwaps = 1;
@@ -14,8 +14,8 @@ contract RouterTest is DefaultRouterTest {
     }
 
     function testExecuteBestPath2(
-        uint256 indexFrom,
-        uint256 indexTo,
+        uint8 indexFrom,
+        uint8 indexTo,
         uint64 amountIn
     ) public {
         uint8 maxSwaps = 2;
@@ -23,8 +23,8 @@ contract RouterTest is DefaultRouterTest {
     }
 
     function testExecuteBestPath3(
-        uint256 indexFrom,
-        uint256 indexTo,
+        uint8 indexFrom,
+        uint8 indexTo,
         uint64 amountIn
     ) public {
         uint8 maxSwaps = 3;
@@ -32,58 +32,58 @@ contract RouterTest is DefaultRouterTest {
     }
 
     function testExecuteBestPath4(
-        uint256 indexFrom,
-        uint256 indexTo,
+        uint8 indexFrom,
+        uint8 indexTo,
         uint64 amountIn
     ) public {
         uint8 maxSwaps = 4;
         _checkExecution(maxSwaps, indexFrom, indexTo, amountIn);
     }
 
-    function testExecuteBestPathFromGAS1(uint256 indexTo, uint64 amountIn) public {
+    function testExecuteBestPathFromGAS1(uint8 indexTo, uint64 amountIn) public {
         uint8 maxSwaps = 1;
         _checkExecutionFromGAS(maxSwaps, indexTo, amountIn);
     }
 
-    function testExecuteBestPathFromGAS2(uint256 indexTo, uint64 amountIn) public {
+    function testExecuteBestPathFromGAS2(uint8 indexTo, uint64 amountIn) public {
         uint8 maxSwaps = 2;
         _checkExecutionFromGAS(maxSwaps, indexTo, amountIn);
     }
 
-    function testExecuteBestPathFromGAS3(uint256 indexTo, uint64 amountIn) public {
+    function testExecuteBestPathFromGAS3(uint8 indexTo, uint64 amountIn) public {
         uint8 maxSwaps = 3;
         _checkExecutionFromGAS(maxSwaps, indexTo, amountIn);
     }
 
-    function testExecuteBestPathFromGAS4(uint256 indexTo, uint64 amountIn) public {
+    function testExecuteBestPathFromGAS4(uint8 indexTo, uint64 amountIn) public {
         uint8 maxSwaps = 4;
         _checkExecutionFromGAS(maxSwaps, indexTo, amountIn);
     }
 
-    function testExecuteBestPathToGAS1(uint256 indexFrom, uint64 amountIn) public {
+    function testExecuteBestPathToGAS1(uint8 indexFrom, uint64 amountIn) public {
         uint8 maxSwaps = 1;
         _checkExecutionToGAS(maxSwaps, indexFrom, amountIn);
     }
 
-    function testExecuteBestPathToGAS2(uint256 indexFrom, uint64 amountIn) public {
+    function testExecuteBestPathToGAS2(uint8 indexFrom, uint64 amountIn) public {
         uint8 maxSwaps = 2;
         _checkExecutionToGAS(maxSwaps, indexFrom, amountIn);
     }
 
-    function testExecuteBestPathToGAS3(uint256 indexFrom, uint64 amountIn) public {
+    function testExecuteBestPathToGAS3(uint8 indexFrom, uint64 amountIn) public {
         uint8 maxSwaps = 3;
         _checkExecutionToGAS(maxSwaps, indexFrom, amountIn);
     }
 
-    function testExecuteBestPathToGAS4(uint256 indexFrom, uint64 amountIn) public {
+    function testExecuteBestPathToGAS4(uint8 indexFrom, uint64 amountIn) public {
         uint8 maxSwaps = 4;
         _checkExecutionToGAS(maxSwaps, indexFrom, amountIn);
     }
 
     function _checkExecution(
         uint8 maxSwaps,
-        uint256 indexFrom,
-        uint256 indexTo,
+        uint8 indexFrom,
+        uint8 indexTo,
         uint64 _amountIn
     ) internal {
         (Offers.FormattedOffer memory offer, uint256 amountIn, uint256 amountOut) = _askQuoter(
@@ -113,10 +113,10 @@ contract RouterTest is DefaultRouterTest {
 
     function _checkExecutionFromGAS(
         uint8 maxSwaps,
-        uint256 indexTo,
+        uint8 indexTo,
         uint64 _amountIn
     ) internal {
-        uint256 indexFrom = WETH_INDEX;
+        uint8 indexFrom = WETH_INDEX;
         (Offers.FormattedOffer memory offer, uint256 amountIn, uint256 amountOut) = _askQuoter(
             maxSwaps,
             indexFrom,
@@ -150,10 +150,10 @@ contract RouterTest is DefaultRouterTest {
 
     function _checkExecutionToGAS(
         uint8 maxSwaps,
-        uint256 indexFrom,
+        uint8 indexFrom,
         uint64 _amountIn
     ) internal {
-        uint256 indexTo = WETH_INDEX;
+        uint8 indexTo = WETH_INDEX;
         (Offers.FormattedOffer memory offer, uint256 amountIn, uint256 amountOut) = _askQuoter(
             maxSwaps,
             indexFrom,
@@ -177,8 +177,8 @@ contract RouterTest is DefaultRouterTest {
 
     function _askQuoter(
         uint8 maxSwaps,
-        uint256 indexFrom,
-        uint256 indexTo,
+        uint8 indexFrom,
+        uint8 indexTo,
         uint64 _amountIn
     )
         internal

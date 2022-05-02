@@ -51,8 +51,8 @@ contract DefaultRouterTest is DefaultVaultTest {
     address[] public routeTokens;
     address[] public bridgeTokens;
 
-    mapping(address => uint256) public routeIndex;
-    uint256 public constant WETH_INDEX = 0;
+    mapping(address => uint8) public routeIndex;
+    uint8 public constant WETH_INDEX = 0;
 
     constructor() DefaultVaultTest(defaultConfig) {
         this;
@@ -169,7 +169,7 @@ contract DefaultRouterTest is DefaultVaultTest {
         }
     }
 
-    function _saveRouteToken(address token, uint256 index) internal {
+    function _saveRouteToken(address token, uint8 index) internal {
         routeTokens[index] = token;
         // start from 1, so default zero value => not a route token
         routeIndex[token] = index + 1;
