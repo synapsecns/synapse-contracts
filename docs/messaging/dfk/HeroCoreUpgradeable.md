@@ -10,6 +10,23 @@
 
 ## Methods
 
+### BRIDGE_ROLE
+
+```solidity
+function BRIDGE_ROLE() external view returns (bytes32)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes32 | undefined |
+
 ### DEFAULT_ADMIN_ROLE
 
 ```solidity
@@ -116,6 +133,23 @@ function balanceOf(address owner) external view returns (uint256)
 | Name | Type | Description |
 |---|---|---|
 | _0 | uint256 | undefined |
+
+### bridgeMint
+
+```solidity
+function bridgeMint(uint256 _id, address _to) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _id | uint256 | undefined |
+| _to | address | undefined |
 
 ### createHero
 
