@@ -22,7 +22,8 @@ contract MessageBusSender is Ownable {
         bytes message,
         uint64 indexed nonce,
         bytes options,
-        uint256 fee
+        uint256 fee,
+        bytes32 messageId
     );
 
     function estimateFee(uint256 _dstChainId, bytes calldata _options)
@@ -62,7 +63,8 @@ contract MessageBusSender is Ownable {
             _message,
             nonce,
             _options,
-            msg.value
+            msg.value,
+            keccak256("placeholder_message_id")
         );
         fees += msg.value;
         ++nonce;
