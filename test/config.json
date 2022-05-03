@@ -1,0 +1,167 @@
+{
+  "1": {
+    "assets": {
+      "DAI": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+      "USDC": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "USDT": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "FRAX": "0x853d955aCEf822Db058eb8505911ED77F175b99e",
+      "WBTC": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "aDAI": "0x028171bca77440897b824ca71d1c56cac55b68a3",
+      "aUSDC": "0xbcca60bb61934080951369a648fb03df4f96263c",
+      "aUSDT": "0x3ed3b47dd13ec9a98b44e6204a523e766b225811",
+      "CRVLP": "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490"
+    },
+    "slot": {
+      "DAI": 2,
+      "USDC": 9,
+      "USDT": 2,
+      "FRAX": 0,
+      "WBTC": 0,
+      "WETH": 3
+    },
+    "curve": {
+      "basepool": "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7",
+      "aave": "0xDeBF20617708857ebe4F679508E7b7863a8A8EeE",
+      "frax": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
+      "tricrypto": "0xD51a44d3FaE010294C616388b506AcdA1bfAAE46"
+    }
+  },
+  "250": {
+    "assets": {
+      "WFTM": "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
+      "ETH": "0x74b23882a30290451A17c44f4F05243b6b58C76d",
+      "USDC": "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
+      "BOO": "0x841FAD6EAe12c286d1Fd18d1d525DFfA75C7EFFE",
+      "fUSDT": "0x049d68029688eAbF473097a2fC38ef61633A3C7A",
+      "BTC": "0x321162Cd933E2Be498Cd2267a90534A804051b11",
+      "MIM": "0x82f0B8B456c1A451378467398982d4834b6829c1",
+      "DAI": "0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E",
+
+      "FRAX": "0xdc301622e621166BD8E82f2cA0A26c13Ad0BE355",
+      "synFRAX": "0x1852F70512298d56e9c8FDd905e02581E04ddb2a"
+    },
+    "slot": {
+      "WFTM": 0,
+      "ETH": 2,
+      "USDC": 2,
+      "BOO": 0,
+      "fUSDT": 2,
+      "BTC": 2,
+      "MIM": 2,
+      "DAI": 2,
+
+      "FRAX": 0,
+      "synFRAX": -1
+    },
+    "synapse": {
+      "bridge": "0xAf41a65F786339e7911F4acDAD6BD49426F2Dc6b"
+    },
+    "solidly": {
+      "factory": "0x3fAaB499b519fdC5819e3D7ed0C26111904cbc28",
+      "router": "0xa38cd27185a464914D3046f0AB9d43356B34829D",
+      "hash": "0x57ae84018c47ebdaf7ddb2d1216c8c36389d12481309af65428eb6d460f747a4"
+    },
+    "spookyswap": {
+      "factory": "0x152eE697f2E276fA89E96742e9bB9aB1F2E61bE3",
+      "router": "0xF491e7B69E4244ad4002BC14e878a34207E38c29",
+      "hash": ""
+    }
+  },
+  "42161": {
+    "assets": {
+      "WBTC": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+      "WETH": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "USDC": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+      "USDT": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+      "FRAX": "0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F"
+    },
+    "slot": {
+      "WBTC": 51,
+      "WETH": 51,
+      "USDC": 51,
+      "USDT": 51,
+      "FRAX": 0
+    },
+    "gmx": {
+      "vault": "0x489ee077994B6658eAfA855C308275EAd8097C4A",
+      "reader": "0x22199a49A999c351eF7927602CFB187ec3cae489"
+    }
+  },
+  "43114": {
+    "assets": {
+      "WAVAX": "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7",
+      "DAIe": "0xd586E7F844cEa2F87f50152665BCbc2C279D8d70",
+      "USDTe": "0xc7198437980c041c805A1EDcbA50c1Ce5db95118",
+      "USDCe": "0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664",
+      "WETHe": "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB",
+      "avDAI": "0x47AFa96Cdc9fAb46904A55a6ad4bf6660B53c38a",
+      "avUSDT": "0x532E6537FEA298397212F09A61e03311686f548e",
+      "avUSDC": "0x46A51127C3ce23fb7AB1DE06226147F446e4a857",
+      "avWETH": "0x53f7c5869a859F0AeC3D334ee8B4Cf01E3492f21",
+      "avWBTC": "0x686bEF2417b6Dc32C50a3cBfbCC3bb60E1e9a15D",
+      "avCRV": "0x1337BedC9D22ecbe766dF105c9623922A27963EC",
+
+      "JOE": "0x6e84a6216eA6dACC71eE8E6b0a5B7322EEbC0fDd",
+      "WBTCe": "0x50b7545627a5162F82A992c33b87aDc75187B218",
+      "MIM": "0x130966628846BFd36ff31a822705796e8cb8C18D",
+      "LINKe": "0x5947BB275c521040051D82396192181b413227A3",
+      "alexarUST": "0x260Bbf5698121EB85e7a74f2E45E16Ce762EbE11",
+      "wMEMO": "0x0da67235dD5787D67955420C84ca1cEcd4E5Bb3b",
+      "SUSHIe": "0x37B608519F91f70F2EeB0e5Ed9AF4061722e4F76",
+
+      "USDC": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+      "USDT": "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7"
+    },
+    "slot": {
+      "WAVAX": 3,
+      "DAIe": 0,
+      "USDTe": 0,
+      "USDCe": 0,
+      "WETHe": 0,
+
+      "JOE": 0,
+      "WBTCe": 0,
+      "MIM": 2,
+      "LINKe": 0,
+      "alexarUST": 0,
+      "wMEMO": 0,
+      "SUSHIe": 0,
+
+      "USDC": 9,
+      "USDT": 51
+    },
+    "aave": {
+      "lendingpool": "0x4F01AeD16D97E3aB5ab2B501154DC9bb0F1A5A2C"
+    },
+    "curve": {
+      "aave": "0x7f90122BF0700F9E7e1F688fe926940E8839F353",
+      "mim": "0xAEA2E71b631fA93683BCF256A8689dFa0e094fcD",
+      "usdc": "0x3a43A5851A3e3E0e25A3c1089670269786be1577",
+      "tricrypto": "0x58e57cA18B7A47112b877E31929798Cd3D703b0f",
+      "tricryptopool": "0xB755B949C126C04e0348DD881a5cF55d424742B2"
+    },
+    "gmx": {
+      "vault": "0x9ab2De34A33fB459b538c43f251eB825645e8595",
+      "reader": "0x67b789D48c926006F5132BFCe4e976F0A7A63d5D"
+    },
+    "platypus": {
+      "pool": "0x66357dCaCe80431aee0A7507e2E361B7e2402370"
+    },
+    "sushiswap": {
+      "factory": "0xc35DADB65012eC5796536bD9864eD8773aBc74C4",
+      "router": "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506",
+      "hash": "0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303"
+    },
+    "traderjoe": {
+      "factory": "0x9Ad6C38BE94206cA50bb0d90783181662f0Cfa10",
+      "router": "0x60aE616a2155Ee3d9A68541Ba4544862310933d4",
+      "hash": "0x0bbca9af0511ad1a1da383135cf3a8d2ac620e549ef9f6ae3a4c33c2fed0af91"
+    },
+    "pangolin": {
+      "factory": "0xefa94DE7a4656D787667C749f7E1223D71E9FD88",
+      "router": "0xE54Ca86531e17Ef3616d22Ca28b0D458b6C89106",
+      "hash": "0x40231f6b438bce0797c9ada29b718a87ea0a5cea3fe9a771abdd76bd41a3e545"
+    }
+  }
+}

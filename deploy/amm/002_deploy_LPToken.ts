@@ -25,6 +25,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       "synapseLPTokenTarget",
     )
   }
+
+  if ((await getChainId()) == CHAIN_ID.HARDHAT) {
+    await deploy("LPToken08", {
+      from: libraryDeployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+    })
+  }
 }
 }
 export default func
