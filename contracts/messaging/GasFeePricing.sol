@@ -56,9 +56,11 @@ contract GasFeePricing is Ownable, Test {
             gasLimit = 200000;
         }
 
-        return ((dstGasPriceInWei[_dstChainId] *
+        uint256 minFee = ((dstGasPriceInWei[_dstChainId] *
             dstGasTokenRatio[_dstChainId] *
             gasLimit) / 10**18);
+
+        return minFee;
     }
 
     function encodeOptions(uint16 txType, uint256 gasLimit)
