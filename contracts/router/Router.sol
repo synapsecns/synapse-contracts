@@ -9,7 +9,7 @@ import {SafeERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/SafeERC2
 
 import {BasicRouter} from "./BasicRouter.sol";
 
-import {ReentrancyGuard} from "@openzeppelin/contracts-4.4.2/security/ReentrancyGuard.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts-4.5.0/security/ReentrancyGuard.sol";
 
 // solhint-disable reason-string
 
