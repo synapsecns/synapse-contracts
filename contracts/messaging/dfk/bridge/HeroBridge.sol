@@ -5,8 +5,6 @@ import "../IHeroCoreUpgradeable.sol";
 import "../IAssistingAuctionUpgradeable.sol";
 import {HeroStatus} from "../types/HeroTypes.sol";
 
-import "@openzeppelin/contracts-4.5.0/token/ERC721/IERC721Receiver.sol";
-
 pragma solidity 0.8.13;
 
 /** @title Core app for handling cross chain messaging passing to bridge Hero NFTs
