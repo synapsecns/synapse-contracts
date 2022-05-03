@@ -52,7 +52,6 @@ contract BatchMessageSenderTest is Test {
         vm.label(address(batchMessageSenderChainA), "BatchMessageSenderChainA");
         gasFeePricingChainA.setCostPerChain(43113, 30000000000, 25180000000000000);
         batchMessageSenderChainA.setTrustedRemote(43113, keccak256("Receiver!"));
-
     }
 
     function testSendMultipleMessages() public {
@@ -69,7 +68,8 @@ contract BatchMessageSenderTest is Test {
             console.log(options[i].length);
         }
 
-        batchMessageSenderChainA.sendMultipleMessages{value:1 ether}(receivers, dstChainIds, messages, options);
+        // this msg.value (fee) is entirely fake and way too high
+        batchMessageSenderChainA.sendMultipleMessages{value:10 ether}(receivers, dstChainIds, messages, options);
     }
 
 
