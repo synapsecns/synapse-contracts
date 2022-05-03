@@ -1,0 +1,269 @@
+{
+  "address": "0x003107B3aeee133804eaBE7D1df200DdFbb51dCE",
+  "abi": [
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "dstGasPriceInWei",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "dstGasTokenRatio",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_dstChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_options",
+          "type": "bytes"
+        }
+      ],
+      "name": "estimateGasFee",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_dstChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_gasUnitPrice",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_gasTokenPriceRatio",
+          "type": "uint256"
+        }
+      ],
+      "name": "setCostPerChain",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x49a020feb5efe2d35f85aaa69029a2d096f28df4e912e18f5b58f24738fa6e98",
+  "receipt": {
+    "to": null,
+    "from": "0x0AF91FA049A7e1894F480bFE5bBa20142C6c29a9",
+    "contractAddress": "0x003107B3aeee133804eaBE7D1df200DdFbb51dCE",
+    "transactionIndex": 0,
+    "gasUsed": "615806",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000001000000000000000010000000000000000000020000000000000000000800000000000000000000000000000000400000000000000000000000000040000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020000000000000002000000000000000000000000000000020000000000000000000",
+    "blockHash": "0xeb765c9133832f218d570c3731daaea121093c17a4c5cd2c2bdf80f1c1a0bf52",
+    "transactionHash": "0x49a020feb5efe2d35f85aaa69029a2d096f28df4e912e18f5b58f24738fa6e98",
+    "logs": [
+      {
+        "transactionIndex": 0,
+        "blockNumber": 24790756,
+        "transactionHash": "0x49a020feb5efe2d35f85aaa69029a2d096f28df4e912e18f5b58f24738fa6e98",
+        "address": "0x003107B3aeee133804eaBE7D1df200DdFbb51dCE",
+        "topics": [
+          "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x0000000000000000000000000af91fa049a7e1894f480bfe5bba20142c6c29a9"
+        ],
+        "data": "0x",
+        "logIndex": 0,
+        "blockHash": "0xeb765c9133832f218d570c3731daaea121093c17a4c5cd2c2bdf80f1c1a0bf52"
+      }
+    ],
+    "blockNumber": 24790756,
+    "cumulativeGasUsed": "615806",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "solcInputHash": "2c99480c4b27fa6f3dfbf2224f6bc524",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.13+commit.abaa5c0e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"dstGasPriceInWei\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"dstGasTokenRatio\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_dstChainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_options\",\"type\":\"bytes\"}],\"name\":\"estimateGasFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_dstChainId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_gasUnitPrice\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_gasTokenPriceRatio\",\"type\":\"uint256\"}],\"name\":\"setCostPerChain\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"estimateGasFee(uint256,bytes)\":{\"params\":{\"_options\":\"Versioned struct used to instruct relayer on how to proceed with gas limits. Contains data on gas limit to submit tx with.\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.\"},\"setCostPerChain(uint256,uint256,uint256)\":{\"params\":{\"_dstChainId\":\"The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains\",\"_gasTokenPriceRatio\":\"USD gas ratio of dstGasToken / srcGasToken\",\"_gasUnitPrice\":\"The estimated current gas price in wei of the destination chain\"}},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"estimateGasFee(uint256,bytes)\":{\"notice\":\"Returns srcGasToken fee to charge in wei for the cross-chain message based on the gas limit\"},\"setCostPerChain(uint256,uint256,uint256)\":{\"notice\":\"Permissioned method to allow an off-chain party to set what each dstChain's gas cost is priced in the srcChain's native gas currency. Example: call on ETH, setCostPerChain(43114, 30000000000, 25180000000000000) chain ID 43114 Average of 30 gwei cost to transaction on 43114 AVAX/ETH = 0.02518, scaled to gas in wei = 25180000000000000\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/messaging/GasFeePricing.sol\":\"GasFeePricing\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts-4.5.0/access/Ownable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts v4.4.1 (access/Ownable.sol)\\n\\npragma solidity ^0.8.0;\\n\\nimport \\\"../utils/Context.sol\\\";\\n\\n/**\\n * @dev Contract module which provides a basic access control mechanism, where\\n * there is an account (an owner) that can be granted exclusive access to\\n * specific functions.\\n *\\n * By default, the owner account will be the one that deploys the contract. This\\n * can later be changed with {transferOwnership}.\\n *\\n * This module is used through inheritance. It will make available the modifier\\n * `onlyOwner`, which can be applied to your functions to restrict their use to\\n * the owner.\\n */\\nabstract contract Ownable is Context {\\n    address private _owner;\\n\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /**\\n     * @dev Initializes the contract setting the deployer as the initial owner.\\n     */\\n    constructor() {\\n        _transferOwnership(_msgSender());\\n    }\\n\\n    /**\\n     * @dev Returns the address of the current owner.\\n     */\\n    function owner() public view virtual returns (address) {\\n        return _owner;\\n    }\\n\\n    /**\\n     * @dev Throws if called by any account other than the owner.\\n     */\\n    modifier onlyOwner() {\\n        require(owner() == _msgSender(), \\\"Ownable: caller is not the owner\\\");\\n        _;\\n    }\\n\\n    /**\\n     * @dev Leaves the contract without owner. It will not be possible to call\\n     * `onlyOwner` functions anymore. Can only be called by the current owner.\\n     *\\n     * NOTE: Renouncing ownership will leave the contract without an owner,\\n     * thereby removing any functionality that is only available to the owner.\\n     */\\n    function renounceOwnership() public virtual onlyOwner {\\n        _transferOwnership(address(0));\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Can only be called by the current owner.\\n     */\\n    function transferOwnership(address newOwner) public virtual onlyOwner {\\n        require(newOwner != address(0), \\\"Ownable: new owner is the zero address\\\");\\n        _transferOwnership(newOwner);\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Internal function without access restriction.\\n     */\\n    function _transferOwnership(address newOwner) internal virtual {\\n        address oldOwner = _owner;\\n        _owner = newOwner;\\n        emit OwnershipTransferred(oldOwner, newOwner);\\n    }\\n}\\n\",\"keccak256\":\"0x24e0364e503a9bbde94c715d26573a76f14cd2a202d45f96f52134ab806b67b9\",\"license\":\"MIT\"},\"@openzeppelin/contracts-4.5.0/utils/Context.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts v4.4.1 (utils/Context.sol)\\n\\npragma solidity ^0.8.0;\\n\\n/**\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract Context {\\n    function _msgSender() internal view virtual returns (address) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes calldata) {\\n        return msg.data;\\n    }\\n}\\n\",\"keccak256\":\"0xe2e337e6dde9ef6b680e07338c493ebea1b5fd09b43424112868e9cc1706bca7\",\"license\":\"MIT\"},\"contracts/messaging/GasFeePricing.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.8.13;\\n\\nimport \\\"@openzeppelin/contracts-4.5.0/access/Ownable.sol\\\";\\n\\ncontract GasFeePricing is Ownable {\\n    // DstChainId => The estimated current gas price in wei of the destination chain\\n    mapping(uint256 => uint256) public dstGasPriceInWei;\\n    // DstChainId => USD gas ratio of dstGasToken / srcGasToken\\n    mapping(uint256 => uint256) public dstGasTokenRatio;\\n\\n    constructor() {}\\n\\n    /**\\n     * @notice Permissioned method to allow an off-chain party to set what each dstChain's\\n     * gas cost is priced in the srcChain's native gas currency.\\n     * Example: call on ETH, setCostPerChain(43114, 30000000000, 25180000000000000)\\n     * chain ID 43114\\n     * Average of 30 gwei cost to transaction on 43114\\n     * AVAX/ETH = 0.02518, scaled to gas in wei = 25180000000000000\\n     * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains\\n     * @param _gasUnitPrice The estimated current gas price in wei of the destination chain\\n     * @param _gasTokenPriceRatio USD gas ratio of dstGasToken / srcGasToken\\n     */\\n    function setCostPerChain(\\n        uint256 _dstChainId,\\n        uint256 _gasUnitPrice,\\n        uint256 _gasTokenPriceRatio\\n    ) external onlyOwner {\\n        dstGasPriceInWei[_dstChainId] = _gasUnitPrice;\\n        dstGasTokenRatio[_dstChainId] = _gasTokenPriceRatio;\\n    }\\n\\n    /**\\n     * @notice Returns srcGasToken fee to charge in wei for the cross-chain message based on the gas limit\\n     * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits. Contains data on gas limit to submit tx with.\\n     */\\n    function estimateGasFee(uint256 _dstChainId, bytes calldata _options)\\n        external\\n        view\\n        returns (uint256)\\n    {\\n        // temporary gas limit set\\n        uint256 gasLimit = 200000;\\n        return ((dstGasPriceInWei[_dstChainId] *\\n            dstGasTokenRatio[_dstChainId] *\\n            gasLimit) / 10**18);\\n    }\\n}\\n\",\"keccak256\":\"0x6528eead1fa97c92e6c86a424ff24bafec256c3f7e6e931cd1246ba4234cf9cb\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b5061002d61002261003260201b60201c565b61003a60201b60201c565b6100fe565b600033905090565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050816000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508173ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b6109bc8061010d6000396000f3fe608060405234801561001057600080fd5b506004361061007d5760003560e01c80638da5cb5b1161005b5780638da5cb5b146100ec578063e32192b71461010a578063f2fde38b14610126578063f7b9872a146101425761007d565b806347feadc11461008257806368e0a685146100b2578063715018a6146100e2575b600080fd5b61009c600480360381019061009791906105cf565b610172565b6040516100a9919061063e565b60405180910390f35b6100cc60048036038101906100c79190610659565b6101d5565b6040516100d9919061063e565b60405180910390f35b6100ea6101ed565b005b6100f4610275565b60405161010191906106c7565b60405180910390f35b610124600480360381019061011f91906106e2565b61029e565b005b610140600480360381019061013b9190610761565b61034f565b005b61015c60048036038101906101579190610659565b610446565b604051610169919061063e565b60405180910390f35b60008062030d409050670de0b6b3a764000081600260008881526020019081526020016000205460016000898152602001908152602001600020546101b791906107bd565b6101c191906107bd565b6101cb9190610846565b9150509392505050565b60016020528060005260406000206000915090505481565b6101f561045e565b73ffffffffffffffffffffffffffffffffffffffff16610213610275565b73ffffffffffffffffffffffffffffffffffffffff1614610269576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401610260906108d4565b60405180910390fd5b6102736000610466565b565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b6102a661045e565b73ffffffffffffffffffffffffffffffffffffffff166102c4610275565b73ffffffffffffffffffffffffffffffffffffffff161461031a576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401610311906108d4565b60405180910390fd5b816001600085815260200190815260200160002081905550806002600085815260200190815260200160002081905550505050565b61035761045e565b73ffffffffffffffffffffffffffffffffffffffff16610375610275565b73ffffffffffffffffffffffffffffffffffffffff16146103cb576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016103c2906108d4565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff160361043a576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161043190610966565b60405180910390fd5b61044381610466565b50565b60026020528060005260406000206000915090505481565b600033905090565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050816000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508173ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b600080fd5b600080fd5b6000819050919050565b61054781610534565b811461055257600080fd5b50565b6000813590506105648161053e565b92915050565b600080fd5b600080fd5b600080fd5b60008083601f84011261058f5761058e61056a565b5b8235905067ffffffffffffffff8111156105ac576105ab61056f565b5b6020830191508360018202830111156105c8576105c7610574565b5b9250929050565b6000806000604084860312156105e8576105e761052a565b5b60006105f686828701610555565b935050602084013567ffffffffffffffff8111156106175761061661052f565b5b61062386828701610579565b92509250509250925092565b61063881610534565b82525050565b6000602082019050610653600083018461062f565b92915050565b60006020828403121561066f5761066e61052a565b5b600061067d84828501610555565b91505092915050565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b60006106b182610686565b9050919050565b6106c1816106a6565b82525050565b60006020820190506106dc60008301846106b8565b92915050565b6000806000606084860312156106fb576106fa61052a565b5b600061070986828701610555565b935050602061071a86828701610555565b925050604061072b86828701610555565b9150509250925092565b61073e816106a6565b811461074957600080fd5b50565b60008135905061075b81610735565b92915050565b6000602082840312156107775761077661052a565b5b60006107858482850161074c565b91505092915050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b60006107c882610534565b91506107d383610534565b9250817fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff048311821515161561080c5761080b61078e565b5b828202905092915050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601260045260246000fd5b600061085182610534565b915061085c83610534565b92508261086c5761086b610817565b5b828204905092915050565b600082825260208201905092915050565b7f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572600082015250565b60006108be602083610877565b91506108c982610888565b602082019050919050565b600060208201905081810360008301526108ed816108b1565b9050919050565b7f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160008201527f6464726573730000000000000000000000000000000000000000000000000000602082015250565b6000610950602683610877565b915061095b826108f4565b604082019050919050565b6000602082019050818103600083015261097f81610943565b905091905056fea2646970667358221220dd3ddc3d057765224a95d5ffb59e00fd5d2c4acd8cd3d53f5e4e7e05f300585964736f6c634300080d0033",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061007d5760003560e01c80638da5cb5b1161005b5780638da5cb5b146100ec578063e32192b71461010a578063f2fde38b14610126578063f7b9872a146101425761007d565b806347feadc11461008257806368e0a685146100b2578063715018a6146100e2575b600080fd5b61009c600480360381019061009791906105cf565b610172565b6040516100a9919061063e565b60405180910390f35b6100cc60048036038101906100c79190610659565b6101d5565b6040516100d9919061063e565b60405180910390f35b6100ea6101ed565b005b6100f4610275565b60405161010191906106c7565b60405180910390f35b610124600480360381019061011f91906106e2565b61029e565b005b610140600480360381019061013b9190610761565b61034f565b005b61015c60048036038101906101579190610659565b610446565b604051610169919061063e565b60405180910390f35b60008062030d409050670de0b6b3a764000081600260008881526020019081526020016000205460016000898152602001908152602001600020546101b791906107bd565b6101c191906107bd565b6101cb9190610846565b9150509392505050565b60016020528060005260406000206000915090505481565b6101f561045e565b73ffffffffffffffffffffffffffffffffffffffff16610213610275565b73ffffffffffffffffffffffffffffffffffffffff1614610269576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401610260906108d4565b60405180910390fd5b6102736000610466565b565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b6102a661045e565b73ffffffffffffffffffffffffffffffffffffffff166102c4610275565b73ffffffffffffffffffffffffffffffffffffffff161461031a576040517f08c379a0000000000000000000000000000000000000000000000000000000008152600401610311906108d4565b60405180910390fd5b816001600085815260200190815260200160002081905550806002600085815260200190815260200160002081905550505050565b61035761045e565b73ffffffffffffffffffffffffffffffffffffffff16610375610275565b73ffffffffffffffffffffffffffffffffffffffff16146103cb576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004016103c2906108d4565b60405180910390fd5b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff160361043a576040517f08c379a000000000000000000000000000000000000000000000000000000000815260040161043190610966565b60405180910390fd5b61044381610466565b50565b60026020528060005260406000206000915090505481565b600033905090565b60008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff169050816000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508173ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a35050565b600080fd5b600080fd5b6000819050919050565b61054781610534565b811461055257600080fd5b50565b6000813590506105648161053e565b92915050565b600080fd5b600080fd5b600080fd5b60008083601f84011261058f5761058e61056a565b5b8235905067ffffffffffffffff8111156105ac576105ab61056f565b5b6020830191508360018202830111156105c8576105c7610574565b5b9250929050565b6000806000604084860312156105e8576105e761052a565b5b60006105f686828701610555565b935050602084013567ffffffffffffffff8111156106175761061661052f565b5b61062386828701610579565b92509250509250925092565b61063881610534565b82525050565b6000602082019050610653600083018461062f565b92915050565b60006020828403121561066f5761066e61052a565b5b600061067d84828501610555565b91505092915050565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b60006106b182610686565b9050919050565b6106c1816106a6565b82525050565b60006020820190506106dc60008301846106b8565b92915050565b6000806000606084860312156106fb576106fa61052a565b5b600061070986828701610555565b935050602061071a86828701610555565b925050604061072b86828701610555565b9150509250925092565b61073e816106a6565b811461074957600080fd5b50565b60008135905061075b81610735565b92915050565b6000602082840312156107775761077661052a565b5b60006107858482850161074c565b91505092915050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b60006107c882610534565b91506107d383610534565b9250817fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff048311821515161561080c5761080b61078e565b5b828202905092915050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601260045260246000fd5b600061085182610534565b915061085c83610534565b92508261086c5761086b610817565b5b828204905092915050565b600082825260208201905092915050565b7f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572600082015250565b60006108be602083610877565b91506108c982610888565b602082019050919050565b600060208201905081810360008301526108ed816108b1565b9050919050565b7f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160008201527f6464726573730000000000000000000000000000000000000000000000000000602082015250565b6000610950602683610877565b915061095b826108f4565b604082019050919050565b6000602082019050818103600083015261097f81610943565b905091905056fea2646970667358221220dd3ddc3d057765224a95d5ffb59e00fd5d2c4acd8cd3d53f5e4e7e05f300585964736f6c634300080d0033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "estimateGasFee(uint256,bytes)": {
+        "params": {
+          "_options": "Versioned struct used to instruct relayer on how to proceed with gas limits. Contains data on gas limit to submit tx with."
+        }
+      },
+      "owner()": {
+        "details": "Returns the address of the current owner."
+      },
+      "renounceOwnership()": {
+        "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner."
+      },
+      "setCostPerChain(uint256,uint256,uint256)": {
+        "params": {
+          "_dstChainId": "The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains",
+          "_gasTokenPriceRatio": "USD gas ratio of dstGasToken / srcGasToken",
+          "_gasUnitPrice": "The estimated current gas price in wei of the destination chain"
+        }
+      },
+      "transferOwnership(address)": {
+        "details": "Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "estimateGasFee(uint256,bytes)": {
+        "notice": "Returns srcGasToken fee to charge in wei for the cross-chain message based on the gas limit"
+      },
+      "setCostPerChain(uint256,uint256,uint256)": {
+        "notice": "Permissioned method to allow an off-chain party to set what each dstChain's gas cost is priced in the srcChain's native gas currency. Example: call on ETH, setCostPerChain(43114, 30000000000, 25180000000000000) chain ID 43114 Average of 30 gwei cost to transaction on 43114 AVAX/ETH = 0.02518, scaled to gas in wei = 25180000000000000"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 962,
+        "contract": "contracts/messaging/GasFeePricing.sol:GasFeePricing",
+        "label": "_owner",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_address"
+      },
+      {
+        "astId": 4969,
+        "contract": "contracts/messaging/GasFeePricing.sol:GasFeePricing",
+        "label": "dstGasPriceInWei",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_mapping(t_uint256,t_uint256)"
+      },
+      {
+        "astId": 4973,
+        "contract": "contracts/messaging/GasFeePricing.sol:GasFeePricing",
+        "label": "dstGasTokenRatio",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_mapping(t_uint256,t_uint256)"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_mapping(t_uint256,t_uint256)": {
+        "encoding": "mapping",
+        "key": "t_uint256",
+        "label": "mapping(uint256 => uint256)",
+        "numberOfBytes": "32",
+        "value": "t_uint256"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  }
+}
