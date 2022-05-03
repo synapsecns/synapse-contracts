@@ -12,8 +12,7 @@ contract MessageBusReceiver is Ownable {
     enum TxStatus {
         Null,
         Success,
-        Fail,
-        Retry
+        Fail
     }
 
     // Store all successfully executed messages
@@ -27,7 +26,6 @@ contract MessageBusReceiver is Ownable {
         uint64 srcChainId,
         uint64 srcNonce
     );
-    event NeedRetry(bytes32 indexed msgId, uint64 srcChainId, uint64 srcNonce);
     event CallReverted(string reason);
 
     constructor(address _authVerifier) {
@@ -107,17 +105,9 @@ contract MessageBusReceiver is Ownable {
                 _srcChainId,
                 _message,
                 msg.sender
-            )
-        returns (ISynMessagingReceiver.MsgExecutionStatus execStatus) {
-            // TODO: This state is not fully managed yet - May not even need return variables.
-            if (execStatus == ISynMessagingReceiver.MsgExecutionStatus.Retry) {
-                // handle permissionless retries or delete and only allow Success / Revert
-                executedMessages[messageId] = TxStatus.Null;
-                emit NeedRetry(messageId, uint64(_srcChainId), uint64(_nonce));
-            } else {
-                // Currently assuming success state if no returned variable & no revert?
-                status = TxStatus.Success;
-            }
+            ) {
+            // Assuming success state if no revert
+            status = TxStatus.Success;
         } catch (bytes memory reason) {
             // call hard reverted & failed
             emit CallReverted(getRevertMsg(reason));
