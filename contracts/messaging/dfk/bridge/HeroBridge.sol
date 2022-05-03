@@ -32,6 +32,8 @@ contract HeroBridge is SynMessagingReceiver {
     }
 
 
+    event HeroArrived(uint256 heroId, uint256 arrivalChainId);
+
     /**
      * @dev Whenever an {IERC721} `tokenId` token is transferred to this contract via {IERC721-safeTransferFrom}
      * by `operator` from `from`, this function is called.
@@ -170,6 +172,7 @@ contract HeroBridge is SynMessagingReceiver {
         // update the hero attributes based on the attributes in the message (Assumes the message has more recent attributes)
         IHeroCoreUpgradeable(heroes).updateHero(dstHero);
         // Tx completed, return Success
+        emit HeroArrived(dstHeroId, block.chainid);
         return MsgExecutionStatus.Success;
     }
 
