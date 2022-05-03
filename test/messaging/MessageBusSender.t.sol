@@ -17,10 +17,12 @@ contract MessageBusSenderTest is Test {
         bytes32 receiver,
         uint256 indexed dstChainId,
         bytes message,
-        uint64 indexed nonce,
+        uint64 nonce,
         bytes options,
-        uint256 fee
+        uint256 fee,
+        bytes32 indexed messageId
     );
+
 
     function addressToBytes32(address _addr) pure public returns (bytes32) {
         return bytes32(uint256(uint160(_addr)));
@@ -76,7 +78,7 @@ contract MessageBusSenderTest is Test {
         uint64 currentNonce = messageBusSender.nonce();
         bytes32 receiverAddress = addressToBytes32(address(1337));
         vm.expectEmit(true, true, true, true);
-        emit MessageSent(address(this), 99, receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), currentNonce, bytes(""), estimatedFee);
+        emit MessageSent(address(this), 99, receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), currentNonce, bytes(""), estimatedFee, keccak256("placeholder_message_id"));
         messageBusSender.sendMessage{value: estimatedFee}(receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), bytes(""));
     }
 
@@ -87,7 +89,7 @@ contract MessageBusSenderTest is Test {
         uint64 currentNonce = messageBusSender.nonce();
         bytes32 receiverAddress = addressToBytes32(address(1337));
         vm.expectEmit(true, true, true, true);
-        emit MessageSent(address(this), 99, receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), currentNonce, bytes(""), estimatedFee);
+        emit MessageSent(address(this), 99, receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), currentNonce, bytes(""), estimatedFee, keccak256("placeholder_message_id"));
         messageBusSender.sendMessage{value: estimatedFee}(receiverAddress, gasFeePricingTest.expectedDstChainId(), bytes(""), bytes(""));
         messageBusSender.withdrawGasFees(payable(address(1000)));
         assertEq(address(1000).balance, estimatedFee);

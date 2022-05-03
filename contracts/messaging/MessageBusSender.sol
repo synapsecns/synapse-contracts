@@ -20,10 +20,10 @@ contract MessageBusSender is Ownable {
         bytes32 receiver,
         uint256 indexed dstChainId,
         bytes message,
-        uint64 indexed nonce,
+        uint64 nonce,
         bytes options,
         uint256 fee,
-        bytes32 messageId
+        bytes32 indexed messageId
     );
 
     function estimateFee(uint256 _dstChainId, bytes calldata _options)
