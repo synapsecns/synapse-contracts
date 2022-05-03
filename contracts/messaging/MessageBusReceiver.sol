@@ -5,9 +5,8 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import "./interfaces/IAuthVerifier.sol";
 import "./interfaces/ISynMessagingReceiver.sol";
-import "forge-std/Test.sol";
 
-contract MessageBusReceiver is Ownable, Test {
+contract MessageBusReceiver is Ownable {
     address public authVerifier;
 
     enum TxStatus {
