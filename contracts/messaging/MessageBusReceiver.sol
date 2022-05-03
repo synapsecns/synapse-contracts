@@ -105,7 +105,8 @@ contract MessageBusReceiver is Ownable {
                 _srcChainId,
                 _message,
                 msg.sender
-            ) {
+            )
+        {
             // Assuming success state if no revert
             status = TxStatus.Success;
         } catch (bytes memory reason) {
