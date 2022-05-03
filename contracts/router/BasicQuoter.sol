@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {IBasicQuoter} from "./interfaces/IBasicQuoter.sol";
 import {IBasicRouter} from "./interfaces/IBasicRouter.sol";
 
-import {Ownable} from "@openzeppelin/contracts-4.4.2/access/Ownable.sol";
+import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import {Bytes} from "@synapseprotocol/sol-lib/contracts/universal/lib/LibBytes.sol";
 
 contract BasicQuoter is Ownable, IBasicQuoter {
