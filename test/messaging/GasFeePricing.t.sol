@@ -68,6 +68,8 @@ contract GasFeePricingTest is Test {
        function testTypeTwoEncodeAndDecodeOptions(uint256 _gasLimit, uint256 _dstNativeAmt, bytes32 _address) public {
         // test type 2
         vm.assume(_dstNativeAmt != 0);
+        vm.assume(_address != bytes32(0));
+        
         bytes memory options = gasFeePricing.encodeOptions(2, _gasLimit, _dstNativeAmt, _address);
 
         (uint16 txType, uint256 gasLimit, uint256 dstAirdrop, bytes32 dstAddress) = gasFeePricing.decodeOptions(options);
