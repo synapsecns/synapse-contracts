@@ -108,7 +108,7 @@ contract HeroBridge is SynMessagingReceiver {
 
         // revert if the hero is on auction
         require(
-            !IAssistingAuction(assistingAuction).isOnAuction(_heroId),
+            (IAssistingAuction(assistingAuction).isOnAuction(_heroId)) == false,
             "assisting auction"
         );
 
@@ -176,8 +176,8 @@ contract HeroBridge is SynMessagingReceiver {
     function _send(
         bytes32 _receiver,
         uint256 _dstChainId,
-        bytes calldata _message,
-        bytes calldata _options
+        bytes memory _message,
+        bytes memory _options
     ) internal override {
         require(trustedRemoteLookup[_dstChainId] != bytes32(0));
         require(trustedRemoteLookup[_dstChainId] == _receiver);

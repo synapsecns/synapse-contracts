@@ -14,6 +14,7 @@ contract HeroCoreUpgradeable is ERC721EnumerableUpgradeable, PausableUpgradeable
     bytes32 public constant MODERATOR_ROLE = keccak256("MODERATOR_ROLE");
     bytes32 public constant HERO_MODERATOR_ROLE = keccak256("HERO_MODERATOR_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant BRIDGE_ROLE = keccak256("BRIDGE_ROLE");
     /// STATE ///
     IStatScienceUpgradeable statScience;
     mapping(uint256 => Hero) public heroes;
@@ -124,6 +125,9 @@ contract HeroCoreUpgradeable is ERC721EnumerableUpgradeable, PausableUpgradeable
         // Save the hero.
         heroes[_hero.id] = _hero;
         emit HeroUpdated(ownerOf(_hero.id), _hero.id, _hero);
+    }
+    function bridgeMint(uint256 _id, address _to) external onlyRole(BRIDGE_ROLE) {
+        _mint(_to, _id);
     }
     // /**
     //  * @dev See {IERC165-supportsInterface}.
