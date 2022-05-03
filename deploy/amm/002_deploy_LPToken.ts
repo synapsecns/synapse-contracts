@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types"
 import { DeployFunction } from "hardhat-deploy/types"
-import {includes} from "lodash";
+import { includes } from "lodash"
 import { CHAIN_ID } from "../../utils/network"
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -8,32 +8,32 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, execute, getOrNull } = deployments
   const { libraryDeployer } = await getNamedAccounts()
 
-  if (!(includes([CHAIN_ID.DFK], await getChainId()))) {
-  let LPToken = await getOrNull("LPToken")
-  if (!LPToken) {
-    await deploy("LPToken", {
-      from: libraryDeployer,
-      log: true,
-      skipIfAlreadyDeployed: true,
-    })
+  if (!includes([CHAIN_ID.DFK], await getChainId())) {
+    let LPToken = await getOrNull("LPToken")
+    if (!LPToken) {
+      await deploy("LPToken", {
+        from: libraryDeployer,
+        log: true,
+        skipIfAlreadyDeployed: true,
+      })
 
-    await execute(
-      "LPToken",
-      { from: libraryDeployer, log: true },
-      "initialize",
-      "Synapse LP Token (Target)",
-      "synapseLPTokenTarget",
-    )
-  }
+      await execute(
+        "LPToken",
+        { from: libraryDeployer, log: true },
+        "initialize",
+        "Synapse LP Token (Target)",
+        "synapseLPTokenTarget",
+      )
+    }
 
-  if ((await getChainId()) == CHAIN_ID.HARDHAT) {
-    await deploy("LPToken08", {
-      from: libraryDeployer,
-      log: true,
-      skipIfAlreadyDeployed: true,
-    })
+    if ((await getChainId()) == CHAIN_ID.HARDHAT) {
+      await deploy("LPToken08", {
+        from: libraryDeployer,
+        log: true,
+        skipIfAlreadyDeployed: true,
+      })
+    }
   }
-}
 }
 export default func
 func.tags = ["LPToken"]
