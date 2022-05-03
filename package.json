@@ -6,7 +6,7 @@
   "scripts": {
     "test": "hardhat test --parallel",
     "build": "hardhat compile && npm run build-go",
-    "build-go": "sol-merger \"./contracts/bridge/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/wrappers/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/testing/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/meta/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin",
+    "build-go": "sol-merger \"./contracts/bridge/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/wrappers/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/testing/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/meta/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/messaging/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/messaging/apps/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin",
     "post-install": "build-go",
     "test:coverage": "cross-env NODE_OPTIONS=\"--max-old-space-size=2048\" hardhat coverage",
     "prepublishOnly": "npm run build",

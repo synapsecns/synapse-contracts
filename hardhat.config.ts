@@ -148,8 +148,14 @@ let config: HardhatUserConfig = {
         version: "0.4.24"
       },
       {
-        version: "0.8.13"
-      }
+        version: "0.8.13",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 5000000, // see: https://github.com/ethereum/solidity/issues/5394#issue-379536332
+          },
+        },
+      },
     ],
   },
   namedAccounts: {
