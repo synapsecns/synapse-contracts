@@ -17,10 +17,12 @@ contract BatchMessageSender is SynMessagingReceiver {
         require(_receiver.length == _message.length);
         require(_receiver.length == _options.length);
 
+        uint256 feePerMessage = msg.value / _message.length;
 
         // Care for block gas limit
         for (uint16 i = 0; i < _message.length; i++) {
-            _send(_receiver[i], _dstChainId[i], _message[i], _options[i]);
+            require(trustedRemoteLookup[_dstChainId[i]] != bytes32(0), "Receiver not trusted remote");
+            IMessageBus(messageBus).sendMessage{value: feePerMessage}(_receiver[i], _dstChainId[i], _message[i], _options[i]);
         }
     }
 
