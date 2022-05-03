@@ -7,6 +7,7 @@ export const CHAIN_ID = {
   POLYGON: "137",
   FANTOM: "250",
   BOBA: "288",
+  DFK_TESTNET: "335",
   METIS: "1088",
   MOONBEAM: "1284",
   MOONRIVER: "1285",
@@ -16,4 +17,5 @@ export const CHAIN_ID = {
   DFK: "53935",
   AURORA: "1313161554",
   HARMONY: "1666600000",
+  HARMONY_TESTNET: "1666700000"
 }
