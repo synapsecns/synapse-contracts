@@ -37,6 +37,7 @@
     "@openzeppelin/contracts-4.5.0-upgradeable": "npm:@openzeppelin/contracts-upgradeable@4.5.0",
     "@openzeppelin/contracts-4.6.0-upgradeable": "npm:@openzeppelin/contracts-upgradeable@4.6.0-rc.0",
     "@openzeppelin/contracts-upgradeable": "^3.4.1",
+    "@synapseprotocol/sol-lib": "ssh://git@github.com:synapsecns/synapse-sol-lib.git",
     "@tenderly/hardhat-tenderly": "^1.0.12",
     "dotenv": "^10.0.0",
     "e": "^0.2.0",

@@ -377,7 +377,7 @@ contract L1BridgeZap {
 
 
   /**
-   * @notice Wraps SynapseBridge redeemv2() function
+   * @notice Wraps SynapseBridge redeemV2() function
    * @param to address on other chain to bridge assets to
    * @param chainId which chain to bridge assets onto
    * @param token ERC20 compatible token to redeem into the bridge

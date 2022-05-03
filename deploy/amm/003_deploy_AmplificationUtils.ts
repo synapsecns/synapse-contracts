@@ -13,7 +13,15 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log: true,
     skipIfAlreadyDeployed: true,
   })
+
+  if ((await getChainId()) == CHAIN_ID.HARDHAT) {
+    await deploy("AmplificationUtils08", {
+      from: libraryDeployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+    })
+  }
 }
 }
 export default func
-func.tags = ["AmplificationUtils"]
+func.tags = ["AmplificationUtils", "AmplificationUtils08"]

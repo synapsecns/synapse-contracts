@@ -8,12 +8,12 @@ import { ethers } from "hardhat"
 chai.use(solidity)
 const { expect } = chai
 
-describe("GenericERC20", async () => {
+describe("GenericERC20", async function () {
   let signers: Array<Signer>
   let owner: Signer
   let firstToken: GenericERC20
 
-  it("Reverts when minting 0", async () => {
+  it("Reverts when minting 0", async function () {
     signers = await ethers.getSigners()
     owner = signers[0]
 
