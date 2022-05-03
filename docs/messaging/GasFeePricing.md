@@ -10,6 +10,31 @@
 
 ## Methods
 
+### decodeOptions
+
+```solidity
+function decodeOptions(bytes _options) external pure returns (uint16, uint256, uint256, bytes32)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _options | bytes | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint16 | undefined |
+| _1 | uint256 | undefined |
+| _2 | uint256 | undefined |
+| _3 | bytes32 | undefined |
+
 ### dstGasPriceInWei
 
 ```solidity
@@ -53,6 +78,54 @@ function dstGasTokenRatio(uint256) external view returns (uint256)
 | Name | Type | Description |
 |---|---|---|
 | _0 | uint256 | undefined |
+
+### encodeOptions
+
+```solidity
+function encodeOptions(uint16 txType, uint256 gasLimit) external pure returns (bytes)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| txType | uint16 | undefined |
+| gasLimit | uint256 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes | undefined |
+
+### encodeOptions
+
+```solidity
+function encodeOptions(uint16 txType, uint256 gasLimit, uint256 dstNativeAmt, bytes32 dstAddress) external pure returns (bytes)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| txType | uint16 | undefined |
+| gasLimit | uint256 | undefined |
+| dstNativeAmt | uint256 | undefined |
+| dstAddress | bytes32 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes | undefined |
 
 ### estimateGasFee
 
