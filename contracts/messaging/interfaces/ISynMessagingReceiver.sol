@@ -16,8 +16,7 @@ interface ISynMessagingReceiver {
     */ 
     enum MsgExecutionStatus {
         Success, 
-        Fail,
-        Retry
+        Fail
     }
 
      /**
