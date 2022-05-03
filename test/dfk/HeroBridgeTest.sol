@@ -40,9 +40,10 @@ contract HeroBridgeTest is Test {
         bytes32 receiver,
         uint256 indexed dstChainId,
         bytes message,
-        uint64 indexed nonce,
+        uint64 nonce,
         bytes options,
-        uint256 fee
+        uint256 fee,
+        bytes32 indexed messageId
     );
 
 
@@ -167,7 +168,8 @@ contract HeroBridgeTest is Test {
             "0x", // example possible message
             messageBusChainA.nonce(),
             "0x", // null
-            100000000000000000
+            100000000000000000,
+            keccak256("placeholder_message_id")
         );
         heroBridgeChainA.sendHero{value: 1000000000000000000}(1000, 1666700000);
 
