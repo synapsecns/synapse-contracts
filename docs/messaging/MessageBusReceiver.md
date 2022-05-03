@@ -214,24 +214,6 @@ event Executed(bytes32 msgId, enum MessageBusReceiver.TxStatus status, address i
 | srcChainId  | uint64 | undefined |
 | srcNonce  | uint64 | undefined |
 
-### NeedRetry
-
-```solidity
-event NeedRetry(bytes32 indexed msgId, uint64 srcChainId, uint64 srcNonce)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| msgId `indexed` | bytes32 | undefined |
-| srcChainId  | uint64 | undefined |
-| srcNonce  | uint64 | undefined |
-
 ### OwnershipTransferred
 
 ```solidity

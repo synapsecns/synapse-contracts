@@ -93,6 +93,12 @@ let config: HardhatUserConfig = {
     mainnet: {
       url: process.env.ALCHEMY_API || "https://main-light.eth.linkpool.io/",
     },
+    fuji: {
+      url: "https://api.avax-test.network/ext/bc/C/rpc"
+    },
+    goerli: {
+      url: "https://rpc.goerli.mudit.blog/"
+    },
     optimism: {
       url: "https://mainnet.optimism.io",
       gas: 10000000,
@@ -195,7 +201,9 @@ if (process.env.PRIVATE_KEYS) {
     "metis",
     "dfk",
     "dfk_testnet",
-    "harmony_testnet"
+    "harmony_testnet",
+    "fuji",
+    "goerli"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {

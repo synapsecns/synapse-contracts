@@ -130,6 +130,22 @@ function transferOwnership(address newOwner) external nonpayable
 |---|---|---|
 | newOwner | address | undefined |
 
+### updateGasFeePricing
+
+```solidity
+function updateGasFeePricing(address _gasFeePricing) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _gasFeePricing | address | undefined |
+
 ### withdrawGasFees
 
 ```solidity

@@ -78,4 +78,9 @@ contract MessageBusSender is Ownable {
         to.transfer(withdrawAmount);
         delete fees;
     }
+
+    function updateGasFeePricing(address _gasFeePricing) public onlyOwner {
+        require(_gasFeePricing != address(0), "Cannot set to 0");
+        gasFeePricing = _gasFeePricing;
+    }
 }

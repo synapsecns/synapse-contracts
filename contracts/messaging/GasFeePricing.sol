@@ -45,11 +45,12 @@ contract GasFeePricing is Ownable {
         // temporary gas limit set
         if (_options.length != 0) {
             (
-                uint16 txType,
-                uint256 gasLimit,
-                uint256 dstAirdrop,
-                bytes32 dstAddress
+                uint16 _txType,
+                uint256 _gasLimit,
+                uint256 _dstAirdrop,
+                bytes32 _dstAddress
             ) = decodeOptions(_options);
+            gasLimit = _gasLimit;
         } else {
             gasLimit = 200000;
         }

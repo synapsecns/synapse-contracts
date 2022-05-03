@@ -233,6 +233,22 @@ function updateAuthVerifier(address _authVerifier) external nonpayable
 |---|---|---|
 | _authVerifier | address | undefined |
 
+### updateGasFeePricing
+
+```solidity
+function updateGasFeePricing(address _gasFeePricing) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _gasFeePricing | address | undefined |
+
 ### updateMessageStatus
 
 ```solidity
@@ -328,24 +344,6 @@ event MessageSent(address indexed sender, uint256 srcChainID, bytes32 receiver, 
 | nonce `indexed` | uint64 | undefined |
 | options  | bytes | undefined |
 | fee  | uint256 | undefined |
-
-### NeedRetry
-
-```solidity
-event NeedRetry(bytes32 indexed msgId, uint64 srcChainId, uint64 srcNonce)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| msgId `indexed` | bytes32 | undefined |
-| srcChainId  | uint64 | undefined |
-| srcNonce  | uint64 | undefined |
 
 ### OwnershipTransferred
 

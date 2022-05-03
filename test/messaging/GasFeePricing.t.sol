@@ -69,7 +69,7 @@ contract GasFeePricingTest is Test {
         // test type 2
         vm.assume(_dstNativeAmt != 0);
         vm.assume(_address != bytes32(0));
-        
+
         bytes memory options = gasFeePricing.encodeOptions(2, _gasLimit, _dstNativeAmt, _address);
 
         (uint16 txType, uint256 gasLimit, uint256 dstAirdrop, bytes32 dstAddress) = gasFeePricing.decodeOptions(options);
@@ -86,6 +86,16 @@ contract GasFeePricingTest is Test {
         assertEq(txType, 2);
         assertEq(gasLimit, 300000);
         assertEq(dstAirdrop, 100000000000000000);
+    }
+
+    function testEstimateFeeWithOptionsTypeOne(uint64 _gasLimit) public {
+        vm.assume(_gasLimit != 0);
+        testSetCostAsOwner();
+        bytes memory options = gasFeePricing.encodeOptions(1, uint256(_gasLimit));
+        uint256 fee = gasFeePricing.estimateGasFee(43114, options);
+        uint256 expectedFee = (expectedDstGasPrice*expectedGasTokenPriceRatio*_gasLimit / 10**18);
+        assertEq(fee, expectedFee);
+
     }
 }
 
