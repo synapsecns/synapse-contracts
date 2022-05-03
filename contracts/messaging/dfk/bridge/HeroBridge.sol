@@ -5,6 +5,8 @@ import "../IHeroCoreUpgradeable.sol";
 import "../IAssistingAuctionUpgradeable.sol";
 import {HeroStatus} from "../types/HeroTypes.sol";
 
+import "@openzeppelin/contracts-4.5.0/token/ERC721/IERC721Receiver.sol";
+
 pragma solidity 0.8.13;
 
 /** @title Core app for handling cross chain messaging passing to bridge Hero NFTs
@@ -13,6 +15,7 @@ pragma solidity 0.8.13;
 contract HeroBridge is SynMessagingReceiver {
     address public heroes;
     address public assistingAuction;
+    uint256 public msgGasLimit;
 
     struct MessageFormat {
         Hero dstHero;
@@ -28,6 +31,25 @@ contract HeroBridge is SynMessagingReceiver {
         messageBus = _messageBus;
         heroes = _heroes;
         assistingAuction = _assistingAuction;
+    }
+
+
+    /**
+     * @dev Whenever an {IERC721} `tokenId` token is transferred to this contract via {IERC721-safeTransferFrom}
+     * by `operator` from `from`, this function is called.
+     *
+     * It must return its Solidity selector to confirm the token transfer.
+     * If any other value is returned or the interface is not implemented by the recipient, the transfer will be reverted.
+     *
+     * The selector can be obtained in Solidity with `onERC721Received.selector`.
+     */
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes calldata data
+    ) external returns (bytes4) { 
+        return this.onERC721Received.selector;
     }
 
     function _createMessage(
@@ -56,6 +78,10 @@ contract HeroBridge is SynMessagingReceiver {
         return decodedMessage;
     }
 
+    function _createOptions() public returns (bytes memory) {
+        abi.encodePacked(uint16(1), msgGasLimit);
+    }
+
     /**
      * @notice User must have an existing hero minted to bridge it.
      * @param _heroId specifics which hero msg.sender already holds and will transfer to the bridge contract
@@ -74,7 +100,7 @@ contract HeroBridge is SynMessagingReceiver {
         );
         // Create _options
         // temporarily empty
-        bytes memory options = bytes("");
+        bytes memory options = _createOptions();
 
         // revert if the hero is on a quest
         require(
@@ -95,7 +121,7 @@ contract HeroBridge is SynMessagingReceiver {
         );
         // Hero now locked, message can be safely emitted
 
-        _send(receiver, _dstChainId, msgToPass, bytes(""));
+        _send(receiver, _dstChainId, msgToPass, options);
     }
 
     // Function called by executeMessage() - handleMessage will handle the hero bridge mint
@@ -121,14 +147,14 @@ contract HeroBridge is SynMessagingReceiver {
 
         // will revert if non-existant Hero
         try IHeroCoreUpgradeable(heroes).ownerOf(dstHeroId) returns (
-            address owner
+            address heroOwner
         ) {
             /** 
                 If heroId does exist (which means it should be locked on this contract), as it was bridged before.
                 Transfer it to message.dstUserAddress
                 */
 
-            if (owner == address(this)) {
+            if (heroOwner == address(this)) {
                 IHeroCoreUpgradeable(heroes).safeTransferFrom(
                     address(this),
                     dstUser,
@@ -167,5 +193,9 @@ contract HeroBridge is SynMessagingReceiver {
 
     function setAssistingAuctionAddress(address _assistingAuction) external onlyOwner {
         assistingAuction = _assistingAuction;
+    }
+
+    function setMsgGasLimit(uint256 _msgGasLimit) external onlyOwner {
+        msgGasLimit = _msgGasLimit;
     }
 }
