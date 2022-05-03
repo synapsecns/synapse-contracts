@@ -13,7 +13,6 @@ contract GasFeePricing is Ownable, Test {
     mapping(uint256 => uint256) public dstGasTokenRatio;
 
     constructor() {}
-    
 
     /**
      * @notice Permissioned method to allow an off-chain party to set what each dstChain's
@@ -47,7 +46,12 @@ contract GasFeePricing is Ownable, Test {
         uint256 gasLimit;
         // temporary gas limit set
         if (_options.length != 0) {
-            (uint16 txType, uint256 gasLimit, uint256 dstAirdrop, bytes32 dstAddress) = decodeOptions(_options);
+            (
+                uint16 txType,
+                uint256 gasLimit,
+                uint256 dstAirdrop,
+                bytes32 dstAddress
+            ) = decodeOptions(_options);
         } else {
             gasLimit = 200000;
         }
@@ -57,17 +61,38 @@ contract GasFeePricing is Ownable, Test {
             gasLimit) / 10**18);
     }
 
-    function encodeOptions(uint16 txType, uint256 gasLimit) public pure returns(bytes memory) {
+    function encodeOptions(uint16 txType, uint256 gasLimit)
+        public
+        pure
+        returns (bytes memory)
+    {
         return abi.encodePacked(txType, gasLimit);
     }
 
-    function encodeOptions(uint16 txType, uint256 gasLimit, uint256 dstNativeAmt, bytes32 dstAddress) public pure returns(bytes memory) {
+    function encodeOptions(
+        uint16 txType,
+        uint256 gasLimit,
+        uint256 dstNativeAmt,
+        bytes32 dstAddress
+    ) public pure returns (bytes memory) {
         return abi.encodePacked(txType, gasLimit, dstNativeAmt, dstAddress);
     }
 
-    function decodeOptions(bytes memory _options) public pure returns (uint16, uint256, uint256, bytes32) {
+    function decodeOptions(bytes memory _options)
+        public
+        pure
+        returns (
+            uint16,
+            uint256,
+            uint256,
+            bytes32
+        )
+    {
         // decoding the _options - reverts if type 2 and there is no dstNativeAddress
-        require(_options.length == 34 || _options.length > 66, "Wrong _adapterParameters size");
+        require(
+            _options.length == 34 || _options.length > 66,
+            "Wrong _adapterParameters size"
+        );
         uint16 txType;
         uint256 gasLimit;
         uint256 dstNativeAmt;
