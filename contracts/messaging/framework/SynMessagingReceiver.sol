@@ -50,7 +50,7 @@ abstract contract SynMessagingReceiver is ISynMessagingReceiver, Ownable {
         uint256 _dstChainId,
         bytes memory _message,
         bytes memory _options) internal virtual {
-            require(trustedRemoteLookup[_dstChainId] != bytes32(0));
+            require(trustedRemoteLookup[_dstChainId] != bytes32(0), "Receiver not trusted remote");
             IMessageBus(messageBus).sendMessage{value: msg.value}(_receiver, _dstChainId, _message, _options);
     }
 
