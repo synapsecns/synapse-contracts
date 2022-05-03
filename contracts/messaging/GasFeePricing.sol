@@ -4,9 +4,7 @@ pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
-import "forge-std/Test.sol";
-
-contract GasFeePricing is Ownable, Test {
+contract GasFeePricing is Ownable {
     // DstChainId => The estimated current gas price in wei of the destination chain
     mapping(uint256 => uint256) public dstGasPriceInWei;
     // DstChainId => USD gas ratio of dstGasToken / srcGasToken

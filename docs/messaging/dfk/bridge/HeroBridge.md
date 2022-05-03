@@ -10,6 +10,23 @@
 
 ## Methods
 
+### _createOptions
+
+```solidity
+function _createOptions() external nonpayable returns (bytes)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes | undefined |
+
 ### assistingAuction
 
 ```solidity
@@ -108,6 +125,48 @@ function messageBus() external view returns (address)
 |---|---|---|
 | _0 | address | undefined |
 
+### msgGasLimit
+
+```solidity
+function msgGasLimit() external view returns (uint256)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
+### onERC721Received
+
+```solidity
+function onERC721Received(address operator, address from, uint256 tokenId, bytes data) external nonpayable returns (bytes4)
+```
+
+
+
+*Whenever an {IERC721} `tokenId` token is transferred to this contract via {IERC721-safeTransferFrom} by `operator` from `from`, this function is called. It must return its Solidity selector to confirm the token transfer. If any other value is returned or the interface is not implemented by the recipient, the transfer will be reverted. The selector can be obtained in Solidity with `onERC721Received.selector`.*
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| operator | address | undefined |
+| from | address | undefined |
+| tokenId | uint256 | undefined |
+| data | bytes | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes4 | undefined |
+
 ### owner
 
 ```solidity
@@ -184,6 +243,22 @@ function setMessageBus(address _messageBus) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | _messageBus | address | undefined |
+
+### setMsgGasLimit
+
+```solidity
+function setMsgGasLimit(uint256 _msgGasLimit) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _msgGasLimit | uint256 | undefined |
 
 ### setTrustedRemote
 
