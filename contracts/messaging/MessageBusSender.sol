@@ -73,8 +73,8 @@ contract MessageBusSender is Ownable {
      * @param to Address to withdraw gas fees to, which can be specified in the event owner() can't receive native gas
      */
     function withdrawGasFees(address payable to) external onlyOwner {
-        to.transfer(fees);
         // Reset fees to 0
         delete fees;
+        to.transfer(fees);
     }
 }
