@@ -18,6 +18,10 @@ contract MessageBusReceiverTest is Test {
         return bytes32(uint256(uint160(_addr)));
     }
 
+    function testAddressToBytes32() public {
+        console.logBytes32(addressToBytes32(address(0xDE03e73c3785cE086ca85C6315Df376A4A64C84b)));
+    }
+
     function bytes32ToAddress(bytes32 bys) pure public returns(address) {
         return address(uint160(uint256(bys)));
     }
