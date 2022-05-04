@@ -27,10 +27,10 @@ function authVerifier() external view returns (address)
 |---|---|---|
 | _0 | address | undefined |
 
-### computeMessageIdSender
+### computeMessageId
 
 ```solidity
-function computeMessageIdSender(uint256 _srcChainId, address _srcAddress, uint256 _dstChainId, bytes32 _dstAddress, uint256 _nonce, bytes _message) external view returns (bytes32)
+function computeMessageId(uint256 _srcChainId, address _srcAddress, uint256 _dstChainId, bytes32 _dstAddress, uint256 _srcNonce, bytes _message) external view returns (bytes32)
 ```
 
 
@@ -45,7 +45,7 @@ function computeMessageIdSender(uint256 _srcChainId, address _srcAddress, uint25
 | _srcAddress | address | undefined |
 | _dstChainId | uint256 | undefined |
 | _dstAddress | bytes32 | undefined |
-| _nonce | uint256 | undefined |
+| _srcNonce | uint256 | undefined |
 | _message | bytes | undefined |
 
 #### Returns
@@ -182,6 +182,22 @@ function renounceOwnership() external nonpayable
 
 *Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.*
 
+
+### rescueGas
+
+```solidity
+function rescueGas(address payable to) external nonpayable
+```
+
+Rescues any gas in contract, aside from fees
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| to | address payable | Address to which to rescue gas to |
 
 ### sendMessage
 
