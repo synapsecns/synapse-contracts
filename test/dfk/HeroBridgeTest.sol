@@ -5,7 +5,7 @@ import {Utilities} from "../utils/Utilities.sol";
 
 import "../../contracts/messaging/dfk/types/HeroTypes.sol";
 
-import "../../contracts/messaging/dfk/bridge/HeroBridge.sol";
+import "../../contracts/messaging/dfk/bridge/HeroBridgeUpgradeable.sol";
 import "../../contracts/messaging/dfk/random/RandomGenerator.sol";
 import "../../contracts/messaging/dfk/auctions/AssistingAuctionUpgradeable.sol";
 import "../../contracts/messaging/dfk/StatScienceUpgradeable.sol";
@@ -18,14 +18,14 @@ import "../../contracts/messaging/apps/PingPong.sol";
 import "../../contracts/messaging/AuthVerifier.sol";
 
 
-contract HeroBridgeTest is Test {
+contract HeroBridgeUpgradeableTest is Test {
     Utilities internal utils;
     address payable[] internal users;
     MessageBus public messageBusChainA;
     PingPong public pingPongChainA;
     GasFeePricing public gasFeePricingChainA;
     AuthVerifier public authVerifierChainA;
-    HeroBridge public heroBridgeChainA;
+    HeroBridgeUpgradeable public HeroBridgeUpgradeableChainA;
     StatScienceUpgradeable public statScienceUpgradeableChainA;
     RandomGenerator public randomGeneratorChainA;
     HeroCoreUpgradeable public heroCoreUpgradeableChainA;
@@ -154,24 +154,25 @@ contract HeroBridgeTest is Test {
         });
         
         assistingAuctionUpgradeableChainA = new AssistingAuctionUpgradeable();
-        heroBridgeChainA = new HeroBridge(address(messageBusChainA), address(heroCoreUpgradeableChainA), address(assistingAuctionUpgradeableChainA));
-        heroBridgeChainA.setMsgGasLimit(800000);
-        heroCoreUpgradeableChainA.grantRole(keccak256("BRIDGE_ROLE"), address(heroBridgeChainA));
-        heroCoreUpgradeableChainA.grantRole(keccak256("HERO_MODERATOR_ROLE"), address(heroBridgeChainA));
+        HeroBridgeUpgradeableChainA = new HeroBridgeUpgradeable();
+        HeroBridgeUpgradeableChainA.initialize(address(messageBusChainA), address(heroCoreUpgradeableChainA), address(assistingAuctionUpgradeableChainA));
+        HeroBridgeUpgradeableChainA.setMsgGasLimit(800000);
+        heroCoreUpgradeableChainA.grantRole(keccak256("BRIDGE_ROLE"), address(HeroBridgeUpgradeableChainA));
+        heroCoreUpgradeableChainA.grantRole(keccak256("HERO_MODERATOR_ROLE"), address(HeroBridgeUpgradeableChainA));
         gasFeePricingChainA.setCostPerChain(1666700000, 2000000000, 100000000000000000);
-        heroBridgeChainA.setTrustedRemote(1666700000, bytes32("trustedRemoteB"));
-        heroBridgeChainA.setTrustedRemote(335, bytes32("trustedRemoteA"));
+        HeroBridgeUpgradeableChainA.setTrustedRemote(1666700000, bytes32("trustedRemoteB"));
+        HeroBridgeUpgradeableChainA.setTrustedRemote(335, bytes32("trustedRemoteA"));
     }
 
     function testHeroSendMessage() public {
         heroCoreUpgradeableChainA.bridgeMint(1000, users[1]);
         heroCoreUpgradeableChainA.updateHero(heroStruct);
         vm.startPrank(users[1]);
-        heroCoreUpgradeableChainA.approve(address(heroBridgeChainA), 1000);
+        heroCoreUpgradeableChainA.approve(address(HeroBridgeUpgradeableChainA), 1000);
         // check first two topics, but don't check data or msgId
         vm.expectEmit(true, true, false, false);
         emit MessageSent(
-            address(heroBridgeChainA),
+            address(HeroBridgeUpgradeableChainA),
             block.chainid,
             bytes32("1337"),
             1666700000, // chain id
@@ -181,9 +182,9 @@ contract HeroBridgeTest is Test {
             100000000000000000,
             keccak256("placeholder_message_id")
         );
-        heroBridgeChainA.sendHero{value: 1000000000000000000}(1000, 1666700000);
-        // Hero locked into herobridge contract now
-        assertEq(heroCoreUpgradeableChainA.ownerOf(1000), address(heroBridgeChainA));
+        HeroBridgeUpgradeableChainA.sendHero{value: 1000000000000000000}(1000, 1666700000);
+        // Hero locked into HeroBridgeUpgradeable contract now
+        assertEq(heroCoreUpgradeableChainA.ownerOf(1000), address(HeroBridgeUpgradeableChainA));
     }
 
     function testExecuteMessage() public {
@@ -195,7 +196,7 @@ contract HeroBridgeTest is Test {
 
         bytes memory message = abi.encode(msgFormat);
         vm.prank(address(messageBusChainA));
-        heroBridgeChainA.executeMessage(bytes32("trustedRemoteA"), 335, message, msg.sender);
+        HeroBridgeUpgradeableChainA.executeMessage(bytes32("trustedRemoteA"), 335, message, msg.sender);
     }
 
 }
