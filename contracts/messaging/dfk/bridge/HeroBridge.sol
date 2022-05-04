@@ -11,7 +11,7 @@ pragma solidity 0.8.13;
  */
 
 contract HeroBridge is SynMessagingReceiver {
-    address public heroes;
+    address public immutable heroes;
     address public assistingAuction;
     uint256 public msgGasLimit;
 
@@ -33,24 +33,6 @@ contract HeroBridge is SynMessagingReceiver {
 
 
     event HeroArrived(uint256 heroId, uint256 arrivalChainId);
-
-    /**
-     * @dev Whenever an {IERC721} `tokenId` token is transferred to this contract via {IERC721-safeTransferFrom}
-     * by `operator` from `from`, this function is called.
-     *
-     * It must return its Solidity selector to confirm the token transfer.
-     * If any other value is returned or the interface is not implemented by the recipient, the transfer will be reverted.
-     *
-     * The selector can be obtained in Solidity with `onERC721Received.selector`.
-     */
-    function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes calldata data
-    ) external returns (bytes4) { 
-        return this.onERC721Received.selector;
-    }
 
     function _createMessage(
         uint256 _heroId,
@@ -84,6 +66,9 @@ contract HeroBridge is SynMessagingReceiver {
 
     /**
      * @notice User must have an existing hero minted to bridge it.
+     * @dev This function enforces the caller to receive the Hero being bridged to the same address on another chain.
+     * @dev Do NOT call this from other contracts, unless the contract is deployed on another chain to the same address, 
+     * @dev and can receive ERC721s. 
      * @param _heroId specifics which hero msg.sender already holds and will transfer to the bridge contract
      * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
      */
@@ -91,17 +76,6 @@ contract HeroBridge is SynMessagingReceiver {
         Hero memory heroToBridge = IHeroCoreUpgradeable(heroes).getHero(
             _heroId
         );
-        bytes32 receiver = trustedRemoteLookup[_dstChainId];
-        // _createMessage(heroId, dstUserAddress, Hero);
-        bytes memory msgToPass = _createMessage(
-            _heroId,
-            msg.sender,
-            heroToBridge
-        );
-        // Create _options
-        // temporarily empty
-        bytes memory options = _createOptions();
-
         // revert if the hero is on a quest
         require(
             heroToBridge.state.currentQuest == address(0),
@@ -114,11 +88,24 @@ contract HeroBridge is SynMessagingReceiver {
             "assisting auction"
         );
 
-        IHeroCoreUpgradeable(heroes).safeTransferFrom(
+        bytes32 receiver = trustedRemoteLookup[_dstChainId];
+        // _createMessage(heroId, dstUserAddress, Hero);
+        // Only bridgeable directly to the caller of this contract
+        // @dev do not call this function from other contracts
+        bytes memory msgToPass = _createMessage(
+            _heroId,
+            msg.sender,
+            heroToBridge
+        );
+        // Create _options
+        bytes memory options = _createOptions();
+
+        IHeroCoreUpgradeable(heroes).transferFrom(
             msg.sender,
             address(this),
             _heroId
         );
+        require(IHeroCoreUpgradeable(heroes).ownerOf(_heroId) == address(this), "Failed to lock Hero");
         // Hero now locked, message can be safely emitted
 
         _send(receiver, _dstChainId, msgToPass, options);
@@ -127,10 +114,10 @@ contract HeroBridge is SynMessagingReceiver {
     // Function called by executeMessage() - handleMessage will handle the hero bridge mint
     // executeMessage() handles permissioning checks
     function _handleMessage(
-        bytes32 _srcAddress,
-        uint256 _srcChainId,
+        bytes32,
+        uint256,
         bytes memory _message,
-        address _executor
+        address
     ) internal override returns (MsgExecutionStatus) {
         // Decode _message, depending on exactly how the originating message is structured
         /** 
@@ -182,8 +169,9 @@ contract HeroBridge is SynMessagingReceiver {
         bytes memory _message,
         bytes memory _options
     ) internal override {
-        require(trustedRemoteLookup[_dstChainId] != bytes32(0));
-        require(trustedRemoteLookup[_dstChainId] == _receiver);
+        bytes32 trustedRemote = trustedRemoteLookup[_dstChainId];
+        require(trustedRemote != bytes32(0), "No remote app set for dst chain");
+        require(trustedRemote == _receiver, "Receiver is not in trusted remote apps");
         IMessageBus(messageBus).sendMessage{value: msg.value}(
             _receiver,
             _dstChainId,
