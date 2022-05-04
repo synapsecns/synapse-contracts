@@ -8,7 +8,7 @@ import "./interfaces/IGasFeePricing.sol";
 contract MessageBusSender is Ownable {
     address public gasFeePricing;
     uint64 public nonce;
-    uint256 internal fees;
+    uint256 public fees;
 
     constructor(address _gasFeePricing) {
         gasFeePricing = _gasFeePricing;
@@ -27,20 +27,20 @@ contract MessageBusSender is Ownable {
     );
 
     function computeMessageId(
-        uint256 _srcChainId,
         address _srcAddress,
-        uint256 _dstChainId,
+        uint256 _srcChainId,
         bytes32 _dstAddress,
+        uint256 _dstChainId,
         uint256 _srcNonce,
         bytes calldata _message
     ) public view returns (bytes32) {
         return
             keccak256(
                 abi.encode(
-                    _srcChainId,
                     _srcAddress,
-                    _dstChainId,
+                    _srcChainId,
                     _dstAddress,
+                    _dstChainId,
                     _srcNonce,
                     _message
                 )
@@ -77,10 +77,10 @@ contract MessageBusSender is Ownable {
         uint256 fee = estimateFee(_dstChainId, _options);
         require(msg.value >= fee, "Insuffient gas fee");
         bytes32 msgId = computeMessageId(
-            block.chainid,
             msg.sender,
-            _dstChainId,
+            block.chainid,
             _receiver,
+            _dstChainId,
             nonce,
             _message
         );
