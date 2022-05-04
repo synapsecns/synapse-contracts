@@ -163,7 +163,7 @@ contract HeroBridgeTest is Test {
         heroBridgeChainA.setTrustedRemote(335, bytes32("trustedRemoteA"));
     }
 
-    function testSendMessage() public {
+    function testHeroSendMessage() public {
         heroCoreUpgradeableChainA.bridgeMint(1000, users[1]);
         heroCoreUpgradeableChainA.updateHero(heroStruct);
         vm.startPrank(users[1]);
