@@ -36,7 +36,7 @@ Returns srcGasToken fee to charge in wei for the cross-chain message based on th
 ### executeMessage
 
 ```solidity
-function executeMessage(uint256 _srcChainId, bytes _srcAddress, address _dstAddress, uint256 _gasLimit, uint256 _nonce, bytes _message) external nonpayable
+function executeMessage(uint256 _srcChainId, bytes _srcAddress, address _dstAddress, uint256 _gasLimit, uint256 _nonce, bytes _message, bytes32 _messageId) external nonpayable
 ```
 
 Relayer executes messages through an authenticated method to the destination receiver based on the originating transaction on source chain
@@ -53,6 +53,7 @@ Relayer executes messages through an authenticated method to the destination rec
 | _gasLimit | uint256 | Gas limit to be passed alongside the message, depending on the fee paid on srcChain |
 | _nonce | uint256 | undefined |
 | _message | bytes | Arbitrary message payload to pass to the destination chain receiver |
+| _messageId | bytes32 | undefined |
 
 ### sendMessage
 
