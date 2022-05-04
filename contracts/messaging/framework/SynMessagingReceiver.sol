@@ -23,27 +23,26 @@ abstract contract SynMessagingReceiver is ISynMessagingReceiver, Ownable {
      * @param _srcChainId The source chain ID where the transfer is originated from
      * @param _message Arbitrary message bytes originated from and encoded by the source app contract
      * @param _executor Address who called the MessageBus execution function
-     * @return status Enum containing options of Success, Fail, Retry
      */
     function executeMessage(
         bytes32 _srcAddress,
         uint256 _srcChainId,
         bytes calldata _message,
         address _executor
-    ) external returns (MsgExecutionStatus) {
+    ) external {
         // Must be called by the MessageBus/MessageBus for security
         require(msg.sender == messageBus, "caller is not message bus");
         // Must also be from a trusted source app
         require(_srcAddress == trustedRemoteLookup[_srcChainId], "Invalid source sending app");
 
-        return _handleMessage(_srcAddress, _srcChainId, _message, _executor);
+        _handleMessage(_srcAddress, _srcChainId, _message, _executor);
     }
 
     // Logic here handling messsage contents
     function _handleMessage(bytes32 _srcAddress,
         uint256 _srcChainId,
         bytes memory _message,
-        address _executor) internal virtual returns (MsgExecutionStatus);
+        address _executor) internal virtual;
 
 
     function _send(bytes32 _receiver,

@@ -7,18 +7,6 @@ interface ISynMessagingReceiver {
     // Maps chain ID to the bytes32 trusted addresses allowed to be source senders
     // mapping(uint256 => bytes32) internal trustedRemoteLookup;
 
-
-    /** 
-     * @notice MsgExecutionStatus state
-     * @return Success execution succeeded, finalized
-     * @return Fail // execution failed, finalized
-     * @return Retry // execution failed or rejected, set to be retryable
-    */ 
-    enum MsgExecutionStatus {
-        Success, 
-        Fail
-    }
-
      /**
      * @notice Called by MessageBus 
      * @dev MUST be permissioned to trusted source apps via trustedRemote
@@ -32,6 +20,6 @@ interface ISynMessagingReceiver {
         uint256 _srcChainId,
         bytes calldata _message,
         address _executor
-    ) external returns (MsgExecutionStatus);
+    ) external;
 }
     

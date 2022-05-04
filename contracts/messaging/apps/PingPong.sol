@@ -56,7 +56,7 @@ contract PingPong is ISynMessagingReceiver {
         uint256 _srcChainId,
         bytes calldata _message,
         address _executor
-    ) external returns (ISynMessagingReceiver.MsgExecutionStatus) {
+    ) external {
         require(msg.sender == address(messageBus));
         // In production the srcAddress should be a verified sender
 
@@ -69,7 +69,6 @@ contract PingPong is ISynMessagingReceiver {
         numPings = pings;
 
         ping(_srcChainId, fromAddress, pings);
-        // return ISynMessagingReceiver.MsgExecutionStatus.Success;
     }
 
     // allow this contract to receive ether

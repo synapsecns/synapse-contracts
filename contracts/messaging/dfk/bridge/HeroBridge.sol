@@ -122,7 +122,7 @@ contract HeroBridge is SynMessagingReceiver {
         uint256,
         bytes memory _message,
         address
-    ) internal override returns (MsgExecutionStatus) {
+    ) internal override {
         // Decode _message, depending on exactly how the originating message is structured
         /** 
             Message data: 
@@ -162,9 +162,8 @@ contract HeroBridge is SynMessagingReceiver {
 
         // update the hero attributes based on the attributes in the message (Assumes the message has more recent attributes)
         IHeroCoreUpgradeable(heroes).updateHero(dstHero);
-        // Tx completed, return Success
+        // Tx completed, emit success
         emit HeroArrived(dstHeroId, block.chainid);
-        return MsgExecutionStatus.Success;
     }
 
     function _send(

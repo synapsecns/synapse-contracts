@@ -29,7 +29,7 @@ contract BatchMessageSender is SynMessagingReceiver {
     function _handleMessage(bytes32 _srcAddress,
         uint256 _srcChainId,
         bytes memory _message,
-        address _executor) internal override returns (MsgExecutionStatus) {
-            return MsgExecutionStatus.Success;
+        address _executor) internal override {
+            return;
         }
 }
