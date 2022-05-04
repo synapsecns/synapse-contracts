@@ -26,12 +26,12 @@ contract MessageBusSender is Ownable {
         bytes32 indexed messageId
     );
 
-    function computeMessageIdSender(
+    function computeMessageId(
         uint256 _srcChainId,
         address _srcAddress,
         uint256 _dstChainId,
         bytes32 _dstAddress,
-        uint256 _nonce,
+        uint256 _srcNonce,
         bytes calldata _message
     ) public view returns (bytes32) {
         return
@@ -41,7 +41,7 @@ contract MessageBusSender is Ownable {
                     _srcAddress,
                     _dstChainId,
                     _dstAddress,
-                    _nonce,
+                    _srcNonce,
                     _message
                 )
             );
