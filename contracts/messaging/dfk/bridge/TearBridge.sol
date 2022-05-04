@@ -5,10 +5,10 @@ import "../../framework/SynMessagingReceiver.sol";
 import "../inventory/IInventoryItem.sol";
 
 contract TearBridge is SynMessagingReceiver {
-        address public immutable gaiaTear;
+        address public immutable gaiaTears;
         uint256 public msgGasLimit;
 
-        struct MessageFormat {
+    struct MessageFormat {
         address dstUser;
         uint256 dstTearAmount;
     }
@@ -21,7 +21,7 @@ contract TearBridge is SynMessagingReceiver {
         address _gaiaTear
     ) {
         messageBus = _messageBus;
-        gaiaTear = _gaiaTear; 
+        gaiaTears = _gaiaTear; 
     }
 
     function _createMessage(
@@ -52,11 +52,11 @@ contract TearBridge is SynMessagingReceiver {
         return abi.encodePacked(uint16(1), msgGasLimit);
     }
 
-    function bridgeTears(uint256 _tearsAmount, uint256 _dstChainId) external payable {
+    function sendTear(uint256 _tearsAmount, uint256 _dstChainId) external payable {
         uint256 tearsAmount = _tearsAmount;
         uint256 dstChainId = _dstChainId;
         // Tears now burnt, equivalent amount will be bridged to dstChainId
-        IInventoryItem(gaiaTear).burnFrom(msg.sender, tearsAmount);
+        IInventoryItem(gaiaTears).burnFrom(msg.sender, tearsAmount);
 
         bytes32 receiver = trustedRemoteLookup[dstChainId];
         bytes memory message = _createMessage(msg.sender, tearsAmount);
@@ -75,7 +75,7 @@ contract TearBridge is SynMessagingReceiver {
             MessageFormat memory passedMsg = _decodeMessage(_message);
             address dstUser = passedMsg.dstUser;
             uint256 dstTearAmount = passedMsg.dstTearAmount;
-            IInventoryItem(gaiaTear).mint(dstUser, dstTearAmount);
+            IInventoryItem(gaiaTears).mint(dstUser, dstTearAmount);
             emit GaiaArrived(dstUser, dstTearAmount);
         }
 
