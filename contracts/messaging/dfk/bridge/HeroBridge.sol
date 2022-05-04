@@ -78,8 +78,8 @@ contract HeroBridge is SynMessagingReceiver {
         return decodedMessage;
     }
 
-    function _createOptions() public returns (bytes memory) {
-        abi.encodePacked(uint16(1), msgGasLimit);
+    function _createOptions() internal view returns (bytes memory) {
+        return abi.encodePacked(uint16(1), msgGasLimit);
     }
 
     /**
@@ -166,7 +166,7 @@ contract HeroBridge is SynMessagingReceiver {
                 If hero ID doesn't exist: 
                 Mint a hero to msg.dstUserAddress
                 */
-            IHeroCoreUpgradeable(heroes).bridgeMint(dstHero, dstUser);
+            IHeroCoreUpgradeable(heroes).bridgeMint(dstHeroId, dstUser);
         }
 
         // update the hero attributes based on the attributes in the message (Assumes the message has more recent attributes)

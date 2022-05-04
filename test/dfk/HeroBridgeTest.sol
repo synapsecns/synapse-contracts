@@ -30,9 +30,15 @@ contract HeroBridgeTest is Test {
     RandomGenerator public randomGeneratorChainA;
     HeroCoreUpgradeable public heroCoreUpgradeableChainA;
     AssistingAuctionUpgradeable public assistingAuctionUpgradeableChainA;
-    
+    Hero public heroStruct;
     address payable public node;
 
+
+    struct MessageFormat {
+        Hero dstHero;
+        address dstUser;
+        uint256 dstHeroId;
+    }
 
     event MessageSent(
         address indexed sender,
@@ -46,6 +52,9 @@ contract HeroBridgeTest is Test {
         bytes32 indexed messageId
     );
 
+        function addressToBytes32(address _addr) pure public returns (bytes32) {
+        return bytes32(uint256(uint160(_addr)));
+    }
 
 
     function setUp() public {
@@ -64,7 +73,7 @@ contract HeroBridgeTest is Test {
         heroCoreUpgradeableChainA = new HeroCoreUpgradeable();
         heroCoreUpgradeableChainA.initialize("Heroes", "HERO", address(statScienceUpgradeableChainA));
         heroCoreUpgradeableChainA.grantRole(keccak256("BRIDGE_ROLE"), address(this));
-        Hero memory heroStruct = Hero({
+        heroStruct = Hero({
             id: 1000,
             info: HeroInfo({
                 statGenes: 1001,
@@ -143,23 +152,24 @@ contract HeroBridgeTest is Test {
             }),
             professions: HeroProfessions({mining: 1060, gardening: 1061, foraging: 1062, fishing: 1063})
         });
-        heroCoreUpgradeableChainA.bridgeMint(1000, users[1]);
-        heroCoreUpgradeableChainA.updateHero(heroStruct);
-
+        
         assistingAuctionUpgradeableChainA = new AssistingAuctionUpgradeable();
         heroBridgeChainA = new HeroBridge(address(messageBusChainA), address(heroCoreUpgradeableChainA), address(assistingAuctionUpgradeableChainA));
         heroBridgeChainA.setMsgGasLimit(800000);
+        heroCoreUpgradeableChainA.grantRole(keccak256("BRIDGE_ROLE"), address(heroBridgeChainA));
+        heroCoreUpgradeableChainA.grantRole(keccak256("HERO_MODERATOR_ROLE"), address(heroBridgeChainA));
         gasFeePricingChainA.setCostPerChain(1666700000, 2000000000, 100000000000000000);
-        heroBridgeChainA.setTrustedRemote(1666700000, bytes32("trustedRemote"));
+        heroBridgeChainA.setTrustedRemote(1666700000, bytes32("trustedRemoteB"));
+        heroBridgeChainA.setTrustedRemote(335, bytes32("trustedRemoteA"));
     }
 
     function testSendMessage() public {
+        heroCoreUpgradeableChainA.bridgeMint(1000, users[1]);
+        heroCoreUpgradeableChainA.updateHero(heroStruct);
         vm.startPrank(users[1]);
         heroCoreUpgradeableChainA.approve(address(heroBridgeChainA), 1000);
-        console.log(heroCoreUpgradeableChainA.ownerOf(1000));
-        console.log(users[1]);
-        // check topics but don't check data
-        vm.expectEmit(true, true, true, false);
+        // check first two topics, but don't check data or msgId
+        vm.expectEmit(true, true, false, false);
         emit MessageSent(
             address(heroBridgeChainA),
             block.chainid,
@@ -172,6 +182,18 @@ contract HeroBridgeTest is Test {
             keccak256("placeholder_message_id")
         );
         heroBridgeChainA.sendHero{value: 1000000000000000000}(1000, 1666700000);
-
     }
+
+    function testExecuteMessage() public {
+        MessageFormat memory msgFormat = MessageFormat({
+            dstHeroId: 1000,
+            dstHero: heroStruct,
+            dstUser: address(1337)
+        });
+
+        bytes memory message = abi.encode(msgFormat);
+        vm.prank(address(messageBusChainA));
+        heroBridgeChainA.executeMessage(bytes32("trustedRemoteA"), 335, message, msg.sender);
+    }
+
 }

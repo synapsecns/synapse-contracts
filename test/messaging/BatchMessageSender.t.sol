@@ -25,7 +25,7 @@ contract BatchMessageSenderTest is Test {
         uint256 srcChainID,
         bytes32 receiver,
         uint256 indexed dstChainId,
-        bytes messages,
+        bytes message,
         uint64 nonce,
         bytes options,
         uint256 fee,
