@@ -20,7 +20,7 @@ contract MessageBusReceiver is Ownable {
 
     // TODO: Rename to follow one standard convention -> Send -> Receive?
     event Executed(
-        bytes32 msgId,
+        bytes32 indexed messageId,
         TxStatus status,
         address indexed _dstAddress,
         uint64 srcChainId,
@@ -30,26 +30,6 @@ contract MessageBusReceiver is Ownable {
 
     constructor(address _authVerifier) {
         authVerifier = _authVerifier;
-    }
-
-    function computeMessageId(
-        uint256 _srcChainId,
-        bytes32 _srcAddress,
-        address _dstAddress,
-        uint256 _nonce,
-        bytes calldata _message
-    ) public view returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    _srcChainId,
-                    _srcAddress,
-                    block.chainid,
-                    _dstAddress,
-                    _nonce,
-                    _message
-                )
-            );
     }
 
     function getExecutedMessage(bytes32 _messageId)
@@ -78,17 +58,9 @@ contract MessageBusReceiver is Ownable {
         bytes calldata _message,
         bytes32 _messageId
     ) external {
-        // In order to guarentee that an individual message is only executed once, a messageId is generated.
-        bytes32 messageId = computeMessageId(
-            _srcChainId,
-            _srcAddress,
-            _dstAddress,
-            _nonce,
-            _message
-        );
-        require(messageId == _messageId, "Incorrect messageId submitted");
+        // In order to guarentee that an individual message is only executed once, a messageId is passed
         // enforce that this message ID hasn't already been tried ever
-        // console.log(uint256(executedMessages[messageId]));
+        bytes32 messageId = _messageId;
         require(
             executedMessages[messageId] == TxStatus.Null,
             "Message already executed"

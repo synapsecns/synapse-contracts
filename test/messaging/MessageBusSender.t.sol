@@ -95,6 +95,11 @@ contract MessageBusSenderTest is Test {
         assertEq(address(1000).balance, estimatedFee);
     }
 
+    function testAddressABIEncode() public {
+        console.logBytes(abi.encode(address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9)));
+        console.logBytes32(addressToBytes32(address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9)));
+        console.logBytes(abi.encodePacked(address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9)));
+    }
 
 }
 

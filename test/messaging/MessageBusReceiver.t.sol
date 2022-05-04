@@ -22,25 +22,26 @@ contract MessageBusReceiverTest is Test {
         return address(uint160(uint256(bys)));
     }
 
-    function testComputeMessageId() public returns(bytes32) {
-        uint256 srcChainId = 1; 
-        bytes32 srcAddress = addressToBytes32(address(1338));
-        address dstAddress = address(0x2796317b0fF8538F253012862c06787Adfb8cEb6);
-        uint256 nonce = 0;
-        bytes memory message = bytes("");
+    // function testComputeMessageId() public returns(bytes32) {
+    //     uint256 srcChainId = 1; 
+    //     bytes32 srcAddress = addressToBytes32(address(1338));
+    //     address dstAddress = address(0x2796317b0fF8538F253012862c06787Adfb8cEb6);
+    //     uint256 nonce = 0;
+    //     bytes memory message = bytes("");
 
-        bytes32 expectedMessageId = keccak256(abi.encode(
-            srcChainId, srcAddress, block.chainid, dstAddress, nonce, message
-        ));
+    //     bytes32 expectedMessageId = keccak256(abi.encode(
+    //         srcChainId, srcAddress, block.chainid, dstAddress, nonce, message
+    //     ));
 
-        bytes32 messageId = messageBusReceiver.computeMessageId(srcChainId, srcAddress, dstAddress, nonce, message);
-        assertEq(messageId, expectedMessageId);
-        return messageId;
-    }
+    //     bytes32 messageId = messageBusReceiver.computeMessageId(srcChainId, srcAddress, dstAddress, nonce, message);
+    //     assertEq(messageId, expectedMessageId);
+    //     return messageId;
+    // }
 
     // Authorized actor can update status of messages, and they are set correctly
     function testAuthorizedUpdateMessageStatus() public {
-        bytes32 messageId = testComputeMessageId();
+        // bytes32 messageId = testComputeMessageId();
+        bytes32 messageId = keccak256("testMessageId");
         MessageBusReceiver.TxStatus initialStatus = messageBusReceiver.getExecutedMessage(messageId);
         messageBusReceiver.updateMessageStatus(messageId, MessageBusReceiver.TxStatus.Success);
         MessageBusReceiver.TxStatus finalStatus = messageBusReceiver.getExecutedMessage(messageId);
@@ -48,7 +49,7 @@ contract MessageBusReceiverTest is Test {
     }
 
     function testUnauthorizedUpdateMessageStatus() public {
-        bytes32 messageId = testComputeMessageId();
+        bytes32 messageId = keccak256("testMessageId");
         vm.prank(address(9999));
         vm.expectRevert("Ownable: caller is not the owner");
         messageBusReceiver.updateMessageStatus(messageId, MessageBusReceiver.TxStatus.Success);
@@ -73,7 +74,7 @@ contract MessageBusReceiverTest is Test {
         address dstAddress = address(0x2796317b0fF8538F253012862c06787Adfb8cEb6);
         uint256 nonce = 0;
         bytes memory message = bytes("");
-        bytes32 messageId = testComputeMessageId();
+        bytes32 messageId = keccak256("testMessageId");
 
         vm.prank(address(999));
         vm.expectRevert("Unauthenticated caller");

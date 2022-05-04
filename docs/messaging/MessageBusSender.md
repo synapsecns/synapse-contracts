@@ -10,6 +10,33 @@
 
 ## Methods
 
+### computeMessageIdSender
+
+```solidity
+function computeMessageIdSender(uint256 _srcChainId, address _srcAddress, uint256 _dstChainId, bytes32 _dstAddress, uint256 _nonce, bytes _message) external view returns (bytes32)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _srcChainId | uint256 | undefined |
+| _srcAddress | address | undefined |
+| _dstChainId | uint256 | undefined |
+| _dstAddress | bytes32 | undefined |
+| _nonce | uint256 | undefined |
+| _message | bytes | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes32 | undefined |
+
 ### estimateFee
 
 ```solidity
