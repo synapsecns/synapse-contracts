@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: MIT
 
-import "../../framework/SynMessagingReceiver.sol";
+import "../../framework/SynMessagingReceiverUpgradeable.sol";
 import "../IHeroCoreUpgradeable.sol";
 import "../IAssistingAuctionUpgradeable.sol";
 import {HeroStatus} from "../types/HeroTypes.sol";
+
+import "@openzeppelin/contracts-upgradeable-4.5.0/proxy/utils/Initializable.sol";
 
 pragma solidity 0.8.13;
 
 /** @title Core app for handling cross chain messaging passing to bridge Hero NFTs
  */
 
-contract HeroBridge is SynMessagingReceiver {
-    address public immutable heroes;
+contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable {
+    address public heroes;
     address public assistingAuction;
     uint256 public msgGasLimit;
 
@@ -21,16 +23,14 @@ contract HeroBridge is SynMessagingReceiver {
         uint256 dstHeroId;
     }
 
-    constructor(
-        address _messageBus,
+    function initialize(address _messageBus,
         address _heroes,
-        address _assistingAuction
-    ) {
+        address _assistingAuction) external initializer {
+        __Ownable_init_unchained();
         messageBus = _messageBus;
         heroes = _heroes;
         assistingAuction = _assistingAuction;
-    }
-
+        }
 
     event HeroSent(uint256 indexed heroId, uint256 arrivalChainId);
     event HeroArrived(uint256 indexed heroId, uint256 arrivalChainId);
@@ -190,4 +190,11 @@ contract HeroBridge is SynMessagingReceiver {
     function setMsgGasLimit(uint256 _msgGasLimit) external onlyOwner {
         msgGasLimit = _msgGasLimit;
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[47] private __gap;
 }
