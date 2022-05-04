@@ -57,7 +57,7 @@ describe("Avax Jewel Migration", async function () {
       ],
     })
 
-    multiJewel = (await ethers.getContractAt("ERC20", MULTI_JEWEL)) as ERC20
+    multiJewel = (await ethers.getContractAt("@openzeppelin/contracts-solc8/token/ERC20/ERC20.sol:ERC20", MULTI_JEWEL)) as ERC20
     synJewel = (await ethers.getContractAt(
       "SynapseERC20",
       SYN_JEWEL,
