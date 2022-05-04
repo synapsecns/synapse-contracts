@@ -1,48 +1,14 @@
-# HeroBridge
+# BatchMessageSender
 
 
 
-> Core app for handling cross chain messaging passing to bridge Hero NFTs
+> Example app of sending multiple messages in one transaction
 
 
 
 
 
 ## Methods
-
-### _createOptions
-
-```solidity
-function _createOptions() external nonpayable returns (bytes)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | bytes | undefined |
-
-### assistingAuction
-
-```solidity
-function assistingAuction() external view returns (address)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
 
 ### executeMessage
 
@@ -91,23 +57,6 @@ function getTrustedRemote(uint256 _chainId) external view returns (bytes32 trust
 |---|---|---|
 | trustedRemote | bytes32 | undefined |
 
-### heroes
-
-```solidity
-function heroes() external view returns (address)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
-
 ### messageBus
 
 ```solidity
@@ -124,48 +73,6 @@ function messageBus() external view returns (address)
 | Name | Type | Description |
 |---|---|---|
 | _0 | address | undefined |
-
-### msgGasLimit
-
-```solidity
-function msgGasLimit() external view returns (uint256)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
-
-### onERC721Received
-
-```solidity
-function onERC721Received(address operator, address from, uint256 tokenId, bytes data) external nonpayable returns (bytes4)
-```
-
-
-
-*Whenever an {IERC721} `tokenId` token is transferred to this contract via {IERC721-safeTransferFrom} by `operator` from `from`, this function is called. It must return its Solidity selector to confirm the token transfer. If any other value is returned or the interface is not implemented by the recipient, the transfer will be reverted. The selector can be obtained in Solidity with `onERC721Received.selector`.*
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| operator | address | undefined |
-| from | address | undefined |
-| tokenId | uint256 | undefined |
-| data | bytes | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | bytes4 | undefined |
 
 ### owner
 
@@ -195,27 +102,10 @@ function renounceOwnership() external nonpayable
 *Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.*
 
 
-### sendHero
+### sendMultipleMessages
 
 ```solidity
-function sendHero(uint256 _heroId, uint256 _dstChainId) external payable
-```
-
-User must have an existing hero minted to bridge it.
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _heroId | uint256 | specifics which hero msg.sender already holds and will transfer to the bridge contract |
-| _dstChainId | uint256 | The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains |
-
-### setAssistingAuctionAddress
-
-```solidity
-function setAssistingAuctionAddress(address _assistingAuction) external nonpayable
+function sendMultipleMessages(bytes32[] _receiver, uint256[] _dstChainId, bytes[] _message, bytes[] _options) external payable
 ```
 
 
@@ -226,7 +116,10 @@ function setAssistingAuctionAddress(address _assistingAuction) external nonpayab
 
 | Name | Type | Description |
 |---|---|---|
-| _assistingAuction | address | undefined |
+| _receiver | bytes32[] | undefined |
+| _dstChainId | uint256[] | undefined |
+| _message | bytes[] | undefined |
+| _options | bytes[] | undefined |
 
 ### setMessageBus
 
@@ -243,22 +136,6 @@ function setMessageBus(address _messageBus) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | _messageBus | address | undefined |
-
-### setMsgGasLimit
-
-```solidity
-function setMsgGasLimit(uint256 _msgGasLimit) external nonpayable
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _msgGasLimit | uint256 | undefined |
 
 ### setTrustedRemote
 
@@ -296,23 +173,6 @@ function transferOwnership(address newOwner) external nonpayable
 
 
 ## Events
-
-### HeroArrived
-
-```solidity
-event HeroArrived(uint256 heroId, uint256 arrivalChainId)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| heroId  | uint256 | undefined |
-| arrivalChainId  | uint256 | undefined |
 
 ### OwnershipTransferred
 

@@ -169,7 +169,7 @@ Withdraws accumulated fees in native gas token, based on fees variable.
 ### MessageSent
 
 ```solidity
-event MessageSent(address indexed sender, uint256 srcChainID, bytes32 receiver, uint256 indexed dstChainId, bytes message, uint64 indexed nonce, bytes options, uint256 fee)
+event MessageSent(address indexed sender, uint256 srcChainID, bytes32 receiver, uint256 indexed dstChainId, bytes message, uint64 nonce, bytes options, uint256 fee, bytes32 indexed messageId)
 ```
 
 
@@ -185,9 +185,10 @@ event MessageSent(address indexed sender, uint256 srcChainID, bytes32 receiver, 
 | receiver  | bytes32 | undefined |
 | dstChainId `indexed` | uint256 | undefined |
 | message  | bytes | undefined |
-| nonce `indexed` | uint64 | undefined |
+| nonce  | uint64 | undefined |
 | options  | bytes | undefined |
 | fee  | uint256 | undefined |
+| messageId `indexed` | bytes32 | undefined |
 
 ### OwnershipTransferred
 

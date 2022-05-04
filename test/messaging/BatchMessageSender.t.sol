@@ -65,7 +65,6 @@ contract BatchMessageSenderTest is Test {
             dstChainIds[i] = 43113; // always to fuji
             messages[i] = abi.encode(true);
             options[i] = bytes("");
-            console.log(options[i].length);
         }
 
         // this msg.value (fee) is entirely fake and way too high
