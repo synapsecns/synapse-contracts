@@ -73,7 +73,10 @@ contract TearBridge is SynMessagingReceiver {
         bytes memory _message,
         address _executor) internal override {
             MessageFormat memory passedMsg = _decodeMessage(_message);
-            IInventoryItem(gaiaTear).mint(passedMsg.dstUser, passedMsg.dstTearAmount);
+            address dstUser = passedMsg.dstUser;
+            uint256 dstTearAmount = passedMsg.dstTearAmount;
+            IInventoryItem(gaiaTear).mint(dstUser, dstTearAmount);
+            emit GaiaArrived(dstUser, dstTearAmount);
         }
 
     function _send(
