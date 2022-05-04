@@ -26,7 +26,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
       await execute("TearBridge", { from: deployer, log: true },
       "setMsgGasLimit", 
-      "200000"
+      "800000"
       )
     }
 }
