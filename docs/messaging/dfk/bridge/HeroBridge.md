@@ -258,7 +258,7 @@ function transferOwnership(address newOwner) external nonpayable
 ### HeroArrived
 
 ```solidity
-event HeroArrived(uint256 heroId, uint256 arrivalChainId)
+event HeroArrived(uint256 indexed heroId, uint256 arrivalChainId)
 ```
 
 
@@ -269,7 +269,24 @@ event HeroArrived(uint256 heroId, uint256 arrivalChainId)
 
 | Name | Type | Description |
 |---|---|---|
-| heroId  | uint256 | undefined |
+| heroId `indexed` | uint256 | undefined |
+| arrivalChainId  | uint256 | undefined |
+
+### HeroSent
+
+```solidity
+event HeroSent(uint256 indexed heroId, uint256 arrivalChainId)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| heroId `indexed` | uint256 | undefined |
 | arrivalChainId  | uint256 | undefined |
 
 ### OwnershipTransferred

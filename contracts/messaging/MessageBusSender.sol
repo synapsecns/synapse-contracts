@@ -110,6 +110,15 @@ contract MessageBusSender is Ownable {
         delete fees;
     }
 
+    /**
+     * @notice Rescues any gas in contract, aside from fees
+     * @param to Address to which to rescue gas to
+     */
+    function rescueGas(address payable to) external onlyOwner {
+        uint256 withdrawAmount = address(this).balance - fees;
+        to.transfer(withdrawAmount);
+    }
+
     function updateGasFeePricing(address _gasFeePricing) public onlyOwner {
         require(_gasFeePricing != address(0), "Cannot set to 0");
         gasFeePricing = _gasFeePricing;

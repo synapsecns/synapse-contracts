@@ -32,7 +32,8 @@ contract HeroBridge is SynMessagingReceiver {
     }
 
 
-    event HeroArrived(uint256 heroId, uint256 arrivalChainId);
+    event HeroSent(uint256 indexed heroId, uint256 arrivalChainId);
+    event HeroArrived(uint256 indexed heroId, uint256 arrivalChainId);
 
     function _createMessage(
         uint256 _heroId,
@@ -73,8 +74,10 @@ contract HeroBridge is SynMessagingReceiver {
      * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
      */
     function sendHero(uint256 _heroId, uint256 _dstChainId) external payable {
+        uint256 heroId = _heroId;
+        uint256 dstChainId = _dstChainId;
         Hero memory heroToBridge = IHeroCoreUpgradeable(heroes).getHero(
-            _heroId
+            heroId
         );
         // revert if the hero is on a quest
         require(
@@ -84,16 +87,16 @@ contract HeroBridge is SynMessagingReceiver {
 
         // revert if the hero is on auction
         require(
-            (IAssistingAuction(assistingAuction).isOnAuction(_heroId)) == false,
+            (IAssistingAuction(assistingAuction).isOnAuction(heroId)) == false,
             "assisting auction"
         );
 
-        bytes32 receiver = trustedRemoteLookup[_dstChainId];
+        bytes32 receiver = trustedRemoteLookup[dstChainId];
         // _createMessage(heroId, dstUserAddress, Hero);
         // Only bridgeable directly to the caller of this contract
         // @dev do not call this function from other contracts
         bytes memory msgToPass = _createMessage(
-            _heroId,
+            heroId,
             msg.sender,
             heroToBridge
         );
@@ -103,12 +106,13 @@ contract HeroBridge is SynMessagingReceiver {
         IHeroCoreUpgradeable(heroes).transferFrom(
             msg.sender,
             address(this),
-            _heroId
+            heroId
         );
-        require(IHeroCoreUpgradeable(heroes).ownerOf(_heroId) == address(this), "Failed to lock Hero");
+        require(IHeroCoreUpgradeable(heroes).ownerOf(heroId) == address(this), "Failed to lock Hero");
         // Hero now locked, message can be safely emitted
 
-        _send(receiver, _dstChainId, msgToPass, options);
+        _send(receiver, dstChainId, msgToPass, options);
+        emit HeroSent(heroId, dstChainId);
     }
 
     // Function called by executeMessage() - handleMessage will handle the hero bridge mint
