@@ -1,31 +1,14 @@
-# HeroBridge
+# SynMessagingReceiverUpgradeable
 
 
 
-> Core app for handling cross chain messaging passing to bridge Hero NFTs
+
 
 
 
 
 
 ## Methods
-
-### assistingAuction
-
-```solidity
-function assistingAuction() external view returns (address)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
 
 ### executeMessage
 
@@ -68,23 +51,6 @@ function getTrustedRemote(uint256 _chainId) external view returns (bytes32 trust
 |---|---|---|
 | trustedRemote | bytes32 | undefined |
 
-### heroes
-
-```solidity
-function heroes() external view returns (address)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
-
 ### messageBus
 
 ```solidity
@@ -101,23 +67,6 @@ function messageBus() external view returns (address)
 | Name | Type | Description |
 |---|---|---|
 | _0 | address | undefined |
-
-### msgGasLimit
-
-```solidity
-function msgGasLimit() external view returns (uint256)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | uint256 | undefined |
 
 ### owner
 
@@ -147,39 +96,6 @@ function renounceOwnership() external nonpayable
 *Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.*
 
 
-### sendHero
-
-```solidity
-function sendHero(uint256 _heroId, uint256 _dstChainId) external payable
-```
-
-User must have an existing hero minted to bridge it.
-
-*This function enforces the caller to receive the Hero being bridged to the same address on another chain.Do NOT call this from other contracts, unless the contract is deployed on another chain to the same address, and can receive ERC721s. *
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _heroId | uint256 | specifics which hero msg.sender already holds and will transfer to the bridge contract |
-| _dstChainId | uint256 | The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains |
-
-### setAssistingAuctionAddress
-
-```solidity
-function setAssistingAuctionAddress(address _assistingAuction) external nonpayable
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _assistingAuction | address | undefined |
-
 ### setMessageBus
 
 ```solidity
@@ -195,22 +111,6 @@ function setMessageBus(address _messageBus) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | _messageBus | address | undefined |
-
-### setMsgGasLimit
-
-```solidity
-function setMsgGasLimit(uint256 _msgGasLimit) external nonpayable
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _msgGasLimit | uint256 | undefined |
 
 ### setTrustedRemote
 
@@ -248,40 +148,6 @@ function transferOwnership(address newOwner) external nonpayable
 
 
 ## Events
-
-### HeroArrived
-
-```solidity
-event HeroArrived(uint256 indexed heroId, uint256 arrivalChainId)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| heroId `indexed` | uint256 | undefined |
-| arrivalChainId  | uint256 | undefined |
-
-### HeroSent
-
-```solidity
-event HeroSent(uint256 indexed heroId, uint256 arrivalChainId)
-```
-
-
-
-
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| heroId `indexed` | uint256 | undefined |
-| arrivalChainId  | uint256 | undefined |
 
 ### OwnershipTransferred
 

@@ -51,9 +51,9 @@ Relayer executes messages through an authenticated method to the destination rec
 | _srcAddress | bytes | Originating bytes address of the message sender on the srcChain |
 | _dstAddress | address | Destination address that the arbitrary message will be passed to |
 | _gasLimit | uint256 | Gas limit to be passed alongside the message, depending on the fee paid on srcChain |
-| _nonce | uint256 | undefined |
+| _nonce | uint256 | Nonce from origin chain |
 | _message | bytes | Arbitrary message payload to pass to the destination chain receiver |
-| _messageId | bytes32 | undefined |
+| _messageId | bytes32 | MessageId for uniqueness of messages (alongisde nonce) |
 
 ### sendMessage
 
