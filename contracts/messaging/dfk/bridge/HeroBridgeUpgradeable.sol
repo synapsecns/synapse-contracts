@@ -12,7 +12,7 @@ pragma solidity 0.8.13;
 /** @title Core app for handling cross chain messaging passing to bridge Hero NFTs
  */
 
-contract HeroBridge is Initializable, SynMessagingReceiverUpgradeable {
+contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable {
     address public heroes;
     address public assistingAuction;
     uint256 public msgGasLimit;
@@ -190,4 +190,11 @@ contract HeroBridge is Initializable, SynMessagingReceiverUpgradeable {
     function setMsgGasLimit(uint256 _msgGasLimit) external onlyOwner {
         msgGasLimit = _msgGasLimit;
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[47] private __gap;
 }
