@@ -205,7 +205,7 @@ function baseSummonFee() external view returns (uint256)
 ### bridgeMint
 
 ```solidity
-function bridgeMint(Hero _hero, address dstAddress) external nonpayable
+function bridgeMint(uint256 _id, address _to) external nonpayable
 ```
 
 
@@ -216,8 +216,8 @@ function bridgeMint(Hero _hero, address dstAddress) external nonpayable
 
 | Name | Type | Description |
 |---|---|---|
-| _hero | Hero | undefined |
-| dstAddress | address | undefined |
+| _id | uint256 | undefined |
+| _to | address | undefined |
 
 ### burn
 

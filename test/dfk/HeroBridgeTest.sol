@@ -182,6 +182,8 @@ contract HeroBridgeTest is Test {
             keccak256("placeholder_message_id")
         );
         heroBridgeChainA.sendHero{value: 1000000000000000000}(1000, 1666700000);
+        // Hero locked into herobridge contract now
+        assertEq(heroCoreUpgradeableChainA.ownerOf(1000), address(heroBridgeChainA));
     }
 
     function testExecuteMessage() public {

@@ -10,23 +10,6 @@
 
 ## Methods
 
-### _createOptions
-
-```solidity
-function _createOptions() external nonpayable returns (bytes)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | bytes | undefined |
-
 ### assistingAuction
 
 ```solidity
@@ -142,31 +125,6 @@ function msgGasLimit() external view returns (uint256)
 |---|---|---|
 | _0 | uint256 | undefined |
 
-### onERC721Received
-
-```solidity
-function onERC721Received(address operator, address from, uint256 tokenId, bytes data) external nonpayable returns (bytes4)
-```
-
-
-
-*Whenever an {IERC721} `tokenId` token is transferred to this contract via {IERC721-safeTransferFrom} by `operator` from `from`, this function is called. It must return its Solidity selector to confirm the token transfer. If any other value is returned or the interface is not implemented by the recipient, the transfer will be reverted. The selector can be obtained in Solidity with `onERC721Received.selector`.*
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| operator | address | undefined |
-| from | address | undefined |
-| tokenId | uint256 | undefined |
-| data | bytes | undefined |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | bytes4 | undefined |
-
 ### owner
 
 ```solidity
@@ -203,7 +161,7 @@ function sendHero(uint256 _heroId, uint256 _dstChainId) external payable
 
 User must have an existing hero minted to bridge it.
 
-
+*This function enforces the caller to receive the Hero being bridged to the same address on another chain.Do NOT call this from other contracts, unless the contract is deployed on another chain to the same address, and can receive ERC721s. *
 
 #### Parameters
 
