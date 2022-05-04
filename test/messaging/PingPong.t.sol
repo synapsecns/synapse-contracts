@@ -37,12 +37,13 @@ contract PingPongTest is Test {
         uint256 srcChainID,
         bytes32 receiver,
         uint256 indexed dstChainId,
-        bytes messages,
-        uint64 indexed nonce,
+        bytes message,
+        uint64 nonce,
         bytes options,
-        uint256 fee
+        uint256 fee,
+        bytes32 indexed messageId
     );
-
+    
     event Executed(
         bytes32 msgId,
         MessageBus.TxStatus status,
