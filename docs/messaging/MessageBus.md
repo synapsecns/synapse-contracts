@@ -27,10 +27,10 @@ function authVerifier() external view returns (address)
 |---|---|---|
 | _0 | address | undefined |
 
-### computeMessageId
+### computeMessageIdSender
 
 ```solidity
-function computeMessageId(uint256 _srcChainId, bytes32 _srcAddress, address _dstAddress, uint256 _nonce, bytes _message) external view returns (bytes32)
+function computeMessageIdSender(uint256 _srcChainId, address _srcAddress, uint256 _dstChainId, bytes32 _dstAddress, uint256 _nonce, bytes _message) external view returns (bytes32)
 ```
 
 
@@ -42,8 +42,9 @@ function computeMessageId(uint256 _srcChainId, bytes32 _srcAddress, address _dst
 | Name | Type | Description |
 |---|---|---|
 | _srcChainId | uint256 | undefined |
-| _srcAddress | bytes32 | undefined |
-| _dstAddress | address | undefined |
+| _srcAddress | address | undefined |
+| _dstChainId | uint256 | undefined |
+| _dstAddress | bytes32 | undefined |
 | _nonce | uint256 | undefined |
 | _message | bytes | undefined |
 
@@ -305,7 +306,7 @@ event CallReverted(string reason)
 ### Executed
 
 ```solidity
-event Executed(bytes32 msgId, enum MessageBusReceiver.TxStatus status, address indexed _dstAddress, uint64 srcChainId, uint64 srcNonce)
+event Executed(bytes32 indexed messageId, enum MessageBusReceiver.TxStatus status, address indexed _dstAddress, uint64 srcChainId, uint64 srcNonce)
 ```
 
 
@@ -316,7 +317,7 @@ event Executed(bytes32 msgId, enum MessageBusReceiver.TxStatus status, address i
 
 | Name | Type | Description |
 |---|---|---|
-| msgId  | bytes32 | undefined |
+| messageId `indexed` | bytes32 | undefined |
 | status  | enum MessageBusReceiver.TxStatus | undefined |
 | _dstAddress `indexed` | address | undefined |
 | srcChainId  | uint64 | undefined |
