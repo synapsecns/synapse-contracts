@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: MIT
 
-import "../../framework/SynMessagingReceiver.sol";
+import "../../framework/SynMessagingReceiverUpgradeable.sol";
 import "../IHeroCoreUpgradeable.sol";
 import "../IAssistingAuctionUpgradeable.sol";
 import {HeroStatus} from "../types/HeroTypes.sol";
+
+import "@openzeppelin/contracts-upgradeable-4.5.0/proxy/utils/Initializable.sol";
 
 pragma solidity 0.8.13;
 
 /** @title Core app for handling cross chain messaging passing to bridge Hero NFTs
  */
 
-contract HeroBridge is SynMessagingReceiver {
-    address public immutable heroes;
+contract HeroBridge is Initializable, SynMessagingReceiverUpgradeable {
+    address public heroes;
     address public assistingAuction;
     uint256 public msgGasLimit;
 
@@ -21,16 +23,14 @@ contract HeroBridge is SynMessagingReceiver {
         uint256 dstHeroId;
     }
 
-    constructor(
-        address _messageBus,
+    function initialize(address _messageBus,
         address _heroes,
-        address _assistingAuction
-    ) {
+        address _assistingAuction) external initializer {
+        __Ownable_init_unchained();
         messageBus = _messageBus;
         heroes = _heroes;
         assistingAuction = _assistingAuction;
-    }
-
+        }
 
     event HeroSent(uint256 indexed heroId, uint256 arrivalChainId);
     event HeroArrived(uint256 indexed heroId, uint256 arrivalChainId);

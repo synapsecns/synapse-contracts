@@ -154,7 +154,8 @@ contract HeroBridgeTest is Test {
         });
         
         assistingAuctionUpgradeableChainA = new AssistingAuctionUpgradeable();
-        heroBridgeChainA = new HeroBridge(address(messageBusChainA), address(heroCoreUpgradeableChainA), address(assistingAuctionUpgradeableChainA));
+        heroBridgeChainA = new HeroBridge();
+        heroBridgeChainA.initialize(address(messageBusChainA), address(heroCoreUpgradeableChainA), address(assistingAuctionUpgradeableChainA));
         heroBridgeChainA.setMsgGasLimit(800000);
         heroCoreUpgradeableChainA.grantRole(keccak256("BRIDGE_ROLE"), address(heroBridgeChainA));
         heroCoreUpgradeableChainA.grantRole(keccak256("HERO_MODERATOR_ROLE"), address(heroBridgeChainA));
