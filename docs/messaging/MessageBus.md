@@ -30,7 +30,7 @@ function authVerifier() external view returns (address)
 ### computeMessageId
 
 ```solidity
-function computeMessageId(uint256 _srcChainId, address _srcAddress, uint256 _dstChainId, bytes32 _dstAddress, uint256 _srcNonce, bytes _message) external view returns (bytes32)
+function computeMessageId(address _srcAddress, uint256 _srcChainId, bytes32 _dstAddress, uint256 _dstChainId, uint256 _srcNonce, bytes _message) external view returns (bytes32)
 ```
 
 
@@ -41,10 +41,10 @@ function computeMessageId(uint256 _srcChainId, address _srcAddress, uint256 _dst
 
 | Name | Type | Description |
 |---|---|---|
-| _srcChainId | uint256 | undefined |
 | _srcAddress | address | undefined |
-| _dstChainId | uint256 | undefined |
+| _srcChainId | uint256 | undefined |
 | _dstAddress | bytes32 | undefined |
+| _dstChainId | uint256 | undefined |
 | _srcNonce | uint256 | undefined |
 | _message | bytes | undefined |
 
@@ -98,6 +98,23 @@ Relayer executes messages through an authenticated method to the destination rec
 | _nonce | uint256 | undefined |
 | _message | bytes | Arbitrary message payload to pass to the destination chain receiver |
 | _messageId | bytes32 | undefined |
+
+### fees
+
+```solidity
+function fees() external view returns (uint256)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
 
 ### gasFeePricing
 

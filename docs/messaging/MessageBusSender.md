@@ -13,7 +13,7 @@
 ### computeMessageId
 
 ```solidity
-function computeMessageId(uint256 _srcChainId, address _srcAddress, uint256 _dstChainId, bytes32 _dstAddress, uint256 _srcNonce, bytes _message) external view returns (bytes32)
+function computeMessageId(address _srcAddress, uint256 _srcChainId, bytes32 _dstAddress, uint256 _dstChainId, uint256 _srcNonce, bytes _message) external view returns (bytes32)
 ```
 
 
@@ -24,10 +24,10 @@ function computeMessageId(uint256 _srcChainId, address _srcAddress, uint256 _dst
 
 | Name | Type | Description |
 |---|---|---|
-| _srcChainId | uint256 | undefined |
 | _srcAddress | address | undefined |
-| _dstChainId | uint256 | undefined |
+| _srcChainId | uint256 | undefined |
 | _dstAddress | bytes32 | undefined |
+| _dstChainId | uint256 | undefined |
 | _srcNonce | uint256 | undefined |
 | _message | bytes | undefined |
 
@@ -53,6 +53,23 @@ function estimateFee(uint256 _dstChainId, bytes _options) external nonpayable re
 |---|---|---|
 | _dstChainId | uint256 | undefined |
 | _options | bytes | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint256 | undefined |
+
+### fees
+
+```solidity
+function fees() external view returns (uint256)
+```
+
+
+
+
+
 
 #### Returns
 
