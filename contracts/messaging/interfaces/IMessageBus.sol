@@ -34,7 +34,8 @@ interface IMessageBus {
         address _dstAddress,
         uint256 _gasLimit,
         uint256 _nonce,
-        bytes calldata _message
+        bytes calldata _message,
+        bytes32 _messageId
     ) external;
 
 

@@ -1,31 +1,14 @@
-# HeroBridge
+# TearBridge
 
 
 
-> Core app for handling cross chain messaging passing to bridge Hero NFTs
+
 
 
 
 
 
 ## Methods
-
-### assistingAuction
-
-```solidity
-function assistingAuction() external view returns (address)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
 
 ### executeMessage
 
@@ -45,6 +28,23 @@ Executes a message called by MessageBus (MessageBusReceiver)
 | _srcChainId | uint256 | The source chain ID where the transfer is originated from |
 | _message | bytes | Arbitrary message bytes originated from and encoded by the source app contract |
 | _executor | address | Address who called the MessageBus execution function |
+
+### gaiaTears
+
+```solidity
+function gaiaTears() external view returns (address)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | address | undefined |
 
 ### getTrustedRemote
 
@@ -67,23 +67,6 @@ function getTrustedRemote(uint256 _chainId) external view returns (bytes32 trust
 | Name | Type | Description |
 |---|---|---|
 | trustedRemote | bytes32 | undefined |
-
-### heroes
-
-```solidity
-function heroes() external view returns (address)
-```
-
-
-
-
-
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | address | undefined |
 
 ### messageBus
 
@@ -147,27 +130,10 @@ function renounceOwnership() external nonpayable
 *Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.*
 
 
-### sendHero
+### sendTear
 
 ```solidity
-function sendHero(uint256 _heroId, uint256 _dstChainId) external payable
-```
-
-User must have an existing hero minted to bridge it.
-
-*This function enforces the caller to receive the Hero being bridged to the same address on another chain.Do NOT call this from other contracts, unless the contract is deployed on another chain to the same address, and can receive ERC721s. *
-
-#### Parameters
-
-| Name | Type | Description |
-|---|---|---|
-| _heroId | uint256 | specifics which hero msg.sender already holds and will transfer to the bridge contract |
-| _dstChainId | uint256 | The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains |
-
-### setAssistingAuctionAddress
-
-```solidity
-function setAssistingAuctionAddress(address _assistingAuction) external nonpayable
+function sendTear(uint256 _tearsAmount, uint256 _dstChainId) external payable
 ```
 
 
@@ -178,7 +144,8 @@ function setAssistingAuctionAddress(address _assistingAuction) external nonpayab
 
 | Name | Type | Description |
 |---|---|---|
-| _assistingAuction | address | undefined |
+| _tearsAmount | uint256 | undefined |
+| _dstChainId | uint256 | undefined |
 
 ### setMessageBus
 
@@ -249,10 +216,10 @@ function transferOwnership(address newOwner) external nonpayable
 
 ## Events
 
-### HeroArrived
+### GaiaArrived
 
 ```solidity
-event HeroArrived(uint256 indexed heroId, uint256 arrivalChainId)
+event GaiaArrived(address indexed dstUser, uint256 arrivalChainId)
 ```
 
 
@@ -263,13 +230,13 @@ event HeroArrived(uint256 indexed heroId, uint256 arrivalChainId)
 
 | Name | Type | Description |
 |---|---|---|
-| heroId `indexed` | uint256 | undefined |
+| dstUser `indexed` | address | undefined |
 | arrivalChainId  | uint256 | undefined |
 
-### HeroSent
+### GaiaSent
 
 ```solidity
-event HeroSent(uint256 indexed heroId, uint256 arrivalChainId)
+event GaiaSent(address indexed dstUser, uint256 arrivalChainId)
 ```
 
 
@@ -280,7 +247,7 @@ event HeroSent(uint256 indexed heroId, uint256 arrivalChainId)
 
 | Name | Type | Description |
 |---|---|---|
-| heroId `indexed` | uint256 | undefined |
+| dstUser `indexed` | address | undefined |
 | arrivalChainId  | uint256 | undefined |
 
 ### OwnershipTransferred
