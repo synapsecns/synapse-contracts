@@ -10,8 +10,8 @@ import {includes} from "lodash";
 
 async function main() {
     const signers = (await ethers.getSigners());
-    const HeroBridgeFactory = await ethers.getContractFactory("HeroBridge");
-    const heroBridge = HeroBridgeFactory.attach(((await get('HeroBridge')).address));
+    const HeroBridgeFactory = await ethers.getContractFactory("HeroBridgeUpgradeable");
+    const heroBridge = HeroBridgeFactory.attach(((await get('HeroBridgeUpgradeable')).address));
     if (includes([CHAIN_ID.DFK_TESTNET, CHAIN_ID.DFK], await getChainId())) {
       await heroBridge.connect(signers[3]).setMessageBus((await get('MessageBus')).address); } 
     else {
