@@ -12,7 +12,7 @@ import "../../contracts/messaging/GasFeePricing.sol";
 import "../../contracts/messaging/AuthVerifier.sol";
 
 
-contract HeroBridgeTest is Test {
+contract TearBridgeTest is Test {
     Utilities internal utils;
     address payable[] internal users;
     MessageBus public messageBus;
@@ -65,7 +65,6 @@ contract HeroBridgeTest is Test {
         tearBridge = new TearBridge(address(messageBus), address(gaiaTears));
         tearBridge.setMsgGasLimit(800000);
         gaiaTears.grantRole(keccak256("MINTER_ROLE"), address(tearBridge));
-        gaiaTears.grantRole(keccak256("MINTER_ROLE"), address(this));
         gasFeePricing.setCostPerChain(1666700000, 2000000000, 100000000000000000);
         gasFeePricing.setCostPerChain(335, 2000000000, 100000000000000000);
         tearBridge.setTrustedRemote(1666700000, bytes32("trustedRemoteB"));
@@ -73,7 +72,9 @@ contract HeroBridgeTest is Test {
     }
 
     function testGaiaSendMessage() public {
+        gaiaTears.grantRole(keccak256("MINTER_ROLE"), address(this));
         gaiaTears.mint(users[1], 1000);
+        gaiaTears.revokeRole(keccak256("MINTER_ROLE"), address(this));
         vm.startPrank(users[1]);
         assertEq(gaiaTears.balanceOf(users[1]), 1000);
         gaiaTears.approve(address(tearBridge), 1000);

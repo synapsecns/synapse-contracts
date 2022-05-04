@@ -24,7 +24,7 @@ function disable() external nonpayable
 ### executeMessage
 
 ```solidity
-function executeMessage(bytes32 _srcAddress, uint256 _srcChainId, bytes _message, address _executor) external nonpayable returns (enum ISynMessagingReceiver.MsgExecutionStatus)
+function executeMessage(bytes32 _srcAddress, uint256 _srcChainId, bytes _message, address _executor) external nonpayable
 ```
 
 Called by MessageBus (MessageBusReceiver)
@@ -39,12 +39,6 @@ Called by MessageBus (MessageBusReceiver)
 | _srcChainId | uint256 | The source chain ID where the transfer is originated from |
 | _message | bytes | Arbitrary message bytes originated from and encoded by the source app contract |
 | _executor | address | Address who called the MessageBus execution function |
-
-#### Returns
-
-| Name | Type | Description |
-|---|---|---|
-| _0 | enum ISynMessagingReceiver.MsgExecutionStatus | undefined |
 
 ### maxPings
 
