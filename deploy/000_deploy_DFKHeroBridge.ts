@@ -23,7 +23,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     },
     [CHAIN_ID.HARMONY]: {
       "heroes": "0x5F753dcDf9b1AD9AabC1346614D1f4746fd6Ce5C",
-      "auction": "0x8101CfFBec8E045c3FAdC3877a1D30f97d301209"
+      "auction": "0x65DEA93f7b886c33A78c10343267DD39727778c2"
     }
   }
 
