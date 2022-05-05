@@ -26,6 +26,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       "auction": "0x8101CfFBec8E045c3FAdC3877a1D30f97d301209"
     }
   }
+
+  // TESTNET
   if (includes([CHAIN_ID.DFK_TESTNET, CHAIN_ID.HARMONY_TESTNET], chainId)) {
     await deploy('HeroBridgeUpgradeable', {
       from: deployer,
@@ -37,18 +39,33 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         proxyContract: "OpenZeppelinTransparentProxy",
       },
     })
+  }
 
-    // await execute("HeroBridgeUpgradeable", {from: deployer, log: true}, 
-    //     "initialize", 
-    //     (await get('MessageBus')).address,
-    //     HeroBridgeConfig[chainId].heroes,
-    //     HeroBridgeConfig[chainId].auction
-    //   )
+  // MAINNET
+    if (includes([CHAIN_ID.DFK_TESTNET, CHAIN_ID.HARMONY_TESTNET], chainId)) {
+      await deploy('HeroBridgeUpgradeable', {
+        from: deployer,
+        log: true,
+        skipIfAlreadyDeployed: true,
+        args: [],
+        proxy: {
+          owner: (await get("DevMultisig")).address,
+          proxyContract: "OpenZeppelinTransparentProxy",
+        },
+      })
 
-    // await execute("HeroBridgeUpgradeable", { from: deployer, log: true },
-    //   "setMsgGasLimit", 
-    //   "800000"
-    // )
+    await execute("HeroBridgeUpgradeable", {from: deployer, log: true}, 
+        "initialize",
+        (await get('MessageBus')).address,
+        HeroBridgeConfig[chainId].heroes,
+        HeroBridgeConfig[chainId].auction
+      )
+
+    await execute("HeroBridgeUpgradeable", { from: deployer, log: true },
+      "setMsgGasLimit", 
+      "800000"
+    )
+
   }
 }
 export default func
