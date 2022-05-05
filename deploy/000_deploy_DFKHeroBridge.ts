@@ -42,7 +42,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   }
 
   // MAINNET
-    if (includes([CHAIN_ID.DFK_TESTNET, CHAIN_ID.HARMONY_TESTNET], chainId)) {
+    if (includes([CHAIN_ID.DFK, CHAIN_ID.HARMONY], chainId)) {
       await deploy('HeroBridgeUpgradeable', {
         from: deployer,
         log: true,
