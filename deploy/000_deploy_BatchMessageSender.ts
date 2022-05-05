@@ -7,7 +7,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployments, getNamedAccounts, getChainId } = hre
   const { deploy, get } = deployments
   const { deployer } = await getNamedAccounts()
-  if (includes([CHAIN_ID.DFK_TESTNET, CHAIN_ID.HARMONY_TESTNET, CHAIN_ID.AVALANCHE, CHAIN_ID.FUJI, CHAIN_ID.GOERLI], await getChainId())) {
+  if (includes([CHAIN_ID.DFK_TESTNET, CHAIN_ID.HARMONY_TESTNET, CHAIN_ID.DFK, CHAIN_ID.HARMONY, CHAIN_ID.FUJI, CHAIN_ID.GOERLI], await getChainId())) {
     await deploy('BatchMessageSender', {
         from: deployer,
         log: true,

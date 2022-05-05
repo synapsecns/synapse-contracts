@@ -23,6 +23,14 @@ contract GasFeePricing is Ownable {
      * @param _gasUnitPrice The estimated current gas price in wei of the destination chain
      * @param _gasTokenPriceRatio USD gas ratio of dstGasToken / srcGasToken
      */
+    // Example:
+    // DstChainId = 1666600000
+    // Harmony set gwei to 200000000000
+    // ONE / JEWEL = 0.05 == 50000000000000000
+
+    // DstChainId = 53935
+    // DFK Chain set 1 gwei = 1000000000
+    // JEWEL / ONE = 20000000000000000000
     function setCostPerChain(
         uint256 _dstChainId,
         uint256 _gasUnitPrice,
