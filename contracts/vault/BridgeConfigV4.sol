@@ -127,7 +127,9 @@ contract BridgeConfig is
         returns (address tokenGlobal, bool isEnabled)
     {
         tokenGlobal = localMapEVM[tokenLocal][chainId];
-        isEnabled = tokenConfigs[tokenLocal].isEnabled;
+        if (tokenGlobal != address(0)) {
+            isEnabled = tokenConfigs[tokenLocal].isEnabled;
+        }
     }
 
     /**
@@ -145,7 +147,9 @@ contract BridgeConfig is
         TokenConfig memory config = tokenConfigs[tokenLocal];
         if (config.chainIdNonEVM == chainId) {
             tokenGlobal = tokenConfigs[tokenLocal].bridgeTokenNonEVM;
-            isEnabled = tokenConfigs[tokenLocal].isEnabled;
+            if (bytes(tokenGlobal).length > 0) {
+                isEnabled = tokenConfigs[tokenLocal].isEnabled;
+            }
         }
     }
 
