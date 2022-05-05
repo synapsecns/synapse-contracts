@@ -43,7 +43,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // MAINNET
     if (includes([CHAIN_ID.DFK, CHAIN_ID.HARMONY], chainId)) {
-      await deploy('HeroBridgeUpgradeable', {
+      const heroBridgeDeployResult = await deploy('HeroBridgeUpgradeable', {
         from: deployer,
         log: true,
         skipIfAlreadyDeployed: true,
@@ -53,18 +53,19 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
           proxyContract: "OpenZeppelinTransparentProxy",
         },
       })
+    if (heroBridgeDeployResult.newlyDeployed) {
+      await execute("HeroBridgeUpgradeable", {from: deployer, log: true}, 
+          "initialize",
+          (await get('MessageBus')).address,
+          HeroBridgeConfig[chainId].heroes,
+          HeroBridgeConfig[chainId].auction
+        )
 
-    await execute("HeroBridgeUpgradeable", {from: deployer, log: true}, 
-        "initialize",
-        (await get('MessageBus')).address,
-        HeroBridgeConfig[chainId].heroes,
-        HeroBridgeConfig[chainId].auction
+      await execute("HeroBridgeUpgradeable", { from: deployer, log: true },
+        "setMsgGasLimit", 
+        "800000"
       )
-
-    await execute("HeroBridgeUpgradeable", { from: deployer, log: true },
-      "setMsgGasLimit", 
-      "800000"
-    )
+    }
 
   }
 }
