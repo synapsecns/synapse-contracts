@@ -10,6 +10,7 @@ import "hardhat-deploy"
 import "hardhat-spdx-license-identifier"
 import "hardhat-interface-generator";
 import "@primitivefi/hardhat-dodoc";
+import "hardhat-deploy-ethers";
 
 import { HardhatUserConfig } from "hardhat/config"
 import dotenv from "dotenv"
@@ -65,6 +66,9 @@ let config: HardhatUserConfig = {
     harmony: {
       url: "https://a.api.s0.t.hmny.io/",
     },
+    harmony_testnet: {
+      url: "https://api.s0.b.hmny.io"
+    },
     boba: {
       url: "https://mainnet.boba.network",
     },
@@ -84,8 +88,17 @@ let config: HardhatUserConfig = {
     dfk: {
       url: 'https://subnets.avax.network/defi-kingdoms/dfk-chain/rpc',
     },
+    dfk_testnet: {
+      url: 'https://subnets.avax.network/defi-kingdoms/dfk-chain-testnet/rpc	',
+    },
     mainnet: {
       url: process.env.ALCHEMY_API || "https://main-light.eth.linkpool.io/",
+    },
+    fuji: {
+      url: "https://api.avax-test.network/ext/bc/C/rpc"
+    },
+    goerli: {
+      url: "https://rpc.goerli.mudit.blog/"
     },
     optimism: {
       url: "https://mainnet.optimism.io",
@@ -106,7 +119,8 @@ let config: HardhatUserConfig = {
     target: "ethers-v5",
   },
   dodoc: {
-    runOnCompile: true,
+    // skip doc generation on ci
+    runOnCompile: process.env.CI == "",
     debugMode: false,
     // pre solidity 5 breaks docgen
     exclude: ["MultisigWallet", "WETH9"]
@@ -135,6 +149,15 @@ let config: HardhatUserConfig = {
       {
         version: "0.4.24"
       },
+      {
+        version: "0.8.13",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 5000000, // see: https://github.com/ethereum/solidity/issues/5394#issue-379536332
+          },
+        },
+      },
     ],
   },
   namedAccounts: {
@@ -142,7 +165,8 @@ let config: HardhatUserConfig = {
       default: 0, // here this will by default take the first account as deployer
       1: 0, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
       42161: 0,
-      53935: 3
+      53935: 3,
+      335: 3
     },
     libraryDeployer: {
       default: 0, // use a different account for deploying libraries on the hardhat network
@@ -156,6 +180,7 @@ let config: HardhatUserConfig = {
   },
   mocha: {
     timeout: 200000,
+    require: ['dd-trace/ci/init'],
   },
   spdxLicenseIdentifier: {
     overwrite: false,
@@ -183,7 +208,11 @@ if (process.env.PRIVATE_KEYS) {
     "aurora",
     "cronos",
     "metis",
-    "dfk"
+    "dfk",
+    "dfk_testnet",
+    "harmony_testnet",
+    "fuji",
+    "goerli"
   ]
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
