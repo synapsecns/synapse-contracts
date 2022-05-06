@@ -59,7 +59,11 @@ interface IBridgeConfig {
 
     // -- CROSS CHAIN SETUP EVENTS --
 
-    event TokenDeleted(uint256 chainIdEVM, address bridgeTokenEVM);
+    event TokenDeleted(
+        uint256[] chainIdsEVM,
+        uint256 deletedChainIdEVM,
+        address deletedTokenEVM
+    );
 
     event TokenMapUpdated(
         uint256[] chainIdsEVM,

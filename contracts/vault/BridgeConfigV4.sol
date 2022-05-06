@@ -497,9 +497,10 @@ contract BridgeConfig is
      * @param token Token to delete: the version that is used on this chain.
      */
     function deleteTokenEVM(address token) external onlyRole(GOVERNANCE_ROLE) {
-        _deleteTokenEVM(address(token));
+        uint256[] memory chainIds = tokenChainIds[token];
+        _deleteTokenEVM(token);
 
-        emit TokenDeleted(block.chainid, address(token));
+        emit TokenDeleted(chainIds, block.chainid, address(token));
     }
 
     /**
@@ -512,9 +513,9 @@ contract BridgeConfig is
         external
         onlyRole(GOVERNANCE_ROLE)
     {
-        _removeGlobalTokenEVM(chainId, tokenGlobal);
+        uint256[] memory chainIds = _removeGlobalTokenEVM(chainId, tokenGlobal);
 
-        emit TokenDeleted(chainId, tokenGlobal);
+        emit TokenDeleted(chainIds, chainId, tokenGlobal);
     }
 
     // -- BRIDGE CONFIG: Token Map (Node Group) --
@@ -739,18 +740,21 @@ contract BridgeConfig is
             globalMapEVM[chainId][tokenGlobal] = address(0);
         }
 
-        // Zero out the token config
+        // Delete both token config and token chainIds
+        delete tokenChainIds[tokenLocal];
         delete tokenConfigs[tokenLocal];
     }
 
     function _removeGlobalTokenEVM(uint256 chainId, address tokenGlobal)
         internal
+        returns (uint256[] memory chainIds)
     {
         address tokenLocal = globalMapEVM[chainId][tokenGlobal];
         require(tokenLocal != address(0), "Token doesn't exist");
 
+        chainIds = tokenChainIds[tokenLocal];
+
         {
-            uint256[] memory chainIds = tokenChainIds[tokenLocal];
             uint256 index = UINT_MAX;
             uint256 chainsAmount = chainIds.length;
             for (uint256 i = 0; i < chainsAmount; ++i) {
