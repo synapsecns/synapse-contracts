@@ -38,9 +38,6 @@ interface IBridgeConfig {
         /// Otherwise, these are left empty.
         uint256 chainIdNonEVM;
         string bridgeTokenNonEVM;
-        /// @dev List of ALL EVM chains `token` is present on, in no particular order.
-        /// This includes the chain this Bridge is deployed on
-        uint256[] chainIdsEVM;
     }
 
     // -- SINGLE CHAIN SETUP EVENTS --
