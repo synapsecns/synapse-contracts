@@ -11,9 +11,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deployer } = await getNamedAccounts()
 
   const adaptersToDeploy = {
-    curve: ["tricrypto", "usdc"],
+    curve: ["aave", "mim", "tricrypto", "usdc", "ust3pool", "ust4pool"],
+    gmx: ["gmx"],
+    platypus: ["platypus"],
     synapse: ["eth", "usd"],
-    uniswap: ["traderjoe", "pangolin"],
+    uniswap: ["traderjoe", "pangolin", "sushiswap"],
   }
 
   if ((await getChainId()) === CHAIN_ID.AVALANCHE) {
@@ -28,7 +30,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       from: deployer,
       log: true,
       skipIfAlreadyDeployed: true,
-      args: [((await get("Router")).address), 4],
+      args: [(await get("Router")).address, 4],
     })
 
     let deployedAdapters = []
@@ -49,16 +51,29 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       }
     }
 
-    await execute(
-      "Router",
-      { from: deployer, log: true },
-      "grantRole",
-      await read("Router", "ADAPTERS_STORAGE_ROLE"),
-      (
-        await get("Quoter")
-      ).address,
-    )
+    // Assign needed role only if it hasn't been assigned before
+    if (
+      !(await read(
+        "Router",
+        "hasRole",
+        await read("Router", "ADAPTERS_STORAGE_ROLE"),
+        (
+          await get("Quoter")
+        ).address,
+      ))
+    ) {
+      await execute(
+        "Router",
+        { from: deployer, log: true },
+        "grantRole",
+        await read("Router", "ADAPTERS_STORAGE_ROLE"),
+        (
+          await get("Quoter")
+        ).address,
+      )
+    }
 
+    // This will set the new set of Adapters
     await execute(
       "Quoter",
       { from: deployer, log: true },
@@ -72,13 +87,18 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       tokens.DAIe,
       tokens.USDCe,
       tokens.USDTe,
+
       tokens.USDC,
+      tokens.USDT,
+      tokens.FRAX,
+      tokens.UST,
 
       tokens.WAVAX,
       tokens.WETHe,
       tokens.WBTCe,
     ]
 
+    // This will set the new set of tokens
     await execute(
       "Quoter",
       { from: deployer, log: true },
