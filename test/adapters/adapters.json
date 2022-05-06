@@ -100,6 +100,16 @@
         ]
       }
     },
+    "platypus": {
+      "platypus": {
+        "contract": "PlatypusAdapter",
+        "params": [
+          "Platypus on Avalanche",
+          0,
+          "0x66357dCaCe80431aee0A7507e2E361B7e2402370"
+        ]
+      }
+    },
     "synapse": {
       "eth": {
         "contract": "SynapseAaveAdapter",

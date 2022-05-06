@@ -14,11 +14,19 @@ import { getBigNumber } from "../../../bridge/utilities"
 import { forkChain, setBalance } from "../../utils/helpers"
 
 import config from "../../../config.json"
+import adapters from "../../adapters.json"
 
 chai.use(solidity)
 const { expect } = chai
 
-describe("Platypus Adapter", async function () {
+const CHAIN = 43114
+const DEX = "platypus"
+const POOL = "platypus"
+const STORAGE = "pool"
+const ADAPTER = adapters[CHAIN][DEX][POOL]
+const ADAPTER_NAME = String(ADAPTER.params[0])
+
+describe(ADAPTER_NAME, function () {
   let signers: Array<Signer>
 
   let owner: Signer
@@ -91,9 +99,7 @@ describe("Platypus Adapter", async function () {
     const adapterFactory = await ethers.getContractFactory("PlatypusAdapter")
 
     adapter = (await adapterFactory.deploy(
-      "PlatypusAdapter",
-      160000,
-      config[CHAIN][DEX].pool,
+      ...ADAPTER.params,
     )) as PlatypusAdapter
 
     const testFactory = await ethers.getContractFactory("TestAdapterSwap")
