@@ -111,7 +111,8 @@
       "SUSHIe": "0x37B608519F91f70F2EeB0e5Ed9AF4061722e4F76",
 
       "USDC": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
-      "USDT": "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7"
+      "USDT": "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7",
+      "UST": "0xb599c3590F42f8F995ECfa0f85D2980B76862fc1"
     },
     "slot": {
       "WAVAX": 3,
@@ -129,7 +130,8 @@
       "SUSHIe": 0,
 
       "USDC": 9,
-      "USDT": 51
+      "USDT": 51,
+      "UST": 5
     },
     "aave": {
       "lendingpool": "0x4F01AeD16D97E3aB5ab2B501154DC9bb0F1A5A2C"
@@ -139,7 +141,8 @@
       "mim": "0xAEA2E71b631fA93683BCF256A8689dFa0e094fcD",
       "usdc": "0x3a43A5851A3e3E0e25A3c1089670269786be1577",
       "tricrypto": "0x58e57cA18B7A47112b877E31929798Cd3D703b0f",
-      "tricryptopool": "0xB755B949C126C04e0348DD881a5cF55d424742B2"
+      "tricryptopool": "0xB755B949C126C04e0348DD881a5cF55d424742B2",
+      "ust3pool": "0xD79138c49c49200a1Afc935171D1bDAd084FDc95"
     },
     "gmx": {
       "vault": "0x9ab2De34A33fB459b538c43f251eB825645e8595",
