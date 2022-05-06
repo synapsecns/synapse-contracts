@@ -10,11 +10,19 @@ import { getBigNumber } from "../../../bridge/utilities"
 import { forkChain, setBalance } from "../../utils/helpers"
 
 import config from "../../../config.json"
+import adapters from "../../adapters.json"
 
 chai.use(solidity)
 const { expect } = chai
 
-describe("GMX Adapter", async function () {
+const CHAIN = 43114
+const DEX = "gmx"
+const POOL = "gmx"
+const STORAGE = "vault"
+const ADAPTER = adapters[CHAIN][DEX][POOL]
+const ADAPTER_NAME = String(ADAPTER.params[0])
+
+describe(ADAPTER_NAME, function () {
   let signers: Array<Signer>
 
   let owner: Signer
@@ -93,12 +101,7 @@ describe("GMX Adapter", async function () {
 
     const adapterFactory = await ethers.getContractFactory("GmxAdapter")
 
-    adapter = (await adapterFactory.deploy(
-      "GmxAdapter",
-      160000,
-      config[CHAIN][DEX].vault,
-      config[CHAIN][DEX].reader,
-    )) as GmxAdapter
+    adapter = (await adapterFactory.deploy(...ADAPTER.params)) as GmxAdapter
 
     const testFactory = await ethers.getContractFactory("TestAdapterSwap")
 
