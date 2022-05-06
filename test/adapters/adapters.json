@@ -89,6 +89,17 @@
         ]
       }
     },
+    "gmx": {
+      "gmx": {
+        "contract": "GmxAdapter",
+        "params": [
+          "GMX on Avalanche",
+          0,
+          "0x9ab2De34A33fB459b538c43f251eB825645e8595",
+          "0x67b789D48c926006F5132BFCe4e976F0A7A63d5D"
+        ]
+      }
+    },
     "synapse": {
       "eth": {
         "contract": "SynapseAaveAdapter",
