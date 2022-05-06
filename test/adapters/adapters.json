@@ -87,6 +87,15 @@
           "0xD79138c49c49200a1Afc935171D1bDAd084FDc95",
           true
         ]
+      },
+      "ust4pool": {
+        "contract": "CurveBaseAdapter",
+        "params": [
+          "Curve UST 4pool",
+          0,
+          "0xcb11EE4B70d73e38a383b8691cAFb221059669cC",
+          true
+        ]
       }
     },
     "gmx": {
