@@ -288,7 +288,7 @@ contract BridgeConfig is
     ) external onlyRole(GOVERNANCE_ROLE) {
         require(
             tokenConfigs[token].tokenType == TokenType.UNKNOWN,
-            "Token is already added"
+            "Token already added"
         );
         bridgeTokens.push(token);
 
@@ -317,7 +317,7 @@ contract BridgeConfig is
     ) external onlyRole(GOVERNANCE_ROLE) {
         require(
             tokenConfigs[token].tokenType != TokenType.UNKNOWN,
-            "Token is not added"
+            "Token not added"
         );
 
         _updateTokenSetup(token, bridgeToken, isMintBurn);
@@ -358,7 +358,7 @@ contract BridgeConfig is
         uint256 minSwapFee
     ) public onlyRole(GOVERNANCE_ROLE) {
         TokenConfig memory config = tokenConfigs[token];
-        require(config.tokenType != TokenType.UNKNOWN, "Token is not added");
+        require(config.tokenType != TokenType.UNKNOWN, "Token not added");
 
         config.synapseFee = synapseFee;
         config.maxTotalFee = maxTotalFee;
@@ -439,7 +439,7 @@ contract BridgeConfig is
         string calldata bridgeTokenNonEVM
     ) external onlyRole(GOVERNANCE_ROLE) {
         _checkConfigEVM(newChainIdsEVM, newBridgeTokensEVM);
-        require(tokenChainIds[token].length != 0, "!Map");
+        require(tokenChainIds[token].length != 0, "Token map not created");
 
         _updateTokenMap(
             token,
@@ -589,10 +589,13 @@ contract BridgeConfig is
         uint256[] calldata chainIdsEVM,
         address[] calldata bridgeTokensEVM
     ) internal pure {
-        require(bridgeTokensEVM.length == chainIdsEVM.length, "!length");
+        require(
+            bridgeTokensEVM.length == chainIdsEVM.length,
+            "Arrays length differs"
+        );
         for (uint256 i = 0; i < chainIdsEVM.length; ++i) {
-            require(chainIdsEVM[i] != 0, "!ID");
-            require(bridgeTokensEVM[i] != address(0), "!token");
+            require(chainIdsEVM[i] != 0, "Zero chainId is setup");
+            require(bridgeTokensEVM[i] != address(0), "Zero token in setup");
         }
     }
 
@@ -617,8 +620,8 @@ contract BridgeConfig is
         returns (bool)
     {
         TokenConfig memory config = tokenConfigs[token];
-        require(config.bridgeToken != address(0), "!token");
-        require(tokenChainIds[token].length != 0, "!Map");
+        require(config.tokenType != TokenType.UNKNOWN, "Token not added");
+        require(tokenChainIds[token].length != 0, "Token map not created");
 
         if (config.isEnabled == isEnabled) {
             // Y U DO DIS
@@ -640,7 +643,7 @@ contract BridgeConfig is
                 break;
             }
         }
-        require(token != address(0), "!Found");
+        require(token != address(0), "Local chain not found in list");
     }
 
     function _updateMap(
@@ -651,7 +654,10 @@ contract BridgeConfig is
         bool checkEmpty
     ) internal {
         address tokenLocal = _findLocalToken(chainIdsEVM, bridgeTokensEVM);
-        require(!checkEmpty || tokenChainIds[tokenLocal].length == 0, "+Map");
+        require(
+            !checkEmpty || tokenChainIds[tokenLocal].length == 0,
+            "Token map already created"
+        );
         _updateTokenMap(
             tokenLocal,
             chainIdsEVM,
@@ -669,7 +675,7 @@ contract BridgeConfig is
         string calldata bridgeTokenNonEVM
     ) internal {
         TokenConfig memory config = tokenConfigs[tokenLocal];
-        require(config.bridgeToken != address(0), "!token");
+        require(config.tokenType != TokenType.UNKNOWN, "Token not added");
 
         for (uint256 i = 0; i < chainIdsEVM.length; i++) {
             uint256 chainId = chainIdsEVM[i];
@@ -693,14 +699,17 @@ contract BridgeConfig is
                 tokenConfigs[tokenLocal] = config;
             } else {
                 // If token already has non-EVM chain setup, check that it's the same chain.
-                require(config.chainIdNonEVM == chainIdNonEVM, "+chain");
+                require(
+                    config.chainIdNonEVM == chainIdNonEVM,
+                    "Deployed on other non-EVM"
+                );
             }
         }
     }
 
     function _deleteTokenEVM(address tokenLocal) internal {
         TokenConfig memory config = tokenConfigs[tokenLocal];
-        require(config.bridgeToken != address(0), "!token");
+        require(config.tokenType != TokenType.UNKNOWN, "Token not added");
 
         {
             uint256 index = UINT_MAX;
@@ -712,7 +721,7 @@ contract BridgeConfig is
                 }
             }
 
-            require(index != UINT_MAX, "!found");
+            require(index != UINT_MAX, "Bridge token not found in list");
 
             // Replace found token with the last one
             bridgeTokens[index] = bridgeTokens[tokensAmount - 1];
@@ -738,7 +747,7 @@ contract BridgeConfig is
         internal
     {
         address tokenLocal = globalMapEVM[chainId][tokenGlobal];
-        require(tokenLocal != address(0), "!token");
+        require(tokenLocal != address(0), "Token doesn't exist");
 
         {
             uint256[] memory chainIds = tokenChainIds[tokenLocal];
@@ -751,7 +760,7 @@ contract BridgeConfig is
                 }
             }
 
-            require(index != UINT_MAX, "!found");
+            require(index != UINT_MAX, "Given chain not found in list");
 
             // Replace found chain with the last one
             tokenChainIds[tokenLocal][index] = chainIds[chainsAmount - 1];
