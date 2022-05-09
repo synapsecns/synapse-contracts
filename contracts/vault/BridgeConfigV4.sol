@@ -768,6 +768,7 @@ contract BridgeConfig is
         {
             uint256[] memory chainIds = tokenChainIds[tokenLocal];
             uint256 chainAmount = chainIds.length;
+            require(chainAmount != 0, "Token map not created");
             for (uint256 i = 0; i < chainAmount; ++i) {
                 uint256 chainId = chainIds[i];
                 address tokenGlobal = localMapEVM[tokenLocal][chainIds[i]];
