@@ -16,7 +16,7 @@ contract BridgeConfig is
     bytes32 public constant NODEGROUP_ROLE = keccak256("NODEGROUP_ROLE");
 
     /// @dev List of tokenLocal
-    address[] public bridgeTokens;
+    address[] internal bridgeTokens;
 
     /// @dev [tokenLocal => config]
     mapping(address => TokenConfig) public tokenConfigs;
@@ -114,6 +114,14 @@ contract BridgeConfig is
         bridgeToken = config.bridgeToken;
         isEnabled = config.isEnabled;
         isMintBurn = config.tokenType == TokenType.MINT_BURN;
+    }
+
+    function getBridgeTokens() external view returns (address[] memory) {
+        return bridgeTokens;
+    }
+
+    function getBridgeTokensAmount() external view returns (uint256 amount) {
+        amount = bridgeTokens.length;
     }
 
     /**
