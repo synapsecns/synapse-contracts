@@ -74,7 +74,8 @@ interface IBridgeConfig {
 
     event TokenStatusUpdated(
         uint256[] chainIdsEVM,
-        address[] bridgeTokensEVM,
+        uint256 originChainIdEVM,
+        address originTokenEVM,
         bool isEnabled
     );
 

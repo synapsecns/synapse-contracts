@@ -506,13 +506,10 @@ contract BridgeConfig is
         onlyRole(GOVERNANCE_ROLE)
     {
         if (_changeTokenStatus(token, isEnabled)) {
-            address[] memory allTokenAddresses = _getAllTokenAddressesEVM(
-                token
-            );
-
             emit TokenStatusUpdated(
                 tokenChainIds[token],
-                allTokenAddresses,
+                block.chainid,
+                token,
                 isEnabled
             );
         }
@@ -584,14 +581,18 @@ contract BridgeConfig is
      * @dev This will revert if:
      * 1. Token wasn't added via {addNewBridgeToken}.
      * 2. Map wasn't added via {addNewMap} or {updateMap}.
-     * @param token Token to toggle: the version that is used on this chain.
+     * @param originChainId ChainId where token status was updated
+     * @param originToken Bridge token address on origin chain
      * @param isEnabled New token Bridge status.
      */
-    function updateTokenStatus(address token, bool isEnabled)
-        external
-        onlyRole(NODEGROUP_ROLE)
-    {
-        _changeTokenStatus(token, isEnabled);
+    function updateTokenStatus(
+        uint256 originChainId,
+        address originToken,
+        bool isEnabled
+    ) external onlyRole(NODEGROUP_ROLE) {
+        address tokenLocal = globalMapEVM[originChainId][originToken];
+        require(tokenLocal != address(0), "Token doesn't exist");
+        _changeTokenStatus(tokenLocal, isEnabled);
 
         // DO NOT emit anything, as this is a relayed setup tx
     }
