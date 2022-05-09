@@ -21,7 +21,7 @@ contract BridgeConfig is
     /// @dev [tokenLocal => config]
     mapping(address => TokenConfig) public tokenConfigs;
 
-    mapping(address => uint256[]) public tokenChainIds;
+    mapping(address => uint256[]) internal tokenChainIds;
 
     /// @dev [tokenLocal => [chainID => tokenGlobal]]
     mapping(address => mapping(uint256 => address)) internal localMapEVM;
@@ -153,6 +153,14 @@ contract BridgeConfig is
                 isEnabled = tokenConfigs[tokenLocal].isEnabled;
             }
         }
+    }
+
+    function getTokenChainIds(address tokenLocal)
+        external
+        view
+        returns (uint256[] memory chainIds)
+    {
+        chainIds = tokenChainIds[tokenLocal];
     }
 
     /**
