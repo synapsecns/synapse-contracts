@@ -455,7 +455,19 @@ contract BridgeConfig is
         string calldata bridgeTokenNonEVM
     ) external onlyRole(GOVERNANCE_ROLE) {
         _checkConfigEVM(newChainIdsEVM, newBridgeTokensEVM);
-        require(tokenChainIds[token].length != 0, "Token map not created");
+        {
+            uint256[] memory chainIdsEVM = tokenChainIds[token];
+            require(chainIdsEVM.length != 0, "Token map not created");
+            for (uint256 i = 0; i < newChainIdsEVM.length; ++i) {
+                uint256 newChainId = newChainIdsEVM[i];
+                for (uint256 j = 0; j < chainIdsEVM.length; ++j) {
+                    require(
+                        chainIdsEVM[j] != newChainId,
+                        "ChainId already present in map"
+                    );
+                }
+            }
+        }
 
         _updateTokenMap(
             token,
