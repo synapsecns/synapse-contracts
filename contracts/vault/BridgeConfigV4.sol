@@ -745,14 +745,23 @@ contract BridgeConfig is
             bridgeTokens.pop();
         }
 
-        uint256[] memory chainIds = tokenChainIds[tokenLocal];
-        uint256 chainAmount = chainIds.length;
-        for (uint256 i = 0; i < chainAmount; ++i) {
-            uint256 chainId = chainIds[i];
-            address tokenGlobal = localMapEVM[tokenLocal][chainIds[i]];
+        {
+            uint256[] memory chainIds = tokenChainIds[tokenLocal];
+            uint256 chainAmount = chainIds.length;
+            for (uint256 i = 0; i < chainAmount; ++i) {
+                uint256 chainId = chainIds[i];
+                address tokenGlobal = localMapEVM[tokenLocal][chainIds[i]];
 
-            localMapEVM[tokenLocal][chainId] = address(0);
-            globalMapEVM[chainId][tokenGlobal] = address(0);
+                delete localMapEVM[tokenLocal][chainId];
+                delete globalMapEVM[chainId][tokenGlobal];
+            }
+        }
+
+        {
+            uint256 chainIdNonEVM = config.chainIdNonEVM;
+            if (chainIdNonEVM != 0) {
+                delete globalMapNonEVM[chainIdNonEVM][config.bridgeTokenNonEVM];
+            }
         }
 
         // Delete both token config and token chainIds
