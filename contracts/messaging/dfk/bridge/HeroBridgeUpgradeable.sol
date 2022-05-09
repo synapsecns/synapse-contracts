@@ -12,7 +12,10 @@ pragma solidity 0.8.13;
 /** @title Core app for handling cross chain messaging passing to bridge Hero NFTs
  */
 
-contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable {
+contract HeroBridgeUpgradeable is
+    Initializable,
+    SynMessagingReceiverUpgradeable
+{
     address public heroes;
     address public assistingAuction;
     uint256 public msgGasLimit;
@@ -23,14 +26,16 @@ contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable
         uint256 dstHeroId;
     }
 
-    function initialize(address _messageBus,
+    function initialize(
+        address _messageBus,
         address _heroes,
-        address _assistingAuction) external initializer {
+        address _assistingAuction
+    ) external initializer {
         __Ownable_init_unchained();
         messageBus = _messageBus;
         heroes = _heroes;
         assistingAuction = _assistingAuction;
-        }
+    }
 
     event HeroSent(uint256 indexed heroId, uint256 arrivalChainId);
     event HeroArrived(uint256 indexed heroId, uint256 arrivalChainId);
@@ -68,17 +73,15 @@ contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable
     /**
      * @notice User must have an existing hero minted to bridge it.
      * @dev This function enforces the caller to receive the Hero being bridged to the same address on another chain.
-     * @dev Do NOT call this from other contracts, unless the contract is deployed on another chain to the same address, 
-     * @dev and can receive ERC721s. 
+     * @dev Do NOT call this from other contracts, unless the contract is deployed on another chain to the same address,
+     * @dev and can receive ERC721s.
      * @param _heroId specifics which hero msg.sender already holds and will transfer to the bridge contract
      * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
      */
     function sendHero(uint256 _heroId, uint256 _dstChainId) external payable {
         uint256 heroId = _heroId;
         uint256 dstChainId = _dstChainId;
-        Hero memory heroToBridge = IHeroCoreUpgradeable(heroes).getHero(
-            heroId
-        );
+        Hero memory heroToBridge = IHeroCoreUpgradeable(heroes).getHero(heroId);
         // revert if the hero is on a quest
         require(
             heroToBridge.state.currentQuest == address(0),
@@ -108,7 +111,10 @@ contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable
             address(this),
             heroId
         );
-        require(IHeroCoreUpgradeable(heroes).ownerOf(heroId) == address(this), "Failed to lock Hero");
+        require(
+            IHeroCoreUpgradeable(heroes).ownerOf(heroId) == address(this),
+            "Failed to lock Hero"
+        );
         // Hero now locked, message can be safely emitted
 
         _send(receiver, dstChainId, msgToPass, options);
@@ -174,7 +180,10 @@ contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable
     ) internal override {
         bytes32 trustedRemote = trustedRemoteLookup[_dstChainId];
         require(trustedRemote != bytes32(0), "No remote app set for dst chain");
-        require(trustedRemote == _receiver, "Receiver is not in trusted remote apps");
+        require(
+            trustedRemote == _receiver,
+            "Receiver is not in trusted remote apps"
+        );
         IMessageBus(messageBus).sendMessage{value: msg.value}(
             _receiver,
             _dstChainId,
@@ -183,7 +192,10 @@ contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable
         );
     }
 
-    function setAssistingAuctionAddress(address _assistingAuction) external onlyOwner {
+    function setAssistingAuctionAddress(address _assistingAuction)
+        external
+        onlyOwner
+    {
         assistingAuction = _assistingAuction;
     }
 
