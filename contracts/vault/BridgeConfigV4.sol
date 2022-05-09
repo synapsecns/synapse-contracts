@@ -712,6 +712,11 @@ contract BridgeConfig is
                     config.chainIdNonEVM == chainIdNonEVM,
                     "Deployed on other non-EVM"
                 );
+                require(
+                    keccak256(bytes(config.bridgeTokenNonEVM)) ==
+                        keccak256(bytes(bridgeTokenNonEVM)),
+                    "Wrong non-EVM token address"
+                );
             }
         }
     }
