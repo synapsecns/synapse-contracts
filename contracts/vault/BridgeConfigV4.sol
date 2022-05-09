@@ -459,13 +459,15 @@ contract BridgeConfig is
 
         // tokenChainIds[token] now contains both old and new chainIds
         address[] memory allTokenAddresses = _getAllTokenAddressesEVM(token);
+        string memory updBridgeTokenNonEVM = tokenConfigs[token]
+        .bridgeTokenNonEVM;
 
         // Use both old and new chains in the emitted Event
         emit TokenMapUpdated(
             tokenChainIds[token],
             allTokenAddresses,
             tokenConfigs[token].chainIdNonEVM,
-            tokenConfigs[token].bridgeTokenNonEVM
+            updBridgeTokenNonEVM
         );
     }
 
