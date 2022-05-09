@@ -58,7 +58,7 @@ contract MessageBusReceiver is Ownable {
         bytes calldata _message,
         bytes32 _messageId
     ) external {
-        // In order to guarentee that an individual message is only executed once, a messageId is passed
+        // In order to guarantee that an individual message is only executed once, a messageId is passed
         // enforce that this message ID hasn't already been tried ever
         bytes32 messageId = _messageId;
         require(

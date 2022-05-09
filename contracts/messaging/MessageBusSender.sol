@@ -75,7 +75,7 @@ contract MessageBusSender is Ownable {
     ) external payable {
         require(_dstChainId != block.chainid, "Invalid chainId");
         uint256 fee = estimateFee(_dstChainId, _options);
-        require(msg.value >= fee, "Insuffient gas fee");
+        require(msg.value >= fee, "Insufficient gas fee");
         bytes32 msgId = computeMessageId(
             msg.sender,
             block.chainid,

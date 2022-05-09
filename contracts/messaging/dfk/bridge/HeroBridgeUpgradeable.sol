@@ -136,7 +136,7 @@ contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable
         address dstUser = passedMsg.dstUser;
         uint256 dstHeroId = passedMsg.dstHeroId;
 
-        // will revert if non-existant Hero
+        // will revert if non-existent Hero
         try IHeroCoreUpgradeable(heroes).ownerOf(dstHeroId) returns (
             address heroOwner
         ) {

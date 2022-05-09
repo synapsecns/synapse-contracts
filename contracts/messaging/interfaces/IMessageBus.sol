@@ -27,7 +27,7 @@ interface IMessageBus {
      * @param _gasLimit Gas limit to be passed alongside the message, depending on the fee paid on srcChain
      * @param _nonce Nonce from origin chain
      * @param _message Arbitrary message payload to pass to the destination chain receiver
-     * @param _messageId MessageId for uniqueness of messages (alongisde nonce)
+     * @param _messageId MessageId for uniqueness of messages (alongside nonce)
      */
     function executeMessage(
         uint256 _srcChainId,
