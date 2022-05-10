@@ -105,14 +105,16 @@ contract GasFeePricing is Ownable {
         // decoding the _options - reverts if type 2 and there is no dstNativeAddress
         require(
             _options.length == 34 || _options.length > 66,
-            "Wrong _adapterParameters size"
+            "Wrong _options size"
         );
+        // solhint-disable-next-line
         assembly {
             txType := mload(add(_options, 2))
             gasLimit := mload(add(_options, 34))
         }
 
         if (txType == 2) {
+            // solhint-disable-next-line
             assembly {
                 dstNativeAmt := mload(add(_options, 66))
                 dstNativeAddress := mload(add(_options, 98))
