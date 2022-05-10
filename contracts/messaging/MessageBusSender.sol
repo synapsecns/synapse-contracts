@@ -33,7 +33,7 @@ contract MessageBusSender is Ownable {
         uint256 _dstChainId,
         uint256 _srcNonce,
         bytes calldata _message
-    ) public view returns (bytes32) {
+    ) public pure returns (bytes32) {
         return
             keccak256(
                 abi.encode(

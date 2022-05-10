@@ -18,9 +18,12 @@ contract BatchMessageSender is SynMessagingReceiver {
         bytes[] memory _message,
         bytes[] memory _options
     ) public payable {
-        require(_receiver.length == _dstChainId.length);
-        require(_receiver.length == _message.length);
-        require(_receiver.length == _options.length);
+        require(
+            _receiver.length == _dstChainId.length,
+            "dstChainId bad length"
+        );
+        require(_receiver.length == _message.length, "message bad length");
+        require(_receiver.length == _options.length, "options bad length");
 
         uint256 feePerMessage = msg.value / _message.length;
 
