@@ -5,10 +5,10 @@ pragma solidity 0.8.13;
 import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
 contract GasFeePricing is Ownable {
-    // DstChainId => The estimated current gas price in wei of the destination chain
-    mapping(uint256 => uint256) public dstGasPriceInWei;
-    // DstChainId => USD gas ratio of dstGasToken / srcGasToken
-    mapping(uint256 => uint256) public dstGasTokenRatio;
+    // DstChainId => (estimated gas price of the destination chain) * (USD gas ratio of dstGasToken / srcGasToken)
+    // both multiples are in wei, so their multiple would be the gas price on dst chain,
+    // expressed in source chain's 10^(-18) wei = attoWei
+    mapping(uint256 => uint256) public dstGasPriceInSrcAttoWei;
 
     constructor() {}
 
@@ -36,8 +36,13 @@ contract GasFeePricing is Ownable {
         uint256 _gasUnitPrice,
         uint256 _gasTokenPriceRatio
     ) external onlyOwner {
-        dstGasPriceInWei[_dstChainId] = _gasUnitPrice;
-        dstGasTokenRatio[_dstChainId] = _gasTokenPriceRatio;
+        require(
+            _gasUnitPrice != 0 && _gasTokenPriceRatio != 0,
+            "Can't set to zero"
+        );
+        dstGasPriceInSrcAttoWei[_dstChainId] =
+            _gasUnitPrice *
+            _gasTokenPriceRatio;
     }
 
     /**
@@ -63,9 +68,9 @@ contract GasFeePricing is Ownable {
             gasLimit = 200000;
         }
 
-        uint256 minFee = ((dstGasPriceInWei[_dstChainId] *
-            dstGasTokenRatio[_dstChainId] *
-            gasLimit) / 10**18);
+        // divide by 10**18 to convert attoWei into wei
+        uint256 minFee = (dstGasPriceInSrcAttoWei[_dstChainId] * gasLimit) /
+            10**18;
 
         return minFee;
     }
