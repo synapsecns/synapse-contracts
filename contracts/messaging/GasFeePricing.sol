@@ -91,10 +91,10 @@ contract GasFeePricing is Ownable {
         public
         pure
         returns (
-            uint16,
-            uint256,
-            uint256,
-            bytes32
+            uint16 txType,
+            uint256 gasLimit,
+            uint256 dstNativeAmt,
+            bytes32 dstNativeAddress
         )
     {
         // decoding the _options - reverts if type 2 and there is no dstNativeAddress
@@ -102,10 +102,6 @@ contract GasFeePricing is Ownable {
             _options.length == 34 || _options.length > 66,
             "Wrong _adapterParameters size"
         );
-        uint16 txType;
-        uint256 gasLimit;
-        uint256 dstNativeAmt;
-        bytes32 dstNativeAddress;
         assembly {
             txType := mload(add(_options, 2))
             gasLimit := mload(add(_options, 34))
@@ -119,7 +115,5 @@ contract GasFeePricing is Ownable {
             require(dstNativeAmt != 0, "dstNativeAmt empty");
             require(dstNativeAddress != bytes32(0), "dstNativeAddress empty");
         }
-
-        return (txType, gasLimit, dstNativeAmt, dstNativeAddress);
     }
 }

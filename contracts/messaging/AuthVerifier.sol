@@ -30,7 +30,7 @@ contract AuthVerifier is Ownable {
      * @notice Permissioned method to support upgrades to the library
      * @param _nodegroup address which has authentication to execute messages
      */
-    function setNodeGroup(address _nodegroup) public onlyOwner {
+    function setNodeGroup(address _nodegroup) external onlyOwner {
         nodegroup = _nodegroup;
     }
 }
