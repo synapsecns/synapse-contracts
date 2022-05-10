@@ -53,6 +53,16 @@ abstract contract SynMessagingReceiver is ISynMessagingReceiver, Ownable {
         bytes memory _message,
         bytes memory _options
     ) internal virtual {
+        _send(_receiver, _dstChainId, _message, _options, payable(msg.sender));
+    }
+
+    function _send(
+        bytes32 _receiver,
+        uint256 _dstChainId,
+        bytes memory _message,
+        bytes memory _options,
+        address payable _refundAddress
+    ) internal virtual {
         require(
             trustedRemoteLookup[_dstChainId] != bytes32(0),
             "Receiver not trusted remote"
@@ -61,7 +71,8 @@ abstract contract SynMessagingReceiver is ISynMessagingReceiver, Ownable {
             _receiver,
             _dstChainId,
             _message,
-            _options
+            _options,
+            _refundAddress
         );
     }
 

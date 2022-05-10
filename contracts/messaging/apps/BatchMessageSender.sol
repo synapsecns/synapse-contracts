@@ -17,7 +17,42 @@ contract BatchMessageSender is SynMessagingReceiver {
         uint256[] memory _dstChainId,
         bytes[] memory _message,
         bytes[] memory _options
-    ) public payable {
+    ) external payable {
+        // use tx.origin for gas refund by default, so that older contracts,
+        // interacting with MessageBus that don't have a fallback/receive
+        // (i.e. not able to receive gas), will continue to work
+        _sendMultipleMessages(
+            _receiver,
+            _dstChainId,
+            _message,
+            _options,
+            payable(tx.origin)
+        );
+    }
+
+    function sendMultipleMessages(
+        bytes32[] memory _receiver,
+        uint256[] memory _dstChainId,
+        bytes[] memory _message,
+        bytes[] memory _options,
+        address payable _refundAddress
+    ) external payable {
+        _sendMultipleMessages(
+            _receiver,
+            _dstChainId,
+            _message,
+            _options,
+            _refundAddress
+        );
+    }
+
+    function _sendMultipleMessages(
+        bytes32[] memory _receiver,
+        uint256[] memory _dstChainId,
+        bytes[] memory _message,
+        bytes[] memory _options,
+        address payable _refundAddress
+    ) internal {
         require(
             _receiver.length == _dstChainId.length,
             "dstChainId bad length"
@@ -37,7 +72,8 @@ contract BatchMessageSender is SynMessagingReceiver {
                 _receiver[i],
                 _dstChainId[i],
                 _message[i],
-                _options[i]
+                _options[i],
+                _refundAddress
             );
         }
     }

@@ -62,6 +62,7 @@ contract MessageBusSender is Ownable {
     /**
      * @notice Sends a message to a receiving contract address on another chain.
      * Sender must make sure that the message is unique and not a duplicate message.
+     * Unspent gas fees would be transferred back to tx.origin.
      * @param _receiver The bytes32 address of the destination contract to be called
      * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
      * @param _message The arbitrary payload to pass to the destination chain receiver
@@ -73,6 +74,51 @@ contract MessageBusSender is Ownable {
         bytes calldata _message,
         bytes calldata _options
     ) external payable {
+        // use tx.origin for gas refund by default, so that older contracts,
+        // interacting with MessageBus that don't have a fallback/receive
+        // (i.e. not able to receive gas), will continue to work
+        _sendMessage(
+            _receiver,
+            _dstChainId,
+            _message,
+            _options,
+            payable(tx.origin)
+        );
+    }
+
+    /**
+     * @notice Sends a message to a receiving contract address on another chain.
+     * Sender must make sure that the message is unique and not a duplicate message.
+     * Unspent gas fees will be refunded to specified address.
+     * @param _receiver The bytes32 address of the destination contract to be called
+     * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
+     * @param _message The arbitrary payload to pass to the destination chain receiver
+     * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits
+     * @param _refundAddress Address that will receive unspent gas fees
+     */
+    function sendMessage(
+        bytes32 _receiver,
+        uint256 _dstChainId,
+        bytes calldata _message,
+        bytes calldata _options,
+        address payable _refundAddress
+    ) external payable {
+        _sendMessage(
+            _receiver,
+            _dstChainId,
+            _message,
+            _options,
+            _refundAddress
+        );
+    }
+
+    function _sendMessage(
+        bytes32 _receiver,
+        uint256 _dstChainId,
+        bytes calldata _message,
+        bytes calldata _options,
+        address payable _refundAddress
+    ) internal {
         require(_dstChainId != block.chainid, "Invalid chainId");
         uint256 fee = estimateFee(_dstChainId, _options);
         require(msg.value >= fee, "Insufficient gas fee");
@@ -92,11 +138,15 @@ contract MessageBusSender is Ownable {
             _message,
             nonce,
             _options,
-            msg.value,
+            fee,
             msgId
         );
-        fees += msg.value;
+        fees += fee;
         ++nonce;
+        // refund gas fees in case of overpayment
+        if (msg.value > fee) {
+            _refundAddress.transfer(msg.value - fee);
+        }
     }
 
     /**
