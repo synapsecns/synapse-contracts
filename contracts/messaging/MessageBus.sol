@@ -10,5 +10,8 @@ contract MessageBus is MessageBusSender, MessageBusReceiver {
     constructor(address _gasFeePricing, address _authVerifier)
         MessageBusSender(_gasFeePricing)
         MessageBusReceiver(_authVerifier)
-    {}
+    {
+        // silence linter without generating bytecode
+        this;
+    }
 }

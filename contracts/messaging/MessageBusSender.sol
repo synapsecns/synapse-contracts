@@ -169,7 +169,7 @@ contract MessageBusSender is Ownable {
         to.transfer(withdrawAmount);
     }
 
-    function updateGasFeePricing(address _gasFeePricing) public onlyOwner {
+    function updateGasFeePricing(address _gasFeePricing) external onlyOwner {
         require(_gasFeePricing != address(0), "Cannot set to 0");
         gasFeePricing = _gasFeePricing;
     }

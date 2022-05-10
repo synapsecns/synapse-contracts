@@ -16,7 +16,7 @@ contract MessageBusReceiver is Ownable {
     }
 
     // Store all successfully executed messages
-    mapping(bytes32 => TxStatus) public executedMessages;
+    mapping(bytes32 => TxStatus) internal executedMessages;
 
     // TODO: Rename to follow one standard convention -> Send -> Receive?
     event Executed(
@@ -60,15 +60,12 @@ contract MessageBusReceiver is Ownable {
     ) external {
         // In order to guarantee that an individual message is only executed once, a messageId is passed
         // enforce that this message ID hasn't already been tried ever
-        bytes32 messageId = _messageId;
         require(
-            executedMessages[messageId] == TxStatus.Null,
+            executedMessages[_messageId] == TxStatus.Null,
             "Message already executed"
         );
         // Authenticate executeMessage, will revert if not authenticated
         IAuthVerifier(authVerifier).msgAuth(abi.encode(msg.sender));
-        // Message is now in-flight, adjust status
-        // executedMessages[messageId] = TxStatus.Pending;
 
         TxStatus status;
         try
@@ -83,13 +80,13 @@ contract MessageBusReceiver is Ownable {
             status = TxStatus.Success;
         } catch (bytes memory reason) {
             // call hard reverted & failed
-            emit CallReverted(getRevertMsg(reason));
+            emit CallReverted(_getRevertMsg(reason));
             status = TxStatus.Fail;
         }
 
-        executedMessages[messageId] = status;
+        executedMessages[_messageId] = status;
         emit Executed(
-            messageId,
+            _messageId,
             status,
             _dstAddress,
             uint64(_srcChainId),
@@ -100,8 +97,8 @@ contract MessageBusReceiver is Ownable {
     /** HELPER VIEW FUNCTION */
     // https://ethereum.stackexchange.com/a/83577
     // https://github.com/Uniswap/v3-periphery/blob/v1.0.0/contracts/base/Multicall.sol
-    function getRevertMsg(bytes memory _returnData)
-        private
+    function _getRevertMsg(bytes memory _returnData)
+        internal
         pure
         returns (string memory)
     {
@@ -118,13 +115,13 @@ contract MessageBusReceiver is Ownable {
     /** CONTRACT CONFIG */
 
     function updateMessageStatus(bytes32 _messageId, TxStatus _status)
-        public
+        external
         onlyOwner
     {
         executedMessages[_messageId] = _status;
     }
 
-    function updateAuthVerifier(address _authVerifier) public onlyOwner {
+    function updateAuthVerifier(address _authVerifier) external onlyOwner {
         require(_authVerifier != address(0), "Cannot set to 0");
         authVerifier = _authVerifier;
     }

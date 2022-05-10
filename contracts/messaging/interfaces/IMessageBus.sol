@@ -38,7 +38,7 @@ interface IMessageBus {
     ) external payable;
 
     /**
-    * @notice Relayer executes messages through an authenticated method to the destination receiver based on the originating transaction on source chain
+     * @notice Relayer executes messages through an authenticated method to the destination receiver based on the originating transaction on source chain
      * @param _srcChainId Originating chain ID - typically a standard EVM chain ID, but may refer to a Synapse-specific chain ID on nonEVM chains
      * @param _srcAddress Originating bytes address of the message sender on the srcChain
      * @param _dstAddress Destination address that the arbitrary message will be passed to
