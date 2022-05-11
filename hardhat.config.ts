@@ -17,6 +17,7 @@ import dotenv from "dotenv"
 
 dotenv.config()
 
+
 let config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
@@ -108,7 +109,7 @@ let config: HardhatUserConfig = {
   },
   dodoc: {
     // skip doc generation on ci
-    runOnCompile: process.env.CI == "",
+    runOnCompile: process.env.CI != "",
     debugMode: false,
     // pre solidity 5 breaks docgen
     exclude: ["MultisigWallet", "WETH9"]

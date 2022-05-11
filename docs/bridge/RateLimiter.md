@@ -95,6 +95,23 @@ function LIMITER_ROLE() external view returns (bytes32)
 |---|---|---|
 | _0 | bytes32 | undefined |
 
+### MIN_RETRY_TIMEOUT
+
+```solidity
+function MIN_RETRY_TIMEOUT() external view returns (uint32)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint32 | undefined |
+
 ### NAME
 
 ```solidity
@@ -388,6 +405,40 @@ function retryCount(uint8 count) external nonpayable
 |---|---|---|
 | count | uint8 | undefined |
 
+### retryQueueLength
+
+```solidity
+function retryQueueLength() external view returns (uint256 length)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| length | uint256 | undefined |
+
+### retryTimeout
+
+```solidity
+function retryTimeout() external view returns (uint32)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | uint32 | undefined |
+
 ### revokeRole
 
 ```solidity
@@ -439,6 +490,22 @@ function setBridgeAddress(address bridge) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | bridge | address | undefined |
+
+### setRetryTimeout
+
+```solidity
+function setRetryTimeout(uint32 _retryTimeout) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _retryTimeout | uint32 | undefined |
 
 ### supportsInterface
 
