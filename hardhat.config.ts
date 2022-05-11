@@ -11,6 +11,8 @@ import "hardhat-spdx-license-identifier"
 import "hardhat-interface-generator"
 import "@primitivefi/hardhat-dodoc"
 import "@openzeppelin/hardhat-upgrades"
+import "hardhat-deploy-ethers";
+
 
 import { HardhatUserConfig } from "hardhat/config"
 import dotenv from "dotenv"
