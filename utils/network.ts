@@ -1,5 +1,6 @@
 export const CHAIN_ID = {
   MAINNET: "1",
+  GOERLI: "5",
   OPTIMISM: "10",
   CRONOS: "25",
   KOVAN: "42",
@@ -11,6 +12,7 @@ export const CHAIN_ID = {
   MOONBEAM: "1284",
   MOONRIVER: "1285",
   HARDHAT: "31337",
+  FUJI: "43113",
   AVALANCHE: "43114",
   ARBITRUM: "42161",
   DFK: "53935",
