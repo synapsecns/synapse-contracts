@@ -241,10 +241,10 @@ Wraps redeemAndSwap on SynapseBridge.sol Relays to nodes that (typically) a wrap
 | minDy | uint256 | the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain. |
 | deadline | uint256 | latest timestamp to accept this transaction* |
 
-### redeemv2
+### redeemV2
 
 ```solidity
-function redeemv2(bytes32 to, uint256 chainId, contract IERC20 token, uint256 amount) external nonpayable
+function redeemV2(bytes32 to, uint256 chainId, contract IERC20 token, uint256 amount) external nonpayable
 ```
 
 Wraps SynapseBridge redeemv2() function

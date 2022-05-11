@@ -136,7 +136,7 @@ wraps SynapseBridge redeem()
 function redeemAndRemove(address to, uint256 chainId, contract IERC20 token, uint256 amount, uint8 liqTokenIndex, uint256 liqMinAmount, uint256 liqDeadline) external nonpayable
 ```
 
-Wraps redeemAndRemove on SynapseBridge Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
+Wraps redeemAndRemove on SynapseBridge Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
 
 
 
@@ -150,7 +150,7 @@ Wraps redeemAndRemove on SynapseBridge Relays to nodes that (typically) a wrappe
 | amount | uint256 | Amount of (typically) LP token to pass to the nodes to attempt to removeLiquidity() with to redeem for the underlying assets of the LP token |
 | liqTokenIndex | uint8 | Specifies which of the underlying LP assets the nodes should attempt to redeem for |
 | liqMinAmount | uint256 | Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap |
-| liqDeadline | uint256 | Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token* |
+| liqDeadline | uint256 | Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token* |
 
 ### redeemAndSwap
 
@@ -158,7 +158,7 @@ Wraps redeemAndRemove on SynapseBridge Relays to nodes that (typically) a wrappe
 function redeemAndSwap(address to, uint256 chainId, contract IERC20 token, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline) external nonpayable
 ```
 
-Wraps redeemAndSwap on SynapseBridge.sol Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
+Wraps redeemAndSwap on SynapseBridge.sol Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
 
 
 
@@ -175,13 +175,13 @@ Wraps redeemAndSwap on SynapseBridge.sol Relays to nodes that (typically) a wrap
 | minDy | uint256 | the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain. |
 | deadline | uint256 | latest timestamp to accept this transaction* |
 
-### redeemv2
+### redeemV2
 
 ```solidity
-function redeemv2(bytes32 to, uint256 chainId, contract IERC20 token, uint256 amount) external nonpayable
+function redeemV2(bytes32 to, uint256 chainId, contract IERC20 token, uint256 amount) external nonpayable
 ```
 
-Wraps SynapseBridge redeemv2() function
+Wraps SynapseBridge redeemV2() function
 
 
 
@@ -364,6 +364,23 @@ function swapTokensMap(address, uint256) external view returns (contract IERC20)
 | Name | Type | Description |
 |---|---|---|
 | _0 | contract IERC20 | undefined |
+
+### synapseBridge
+
+```solidity
+function synapseBridge() external view returns (contract ISynapseBridge)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | contract ISynapseBridge | undefined |
 
 
 

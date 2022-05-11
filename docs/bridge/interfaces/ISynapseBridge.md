@@ -116,10 +116,10 @@ function redeemAndSwap(address to, uint256 chainId, contract IERC20 token, uint2
 | minDy | uint256 | undefined |
 | deadline | uint256 | undefined |
 
-### redeemv2
+### redeemV2
 
 ```solidity
-function redeemv2(bytes32 to, uint256 chainId, contract IERC20 token, uint256 amount) external nonpayable
+function redeemV2(bytes32 to, uint256 chainId, contract IERC20 token, uint256 amount) external nonpayable
 ```
 
 

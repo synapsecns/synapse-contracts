@@ -390,7 +390,7 @@ Nodes call this function to mint a SynERC20 (or any asset that the bridge is giv
 | pool | contract ISwap | Destination chain&#39;s pool to use to swap SynERC20 -&gt; Asset. The nodes determine this by using PoolConfig.sol. |
 | tokenIndexFrom | uint8 | Index of the SynERC20 asset in the pool |
 | tokenIndexTo | uint8 | Index of the desired final asset |
-| minDy | uint256 | Minumum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20. |
+| minDy | uint256 | Minimum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20. |
 | deadline | uint256 | Epoch time of the deadline that the swap is allowed to be executed. |
 | kappa | bytes32 | kappa* |
 
@@ -445,7 +445,7 @@ function rateLimiter() external view returns (contract IRateLimiter)
 function redeem(address to, uint256 chainId, contract ERC20Burnable token, uint256 amount) external nonpayable
 ```
 
-Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain
 
 
 
@@ -464,7 +464,7 @@ Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned 
 function redeemAndRemove(address to, uint256 chainId, contract ERC20Burnable token, uint256 amount, uint8 swapTokenIndex, uint256 swapMinAmount, uint256 swapDeadline) external nonpayable
 ```
 
-Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
+Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
 
 
 
@@ -478,7 +478,7 @@ Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned 
 | amount | uint256 | Amount in native token decimals to transfer cross-chain pre-fees |
 | swapTokenIndex | uint8 | Specifies which of the underlying LP assets the nodes should attempt to redeem for |
 | swapMinAmount | uint256 | Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap |
-| swapDeadline | uint256 | Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token* |
+| swapDeadline | uint256 | Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token* |
 
 ### redeemAndSwap
 
@@ -486,7 +486,7 @@ Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned 
 function redeemAndSwap(address to, uint256 chainId, contract ERC20Burnable token, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline) external nonpayable
 ```
 
-Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
+Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
 
 
 
@@ -509,7 +509,7 @@ Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned 
 function redeemV2(bytes32 to, uint256 chainId, contract ERC20Burnable token, uint256 amount) external nonpayable
 ```
 
-Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain
 
 
 
@@ -580,7 +580,7 @@ RateLimiter call this function to retry a mint of a SynERC20 (or any asset that 
 | pool | contract ISwap | Destination chain&#39;s pool to use to swap SynERC20 -&gt; Asset. The nodes determine this by using PoolConfig.sol. |
 | tokenIndexFrom | uint8 | Index of the SynERC20 asset in the pool |
 | tokenIndexTo | uint8 | Index of the desired final asset |
-| minDy | uint256 | Minumum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20. |
+| minDy | uint256 | Minimum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20. |
 | deadline | uint256 | Epoch time of the deadline that the swap is allowed to be executed. |
 | kappa | bytes32 | kappa* |
 
@@ -625,7 +625,7 @@ Function to be called by the rate limiter to retry a withdraw of the underlying 
 | pool | contract ISwap | Destination chain&#39;s pool to use to swap SynERC20 -&gt; Asset. The nodes determine this by using PoolConfig.sol. |
 | swapTokenIndex | uint8 | Specifies which of the underlying LP assets the nodes should attempt to redeem for |
 | swapMinAmount | uint256 | Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap |
-| swapDeadline | uint256 | Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token |
+| swapDeadline | uint256 | Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token |
 | kappa | bytes32 | kappa* |
 
 ### revokeRole
@@ -676,6 +676,22 @@ function setRateLimiter(contract IRateLimiter _rateLimiter) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | _rateLimiter | contract IRateLimiter | undefined |
+
+### setRateLimiterEnabled
+
+```solidity
+function setRateLimiterEnabled(bool enabled) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| enabled | bool | undefined |
 
 ### setWethAddress
 
@@ -762,7 +778,7 @@ Function to be called by the node group to withdraw the underlying assets from t
 | pool | contract ISwap | Destination chain&#39;s pool to use to swap SynERC20 -&gt; Asset. The nodes determine this by using PoolConfig.sol. |
 | swapTokenIndex | uint8 | Specifies which of the underlying LP assets the nodes should attempt to redeem for |
 | swapMinAmount | uint256 | Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap |
-| swapDeadline | uint256 | Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token |
+| swapDeadline | uint256 | Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token |
 | kappa | bytes32 | kappa* |
 
 ### withdrawFees
@@ -779,7 +795,7 @@ withdraw specified ERC20 token fees to a given address
 
 | Name | Type | Description |
 |---|---|---|
-| token | contract IERC20 | ERC20 token in which fees acccumulated to transfer |
+| token | contract IERC20 | ERC20 token in which fees accumulated to transfer |
 | to | address | Address to send the fees to |
 
 
