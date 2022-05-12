@@ -84,4 +84,42 @@ contract MessageBusReceiverTest is Test {
         vm.expectRevert("Unauthenticated caller");
         messageBusReceiver.executeMessage(srcChainId, srcAddress, dstAddress, 200000, nonce, message, messageId);
     }
+
+    function testUnauthorizedPauseUnpause() public {
+        // try pausing from unauthorized address
+        vm.prank(address(999));
+        vm.expectRevert("Ownable: caller is not the owner");
+        messageBusReceiver.pause();
+
+        // switch to authorized address, pause
+        vm.prank(address(this));
+        messageBusReceiver.pause();
+
+        // try pausing from unauthorized address
+        vm.prank(address(999));
+        vm.expectRevert("Ownable: caller is not the owner");
+        messageBusReceiver.unpause();
+
+        // try unpausing from correct address
+        vm.prank(address(this));
+        messageBusReceiver.unpause();
+    }
+
+    function testPausedMessageSend() public {
+        // pause the contract
+        vm.prank(address(this));
+        messageBusReceiver.pause();
+
+        uint256 srcChainId = 1;
+        bytes32 srcAddress = addressToBytes32(address(1338));
+        address dstAddress = address(0x2796317b0fF8538F253012862c06787Adfb8cEb6);
+        uint256 nonce = 0;
+        bytes memory message = bytes("");
+        bytes32 messageId = keccak256("testMessageId");
+
+        vm.prank(address(999));
+        vm.expectRevert("Pausable: paused");
+
+        messageBusReceiver.executeMessage(srcChainId, srcAddress, dstAddress, 200000, nonce, message, messageId);
+    }
 }

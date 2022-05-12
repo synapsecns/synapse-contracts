@@ -3,10 +3,11 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
+import "@openzeppelin/contracts-4.5.0/security/Pausable.sol";
 import "./interfaces/IAuthVerifier.sol";
 import "./interfaces/ISynMessagingReceiver.sol";
 
-contract MessageBusReceiver is Ownable {
+contract MessageBusReceiver is Ownable, Pausable {
     address public authVerifier;
 
     enum TxStatus {
@@ -57,7 +58,7 @@ contract MessageBusReceiver is Ownable {
         uint256 _nonce,
         bytes calldata _message,
         bytes32 _messageId
-    ) external {
+    ) external whenNotPaused {
         // In order to guarentee that an individual message is only executed once, a messageId is passed
         // enforce that this message ID hasn't already been tried ever
         bytes32 messageId = _messageId;
@@ -126,5 +127,14 @@ contract MessageBusReceiver is Ownable {
     function updateAuthVerifier(address _authVerifier) public onlyOwner {
         require(_authVerifier != address(0), "Cannot set to 0");
         authVerifier = _authVerifier;
+    }
+
+    // PAUSABLE FUNCTIONS ***/
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner {
+        _unpause();
     }
 }
