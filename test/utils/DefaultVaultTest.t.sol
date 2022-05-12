@@ -128,8 +128,10 @@ contract DefaultVaultTest is Test {
     }
 
     function setUp() public virtual {
-        // Roads? Where we're going, we don't need roads. 
-        vm.warp(2345678901);
+        // Roads? Where we're going, we don't need roads.
+        if (!_config.needsUpgrade) {
+            vm.warp(2345678901);
+        }
         _setupVault();
         _setupBridge();
         _setupRouter();
@@ -139,9 +141,9 @@ contract DefaultVaultTest is Test {
         // Deploy Vault and change old Bridge implementation to Vault
         address _vault = deployCode("./artifacts/Vault.sol/Vault.json");
         if (_config.needsUpgrade) {
+            vault = IVault(_config.oldBridgeAddress);
             _saveState();
             utils.upgradeTo(_config.oldBridgeAddress, _vault);
-            vault = IVault(_config.oldBridgeAddress);
             vm.label(_vault, "Vault impl");
         } else {
             vault = IVault(_vault);
@@ -149,8 +151,9 @@ contract DefaultVaultTest is Test {
         }
         vm.label(address(vault), "Vault");
 
+        bytes32 govRole = vault.GOVERNANCE_ROLE();
         hoax(utils.getRoleMember(address(vault), 0x00));
-        IAccessControl(address(vault)).grantRole(vault.GOVERNANCE_ROLE(), governance);
+        IAccessControl(address(vault)).grantRole(govRole, governance);
     }
 
     function _setupBridge() private {
@@ -168,8 +171,9 @@ contract DefaultVaultTest is Test {
         bridge.grantRole(bridge.GOVERNANCE_ROLE(), governance);
         bridge.grantRole(bridge.NODEGROUP_ROLE(), node);
 
+        bytes32 bridgeRole = vault.BRIDGE_ROLE();
         hoax(utils.getRoleMember(address(vault), 0x00));
-        IAccessControl(address(vault)).grantRole(vault.BRIDGE_ROLE(), address(bridge));
+        IAccessControl(address(vault)).grantRole(bridgeRole, address(bridge));
     }
 
     function _setupRouter() private {
