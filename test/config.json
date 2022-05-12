@@ -25,6 +25,14 @@
       "aave": "0xDeBF20617708857ebe4F679508E7b7863a8A8EeE",
       "frax": "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
       "tricrypto": "0xD51a44d3FaE010294C616388b506AcdA1bfAAE46"
+    },
+    "sushiswap": {
+      "factory": "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac",
+      "hash": "0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303"
+    },
+    "uniswap": {
+      "factory": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+      "hash": "0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f"
     }
   },
   "250": {
