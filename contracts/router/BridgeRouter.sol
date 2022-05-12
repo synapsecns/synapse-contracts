@@ -12,6 +12,7 @@ import {IBridge} from "../vault/interfaces/IBridge.sol";
 import {Router} from "./Router.sol";
 
 // solhint-disable reason-string
+// solhint-disable not-rely-on-time
 
 contract BridgeRouter is Router, IBridgeRouter {
     using SafeERC20 for IERC20;
@@ -68,11 +69,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         uint256 amountIn,
         IBridge.SwapParams calldata destinationSwapParams,
         bool gasdropRequested
-    )
-        external
-        deadlineCheck(initialSwapParams.deadline)
-        returns (uint256 amountBridged)
-    {
+    ) external returns (uint256 amountBridged) {
         // First, perform swap on initial chain
         // Need to pull tokens from caller => isSelfSwap = false
         IERC20 bridgeToken = _swapToBridge(initialSwapParams, amountIn, false);
@@ -93,12 +90,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         IBridge.SwapParams calldata initialSwapParams,
         IBridge.SwapParams calldata destinationSwapParams,
         bool gasdropRequested
-    )
-        external
-        payable
-        deadlineCheck(initialSwapParams.deadline)
-        returns (uint256 amountBridged)
-    {
+    ) external payable returns (uint256 amountBridged) {
         // TODO: enforce consistency?? introduce amountIn parameter
 
         require(
@@ -131,11 +123,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         uint256 chainId,
         IBridge.SwapParams calldata initialSwapParams,
         uint256 amountIn
-    )
-        external
-        deadlineCheck(initialSwapParams.deadline)
-        returns (uint256 amountBridged)
-    {
+    ) external returns (uint256 amountBridged) {
         // First, perform swap on initial chain
         // Need to pull tokens from caller => isSelfSwap = false
         IERC20 bridgeToken = _swapToBridge(initialSwapParams, amountIn, false);
@@ -152,12 +140,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         bytes32 to,
         uint256 chainId,
         IBridge.SwapParams calldata initialSwapParams
-    )
-        external
-        payable
-        deadlineCheck(initialSwapParams.deadline)
-        returns (uint256 amountBridged)
-    {
+    ) external payable returns (uint256 amountBridged) {
         // TODO: enforce consistency?? introduce amountIn parameter
 
         require(
@@ -189,6 +172,10 @@ contract BridgeRouter is Router, IBridgeRouter {
         bool isSelfSwap
     ) internal checkSwapParams(initialSwapParams) returns (IERC20 lastToken) {
         if (_isSwapPresent(initialSwapParams)) {
+            require(
+                block.timestamp <= initialSwapParams.deadline,
+                "Router: past deadline"
+            );
             // Swap, and send swapped tokens to Bridge contract directly
             (isSelfSwap ? _selfSwap : _swap)(
                 bridge,
