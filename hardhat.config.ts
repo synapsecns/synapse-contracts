@@ -94,7 +94,7 @@ let config: HardhatUserConfig = {
       url: "https://api.avax-test.network/ext/bc/C/rpc"
     },
     goerli: {
-      url: "https://rpc.goerli.mudit.blog/"
+      url: process.env.GOERLI_API
     },
     optimism: {
       url: "https://mainnet.optimism.io",
