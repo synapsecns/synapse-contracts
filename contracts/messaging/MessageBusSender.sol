@@ -3,9 +3,10 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
+import "@openzeppelin/contracts-4.5.0/security/Pausable.sol";
 import "./interfaces/IGasFeePricing.sol";
 
-contract MessageBusSender is Ownable {
+contract MessageBusSender is Ownable, Pausable {
     address public gasFeePricing;
     uint64 public nonce;
     uint256 public fees;
@@ -73,7 +74,7 @@ contract MessageBusSender is Ownable {
         uint256 _dstChainId,
         bytes calldata _message,
         bytes calldata _options
-    ) external payable {
+    ) external payable whenNotPaused {
         // use tx.origin for gas refund by default, so that older contracts,
         // interacting with MessageBus that don't have a fallback/receive
         // (i.e. not able to receive gas), will continue to work
