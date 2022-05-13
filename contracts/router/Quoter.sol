@@ -88,10 +88,10 @@ contract Quoter is BasicQuoter, IQuoter {
         address tokenIn,
         uint256 amountIn,
         address tokenOut
-    ) external view returns (Offers.FormattedOffer memory _bestOffer) {
+    ) external view returns (Offers.FormattedOffer memory bestOffer) {
         // User pays for gas, so:
         // use maximum swaps permitted for the search
-        _bestOffer = findBestPath(tokenIn, amountIn, tokenOut, MAX_SWAPS);
+        bestOffer = findBestPath(tokenIn, amountIn, tokenOut, MAX_SWAPS);
     }
 
     // -- INTERNAL HELPERS
@@ -114,8 +114,8 @@ contract Quoter is BasicQuoter, IQuoter {
         address tokenOut,
         uint256 maxSwaps,
         Offers.Offer memory queries
-    ) internal view returns (Offers.Offer memory) {
-        Offers.Offer memory bestOption = Offers.cloneOfferWithGas(queries);
+    ) internal view returns (Offers.Offer memory bestOption) {
+        bestOption = Offers.cloneOfferWithGas(queries);
         /// @dev bestAmountOut is net returns of the swap,
         /// this is the parameter that should be maximized
 
@@ -194,7 +194,6 @@ contract Quoter is BasicQuoter, IQuoter {
                 }
             }
         }
-        return bestOption;
     }
 
     /**
