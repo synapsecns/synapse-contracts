@@ -80,13 +80,13 @@ contract VaultTestEth is DefaultVaultForkedTest {
     }
 
     function _setupTokens() internal override {
-        _addSimpleBridgeToken(basicTokens.nusd, "nUSD", 10**7, false, 10, 20 * 10**18, 0, 80 * 10**18, 0);
-        _addSimpleBridgeToken(basicTokens.weth, "wETH", 10**4, false, 10, 2 * 10**16, 0, 8 * 10**16, 0);
+        _addSimpleBridgeToken(basicTokens.nusd, "nUSD", 10**7, false, 10, 20 * 10**18, 0, 80 * 10**18, 0, false);
+        _addSimpleBridgeToken(basicTokens.weth, "wETH", 10**4, false, 10, 2 * 10**16, 0, 8 * 10**16, 0, true);
 
-        _addToken(testTokens.dai, "DAI", 10**7);
-        _addToken(testTokens.usdc, "USDC", 10**7);
-        _addToken(testTokens.usdt, "USDT", 10**7);
+        _addToken(testTokens.dai, "DAI", 10**7, true);
+        _addToken(testTokens.usdc, "USDC", 10**7, true);
+        _addToken(testTokens.usdt, "USDT", 10**7, true);
 
-        _addToken(testTokens.wbtc, "wBTC", 10**3);
+        _addToken(testTokens.wbtc, "wBTC", 10**3, false);
     }
 }
