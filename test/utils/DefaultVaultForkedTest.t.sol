@@ -142,6 +142,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
     // solhint-disable-next-line
     struct _BridgeOutState {
         bool isMintBurn;
+        bool hasWrapper;
         bool startFromGas;
         uint256 userTokenInBalance;
         uint256 routerTokenInBalance;
@@ -297,14 +298,21 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
     ) internal view returns (_BridgeOutState memory state) {
         IERC20 _in = IERC20(tokenIn);
         IERC20 _out = IERC20(tokenOut);
-        (tokenOut, , state.isMintBurn) = bridgeConfig.getBridgeToken(tokenOut);
+        address wrapper;
+        (wrapper, , state.isMintBurn) = bridgeConfig.getBridgeToken(tokenOut);
+        state.hasWrapper = (wrapper != tokenOut);
         state.startFromGas = startFromGas;
+
         state.userTokenInBalance = startFromGas ? user.balance : _in.balanceOf(user);
+
         state.routerTokenInBalance = startFromGas ? address(router).balance : _in.balanceOf(address(router));
         state.routerTokenOutBalance = _out.balanceOf(address(router));
+
         state.bridgeTokenInBalance = startFromGas ? address(bridge).balance : _in.balanceOf(address(bridge));
         state.bridgeTokenOutBalance = _out.balanceOf(address(bridge));
+
         state.vaultTokenOutBalance = vault.getTokenBalance(_out);
+
         state.tokenOutTotalSupply = _out.totalSupply();
     }
 
@@ -332,7 +340,10 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
             assertEq(_out.balanceOf(address(bridge)) - state.bridgeTokenOutBalance, 0, "TokenOut left in Bridge");
         }
         if (state.isMintBurn) {
-            assertEq(state.tokenOutTotalSupply - _out.totalSupply(), amountOut, "Incomplete burn");
+            if (!state.hasWrapper) {
+                // Tokens that need a wrapper to be bridged are supposed to check invariant separately
+                assertEq(state.tokenOutTotalSupply - _out.totalSupply(), amountOut, "Incomplete burn");
+            }
         } else {
             assertEq(vault.getTokenBalance(_out) - state.vaultTokenOutBalance, amountOut, "Incomplete deposit");
         }
