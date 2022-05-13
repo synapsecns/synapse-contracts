@@ -89,6 +89,19 @@ contract Utilities is Test {
 
     // -- EVM FUNCTIONS --
 
+    /// @notice Get state modifying function return value without modifying the state
+    function peekReturnValue(
+        address caller,
+        address _contract,
+        bytes memory payload,
+        uint256 value
+    ) external {
+        vm.prank(caller);
+        (bool success, bytes memory data) = _contract.call{value: value}(payload);
+        assertTrue(success, "Call failed");
+        revert(string(data));
+    }
+
     // move block.number forward by a given number of blocks
     function mineBlocks(uint256 numBlocks) external {
         uint256 targetBlock = block.number + numBlocks;
