@@ -7,7 +7,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const { deploy, get } = deployments
   const { deployer } = await getNamedAccounts()
-  if ((await getChainId()) === CHAIN_ID.MAINNET) {
+  if ((await getChainId()) === CHAIN_ID.MAINNET || await getChainId() === CHAIN_ID.GOERLI) {
     await deploy('ECDSAFactory', {
       from: deployer,
       log: true,
