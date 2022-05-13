@@ -11,6 +11,7 @@ import {SafeERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/SafeERC2
 abstract contract DefaultVaultForkedSetup is DefaultVaultTest {
     using SafeERC20 for IERC20;
 
+    mapping(address => uint256) public minTokenAmount;
     mapping(address => uint256) public maxTokenAmount;
 
     uint256[] public dstChainIdsEVM;
@@ -59,21 +60,24 @@ abstract contract DefaultVaultForkedSetup is DefaultVaultTest {
     function _addToken(
         address token,
         string memory name,
+        uint256 minAmount,
         uint256 maxAmount,
-		bool isRouteToken
+        bool isRouteToken
     ) internal {
         _addToken(token);
         vm.label(token, name);
+        minTokenAmount[token] = minAmount;
         maxTokenAmount[token] = maxAmount * 10**IERC20(token).decimals();
-		tokenNames[token] = name;
-		if (isRouteToken) {
-			routeTokens.push(token);
-		}
+        tokenNames[token] = name;
+        if (isRouteToken) {
+            routeTokens.push(token);
+        }
     }
 
     function _addSimpleBridgeToken(
         address token,
         string memory name,
+        uint256 minAmount,
         uint256 maxAmount,
         bool isMintBurn,
         uint256 feeBP,
@@ -81,9 +85,9 @@ abstract contract DefaultVaultForkedSetup is DefaultVaultTest {
         uint256 minGasDropFee,
         uint256 minSwapFee,
         uint256 chainIdNonEVM,
-		bool isRouteToken
+        bool isRouteToken
     ) internal {
-        _addToken(token, name, maxAmount, isRouteToken);
+        _addToken(token, name, minAmount, maxAmount, isRouteToken);
 
         _addBridgeToken(token, token, isMintBurn, feeBP * 10**6, MAX_UINT, minBridgeFee, minGasDropFee, minSwapFee);
         _addBridgeMap(token, chainIdNonEVM, name);
