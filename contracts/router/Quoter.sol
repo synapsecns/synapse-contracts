@@ -43,23 +43,38 @@ contract Quoter is BasicQuoter, IQuoter {
         uint256 amountIn,
         address tokenOut,
         uint8 maxSwaps
-    ) public view returns (Offers.FormattedOffer memory _bestOffer) {
+    ) public view returns (Offers.FormattedOffer memory bestOffer) {
         require(
             maxSwaps > 0 && maxSwaps <= MAX_SWAPS,
             "Quoter: Invalid max-swaps"
         );
-        Offers.Offer memory queries;
-        queries.amounts = Bytes.toBytes(amountIn);
-        queries.path = Bytes.toBytes(tokenIn);
+        if (tokenIn == tokenOut) {
+            bestOffer.amounts = new uint256[](1);
+            bestOffer.path = new address[](1);
+            bestOffer.adapters = new address[](0);
 
-        queries = _findBestPath(amountIn, tokenIn, tokenOut, maxSwaps, queries);
+            bestOffer.amounts[0] = amountIn;
+            bestOffer.path[0] = tokenIn;
+        } else {
+            Offers.Offer memory queries;
+            queries.amounts = Bytes.toBytes(amountIn);
+            queries.path = Bytes.toBytes(tokenIn);
 
-        // If no paths are found, return empty struct
-        if (queries.adapters.length == 0) {
-            queries.amounts = "";
-            queries.path = "";
+            queries = _findBestPath(
+                amountIn,
+                tokenIn,
+                tokenOut,
+                maxSwaps,
+                queries
+            );
+
+            // If no paths are found, return empty struct
+            if (queries.adapters.length == 0) {
+                queries.amounts = "";
+                queries.path = "";
+            }
+            bestOffer = Offers.formatOfferWithGas(queries);
         }
-        return Offers.formatOfferWithGas(queries);
     }
 
     /**
