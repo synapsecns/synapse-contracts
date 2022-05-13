@@ -4,6 +4,15 @@ pragma solidity >=0.8.0;
 import "../../utils/DefaultVaultForkedTest.t.sol";
 
 contract VaultTestEth is DefaultVaultForkedTest {
+    BasicTokens internal basicTokens =
+        BasicTokens({
+            wgas: payable(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2),
+            weth: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
+            neth: address(0),
+            nusd: 0x1B84765dE8B7566e4cEAF4D0fD3c5aF52D3DdE4F,
+            syn: 0x0f2D719407FdBeFF09D87557AbB7232601FD9F29
+        });
+
     struct TestTokens {
         address dai;
         address usdc;
@@ -38,14 +47,6 @@ contract VaultTestEth is DefaultVaultForkedTest {
     string public constant CURVE_3POOL = "Curve 3pool";
 
     constructor() DefaultVaultForkedTest(ethConfig) {
-        basicTokens = BasicTokens({
-            wgas: payable(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2),
-            weth: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
-            neth: address(0),
-            nusd: 0x1B84765dE8B7566e4cEAF4D0fD3c5aF52D3DdE4F,
-            syn: 0x0f2D719407FdBeFF09D87557AbB7232601FD9F29
-        });
-
         kappas = new bytes32[](4);
         kappas[0] = 0x58b29a4cf220b60a7e46b76b9831686c0bfbdbfea19721ef8f2192ba28514485;
         kappas[1] = 0x3745754e018ed57dce0feda8b027f04b7e1369e7f74f1a247f5f7352d519021c;
@@ -55,6 +56,8 @@ contract VaultTestEth is DefaultVaultForkedTest {
         dstChainIdsEVM = new uint256[](2);
         dstChainIdsEVM[0] = 56;
         dstChainIdsEVM[1] = 250;
+
+        tokenFixedTotalSupply = basicTokens.nusd;
     }
 
     function _setupAdapters() internal override {
@@ -80,6 +83,9 @@ contract VaultTestEth is DefaultVaultForkedTest {
     }
 
     function _setupTokens() internal override {
+        // Add WGAS as first token
+        _addSimpleBridgeToken(basicTokens.weth, "wETH", 10**15, 10**4, false, 10, 2 * 10**16, 0, 8 * 10**16, 0, true);
+
         _addSimpleBridgeToken(
             basicTokens.nusd,
             "nUSD",
@@ -93,7 +99,6 @@ contract VaultTestEth is DefaultVaultForkedTest {
             0,
             false
         );
-        _addSimpleBridgeToken(basicTokens.weth, "wETH", 10**15, 10**4, false, 10, 2 * 10**16, 0, 8 * 10**16, 0, true);
 
         _addToken(testTokens.dai, "DAI", 10**18, 10**7, true);
         _addToken(testTokens.usdc, "USDC", 10**6, 10**7, true);
