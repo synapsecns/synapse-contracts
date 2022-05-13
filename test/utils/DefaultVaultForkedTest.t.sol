@@ -6,12 +6,13 @@ import "./DefaultVaultForkedSetup.t.sol";
 import {Offers} from "src-router/libraries/LibOffers.sol";
 import {IBridge} from "src-vault/interfaces/IBridge.sol";
 
+// solhint-disable code-complexity
+// solhint-disable not-rely-on-time
+
 abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
     using SafeERC20 for IERC20;
 
     bytes32[] public kappas;
-
-    uint256 public constant MIN_SWAP_AMOUNT = 10**3;
 
     constructor(TestSetup memory config) DefaultVaultForkedSetup(config) {
         this;
@@ -28,35 +29,53 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         }
     }
 
-    function testBridgeDirect() public {
-        uint256 tokensAmount = bridgeTokens.length;
-        uint256 chainsAmount = dstChainIdsEVM.length;
-
-        for (uint256 j = 0; j < chainsAmount; ++j) {
-            uint256 chainId = dstChainIdsEVM[j];
-            for (uint256 i = 0; i < tokensAmount; ++i) {
-                _testDirectBridgeEVM(i, 10**6, chainId, false);
-                _testDirectBridgeEVM(i, 10**7, chainId, true);
-            }
-        }
-        for (uint256 i = 0; i < tokensAmount; ++i) {
-            _testDirectBridgeNonEVM(i, 10**8);
-        }
+    function testBridgeOutToken(uint256 amountIn, uint8 indexFrom) public {
+        _testBridgeOuts(amountIn, indexFrom, false);
     }
 
-    function testBridgeSwaps(
+    function testBridgeOutGas(uint256 amountIn) public {
+        // WGAS is always the first token
+        uint8 indexFrom = 0;
+
+        _testBridgeOuts(amountIn, indexFrom, true);
+    }
+
+    function _testBridgeOuts(
         uint256 amountIn,
         uint8 indexFrom,
-        bool gasdropRequested
-    ) public {
+        bool startFromGas
+    ) internal {
         uint256 tokensAmount = bridgeTokens.length;
         uint256 chainsAmount = dstChainIdsEVM.length;
 
         for (uint256 j = 0; j < chainsAmount; ++j) {
+            _BridgeOutBools memory bools = _BridgeOutBools({
+                gasdropRequested: false,
+                isEVM: true,
+                startFromGas: startFromGas
+            });
             uint256 chainId = dstChainIdsEVM[j];
             for (uint256 i = 0; i < tokensAmount; ++i) {
                 address bridgeToken = bridgeTokens[i];
-                _testBridgeSwapEVM(amountIn, indexFrom, bridgeToken, chainId, gasdropRequested);
+                // gasDrop = false, isEVM = true
+                _testBridgeOut(amountIn, indexFrom, bridgeToken, chainId, bools);
+                // gasDrop = true, isEVM = true
+                bools.gasdropRequested = true;
+                _testBridgeOut(amountIn, indexFrom, bridgeToken, chainId, bools);
+            }
+        }
+
+        for (uint256 i = 0; i < tokensAmount; ++i) {
+            address bridgeToken = bridgeTokens[i];
+            uint256 chainId = _getTokenChainNonEVM(bridgeToken);
+            if (chainId != 0) {
+                _BridgeOutBools memory bools = _BridgeOutBools({
+                    gasdropRequested: false,
+                    isEVM: false,
+                    startFromGas: startFromGas
+                });
+                // gasDrop = false, isEVM = false
+                _testBridgeOut(amountIn, indexFrom, bridgeToken, chainId, bools);
             }
         }
     }
@@ -99,6 +118,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         }
     }
 
+    // solhint-disable-next-line
     struct _BridgeOutState {
         bool isMintBurn;
         bool startFromGas;
@@ -111,102 +131,57 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         uint256 tokenOutTotalSupply;
     }
 
-    function _testDirectBridgeEVM(
-        uint256 indexFrom,
-        uint256 amount,
-        uint256 chainId,
-        bool gasdropRequested
-    ) internal {
-        address token = bridgeTokens[indexFrom % bridgeTokens.length];
-        address dstToken = _getTokenDstAddress(token, chainId);
-
-        _addTokenTo(token, user, amount);
-        _BridgeOutState memory state = _saveTokenState(token, token, false);
-
-        startHoax(user);
-        IERC20(token).safeApprove(address(router), amount);
-
-        vm.expectEmit(true, false, false, true);
-        emit BridgedOutEVM(
-            user,
-            chainId,
-            IERC20(token),
-            amount,
-            IERC20(dstToken),
-            _getEmptySwapParams(dstToken),
-            gasdropRequested
-        );
-
-        router.bridgeTokenToEVM(
-            user,
-            chainId,
-            _getEmptySwapParams(token),
-            amount,
-            _getEmptySwapParams(dstToken),
-            gasdropRequested
-        );
-        vm.stopPrank();
-
-        _checkTokenState(token, token, amount, amount, state);
-    }
-
-    function _testDirectBridgeNonEVM(uint256 indexFrom, uint256 amount) internal {
-        address token = bridgeTokens[indexFrom % bridgeTokens.length];
-        uint256 chainId = _getTokenChainNonEVM(token);
-        if (chainId == 0) return;
-
-        bytes32 to = utils.addressToBytes32(user);
-        string memory dstToken = tokenNames[token];
-
-        _addTokenTo(token, user, amount);
-        _BridgeOutState memory state = _saveTokenState(token, token, false);
-
-        startHoax(user);
-        IERC20(token).safeApprove(address(router), amount);
-
-        vm.expectEmit(true, false, false, true);
-        emit BridgedOutNonEVM(to, chainId, IERC20(token), amount, dstToken);
-
-        router.bridgeTokenToNonEVM(to, chainId, _getEmptySwapParams(token), amount);
-        vm.stopPrank();
-
-        _checkTokenState(token, token, amount, amount, state);
-    }
-
+    // solhint-disable-next-line
     struct _BridgeOutData {
         address tokenIn;
-        address dstBridgeToken;
+        address dstBridgeTokenEVM;
         Offers.FormattedOffer offer;
         IBridge.SwapParams swapParams;
         IBridge.SwapParams dstSwapParams;
         bool canUnderquote;
         uint256 amountOut;
+        bytes32 to;
+        string dstBridgeTokenNonEVM;
     }
 
-    function _testBridgeSwapEVM(
+    // solhint-disable-next-line
+    struct _BridgeOutBools {
+        bool gasdropRequested;
+        bool isEVM;
+        bool startFromGas;
+    }
+
+    function _testBridgeOut(
         uint256 amountIn,
         uint256 indexFrom,
         address bridgeToken,
         uint256 chainId,
-        bool gasdropRequested
+        _BridgeOutBools memory bools
     ) internal {
+        if (chainId == 0) return;
+
         _BridgeOutData memory data;
         data.tokenIn = allTokens[indexFrom % allTokens.length];
-        if (data.tokenIn == bridgeToken) return;
         amountIn = _getAdjustedAmount(data.tokenIn, amountIn);
-        data.dstBridgeToken = _getTokenDstAddress(bridgeToken, chainId);
 
+        if (bools.isEVM) {
+            data.dstBridgeTokenEVM = _getTokenDstAddress(bridgeToken, chainId);
+            data.dstSwapParams = _getEmptySwapParams(data.dstBridgeTokenEVM);
+        } else {
+            data.to = utils.addressToBytes32(user);
+            data.dstBridgeTokenNonEVM = tokenNames[bridgeToken];
+        }
+
+        // This should work both with tokenIn != tokenOut and tokenIn == tokenOut
         data.offer = quoter.bestPathToBridge(data.tokenIn, amountIn, bridgeToken);
+        assertTrue(data.offer.path.length > 0, "Path not found");
         if (data.offer.path.length == 0) return;
-
         data.swapParams = IBridge.SwapParams({
             minAmountOut: 0,
             path: data.offer.path,
             adapters: data.offer.adapters,
             deadline: block.timestamp
         });
-
-        data.dstSwapParams = _getEmptySwapParams(data.dstBridgeToken);
 
         // Check if any of the adapters can give quote less than actual
         for (uint256 i = 0; i < data.offer.adapters.length; ++i) {
@@ -217,48 +192,84 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         }
 
         _addTokenTo(data.tokenIn, user, amountIn);
-        _BridgeOutState memory state = _saveTokenState(data.tokenIn, bridgeToken, false);
-
         startHoax(user);
+        _BridgeOutState memory state = _saveBridgeOutState(data.tokenIn, bridgeToken, bools.startFromGas);
         IERC20(data.tokenIn).safeApprove(address(router), amountIn);
+        vm.stopPrank();
 
         if (data.canUnderquote) {
-            // Simulate bridging to get amountOut for event verification
-            (bool success, bytes memory returnData) = address(router).staticcall(
-                abi.encodeWithSelector(
-                    router.bridgeTokenToEVM.selector,
+            // Simulate swapping to get amountOut for event verification
+            // Utils will swap the tokens and revert, using amountOut as revert reason
+            // Hacky af, but this works
+            try
+                utils.peekReturnValue(
                     user,
-                    chainId,
-                    data.swapParams,
-                    amountIn,
-                    data.dstSwapParams,
-                    gasdropRequested
+                    address(router),
+                    abi.encodeWithSelector(
+                        bools.startFromGas ? router.swapFromGAS.selector : router.swap.selector,
+                        user,
+                        data.swapParams.path,
+                        data.swapParams.adapters,
+                        amountIn,
+                        data.swapParams.minAmountOut,
+                        data.swapParams.deadline
+                    ),
+                    bools.startFromGas ? amountIn : 0
                 )
-            );
-            assertTrue(success, "Router.bridgeTokenToEVM failed");
-            data.amountOut = abi.decode(returnData, (uint256));
+            {
+                this;
+            } catch Error(string memory reason) {
+                data.amountOut = abi.decode(bytes(reason), (uint256));
+            }
         } else {
             data.amountOut = data.offer.amounts[data.offer.amounts.length - 1];
         }
 
         vm.expectEmit(true, false, false, true);
-        emit BridgedOutEVM(
-            user,
-            chainId,
-            IERC20(bridgeToken),
-            data.amountOut,
-            IERC20(data.dstBridgeToken),
-            data.dstSwapParams,
-            gasdropRequested
-        );
+        vm.startPrank(user);
+        if (bools.isEVM) {
+            emit BridgedOutEVM(
+                user,
+                chainId,
+                IERC20(bridgeToken),
+                data.amountOut,
+                IERC20(data.dstBridgeTokenEVM),
+                data.dstSwapParams,
+                bools.gasdropRequested
+            );
+            if (bools.startFromGas) {
+                router.bridgeGasToEVM{value: amountIn}(
+                    user,
+                    chainId,
+                    data.swapParams,
+                    data.dstSwapParams,
+                    bools.gasdropRequested
+                );
+            } else {
+                router.bridgeTokenToEVM(
+                    user,
+                    chainId,
+                    data.swapParams,
+                    amountIn,
+                    data.dstSwapParams,
+                    bools.gasdropRequested
+                );
+            }
+        } else {
+            emit BridgedOutNonEVM(data.to, chainId, IERC20(bridgeToken), data.amountOut, data.dstBridgeTokenNonEVM);
+            if (bools.startFromGas) {
+                router.bridgeGasToNonEVM{value: amountIn}(data.to, chainId, data.swapParams);
+            } else {
+                router.bridgeTokenToNonEVM(data.to, chainId, data.swapParams, amountIn);
+            }
+        }
 
-        router.bridgeTokenToEVM(user, chainId, data.swapParams, amountIn, data.dstSwapParams, gasdropRequested);
         vm.stopPrank();
 
-        _checkTokenState(data.tokenIn, bridgeToken, amountIn, data.amountOut, state);
+        _checkBridgeOutState(data.tokenIn, bridgeToken, amountIn, data.amountOut, state);
     }
 
-    function _saveTokenState(
+    function _saveBridgeOutState(
         address tokenIn,
         address tokenOut,
         bool startFromGas
@@ -276,7 +287,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         state.tokenOutTotalSupply = _out.totalSupply();
     }
 
-    function _checkTokenState(
+    function _checkBridgeOutState(
         address tokenIn,
         address tokenOut,
         uint256 amountIn,
@@ -312,7 +323,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
     }
 
     function _getAdjustedAmount(address token, uint256 amount) internal view returns (uint256 amountAdj) {
-        amountAdj = MIN_SWAP_AMOUNT + (amount % maxTokenAmount[token]);
+        amountAdj = minTokenAmount[token] + (amount % maxTokenAmount[token]);
     }
 
     function _addTokenTo(
@@ -320,12 +331,12 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         address to,
         uint256 amount
     ) internal {
-        if (token == basicTokens.wgas) {
+        if (token == allTokens[0]) {
             deal(address(this), amount);
             IWETH9(payable(token)).deposit{value: amount}();
         } else {
             // Do not update totalSupply for nUSD on Mainnet, as this screws pool calculations
-            bool updateTotalSupply = (block.chainid != 1) || (token != basicTokens.nusd);
+            bool updateTotalSupply = (token != tokenFixedTotalSupply);
             deal(token, address(this), amount, updateTotalSupply);
         }
         IERC20(token).safeTransfer(to, amount);
