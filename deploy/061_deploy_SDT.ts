@@ -8,7 +8,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get, execute, getOrNull, log, save } = deployments
   const { deployer } = await getNamedAccounts()
 
-  if ((includes([CHAIN_ID.HARMONY, CHAIN_ID.AVALANCHE, CHAIN_ID.FANTOM], await getChainId()))) {
+  if ((includes([CHAIN_ID.HARMONY, CHAIN_ID.AVALANCHE, CHAIN_ID.FANTOM, CHAIN_ID.ARBITRUM], await getChainId()))) {
     if ((await getOrNull("SDT")) == null) {
       const receipt = await execute(
         "SynapseERC20Factory",
