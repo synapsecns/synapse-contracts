@@ -40,6 +40,10 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         _testBridgeOuts(amountIn, indexFrom, true);
     }
 
+    function testBridgeIn(uint256 amountIn, uint8 indexFrom) public {
+        _testBridgeIns(amountIn, indexFrom);
+    }
+
     function _testBridgeOuts(
         uint256 amountIn,
         uint8 indexFrom,
@@ -80,6 +84,21 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         }
     }
 
+    function _testBridgeIns(uint256 amountIn, uint8 indexFrom) internal {
+        address bridgeToken = bridgeTokens[indexFrom % bridgeTokens.length];
+        amountIn = _getAdjustedAmount(bridgeToken, amountIn);
+        uint256 tokensAmount = allTokens.length;
+
+        for (uint256 indexTo = 0; indexTo < tokensAmount; ++indexTo) {
+            // gasDrop = false, fromEVM = true
+            _testBridgeIn(amountIn, bridgeToken, indexTo, false, true);
+            // gasDrop = true, fromEVM = true
+            _testBridgeIn(amountIn, bridgeToken, indexTo, true, true);
+            // gasDrop = true, fromEVM = true
+            _testBridgeIn(amountIn, bridgeToken, indexTo, true, false);
+        }
+    }
+
     function _testAdapterSwaps(
         IAdapter adapter,
         uint256 indexFrom,
@@ -117,6 +136,8 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
             assertEq(quoteOut, amountOut, "Failed to provide exact quote");
         }
     }
+
+    // -- TEST: BRIDGE OUT --
 
     // solhint-disable-next-line
     struct _BridgeOutState {
@@ -174,7 +195,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
 
         // This should work both with tokenIn != tokenOut and tokenIn == tokenOut
         data.offer = quoter.bestPathToBridge(data.tokenIn, amountIn, bridgeToken);
-        assertTrue(data.offer.path.length > 0, "Path not found");
+
         if (data.offer.path.length == 0) return;
         data.swapParams = IBridge.SwapParams({
             minAmountOut: 0,
@@ -314,6 +335,197 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
             assertEq(state.tokenOutTotalSupply - _out.totalSupply(), amountOut, "Incomplete burn");
         } else {
             assertEq(vault.getTokenBalance(_out) - state.vaultTokenOutBalance, amountOut, "Incomplete deposit");
+        }
+    }
+
+    // -- TEST: BRIDGE IN --
+
+    // solhint-disable-next-line
+    struct _BridgeInData {
+        address tokenOut;
+        Offers.FormattedOffer offer;
+        IBridge.SwapParams swapParams;
+        bool canUnderquote;
+        uint256 amountOut;
+        bytes32 kappa;
+        uint256 bridgeFee;
+        uint256 gasdropAmount;
+        uint256 chainIdNonEVM;
+        string bridgeTokenNonEVM;
+    }
+
+    // solhint-disable-next-line
+    struct _BridgeInState {
+        bool isMintBurn;
+        bool hasWrapper;
+        bool endsWithGas;
+        uint256 userTokenOutBalance;
+        uint256 userGasBalance;
+        uint256 routerTokenInBalance;
+        uint256 routerTokenOutBalance;
+        uint256 vaultTokenInBalance;
+        uint256 vaultTokenInFees;
+        uint256 tokenInTotalSupply;
+    }
+
+    function _testBridgeIn(
+        uint256 amountIn,
+        address bridgeToken,
+        uint256 indexTo,
+        bool gasdropRequested,
+        bool fromEVM
+    ) internal {
+        _BridgeInData memory data;
+        data.tokenOut = allTokens[indexTo % allTokens.length];
+        amountIn = _getAdjustedAmount(bridgeToken, amountIn);
+
+        (data.bridgeFee, , , ) = bridgeConfig.calculateBridgeFee(
+            bridgeToken,
+            amountIn,
+            gasdropRequested,
+            bridgeToken == data.tokenOut ? 0 : _config.bridgeMaxSwaps
+        );
+        data.gasdropAmount = gasdropRequested ? vault.chainGasAmount() : 0;
+        data.kappa = utils.getNextKappa();
+
+        if (!fromEVM) {
+            (, , , , , , , , data.chainIdNonEVM, data.bridgeTokenNonEVM) = bridgeConfig.tokenConfigs(bridgeToken);
+            if (data.chainIdNonEVM == 0) return;
+        }
+
+        data.offer = quoter.bestPathFromBridge(bridgeToken, amountIn, data.tokenOut, gasdropRequested);
+
+        if (data.offer.path.length == 0) return;
+        data.swapParams = IBridge.SwapParams({
+            minAmountOut: 0,
+            path: data.offer.path,
+            adapters: data.offer.adapters,
+            deadline: block.timestamp
+        });
+
+        // Check if any of the adapters can give quote less than actual
+        for (uint256 i = 0; i < data.offer.adapters.length; ++i) {
+            if (canUnderquote[data.offer.adapters[i]]) {
+                data.canUnderquote = true;
+                break;
+            }
+        }
+
+        if (data.canUnderquote) {
+            _addTokenTo(bridgeToken, dude, amountIn);
+            startHoax(dude);
+            IERC20(bridgeToken).safeApprove(address(router), amountIn);
+            vm.stopPrank();
+            try
+                utils.peekReturnValue(
+                    dude,
+                    address(router),
+                    abi.encodeWithSelector(
+                        router.swap.selector,
+                        dude,
+                        data.swapParams.path,
+                        data.swapParams.adapters,
+                        amountIn - data.bridgeFee,
+                        data.swapParams.minAmountOut,
+                        data.swapParams.deadline
+                    ),
+                    0
+                )
+            {
+                this;
+            } catch Error(string memory reason) {
+                data.amountOut = abi.decode(bytes(reason), (uint256));
+            }
+            startHoax(dude);
+            IERC20(bridgeToken).safeApprove(address(router), 0);
+            vm.stopPrank();
+        } else {
+            data.amountOut = data.offer.amounts[data.offer.amounts.length - 1];
+        }
+
+        _BridgeInState memory state = _saveBridgeInState(bridgeToken, data.tokenOut);
+
+        vm.expectEmit(true, false, false, true);
+        emit TokenBridgedIn(
+            user,
+            IERC20(bridgeToken),
+            amountIn,
+            data.bridgeFee,
+            IERC20(data.tokenOut),
+            data.amountOut,
+            data.gasdropAmount,
+            data.kappa
+        );
+
+        hoax(node);
+        if (fromEVM) {
+            bridge.bridgeInEVM(user, IERC20(bridgeToken), amountIn, data.swapParams, gasdropRequested, data.kappa);
+        } else {
+            bridge.bridgeInNonEVM(user, data.chainIdNonEVM, data.bridgeTokenNonEVM, amountIn, data.kappa);
+        }
+
+        _checkBridgeInState(bridgeToken, amountIn, state, data);
+    }
+
+    function _saveBridgeInState(address tokenIn, address tokenOut) internal view returns (_BridgeInState memory state) {
+        IERC20 _in = IERC20(tokenIn);
+        IERC20 _out = IERC20(tokenOut);
+        state.endsWithGas = tokenOut == allTokens[0];
+        address wrapper;
+        (wrapper, , state.isMintBurn) = bridgeConfig.getBridgeToken(tokenIn);
+        state.hasWrapper = (tokenIn != wrapper);
+
+        state.userTokenOutBalance = _out.balanceOf(user);
+        state.userGasBalance = user.balance;
+
+        state.routerTokenInBalance = _in.balanceOf(address(router));
+        state.routerTokenOutBalance = _out.balanceOf(address(router));
+
+        state.vaultTokenInBalance = vault.getTokenBalance(_in);
+        state.vaultTokenInFees = vault.getFeeBalance(_in);
+
+        state.tokenInTotalSupply = _in.totalSupply();
+    }
+
+    function _checkBridgeInState(
+        address tokenIn,
+        uint256 amountIn,
+        _BridgeInState memory state,
+        _BridgeInData memory data
+    ) internal {
+        IERC20 _in = IERC20(tokenIn);
+        IERC20 _out = IERC20(data.tokenOut);
+        if (state.endsWithGas) {
+            assertEq(
+                user.balance - state.userGasBalance,
+                data.amountOut + data.gasdropAmount,
+                "Incorrect amount of GAS gained"
+            );
+        } else {
+            assertEq(
+                _out.balanceOf(user) - state.userTokenOutBalance,
+                data.amountOut,
+                "Incorrect amount of tokenOut gained"
+            );
+            assertEq(user.balance - state.userGasBalance, data.gasdropAmount, "Incorrect amount of GAS airdropped");
+        }
+
+        assertEq(_in.balanceOf(address(router)), state.routerTokenInBalance, "TokenIn left in Router");
+        assertEq(_out.balanceOf(address(router)), state.routerTokenOutBalance, "TokenOut left in Router");
+
+        assertEq(
+            vault.getFeeBalance(_in) - state.vaultTokenInFees,
+            data.bridgeFee,
+            "Incorrect amount of fee gained by Vault"
+        );
+
+        if (state.isMintBurn) {
+            if (!state.hasWrapper) {
+                // Tokens that need a wrapper to be bridged are supposed to check invariant separately
+                assertEq(_in.totalSupply() - state.tokenInTotalSupply, amountIn, "Incorrect amount minted");
+            }
+        } else {
+            assertEq(state.vaultTokenInBalance - vault.getTokenBalance(_in), amountIn, "Incorrect amount withdrawn");
         }
     }
 
