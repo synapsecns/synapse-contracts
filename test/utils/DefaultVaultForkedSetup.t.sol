@@ -59,12 +59,16 @@ abstract contract DefaultVaultForkedSetup is DefaultVaultTest {
     function _addToken(
         address token,
         string memory name,
-        uint256 maxAmount
+        uint256 maxAmount,
+		bool isRouteToken
     ) internal {
         _addToken(token);
         vm.label(token, name);
         maxTokenAmount[token] = maxAmount * 10**IERC20(token).decimals();
 		tokenNames[token] = name;
+		if (isRouteToken) {
+			routeTokens.push(token);
+		}
     }
 
     function _addSimpleBridgeToken(
@@ -76,9 +80,10 @@ abstract contract DefaultVaultForkedSetup is DefaultVaultTest {
         uint256 minBridgeFee,
         uint256 minGasDropFee,
         uint256 minSwapFee,
-        uint256 chainIdNonEVM
+        uint256 chainIdNonEVM,
+		bool isRouteToken
     ) internal {
-        _addToken(token, name, maxAmount);
+        _addToken(token, name, maxAmount, isRouteToken);
 
         _addBridgeToken(token, token, isMintBurn, feeBP * 10**6, MAX_UINT, minBridgeFee, minGasDropFee, minSwapFee);
         _addBridgeMap(token, chainIdNonEVM, name);
