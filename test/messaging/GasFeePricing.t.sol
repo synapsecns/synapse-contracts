@@ -34,8 +34,7 @@ contract GasFeePricingTest is Test {
 
     function testSetCostAsOwner() public {
         gasFeePricing.setCostPerChain(expectedDstChainId, expectedDstGasPrice, expectedGasTokenPriceRatio);
-        assertEq(gasFeePricing.dstGasPriceInWei(expectedDstChainId), expectedDstGasPrice);
-        assertEq(gasFeePricing.dstGasTokenRatio(expectedDstChainId), expectedGasTokenPriceRatio);
+        assertEq(gasFeePricing.dstGasPriceInSrcAttoWei(expectedDstChainId), expectedDstGasPrice * expectedGasTokenPriceRatio);
     }
 
     function testNotSetData() public {
