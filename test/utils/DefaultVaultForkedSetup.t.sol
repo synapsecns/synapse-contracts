@@ -25,6 +25,9 @@ abstract contract DefaultVaultForkedSetup is DefaultVaultTest {
     mapping(address => address[]) public adapterTestTokens;
     mapping(string => address) public adaptersByName;
 
+    // nUSD, if chainId == 1
+    address public tokenFixedTotalSupply;
+
     struct BasicTokens {
         address payable wgas;
         address weth;
@@ -32,8 +35,6 @@ abstract contract DefaultVaultForkedSetup is DefaultVaultTest {
         address nusd;
         address syn;
     }
-
-    BasicTokens internal basicTokens;
 
     constructor(TestSetup memory config) DefaultVaultTest(config) {
         this;
