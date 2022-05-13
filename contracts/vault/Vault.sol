@@ -10,6 +10,10 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 
+interface IWETH {
+    function withdraw(uint256 amount) external;
+}
+
 interface IERC20Mintable is IERC20 {
     function mint(address to, uint256 amount) external;
 }
@@ -229,10 +233,35 @@ contract Vault is
         returns (uint256 gasdropAmount)
     {
         fees[address(token)] += fee;
-        token.safeTransfer(to, amount);
+
+        if (to == gasdropAddress) {
+            // gasDropAddress is always user address
+            // (to == gasdropAddress) => token will be transferred to user
+            // => need to unwrap GAS
+            _transferTokenWithUnwrap(token, to, amount);
+        } else {
+            // gasDropAddress is always user address
+            // (to == gasdropAddress) => token will be transferred to router
+            // => no need to unwrap GAS
+            token.safeTransfer(to, amount);
+        }
 
         if (gasdropRequested) {
             gasdropAmount = _transferGasDrop(gasdropAddress);
+        }
+    }
+
+    function _transferTokenWithUnwrap(
+        IERC20 token,
+        address to,
+        uint256 amount
+    ) internal {
+        if (address(token) == WETH_ADDRESS) {
+            IWETH(address(token)).withdraw(amount);
+            (bool success, ) = to.call{value: amount}("");
+            require(success, "Gas transfer failed");
+        } else {
+            token.safeTransfer(to, amount);
         }
     }
 
