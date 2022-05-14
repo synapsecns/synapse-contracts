@@ -126,7 +126,7 @@ library EnumerableQueueUpgradeable {
      * It means, that one should check value obtained by `get(key)` before using it.
      */
     function deleteKey(KappaQueue storage queue, bytes32 key) internal {
-        queue._data[key].toRetry = bytes("");
+        delete queue._data[key];
     }
 
     /**
