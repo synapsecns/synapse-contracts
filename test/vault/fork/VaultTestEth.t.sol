@@ -68,7 +68,7 @@ contract VaultTestEth is DefaultVaultForkedTest {
     function _setupAdapters() internal override {
         // Mark Synapse nUSD Adapter as potentially "underquoting",
         // until Quoter is fixed to avoid using it twice in path
-        _deployUnderquoteAdapter(
+        _deployAdapter(
             "SynapseBaseMainnetAdapter",
             SYNAPSE_NUSD,
             abi.encode(SYNAPSE_NUSD, 0, 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8),
@@ -122,7 +122,7 @@ contract VaultTestEth is DefaultVaultForkedTest {
         );
 
         // Curve Adapter can underquote by 1 wei sometimes
-        _deployUnderquoteAdapter(
+        _deployAdapter(
             "CurveBaseAdapter",
             CURVE_3POOL,
             abi.encode(CURVE_3POOL, 0, 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7, false),
@@ -130,7 +130,7 @@ contract VaultTestEth is DefaultVaultForkedTest {
             true
         );
 
-        _deployUnderquoteAdapter(
+        _deployAdapter(
             "CurveLendingAdapter",
             CURVE_AAVE,
             abi.encode(CURVE_AAVE, 0, 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE, false),
@@ -138,7 +138,7 @@ contract VaultTestEth is DefaultVaultForkedTest {
             true
         );
 
-        _deployUnderquoteAdapter(
+        _deployAdapter(
             "CurveMetaAdapter",
             CURVE_FRAX,
             abi.encode(
@@ -152,7 +152,7 @@ contract VaultTestEth is DefaultVaultForkedTest {
             true
         );
 
-        _deployUnderquoteAdapter(
+        _deployAdapter(
             "CurveTriCryptoAdapter",
             CURVE_TRICRYPTO,
             abi.encode(CURVE_TRICRYPTO, 0, 0xD51a44d3FaE010294C616388b506AcdA1bfAAE46, false),
