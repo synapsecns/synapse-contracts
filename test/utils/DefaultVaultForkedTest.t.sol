@@ -29,48 +29,58 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         }
     }
 
-    function testBridgeOutToken(uint256 amountIn, uint8 indexFrom) public {
-        _testBridgeOuts(amountIn, indexFrom, false);
+    function testBridgeOutToken(
+        uint256 amountIn,
+        uint8 indexFrom,
+        uint8 indexTo,
+        uint8 chainIndex
+    ) public {
+        _testBridgeOuts(amountIn, indexFrom, indexTo, chainIndex, false);
     }
 
-    function testBridgeOutGas(uint256 amountIn) public {
+    function testBridgeOutGas(
+        uint256 amountIn,
+        uint8 indexTo,
+        uint8 chainIndex
+    ) public {
         // WGAS is always the first token
-        uint8 indexFrom = 0;
+        uint256 indexFrom = 0;
 
-        _testBridgeOuts(amountIn, indexFrom, true);
+        _testBridgeOuts(amountIn, indexFrom, indexTo, chainIndex, true);
     }
 
-    function testBridgeIn(uint256 amountIn, uint8 indexFrom) public {
-        _testBridgeIns(amountIn, indexFrom);
+    function testBridgeIn(
+        uint256 amountIn,
+        uint8 indexFrom,
+        uint8 indexTo
+    ) public {
+        _testBridgeIns(amountIn, indexFrom, indexTo);
     }
 
     function _testBridgeOuts(
         uint256 amountIn,
-        uint8 indexFrom,
+        uint256 indexFrom,
+        uint256 indexTo,
+        uint256 chainIndex,
         bool startFromGas
     ) internal {
-        uint256 tokensAmount = bridgeTokens.length;
-        uint256 chainsAmount = dstChainIdsEVM.length;
+        address bridgeToken = bridgeTokens[indexTo % bridgeTokens.length];
 
-        for (uint256 j = 0; j < chainsAmount; ++j) {
+        {
+            uint256 chainId = dstChainIdsEVM[chainIndex % dstChainIdsEVM.length];
             _BridgeOutBools memory bools = _BridgeOutBools({
                 gasdropRequested: false,
                 isEVM: true,
                 startFromGas: startFromGas
             });
-            uint256 chainId = dstChainIdsEVM[j];
-            for (uint256 i = 0; i < tokensAmount; ++i) {
-                address bridgeToken = bridgeTokens[i];
-                // gasDrop = false, isEVM = true
-                _testBridgeOut(amountIn, indexFrom, bridgeToken, chainId, bools);
-                // gasDrop = true, isEVM = true
-                bools.gasdropRequested = true;
-                _testBridgeOut(amountIn, indexFrom, bridgeToken, chainId, bools);
-            }
+            // gasDrop = false, isEVM = true
+            _testBridgeOut(amountIn, indexFrom, bridgeToken, chainId, bools);
+            // gasDrop = true, isEVM = true
+            bools.gasdropRequested = true;
+            _testBridgeOut(amountIn, indexFrom, bridgeToken, chainId, bools);
         }
 
-        for (uint256 i = 0; i < tokensAmount; ++i) {
-            address bridgeToken = bridgeTokens[i];
+        {
             uint256 chainId = _getTokenChainNonEVM(bridgeToken);
             if (chainId != 0) {
                 _BridgeOutBools memory bools = _BridgeOutBools({
@@ -84,12 +94,14 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         }
     }
 
-    function _testBridgeIns(uint256 amountIn, uint8 indexFrom) internal {
+    function _testBridgeIns(
+        uint256 amountIn,
+        uint256 indexFrom,
+        uint256 indexTo
+    ) internal {
         address bridgeToken = bridgeTokens[indexFrom % bridgeTokens.length];
         amountIn = _getAdjustedAmount(bridgeToken, amountIn);
-        uint256 tokensAmount = allTokens.length;
-
-        for (uint256 indexTo = 0; indexTo < tokensAmount; ++indexTo) {
+        {
             // gasDrop = false, fromEVM = true
             _testBridgeIn(amountIn, bridgeToken, indexTo, false, true);
             // gasDrop = true, fromEVM = true
