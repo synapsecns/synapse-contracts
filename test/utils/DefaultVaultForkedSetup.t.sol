@@ -150,23 +150,23 @@ abstract contract DefaultVaultForkedSetup is DefaultVaultTest {
         bytes memory args,
         bytes memory tokens
     ) internal {
-        _deployUnderquoteAdapter(contractName, name, args, tokens, false);
+        _deployAdapter(contractName, name, args, tokens, false);
     }
 
-    function _deployUnderquoteAdapter(
+    function _deployAdapter(
         string memory contractName,
         string memory name,
         bytes memory args,
         bytes memory tokens,
-        bool underquote
+        bool _canUnderquote
     ) internal {
         address _adapter = deployCode(
             string(abi.encodePacked("./artifacts/", contractName, ".sol/", contractName, ".json")),
             args
         );
         adapters.push(_adapter);
-        if (underquote) {
-            canUnderquote[_adapter] = underquote;
+        if (_canUnderquote) {
+            canUnderquote[_adapter] = true;
         }
         vm.label(_adapter, name);
         adapterTestTokens[_adapter] = abi.decode(tokens, (address[]));
