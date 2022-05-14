@@ -161,6 +161,8 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         IBridge.SwapParams swapParams;
         IBridge.SwapParams dstSwapParams;
         bool canUnderquote;
+        uint256 quotedOut;
+        uint256 reportedOut;
         uint256 amountOut;
         bytes32 to;
         string dstBridgeTokenNonEVM;
@@ -204,6 +206,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
             adapters: data.offer.adapters,
             deadline: block.timestamp
         });
+        data.quotedOut = data.offer.amounts[data.offer.amounts.length - 1];
 
         // Check if any of the adapters can give quote less than actual
         for (uint256 i = 0; i < data.offer.adapters.length; ++i) {
@@ -244,7 +247,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
                 data.amountOut = abi.decode(bytes(reason), (uint256));
             }
         } else {
-            data.amountOut = data.offer.amounts[data.offer.amounts.length - 1];
+            data.amountOut = data.quotedOut;
         }
 
         vm.expectEmit(true, false, false, true);
@@ -260,7 +263,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
                 bools.gasdropRequested
             );
             if (bools.startFromGas) {
-                router.bridgeGasToEVM{value: amountIn}(
+                data.reportedOut = router.bridgeGasToEVM{value: amountIn}(
                     user,
                     chainId,
                     data.swapParams,
@@ -268,7 +271,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
                     bools.gasdropRequested
                 );
             } else {
-                router.bridgeTokenToEVM(
+                data.reportedOut = router.bridgeTokenToEVM(
                     user,
                     chainId,
                     data.swapParams,
@@ -280,15 +283,15 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         } else {
             emit BridgedOutNonEVM(data.to, chainId, IERC20(bridgeToken), data.amountOut, data.dstBridgeTokenNonEVM);
             if (bools.startFromGas) {
-                router.bridgeGasToNonEVM{value: amountIn}(data.to, chainId, data.swapParams);
+                data.reportedOut = router.bridgeGasToNonEVM{value: amountIn}(data.to, chainId, data.swapParams);
             } else {
-                router.bridgeTokenToNonEVM(data.to, chainId, data.swapParams, amountIn);
+                data.reportedOut = router.bridgeTokenToNonEVM(data.to, chainId, data.swapParams, amountIn);
             }
         }
 
         vm.stopPrank();
 
-        _checkBridgeOutState(data.tokenIn, bridgeToken, amountIn, data.amountOut, state);
+        _checkBridgeOutState(bridgeToken, amountIn, data, state);
     }
 
     function _saveBridgeOutState(
@@ -317,13 +320,12 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
     }
 
     function _checkBridgeOutState(
-        address tokenIn,
         address tokenOut,
         uint256 amountIn,
-        uint256 amountOut,
+        _BridgeOutData memory data,
         _BridgeOutState memory state
     ) internal {
-        IERC20 _in = IERC20(tokenIn);
+        IERC20 _in = IERC20(data.tokenIn);
         IERC20 _out = IERC20(tokenOut);
         if (state.startFromGas) {
             assertEq(address(router).balance - state.routerTokenInBalance, 0, "TokenIn left in Router");
@@ -335,18 +337,21 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
             assertEq(state.userTokenInBalance - _in.balanceOf(user), amountIn, "Incorrect amount spent from user");
         }
 
-        if (tokenIn != tokenOut) {
+        if (data.tokenIn != tokenOut) {
             assertEq(_out.balanceOf(address(router)) - state.routerTokenOutBalance, 0, "TokenOut left in Router");
             assertEq(_out.balanceOf(address(bridge)) - state.bridgeTokenOutBalance, 0, "TokenOut left in Bridge");
         }
         if (state.isMintBurn) {
             if (!state.hasWrapper) {
                 // Tokens that need a wrapper to be bridged are supposed to check invariant separately
-                assertEq(state.tokenOutTotalSupply - _out.totalSupply(), amountOut, "Incomplete burn");
+                assertEq(state.tokenOutTotalSupply - _out.totalSupply(), data.amountOut, "Incomplete burn");
             }
         } else {
-            assertEq(vault.getTokenBalance(_out) - state.vaultTokenOutBalance, amountOut, "Incomplete deposit");
+            assertEq(vault.getTokenBalance(_out) - state.vaultTokenOutBalance, data.amountOut, "Incomplete deposit");
         }
+
+        assertEq(data.reportedOut, data.amountOut, "Failed to report correct bridged amount");
+        assertTrue(data.reportedOut >= data.quotedOut, "Quote amount too big");
     }
 
     // -- TEST: BRIDGE IN --
@@ -358,6 +363,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         IBridge.SwapParams swapParams;
         bool canUnderquote;
         uint256 amountOut;
+        uint256 quotedOut;
         bytes32 kappa;
         uint256 bridgeFee;
         uint256 gasdropAmount;
@@ -413,6 +419,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
             adapters: data.offer.adapters,
             deadline: block.timestamp
         });
+        data.quotedOut = data.offer.amounts[data.offer.amounts.length - 1];
 
         // Check if any of the adapters can give quote less than actual
         for (uint256 i = 0; i < data.offer.adapters.length; ++i) {
@@ -451,7 +458,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
             IERC20(bridgeToken).safeApprove(address(router), 0);
             vm.stopPrank();
         } else {
-            data.amountOut = data.offer.amounts[data.offer.amounts.length - 1];
+            data.amountOut = data.quotedOut;
         }
 
         _BridgeInState memory state = _saveBridgeInState(bridgeToken, data.tokenOut);
@@ -520,6 +527,8 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
             );
             assertEq(user.balance - state.userGasBalance, data.gasdropAmount, "Incorrect amount of GAS airdropped");
         }
+
+        assertTrue(data.amountOut >= data.quotedOut, "Quote amount too big");
 
         assertEq(_in.balanceOf(address(router)), state.routerTokenInBalance, "TokenIn left in Router");
         assertEq(_out.balanceOf(address(router)), state.routerTokenOutBalance, "TokenOut left in Router");
