@@ -19,6 +19,8 @@ contract VaultTestEth is DefaultVaultForkedTest {
         address usdt;
         address wbtc;
         address frax;
+        address gohm;
+        address high;
     }
 
     TestTokens internal testTokens =
@@ -27,7 +29,9 @@ contract VaultTestEth is DefaultVaultForkedTest {
             usdc: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,
             usdt: 0xdAC17F958D2ee523a2206206994597C13D831ec7,
             wbtc: 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
-            frax: 0x853d955aCEf822Db058eb8505911ED77F175b99e
+            frax: 0x853d955aCEf822Db058eb8505911ED77F175b99e,
+            gohm: 0x0ab87046fBb341D058F17CBC4c1133F25a20a52f,
+            high: 0x71Ab77b7dbB4fa7e017BC15090b2163221420282
         });
 
     TestSetup internal ethConfig =
@@ -182,6 +186,13 @@ contract VaultTestEth is DefaultVaultForkedTest {
         _addSimpleBridgeToken(testTokens.frax, "FRAX", 10**18, 10**6, false, 10, 2 * 10**17, 0, 6 * 10**17, 0, true);
         // Sorry Sam, gotta casually mint 1B FRAX for testing
         _addTokenTo(testTokens.frax, address(vault), 10**27);
+
+        // mintBurn = false, routeToken = false
+        _addSimpleBridgeToken(testTokens.gohm, "gOHM", 10**16, 10**3, false, 10, 2 * 10**15, 0, 6 * 10**15, 0, false);
+
+        // mintBurn = false, routeToken = false
+        _addSimpleBridgeToken(testTokens.high, "HIGH", 10**18, 10**6, false, 10, 2 * 10**17, 0, 6 * 10**17, 0, false);
+        _addTokenTo(testTokens.high, address(vault), 10**27);
 
         // routeToken = true
         _addToken(testTokens.dai, "DAI", 10**18, 10**6, true);
