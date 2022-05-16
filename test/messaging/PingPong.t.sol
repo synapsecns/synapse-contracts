@@ -8,7 +8,6 @@ import "../../contracts/messaging/AuthVerifier.sol";
 import "../../contracts/messaging/apps/PingPong.sol";
 import "../../contracts/messaging/AuthVerifier.sol";
 
-
 contract PingPongTest is Test {
     Utilities internal utils;
     address payable[] internal users;
@@ -17,7 +16,7 @@ contract PingPongTest is Test {
     MessageBus public messageBusChainA;
     PingPong public pingPongChainA;
     GasFeePricing public gasFeePricingChainA;
-    AuthVerifier public authVerifierChainA; 
+    AuthVerifier public authVerifierChainA;
 
     // Chain B 2000
     uint256 chainB = 2000;
@@ -43,7 +42,7 @@ contract PingPongTest is Test {
         uint256 fee,
         bytes32 indexed messageId
     );
-    
+
     event Executed(
         bytes32 msgId,
         MessageBus.TxStatus status,
@@ -61,8 +60,14 @@ contract PingPongTest is Test {
         vm.label(node, "Node");
         authVerifierChainA = new AuthVerifier(node);
         authVerifierChainB = new AuthVerifier(node);
-        messageBusChainA = new MessageBus(address(gasFeePricingChainA), address(authVerifierChainA));
-        messageBusChainB = new MessageBus(address(gasFeePricingChainB), address(authVerifierChainB));
+        messageBusChainA = new MessageBus(
+            address(gasFeePricingChainA),
+            address(authVerifierChainA)
+        );
+        messageBusChainB = new MessageBus(
+            address(gasFeePricingChainB),
+            address(authVerifierChainB)
+        );
         pingPongChainA = new PingPong(address(messageBusChainA));
         vm.label(address(pingPongChainA), "PingChainA");
         pingPongChainB = new PingPong(address(messageBusChainB));
@@ -71,17 +76,24 @@ contract PingPongTest is Test {
         pingPongChainBBytes = utils.addressToBytes32(address(pingPongChainB));
         vm.deal(address(pingPongChainA), 100 ether);
         vm.deal(address(pingPongChainB), 100 ether);
-        gasFeePricingChainA.setCostPerChain(chainB, 30000000000, 25180000000000000);
-        gasFeePricingChainB.setCostPerChain(chainA, 30000000000, 25180000000000000);
+        gasFeePricingChainA.setCostPerChain(
+            chainB,
+            30000000000,
+            25180000000000000
+        );
+        gasFeePricingChainB.setCostPerChain(
+            chainA,
+            30000000000,
+            25180000000000000
+        );
     }
 
-
     // function testPingPongE2E() public {
-    //     // Chain A - 1000 chain ID. Call ping, message gets sent, processed, and event gets emitted. 
+    //     // Chain A - 1000 chain ID. Call ping, message gets sent, processed, and event gets emitted.
     //     vm.chainId(chainA);
     //     pingPongChainA.ping(chainB, address(pingPongChainB), 0);
     //     // TODO: Check that fee was transferred & enforced on MsgBus
-    //     // Ping hit, event emitted, move to next chain, 
+    //     // Ping hit, event emitted, move to next chain,
     //     vm.startPrank(address(node));
     //     vm.chainId(2000);
     //     // Relay tx construction
@@ -94,19 +106,19 @@ contract PingPongTest is Test {
     //     messageBusChainA.executeMessage(chainB, pingPongChainBBytes, address(pingPongChainA), 200000, 0, abi.encode(2), secondMessageId);
     //     console.log(pingPongChainA.numPings());
     //     // gets to 3 pings
-    // }  
+    // }
 
     //  failure cases to implement
 
-        // // try some differing cases of submission, they revert
-        // // submit same exact transaction as original executeMessage
-        // vm.expectRevert(bytes("Message already executed"));
-        // messageBusChainB.executeMessage(chainA, pingPongChainABytes, address(pingPongChainB), chainB, expectedNonce, abi.encode(currentPingsA), firstMessageId);
-        // vm.stopPrank();
+    // // try some differing cases of submission, they revert
+    // // submit same exact transaction as original executeMessage
+    // vm.expectRevert(bytes("Message already executed"));
+    // messageBusChainB.executeMessage(chainA, pingPongChainABytes, address(pingPongChainB), chainB, expectedNonce, abi.encode(currentPingsA), firstMessageId);
+    // vm.stopPrank();
 
-        // // submit a malformed messageId, gets rejected
-        // bytes32 secondMessageId = messageBusChainB.computeMessageId(chainA,pingPongChainABytes, address(pingPongChainB), 1, abi.encode(currentPingsA));
-        // vm.expectRevert(bytes("Incorrect messageId submitted"));
-        // messageBusChainB.executeMessage(chainA, pingPongChainABytes, address(pingPongChainB), 200000, 0, abi.encode(currentPingsA), secondMessageId);
-        // vm.stopPrank();
+    // // submit a malformed messageId, gets rejected
+    // bytes32 secondMessageId = messageBusChainB.computeMessageId(chainA,pingPongChainABytes, address(pingPongChainB), 1, abi.encode(currentPingsA));
+    // vm.expectRevert(bytes("Incorrect messageId submitted"));
+    // messageBusChainB.executeMessage(chainA, pingPongChainABytes, address(pingPongChainB), 200000, 0, abi.encode(currentPingsA), secondMessageId);
+    // vm.stopPrank();
 }

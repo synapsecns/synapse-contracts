@@ -10,8 +10,8 @@
     "post-install": "build-go",
     "test:coverage": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" hardhat coverage",
     "prepublishOnly": "npm run build",
-    "lint": "npm run prettier && solhint -c .solhint.json contracts/**/*.sol",
-    "prettier": "prettier --write test/**/*.ts contracts/**/*.sol",
+    "lint": "npm run prettier && solhint -c .solhint.json contracts/**/*.sol test/**/*.sol",
+    "prettier": "prettier --write test/**/*.ts contracts/**/*.sol test/**/*.sol",
     "hardhat:clean": "hardhat clean",
     "prepare": "husky install"
   },
