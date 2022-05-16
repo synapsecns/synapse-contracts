@@ -3,12 +3,15 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 
+
 import {RateLimiter} from "src-bridge/RateLimiter.sol";
+import {Utilities} from "../utilities/Utilities.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 contract RateLimiterFoundryTest is Test {
     RateLimiter internal immutable rateLimiter;
+    Utilities internal immutable utils;
     IERC20 internal immutable token;
 
     uint256 internal constant TIMESTAMP = 1200000;
@@ -16,6 +19,7 @@ contract RateLimiterFoundryTest is Test {
 
     constructor() {
         rateLimiter = new RateLimiter();
+        utils = new Utilities();
         rateLimiter.initialize();
         token = IERC20(
             deployCode(
@@ -112,6 +116,27 @@ contract RateLimiterFoundryTest is Test {
 
         // Check that allowance was reset: spend = 0, lastTimeReset += 60
         _checkAllowance(type(uint96).max, 0, 60, RESET_BASE_MIN + 60);
+    }
+
+    function testGetTransactionAt(uint96 tx_count) public {
+        vm.assume(tx_count > 1);
+        vm.assume(tx_count < 10);
+
+        for (uint256 i = 0; i < tx_count; ++i){
+            bytes32 kappa = utils.getNextKappa();
+            bytes memory expectedPayload = abi.encodePacked(kappa, i);
+            rateLimiter.addToRetryQueue(kappa, expectedPayload);
+
+            (bytes memory payload, uint32 storedAtMin) =
+                rateLimiter.getTransactionByKappa(kappa);
+            assertEq(payload, expectedPayload);
+
+            // without removing anything these txes should be in order
+            (bytes32 atKappa, bytes memory atPayload, uint32 atStoredAtMin) = rateLimiter.getTransactionAt(i);
+            assertEq(atPayload, expectedPayload);
+            assertEq(atKappa, kappa);
+            assertEq(atStoredAtMin, storedAtMin);
+        }
     }
 
     function _checkAllowance(
