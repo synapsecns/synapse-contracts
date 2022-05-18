@@ -119,8 +119,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       skipIfAlreadyDeployed: true,
       args: [
         "0x0000000000000000000000000000000000000000",
-        [],
-        [],
+        (await get("nUSDPoolV3")).address,
+        (await get("nUSD")).address,
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
         (await get("SynapseBridge")).address,
       ],
     })

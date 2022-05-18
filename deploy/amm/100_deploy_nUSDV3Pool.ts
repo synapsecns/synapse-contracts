@@ -77,12 +77,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if (await getChainId() === CHAIN_ID.CRONOS) {
       TOKEN_ADDRESSES = [
         (await get("nUSD")).address,
-        (await get("DAI")).address,
         (await get("USDC")).address,
-        (await get("USDT")).address,
       ]
-      TOKEN_DECIMALS = [18, 18, 6, 6]
-      INITIAL_A = 600
+      TOKEN_DECIMALS = [18, 6]
+      INITIAL_A = 800
     }
 
     if (await getChainId() === CHAIN_ID.OPTIMISM) {
@@ -122,7 +120,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const ADMIN_FEE = 6000000000
 
     const receipt = await execute(
-      "SwapDeployer", 
+      "SwapDeployer",
       { from: deployer, log: true },
       "deploy",
       (
@@ -156,7 +154,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     log(`USD pool LP Token at ${lpTokenAddress}`)
 
     await save("nUSDPoolV3-LPToken", {
-      abi: (await get("nUSD")).abi, // Generic ERC20 ABI
+      abi: (await get("LPToken")).abi,
       address: lpTokenAddress,
     })
 
