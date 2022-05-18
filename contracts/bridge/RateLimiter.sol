@@ -105,6 +105,64 @@ contract RateLimiter is
         length = rateLimitedQueue.length();
     }
 
+    function getTransactionAt(uint256 index)
+        external
+        view
+        returns (
+            bytes32 key,
+            bytes memory payload,
+            uint32 storedAtMin
+        )
+    {
+        (key, payload, storedAtMin) = rateLimitedQueue.at(index);
+    }
+
+    function getTransactionByKappa(bytes32 kappa)
+        external
+        view
+        returns (bytes memory payload, uint32 storedAtMin)
+    {
+        (payload, storedAtMin) = rateLimitedQueue.get(kappa);
+    }
+
+    function getUnhandledKappas()
+        external
+        view
+        returns (bytes32[] memory kappas)
+    {
+        uint256 length = rateLimitedQueue.length();
+        uint256 kappaCount = 0;
+        bytes32[] memory _kappas = new bytes32[](length);
+        for (uint256 index = 0; index < length; ++index) {
+            (bytes32 kappa, bytes memory payload, ) = rateLimitedQueue.at(
+                index
+            );
+            if (payload.length > 0) {
+                // store unhandled kappa for later retrieval
+                ++kappaCount;
+                _kappas[index] = kappa;
+            }
+        }
+
+        // need to return array with exact length
+        kappas = new bytes32[](kappaCount);
+        kappaCount = 0;
+        for (uint256 index = 0; index < length; ++index) {
+            if (_kappas[index] != bytes32(0)) {
+                kappas[kappaCount] = _kappas[index];
+                ++kappaCount;
+            }
+        }
+    }
+
+    function unhandledKappasCount() external view returns (uint256 kappaCount) {
+        uint256 length = rateLimitedQueue.length();
+        for (uint256 index = 0; index < length; ++index) {
+            (, bytes memory payload, ) = rateLimitedQueue.at(index);
+            if (payload.length > 0) ++kappaCount;
+        }
+    }
+
     /*** RESTRICTED: GOVERNANCE ***/
 
     function setBridgeAddress(address bridge)

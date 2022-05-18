@@ -149,11 +149,36 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
                 );
             }
 
+            uint256 pushedAmount = (txs + 1) / 3;
+            {
+                assertEq(
+                    rateLimiter.unhandledKappasCount(),
+                    txs - pushedAmount,
+                    "Wrong reported unhandled count"
+                );
+                bytes32[] memory _kappas = rateLimiter.getUnhandledKappas();
+                assertEq(
+                    _kappas.length,
+                    txs - pushedAmount,
+                    "Wrong unhandled kappas length"
+                );
+                uint256 index = 0;
+                for (uint256 t = 0; t < txs; ++t) {
+                    if (t % 3 == 1) continue;
+                    assertEq(
+                        kappas[t],
+                        _kappas[index],
+                        "Wrong reported unhandled kappas"
+                    );
+                    ++index;
+                }
+            }
+
             uint256 post = IERC20(NUSD).balanceOf(user);
             assertTrue(pre != post, "User hasn't received anything");
             assertEq(
                 post,
-                pre + uint256(amount) * ((txs + 1) / 3),
+                pre + uint256(amount) * pushedAmount,
                 "User hasn't received full amount"
             );
 
