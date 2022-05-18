@@ -80,7 +80,7 @@ contract BridgeConfigSingleChainTest is DefaultBridgeTest {
         );
         utils.checkAccessControl(
             _bc,
-            abi.encodeWithSelector(bridgeConfig.updateTokenStatus.selector, address(0), false),
+            abi.encodeWithSelector(bridgeConfig.updateTokenStatus.selector, 0, address(0), false),
             bridgeConfig.NODEGROUP_ROLE()
         );
         utils.checkAccessControl(
