@@ -8,14 +8,13 @@ import "../../contracts/messaging/AuthVerifier.sol";
 import "../../contracts/messaging/apps/BatchMessageSender.sol";
 import "../../contracts/messaging/AuthVerifier.sol";
 
-
 contract BatchMessageSenderTest is Test {
     Utilities internal utils;
     address payable[] internal users;
 
     MessageBus public messageBusChainA;
     GasFeePricing public gasFeePricingChainA;
-    AuthVerifier public authVerifierChainA; 
+    AuthVerifier public authVerifierChainA;
     BatchMessageSender public batchMessageSenderChainA;
 
     address payable public node;
@@ -47,11 +46,23 @@ contract BatchMessageSenderTest is Test {
         node = users[0];
         vm.label(node, "Node");
         authVerifierChainA = new AuthVerifier(node);
-        messageBusChainA = new MessageBus(address(gasFeePricingChainA), address(authVerifierChainA));
-        batchMessageSenderChainA = new BatchMessageSender(address(messageBusChainA));
+        messageBusChainA = new MessageBus(
+            address(gasFeePricingChainA),
+            address(authVerifierChainA)
+        );
+        batchMessageSenderChainA = new BatchMessageSender(
+            address(messageBusChainA)
+        );
         vm.label(address(batchMessageSenderChainA), "BatchMessageSenderChainA");
-        gasFeePricingChainA.setCostPerChain(43113, 30000000000, 25180000000000000);
-        batchMessageSenderChainA.setTrustedRemote(43113, keccak256("Receiver!"));
+        gasFeePricingChainA.setCostPerChain(
+            43113,
+            30000000000,
+            25180000000000000
+        );
+        batchMessageSenderChainA.setTrustedRemote(
+            43113,
+            keccak256("Receiver!")
+        );
     }
 
     function testSendMultipleMessages() public {
@@ -60,7 +71,7 @@ contract BatchMessageSenderTest is Test {
         bytes[] memory messages = new bytes[](6);
         bytes[] memory options = new bytes[](6);
 
-        for (uint256 i=0; i < 6; i++) {
+        for (uint256 i = 0; i < 6; i++) {
             receivers[i] = keccak256("Receiver!");
             dstChainIds[i] = 43113; // always to fuji
             messages[i] = abi.encode(true);
@@ -68,8 +79,11 @@ contract BatchMessageSenderTest is Test {
         }
 
         // this msg.value (fee) is entirely fake and way too high
-        batchMessageSenderChainA.sendMultipleMessages{value:10 ether}(receivers, dstChainIds, messages, options);
+        batchMessageSenderChainA.sendMultipleMessages{value: 10 ether}(
+            receivers,
+            dstChainIds,
+            messages,
+            options
+        );
     }
-
-
 }
