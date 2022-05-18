@@ -55,11 +55,11 @@ contract HeroEncodingTest is Test {
                 agility: 1033,
                 intelligence: 1034,
                 wisdom: 1035,
-                luck: 1036, 
-                vitality: 1037, 
-                endurance: 1038, 
+                luck: 1036,
+                vitality: 1037,
+                endurance: 1038,
                 dexterity: 1039,
-                hpSm: 1040, 
+                hpSm: 1040,
                 hpRg: 1041,
                 hpLg: 1042,
                 mpSm: 1043,
@@ -71,22 +71,27 @@ contract HeroEncodingTest is Test {
                 agility: 1047,
                 intelligence: 1048,
                 wisdom: 1049,
-                luck: 1050, 
-                vitality: 1051, 
-                endurance: 1052, 
+                luck: 1050,
+                vitality: 1051,
+                endurance: 1052,
                 dexterity: 1053,
-                hpSm: 1054, 
+                hpSm: 1054,
                 hpRg: 1055,
                 hpLg: 1056,
                 mpSm: 1057,
                 mpRg: 1058,
                 mpLg: 1059
             }),
-            professions: HeroProfessions({mining: 1060, gardening: 1061, foraging: 1062, fishing: 1063})
+            professions: HeroProfessions({
+                mining: 1060,
+                gardening: 1061,
+                foraging: 1062,
+                fishing: 1063
+            })
         });
         bytes memory heroBytes = abi.encode(heroStruct);
         console.logBytes(heroBytes);
-        (Hero memory decodedHero) = abi.decode(heroBytes, (Hero));
+        Hero memory decodedHero = abi.decode(heroBytes, (Hero));
         console.log(decodedHero.id);
     }
 }

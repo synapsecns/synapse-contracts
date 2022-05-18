@@ -60,7 +60,7 @@ contract AuthVerifierTest is Test {
         bytes memory authdata = abi.encodePacked(authdata32);
         // This successfully is decoded by abi.decode, but the incorrect address is derived due to padding
         // E.g 0x0000000000000539000000000000000000000000 instead of 0x0000000000000000000000000000000000000539
-        // This is due to the 64bytes 0000000000000000000000000000000000000539000000000000000000000000 
+        // This is due to the 64bytes 0000000000000000000000000000000000000539000000000000000000000000
         // instead of 0x0000000000000000000000000000000000000000000000000000000000000539
         console.log(abi.decode(authdata, (address)));
         console.log(address(1337));

@@ -42,7 +42,9 @@ contract MessageBusTest is Test {
 
         uint256 srcChainId = 1;
         bytes32 srcAddress = addressToBytes32(address(1338));
-        address dstAddress = address(0x2796317b0fF8538F253012862c06787Adfb8cEb6);
+        address dstAddress = address(
+            0x2796317b0fF8538F253012862c06787Adfb8cEb6
+        );
         uint256 nonce = 0;
         bytes memory message = bytes("");
         bytes32 messageId = keccak256("testMessageId");
@@ -50,7 +52,15 @@ contract MessageBusTest is Test {
         vm.prank(address(999));
         vm.expectRevert("Pausable: paused");
 
-        messageBus.executeMessage(srcChainId, srcAddress, dstAddress, 200000, nonce, message, messageId);
+        messageBus.executeMessage(
+            srcChainId,
+            srcAddress,
+            dstAddress,
+            200000,
+            nonce,
+            message,
+            messageId
+        );
     }
 
     function testPausedMessageSend() public {
@@ -60,10 +70,15 @@ contract MessageBusTest is Test {
 
         vm.expectRevert("Pausable: paused");
         bytes32 receiverAddress = addressToBytes32(address(1337));
-        messageBus.sendMessage{value: 4}(receiverAddress, 121, bytes(""), bytes(""));
+        messageBus.sendMessage{value: 4}(
+            receiverAddress,
+            121,
+            bytes(""),
+            bytes("")
+        );
     }
 
-    function addressToBytes32(address _addr) pure public returns (bytes32) {
+    function addressToBytes32(address _addr) public pure returns (bytes32) {
         return bytes32(uint256(uint160(_addr)));
     }
 }
