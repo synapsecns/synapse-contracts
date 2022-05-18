@@ -17,6 +17,7 @@ abstract contract DefaultVaultForkedSetup is DefaultVaultTest {
     uint256[] public dstChainIdsEVM;
     address[] public bridgeTokens;
     mapping(address => string) public tokenNames;
+    mapping(string => address) public tokensByName;
 
     address[] public routeTokens;
 
@@ -70,6 +71,7 @@ abstract contract DefaultVaultForkedSetup is DefaultVaultTest {
         minTokenAmount[token] = minAmount;
         maxTokenAmount[token] = maxAmount * 10**IERC20(token).decimals();
         tokenNames[token] = name;
+        tokensByName[name] = token;
         if (isRouteToken) {
             routeTokens.push(token);
         }
@@ -169,8 +171,16 @@ abstract contract DefaultVaultForkedSetup is DefaultVaultTest {
             canUnderquote[_adapter] = true;
         }
         vm.label(_adapter, name);
-        adapterTestTokens[_adapter] = abi.decode(tokens, (address[]));
+        adapterTestTokens[_adapter] = _extractTokens(tokens);
         adaptersByName[name] = _adapter;
+    }
+
+    function _extractTokens(bytes memory encodedTokens) internal view returns (address[] memory tokens) {
+        string[] memory names = abi.decode(encodedTokens, (string[]));
+        tokens = new address[](names.length);
+        for (uint256 i = 0; i < names.length; ++i) {
+            tokens[i] = tokensByName[names[i]];
+        }
     }
 
     function _getTokenDstAddress(address token, uint256 chainId) internal view returns (address dstAddress) {

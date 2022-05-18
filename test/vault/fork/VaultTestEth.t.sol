@@ -72,97 +72,129 @@ contract VaultTestEth is DefaultVaultForkedTest {
     function _setupAdapters() internal override {
         // Mark Synapse nUSD Adapter as potentially "underquoting",
         // until Quoter is fixed to avoid using it twice in path
-        _deployAdapter(
-            "SynapseBaseMainnetAdapter",
-            SYNAPSE_NUSD,
-            abi.encode(SYNAPSE_NUSD, 0, 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8),
-            abi.encode(32, 4, testTokens.dai, testTokens.usdc, testTokens.usdt, basicTokens.nusd),
-            true
-        );
 
-        _deployAdapter(
-            "UniswapV2Adapter",
-            UNISWAP,
-            abi.encode(
+        {
+            string[] memory names = new string[](4);
+            names[0] = "dai";
+            names[1] = "usdc";
+            names[2] = "usdt";
+            names[3] = "nusd";
+
+            _deployAdapter(
+                "SynapseBaseMainnetAdapter",
+                SYNAPSE_NUSD,
+                abi.encode(SYNAPSE_NUSD, 0, 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8),
+                abi.encode(names),
+                true
+            );
+        }
+
+        {
+            string[] memory names = new string[](6);
+            names[0] = "weth";
+            names[1] = "dai";
+            names[2] = "usdc";
+            names[3] = "usdt";
+            names[4] = "wbtc";
+            names[5] = "frax";
+
+            _deployAdapter(
+                "UniswapV2Adapter",
                 UNISWAP,
-                0,
-                0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f,
-                0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f,
-                30
-            ),
-            abi.encode(
-                32,
-                6,
-                basicTokens.weth,
-                testTokens.dai,
-                testTokens.usdc,
-                testTokens.usdt,
-                testTokens.wbtc,
-                testTokens.frax
-            )
-        );
+                abi.encode(
+                    UNISWAP,
+                    0,
+                    0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f,
+                    0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f,
+                    30
+                ),
+                abi.encode(names)
+            );
+        }
 
-        _deployAdapter(
-            "UniswapV2Adapter",
-            SUSHISWAP,
-            abi.encode(
+        {
+            string[] memory names = new string[](7);
+            names[0] = "weth";
+            names[1] = "dai";
+            names[2] = "usdc";
+            names[3] = "usdt";
+            names[4] = "wbtc";
+            names[5] = "frax";
+            names[6] = "syn";
+
+            _deployAdapter(
+                "UniswapV2Adapter",
                 SUSHISWAP,
-                0,
-                0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac,
-                0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303,
-                30
-            ),
-            abi.encode(
-                32,
-                7,
-                basicTokens.weth,
-                basicTokens.syn,
-                testTokens.dai,
-                testTokens.usdc,
-                testTokens.usdt,
-                testTokens.wbtc,
-                testTokens.frax
-            )
-        );
+                abi.encode(
+                    SUSHISWAP,
+                    0,
+                    0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac,
+                    0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303,
+                    30
+                ),
+                abi.encode(names)
+            );
+        }
 
         // Curve Adapter can underquote by 1 wei sometimes
-        _deployAdapter(
-            "CurveBaseAdapter",
-            CURVE_3POOL,
-            abi.encode(CURVE_3POOL, 0, 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7, false),
-            abi.encode(32, 3, testTokens.dai, testTokens.usdc, testTokens.usdt),
-            true
-        );
+        {
+            string[] memory names = new string[](3);
+            names[0] = "dai";
+            names[1] = "usdc";
+            names[2] = "usdt";
+            _deployAdapter(
+                "CurveBaseAdapter",
+                CURVE_3POOL,
+                abi.encode(CURVE_3POOL, 0, 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7, false),
+                abi.encode(names),
+                true
+            );
 
-        _deployAdapter(
-            "CurveLendingAdapter",
-            CURVE_AAVE,
-            abi.encode(CURVE_AAVE, 0, 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE, false),
-            abi.encode(32, 3, testTokens.dai, testTokens.usdc, testTokens.usdt),
-            true
-        );
+            _deployAdapter(
+                "CurveLendingAdapter",
+                CURVE_AAVE,
+                abi.encode(CURVE_AAVE, 0, 0xDeBF20617708857ebe4F679508E7b7863a8A8EeE, false),
+                abi.encode(names),
+                true
+            );
+        }
 
-        _deployAdapter(
-            "CurveMetaAdapter",
-            CURVE_FRAX,
-            abi.encode(
+        {
+            string[] memory names = new string[](4);
+            names[0] = "dai";
+            names[1] = "usdc";
+            names[2] = "usdt";
+            names[3] = "frax";
+
+            _deployAdapter(
+                "CurveMetaAdapter",
                 CURVE_FRAX,
-                0,
-                0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B,
-                true,
-                0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7
-            ),
-            abi.encode(32, 4, testTokens.dai, testTokens.usdc, testTokens.usdt, testTokens.frax),
-            true
-        );
+                abi.encode(
+                    CURVE_FRAX,
+                    0,
+                    0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B,
+                    true,
+                    0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7
+                ),
+                abi.encode(names),
+                true
+            );
+        }
 
-        _deployAdapter(
-            "CurveTriCryptoAdapter",
-            CURVE_TRICRYPTO,
-            abi.encode(CURVE_TRICRYPTO, 0, 0xD51a44d3FaE010294C616388b506AcdA1bfAAE46, false),
-            abi.encode(32, 3, basicTokens.weth, testTokens.wbtc, testTokens.usdt),
-            true
-        );
+        {
+            string[] memory names = new string[](3);
+            names[0] = "weth";
+            names[1] = "wbtc";
+            names[2] = "usdt";
+
+            _deployAdapter(
+                "CurveTriCryptoAdapter",
+                CURVE_TRICRYPTO,
+                abi.encode(CURVE_TRICRYPTO, 0, 0xD51a44d3FaE010294C616388b506AcdA1bfAAE46, false),
+                abi.encode(names),
+                true
+            );
+        }
     }
 
     function _setupTokens() internal override {
@@ -174,32 +206,32 @@ contract VaultTestEth is DefaultVaultForkedTest {
 
         // Always add WGAS as first token
         // mintBurn = false, routeToken = true
-        _addSimpleBridgeToken(basicTokens.weth, "wETH", 10**16, 10**3, false, 10, 2 * 10**15, 0, 6 * 10**15, 0, true);
+        _addSimpleBridgeToken(basicTokens.weth, "weth", 10**16, 10**3, false, 10, 2 * 10**15, 0, 6 * 10**15, 0, true);
 
         // mintBurn = false, routeToken = false
-        _addSimpleBridgeToken(basicTokens.nusd, "nUSD", 10**18, 10**6, false, 10, 2 * 10**17, 0, 6 * 10**17, 0, false);
+        _addSimpleBridgeToken(basicTokens.nusd, "nusd", 10**18, 10**6, false, 10, 2 * 10**17, 0, 6 * 10**17, 0, false);
 
         // mintBurn = true, routeToken = false
-        _addSimpleBridgeToken(basicTokens.syn, "SYN", 10**18, 10**6, true, 10, 2 * 10**17, 0, 6 * 10**17, 0, false);
+        _addSimpleBridgeToken(basicTokens.syn, "syn", 10**18, 10**6, true, 10, 2 * 10**17, 0, 6 * 10**17, 0, false);
 
         // mintBurn = false, routeToken = true
-        _addSimpleBridgeToken(testTokens.frax, "FRAX", 10**18, 10**6, false, 10, 2 * 10**17, 0, 6 * 10**17, 0, true);
+        _addSimpleBridgeToken(testTokens.frax, "frax", 10**18, 10**6, false, 10, 2 * 10**17, 0, 6 * 10**17, 0, true);
         // Sorry Sam, gotta casually mint 1B FRAX for testing
         _addTokenTo(testTokens.frax, address(vault), 10**27);
 
         // mintBurn = false, routeToken = false
-        _addSimpleBridgeToken(testTokens.gohm, "gOHM", 10**16, 10**3, false, 10, 2 * 10**15, 0, 6 * 10**15, 0, false);
+        _addSimpleBridgeToken(testTokens.gohm, "gohm", 10**16, 10**3, false, 10, 2 * 10**15, 0, 6 * 10**15, 0, false);
 
         // mintBurn = false, routeToken = false
-        _addSimpleBridgeToken(testTokens.high, "HIGH", 10**18, 10**6, false, 10, 2 * 10**17, 0, 6 * 10**17, 0, false);
+        _addSimpleBridgeToken(testTokens.high, "high", 10**18, 10**6, false, 10, 2 * 10**17, 0, 6 * 10**17, 0, false);
         _addTokenTo(testTokens.high, address(vault), 10**27);
 
         // routeToken = true
-        _addToken(testTokens.dai, "DAI", 10**18, 10**6, true);
-        _addToken(testTokens.usdc, "USDC", 10**6, 10**6, true);
-        _addToken(testTokens.usdt, "USDT", 10**6, 10**6, true);
+        _addToken(testTokens.dai, "dai", 10**18, 10**6, true);
+        _addToken(testTokens.usdc, "usdc", 10**6, 10**6, true);
+        _addToken(testTokens.usdt, "usdt", 10**6, 10**6, true);
 
         // routeToken = false
-        _addToken(testTokens.wbtc, "wBTC", 10**2, 10**2, false);
+        _addToken(testTokens.wbtc, "wbtc", 10**2, 10**2, false);
     }
 }
