@@ -289,6 +289,70 @@ Gets a  list of tokens with allowances*
 |---|---|---|
 | _0 | address[] | undefined |
 
+### getTransactionAt
+
+```solidity
+function getTransactionAt(uint256 index) external view returns (bytes32 key, bytes payload, uint32 storedAtMin)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| index | uint256 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| key | bytes32 | undefined |
+| payload | bytes | undefined |
+| storedAtMin | uint32 | undefined |
+
+### getTransactionByKappa
+
+```solidity
+function getTransactionByKappa(bytes32 kappa) external view returns (bytes payload, uint32 storedAtMin)
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| kappa | bytes32 | undefined |
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| payload | bytes | undefined |
+| storedAtMin | uint32 | undefined |
+
+### getUnhandledKappas
+
+```solidity
+function getUnhandledKappas() external view returns (bytes32[] kappas)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| kappas | bytes32[] | undefined |
+
 ### grantRole
 
 ```solidity
@@ -550,6 +614,23 @@ function tokens(uint256) external view returns (address)
 | Name | Type | Description |
 |---|---|---|
 | _0 | address | undefined |
+
+### unhandledKappasCount
+
+```solidity
+function unhandledKappasCount() external view returns (uint256 kappaCount)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| kappaCount | uint256 | undefined |
 
 
 
