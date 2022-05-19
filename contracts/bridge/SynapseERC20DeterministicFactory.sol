@@ -60,10 +60,7 @@ contract SynapseERC20DeterministicFactory is Ownable {
         _initializeToken(synERC20Clone, name, symbol, decimals, owner);
     }
 
-    function predictDeterministicAddress(
-        address synapseERC20Address,
-        bytes32 salt
-    ) external view returns (address) {
+    function predictDeterministicAddress(address synapseERC20Address, bytes32 salt) external view returns (address) {
         return Clones.predictDeterministicAddress(synapseERC20Address, salt);
     }
 
