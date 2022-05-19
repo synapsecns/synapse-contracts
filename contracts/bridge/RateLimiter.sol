@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: LGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-4.5.0-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-4.5.0-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-4.5.0-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-4.5.0-upgradeable/utils/math/MathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/utils/math/MathUpgradeable.sol";
 
 import "./libraries/EnumerableQueueUpgradeable.sol";
 import "./interfaces/IRateLimiter.sol";
 
-import {StringsUpgradeable} from "@openzeppelin/contracts-4.5.0-upgradeable/utils/StringsUpgradeable.sol";
+import {StringsUpgradeable} from "@openzeppelin/contracts-upgradeable-4.5.0/utils/StringsUpgradeable.sol";
 
 // solhint-disable not-rely-on-time
 
