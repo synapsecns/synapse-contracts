@@ -164,7 +164,11 @@ contract DefaultRouterTest is DefaultVaultTest {
 
     // deal token and update totalSupply
     // custom logic for wETH, as totalSupply is amount of ether stored in WETH contract
-    function _dealToken(IERC20 token, address who, uint256 amount) internal {
+    function _dealToken(
+        IERC20 token,
+        address who,
+        uint256 amount
+    ) internal {
         if (address(token) == address(_tokens.wETH)) {
             deal(who, amount);
             hoax(who);

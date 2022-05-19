@@ -4,12 +4,7 @@ pragma solidity ^0.8.0;
 import {IBasicRouter} from "./IBasicRouter.sol";
 
 interface IRouter is IBasicRouter {
-    event Swap(
-        address indexed tokenIn,
-        address indexed tokenOut,
-        uint256 amountIn,
-        uint256 amountOut
-    );
+    event Swap(address indexed tokenIn, address indexed tokenOut, uint256 amountIn, uint256 amountOut);
 
     // Single chain swaps
 

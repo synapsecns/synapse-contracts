@@ -29,14 +29,7 @@ contract CurveMetaAdapter is CurveLendingAdapter {
         address _pool,
         bool _directSwapSupported,
         address _basePool
-    )
-        CurveLendingAdapter(
-            _name,
-            _swapGasEstimate,
-            _pool,
-            _directSwapSupported
-        )
-    {
+    ) CurveLendingAdapter(_name, _swapGasEstimate, _pool, _directSwapSupported) {
         _addBasePoolTokens(_basePool);
     }
 
@@ -80,13 +73,7 @@ contract CurveMetaAdapter is CurveLendingAdapter {
         address _tokenIn,
         address _tokenOut
     ) internal view virtual override returns (uint256 _amountOut) {
-        try
-            pool.get_dy_underlying(
-                tokenIndex[_tokenIn],
-                tokenIndex[_tokenOut],
-                _amountIn
-            )
-        returns (uint256 _amt) {
+        try pool.get_dy_underlying(tokenIndex[_tokenIn], tokenIndex[_tokenOut], _amountIn) returns (uint256 _amt) {
             // -1 to account for rounding errors.
             // This will underquote by 1 wei sometimes, but that's life
             _amountOut = _amt != 0 ? _amt - 1 : 0;
@@ -97,10 +84,7 @@ contract CurveMetaAdapter is CurveLendingAdapter {
         // quote for swaps from [base pool token] to [meta pool token] is
         // sometimes overly optimistic. Subtracting 1 bp should give
         // a more accurate lower bound for actual amount of tokens swapped
-        if (
-            tokenIndex[_tokenIn] >= firstBaseIndex &&
-            tokenIndex[_tokenOut] < firstBaseIndex
-        ) {
+        if (tokenIndex[_tokenIn] >= firstBaseIndex && tokenIndex[_tokenOut] < firstBaseIndex) {
             _amountOut = (_amountOut * 9999) / 10000;
         }
     }

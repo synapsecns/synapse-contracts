@@ -19,11 +19,7 @@ contract LPToken08 is ERC20BurnableUpgradeable, OwnableUpgradeable {
      * @param _name _name of this token
      * @param _symbol _symbol of this token
      */
-    function initialize(string memory _name, string memory _symbol)
-        external
-        initializer
-        returns (bool)
-    {
+    function initialize(string memory _name, string memory _symbol) external initializer returns (bool) {
         __Context_init_unchained();
         __ERC20_init_unchained(_name, _symbol);
         __Ownable_init_unchained();

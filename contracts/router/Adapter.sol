@@ -41,10 +41,7 @@ abstract contract Adapter is Ownable, IAdapter {
 
     // -- RESTRICTED ALLOWANCE FUNCTIONS --
 
-    function setInfiniteAllowance(IERC20 token, address spender)
-        external
-        onlyOwner
-    {
+    function setInfiniteAllowance(IERC20 token, address spender) external onlyOwner {
         _setInfiniteAllowance(token, spender);
     }
 
@@ -54,10 +51,7 @@ abstract contract Adapter is Ownable, IAdapter {
      * @param token address
      * @param spender address
      */
-    function revokeTokenAllowance(IERC20 token, address spender)
-        external
-        onlyOwner
-    {
+    function revokeTokenAllowance(IERC20 token, address spender) external onlyOwner {
         token.safeApprove(spender, 0);
     }
 
@@ -92,11 +86,7 @@ abstract contract Adapter is Ownable, IAdapter {
      * @return Address to transfer tokens in order for swap() to work
      */
 
-    function depositAddress(address tokenIn, address tokenOut)
-        external
-        view
-        returns (address)
-    {
+    function depositAddress(address tokenIn, address tokenOut) external view returns (address) {
         return _depositAddress(tokenIn, tokenOut);
     }
 
@@ -112,11 +102,7 @@ abstract contract Adapter is Ownable, IAdapter {
         address tokenIn,
         address tokenOut
     ) external view returns (uint256) {
-        if (
-            amountIn == 0 ||
-            tokenIn == tokenOut ||
-            !_checkTokens(tokenIn, tokenOut)
-        ) {
+        if (amountIn == 0 || tokenIn == tokenOut || !_checkTokens(tokenIn, tokenOut)) {
             return 0;
         }
         return _query(amountIn, tokenIn, tokenOut);
@@ -210,12 +196,7 @@ abstract contract Adapter is Ownable, IAdapter {
     /**
      * @notice Checks if a swap between two tokens is supported by adapter
      */
-    function _checkTokens(address, address)
-        internal
-        view
-        virtual
-        returns (bool)
-    {
+    function _checkTokens(address, address) internal view virtual returns (bool) {
         return true;
     }
 
@@ -227,11 +208,7 @@ abstract contract Adapter is Ownable, IAdapter {
      *      while some (2) will only be able to pull tokens while swapping.
      *      Use swapper address for (1) and Adapter address for (2)
      */
-    function _depositAddress(address tokenIn, address tokenOut)
-        internal
-        view
-        virtual
-        returns (address);
+    function _depositAddress(address tokenIn, address tokenOut) internal view virtual returns (address);
 
     /**
      * @notice Internal implementation of a swap

@@ -18,12 +18,7 @@ interface IERC20Mintable is IERC20 {
     function mint(address to, uint256 amount) external;
 }
 
-contract Vault is
-    Initializable,
-    AccessControlUpgradeable,
-    ReentrancyGuardUpgradeable,
-    PausableUpgradeable
-{
+contract Vault is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -162,11 +157,7 @@ contract Vault is
      * * @param token ERC20 token in which fees accumulated to transfer
      * * @param to Address to send the fees to
      */
-    function withdrawFees(IERC20 token, address to)
-        external
-        onlyGovernance
-        whenNotPaused
-    {
+    function withdrawFees(IERC20 token, address to) external onlyGovernance whenNotPaused {
         require(to != address(0), "Address is 0x00");
         uint256 feeAmount = fees[address(token)];
         require(feeAmount != 0, "Nothing to withdraw");
@@ -265,10 +256,7 @@ contract Vault is
         }
     }
 
-    function _transferGasDrop(address to)
-        internal
-        returns (uint256 gasdropAmount)
-    {
+    function _transferGasDrop(address to) internal returns (uint256 gasdropAmount) {
         // save gas on reads
         uint256 _amount = chainGasAmount;
         if (_amount > 0 && address(this).balance >= _amount) {

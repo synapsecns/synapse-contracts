@@ -35,27 +35,13 @@ abstract contract CurveAbstractAdapter is Adapter {
         }
     }
 
-    function _addPoolToken(address _tokenAddress, uint8 _index)
-        internal
-        virtual;
+    function _addPoolToken(address _tokenAddress, uint8 _index) internal virtual;
 
-    function _checkTokens(address _tokenIn, address _tokenOut)
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
+    function _checkTokens(address _tokenIn, address _tokenOut) internal view virtual override returns (bool) {
         return isPoolToken[_tokenIn] && isPoolToken[_tokenOut];
     }
 
-    function _depositAddress(address, address)
-        internal
-        view
-        virtual
-        override
-        returns (address)
-    {
+    function _depositAddress(address, address) internal view virtual override returns (address) {
         return address(this);
     }
 

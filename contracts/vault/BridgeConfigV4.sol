@@ -7,11 +7,7 @@ import {IBridgeConfig} from "./interfaces/IBridgeConfig.sol";
 import {Initializable} from "@openzeppelin/contracts-upgradeable-4.5.0/proxy/utils/Initializable.sol";
 import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable-4.5.0/access/AccessControlUpgradeable.sol";
 
-contract BridgeConfig is
-    Initializable,
-    AccessControlUpgradeable,
-    IBridgeConfig
-{
+contract BridgeConfig is Initializable, AccessControlUpgradeable, IBridgeConfig {
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
     bytes32 public constant NODEGROUP_ROLE = keccak256("NODEGROUP_ROLE");
 
@@ -163,11 +159,7 @@ contract BridgeConfig is
         }
     }
 
-    function getTokenChainIds(address tokenLocal)
-        external
-        view
-        returns (uint256[] memory chainIds)
-    {
+    function getTokenChainIds(address tokenLocal) external view returns (uint256[] memory chainIds) {
         chainIds = tokenChainIds[tokenLocal];
     }
 
@@ -177,11 +169,7 @@ contract BridgeConfig is
      * @param tokenGlobal Token address on EVM chain.
      * @return tokenLocal Bridge token address on this chain.
      */
-    function findTokenEVM(uint256 chainId, address tokenGlobal)
-        external
-        view
-        returns (address tokenLocal)
-    {
+    function findTokenEVM(uint256 chainId, address tokenGlobal) external view returns (address tokenLocal) {
         tokenLocal = globalMapEVM[chainId][tokenGlobal];
     }
 
@@ -191,11 +179,7 @@ contract BridgeConfig is
      * @param tokenGlobal Token address on non-EVM chain.
      * @return tokenLocal Bridge token address on this chain.
      */
-    function findTokenNonEVM(uint256 chainId, string calldata tokenGlobal)
-        external
-        view
-        returns (address tokenLocal)
-    {
+    function findTokenNonEVM(uint256 chainId, string calldata tokenGlobal) external view returns (address tokenLocal) {
         tokenLocal = globalMapNonEVM[chainId][tokenGlobal];
     }
 
@@ -302,21 +286,11 @@ contract BridgeConfig is
         uint256 minGasDropFee,
         uint256 minSwapFee
     ) external onlyRole(GOVERNANCE_ROLE) {
-        require(
-            tokenConfigs[token].tokenType == TokenType.UNKNOWN,
-            "Token already added"
-        );
+        require(tokenConfigs[token].tokenType == TokenType.UNKNOWN, "Token already added");
         bridgeTokens.push(token);
 
         _updateTokenSetup(token, bridgeToken, isMintBurn);
-        updateTokenFees(
-            token,
-            synapseFee,
-            maxTotalFee,
-            minBridgeFee,
-            minGasDropFee,
-            minSwapFee
-        );
+        updateTokenFees(token, synapseFee, maxTotalFee, minBridgeFee, minGasDropFee, minSwapFee);
     }
 
     /**
@@ -331,10 +305,7 @@ contract BridgeConfig is
         address bridgeToken,
         bool isMintBurn
     ) external onlyRole(GOVERNANCE_ROLE) {
-        require(
-            tokenConfigs[token].tokenType != TokenType.UNKNOWN,
-            "Token not added"
-        );
+        require(tokenConfigs[token].tokenType != TokenType.UNKNOWN, "Token not added");
 
         _updateTokenSetup(token, bridgeToken, isMintBurn);
     }
@@ -347,9 +318,7 @@ contract BridgeConfig is
         TokenConfig memory config = tokenConfigs[token];
 
         config.bridgeToken = bridgeToken;
-        config.tokenType = isMintBurn
-            ? TokenType.MINT_BURN
-            : TokenType.DEPOSIT_WITHDRAW;
+        config.tokenType = isMintBurn ? TokenType.MINT_BURN : TokenType.DEPOSIT_WITHDRAW;
 
         tokenConfigs[token] = config;
 
@@ -384,14 +353,7 @@ contract BridgeConfig is
 
         tokenConfigs[token] = config;
 
-        emit TokenFeesUpdated(
-            token,
-            synapseFee,
-            maxTotalFee,
-            minBridgeFee,
-            minGasDropFee,
-            minSwapFee
-        );
+        emit TokenFeesUpdated(token, synapseFee, maxTotalFee, minBridgeFee, minGasDropFee, minSwapFee);
     }
 
     // -- BRIDGE CONFIG: Token Map (Governance) --
@@ -416,22 +378,11 @@ contract BridgeConfig is
         string calldata bridgeTokenNonEVM
     ) external onlyRole(GOVERNANCE_ROLE) {
         _checkConfigEVM(chainIdsEVM, bridgeTokensEVM);
-        _updateMap(
-            chainIdsEVM,
-            bridgeTokensEVM,
-            chainIdNonEVM,
-            bridgeTokenNonEVM,
-            true
-        );
+        _updateMap(chainIdsEVM, bridgeTokensEVM, chainIdNonEVM, bridgeTokenNonEVM, true);
 
         // We were given the full token map, will emit it, so that
         // Bridge.addToMap() can be called by the Node Group on other chains
-        emit TokenMapUpdated(
-            chainIdsEVM,
-            bridgeTokensEVM,
-            chainIdNonEVM,
-            bridgeTokenNonEVM
-        );
+        emit TokenMapUpdated(chainIdsEVM, bridgeTokensEVM, chainIdNonEVM, bridgeTokenNonEVM);
     }
 
     /**
@@ -461,26 +412,16 @@ contract BridgeConfig is
             for (uint256 i = 0; i < newChainIdsEVM.length; ++i) {
                 uint256 newChainId = newChainIdsEVM[i];
                 for (uint256 j = 0; j < chainIdsEVM.length; ++j) {
-                    require(
-                        chainIdsEVM[j] != newChainId,
-                        "ChainId already present in map"
-                    );
+                    require(chainIdsEVM[j] != newChainId, "ChainId already present in map");
                 }
             }
         }
 
-        _updateTokenMap(
-            token,
-            newChainIdsEVM,
-            newBridgeTokensEVM,
-            chainIdNonEVM,
-            bridgeTokenNonEVM
-        );
+        _updateTokenMap(token, newChainIdsEVM, newBridgeTokensEVM, chainIdNonEVM, bridgeTokenNonEVM);
 
         // tokenChainIds[token] now contains both old and new chainIds
         address[] memory allTokenAddresses = _getAllTokenAddressesEVM(token);
-        string memory updBridgeTokenNonEVM = tokenConfigs[token]
-        .bridgeTokenNonEVM;
+        string memory updBridgeTokenNonEVM = tokenConfigs[token].bridgeTokenNonEVM;
 
         // Use both old and new chains in the emitted Event
         emit TokenMapUpdated(
@@ -501,17 +442,9 @@ contract BridgeConfig is
      * @param token Token to toggle: the version that is used on this chain.
      * @param isEnabled New token Bridge status.
      */
-    function changeTokenStatus(address token, bool isEnabled)
-        external
-        onlyRole(GOVERNANCE_ROLE)
-    {
+    function changeTokenStatus(address token, bool isEnabled) external onlyRole(GOVERNANCE_ROLE) {
         if (_changeTokenStatus(token, isEnabled)) {
-            emit TokenStatusUpdated(
-                tokenChainIds[token],
-                block.chainid,
-                token,
-                isEnabled
-            );
+            emit TokenStatusUpdated(tokenChainIds[token], block.chainid, token, isEnabled);
         }
     }
 
@@ -536,10 +469,7 @@ contract BridgeConfig is
      * @param chainId Id of chain where token (being deleted) is deployed.
      * @param tokenGlobal Token to delete: the given that is used on given chain.
      */
-    function removeGlobalTokenEVM(uint256 chainId, address tokenGlobal)
-        external
-        onlyRole(GOVERNANCE_ROLE)
-    {
+    function removeGlobalTokenEVM(uint256 chainId, address tokenGlobal) external onlyRole(GOVERNANCE_ROLE) {
         uint256[] memory chainIds = _removeGlobalTokenEVM(chainId, tokenGlobal);
 
         emit TokenDeleted(chainIds, chainId, tokenGlobal);
@@ -565,13 +495,7 @@ contract BridgeConfig is
         string calldata bridgeTokenNonEVM
     ) external onlyRole(NODEGROUP_ROLE) {
         _checkConfigEVM(chainIdsEVM, bridgeTokensEVM);
-        _updateMap(
-            chainIdsEVM,
-            bridgeTokensEVM,
-            chainIdNonEVM,
-            bridgeTokenNonEVM,
-            false
-        );
+        _updateMap(chainIdsEVM, bridgeTokensEVM, chainIdNonEVM, bridgeTokenNonEVM, false);
 
         // DO NOT emit anything, as this is a relayed setup tx
     }
@@ -597,10 +521,7 @@ contract BridgeConfig is
         // DO NOT emit anything, as this is a relayed setup tx
     }
 
-    function removeTokenEVM(uint256 chainId, address tokenAddress)
-        external
-        onlyRole(NODEGROUP_ROLE)
-    {
+    function removeTokenEVM(uint256 chainId, address tokenAddress) external onlyRole(NODEGROUP_ROLE) {
         // Check if current chain is the specified one for deleting
         if (chainId == block.chainid) {
             // delete token entirely on this chain
@@ -617,25 +538,15 @@ contract BridgeConfig is
      * @dev Checks whether provided arrays length match,
      * also checks for blank values.
      */
-    function _checkConfigEVM(
-        uint256[] calldata chainIdsEVM,
-        address[] calldata bridgeTokensEVM
-    ) internal pure {
-        require(
-            bridgeTokensEVM.length == chainIdsEVM.length,
-            "Arrays length differs"
-        );
+    function _checkConfigEVM(uint256[] calldata chainIdsEVM, address[] calldata bridgeTokensEVM) internal pure {
+        require(bridgeTokensEVM.length == chainIdsEVM.length, "Arrays length differs");
         for (uint256 i = 0; i < chainIdsEVM.length; ++i) {
             require(chainIdsEVM[i] != 0, "Zero chainId is setup");
             require(bridgeTokensEVM[i] != address(0), "Zero token in setup");
         }
     }
 
-    function _getAllTokenAddressesEVM(address token)
-        internal
-        view
-        returns (address[] memory allTokenAddresses)
-    {
+    function _getAllTokenAddressesEVM(address token) internal view returns (address[] memory allTokenAddresses) {
         uint256[] memory chainIds = tokenChainIds[token];
         uint256 amount = chainIds.length;
         allTokenAddresses = new address[](amount);
@@ -647,10 +558,7 @@ contract BridgeConfig is
 
     // -- BRIDGE CONFIG: token setup (internal implementation) --
 
-    function _changeTokenStatus(address token, bool isEnabled)
-        internal
-        returns (bool)
-    {
+    function _changeTokenStatus(address token, bool isEnabled) internal returns (bool) {
         TokenConfig memory config = tokenConfigs[token];
         require(config.tokenType != TokenType.UNKNOWN, "Token not added");
         require(tokenChainIds[token].length != 0, "Token map not created");
@@ -664,10 +572,11 @@ contract BridgeConfig is
         return true;
     }
 
-    function _findLocalToken(
-        uint256[] calldata chainIdsEVM,
-        address[] calldata bridgeTokensEVM
-    ) internal view returns (address token) {
+    function _findLocalToken(uint256[] calldata chainIdsEVM, address[] calldata bridgeTokensEVM)
+        internal
+        view
+        returns (address token)
+    {
         // Find bridge token address on this chain
         for (uint256 i = 0; i < chainIdsEVM.length; i++) {
             if (chainIdsEVM[i] == block.chainid) {
@@ -686,17 +595,8 @@ contract BridgeConfig is
         bool checkEmpty
     ) internal {
         address tokenLocal = _findLocalToken(chainIdsEVM, bridgeTokensEVM);
-        require(
-            !checkEmpty || tokenChainIds[tokenLocal].length == 0,
-            "Token map already created"
-        );
-        _updateTokenMap(
-            tokenLocal,
-            chainIdsEVM,
-            bridgeTokensEVM,
-            chainIdNonEVM,
-            bridgeTokenNonEVM
-        );
+        require(!checkEmpty || tokenChainIds[tokenLocal].length == 0, "Token map already created");
+        _updateTokenMap(tokenLocal, chainIdsEVM, bridgeTokensEVM, chainIdNonEVM, bridgeTokenNonEVM);
     }
 
     function _updateTokenMap(
@@ -731,13 +631,9 @@ contract BridgeConfig is
                 tokenConfigs[tokenLocal] = config;
             } else {
                 // If token already has non-EVM chain setup, check that it's the same chain.
+                require(config.chainIdNonEVM == chainIdNonEVM, "Deployed on other non-EVM");
                 require(
-                    config.chainIdNonEVM == chainIdNonEVM,
-                    "Deployed on other non-EVM"
-                );
-                require(
-                    keccak256(bytes(config.bridgeTokenNonEVM)) ==
-                        keccak256(bytes(bridgeTokenNonEVM)),
+                    keccak256(bytes(config.bridgeTokenNonEVM)) == keccak256(bytes(bridgeTokenNonEVM)),
                     "Wrong non-EVM token address"
                 );
             }
@@ -791,10 +687,7 @@ contract BridgeConfig is
         delete tokenConfigs[tokenLocal];
     }
 
-    function _removeGlobalTokenEVM(uint256 chainId, address tokenGlobal)
-        internal
-        returns (uint256[] memory chainIds)
-    {
+    function _removeGlobalTokenEVM(uint256 chainId, address tokenGlobal) internal returns (uint256[] memory chainIds) {
         address tokenLocal = globalMapEVM[chainId][tokenGlobal];
         require(tokenLocal != address(0), "Token doesn't exist");
 

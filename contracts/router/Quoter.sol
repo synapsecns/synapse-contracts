@@ -21,9 +21,7 @@ contract Quoter is BasicQuoter, IQuoter {
     /// 1. call oldQuoter.setAdapters([]), this will clear the adapters in Router
     /// 2. revoke ADAPTERS_STORAGE_ROLE from oldQuoter
     /// 3. Do (2-4) from setup flow as usual
-    constructor(address payable _router, uint8 _maxSwaps)
-        BasicQuoter(_router, _maxSwaps)
-    {
+    constructor(address payable _router, uint8 _maxSwaps) BasicQuoter(_router, _maxSwaps) {
         this;
     }
 
@@ -43,10 +41,7 @@ contract Quoter is BasicQuoter, IQuoter {
         address tokenOut,
         uint8 maxSwaps
     ) public view returns (Offers.FormattedOffer memory bestOffer) {
-        require(
-            maxSwaps > 0 && maxSwaps <= MAX_SWAPS,
-            "Quoter: Invalid max-swaps"
-        );
+        require(maxSwaps > 0 && maxSwaps <= MAX_SWAPS, "Quoter: Invalid max-swaps");
         if (tokenIn == tokenOut) {
             bestOffer.amounts = new uint256[](1);
             bestOffer.path = new address[](1);
@@ -59,13 +54,7 @@ contract Quoter is BasicQuoter, IQuoter {
             queries.amounts = Bytes.toBytes(amountIn);
             queries.path = Bytes.toBytes(tokenIn);
 
-            queries = _findBestPath(
-                amountIn,
-                tokenIn,
-                tokenOut,
-                maxSwaps,
-                queries
-            );
+            queries = _findBestPath(amountIn, tokenIn, tokenOut, maxSwaps, queries);
 
             // If no paths are found, return empty struct
             if (queries.adapters.length == 0) {
@@ -121,12 +110,7 @@ contract Quoter is BasicQuoter, IQuoter {
         // bestAmountOut: amount of tokenOut in the local best found route
 
         // First check if there is a path directly from tokenIn to tokenOut
-        uint256 bestAmountOut = _checkDirectSwap(
-            amountIn,
-            tokenIn,
-            tokenOut,
-            bestOption
-        );
+        uint256 bestAmountOut = _checkDirectSwap(amountIn, tokenIn, tokenOut, bestOption);
 
         // Check for swaps through intermediate tokens, only if there are enough swaps left
         // Need at least two extra swaps
@@ -145,45 +129,22 @@ contract Quoter is BasicQuoter, IQuoter {
                 // Loop through all adapters to find the best one
                 // for swapping tokenIn for one of the trusted tokens
 
-                Query memory bestSwap = queryDirectSwap(
-                    amountIn,
-                    tokenIn,
-                    trustedToken
-                );
+                Query memory bestSwap = queryDirectSwap(amountIn, tokenIn, trustedToken);
                 if (bestSwap.amountOut == 0) {
                     continue;
                 }
-                Offers.Offer memory newOffer = Offers.cloneOfferWithGas(
-                    queries
-                );
+                Offers.Offer memory newOffer = Offers.cloneOfferWithGas(queries);
                 // add bestSwap to the current route
-                Offers.addQuery(
-                    newOffer,
-                    bestSwap.amountOut,
-                    bestSwap.adapter,
-                    bestSwap.tokenOut
-                );
+                Offers.addQuery(newOffer, bestSwap.amountOut, bestSwap.adapter, bestSwap.tokenOut);
                 // Find best path, starting with current route + bestSwap
                 // new current token is trustedToken
                 // its amount is bestSwap.amountOut
-                newOffer = _findBestPath(
-                    bestSwap.amountOut,
-                    trustedToken,
-                    tokenOut,
-                    maxSwaps,
-                    newOffer
-                );
-                address lastToken = Bytes.toAddress(
-                    newOffer.path.length,
-                    newOffer.path
-                );
+                newOffer = _findBestPath(bestSwap.amountOut, trustedToken, tokenOut, maxSwaps, newOffer);
+                address lastToken = Bytes.toAddress(newOffer.path.length, newOffer.path);
                 // Check that the last token in the path is tokenOut and update the new best option
                 // only if amountOut is increased
                 if (lastToken == tokenOut) {
-                    uint256 newAmountOut = Bytes.toUint256(
-                        newOffer.amounts.length,
-                        newOffer.amounts
-                    );
+                    uint256 newAmountOut = Bytes.toUint256(newOffer.amounts.length, newOffer.amounts);
 
                     // bestAmountOut == 0 means we don't have the "best" option yet
                     if (bestAmountOut < newAmountOut || bestAmountOut == 0) {
@@ -209,11 +170,7 @@ contract Quoter is BasicQuoter, IQuoter {
     ) internal view returns (Query memory bestQuery) {
         for (uint8 i = 0; i < trustedAdapters.length; ++i) {
             address adapter = trustedAdapters[i];
-            uint256 amountOut = IAdapter(adapter).query(
-                amountIn,
-                tokenIn,
-                tokenOut
-            );
+            uint256 amountOut = IAdapter(adapter).query(amountIn, tokenIn, tokenOut);
             if (amountOut == 0) {
                 continue;
             }
@@ -241,12 +198,7 @@ contract Quoter is BasicQuoter, IQuoter {
     ) internal view returns (uint256 amountOut) {
         Query memory queryDirect = queryDirectSwap(amountIn, tokenIn, tokenOut);
         if (queryDirect.amountOut != 0) {
-            Offers.addQuery(
-                bestOption,
-                queryDirect.amountOut,
-                queryDirect.adapter,
-                queryDirect.tokenOut
-            );
+            Offers.addQuery(bestOption, queryDirect.amountOut, queryDirect.adapter, queryDirect.tokenOut);
             amountOut = queryDirect.amountOut;
         }
     }

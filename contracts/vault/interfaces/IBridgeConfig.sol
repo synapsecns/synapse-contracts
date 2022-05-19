@@ -42,11 +42,7 @@ interface IBridgeConfig {
 
     // -- SINGLE CHAIN SETUP EVENTS --
 
-    event TokenSetupUpdated(
-        address token,
-        address bridgeToken,
-        bool isMintBurn
-    );
+    event TokenSetupUpdated(address token, address bridgeToken, bool isMintBurn);
 
     event TokenFeesUpdated(
         address token,
@@ -59,11 +55,7 @@ interface IBridgeConfig {
 
     // -- CROSS CHAIN SETUP EVENTS --
 
-    event TokenDeleted(
-        uint256[] chainIdsEVM,
-        uint256 deletedChainIdEVM,
-        address deletedTokenEVM
-    );
+    event TokenDeleted(uint256[] chainIdsEVM, uint256 deletedChainIdEVM, address deletedTokenEVM);
 
     event TokenMapUpdated(
         uint256[] chainIdsEVM,
@@ -72,12 +64,7 @@ interface IBridgeConfig {
         string bridgeTokenNonEVM
     );
 
-    event TokenStatusUpdated(
-        uint256[] chainIdsEVM,
-        uint256 originChainIdEVM,
-        address originTokenEVM,
-        bool isEnabled
-    );
+    event TokenStatusUpdated(uint256[] chainIdsEVM, uint256 originChainIdEVM, address originTokenEVM, bool isEnabled);
 
     // -- VIEWS --
 
@@ -125,15 +112,9 @@ interface IBridgeConfig {
         view
         returns (string memory tokenGlobal, bool isEnabled);
 
-    function findTokenEVM(uint256 chainId, address tokenGlobal)
-        external
-        view
-        returns (address tokenLocal);
+    function findTokenEVM(uint256 chainId, address tokenGlobal) external view returns (address tokenLocal);
 
-    function findTokenNonEVM(uint256 chainId, string calldata tokenGlobal)
-        external
-        view
-        returns (address tokenLocal);
+    function findTokenNonEVM(uint256 chainId, string calldata tokenGlobal) external view returns (address tokenLocal);
 
     function isTokenEnabled(address bridgeToken) external view returns (bool);
 }

@@ -10,10 +10,7 @@ interface IAdapter {
 
     function swapGasEstimate() external view returns (uint256);
 
-    function depositAddress(address tokenIn, address tokenOut)
-        external
-        view
-        returns (address);
+    function depositAddress(address tokenIn, address tokenOut) external view returns (address);
 
     function swap(
         uint256 amountIn,

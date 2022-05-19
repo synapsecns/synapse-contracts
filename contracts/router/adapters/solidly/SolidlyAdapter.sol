@@ -29,29 +29,11 @@ contract SolidlyAdapter is Adapter {
         stable = _stable;
     }
 
-    function _depositAddress(address _tokenIn, address _tokenOut)
-        internal
-        view
-        override
-        returns (address pair)
-    {
+    function _depositAddress(address _tokenIn, address _tokenOut) internal view override returns (address pair) {
         bytes32 salt = _tokenIn < _tokenOut
             ? keccak256(abi.encodePacked(_tokenIn, _tokenOut, stable))
             : keccak256(abi.encodePacked(_tokenOut, _tokenIn, stable));
-        pair = address(
-            uint160(
-                uint256(
-                    keccak256(
-                        abi.encodePacked(
-                            hex"ff",
-                            solidlyFactory,
-                            salt,
-                            initCodeHash
-                        )
-                    )
-                )
-            )
-        );
+        pair = address(uint160(uint256(keccak256(abi.encodePacked(hex"ff", solidlyFactory, salt, initCodeHash)))));
     }
 
     function _swap(
@@ -88,9 +70,7 @@ contract SolidlyAdapter is Adapter {
         uint256 _amountIn
     ) internal view returns (uint256 _amountOut) {
         if (Address.isContract(_pair)) {
-            try ISolidlyPair(_pair).getAmountOut(_amountIn, _tokenIn) returns (
-                uint256 amountOut
-            ) {
+            try ISolidlyPair(_pair).getAmountOut(_amountIn, _tokenIn) returns (uint256 amountOut) {
                 _amountOut = amountOut;
             } catch {
                 this;

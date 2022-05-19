@@ -105,18 +105,9 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         uint256 minAmountOut,
         uint256 deadline
     ) external deadlineCheck(deadline) returns (uint256 amountOut) {
-        require(
-            path[path.length - 1] == WGAS,
-            "Router: Path needs to end with WGAS"
-        );
+        require(path[path.length - 1] == WGAS, "Router: Path needs to end with WGAS");
         // This contract needs to receive WGAS in order to unwrap it
-        amountOut = _swap(
-            address(this),
-            path,
-            adapters,
-            amountIn,
-            minAmountOut
-        );
+        amountOut = _swap(address(this), path, adapters, amountIn, minAmountOut);
         // this will unwrap WGAS and return GAS
         // reentrancy not an issue here, as all work is done
         _returnTokensTo(to, IERC20(WGAS), amountOut);
@@ -147,11 +138,7 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         require(path.length > 1, "Router: path too short");
         address tokenIn = path[0];
         address tokenNext = path[1];
-        IERC20(tokenIn).safeTransferFrom(
-            msg.sender,
-            _getDepositAddress(adapters[0], tokenIn, tokenNext),
-            amountIn
-        );
+        IERC20(tokenIn).safeTransferFrom(msg.sender, _getDepositAddress(adapters[0], tokenIn, tokenNext), amountIn);
 
         amountOut = _doChainedSwaps(to, path, adapters, amountIn, minAmountOut);
     }
@@ -176,10 +163,7 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         require(path.length > 1, "Router: path too short");
         address tokenIn = path[0];
         address tokenNext = path[1];
-        IERC20(tokenIn).safeTransfer(
-            _getDepositAddress(adapters[0], tokenIn, tokenNext),
-            amountIn
-        );
+        IERC20(tokenIn).safeTransfer(_getDepositAddress(adapters[0], tokenIn, tokenNext), amountIn);
 
         amountOut = _doChainedSwaps(to, path, adapters, amountIn, minAmountOut);
     }
@@ -209,10 +193,7 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
         uint256 amountIn,
         uint256 minAmountOut
     ) internal returns (uint256 amountOut) {
-        require(
-            path.length == adapters.length + 1,
-            "Router: wrong amount of adapters/tokens"
-        );
+        require(path.length == adapters.length + 1, "Router: wrong amount of adapters/tokens");
         require(to != address(0), "Router: to cannot be zero address");
         for (uint256 i = 0; i < adapters.length; ++i) {
             require(isTrustedAdapter[adapters[i]], "Router: unknown adapter");
@@ -234,27 +215,16 @@ contract Router is ReentrancyGuard, BasicRouter, IRouter {
             if (i < adapters.length - 1) {
                 data.adapterNext = IAdapter(adapters[i + 1]);
                 data.tokenNext = path[i + 2];
-                data.targetAddress = data.adapterNext.depositAddress(
-                    data.tokenOut,
-                    data.tokenNext
-                );
+                data.targetAddress = data.adapterNext.depositAddress(data.tokenOut, data.tokenNext);
             } else {
                 data.targetAddress = to;
             }
 
-            amountIn = adapter.swap(
-                amountIn,
-                data.tokenIn,
-                data.tokenOut,
-                data.targetAddress
-            );
+            amountIn = adapter.swap(amountIn, data.tokenIn, data.tokenOut, data.targetAddress);
         }
         // figure out how much tokens user received exactly
         amountOut = IERC20(data.tokenOut).balanceOf(to) - amountOut;
-        require(
-            amountOut >= minAmountOut,
-            "Router: Insufficient output amount"
-        );
+        require(amountOut >= minAmountOut, "Router: Insufficient output amount");
         emit Swap(path[0], data.tokenOut, amountIn, amountOut);
     }
 

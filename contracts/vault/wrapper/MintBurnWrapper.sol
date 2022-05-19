@@ -118,11 +118,7 @@ abstract contract MintBurnWrapper is IMintBurnWrapper {
         @notice Get maximum amount of native tokens `spender` can burn from `owner` 
         via {burnFrom}.
      */
-    function allowance(address owner, address spender)
-        external
-        view
-        returns (uint256)
-    {
+    function allowance(address owner, address spender) external view returns (uint256) {
         return _allowances[owner][spender];
     }
 
@@ -139,12 +135,7 @@ abstract contract MintBurnWrapper is IMintBurnWrapper {
         external validation of {mint} and {burnFrom}, as well as for getting the max amount of 
         native tokens can be burnt via {burnFrom}.
      */
-    function balanceOf(address account)
-        external
-        view
-        virtual
-        returns (uint256)
-    {
+    function balanceOf(address account) external view virtual returns (uint256) {
         // Remember, native tokens from Vault are stored here
         if (account == vault) {
             return IERC20(nativeToken).balanceOf(address(this));
@@ -159,10 +150,7 @@ abstract contract MintBurnWrapper is IMintBurnWrapper {
         This, and the requirement for approving, makes it impossible to call {burnFrom} without bridging the tokens.
      */
     function burnFrom(address account, uint256 amount) external onlyBridge {
-        require(
-            _allowances[account][msg.sender] >= amount,
-            "Can't burn more than allowance"
-        );
+        require(_allowances[account][msg.sender] >= amount, "Can't burn more than allowance");
         _allowances[account][msg.sender] -= amount;
         uint256 balanceBefore = IERC20(nativeToken).balanceOf(account);
 
@@ -202,10 +190,7 @@ abstract contract MintBurnWrapper is IMintBurnWrapper {
         _transfer(to, amount);
 
         uint256 balanceAfter = IERC20(nativeToken).balanceOf(to);
-        require(
-            balanceBefore + amount == balanceAfter,
-            "Transfer is incomplete"
-        );
+        require(balanceBefore + amount == balanceAfter, "Transfer is incomplete");
     }
 
     /// @dev This should burn native token from account.

@@ -33,22 +33,11 @@ contract GmxAdapter is Adapter {
         }
     }
 
-    function _checkTokens(address _tokenIn, address _tokenOut)
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
+    function _checkTokens(address _tokenIn, address _tokenOut) internal view virtual override returns (bool) {
         return isPoolToken[_tokenIn] && isPoolToken[_tokenOut];
     }
 
-    function _depositAddress(address, address)
-        internal
-        view
-        override
-        returns (address)
-    {
+    function _depositAddress(address, address) internal view override returns (address) {
         return address(vault);
     }
 
@@ -66,9 +55,7 @@ contract GmxAdapter is Adapter {
         address _tokenIn,
         address _tokenOut
     ) internal view virtual override returns (uint256 _amountOut) {
-        try reader.getMaxAmountIn(address(vault), _tokenIn, _tokenOut) returns (
-            uint256 maxAmountIn
-        ) {
+        try reader.getMaxAmountIn(address(vault), _tokenIn, _tokenOut) returns (uint256 maxAmountIn) {
             if (_amountIn > maxAmountIn) {
                 return 0;
             }
@@ -76,9 +63,10 @@ contract GmxAdapter is Adapter {
             return 0;
         }
 
-        try
-            reader.getAmountOut(address(vault), _tokenIn, _tokenOut, _amountIn)
-        returns (uint256 amountOutAfterFees, uint256) {
+        try reader.getAmountOut(address(vault), _tokenIn, _tokenOut, _amountIn) returns (
+            uint256 amountOutAfterFees,
+            uint256
+        ) {
             _amountOut = amountOutAfterFees;
         } catch {
             return 0;

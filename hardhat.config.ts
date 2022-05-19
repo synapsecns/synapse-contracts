@@ -1,19 +1,19 @@
-import "@tenderly/hardhat-tenderly"
-import "@nomiclabs/hardhat-ethers"
-import "@nomiclabs/hardhat-waffle"
-import "@nomiclabs/hardhat-web3"
-import "@nomiclabs/hardhat-etherscan"
-import "@typechain/hardhat"
-import "hardhat-gas-reporter"
-import "solidity-coverage"
-import "hardhat-deploy"
-import "hardhat-spdx-license-identifier"
+import "@tenderly/hardhat-tenderly";
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-web3";
+import "@nomiclabs/hardhat-etherscan";
+import "@typechain/hardhat";
+import "hardhat-gas-reporter";
+import "solidity-coverage";
+import "hardhat-deploy";
+import "hardhat-spdx-license-identifier";
 import "hardhat-interface-generator";
 
-import { HardhatUserConfig } from "hardhat/config"
-import dotenv from "dotenv"
+import { HardhatUserConfig } from "hardhat/config";
+import dotenv from "dotenv";
 
-dotenv.config()
+dotenv.config();
 
 let config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
@@ -51,7 +51,7 @@ let config: HardhatUserConfig = {
     polygon: {
       url: "https://polygon-rpc.com",
       gasPrice: 400 * 1000000000,
-      gas: 1000000
+      gas: 1000000,
     },
     bsc: {
       url: "https://bsc-dataseed1.defibit.io",
@@ -69,7 +69,7 @@ let config: HardhatUserConfig = {
     },
     moonriver: {
       url: "https://rpc.moonriver.moonbeam.network",
-      gasPrice: 10 * 1000000000
+      gasPrice: 10 * 1000000000,
     },
     moonbeam: {
       url: "https://rpc.api.moonbeam.network",
@@ -78,7 +78,7 @@ let config: HardhatUserConfig = {
       url: "https://mainnet.aurora.dev",
     },
     metis: {
-      url: 'https://andromeda.metis.io/?owner=1088',
+      url: "https://andromeda.metis.io/?owner=1088",
     },
     mainnet: {
       url: process.env.ALCHEMY_API || "https://main-light.eth.linkpool.io/",
@@ -90,8 +90,8 @@ let config: HardhatUserConfig = {
     },
     cronos: {
       url: "https://evm-cronos.crypto.org",
-      gasPrice: 5000 * 1000000000
-    }
+      gasPrice: 5000 * 1000000000,
+    },
   },
   paths: {
     artifacts: "./build/artifacts",
@@ -131,10 +131,10 @@ let config: HardhatUserConfig = {
         },
       },
       {
-        version: "0.5.16"
+        version: "0.5.16",
       },
       {
-        version: "0.4.24"
+        version: "0.4.24",
       },
     ],
   },
@@ -160,11 +160,11 @@ let config: HardhatUserConfig = {
   spdxLicenseIdentifier: {
     overwrite: false,
     runOnCompile: true,
-  }
-}
+  },
+};
 
 if (process.env.ETHERSCAN_API) {
-  config = { ...config, etherscan: { apiKey: process.env.ETHERSCAN_API } }
+  config = { ...config, etherscan: { apiKey: process.env.ETHERSCAN_API } };
 }
 
 if (process.env.PRIVATE_KEYS) {
@@ -182,8 +182,8 @@ if (process.env.PRIVATE_KEYS) {
     "optimism",
     "aurora",
     "cronos",
-    "metis"
-  ]
+    "metis",
+  ];
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
       config.networks = {
@@ -192,9 +192,9 @@ if (process.env.PRIVATE_KEYS) {
           ...config.networks?.[network],
           accounts: JSON.parse(process.env.PRIVATE_KEYS),
         },
-      }
+      };
     }
-  })
+  });
 }
 
-module.exports = config
+module.exports = config;

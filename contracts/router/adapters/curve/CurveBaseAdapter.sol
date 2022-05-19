@@ -19,26 +19,13 @@ contract CurveBaseAdapter is CurveAbstractAdapter {
         uint256 _swapGasEstimate,
         address _pool,
         bool _directSwapSupported
-    )
-        CurveAbstractAdapter(
-            _name,
-            _swapGasEstimate,
-            _pool,
-            _directSwapSupported
-        )
-    {
+    ) CurveAbstractAdapter(_name, _swapGasEstimate, _pool, _directSwapSupported) {
         this;
     }
 
-    function _addPoolToken(address _tokenAddress, uint8 _index)
-        internal
-        virtual
-        override
-    {
+    function _addPoolToken(address _tokenAddress, uint8 _index) internal virtual override {
         isPoolToken[_tokenAddress] = true;
-        tokenIndex[_tokenAddress] = SafeCast.toInt128(
-            SafeCast.toInt256(_index)
-        );
+        tokenIndex[_tokenAddress] = SafeCast.toInt128(SafeCast.toInt256(_index));
     }
 
     function _doDirectSwap(
@@ -48,13 +35,7 @@ contract CurveBaseAdapter is CurveAbstractAdapter {
         address _to
     ) internal virtual override returns (uint256 _amountOut) {
         _amountOut = IERC20(_tokenOut).balanceOf(_to);
-        pool.exchange(
-            tokenIndex[_tokenIn],
-            tokenIndex[_tokenOut],
-            _amountIn,
-            0,
-            _to
-        );
+        pool.exchange(tokenIndex[_tokenIn], tokenIndex[_tokenOut], _amountIn, 0, _to);
         _amountOut = IERC20(_tokenOut).balanceOf(_to) - _amountOut;
     }
 
@@ -63,12 +44,7 @@ contract CurveBaseAdapter is CurveAbstractAdapter {
         address _tokenIn,
         address _tokenOut
     ) internal virtual override returns (uint256 _amountOut) {
-        pool.exchange(
-            tokenIndex[_tokenIn],
-            tokenIndex[_tokenOut],
-            _amountIn,
-            0
-        );
+        pool.exchange(tokenIndex[_tokenIn], tokenIndex[_tokenOut], _amountIn, 0);
         // Imagine not returning amount of swapped tokens
         _amountOut = IERC20(_tokenOut).balanceOf(address(this));
     }
@@ -78,9 +54,7 @@ contract CurveBaseAdapter is CurveAbstractAdapter {
         address _tokenIn,
         address _tokenOut
     ) internal view virtual override returns (uint256 _amountOut) {
-        try
-            pool.get_dy(tokenIndex[_tokenIn], tokenIndex[_tokenOut], _amountIn)
-        returns (uint256 _amt) {
+        try pool.get_dy(tokenIndex[_tokenIn], tokenIndex[_tokenOut], _amountIn) returns (uint256 _amt) {
             // -1 to account for rounding errors.
             // This will underquote by 1 wei sometimes, but that's life
             _amountOut = _amt != 0 ? _amt - 1 : 0;

@@ -9,10 +9,7 @@ interface ISolidlyPair {
         bytes calldata data
     ) external;
 
-    function getAmountOut(uint256 amountIn, address tokenIn)
-        external
-        view
-        returns (uint256);
+    function getAmountOut(uint256 amountIn, address tokenIn) external view returns (uint256);
 
     function getReserves()
         external

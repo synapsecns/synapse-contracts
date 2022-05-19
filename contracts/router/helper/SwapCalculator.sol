@@ -47,15 +47,8 @@ contract SwapCalculator {
         _setSwapFee(_swapFee);
     }
 
-    function calculateAddLiquidity(uint256[] memory _amounts)
-        public
-        view
-        returns (uint256)
-    {
-        require(
-            _amounts.length == numTokens,
-            "Amounts must match pooled tokens"
-        );
+    function calculateAddLiquidity(uint256[] memory _amounts) public view returns (uint256) {
+        require(_amounts.length == numTokens, "Amounts must match pooled tokens");
         uint256 _numTokens = numTokens;
 
         ManageLiquidityInfo memory v = ManageLiquidityInfo(
@@ -92,8 +85,7 @@ contract SwapCalculator {
         } else {
             for (uint256 _i = 0; _i < _numTokens; _i++) {
                 uint256 idealBalance = (v.d1 * v.balances[_i]) / v.d0;
-                uint256 fees = (swapFeePerToken *
-                    _diff(newBalances[_i], idealBalance)) / FEE_DENOMINATOR;
+                uint256 fees = (swapFeePerToken * _diff(newBalances[_i], idealBalance)) / FEE_DENOMINATOR;
                 newBalances[_i] = newBalances[_i] - fees;
             }
             v.d1 = _getD(_xp(newBalances, v.multipliers), v.preciseA);
@@ -114,9 +106,7 @@ contract SwapCalculator {
 
     function _addPoolToken(IERC20 token, uint256) internal virtual {
         IERC20Decimals _token = IERC20Decimals(address(token));
-        tokenPrecisionMultipliers.push(
-            10**uint256(POOL_PRECISION_DECIMALS - _token.decimals())
-        );
+        tokenPrecisionMultipliers.push(10**uint256(POOL_PRECISION_DECIMALS - _token.decimals()));
         poolTokens.push(token);
     }
 
@@ -140,15 +130,13 @@ contract SwapCalculator {
     /**
      * @notice Get pool balances adjusted, as if all tokens had 18 decimals
      */
-    function _xp(
-        uint256[] memory balances,
-        uint256[] memory precisionMultipliers
-    ) internal pure returns (uint256[] memory) {
+    function _xp(uint256[] memory balances, uint256[] memory precisionMultipliers)
+        internal
+        pure
+        returns (uint256[] memory)
+    {
         uint256 _numTokens = balances.length;
-        require(
-            _numTokens == precisionMultipliers.length,
-            "Balances must match multipliers"
-        );
+        require(_numTokens == precisionMultipliers.length, "Balances must match multipliers");
         uint256[] memory xp = new uint256[](_numTokens);
         for (uint256 i = 0; i < _numTokens; i++) {
             xp[i] = balances[i] * precisionMultipliers[i];
@@ -159,11 +147,7 @@ contract SwapCalculator {
     /**
      * @notice Get D: pool invariant
      */
-    function _getD(uint256[] memory xp, uint256 a)
-        internal
-        pure
-        returns (uint256)
-    {
+    function _getD(uint256[] memory xp, uint256 a) internal pure returns (uint256) {
         uint256 _numTokens = xp.length;
         uint256 s;
         for (uint256 _i = 0; _i < _numTokens; _i++) {
@@ -188,10 +172,7 @@ contract SwapCalculator {
             prevD = d;
             d =
                 (((nA * s) / A_PRECISION + dP * _numTokens) * d) /
-                (((nA - A_PRECISION) * d) /
-                    A_PRECISION +
-                    (_numTokens + 1) *
-                    dP);
+                (((nA - A_PRECISION) * d) / A_PRECISION + (_numTokens + 1) * dP);
 
             if (_diff(d, prevD) <= 1) {
                 return d;

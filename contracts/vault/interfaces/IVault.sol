@@ -9,10 +9,7 @@ interface IVault {
 
     function chainGasAmount() external returns (uint256);
 
-    function getFeeBalance(IERC20 token)
-        external
-        view
-        returns (uint256);
+    function getFeeBalance(IERC20 token) external view returns (uint256);
 
     function getTokenBalance(IERC20 token) external view returns (uint256);
 

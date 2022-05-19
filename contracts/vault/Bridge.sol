@@ -19,13 +19,7 @@ import {IBridgeRouter} from "../router/interfaces/IBridgeRouter.sol";
 
 // solhint-disable reason-string
 
-contract Bridge is
-    Initializable,
-    AccessControlUpgradeable,
-    ReentrancyGuardUpgradeable,
-    PausableUpgradeable,
-    IBridge
-{
+contract Bridge is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable, IBridge {
     using SafeERC20 for IERC20;
 
     IBridgeConfig public bridgeConfig;
@@ -59,10 +53,7 @@ contract Bridge is
     // -- MODIFIERS --
 
     modifier checkSwapParams(SwapParams calldata swapParams) {
-        require(
-            swapParams.path.length == swapParams.adapters.length + 1,
-            "|path|!=|adapters|+1"
-        );
+        require(swapParams.path.length == swapParams.adapters.length + 1, "|path|!=|adapters|+1");
 
         _;
     }
@@ -97,17 +88,11 @@ contract Bridge is
 
     // -- RESTRICTED SETTERS --
 
-    function setMaxGasForSwap(uint256 _maxGasForSwap)
-        external
-        onlyRole(GOVERNANCE_ROLE)
-    {
+    function setMaxGasForSwap(uint256 _maxGasForSwap) external onlyRole(GOVERNANCE_ROLE) {
         maxGasForSwap = _maxGasForSwap;
     }
 
-    function setRouter(IBridgeRouter _router)
-        external
-        onlyRole(GOVERNANCE_ROLE)
-    {
+    function setRouter(IBridgeRouter _router) external onlyRole(GOVERNANCE_ROLE) {
         router = _router;
     }
 
@@ -119,14 +104,9 @@ contract Bridge is
         IERC20 token,
         SwapParams calldata destinationSwapParams,
         bool gasdropRequested
-    )
-        external
-        checkSwapParams(destinationSwapParams)
-        returns (uint256 amountBridged)
-    {
+    ) external checkSwapParams(destinationSwapParams) returns (uint256 amountBridged) {
         // First, get token address on destination chain and check if it is enabled
-        (address tokenBridgedTo, bool isEnabled) = bridgeConfig
-        .getTokenAddressEVM(address(token), chainId);
+        (address tokenBridgedTo, bool isEnabled) = bridgeConfig.getTokenAddressEVM(address(token), chainId);
 
         require(tokenBridgedTo != address(0), "!token");
         require(isEnabled, "!enabled");
@@ -156,8 +136,7 @@ contract Bridge is
         IERC20 token
     ) external returns (uint256 amountBridged) {
         // First, get token address on destination chain and check if it is enabled
-        (string memory tokenBridgedTo, bool isEnabled) = bridgeConfig
-        .getTokenAddressNonEVM(address(token), chainId);
+        (string memory tokenBridgedTo, bool isEnabled) = bridgeConfig.getTokenAddressNonEVM(address(token), chainId);
         require(bytes(tokenBridgedTo).length > 0, "!token");
         require(isEnabled, "!enabled");
 
@@ -166,27 +145,17 @@ contract Bridge is
         amountBridged = _lockToken(token);
 
         // Finally, emit a Bridge Event
-        emit BridgedOutNonEVM(
-            to,
-            chainId,
-            token,
-            amountBridged,
-            tokenBridgedTo
-        );
+        emit BridgedOutNonEVM(to, chainId, token, amountBridged, tokenBridgedTo);
     }
 
     // -- BRIDGE OUT : internal helpers --
 
-    function _lockToken(IERC20 token)
-        internal
-        returns (uint256 amountVerified)
-    {
+    function _lockToken(IERC20 token) internal returns (uint256 amountVerified) {
         // Figure out how much tokens do we have.
         uint256 amount = token.balanceOf(address(this));
         require(amount > 0, "!amount");
 
-        (address bridgeToken, bool isEnabled, bool isMintBurn) = bridgeConfig
-        .getBridgeToken(address(token));
+        (address bridgeToken, bool isEnabled, bool isMintBurn) = bridgeConfig.getBridgeToken(address(token));
 
         require(isEnabled, "!enabled");
 
@@ -229,10 +198,7 @@ contract Bridge is
         uint256 amount,
         bytes32 kappa
     ) external onlyRole(NODEGROUP_ROLE) nonReentrant whenNotPaused {
-        address token = bridgeConfig.findTokenNonEVM(
-            chainIdFrom,
-            bridgeTokenFrom
-        );
+        address token = bridgeConfig.findTokenNonEVM(chainIdFrom, bridgeTokenFrom);
         require(token != address(0), "!token");
 
         // Construct path consisting of bridge token only (for consistency)
@@ -261,12 +227,9 @@ contract Bridge is
     ) internal {
         _BridgeInData memory data;
         // solhint-disable not-rely-on-time
-        data.amountOfSwaps = block.timestamp <= swapParams.deadline
-            ? swapParams.adapters.length
-            : 0;
+        data.amountOfSwaps = block.timestamp <= swapParams.deadline ? swapParams.adapters.length : 0;
 
-        (data.fee, data.bridgeToken, data.isEnabled, data.isMint) = bridgeConfig
-        .calculateBridgeFee(
+        (data.fee, data.bridgeToken, data.isEnabled, data.isMint) = bridgeConfig.calculateBridgeFee(
             address(token),
             amount,
             gasdropRequested,
@@ -322,13 +285,7 @@ contract Bridge is
         // We're limiting amount of gas forwarded to Router,
         // so we always have some leftover gas to transfer
         // bridged token, should the swap run out of gas
-        try
-            router.postBridgeSwap{gas: maxGasForSwap}(
-                to,
-                swapParams,
-                amountPostFee
-            )
-        returns (uint256 _amountOut) {
+        try router.postBridgeSwap{gas: maxGasForSwap}(to, swapParams, amountPostFee) returns (uint256 _amountOut) {
             // Swap succeeded, save information about received token
             tokenOut = IERC20(swapParams.path[swapParams.path.length - 1]);
             amountOut = _amountOut;
@@ -340,11 +297,7 @@ contract Bridge is
         }
     }
 
-    function _isSwapPresent(SwapParams memory params)
-        internal
-        pure
-        returns (bool)
-    {
+    function _isSwapPresent(SwapParams memory params) internal pure returns (bool) {
         return params.adapters.length > 0;
     }
 

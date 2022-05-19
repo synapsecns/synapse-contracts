@@ -25,11 +25,7 @@ contract GmxBridgeWrapper is MintBurnWrapper {
     }
 
     /// @dev This will require GmxBridgeWrapper to be Minter for GMX. Don't ask why.
-    function _burnFrom(address account, uint256 amount)
-        internal
-        virtual
-        override
-    {
+    function _burnFrom(address account, uint256 amount) internal virtual override {
         IGmx(nativeToken).burn(account, amount);
     }
 

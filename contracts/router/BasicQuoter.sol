@@ -46,21 +46,11 @@ contract BasicQuoter is Ownable, IBasicQuoter {
 
     //  -- VIEWS --
 
-    function getTrustedAdapter(uint8 index)
-        external
-        view
-        checkAdapterIndex(index)
-        returns (address)
-    {
+    function getTrustedAdapter(uint8 index) external view checkAdapterIndex(index) returns (address) {
         return trustedAdapters[index];
     }
 
-    function getTrustedToken(uint8 index)
-        external
-        view
-        checkTokenIndex(index)
-        returns (address)
-    {
+    function getTrustedToken(uint8 index) external view checkTokenIndex(index) returns (address) {
         return trustedTokens[index];
     }
 
@@ -150,10 +140,7 @@ contract BasicQuoter is Ownable, IBasicQuoter {
 
     // -- PRIVATE FUNCTIONS --
 
-    function _removeAdapterByIndex(uint8 index)
-        private
-        checkAdapterIndex(index)
-    {
+    function _removeAdapterByIndex(uint8 index) private checkAdapterIndex(index) {
         address removedAdapter = trustedAdapters[index];
 
         // We don't care about adapters order, so we replace the

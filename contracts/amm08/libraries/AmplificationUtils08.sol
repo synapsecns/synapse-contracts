@@ -13,12 +13,7 @@ import "./SwapUtils08.sol";
  * This library assumes the struct is fully validated.
  */
 library AmplificationUtils08 {
-    event RampA(
-        uint256 oldA,
-        uint256 newA,
-        uint256 initialTime,
-        uint256 futureTime
-    );
+    event RampA(uint256 oldA, uint256 newA, uint256 initialTime, uint256 futureTime);
     event StopRampA(uint256 currentA, uint256 time);
 
     // Constant values used in ramping A calculations
@@ -43,11 +38,7 @@ library AmplificationUtils08 {
      * @param self Swap struct to read from
      * @return A parameter in its raw precision form
      */
-    function getAPrecise(SwapUtils08.Swap storage self)
-        external
-        view
-        returns (uint256)
-    {
+    function getAPrecise(SwapUtils08.Swap storage self) external view returns (uint256) {
         return _getAPrecise(self);
     }
 
@@ -57,11 +48,7 @@ library AmplificationUtils08 {
      * @param self Swap struct to read from
      * @return A parameter in its raw precision form
      */
-    function _getAPrecise(SwapUtils08.Swap storage self)
-        internal
-        view
-        returns (uint256)
-    {
+    function _getAPrecise(SwapUtils08.Swap storage self) internal view returns (uint256) {
         uint256 t1 = self.futureATime; // time when ramp is finished
         uint256 a1 = self.futureA; // final A value when ramp is finished
 
@@ -93,32 +80,17 @@ library AmplificationUtils08 {
         uint256 futureA_,
         uint256 futureTime_
     ) external {
-        require(
-            block.timestamp >= self.initialATime + 1 days,
-            "Wait 1 day before starting ramp"
-        );
-        require(
-            futureTime_ >= block.timestamp + MIN_RAMP_TIME,
-            "Insufficient ramp time"
-        );
-        require(
-            futureA_ > 0 && futureA_ < MAX_A,
-            "futureA_ must be > 0 and < MAX_A"
-        );
+        require(block.timestamp >= self.initialATime + 1 days, "Wait 1 day before starting ramp");
+        require(futureTime_ >= block.timestamp + MIN_RAMP_TIME, "Insufficient ramp time");
+        require(futureA_ > 0 && futureA_ < MAX_A, "futureA_ must be > 0 and < MAX_A");
 
         uint256 initialAPrecise = _getAPrecise(self);
         uint256 futureAPrecise = futureA_ * A_PRECISION;
 
         if (futureAPrecise < initialAPrecise) {
-            require(
-                futureAPrecise * MAX_A_CHANGE >= initialAPrecise,
-                "futureA_ is too small"
-            );
+            require(futureAPrecise * MAX_A_CHANGE >= initialAPrecise, "futureA_ is too small");
         } else {
-            require(
-                futureAPrecise <= initialAPrecise * MAX_A_CHANGE,
-                "futureA_ is too large"
-            );
+            require(futureAPrecise <= initialAPrecise * MAX_A_CHANGE, "futureA_ is too large");
         }
 
         self.initialA = initialAPrecise;
@@ -126,12 +98,7 @@ library AmplificationUtils08 {
         self.initialATime = block.timestamp;
         self.futureATime = futureTime_;
 
-        emit RampA(
-            initialAPrecise,
-            futureAPrecise,
-            block.timestamp,
-            futureTime_
-        );
+        emit RampA(initialAPrecise, futureAPrecise, block.timestamp, futureTime_);
     }
 
     /**

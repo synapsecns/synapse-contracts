@@ -29,12 +29,7 @@ contract SynapseBaseMainnetAdapter is SynapseBaseAdapter {
 
         if (_indexIn == numTokens) {
             // remove liquidity
-            _amountOut = pool.removeLiquidityOneToken(
-                _amountIn,
-                _indexOut,
-                0,
-                block.timestamp
-            );
+            _amountOut = pool.removeLiquidityOneToken(_amountIn, _indexOut, 0, block.timestamp);
         } else if (_indexOut == numTokens) {
             // add liquidity
             uint256[] memory amounts = new uint256[](numTokens);
@@ -43,13 +38,7 @@ contract SynapseBaseMainnetAdapter is SynapseBaseAdapter {
             _amountOut = pool.addLiquidity(amounts, 0, block.timestamp);
         } else {
             // swap tokens
-            _amountOut = pool.swap(
-                _indexIn,
-                _indexOut,
-                _amountIn,
-                0,
-                block.timestamp
-            );
+            _amountOut = pool.swap(_indexIn, _indexOut, _amountIn, 0, block.timestamp);
         }
         _returnTo(_tokenOut, _amountOut, _to);
     }
@@ -67,9 +56,7 @@ contract SynapseBaseMainnetAdapter is SynapseBaseAdapter {
 
         if (_indexIn == numTokens) {
             // remove liquidity
-            try
-                pool.calculateRemoveLiquidityOneToken(_amountIn, _indexOut)
-            returns (uint256 amountOut) {
+            try pool.calculateRemoveLiquidityOneToken(_amountIn, _indexOut) returns (uint256 amountOut) {
                 _amountOut = amountOut;
             } catch {
                 return 0;
@@ -82,9 +69,7 @@ contract SynapseBaseMainnetAdapter is SynapseBaseAdapter {
             _amountOut = calculateAddLiquidity(_amounts);
         } else {
             // swap tokens
-            try pool.calculateSwap(_indexIn, _indexOut, _amountIn) returns (
-                uint256 amountOut
-            ) {
+            try pool.calculateSwap(_indexIn, _indexOut, _amountIn) returns (uint256 amountOut) {
                 _amountOut = amountOut;
             } catch {
                 return 0;

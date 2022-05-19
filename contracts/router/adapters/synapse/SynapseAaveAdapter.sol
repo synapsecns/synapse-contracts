@@ -44,25 +44,15 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
         }
     }
 
-    function _registerUnderlyingToken(address _underlying, address _poolToken)
-        internal
-    {
+    function _registerUnderlyingToken(address _underlying, address _poolToken) internal {
         aaveToken[_underlying] = _poolToken;
         isUnderlying[_underlying] = true;
         _setInfiniteAllowance(IERC20(_underlying), address(lendingPool));
     }
 
-    function _checkTokens(address _tokenIn, address _tokenOut)
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
+    function _checkTokens(address _tokenIn, address _tokenOut) internal view virtual override returns (bool) {
         // Swaps are supported between both pool and underlying tokens
-        return
-            (isUnderlying[_tokenIn] || isPoolToken[_tokenIn]) &&
-            (isUnderlying[_tokenOut] || isPoolToken[_tokenOut]);
+        return (isUnderlying[_tokenIn] || isPoolToken[_tokenIn]) && (isUnderlying[_tokenOut] || isPoolToken[_tokenOut]);
     }
 
     function _swap(
@@ -79,22 +69,12 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
         }
         if (isUnderlying[_tokenOut]) {
             // User needs to receive underlying token, so we ask the aToken to be sent to this contract
-            SynapseBaseAdapter._swap(
-                _amountIn,
-                _tokenIn,
-                aaveToken[_tokenOut],
-                address(this)
-            );
+            SynapseBaseAdapter._swap(_amountIn, _tokenIn, aaveToken[_tokenOut], address(this));
             // Withdraw underlying token directly to user
             _amountOut = _aaveWithdraw(_tokenOut, UINT_MAX, _to);
         } else {
             // User needs to receive pool token, so we can use parent's logic
-            _amountOut = SynapseBaseAdapter._swap(
-                _amountIn,
-                _tokenIn,
-                _tokenOut,
-                _to
-            );
+            _amountOut = SynapseBaseAdapter._swap(_amountIn, _tokenIn, _tokenOut, _to);
         }
     }
 
@@ -115,44 +95,27 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
             uint256 _index = lendingPool.getReserveNormalizedIncome(_tokenOut);
             // replace _tokenOut with actual pool token
             _tokenOut = aaveToken[_tokenOut];
-            _amountOut = SynapseBaseAdapter._query(
-                _amountIn,
-                _tokenIn,
-                _tokenOut
-            );
+            _amountOut = SynapseBaseAdapter._query(_amountIn, _tokenIn, _tokenOut);
 
             _amountOut = _calcTransferredOut(_amountOut, _index);
         } else {
-            _amountOut = SynapseBaseAdapter._query(
-                _amountIn,
-                _tokenIn,
-                _tokenOut
-            );
+            _amountOut = SynapseBaseAdapter._query(_amountIn, _tokenIn, _tokenOut);
         }
     }
 
     // -- AAVE FUNCTIONS
 
     /// https://github.com/aave/protocol-v2/blob/master/contracts/protocol/libraries/math/WadRayMath.sol
-    function _calcTransferredOut(uint256 _amount, uint256 _index)
-        internal
-        pure
-        returns (uint256)
-    {
+    function _calcTransferredOut(uint256 _amount, uint256 _index) internal pure returns (uint256) {
         uint256 rayDiv = (_amount * RAY + _index / 2) / _index;
         return (rayDiv * _index + HALF_RAY) / RAY;
     }
 
-    function _calcTransferredIn(uint256 _amount, address _token)
-        internal
-        view
-        returns (uint256)
-    {
+    function _calcTransferredIn(uint256 _amount, address _token) internal view returns (uint256) {
         uint256 _index = lendingPool.getReserveNormalizedIncome(_token);
 
         uint256 _delta = (_amount * RAY + _index / 2) / _index;
-        uint256 _oldScaledBalance = AaveToken(aaveToken[_token])
-            .scaledBalanceOf(address(pool));
+        uint256 _oldScaledBalance = AaveToken(aaveToken[_token]).scaledBalanceOf(address(pool));
 
         uint256 _newScaledBalance = _oldScaledBalance + _delta;
 
@@ -172,10 +135,7 @@ contract SynapseAaveAdapter is SynapseBaseAdapter {
      *
      * @return amount of aToken received
      */
-    function _aaveDeposit(address _token, uint256 _amount)
-        internal
-        returns (uint256)
-    {
+    function _aaveDeposit(address _token, uint256 _amount) internal returns (uint256) {
         lendingPool.deposit(_token, _amount, address(this), 0);
         return IERC20(aaveToken[_token]).balanceOf(address(this));
     }

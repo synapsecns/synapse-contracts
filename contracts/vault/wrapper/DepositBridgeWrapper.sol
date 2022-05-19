@@ -35,11 +35,7 @@ contract DepositBridgeWrapper is MintBurnWrapper {
         Users willing to bridge via Bridge directly (but why?) will need to pre-approve 
         DepositBridgeWrapper to spend their depositToken.
      */
-    function _burnFrom(address account, uint256 amount)
-        internal
-        virtual
-        override
-    {
+    function _burnFrom(address account, uint256 amount) internal virtual override {
         IERC20(nativeToken).safeTransferFrom(account, address(this), amount);
     }
 

@@ -17,13 +17,7 @@ abstract contract WrapperAdapter is Adapter {
         tokenWrapped = _tokenWrapped;
     }
 
-    function _checkTokens(address _tokenIn, address _tokenOut)
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
+    function _checkTokens(address _tokenIn, address _tokenOut) internal view virtual override returns (bool) {
         return
             (_tokenIn == tokenNative || _tokenIn == tokenWrapped) &&
             (_tokenOut == tokenNative || _tokenOut == tokenWrapped);
@@ -65,25 +59,11 @@ abstract contract WrapperAdapter is Adapter {
 
     function _isPaused() internal view virtual returns (bool);
 
-    function _swapNativeToWrapped(uint256 _amountIn, address _to)
-        internal
-        virtual
-        returns (uint256);
+    function _swapNativeToWrapped(uint256 _amountIn, address _to) internal virtual returns (uint256);
 
-    function _swapWrappedToNative(uint256 _amountIn, address _to)
-        internal
-        virtual
-        returns (uint256);
+    function _swapWrappedToNative(uint256 _amountIn, address _to) internal virtual returns (uint256);
 
-    function _queryNativeToWrapped(uint256 _amountIn)
-        internal
-        view
-        virtual
-        returns (uint256);
+    function _queryNativeToWrapped(uint256 _amountIn) internal view virtual returns (uint256);
 
-    function _queryWrappedToNative(uint256 _amountIn)
-        internal
-        view
-        virtual
-        returns (uint256);
+    function _queryWrappedToNative(uint256 _amountIn) internal view virtual returns (uint256);
 }

@@ -28,38 +28,17 @@ contract UniswapV2Adapter is Adapter {
         bytes32 _initCodeHash,
         uint256 _fee
     ) Adapter(_name, _swapGasEstimate) {
-        require(
-            _fee < MULTIPLIER,
-            "Fee is too high. Must be less than multiplier"
-        );
+        require(_fee < MULTIPLIER, "Fee is too high. Must be less than multiplier");
         MULTIPLIER_WITH_FEE = uint128(MULTIPLIER - _fee);
         uniswapV2Factory = _uniswapV2FactoryAddress;
         initCodeHash = _initCodeHash;
     }
 
-    function _depositAddress(address _tokenIn, address _tokenOut)
-        internal
-        view
-        override
-        returns (address pair)
-    {
+    function _depositAddress(address _tokenIn, address _tokenOut) internal view override returns (address pair) {
         bytes32 salt = _tokenIn < _tokenOut
             ? keccak256(abi.encodePacked(_tokenIn, _tokenOut))
             : keccak256(abi.encodePacked(_tokenOut, _tokenIn));
-        pair = address(
-            uint160(
-                uint256(
-                    keccak256(
-                        abi.encodePacked(
-                            hex"ff",
-                            uniswapV2Factory,
-                            salt,
-                            initCodeHash
-                        )
-                    )
-                )
-            )
-        );
+        pair = address(uint160(uint256(keccak256(abi.encodePacked(hex"ff", uniswapV2Factory, salt, initCodeHash)))));
     }
 
     function _swap(
@@ -97,23 +76,11 @@ contract UniswapV2Adapter is Adapter {
         uint256 _amountIn
     ) internal view returns (uint256 _amountOut) {
         if (Address.isContract(_pair)) {
-            try IUniswapV2Pair(_pair).getReserves() returns (
-                uint112 _reserve0,
-                uint112 _reserve1,
-                uint32
-            ) {
+            try IUniswapV2Pair(_pair).getReserves() returns (uint112 _reserve0, uint112 _reserve1, uint32) {
                 if (_tokenIn < _tokenOut) {
-                    _amountOut = _calcAmountOut(
-                        _amountIn,
-                        _reserve0,
-                        _reserve1
-                    );
+                    _amountOut = _calcAmountOut(_amountIn, _reserve0, _reserve1);
                 } else {
-                    _amountOut = _calcAmountOut(
-                        _amountIn,
-                        _reserve1,
-                        _reserve0
-                    );
+                    _amountOut = _calcAmountOut(_amountIn, _reserve1, _reserve0);
                 }
             } catch {
                 this;
@@ -132,8 +99,6 @@ contract UniswapV2Adapter is Adapter {
         }
         uint256 amountInWithFee = _amountIn * MULTIPLIER_WITH_FEE;
 
-        _amountOut =
-            (amountInWithFee * _reserveOut) /
-            (_reserveIn * MULTIPLIER + amountInWithFee);
+        _amountOut = (amountInWithFee * _reserveOut) / (_reserveIn * MULTIPLIER + amountInWithFee);
     }
 }

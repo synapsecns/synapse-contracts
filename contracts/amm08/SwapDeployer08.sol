@@ -7,11 +7,7 @@ import "@openzeppelin/contracts-4.5.0/proxy/Clones.sol";
 import "./interfaces/ISwap08.sol";
 
 contract SwapDeployer08 is Ownable {
-    event NewSwapPool(
-        address indexed deployer,
-        address swapAddress,
-        IERC20[] pooledTokens
-    );
+    event NewSwapPool(address indexed deployer, address swapAddress, IERC20[] pooledTokens);
 
     constructor() Ownable() {
         this;

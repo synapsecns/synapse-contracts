@@ -31,22 +31,11 @@ contract PlatypusAdapter is Adapter {
 
     // -- BASE ADAPTER FUNCTIONS
 
-    function _checkTokens(address _tokenIn, address _tokenOut)
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
+    function _checkTokens(address _tokenIn, address _tokenOut) internal view virtual override returns (bool) {
         return isPoolToken[_tokenIn] && isPoolToken[_tokenOut];
     }
 
-    function _depositAddress(address, address)
-        internal
-        view
-        override
-        returns (address)
-    {
+    function _depositAddress(address, address) internal view override returns (address) {
         return address(this);
     }
 
@@ -57,14 +46,7 @@ contract PlatypusAdapter is Adapter {
         address _to
     ) internal virtual override returns (uint256 _amountOut) {
         // solhint-disable not-rely-on-time
-        (_amountOut, ) = pool.swap(
-            _tokenIn,
-            _tokenOut,
-            _amountIn,
-            0,
-            _to,
-            block.timestamp
-        );
+        (_amountOut, ) = pool.swap(_tokenIn, _tokenOut, _amountIn, 0, _to, block.timestamp);
     }
 
     function _query(
@@ -75,10 +57,7 @@ contract PlatypusAdapter is Adapter {
         if (pool.paused()) {
             return 0;
         }
-        try pool.quotePotentialSwap(_tokenIn, _tokenOut, _amountIn) returns (
-            uint256 amountOut,
-            uint256
-        ) {
+        try pool.quotePotentialSwap(_tokenIn, _tokenOut, _amountIn) returns (uint256 amountOut, uint256) {
             _amountOut = amountOut;
         } catch {
             return 0;

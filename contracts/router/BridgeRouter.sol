@@ -41,20 +41,14 @@ contract BridgeRouter is Router, IBridgeRouter {
     }
 
     modifier checkSwapParams(IBridge.SwapParams calldata swapParams) {
-        require(
-            swapParams.path.length == swapParams.adapters.length + 1,
-            "BridgeRouter: len(path)!=len(adapters)+1"
-        );
+        require(swapParams.path.length == swapParams.adapters.length + 1, "BridgeRouter: len(path)!=len(adapters)+1");
 
         _;
     }
 
     // -- RESTRICTED SETTERS --
 
-    function setBridgeMaxSwaps(uint8 _bridgeMaxSwaps)
-        public
-        onlyRole(GOVERNANCE_ROLE)
-    {
+    function setBridgeMaxSwaps(uint8 _bridgeMaxSwaps) public onlyRole(GOVERNANCE_ROLE) {
         require(_bridgeMaxSwaps != 0, "Max swaps can't be 0");
         require(_bridgeMaxSwaps <= 4, "Max swaps too big");
         bridgeMaxSwaps = _bridgeMaxSwaps;
@@ -75,13 +69,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         IERC20 bridgeToken = _swapToBridge(initialSwapParams, amountIn, false);
 
         // Then, perform bridging
-        amountBridged = IBridge(bridge).bridgeToEVM(
-            to,
-            chainId,
-            bridgeToken,
-            destinationSwapParams,
-            gasdropRequested
-        );
+        amountBridged = IBridge(bridge).bridgeToEVM(to, chainId, bridgeToken, destinationSwapParams, gasdropRequested);
     }
 
     function bridgeGasToEVM(
@@ -94,8 +82,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         // TODO: enforce consistency?? introduce amountIn parameter
 
         require(
-            initialSwapParams.path.length > 0 &&
-                initialSwapParams.path[0] == WGAS,
+            initialSwapParams.path.length > 0 && initialSwapParams.path[0] == WGAS,
             "Router: path needs to begin with WGAS"
         );
 
@@ -107,13 +94,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         IERC20 bridgeToken = _swapToBridge(initialSwapParams, msg.value, true);
 
         // Finally, perform bridging
-        amountBridged = IBridge(bridge).bridgeToEVM(
-            to,
-            chainId,
-            bridgeToken,
-            destinationSwapParams,
-            gasdropRequested
-        );
+        amountBridged = IBridge(bridge).bridgeToEVM(to, chainId, bridgeToken, destinationSwapParams, gasdropRequested);
     }
 
     // -- BRIDGE FUNCTIONS [initial chain]: to non-EVM chains --
@@ -129,11 +110,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         IERC20 bridgeToken = _swapToBridge(initialSwapParams, amountIn, false);
 
         // Then, perform bridging
-        amountBridged = IBridge(bridge).bridgeToNonEVM(
-            to,
-            chainId,
-            bridgeToken
-        );
+        amountBridged = IBridge(bridge).bridgeToNonEVM(to, chainId, bridgeToken);
     }
 
     function bridgeGasToNonEVM(
@@ -144,8 +121,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         // TODO: enforce consistency?? introduce amountIn parameter
 
         require(
-            initialSwapParams.path.length > 0 &&
-                initialSwapParams.path[0] == WGAS,
+            initialSwapParams.path.length > 0 && initialSwapParams.path[0] == WGAS,
             "Router: path needs to begin with WGAS"
         );
 
@@ -157,11 +133,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         IERC20 bridgeToken = _swapToBridge(initialSwapParams, msg.value, true);
 
         // Finally, perform bridging
-        amountBridged = IBridge(bridge).bridgeToNonEVM(
-            to,
-            chainId,
-            bridgeToken
-        );
+        amountBridged = IBridge(bridge).bridgeToNonEVM(to, chainId, bridgeToken);
     }
 
     // -- BRIDGE FUNCTIONS [initial chain]: internal helpers
@@ -172,10 +144,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         bool isSelfSwap
     ) internal checkSwapParams(initialSwapParams) returns (IERC20 lastToken) {
         if (_isSwapPresent(initialSwapParams)) {
-            require(
-                block.timestamp <= initialSwapParams.deadline,
-                "Router: past deadline"
-            );
+            require(block.timestamp <= initialSwapParams.deadline, "Router: past deadline");
             // Swap, and send swapped tokens to Bridge contract directly
             (isSelfSwap ? _selfSwap : _swap)(
                 bridge,
@@ -242,10 +211,7 @@ contract BridgeRouter is Router, IBridgeRouter {
         IBridge.SwapParams calldata swapParams,
         uint256 amountIn
     ) external onlyBridge returns (uint256 amountOut) {
-        require(
-            swapParams.adapters.length <= bridgeMaxSwaps,
-            "BridgeRouter: Too many swaps in path"
-        );
+        require(swapParams.adapters.length <= bridgeMaxSwaps, "BridgeRouter: Too many swaps in path");
         if (address(_getLastToken(swapParams)) == WGAS) {
             // Path ends with WGAS, and no one wants
             // to receive WGAS after bridging, right?
@@ -260,31 +226,17 @@ contract BridgeRouter is Router, IBridgeRouter {
             // reentrancy not an issue here, as all work is done
             _returnTokensTo(to, IERC20(WGAS), amountOut);
         } else {
-            amountOut = _selfSwap(
-                to,
-                swapParams.path,
-                swapParams.adapters,
-                amountIn,
-                swapParams.minAmountOut
-            );
+            amountOut = _selfSwap(to, swapParams.path, swapParams.adapters, amountIn, swapParams.minAmountOut);
         }
     }
 
     // -- INTERNAL HELPERS --
 
-    function _getLastToken(IBridge.SwapParams calldata swapParams)
-        internal
-        pure
-        returns (IERC20 lastToken)
-    {
+    function _getLastToken(IBridge.SwapParams calldata swapParams) internal pure returns (IERC20 lastToken) {
         lastToken = IERC20(swapParams.path[swapParams.path.length - 1]);
     }
 
-    function _isSwapPresent(IBridge.SwapParams calldata swapParams)
-        internal
-        pure
-        returns (bool)
-    {
+    function _isSwapPresent(IBridge.SwapParams calldata swapParams) internal pure returns (bool) {
         return swapParams.adapters.length > 0;
     }
 }

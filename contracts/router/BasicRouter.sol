@@ -13,8 +13,7 @@ contract BasicRouter is AccessControl, IBasicRouter {
     using SafeERC20 for IERC20;
 
     /// @notice Members of this role can add/remove trusted Adapters
-    bytes32 public constant ADAPTERS_STORAGE_ROLE =
-        keccak256("ADAPTERS_STORAGE_ROLE");
+    bytes32 public constant ADAPTERS_STORAGE_ROLE = keccak256("ADAPTERS_STORAGE_ROLE");
 
     /// @notice Members of this role can rescue funds from this contract
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
@@ -43,26 +42,17 @@ contract BasicRouter is AccessControl, IBasicRouter {
 
     // -- RESTRICTED ADAPTER FUNCTIONS --
 
-    function addTrustedAdapter(address adapter)
-        external
-        onlyRole(ADAPTERS_STORAGE_ROLE)
-    {
+    function addTrustedAdapter(address adapter) external onlyRole(ADAPTERS_STORAGE_ROLE) {
         isTrustedAdapter[adapter] = true;
         emit AddedTrustedAdapter(adapter);
     }
 
-    function removeAdapter(address adapter)
-        external
-        onlyRole(ADAPTERS_STORAGE_ROLE)
-    {
+    function removeAdapter(address adapter) external onlyRole(ADAPTERS_STORAGE_ROLE) {
         isTrustedAdapter[adapter] = false;
         emit RemovedAdapter(adapter);
     }
 
-    function setAdapters(address[] calldata adapters, bool status)
-        external
-        onlyRole(ADAPTERS_STORAGE_ROLE)
-    {
+    function setAdapters(address[] calldata adapters, bool status) external onlyRole(ADAPTERS_STORAGE_ROLE) {
         for (uint8 i = 0; i < adapters.length; ++i) {
             isTrustedAdapter[adapters[i]] = status;
         }

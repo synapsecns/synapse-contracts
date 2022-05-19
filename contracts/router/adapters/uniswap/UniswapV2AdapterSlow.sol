@@ -29,10 +29,7 @@ contract UniswapV2AdapterSlow is Adapter {
         address _uniswapV2FactoryAddress,
         uint256 _fee
     ) Adapter(_name, _swapGasEstimate) {
-        require(
-            _fee < MULTIPLIER,
-            "Fee is too high. Must be less than multiplier"
-        );
+        require(_fee < MULTIPLIER, "Fee is too high. Must be less than multiplier");
         MULTIPLIER_WITH_FEE = MULTIPLIER - _fee;
         uniswapV2Factory = IUniswapV2Factory(_uniswapV2FactoryAddress);
     }
@@ -41,12 +38,7 @@ contract UniswapV2AdapterSlow is Adapter {
         this;
     }
 
-    function _depositAddress(address _tokenIn, address _tokenOut)
-        internal
-        view
-        override
-        returns (address)
-    {
+    function _depositAddress(address _tokenIn, address _tokenOut) internal view override returns (address) {
         return
             pairs[_tokenIn][_tokenOut] == address(0)
                 ? uniswapV2Factory.getPair(_tokenIn, _tokenOut)
@@ -80,10 +72,7 @@ contract UniswapV2AdapterSlow is Adapter {
         _amountOut = _getPairAmountOut(_pair, _tokenIn, _tokenOut, _amountIn);
     }
 
-    function _getPair(address _tokenA, address _tokenB)
-        internal
-        returns (address)
-    {
+    function _getPair(address _tokenA, address _tokenB) internal returns (address) {
         if (pairs[_tokenA][_tokenB] == address(0)) {
             address _pair = _depositAddress(_tokenA, _tokenB);
 
@@ -99,11 +88,8 @@ contract UniswapV2AdapterSlow is Adapter {
         address _tokenA,
         address _tokenB
     ) internal view returns (uint256 _reserveA, uint256 _reserveB) {
-        (uint256 _reserve0, uint256 _reserve1, ) = IUniswapV2Pair(_pair)
-            .getReserves();
-        (_reserveA, _reserveB) = _tokenA < _tokenB
-            ? (_reserve0, _reserve1)
-            : (_reserve1, _reserve0);
+        (uint256 _reserve0, uint256 _reserve1, ) = IUniswapV2Pair(_pair).getReserves();
+        (_reserveA, _reserveB) = _tokenA < _tokenB ? (_reserve0, _reserve1) : (_reserve1, _reserve0);
     }
 
     function _getPairAmountOut(
@@ -112,21 +98,11 @@ contract UniswapV2AdapterSlow is Adapter {
         address _tokenOut,
         uint256 _amountIn
     ) internal view returns (uint256 _amountOut) {
-        (uint256 _reserveIn, uint256 _reserveOut) = _getReserves(
-            _pair,
-            _tokenIn,
-            _tokenOut
-        );
+        (uint256 _reserveIn, uint256 _reserveOut) = _getReserves(_pair, _tokenIn, _tokenOut);
         return _calcAmountOut(_amountIn, _reserveIn, _reserveOut);
     }
 
-    function _checkTokens(address _tokenIn, address _tokenOut)
-        internal
-        view
-        virtual
-        override
-        returns (bool)
-    {
+    function _checkTokens(address _tokenIn, address _tokenOut) internal view virtual override returns (bool) {
         return _depositAddress(_tokenIn, _tokenOut) != address(0);
     }
 
