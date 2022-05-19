@@ -52,11 +52,14 @@ contract RateLimiter is
 
     /*** EVENTS ***/
 
+    event FailedTx(bytes32 indexed kappa);
+
     event SetAllowance(
         address indexed token,
         uint96 allowanceAmount,
         uint16 resetTime
     );
+
     event ResetAllowance(address indexed token);
 
     /*** STRUCTS ***/
@@ -344,6 +347,7 @@ contract RateLimiter is
             // save payload for failed transactions
             // that haven't been processed by Bridge yet
             failedRetries[kappa] = toRetry;
+            emit FailedTx(kappa);
         }
     }
 
