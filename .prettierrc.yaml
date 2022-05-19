@@ -1,6 +1,0 @@
-semi: false
-trailingComma: "all"
-overrides:
-  - files: "*.t.sol"
-    options:
-      printWidth: 120
