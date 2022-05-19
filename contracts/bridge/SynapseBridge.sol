@@ -43,7 +43,7 @@ contract SynapseBridge is
 
     // rate limiter
     IRateLimiter public rateLimiter;
-    bool rateLimiterEnabled;
+    bool public rateLimiterEnabled;
 
     // new role
 

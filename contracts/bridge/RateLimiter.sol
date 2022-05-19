@@ -37,10 +37,10 @@ contract RateLimiter is
     bytes32 public constant BRIDGE_ROLE = keccak256("BRIDGE_ROLE");
 
     // Token -> Allowance
-    mapping(address => Allowance) public allowances;
+    mapping(address => Allowance) internal allowances;
     // Kappa->Retry Selector
-    EnumerableQueueUpgradeable.KappaQueue private rateLimitedQueue;
-    mapping(bytes32 => bytes) private failedRetries;
+    EnumerableQueueUpgradeable.KappaQueue internal rateLimitedQueue;
+    mapping(bytes32 => bytes) internal failedRetries;
     // Bridge Address
     address public BRIDGE_ADDRESS;
     // Time period after anyone can retry a rate limited tx
@@ -48,7 +48,7 @@ contract RateLimiter is
     uint32 public constant MIN_RETRY_TIMEOUT = 10;
 
     // List of tokens
-    address[] public tokens;
+    address[] internal tokens;
 
     /*** EVENTS ***/
 
