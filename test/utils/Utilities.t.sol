@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
-import {StringsUpgradeable} from "@openzeppelin/contracts-upgradeable-solc8/utils/StringsUpgradeable.sol";
+import {StringsUpgradeable} from "@openzeppelin/contracts-upgradeable-4.5.0/utils/StringsUpgradeable.sol";
 
 interface IAccessControl {
     function getRoleMember(bytes32 role, uint256 index) external view returns (address);

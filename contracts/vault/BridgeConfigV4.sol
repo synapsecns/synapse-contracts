@@ -4,8 +4,8 @@ pragma solidity 0.8.11;
 
 import {IBridgeConfig} from "./interfaces/IBridgeConfig.sol";
 
-import {Initializable} from "@openzeppelin/contracts-upgradeable-solc8/proxy/utils/Initializable.sol";
-import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable-solc8/access/AccessControlUpgradeable.sol";
+import {Initializable} from "@openzeppelin/contracts-upgradeable-4.5.0/proxy/utils/Initializable.sol";
+import {AccessControlUpgradeable} from "@openzeppelin/contracts-upgradeable-4.5.0/access/AccessControlUpgradeable.sol";
 
 contract BridgeConfig is
     Initializable,

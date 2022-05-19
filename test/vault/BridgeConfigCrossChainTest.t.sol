@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "../utils/Utilities.t.sol";
 
 import {BridgeConfig} from "src-vault/BridgeConfigV4.sol";
-import {Strings} from "@openzeppelin/contracts-solc8/utils/Strings.sol";
+import {Strings} from "@openzeppelin/contracts-4.5.0/utils/Strings.sol";
 
 contract BridgeConfigCrossChainTest is Test {
     event TokenDeleted(uint256[] chainIdsEVM, uint256 deletedChainIdEVM, address deletedTokenEVM);

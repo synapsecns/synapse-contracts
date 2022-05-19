@@ -2,9 +2,9 @@
 
 pragma solidity 0.8.11;
 
-import "@openzeppelin/contracts-solc8/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts-solc8/proxy/Clones.sol";
-import "@openzeppelin/contracts-upgradeable-solc8/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-4.5.0/proxy/Clones.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/security/ReentrancyGuardUpgradeable.sol";
 import "./OwnerPausableUpgradeable08.sol";
 import "./libraries/SwapUtils08.sol";
 import "./libraries/AmplificationUtils08.sol";

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import {IUniswapV2Pair} from "../interfaces/IUniswapV2Pair.sol";
 import {Adapter} from "../../Adapter.sol";
 
-import {Address} from "@openzeppelin/contracts-solc8/utils/Address.sol";
+import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 
 //solhint-disable reason-string
 

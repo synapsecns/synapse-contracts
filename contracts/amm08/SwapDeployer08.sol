@@ -2,8 +2,8 @@
 
 pragma solidity 0.8.11;
 
-import "@openzeppelin/contracts-solc8/access/Ownable.sol";
-import "@openzeppelin/contracts-solc8/proxy/Clones.sol";
+import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
+import "@openzeppelin/contracts-4.5.0/proxy/Clones.sol";
 import "./interfaces/ISwap08.sol";
 
 contract SwapDeployer08 is Ownable {

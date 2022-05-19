@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-solc8/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts-4.5.0/token/ERC20/ERC20.sol";
 
 interface ISwap08 {
     function swapStorage()
