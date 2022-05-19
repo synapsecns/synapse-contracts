@@ -43,7 +43,7 @@ contract SynapseBridge is
 
     // rate limiter
     IRateLimiter public rateLimiter;
-    bool rateLimiterEnabled;
+    bool public rateLimiterEnabled;
 
     // new role
 
@@ -217,12 +217,14 @@ contract SynapseBridge is
         internal
         returns (bool)
     {
-        if (!rateLimiterEnabled || address(rateLimiter) == address(0)) {
+        // save a bit of gas on reads
+        IRateLimiter _rateLimiter = rateLimiter;
+        if (!rateLimiterEnabled || address(_rateLimiter) == address(0)) {
             return false;
         }
 
         // rate limiter returns true on the successful allowance update
-        return !rateLimiter.checkAndUpdateAllowance(address(token), amount);
+        return !_rateLimiter.checkAndUpdateAllowance(address(token), amount);
     }
 
     // BRIDGE FUNCTIONS: SOURCE CHAIN ***/

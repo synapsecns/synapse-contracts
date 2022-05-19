@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: LGPL-3.0-only
-pragma solidity ^0.8.0;
+pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts-4.5.0-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-4.5.0-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-4.5.0-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-4.5.0-upgradeable/utils/math/MathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/utils/math/MathUpgradeable.sol";
 
 import "./libraries/EnumerableQueueUpgradeable.sol";
 import "./interfaces/IRateLimiter.sol";
 
-import {StringsUpgradeable} from "@openzeppelin/contracts-4.5.0-upgradeable/utils/StringsUpgradeable.sol";
+import {StringsUpgradeable} from "@openzeppelin/contracts-upgradeable-4.5.0/utils/StringsUpgradeable.sol";
 
 // solhint-disable not-rely-on-time
 
@@ -37,10 +37,10 @@ contract RateLimiter is
     bytes32 public constant BRIDGE_ROLE = keccak256("BRIDGE_ROLE");
 
     // Token -> Allowance
-    mapping(address => Allowance) public allowances;
+    mapping(address => Allowance) internal allowances;
     // Kappa->Retry Selector
-    EnumerableQueueUpgradeable.KappaQueue private rateLimitedQueue;
-    mapping(bytes32 => bytes) private failedRetries;
+    EnumerableQueueUpgradeable.KappaQueue internal rateLimitedQueue;
+    mapping(bytes32 => bytes) internal failedRetries;
     // Bridge Address
     address public BRIDGE_ADDRESS;
     // Time period after anyone can retry a rate limited tx
@@ -48,15 +48,18 @@ contract RateLimiter is
     uint32 public constant MIN_RETRY_TIMEOUT = 10;
 
     // List of tokens
-    address[] public tokens;
+    address[] internal tokens;
 
     /*** EVENTS ***/
+
+    event FailedTx(bytes32 indexed kappa);
 
     event SetAllowance(
         address indexed token,
         uint96 allowanceAmount,
         uint16 resetTime
     );
+
     event ResetAllowance(address indexed token);
 
     /*** STRUCTS ***/
@@ -123,6 +126,10 @@ contract RateLimiter is
         returns (bytes memory payload, uint32 storedAtMin)
     {
         (payload, storedAtMin) = rateLimitedQueue.get(kappa);
+    }
+
+    function isKappaFailed(bytes32 kappa) external view returns (bool) {
+        return failedRetries[kappa].length > 0;
     }
 
     function getUnhandledKappas()
@@ -330,7 +337,7 @@ contract RateLimiter is
         for (uint8 i = 0; i < attempts; i++) {
             // check out the first element
             (bytes32 kappa, bytes memory toRetry, ) = rateLimitedQueue
-            .pop_front();
+            .popFront();
 
             if (toRetry.length > 0) {
                 _retry(kappa, toRetry);
@@ -344,6 +351,7 @@ contract RateLimiter is
             // save payload for failed transactions
             // that haven't been processed by Bridge yet
             failedRetries[kappa] = toRetry;
+            emit FailedTx(kappa);
         }
     }
 
