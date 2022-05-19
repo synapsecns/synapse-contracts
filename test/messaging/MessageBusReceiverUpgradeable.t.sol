@@ -31,11 +31,9 @@ contract MessageBusReceiverUpgradeableTest is Test {
     }
 
     function testAddressToBytes32() public {
-        console.logBytes32(
-            addressToBytes32(
-                address(0xDE03e73c3785cE086ca85C6315Df376A4A64C84b)
-            )
-        );
+        address _address = 0xDE03e73c3785cE086ca85C6315Df376A4A64C84b;
+        emit log_named_bytes32("bytes32", addressToBytes32(_address));
+        emit log_named_address("address", _address);
     }
 
     function bytes32ToAddress(bytes32 bys) public pure returns (address) {

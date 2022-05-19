@@ -167,18 +167,10 @@ contract MessageBusSenderUpgradeableTest is Test {
     }
 
     function testAddressABIEncode() public {
-        console.logBytes(
-            abi.encode(address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9))
-        );
-        console.logBytes32(
-            addressToBytes32(
-                address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9)
-            )
-        );
-        console.logBytes(
-            abi.encodePacked(
-                address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9)
-            )
-        );
+        address _address = 0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9;
+        emit log_named_bytes("  abi.encode", abi.encode(_address));
+        emit log_named_bytes32("     bytes32", addressToBytes32(_address));
+        emit log_named_bytes("encodePacked", abi.encodePacked(_address));
+        emit log_named_address("     address", _address);
     }
 }
