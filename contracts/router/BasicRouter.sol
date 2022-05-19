@@ -7,7 +7,7 @@ import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol"
 import {IWETH9} from "@synapseprotocol/sol-lib/contracts/universal/interfaces/IWETH9.sol";
 import {SafeERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/SafeERC20.sol";
 
-import {AccessControl} from "@openzeppelin/contracts-4.4.2/access/AccessControl.sol";
+import {AccessControl} from "@openzeppelin/contracts-4.5.0/access/AccessControl.sol";
 
 contract BasicRouter is AccessControl, IBasicRouter {
     using SafeERC20 for IERC20;
