@@ -3,7 +3,7 @@
 pragma solidity >=0.8.11;
 
 import {ERC20Burnable} from "@openzeppelin/contracts-4.5.0/token/ERC20/extensions/ERC20Burnable.sol";
-import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 import {IVault} from "./IVault.sol";
 import {IBridgeConfig} from "./IBridgeConfig.sol";

@@ -5,7 +5,7 @@ import {WrapperAdapter} from "./WrapperAdapter.sol";
 
 import {IFrax} from "../interfaces/IFrax.sol";
 
-import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 contract SynFraxAdapter is WrapperAdapter {
     // Constant for FRAX price precision

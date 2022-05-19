@@ -13,7 +13,7 @@ import {SynapseBaseAdapter} from "src-router/adapters/synapse/SynapseBaseAdapter
 import {UniswapV2Adapter} from "src-router/adapters/uniswap/UniswapV2Adapter.sol";
 
 import {Swap08} from "src-amm08/Swap08.sol";
-import {IWETH9} from "@synapseprotocol/sol-lib/contracts/universal/interfaces/IWETH9.sol";
+import {IWETH9} from "src-bridge/interfaces/IWETH9.sol";
 
 contract DefaultRouterTest is DefaultVaultTest {
     struct Tokens {

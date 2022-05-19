@@ -8,8 +8,7 @@ import {IQuoter} from "./interfaces/IQuoter.sol";
 import {IBasicRouter} from "./interfaces/IBasicRouter.sol";
 
 import {Offers} from "./libraries/LibOffers.sol";
-
-import {Bytes} from "@synapseprotocol/sol-lib/contracts/universal/lib/LibBytes.sol";
+import {Bytes} from "./libraries/LibBytes.sol";
 
 contract Quoter is BasicQuoter, IQuoter {
     /// @dev Setup flow:

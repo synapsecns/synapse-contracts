@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Bytes} from "@synapseprotocol/sol-lib/contracts/universal/lib/LibBytes.sol";
+import {Bytes} from "./LibBytes.sol";
 
 library Offers {
     struct Offer {

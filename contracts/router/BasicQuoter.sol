@@ -4,8 +4,9 @@ pragma solidity ^0.8.0;
 import {IBasicQuoter} from "./interfaces/IBasicQuoter.sol";
 import {IBasicRouter} from "./interfaces/IBasicRouter.sol";
 
+import {Bytes} from "./libraries/LibBytes.sol";
+
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
-import {Bytes} from "@synapseprotocol/sol-lib/contracts/universal/lib/LibBytes.sol";
 
 contract BasicQuoter is Ownable, IBasicQuoter {
     /// @notice A list of tokens that will be used as "intermediate" tokens, when

@@ -3,8 +3,8 @@ pragma solidity ^0.8.0;
 
 import {IAdapter} from "../../interfaces/IAdapter.sol";
 
-import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
-import {SafeERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
 import "hardhat/console.sol";
 

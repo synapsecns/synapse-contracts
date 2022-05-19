@@ -217,15 +217,15 @@ describe("Aave Pool Adapter", async function () {
       TOKENS.push(
         NUSD,
         await ethers.getContractAt(
-          "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol:IERC20",
+          "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol:IERC20",
           config[43114].assets.DAIe,
         ),
         await ethers.getContractAt(
-          "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol:IERC20",
+          "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol:IERC20",
           config[43114].assets.USDCe,
         ),
         await ethers.getContractAt(
-          "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol:IERC20",
+          "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol:IERC20",
           config[43114].assets.USDTe,
         ),
       )
@@ -233,7 +233,7 @@ describe("Aave Pool Adapter", async function () {
       TOKENS_ETH.push(
         NETH,
         await ethers.getContractAt(
-          "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol:IERC20",
+          "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol:IERC20",
           config[43114].assets.WETHe,
         ),
       )
@@ -293,7 +293,7 @@ describe("Aave Pool Adapter", async function () {
 
       for (let i in poolTokens) {
         let token = await ethers.getContractAt(
-          "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol:IERC20",
+          "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol:IERC20",
           poolTokens[i],
         )
         await token.approve(swap.address, amounts[i])
@@ -301,7 +301,7 @@ describe("Aave Pool Adapter", async function () {
 
       for (let tokenName of ethPoolTokens) {
         let token = await ethers.getContractAt(
-          "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol:IERC20",
+          "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol:IERC20",
           tokenName,
         )
         await token.approve(swapETH.address, amountETH)

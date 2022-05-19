@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {SynapseBaseAdapter} from "./SynapseBaseAdapter.sol";
 
-import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 //solhint-disable not-rely-on-time
 

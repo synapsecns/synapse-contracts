@@ -5,7 +5,7 @@ import {ISynapse} from "../interfaces/ISynapse.sol";
 import {Adapter} from "../../Adapter.sol";
 import {SwapCalculator} from "../../helper/SwapCalculator.sol";
 
-import {IERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 //solhint-disable not-rely-on-time
 

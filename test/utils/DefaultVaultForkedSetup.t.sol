@@ -4,9 +4,9 @@ pragma solidity >=0.8.0;
 import "./DefaultVaultTest.t.sol";
 
 import {IAdapter} from "src-router/interfaces/IAdapter.sol";
-import {IWETH9} from "@synapseprotocol/sol-lib/contracts/universal/interfaces/IWETH9.sol";
+import {IWETH9} from "src-bridge/interfaces/IWETH9.sol";
 
-import {SafeERC20} from "@synapseprotocol/sol-lib/contracts/solc8/erc20/SafeERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
 abstract contract DefaultVaultForkedSetup is DefaultVaultTest {
     using SafeERC20 for IERC20;
