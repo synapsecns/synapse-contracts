@@ -1,5 +1,5 @@
 import {RateLimiter, SynapseBridge} from "../../../build/typechain";
-import { deployments, ethers, upgrades } from "hardhat"
+import { deployments, ethers } from "hardhat"
 import {Signer} from "ethers";
 import {addBridgeOwner, upgradeBridgeProxy} from "./fork";
 

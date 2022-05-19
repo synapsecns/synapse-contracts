@@ -1,4 +1,4 @@
-import { deployments, ethers, upgrades, network } from "hardhat"
+import { deployments, ethers, network } from "hardhat"
 import {ProxyAdmin, SynapseBridge} from "../../../build/typechain";
 import {impersonateAccount} from "../../utils";
 
