@@ -1,4 +1,6 @@
-# Exclude everything by default
-/**/*
-
-!/contracts/*/**/*.sol
+artifacts/*
+build/*
+flattened/*
+lib/*
+contracts/MultisigWallet/*
+contracts/amm/*
