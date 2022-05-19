@@ -1,0 +1,89 @@
+{
+  "1": {
+    "curve": {
+      "aave": {
+        "contract": "CurveLendingAdapter",
+        "params": [
+          "Curve Aave 3pool",
+          0,
+          "0xDeBF20617708857ebe4F679508E7b7863a8A8EeE",
+          false
+        ],
+        "tokens": ["dai", "usdc", "usdt"],
+        "underquote": true
+      },
+      "basepool": {
+        "contract": "CurveBaseAdapter",
+        "params": [
+          "Curve 3pool",
+          0,
+          "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7",
+          false
+        ],
+        "tokens": ["dai", "usdc", "usdt"],
+        "underquote": true
+      },
+      "frax": {
+        "contract": "CurveMetaAdapter",
+        "params": [
+          "Curve FRAX",
+          0,
+          "0xd632f22692FaC7611d2AA1C0D552930D43CAEd3B",
+          true,
+          "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7"
+        ],
+        "tokens": ["dai", "usdc", "usdt", "frax"],
+        "underquote": true
+      },
+      "tricrypto": {
+        "contract": "CurveTriCryptoAdapter",
+        "params": [
+          "Curve TriCrypto",
+          0,
+          "0xD51a44d3FaE010294C616388b506AcdA1bfAAE46",
+          false
+        ],
+        "tokens": ["weth", "wbtc", "usdt"],
+        "underquote": true
+      }
+    },
+    "synapse": {
+      "nusd": {
+        "contract": "SynapseBaseMainnetAdapter",
+        "params": [
+          "Synapse nUSD",
+          0,
+          "0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8"
+        ],
+        "tokens": ["dai", "usdc", "usdt", "nusd"],
+        "underquote": true
+      }
+    },
+    "uniswap": {
+      "sushiswap": {
+        "contract": "UniswapV2Adapter",
+        "params": [
+          "SushiSwap",
+          0,
+          "0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac",
+          "0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303",
+          30
+        ],
+        "tokens": ["weth", "dai", "usdc", "usdt", "wbtc", "frax", "syn"],
+        "underquote": false
+      },
+      "uniswap": {
+        "contract": "UniswapV2Adapter",
+        "params": [
+          "UniSwap",
+          0,
+          "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+          "0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f",
+          30
+        ],
+        "tokens": ["weth", "dai", "usdc", "usdt", "wbtc", "frax", "syn"],
+        "underquote": false
+      }
+    }
+  }
+}

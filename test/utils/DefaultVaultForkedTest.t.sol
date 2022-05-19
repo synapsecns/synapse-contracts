@@ -142,7 +142,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         uint256 userPre = IERC20(tokenOut).balanceOf(user);
         uint256 amountOut = adapter.swap(amountIn, tokenIn, tokenOut, user);
         assertEq(IERC20(tokenOut).balanceOf(user) - userPre, amountOut, "Failed to report amountOut");
-        if (canUnderquote[address(adapter)]) {
+        if (isUnderquoting[address(adapter)]) {
             assertTrue(quoteOut <= amountOut, "Quote amount is bigger than actual received");
         } else {
             assertEq(quoteOut, amountOut, "Failed to provide exact quote");
@@ -172,7 +172,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         Offers.FormattedOffer offer;
         IBridge.SwapParams swapParams;
         IBridge.SwapParams dstSwapParams;
-        bool canUnderquote;
+        bool isUnderquoting;
         uint256 quotedOut;
         uint256 reportedOut;
         uint256 amountOut;
@@ -222,8 +222,8 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
 
         // Check if any of the adapters can give quote less than actual
         for (uint256 i = 0; i < data.offer.adapters.length; ++i) {
-            if (canUnderquote[data.offer.adapters[i]]) {
-                data.canUnderquote = true;
+            if (isUnderquoting[data.offer.adapters[i]]) {
+                data.isUnderquoting = true;
                 break;
             }
         }
@@ -234,7 +234,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         IERC20(data.tokenIn).safeApprove(address(router), amountIn);
         vm.stopPrank();
 
-        if (data.canUnderquote) {
+        if (data.isUnderquoting) {
             // Simulate swapping to get amountOut for event verification
             // Utils will swap the tokens and revert, using amountOut as revert reason
             // Hacky af, but this works
@@ -373,7 +373,7 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         address tokenOut;
         Offers.FormattedOffer offer;
         IBridge.SwapParams swapParams;
-        bool canUnderquote;
+        bool isUnderquoting;
         uint256 amountOut;
         uint256 quotedOut;
         bytes32 kappa;
@@ -435,13 +435,13 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
 
         // Check if any of the adapters can give quote less than actual
         for (uint256 i = 0; i < data.offer.adapters.length; ++i) {
-            if (canUnderquote[data.offer.adapters[i]]) {
-                data.canUnderquote = true;
+            if (isUnderquoting[data.offer.adapters[i]]) {
+                data.isUnderquoting = true;
                 break;
             }
         }
 
-        if (data.canUnderquote) {
+        if (data.isUnderquoting) {
             _addTokenTo(bridgeToken, dude, amountIn);
             startHoax(dude);
             IERC20(bridgeToken).safeApprove(address(router), amountIn);
