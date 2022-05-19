@@ -4,3 +4,4 @@ flattened/*
 lib/*
 contracts/MultisigWallet/*
 contracts/amm/*
+contracts/router/helper/uniswap/*
