@@ -60,14 +60,8 @@ contract PingPongTest is Test {
         vm.label(node, "Node");
         authVerifierChainA = new AuthVerifier(node);
         authVerifierChainB = new AuthVerifier(node);
-        messageBusChainA = new MessageBus(
-            address(gasFeePricingChainA),
-            address(authVerifierChainA)
-        );
-        messageBusChainB = new MessageBus(
-            address(gasFeePricingChainB),
-            address(authVerifierChainB)
-        );
+        messageBusChainA = new MessageBus(address(gasFeePricingChainA), address(authVerifierChainA));
+        messageBusChainB = new MessageBus(address(gasFeePricingChainB), address(authVerifierChainB));
         pingPongChainA = new PingPong(address(messageBusChainA));
         vm.label(address(pingPongChainA), "PingChainA");
         pingPongChainB = new PingPong(address(messageBusChainB));
@@ -76,16 +70,8 @@ contract PingPongTest is Test {
         pingPongChainBBytes = utils.addressToBytes32(address(pingPongChainB));
         vm.deal(address(pingPongChainA), 100 ether);
         vm.deal(address(pingPongChainB), 100 ether);
-        gasFeePricingChainA.setCostPerChain(
-            chainB,
-            30000000000,
-            25180000000000000
-        );
-        gasFeePricingChainB.setCostPerChain(
-            chainA,
-            30000000000,
-            25180000000000000
-        );
+        gasFeePricingChainA.setCostPerChain(chainB, 30000000000, 25180000000000000);
+        gasFeePricingChainB.setCostPerChain(chainA, 30000000000, 25180000000000000);
     }
 
     // function testPingPongE2E() public {

@@ -10,9 +10,8 @@ contract GasFeePricingTest is Test {
     uint256 public expectedDstGasPrice = 30000000000;
     uint256 public expectedGasTokenPriceRatio = 25180000000000000;
     uint256 public currentGasLimit = 200000;
-    uint256 public expectedFeeDst43114 = ((expectedDstGasPrice *
-        expectedGasTokenPriceRatio *
-        currentGasLimit) / 10**18);
+    uint256 public expectedFeeDst43114 = ((expectedDstGasPrice * expectedGasTokenPriceRatio * currentGasLimit) /
+        10**18);
 
     function addressToBytes32(address _addr) public pure returns (bytes32) {
         return bytes32(uint256(uint160(_addr)));
@@ -28,27 +27,13 @@ contract GasFeePricingTest is Test {
 
     function testFailSetCostAsNotOwner() public {
         vm.prank(address(0));
-        gasFeePricing.setCostPerChain(
-            expectedDstChainId,
-            expectedDstGasPrice,
-            expectedGasTokenPriceRatio
-        );
+        gasFeePricing.setCostPerChain(expectedDstChainId, expectedDstGasPrice, expectedGasTokenPriceRatio);
     }
 
     function testSetCostAsOwner() public {
-        gasFeePricing.setCostPerChain(
-            expectedDstChainId,
-            expectedDstGasPrice,
-            expectedGasTokenPriceRatio
-        );
-        assertEq(
-            gasFeePricing.dstGasPriceInWei(expectedDstChainId),
-            expectedDstGasPrice
-        );
-        assertEq(
-            gasFeePricing.dstGasTokenRatio(expectedDstChainId),
-            expectedGasTokenPriceRatio
-        );
+        gasFeePricing.setCostPerChain(expectedDstChainId, expectedDstGasPrice, expectedGasTokenPriceRatio);
+        assertEq(gasFeePricing.dstGasPriceInWei(expectedDstChainId), expectedDstGasPrice);
+        assertEq(gasFeePricing.dstGasTokenRatio(expectedDstChainId), expectedGasTokenPriceRatio);
     }
 
     function testNotSetData() public {
@@ -63,9 +48,7 @@ contract GasFeePricingTest is Test {
         // set data
         testSetCostAsOwner();
         uint256 fee = gasFeePricing.estimateGasFee(43114, bytes(""));
-        uint256 expectedFee = ((expectedDstGasPrice *
-            expectedGasTokenPriceRatio *
-            currentGasLimit) / 10**18);
+        uint256 expectedFee = ((expectedDstGasPrice * expectedGasTokenPriceRatio * currentGasLimit) / 10**18);
         assertEq(fee, expectedFee);
     }
 
@@ -73,12 +56,9 @@ contract GasFeePricingTest is Test {
         // test type 1
         bytes memory options = gasFeePricing.encodeOptions(1, 300000);
 
-        (
-            uint16 txType,
-            uint256 gasLimit,
-            uint256 dstAirdrop,
-            bytes32 dstAddress
-        ) = gasFeePricing.decodeOptions(options);
+        (uint16 txType, uint256 gasLimit, uint256 dstAirdrop, bytes32 dstAddress) = gasFeePricing.decodeOptions(
+            options
+        );
         assertEq(txType, 1);
         assertEq(gasLimit, 300000);
         assertEq(dstAirdrop, 0);
@@ -94,19 +74,11 @@ contract GasFeePricingTest is Test {
         vm.assume(_dstNativeAmt != 0);
         vm.assume(_address != bytes32(0));
 
-        bytes memory options = gasFeePricing.encodeOptions(
-            2,
-            _gasLimit,
-            _dstNativeAmt,
-            _address
-        );
+        bytes memory options = gasFeePricing.encodeOptions(2, _gasLimit, _dstNativeAmt, _address);
 
-        (
-            uint16 txType,
-            uint256 gasLimit,
-            uint256 dstAirdrop,
-            bytes32 dstAddress
-        ) = gasFeePricing.decodeOptions(options);
+        (uint16 txType, uint256 gasLimit, uint256 dstAirdrop, bytes32 dstAddress) = gasFeePricing.decodeOptions(
+            options
+        );
         assertEq(txType, 2);
         assertEq(gasLimit, _gasLimit);
         assertEq(dstAirdrop, _dstNativeAmt);
@@ -114,19 +86,11 @@ contract GasFeePricingTest is Test {
     }
 
     function testFailRevertNoDstNativeAddress() public {
-        bytes memory options = gasFeePricing.encodeOptions(
-            2,
-            300000,
-            100000000000000000,
-            bytes32(0)
-        );
+        bytes memory options = gasFeePricing.encodeOptions(2, 300000, 100000000000000000, bytes32(0));
 
-        (
-            uint16 txType,
-            uint256 gasLimit,
-            uint256 dstAirdrop,
-            bytes32 dstAddress
-        ) = gasFeePricing.decodeOptions(options);
+        (uint16 txType, uint256 gasLimit, uint256 dstAirdrop, bytes32 dstAddress) = gasFeePricing.decodeOptions(
+            options
+        );
         assertEq(txType, 2);
         assertEq(gasLimit, 300000);
         assertEq(dstAirdrop, 100000000000000000);
@@ -135,14 +99,9 @@ contract GasFeePricingTest is Test {
     function testEstimateFeeWithOptionsTypeOne(uint64 _gasLimit) public {
         vm.assume(_gasLimit != 0);
         testSetCostAsOwner();
-        bytes memory options = gasFeePricing.encodeOptions(
-            1,
-            uint256(_gasLimit)
-        );
+        bytes memory options = gasFeePricing.encodeOptions(1, uint256(_gasLimit));
         uint256 fee = gasFeePricing.estimateGasFee(43114, options);
-        uint256 expectedFee = ((expectedDstGasPrice *
-            expectedGasTokenPriceRatio *
-            _gasLimit) / 10**18);
+        uint256 expectedFee = ((expectedDstGasPrice * expectedGasTokenPriceRatio * _gasLimit) / 10**18);
         assertEq(fee, expectedFee);
     }
 }

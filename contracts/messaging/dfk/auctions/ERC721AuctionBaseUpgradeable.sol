@@ -417,7 +417,11 @@ abstract contract ERC721AuctionBaseUpgradeable is
     /// @dev Sets the addresses and percentages that will receive fees.
     /// @param _feeAddresses An array of addresses to send fees to.
     /// @param _feePercents An array of percentages for the addresses to get.
-    function setFees(address[] memory _feeAddresses, uint256[] memory _feePercents) public override onlyRole(MODERATOR_ROLE) {
+    function setFees(address[] memory _feeAddresses, uint256[] memory _feePercents)
+        public
+        override
+        onlyRole(MODERATOR_ROLE)
+    {
         _setFees(_feeAddresses, _feePercents);
     }
 

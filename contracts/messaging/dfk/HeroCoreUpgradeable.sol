@@ -6,6 +6,7 @@ import "@openzeppelin/contracts-upgradeable-4.5.0/security/PausableUpgradeable.s
 import "@openzeppelin/contracts-upgradeable-4.5.0/access/AccessControlUpgradeable.sol";
 import "./IStatScienceUpgradeable.sol";
 import {HeroStatus} from "./types/HeroTypes.sol";
+
 /// @title Core contract for Heroes.
 /// @author Frisky Fox - Defi Kingdoms
 /// @dev Holds the base structs, events, and data.
@@ -21,9 +22,17 @@ contract HeroCoreUpgradeable is ERC721EnumerableUpgradeable, PausableUpgradeable
     uint256 public nextHeroId;
     /// EVENTS ///
     /// @dev The HeroSummoned event is fired whenever a new hero is created.
-    event HeroSummoned(address indexed owner, uint256 heroId, uint256 summonerId, uint256 assistantId, uint256 statGenes, uint256 visualGenes);
+    event HeroSummoned(
+        address indexed owner,
+        uint256 heroId,
+        uint256 summonerId,
+        uint256 assistantId,
+        uint256 statGenes,
+        uint256 visualGenes
+    );
     /// @dev The HeroUpdated event is fired whenever a hero is updated.
     event HeroUpdated(address indexed owner, uint256 heroId, Hero hero);
+
     /// @dev The initialize function is the constructor for upgradeable contracts.
     function initialize(
         string memory _name,
@@ -38,9 +47,11 @@ contract HeroCoreUpgradeable is ERC721EnumerableUpgradeable, PausableUpgradeable
         statScience = IStatScienceUpgradeable(_statScience);
         nextHeroId = 1000000000001;
     }
+
     function _baseURI() internal pure override returns (string memory) {
         return "https://api.defikingdoms.com/";
     }
+
     function getUserHeroes(address _address) external view returns (Hero[] memory) {
         uint256 balance = balanceOf(_address);
         Hero[] memory heroArr = new Hero[](balance);
@@ -49,11 +60,13 @@ contract HeroCoreUpgradeable is ERC721EnumerableUpgradeable, PausableUpgradeable
         }
         return heroArr;
     }
+
     /// @dev Gets a hero object.
     /// @param _id The hero id.
     function getHero(uint256 _id) public view returns (Hero memory) {
         return heroes[_id];
     }
+
     /// @dev Creates Heroes with the given settings.
     /// @param _statGenes the encoded genes for the hero stats.
     /// @param _visualGenes the genes for the appearance.
@@ -120,29 +133,39 @@ contract HeroCoreUpgradeable is ERC721EnumerableUpgradeable, PausableUpgradeable
         _mint(_crystal.owner, _hero.id);
         return _hero.id;
     }
+
     /// @dev Saves a hero object to storage.
     function updateHero(Hero memory _hero) external onlyRole(HERO_MODERATOR_ROLE) whenNotPaused {
         // Save the hero.
         heroes[_hero.id] = _hero;
         emit HeroUpdated(ownerOf(_hero.id), _hero.id, _hero);
     }
+
     function bridgeMint(uint256 _id, address _to) external onlyRole(BRIDGE_ROLE) {
         _mint(_to, _id);
     }
+
     // /**
     //  * @dev See {IERC165-supportsInterface}.
     //  */
     // /// TODO find out if this is right, Im not sure
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721EnumerableUpgradeable, AccessControlUpgradeable) returns (bool) {
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721EnumerableUpgradeable, AccessControlUpgradeable)
+        returns (bool)
+    {
         // return interfaceId == type(IHeroTypes).interfaceId || super.supportsInterface(interfaceId);
         return super.supportsInterface(interfaceId);
     }
+
     ///////////////////////////
     /// @dev ADMIN FUNCTION ///
     //////////////////////////
     function pause() public onlyRole(MODERATOR_ROLE) {
         _pause();
     }
+
     function unpause() public onlyRole(MODERATOR_ROLE) {
         _unpause();
     }

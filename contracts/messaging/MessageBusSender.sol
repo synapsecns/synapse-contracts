@@ -34,27 +34,11 @@ contract MessageBusSender is Ownable {
         uint256 _srcNonce,
         bytes calldata _message
     ) public view returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    _srcAddress,
-                    _srcChainId,
-                    _dstAddress,
-                    _dstChainId,
-                    _srcNonce,
-                    _message
-                )
-            );
+        return keccak256(abi.encode(_srcAddress, _srcChainId, _dstAddress, _dstChainId, _srcNonce, _message));
     }
 
-    function estimateFee(uint256 _dstChainId, bytes calldata _options)
-        public
-        returns (uint256)
-    {
-        uint256 fee = IGasFeePricing(gasFeePricing).estimateGasFee(
-            _dstChainId,
-            _options
-        );
+    function estimateFee(uint256 _dstChainId, bytes calldata _options) public returns (uint256) {
+        uint256 fee = IGasFeePricing(gasFeePricing).estimateGasFee(_dstChainId, _options);
         require(fee != 0, "Fee not set");
         return fee;
     }
@@ -76,14 +60,7 @@ contract MessageBusSender is Ownable {
         require(_dstChainId != block.chainid, "Invalid chainId");
         uint256 fee = estimateFee(_dstChainId, _options);
         require(msg.value >= fee, "Insuffient gas fee");
-        bytes32 msgId = computeMessageId(
-            msg.sender,
-            block.chainid,
-            _receiver,
-            _dstChainId,
-            nonce,
-            _message
-        );
+        bytes32 msgId = computeMessageId(msg.sender, block.chainid, _receiver, _dstChainId, nonce, _message);
         emit MessageSent(
             msg.sender,
             block.chainid,

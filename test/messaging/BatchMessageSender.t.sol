@@ -46,23 +46,11 @@ contract BatchMessageSenderTest is Test {
         node = users[0];
         vm.label(node, "Node");
         authVerifierChainA = new AuthVerifier(node);
-        messageBusChainA = new MessageBus(
-            address(gasFeePricingChainA),
-            address(authVerifierChainA)
-        );
-        batchMessageSenderChainA = new BatchMessageSender(
-            address(messageBusChainA)
-        );
+        messageBusChainA = new MessageBus(address(gasFeePricingChainA), address(authVerifierChainA));
+        batchMessageSenderChainA = new BatchMessageSender(address(messageBusChainA));
         vm.label(address(batchMessageSenderChainA), "BatchMessageSenderChainA");
-        gasFeePricingChainA.setCostPerChain(
-            43113,
-            30000000000,
-            25180000000000000
-        );
-        batchMessageSenderChainA.setTrustedRemote(
-            43113,
-            keccak256("Receiver!")
-        );
+        gasFeePricingChainA.setCostPerChain(43113, 30000000000, 25180000000000000);
+        batchMessageSenderChainA.setTrustedRemote(43113, keccak256("Receiver!"));
     }
 
     function testSendMultipleMessages() public {
@@ -79,11 +67,6 @@ contract BatchMessageSenderTest is Test {
         }
 
         // this msg.value (fee) is entirely fake and way too high
-        batchMessageSenderChainA.sendMultipleMessages{value: 10 ether}(
-            receivers,
-            dstChainIds,
-            messages,
-            options
-        );
+        batchMessageSenderChainA.sendMultipleMessages{value: 10 ether}(receivers, dstChainIds, messages, options);
     }
 }
