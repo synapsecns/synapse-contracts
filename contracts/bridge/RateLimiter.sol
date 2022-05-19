@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: LGPL-3.0-only
-pragma solidity ^0.8.0;
+pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-upgradeable-4.5.0/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable-4.5.0/access/AccessControlUpgradeable.sol";
