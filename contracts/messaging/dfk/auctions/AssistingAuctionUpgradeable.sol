@@ -26,7 +26,16 @@ contract AssistingAuctionUpgradeable is ERC721AuctionBaseUpgradeable {
         // Make sure they actually own the hero.
         require(ERC721.ownerOf(_tokenId) == msg.sender, "Must own the hero");
 
-        Auction memory auction = Auction(msg.sender, _tokenId, _startingPrice, _endingPrice, _duration, uint64(block.timestamp), _winner, true);
+        Auction memory auction = Auction(
+            msg.sender,
+            _tokenId,
+            _startingPrice,
+            _endingPrice,
+            _duration,
+            uint64(block.timestamp),
+            _winner,
+            true
+        );
 
         _addAuction(_tokenId, auction);
     }

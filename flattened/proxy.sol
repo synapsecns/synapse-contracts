@@ -32,14 +32,7 @@ abstract contract Proxy {
 
             // Call the implementation.
             // out and outsize are 0 because we don't know the size yet.
-            let result := delegatecall(
-                gas(),
-                implementation,
-                0,
-                calldatasize(),
-                0,
-                0
-            )
+            let result := delegatecall(gas(), implementation, 0, calldatasize(), 0, 0)
 
             // Copy the returned data.
             returndatacopy(0, 0, returndatasize())
@@ -129,8 +122,7 @@ library Address {
         // for accounts without code, i.e. `keccak256('')`
         bytes32 codehash;
 
-            bytes32 accountHash
-         = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
+        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;
         // solhint-disable-next-line no-inline-assembly
         assembly {
             codehash := extcodehash(account)
@@ -155,17 +147,11 @@ library Address {
      * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(
-            address(this).balance >= amount,
-            "Address: insufficient balance"
-        );
+        require(address(this).balance >= amount, "Address: insufficient balance");
 
         // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
         (bool success, ) = recipient.call{value: amount}("");
-        require(
-            success,
-            "Address: unable to send value, recipient may have reverted"
-        );
+        require(success, "Address: unable to send value, recipient may have reverted");
     }
 
     /**
@@ -186,10 +172,7 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCall(address target, bytes memory data)
-        internal
-        returns (bytes memory)
-    {
+    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
         return functionCall(target, data, "Address: low-level call failed");
     }
 
@@ -223,13 +206,7 @@ library Address {
         bytes memory data,
         uint256 value
     ) internal returns (bytes memory) {
-        return
-            functionCallWithValue(
-                target,
-                data,
-                value,
-                "Address: low-level call with value failed"
-            );
+        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
     }
 
     /**
@@ -244,10 +221,7 @@ library Address {
         uint256 value,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(
-            address(this).balance >= value,
-            "Address: insufficient balance for call"
-        );
+        require(address(this).balance >= value, "Address: insufficient balance for call");
         return _functionCallWithValue(target, data, value, errorMessage);
     }
 
@@ -260,9 +234,7 @@ library Address {
         require(isContract(target), "Address: call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.call{value: weiValue}(
-            data
-        );
+        (bool success, bytes memory returndata) = target.call{value: weiValue}(data);
         if (success) {
             return returndata;
         } else {
@@ -305,10 +277,7 @@ contract UpgradeableProxy is Proxy {
      * function call, and allows initializating the storage of the proxy like a Solidity constructor.
      */
     constructor(address _logic, bytes memory _data) payable {
-        assert(
-            _IMPLEMENTATION_SLOT ==
-                bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1)
-        );
+        assert(_IMPLEMENTATION_SLOT == bytes32(uint256(keccak256("eip1967.proxy.implementation")) - 1));
         _setImplementation(_logic);
         if (_data.length > 0) {
             // solhint-disable-next-line avoid-low-level-calls
@@ -327,8 +296,7 @@ contract UpgradeableProxy is Proxy {
      * This is the keccak-256 hash of "eip1967.proxy.implementation" subtracted by 1, and is
      * validated in the constructor.
      */
-    bytes32 private constant _IMPLEMENTATION_SLOT =
-        0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+    bytes32 private constant _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
 
     /**
      * @dev Returns the current implementation address.
@@ -355,10 +323,7 @@ contract UpgradeableProxy is Proxy {
      * @dev Stores a new address in the EIP1967 implementation slot.
      */
     function _setImplementation(address newImplementation) private {
-        require(
-            Address.isContract(newImplementation),
-            "UpgradeableProxy: new implementation is not a contract"
-        );
+        require(Address.isContract(newImplementation), "UpgradeableProxy: new implementation is not a contract");
 
         bytes32 slot = _IMPLEMENTATION_SLOT;
 
@@ -406,10 +371,7 @@ contract TransparentUpgradeableProxy is UpgradeableProxy {
         address initialAdmin,
         bytes memory _data
     ) payable UpgradeableProxy(initialLogic, _data) {
-        assert(
-            _ADMIN_SLOT ==
-                bytes32(uint256(keccak256("eip1967.proxy.admin")) - 1)
-        );
+        assert(_ADMIN_SLOT == bytes32(uint256(keccak256("eip1967.proxy.admin")) - 1));
         _setAdmin(initialAdmin);
     }
 
@@ -423,8 +385,7 @@ contract TransparentUpgradeableProxy is UpgradeableProxy {
      * This is the keccak-256 hash of "eip1967.proxy.admin" subtracted by 1, and is
      * validated in the constructor.
      */
-    bytes32 private constant _ADMIN_SLOT =
-        0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
+    bytes32 private constant _ADMIN_SLOT = 0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
     /**
      * @dev Modifier used internally that will delegate the call to the implementation unless the sender is the admin.
@@ -471,10 +432,7 @@ contract TransparentUpgradeableProxy is UpgradeableProxy {
      * NOTE: Only the admin can call this function. See {ProxyAdmin-changeProxyAdmin}.
      */
     function changeAdmin(address newAdmin) external ifAdmin {
-        require(
-            newAdmin != address(0),
-            "TransparentUpgradeableProxy: new admin is the zero address"
-        );
+        require(newAdmin != address(0), "TransparentUpgradeableProxy: new admin is the zero address");
         emit AdminChanged(_admin(), newAdmin);
         _setAdmin(newAdmin);
     }
@@ -495,11 +453,7 @@ contract TransparentUpgradeableProxy is UpgradeableProxy {
      *
      * NOTE: Only the admin can call this function. See {ProxyAdmin-upgradeAndCall}.
      */
-    function upgradeToAndCall(address newImplementation, bytes calldata data)
-        external
-        payable
-        ifAdmin
-    {
+    function upgradeToAndCall(address newImplementation, bytes calldata data) external payable ifAdmin {
         _upgradeTo(newImplementation);
         // solhint-disable-next-line avoid-low-level-calls
         (bool success, ) = newImplementation.delegatecall(data);
@@ -533,10 +487,7 @@ contract TransparentUpgradeableProxy is UpgradeableProxy {
      * @dev Makes sure the admin cannot access the fallback function. See {Proxy-_beforeFallback}.
      */
     function _beforeFallback() internal virtual override {
-        require(
-            msg.sender != _admin(),
-            "TransparentUpgradeableProxy: admin cannot fallback to proxy target"
-        );
+        require(msg.sender != _admin(), "TransparentUpgradeableProxy: admin cannot fallback to proxy target");
         super._beforeFallback();
     }
 }

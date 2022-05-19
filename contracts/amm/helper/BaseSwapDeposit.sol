@@ -18,7 +18,7 @@ contract BaseSwapDeposit is ReentrancyGuard {
 
     constructor(ISwap _baseSwap) public {
         baseSwap = _baseSwap;
-           // Check and approve base level tokens to be deposited to the base Swap contract
+        // Check and approve base level tokens to be deposited to the base Swap contract
         {
             uint8 i;
             for (; i < 32; i++) {
@@ -51,19 +51,12 @@ contract BaseSwapDeposit is ReentrancyGuard {
         uint256 deadline
     ) external nonReentrant returns (uint256) {
         baseTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
-        uint256 tokenToAmount =
-            baseSwap.swap(
-                tokenIndexFrom,
-                tokenIndexTo,
-                dx,
-                minDy,
-                deadline
-            );
+        uint256 tokenToAmount = baseSwap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         baseTokens[tokenIndexTo].safeTransfer(msg.sender, tokenToAmount);
         return tokenToAmount;
     }
 
-     /**
+    /**
      * @notice Calculate amount of tokens you receive on swap
      * @param tokenIndexFrom the token the user wants to sell
      * @param tokenIndexTo the token the user wants to buy
@@ -76,11 +69,10 @@ contract BaseSwapDeposit is ReentrancyGuard {
         uint8 tokenIndexTo,
         uint256 dx
     ) external view returns (uint256) {
-        return
-            baseSwap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+        return baseSwap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
     }
 
-        /**
+    /**
      * @notice Returns the address of the pooled token at given index. Reverts if tokenIndex is out of range.
      * @param index the index of the token
      * @return address of the token at given index
@@ -89,5 +81,4 @@ contract BaseSwapDeposit is ReentrancyGuard {
         require(index < baseTokens.length, "index out of range");
         return baseTokens[index];
     }
-
 }

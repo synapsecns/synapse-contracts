@@ -56,16 +56,7 @@ contract AaveSwap is Swap {
         uint256 _adminFee,
         address lpTokenTargetAddress
     ) public virtual override initializer {
-        Swap.initialize(
-            _pooledTokens,
-            decimals,
-            lpTokenName,
-            lpTokenSymbol,
-            _a,
-            _fee,
-            _adminFee,
-            lpTokenTargetAddress
-        );
+        Swap.initialize(_pooledTokens, decimals, lpTokenName, lpTokenSymbol, _a, _fee, _adminFee, lpTokenTargetAddress);
         AAVE_REWARDS = 0x01D83Fe6A10D2f2B7AF17034343746188272cAc9;
         AAVE_LENDING_POOL = 0x4F01AeD16D97E3aB5ab2B501154DC9bb0F1A5A2C;
         REWARD_TOKEN = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;

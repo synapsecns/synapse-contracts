@@ -23,30 +23,19 @@ contract FlashLoanBorrowerExample is IFlashLoanReceiver {
         bytes calldata params
     ) external override {
         // 1. Check if the flashLoan was valid
-        require(
-            IERC20(token).balanceOf(address(this)) >= amount,
-            "flashloan is broken?"
-        );
+        require(IERC20(token).balanceOf(address(this)) >= amount, "flashloan is broken?");
 
         // 2. Do actions with the borrowed token
         bytes32 paramsHash = keccak256(params);
         if (paramsHash == keccak256(bytes("dontRepayDebt"))) {
             return;
         } else if (paramsHash == keccak256(bytes("reentrancy_addLiquidity"))) {
-            ISwapFlashLoan(pool).addLiquidity(
-                new uint256[](0),
-                0,
-                block.timestamp
-            );
+            ISwapFlashLoan(pool).addLiquidity(new uint256[](0), 0, block.timestamp);
         } else if (paramsHash == keccak256(bytes("reentrancy_swap"))) {
             ISwapFlashLoan(pool).swap(1, 0, 1e6, 0, now);
-        } else if (
-            paramsHash == keccak256(bytes("reentrancy_removeLiquidity"))
-        ) {
+        } else if (paramsHash == keccak256(bytes("reentrancy_removeLiquidity"))) {
             ISwapFlashLoan(pool).removeLiquidity(1e18, new uint256[](0), now);
-        } else if (
-            paramsHash == keccak256(bytes("reentrancy_removeLiquidityOneToken"))
-        ) {
+        } else if (paramsHash == keccak256(bytes("reentrancy_removeLiquidityOneToken"))) {
             ISwapFlashLoan(pool).removeLiquidityOneToken(1e18, 0, 1e18, now);
         }
 

@@ -33,13 +33,7 @@ contract SwapFlashLoan is Swap {
     uint256 public constant MAX_BPS = 10000;
 
     /*** EVENTS ***/
-    event FlashLoan(
-        address indexed receiver,
-        uint8 tokenIndex,
-        uint256 amount,
-        uint256 amountFee,
-        uint256 protocolFee
-    );
+    event FlashLoan(address indexed receiver, uint8 tokenIndex, uint256 amount, uint256 amountFee, uint256 protocolFee);
 
     /**
      * @notice Initializes this Swap contract with the given parameters.
@@ -68,16 +62,7 @@ contract SwapFlashLoan is Swap {
         uint256 _adminFee,
         address lpTokenTargetAddress
     ) public virtual override initializer {
-        Swap.initialize(
-            _pooledTokens,
-            decimals,
-            lpTokenName,
-            lpTokenSymbol,
-            _a,
-            _fee,
-            _adminFee,
-            lpTokenTargetAddress
-        );
+        Swap.initialize(_pooledTokens, decimals, lpTokenName, lpTokenSymbol, _a, _fee, _adminFee, lpTokenTargetAddress);
         flashLoanFeeBPS = 8; // 8 bps
         protocolFeeShareBPS = 0; // 0 bps
     }
@@ -103,13 +88,8 @@ contract SwapFlashLoan is Swap {
     ) external nonReentrant {
         uint8 tokenIndex = getTokenIndex(address(token));
         uint256 availableLiquidityBefore = token.balanceOf(address(this));
-        uint256 protocolBalanceBefore = availableLiquidityBefore.sub(
-            swapStorage.balances[tokenIndex]
-        );
-        require(
-            amount > 0 && availableLiquidityBefore >= amount,
-            "invalid amount"
-        );
+        uint256 protocolBalanceBefore = availableLiquidityBefore.sub(swapStorage.balances[tokenIndex]);
+        require(amount > 0 && availableLiquidityBefore >= amount, "invalid amount");
 
         // Calculate the additional amount of tokens the pool should end up with
         uint256 amountFee = amount.mul(flashLoanFeeBPS).div(10000);
@@ -121,23 +101,12 @@ contract SwapFlashLoan is Swap {
         token.safeTransfer(receiver, amount);
 
         // Execute callback function on receiver
-        IFlashLoanReceiver(receiver).executeOperation(
-            address(this),
-            address(token),
-            amount,
-            amountFee,
-            params
-        );
+        IFlashLoanReceiver(receiver).executeOperation(address(this), address(token), amount, amountFee, params);
 
         uint256 availableLiquidityAfter = token.balanceOf(address(this));
-        require(
-            availableLiquidityAfter >= availableLiquidityBefore.add(amountFee),
-            "flashLoan fee is not met"
-        );
+        require(availableLiquidityAfter >= availableLiquidityBefore.add(amountFee), "flashLoan fee is not met");
 
-        swapStorage.balances[tokenIndex] = availableLiquidityAfter
-        .sub(protocolBalanceBefore)
-        .sub(protocolFee);
+        swapStorage.balances[tokenIndex] = availableLiquidityAfter.sub(protocolBalanceBefore).sub(protocolFee);
         emit FlashLoan(receiver, tokenIndex, amount, amountFee, protocolFee);
     }
 
@@ -148,14 +117,9 @@ contract SwapFlashLoan is Swap {
      * @param newFlashLoanFeeBPS the total fee in bps to be applied on future flash loans
      * @param newProtocolFeeShareBPS the protocol fee in bps to be applied on the total flash loan fee
      */
-    function setFlashLoanFees(
-        uint256 newFlashLoanFeeBPS,
-        uint256 newProtocolFeeShareBPS
-    ) external onlyOwner {
+    function setFlashLoanFees(uint256 newFlashLoanFeeBPS, uint256 newProtocolFeeShareBPS) external onlyOwner {
         require(
-            newFlashLoanFeeBPS > 0 &&
-                newFlashLoanFeeBPS <= MAX_BPS &&
-                newProtocolFeeShareBPS <= MAX_BPS,
+            newFlashLoanFeeBPS > 0 && newFlashLoanFeeBPS <= MAX_BPS && newProtocolFeeShareBPS <= MAX_BPS,
             "fees are not in valid range"
         );
         flashLoanFeeBPS = newFlashLoanFeeBPS;

@@ -1,21 +1,21 @@
-import "@tenderly/hardhat-tenderly"
-import "@nomiclabs/hardhat-ethers"
-import "@nomiclabs/hardhat-waffle"
-import "@nomiclabs/hardhat-web3"
-import "@nomiclabs/hardhat-etherscan"
-import "@typechain/hardhat"
-import "hardhat-gas-reporter"
-import "solidity-coverage"
-import "hardhat-deploy"
-import "hardhat-spdx-license-identifier"
+import "@tenderly/hardhat-tenderly";
+import "@nomiclabs/hardhat-ethers";
+import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-web3";
+import "@nomiclabs/hardhat-etherscan";
+import "@typechain/hardhat";
+import "hardhat-gas-reporter";
+import "solidity-coverage";
+import "hardhat-deploy";
+import "hardhat-spdx-license-identifier";
 import "hardhat-interface-generator";
 import "@primitivefi/hardhat-dodoc";
 import "hardhat-deploy-ethers";
 
-import { HardhatUserConfig } from "hardhat/config"
-import dotenv from "dotenv"
+import { HardhatUserConfig } from "hardhat/config";
+import dotenv from "dotenv";
 
-dotenv.config()
+dotenv.config();
 
 let config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
@@ -53,7 +53,7 @@ let config: HardhatUserConfig = {
     polygon: {
       url: "https://polygon-rpc.com",
       gasPrice: 400 * 1000000000,
-      gas: 1000000
+      gas: 1000000,
     },
     bsc: {
       url: "https://bsc-dataseed1.defibit.io",
@@ -67,14 +67,14 @@ let config: HardhatUserConfig = {
       url: "https://a.api.s0.t.hmny.io/",
     },
     harmony_testnet: {
-      url: "https://api.s0.b.hmny.io"
+      url: "https://api.s0.b.hmny.io",
     },
     boba: {
       url: "https://mainnet.boba.network",
     },
     moonriver: {
       url: "https://rpc.moonriver.moonbeam.network",
-      gasPrice: 10 * 1000000000
+      gasPrice: 10 * 1000000000,
     },
     moonbeam: {
       url: "https://rpc.api.moonbeam.network",
@@ -83,22 +83,22 @@ let config: HardhatUserConfig = {
       url: "https://mainnet.aurora.dev",
     },
     metis: {
-      url: 'https://andromeda.metis.io/?owner=1088',
+      url: "https://andromeda.metis.io/?owner=1088",
     },
     dfk: {
-      url: 'https://subnets.avax.network/defi-kingdoms/dfk-chain/rpc',
+      url: "https://subnets.avax.network/defi-kingdoms/dfk-chain/rpc",
     },
     dfk_testnet: {
-      url: 'https://subnets.avax.network/defi-kingdoms/dfk-chain-testnet/rpc	',
+      url: "https://subnets.avax.network/defi-kingdoms/dfk-chain-testnet/rpc	",
     },
     mainnet: {
       url: process.env.ALCHEMY_API || "https://main-light.eth.linkpool.io/",
     },
     fuji: {
-      url: "https://api.avax-test.network/ext/bc/C/rpc"
+      url: "https://api.avax-test.network/ext/bc/C/rpc",
     },
     goerli: {
-      url: "https://rpc.goerli.mudit.blog/"
+      url: "https://rpc.goerli.mudit.blog/",
     },
     optimism: {
       url: "https://mainnet.optimism.io",
@@ -107,8 +107,8 @@ let config: HardhatUserConfig = {
     },
     cronos: {
       url: "https://evm-cronos.crypto.org",
-      gasPrice: 5000 * 1000000000
-    }
+      gasPrice: 5000 * 1000000000,
+    },
   },
   paths: {
     artifacts: "./build/artifacts",
@@ -123,7 +123,7 @@ let config: HardhatUserConfig = {
     runOnCompile: process.env.CI == "",
     debugMode: false,
     // pre solidity 5 breaks docgen
-    exclude: ["MultisigWallet", "WETH9"]
+    exclude: ["MultisigWallet", "WETH9"],
     // More options...
   },
   solidity: {
@@ -147,7 +147,7 @@ let config: HardhatUserConfig = {
         version: "0.8.3",
       },
       {
-        version: "0.4.24"
+        version: "0.4.24",
       },
       {
         version: "0.8.13",
@@ -166,7 +166,7 @@ let config: HardhatUserConfig = {
       1: 0, // similarly on mainnet it will take the first account as deployer. Note though that depending on how hardhat network are configured, the account 0 on one network can be different than on another
       42161: 0,
       53935: 3,
-      335: 3
+      335: 3,
     },
     libraryDeployer: {
       default: 0, // use a different account for deploying libraries on the hardhat network
@@ -180,16 +180,16 @@ let config: HardhatUserConfig = {
   },
   mocha: {
     timeout: 200000,
-    require: ['dd-trace/ci/init'],
+    require: ["dd-trace/ci/init"],
   },
   spdxLicenseIdentifier: {
     overwrite: false,
     runOnCompile: true,
-  }
-}
+  },
+};
 
 if (process.env.ETHERSCAN_API) {
-  config = { ...config, etherscan: { apiKey: process.env.ETHERSCAN_API } }
+  config = { ...config, etherscan: { apiKey: process.env.ETHERSCAN_API } };
 }
 
 if (process.env.PRIVATE_KEYS) {
@@ -212,8 +212,8 @@ if (process.env.PRIVATE_KEYS) {
     "dfk_testnet",
     "harmony_testnet",
     "fuji",
-    "goerli"
-  ]
+    "goerli",
+  ];
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
       config.networks = {
@@ -222,9 +222,9 @@ if (process.env.PRIVATE_KEYS) {
           ...config.networks?.[network],
           accounts: JSON.parse(process.env.PRIVATE_KEYS),
         },
-      }
+      };
     }
-  })
+  });
 }
 
-module.exports = config
+module.exports = config;

@@ -3,7 +3,6 @@
 pragma solidity ^0.4.15;
 
 contract Factory {
-
     /*
      *  Events
      */
@@ -21,11 +20,7 @@ contract Factory {
     /// @dev Returns number of instantiations by creator.
     /// @param creator Contract creator.
     /// @return Returns number of instantiations by creator.
-    function getInstantiationCount(address creator)
-        public
-        constant
-        returns (uint)
-    {
+    function getInstantiationCount(address creator) public constant returns (uint256) {
         return instantiations[creator].length;
     }
 
@@ -34,9 +29,7 @@ contract Factory {
      */
     /// @dev Registers contract in factory registry.
     /// @param instantiation Address of contract instantiation.
-    function register(address instantiation)
-        internal
-    {
+    function register(address instantiation) internal {
         isInstantiation[instantiation] = true;
         instantiations[msg.sender].push(instantiation);
         ContractInstantiation(msg.sender, instantiation);

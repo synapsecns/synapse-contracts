@@ -18,15 +18,11 @@ contract Multicall2 {
         bytes returnData;
     }
 
-    function aggregate(Call[] memory calls)
-        public
-        returns (uint256 blockNumber, bytes[] memory returnData)
-    {
+    function aggregate(Call[] memory calls) public returns (uint256 blockNumber, bytes[] memory returnData) {
         blockNumber = block.number;
         returnData = new bytes[](calls.length);
         for (uint256 i = 0; i < calls.length; i++) {
-            (bool success, bytes memory ret) =
-                calls[i].target.call(calls[i].callData);
+            (bool success, bytes memory ret) = calls[i].target.call(calls[i].callData);
             require(success, "Multicall aggregate: call failed");
             returnData[i] = ret;
         }
@@ -40,17 +36,10 @@ contract Multicall2 {
             Result[] memory returnData
         )
     {
-        (blockNumber, blockHash, returnData) = tryBlockAndAggregate(
-            true,
-            calls
-        );
+        (blockNumber, blockHash, returnData) = tryBlockAndAggregate(true, calls);
     }
 
-    function getBlockHash(uint256 blockNumber)
-        public
-        view
-        returns (bytes32 blockHash)
-    {
+    function getBlockHash(uint256 blockNumber) public view returns (bytes32 blockHash) {
         blockHash = blockhash(blockNumber);
     }
 
@@ -62,11 +51,7 @@ contract Multicall2 {
         coinbase = block.coinbase;
     }
 
-    function getCurrentBlockDifficulty()
-        public
-        view
-        returns (uint256 difficulty)
-    {
+    function getCurrentBlockDifficulty() public view returns (uint256 difficulty) {
         difficulty = block.difficulty;
     }
 
@@ -74,11 +59,7 @@ contract Multicall2 {
         gaslimit = block.gaslimit;
     }
 
-    function getCurrentBlockTimestamp()
-        public
-        view
-        returns (uint256 timestamp)
-    {
+    function getCurrentBlockTimestamp() public view returns (uint256 timestamp) {
         timestamp = block.timestamp;
     }
 
@@ -90,14 +71,10 @@ contract Multicall2 {
         blockHash = blockhash(block.number - 1);
     }
 
-    function tryAggregate(bool requireSuccess, Call[] memory calls)
-        public
-        returns (Result[] memory returnData)
-    {
+    function tryAggregate(bool requireSuccess, Call[] memory calls) public returns (Result[] memory returnData) {
         returnData = new Result[](calls.length);
         for (uint256 i = 0; i < calls.length; i++) {
-            (bool success, bytes memory ret) =
-                calls[i].target.call(calls[i].callData);
+            (bool success, bytes memory ret) = calls[i].target.call(calls[i].callData);
 
             if (requireSuccess) {
                 require(success, "Multicall2 aggregate: call failed");

@@ -57,17 +57,11 @@ library AddressUpgradeable {
      * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(
-            address(this).balance >= amount,
-            "Address: insufficient balance"
-        );
+        require(address(this).balance >= amount, "Address: insufficient balance");
 
         // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
         (bool success, ) = recipient.call{value: amount}("");
-        require(
-            success,
-            "Address: unable to send value, recipient may have reverted"
-        );
+        require(success, "Address: unable to send value, recipient may have reverted");
     }
 
     /**
@@ -88,10 +82,7 @@ library AddressUpgradeable {
      *
      * _Available since v3.1._
      */
-    function functionCall(address target, bytes memory data)
-        internal
-        returns (bytes memory)
-    {
+    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
         return functionCall(target, data, "Address: low-level call failed");
     }
 
@@ -125,13 +116,7 @@ library AddressUpgradeable {
         bytes memory data,
         uint256 value
     ) internal returns (bytes memory) {
-        return
-            functionCallWithValue(
-                target,
-                data,
-                value,
-                "Address: low-level call with value failed"
-            );
+        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
     }
 
     /**
@@ -146,16 +131,11 @@ library AddressUpgradeable {
         uint256 value,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(
-            address(this).balance >= value,
-            "Address: insufficient balance for call"
-        );
+        require(address(this).balance >= value, "Address: insufficient balance for call");
         require(isContract(target), "Address: call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.call{value: value}(
-            data
-        );
+        (bool success, bytes memory returndata) = target.call{value: value}(data);
         return _verifyCallResult(success, returndata, errorMessage);
     }
 
@@ -165,17 +145,8 @@ library AddressUpgradeable {
      *
      * _Available since v3.3._
      */
-    function functionStaticCall(address target, bytes memory data)
-        internal
-        view
-        returns (bytes memory)
-    {
-        return
-            functionStaticCall(
-                target,
-                data,
-                "Address: low-level static call failed"
-            );
+    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {
+        return functionStaticCall(target, data, "Address: low-level static call failed");
     }
 
     /**
@@ -254,10 +225,7 @@ abstract contract Initializable {
      * @dev Modifier to protect an initializer function from being invoked twice.
      */
     modifier initializer() {
-        require(
-            _initializing || _isConstructor() || !_initialized,
-            "Initializable: contract is already initialized"
-        );
+        require(_initializing || _isConstructor() || !_initialized, "Initializable: contract is already initialized");
 
         bool isTopLevelCall = !_initializing;
         if (isTopLevelCall) {
@@ -388,11 +356,7 @@ library EnumerableSetUpgradeable {
     /**
      * @dev Returns true if the value is in the set. O(1).
      */
-    function _contains(Set storage set, bytes32 value)
-        private
-        view
-        returns (bool)
-    {
+    function _contains(Set storage set, bytes32 value) private view returns (bool) {
         return set._indexes[value] != 0;
     }
 
@@ -413,15 +377,8 @@ library EnumerableSetUpgradeable {
      *
      * - `index` must be strictly less than {length}.
      */
-    function _at(Set storage set, uint256 index)
-        private
-        view
-        returns (bytes32)
-    {
-        require(
-            set._values.length > index,
-            "EnumerableSet: index out of bounds"
-        );
+    function _at(Set storage set, uint256 index) private view returns (bytes32) {
+        require(set._values.length > index, "EnumerableSet: index out of bounds");
         return set._values[index];
     }
 
@@ -437,10 +394,7 @@ library EnumerableSetUpgradeable {
      * Returns true if the value was added to the set, that is if it was not
      * already present.
      */
-    function add(Bytes32Set storage set, bytes32 value)
-        internal
-        returns (bool)
-    {
+    function add(Bytes32Set storage set, bytes32 value) internal returns (bool) {
         return _add(set._inner, value);
     }
 
@@ -450,21 +404,14 @@ library EnumerableSetUpgradeable {
      * Returns true if the value was removed from the set, that is if it was
      * present.
      */
-    function remove(Bytes32Set storage set, bytes32 value)
-        internal
-        returns (bool)
-    {
+    function remove(Bytes32Set storage set, bytes32 value) internal returns (bool) {
         return _remove(set._inner, value);
     }
 
     /**
      * @dev Returns true if the value is in the set. O(1).
      */
-    function contains(Bytes32Set storage set, bytes32 value)
-        internal
-        view
-        returns (bool)
-    {
+    function contains(Bytes32Set storage set, bytes32 value) internal view returns (bool) {
         return _contains(set._inner, value);
     }
 
@@ -485,11 +432,7 @@ library EnumerableSetUpgradeable {
      *
      * - `index` must be strictly less than {length}.
      */
-    function at(Bytes32Set storage set, uint256 index)
-        internal
-        view
-        returns (bytes32)
-    {
+    function at(Bytes32Set storage set, uint256 index) internal view returns (bytes32) {
         return _at(set._inner, index);
     }
 
@@ -505,10 +448,7 @@ library EnumerableSetUpgradeable {
      * Returns true if the value was added to the set, that is if it was not
      * already present.
      */
-    function add(AddressSet storage set, address value)
-        internal
-        returns (bool)
-    {
+    function add(AddressSet storage set, address value) internal returns (bool) {
         return _add(set._inner, bytes32(uint256(uint160(value))));
     }
 
@@ -518,21 +458,14 @@ library EnumerableSetUpgradeable {
      * Returns true if the value was removed from the set, that is if it was
      * present.
      */
-    function remove(AddressSet storage set, address value)
-        internal
-        returns (bool)
-    {
+    function remove(AddressSet storage set, address value) internal returns (bool) {
         return _remove(set._inner, bytes32(uint256(uint160(value))));
     }
 
     /**
      * @dev Returns true if the value is in the set. O(1).
      */
-    function contains(AddressSet storage set, address value)
-        internal
-        view
-        returns (bool)
-    {
+    function contains(AddressSet storage set, address value) internal view returns (bool) {
         return _contains(set._inner, bytes32(uint256(uint160(value))));
     }
 
@@ -553,11 +486,7 @@ library EnumerableSetUpgradeable {
      *
      * - `index` must be strictly less than {length}.
      */
-    function at(AddressSet storage set, uint256 index)
-        internal
-        view
-        returns (address)
-    {
+    function at(AddressSet storage set, uint256 index) internal view returns (address) {
         return address(uint160(uint256(_at(set._inner, index))));
     }
 
@@ -583,21 +512,14 @@ library EnumerableSetUpgradeable {
      * Returns true if the value was removed from the set, that is if it was
      * present.
      */
-    function remove(UintSet storage set, uint256 value)
-        internal
-        returns (bool)
-    {
+    function remove(UintSet storage set, uint256 value) internal returns (bool) {
         return _remove(set._inner, bytes32(value));
     }
 
     /**
      * @dev Returns true if the value is in the set. O(1).
      */
-    function contains(UintSet storage set, uint256 value)
-        internal
-        view
-        returns (bool)
-    {
+    function contains(UintSet storage set, uint256 value) internal view returns (bool) {
         return _contains(set._inner, bytes32(value));
     }
 
@@ -618,11 +540,7 @@ library EnumerableSetUpgradeable {
      *
      * - `index` must be strictly less than {length}.
      */
-    function at(UintSet storage set, uint256 index)
-        internal
-        view
-        returns (uint256)
-    {
+    function at(UintSet storage set, uint256 index) internal view returns (uint256) {
         return uint256(_at(set._inner, index));
     }
 }
@@ -703,10 +621,7 @@ pragma solidity >=0.6.0 <0.8.0;
  * grant and revoke this role. Extra precautions should be taken to secure
  * accounts that have been granted it.
  */
-abstract contract AccessControlUpgradeable is
-    Initializable,
-    ContextUpgradeable
-{
+abstract contract AccessControlUpgradeable is Initializable, ContextUpgradeable {
     function __AccessControl_init() internal initializer {
         __Context_init_unchained();
         __AccessControl_init_unchained();
@@ -734,11 +649,7 @@ abstract contract AccessControlUpgradeable is
      *
      * _Available since v3.1._
      */
-    event RoleAdminChanged(
-        bytes32 indexed role,
-        bytes32 indexed previousAdminRole,
-        bytes32 indexed newAdminRole
-    );
+    event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole);
 
     /**
      * @dev Emitted when `account` is granted `role`.
@@ -746,11 +657,7 @@ abstract contract AccessControlUpgradeable is
      * `sender` is the account that originated the contract call, an admin role
      * bearer except when using {_setupRole}.
      */
-    event RoleGranted(
-        bytes32 indexed role,
-        address indexed account,
-        address indexed sender
-    );
+    event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender);
 
     /**
      * @dev Emitted when `account` is revoked `role`.
@@ -759,11 +666,7 @@ abstract contract AccessControlUpgradeable is
      *   - if using `revokeRole`, it is the admin role bearer
      *   - if using `renounceRole`, it is the role bearer (i.e. `account`)
      */
-    event RoleRevoked(
-        bytes32 indexed role,
-        address indexed account,
-        address indexed sender
-    );
+    event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender);
 
     /**
      * @dev Returns `true` if `account` has been granted `role`.
@@ -792,11 +695,7 @@ abstract contract AccessControlUpgradeable is
      * https://forum.openzeppelin.com/t/iterating-over-elements-on-enumerableset-in-openzeppelin-contracts/2296[forum post]
      * for more information.
      */
-    function getRoleMember(bytes32 role, uint256 index)
-        public
-        view
-        returns (address)
-    {
+    function getRoleMember(bytes32 role, uint256 index) public view returns (address) {
         return _roles[role].members.at(index);
     }
 
@@ -821,10 +720,7 @@ abstract contract AccessControlUpgradeable is
      * - the caller must have ``role``'s admin role.
      */
     function grantRole(bytes32 role, address account) public virtual {
-        require(
-            hasRole(_roles[role].adminRole, _msgSender()),
-            "AccessControl: sender must be an admin to grant"
-        );
+        require(hasRole(_roles[role].adminRole, _msgSender()), "AccessControl: sender must be an admin to grant");
 
         _grantRole(role, account);
     }
@@ -839,10 +735,7 @@ abstract contract AccessControlUpgradeable is
      * - the caller must have ``role``'s admin role.
      */
     function revokeRole(bytes32 role, address account) public virtual {
-        require(
-            hasRole(_roles[role].adminRole, _msgSender()),
-            "AccessControl: sender must be an admin to revoke"
-        );
+        require(hasRole(_roles[role].adminRole, _msgSender()), "AccessControl: sender must be an admin to revoke");
 
         _revokeRole(role, account);
     }
@@ -862,10 +755,7 @@ abstract contract AccessControlUpgradeable is
      * - the caller must be `account`.
      */
     function renounceRole(bytes32 role, address account) public virtual {
-        require(
-            account == _msgSender(),
-            "AccessControl: can only renounce roles for self"
-        );
+        require(account == _msgSender(), "AccessControl: can only renounce roles for self");
 
         _revokeRole(role, account);
     }
@@ -1110,9 +1000,7 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount)
-        external
-        returns (bool);
+    function transfer(address recipient, uint256 amount) external returns (bool);
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -1121,10 +1009,7 @@ interface IERC20 {
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function allowance(address owner, address spender)
-        external
-        view
-        returns (uint256);
+    function allowance(address owner, address spender) external view returns (uint256);
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
@@ -1169,11 +1054,7 @@ interface IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
-    );
+    event Approval(address indexed owner, address indexed spender, uint256 value);
 }
 
 // File @openzeppelin/contracts/math/SafeMath.sol@v3.4.1
@@ -1201,11 +1082,7 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryAdd(uint256 a, uint256 b)
-        internal
-        pure
-        returns (bool, uint256)
-    {
+    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
         uint256 c = a + b;
         if (c < a) return (false, 0);
         return (true, c);
@@ -1216,11 +1093,7 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function trySub(uint256 a, uint256 b)
-        internal
-        pure
-        returns (bool, uint256)
-    {
+    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
         if (b > a) return (false, 0);
         return (true, a - b);
     }
@@ -1230,11 +1103,7 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryMul(uint256 a, uint256 b)
-        internal
-        pure
-        returns (bool, uint256)
-    {
+    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
         // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
         // benefit is lost if 'b' is also tested.
         // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
@@ -1249,11 +1118,7 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryDiv(uint256 a, uint256 b)
-        internal
-        pure
-        returns (bool, uint256)
-    {
+    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
         if (b == 0) return (false, 0);
         return (true, a / b);
     }
@@ -1263,11 +1128,7 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryMod(uint256 a, uint256 b)
-        internal
-        pure
-        returns (bool, uint256)
-    {
+    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
         if (b == 0) return (false, 0);
         return (true, a % b);
     }
@@ -1482,17 +1343,11 @@ library Address {
      * https://solidity.readthedocs.io/en/v0.5.11/security-considerations.html#use-the-checks-effects-interactions-pattern[checks-effects-interactions pattern].
      */
     function sendValue(address payable recipient, uint256 amount) internal {
-        require(
-            address(this).balance >= amount,
-            "Address: insufficient balance"
-        );
+        require(address(this).balance >= amount, "Address: insufficient balance");
 
         // solhint-disable-next-line avoid-low-level-calls, avoid-call-value
         (bool success, ) = recipient.call{value: amount}("");
-        require(
-            success,
-            "Address: unable to send value, recipient may have reverted"
-        );
+        require(success, "Address: unable to send value, recipient may have reverted");
     }
 
     /**
@@ -1513,10 +1368,7 @@ library Address {
      *
      * _Available since v3.1._
      */
-    function functionCall(address target, bytes memory data)
-        internal
-        returns (bytes memory)
-    {
+    function functionCall(address target, bytes memory data) internal returns (bytes memory) {
         return functionCall(target, data, "Address: low-level call failed");
     }
 
@@ -1550,13 +1402,7 @@ library Address {
         bytes memory data,
         uint256 value
     ) internal returns (bytes memory) {
-        return
-            functionCallWithValue(
-                target,
-                data,
-                value,
-                "Address: low-level call with value failed"
-            );
+        return functionCallWithValue(target, data, value, "Address: low-level call with value failed");
     }
 
     /**
@@ -1571,16 +1417,11 @@ library Address {
         uint256 value,
         string memory errorMessage
     ) internal returns (bytes memory) {
-        require(
-            address(this).balance >= value,
-            "Address: insufficient balance for call"
-        );
+        require(address(this).balance >= value, "Address: insufficient balance for call");
         require(isContract(target), "Address: call to non-contract");
 
         // solhint-disable-next-line avoid-low-level-calls
-        (bool success, bytes memory returndata) = target.call{value: value}(
-            data
-        );
+        (bool success, bytes memory returndata) = target.call{value: value}(data);
         return _verifyCallResult(success, returndata, errorMessage);
     }
 
@@ -1590,17 +1431,8 @@ library Address {
      *
      * _Available since v3.3._
      */
-    function functionStaticCall(address target, bytes memory data)
-        internal
-        view
-        returns (bytes memory)
-    {
-        return
-            functionStaticCall(
-                target,
-                data,
-                "Address: low-level static call failed"
-            );
+    function functionStaticCall(address target, bytes memory data) internal view returns (bytes memory) {
+        return functionStaticCall(target, data, "Address: low-level static call failed");
     }
 
     /**
@@ -1627,16 +1459,8 @@ library Address {
      *
      * _Available since v3.4._
      */
-    function functionDelegateCall(address target, bytes memory data)
-        internal
-        returns (bytes memory)
-    {
-        return
-            functionDelegateCall(
-                target,
-                data,
-                "Address: low-level delegate call failed"
-            );
+    function functionDelegateCall(address target, bytes memory data) internal returns (bytes memory) {
+        return functionDelegateCall(target, data, "Address: low-level delegate call failed");
     }
 
     /**
@@ -1705,10 +1529,7 @@ library SafeERC20 {
         address to,
         uint256 value
     ) internal {
-        _callOptionalReturn(
-            token,
-            abi.encodeWithSelector(token.transfer.selector, to, value)
-        );
+        _callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
     }
 
     function safeTransferFrom(
@@ -1717,10 +1538,7 @@ library SafeERC20 {
         address to,
         uint256 value
     ) internal {
-        _callOptionalReturn(
-            token,
-            abi.encodeWithSelector(token.transferFrom.selector, from, to, value)
-        );
+        _callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
     }
 
     /**
@@ -1743,10 +1561,7 @@ library SafeERC20 {
             (value == 0) || (token.allowance(address(this), spender) == 0),
             "SafeERC20: approve from non-zero to non-zero allowance"
         );
-        _callOptionalReturn(
-            token,
-            abi.encodeWithSelector(token.approve.selector, spender, value)
-        );
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, value));
     }
 
     function safeIncreaseAllowance(
@@ -1754,17 +1569,8 @@ library SafeERC20 {
         address spender,
         uint256 value
     ) internal {
-        uint256 newAllowance = token.allowance(address(this), spender).add(
-            value
-        );
-        _callOptionalReturn(
-            token,
-            abi.encodeWithSelector(
-                token.approve.selector,
-                spender,
-                newAllowance
-            )
-        );
+        uint256 newAllowance = token.allowance(address(this), spender).add(value);
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
     }
 
     function safeDecreaseAllowance(
@@ -1776,14 +1582,7 @@ library SafeERC20 {
             value,
             "SafeERC20: decreased allowance below zero"
         );
-        _callOptionalReturn(
-            token,
-            abi.encodeWithSelector(
-                token.approve.selector,
-                spender,
-                newAllowance
-            )
-        );
+        _callOptionalReturn(token, abi.encodeWithSelector(token.approve.selector, spender, newAllowance));
     }
 
     /**
@@ -1797,17 +1596,11 @@ library SafeERC20 {
         // we're implementing it ourselves. We use {Address.functionCall} to perform this call, which verifies that
         // the target address contains contract code and also asserts for success in the low-level call.
 
-        bytes memory returndata = address(token).functionCall(
-            data,
-            "SafeERC20: low-level call failed"
-        );
+        bytes memory returndata = address(token).functionCall(data, "SafeERC20: low-level call failed");
         if (returndata.length > 0) {
             // Return data is optional
             // solhint-disable-next-line max-line-length
-            require(
-                abi.decode(returndata, (bool)),
-                "SafeERC20: ERC20 operation did not succeed"
-            );
+            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
         }
     }
 }
@@ -1939,13 +1732,7 @@ contract ERC20 is Context, IERC20 {
     /**
      * @dev See {IERC20-balanceOf}.
      */
-    function balanceOf(address account)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
+    function balanceOf(address account) public view virtual override returns (uint256) {
         return _balances[account];
     }
 
@@ -1957,12 +1744,7 @@ contract ERC20 is Context, IERC20 {
      * - `recipient` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
-    function transfer(address recipient, uint256 amount)
-        public
-        virtual
-        override
-        returns (bool)
-    {
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -1970,13 +1752,7 @@ contract ERC20 is Context, IERC20 {
     /**
      * @dev See {IERC20-allowance}.
      */
-    function allowance(address owner, address spender)
-        public
-        view
-        virtual
-        override
-        returns (uint256)
-    {
+    function allowance(address owner, address spender) public view virtual override returns (uint256) {
         return _allowances[owner][spender];
     }
 
@@ -1987,12 +1763,7 @@ contract ERC20 is Context, IERC20 {
      *
      * - `spender` cannot be the zero address.
      */
-    function approve(address spender, uint256 amount)
-        public
-        virtual
-        override
-        returns (bool)
-    {
+    function approve(address spender, uint256 amount) public virtual override returns (bool) {
         _approve(_msgSender(), spender, amount);
         return true;
     }
@@ -2019,10 +1790,7 @@ contract ERC20 is Context, IERC20 {
         _approve(
             sender,
             _msgSender(),
-            _allowances[sender][_msgSender()].sub(
-                amount,
-                "ERC20: transfer amount exceeds allowance"
-            )
+            _allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance")
         );
         return true;
     }
@@ -2039,16 +1807,8 @@ contract ERC20 is Context, IERC20 {
      *
      * - `spender` cannot be the zero address.
      */
-    function increaseAllowance(address spender, uint256 addedValue)
-        public
-        virtual
-        returns (bool)
-    {
-        _approve(
-            _msgSender(),
-            spender,
-            _allowances[_msgSender()][spender].add(addedValue)
-        );
+    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
+        _approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
         return true;
     }
 
@@ -2066,18 +1826,11 @@ contract ERC20 is Context, IERC20 {
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
      */
-    function decreaseAllowance(address spender, uint256 subtractedValue)
-        public
-        virtual
-        returns (bool)
-    {
+    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
         _approve(
             _msgSender(),
             spender,
-            _allowances[_msgSender()][spender].sub(
-                subtractedValue,
-                "ERC20: decreased allowance below zero"
-            )
+            _allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero")
         );
         return true;
     }
@@ -2106,10 +1859,7 @@ contract ERC20 is Context, IERC20 {
 
         _beforeTokenTransfer(sender, recipient, amount);
 
-        _balances[sender] = _balances[sender].sub(
-            amount,
-            "ERC20: transfer amount exceeds balance"
-        );
+        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
         _balances[recipient] = _balances[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
     }
@@ -2149,10 +1899,7 @@ contract ERC20 is Context, IERC20 {
 
         _beforeTokenTransfer(account, address(0), amount);
 
-        _balances[account] = _balances[account].sub(
-            amount,
-            "ERC20: burn amount exceeds balance"
-        );
+        _balances[account] = _balances[account].sub(amount, "ERC20: burn amount exceeds balance");
         _totalSupply = _totalSupply.sub(amount);
         emit Transfer(account, address(0), amount);
     }
@@ -2284,20 +2031,14 @@ interface ISwap {
         uint256 dx
     ) external view returns (uint256);
 
-    function calculateTokenAmount(uint256[] calldata amounts, bool deposit)
+    function calculateTokenAmount(uint256[] calldata amounts, bool deposit) external view returns (uint256);
+
+    function calculateRemoveLiquidity(uint256 amount) external view returns (uint256[] memory);
+
+    function calculateRemoveLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex)
         external
         view
-        returns (uint256);
-
-    function calculateRemoveLiquidity(uint256 amount)
-        external
-        view
-        returns (uint256[] memory);
-
-    function calculateRemoveLiquidityOneToken(
-        uint256 tokenAmount,
-        uint8 tokenIndex
-    ) external view returns (uint256 availableTokenAmount);
+        returns (uint256 availableTokenAmount);
 
     // state modifying functions
     function initialize(
@@ -2391,12 +2132,7 @@ interface IERC20Mintable is IERC20 {
     function mint(address to, uint256 amount) external;
 }
 
-contract SynapseBridge is
-    Initializable,
-    AccessControlUpgradeable,
-    ReentrancyGuardUpgradeable,
-    PausableUpgradeable
-{
+contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Mintable;
     using SafeMath for uint256;
@@ -2438,32 +2174,10 @@ contract SynapseBridge is
         }
     }
 
-    event TokenDeposit(
-        address indexed to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    );
-    event TokenRedeem(
-        address indexed to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    );
-    event TokenWithdraw(
-        address indexed to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 indexed kappa
-    );
-    event TokenMint(
-        address indexed to,
-        IERC20Mintable token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 indexed kappa
-    );
+    event TokenDeposit(address indexed to, uint256 chainId, IERC20 token, uint256 amount);
+    event TokenRedeem(address indexed to, uint256 chainId, IERC20 token, uint256 amount);
+    event TokenWithdraw(address indexed to, IERC20 token, uint256 amount, uint256 fee, bytes32 indexed kappa);
+    event TokenMint(address indexed to, IERC20Mintable token, uint256 amount, uint256 fee, bytes32 indexed kappa);
     event TokenDepositAndSwap(
         address indexed to,
         uint256 chainId,
@@ -2518,19 +2232,10 @@ contract SynapseBridge is
     );
 
     // v2 events
-    event TokenRedeemV2(
-        bytes32 indexed to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    );
+    event TokenRedeemV2(bytes32 indexed to, uint256 chainId, IERC20 token, uint256 amount);
 
     // VIEW FUNCTIONS ***/
-    function getFeeBalance(address tokenAddress)
-        external
-        view
-        returns (uint256)
-    {
+    function getFeeBalance(address tokenAddress) external view returns (uint256) {
         return fees[tokenAddress];
     }
 
@@ -2613,10 +2318,7 @@ contract SynapseBridge is
         uint256 fee,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(
-            hasRole(NODEGROUP_ROLE, msg.sender),
-            "Caller is not a node group"
-        );
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
@@ -2648,10 +2350,7 @@ contract SynapseBridge is
         uint256 fee,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(
-            hasRole(NODEGROUP_ROLE, msg.sender),
-            "Caller is not a node group"
-        );
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
@@ -2685,16 +2384,7 @@ contract SynapseBridge is
         uint256 minDy,
         uint256 deadline
     ) external nonReentrant whenNotPaused {
-        emit TokenDepositAndSwap(
-            to,
-            chainId,
-            token,
-            amount,
-            tokenIndexFrom,
-            tokenIndexTo,
-            minDy,
-            deadline
-        );
+        emit TokenDepositAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
         token.safeTransferFrom(msg.sender, address(this), amount);
     }
 
@@ -2719,16 +2409,7 @@ contract SynapseBridge is
         uint256 minDy,
         uint256 deadline
     ) external nonReentrant whenNotPaused {
-        emit TokenRedeemAndSwap(
-            to,
-            chainId,
-            token,
-            amount,
-            tokenIndexFrom,
-            tokenIndexTo,
-            minDy,
-            deadline
-        );
+        emit TokenRedeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
         token.burnFrom(msg.sender, amount);
     }
 
@@ -2751,15 +2432,7 @@ contract SynapseBridge is
         uint256 swapMinAmount,
         uint256 swapDeadline
     ) external nonReentrant whenNotPaused {
-        emit TokenRedeemAndRemove(
-            to,
-            chainId,
-            token,
-            amount,
-            swapTokenIndex,
-            swapMinAmount,
-            swapDeadline
-        );
+        emit TokenRedeemAndRemove(to, chainId, token, amount, swapTokenIndex, swapMinAmount, swapDeadline);
         token.burnFrom(msg.sender, amount);
     }
 
@@ -2789,10 +2462,7 @@ contract SynapseBridge is
         uint256 deadline,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(
-            hasRole(NODEGROUP_ROLE, msg.sender),
-            "Caller is not a node group"
-        );
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
@@ -2802,31 +2472,18 @@ contract SynapseBridge is
             to.call.value(chainGasAmount)("");
         }
         // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = ISwap(pool).calculateSwap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            amount.sub(fee)
-        );
+        uint256 expectedOutput = ISwap(pool).calculateSwap(tokenIndexFrom, tokenIndexTo, amount.sub(fee));
 
         if (expectedOutput >= minDy) {
             // proceed with swap
             token.mint(address(this), amount);
             token.safeIncreaseAllowance(address(pool), amount);
-            try
-                ISwap(pool).swap(
-                    tokenIndexFrom,
-                    tokenIndexTo,
-                    amount.sub(fee),
-                    minDy,
-                    deadline
-                )
-            returns (uint256 finalSwappedAmount) {
+            try ISwap(pool).swap(tokenIndexFrom, tokenIndexTo, amount.sub(fee), minDy, deadline) returns (
+                uint256 finalSwappedAmount
+            ) {
                 // Swap succeeded, transfer swapped asset
                 IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
-                if (
-                    address(swappedTokenTo) == WETH_ADDRESS &&
-                    WETH_ADDRESS != address(0)
-                ) {
+                if (address(swappedTokenTo) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
                     IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
                     (bool success, ) = to.call{value: finalSwappedAmount}("");
                     require(success, "ETH_TRANSFER_FAILED");
@@ -2913,29 +2570,18 @@ contract SynapseBridge is
         uint256 swapDeadline,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(
-            hasRole(NODEGROUP_ROLE, msg.sender),
-            "Caller is not a node group"
-        );
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
         // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
-            amount.sub(fee),
-            swapTokenIndex
-        );
+        uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(amount.sub(fee), swapTokenIndex);
 
         if (expectedOutput >= swapMinAmount) {
             token.safeIncreaseAllowance(address(pool), amount.sub(fee));
             try
-                ISwap(pool).removeLiquidityOneToken(
-                    amount.sub(fee),
-                    swapTokenIndex,
-                    swapMinAmount,
-                    swapDeadline
-                )
+                ISwap(pool).removeLiquidityOneToken(amount.sub(fee), swapTokenIndex, swapMinAmount, swapDeadline)
             returns (uint256 finalSwappedAmount) {
                 // Swap succeeded, transfer swapped asset
                 IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);

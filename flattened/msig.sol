@@ -24,11 +24,7 @@ contract Factory {
     /// @dev Returns number of instantiations by creator.
     /// @param creator Contract creator.
     /// @return Returns number of instantiations by creator.
-    function getInstantiationCount(address creator)
-        public
-        constant
-        returns (uint256)
-    {
+    function getInstantiationCount(address creator) public constant returns (uint256) {
         return instantiations[creator].length;
     }
 
@@ -132,12 +128,7 @@ contract MultiSigWallet {
     }
 
     modifier validRequirement(uint256 ownerCount, uint256 _required) {
-        require(
-            ownerCount <= MAX_OWNER_COUNT &&
-                _required <= ownerCount &&
-                _required != 0 &&
-                ownerCount != 0
-        );
+        require(ownerCount <= MAX_OWNER_COUNT && _required <= ownerCount && _required != 0 && ownerCount != 0);
         _;
     }
 
@@ -152,10 +143,7 @@ contract MultiSigWallet {
     /// @dev Contract constructor sets initial owners and required number of confirmations.
     /// @param _owners List of initial owners.
     /// @param _required Number of required confirmations.
-    function MultiSigWallet(address[] _owners, uint256 _required)
-        public
-        validRequirement(_owners.length, _required)
-    {
+    function MultiSigWallet(address[] _owners, uint256 _required) public validRequirement(_owners.length, _required) {
         for (uint256 i = 0; i < _owners.length; i++) {
             require(!isOwner[_owners[i]] && _owners[i] != 0);
             isOwner[_owners[i]] = true;
@@ -214,11 +202,7 @@ contract MultiSigWallet {
 
     /// @dev Allows to change the number of required confirmations. Transaction has to be sent by wallet.
     /// @param _required Number of required confirmations.
-    function changeRequirement(uint256 _required)
-        public
-        onlyWallet
-        validRequirement(owners.length, _required)
-    {
+    function changeRequirement(uint256 _required) public onlyWallet validRequirement(owners.length, _required) {
         required = _required;
         RequirementChange(_required);
     }
@@ -273,14 +257,7 @@ contract MultiSigWallet {
         if (isConfirmed(transactionId)) {
             Transaction storage txn = transactions[transactionId];
             txn.executed = true;
-            if (
-                external_call(
-                    txn.destination,
-                    txn.value,
-                    txn.data.length,
-                    txn.data
-                )
-            ) Execution(transactionId);
+            if (external_call(txn.destination, txn.value, txn.data.length, txn.data)) Execution(transactionId);
             else {
                 ExecutionFailure(transactionId);
                 txn.executed = false;
@@ -356,29 +333,17 @@ contract MultiSigWallet {
     /// @dev Returns number of confirmations of a transaction.
     /// @param transactionId Transaction ID.
     /// @return Number of confirmations.
-    function getConfirmationCount(uint256 transactionId)
-        public
-        constant
-        returns (uint256 count)
-    {
-        for (uint256 i = 0; i < owners.length; i++)
-            if (confirmations[transactionId][owners[i]]) count += 1;
+    function getConfirmationCount(uint256 transactionId) public constant returns (uint256 count) {
+        for (uint256 i = 0; i < owners.length; i++) if (confirmations[transactionId][owners[i]]) count += 1;
     }
 
     /// @dev Returns total number of transactions after filers are applied.
     /// @param pending Include pending transactions.
     /// @param executed Include executed transactions.
     /// @return Total number of transactions after filters are applied.
-    function getTransactionCount(bool pending, bool executed)
-        public
-        constant
-        returns (uint256 count)
-    {
+    function getTransactionCount(bool pending, bool executed) public constant returns (uint256 count) {
         for (uint256 i = 0; i < transactionCount; i++)
-            if (
-                (pending && !transactions[i].executed) ||
-                (executed && transactions[i].executed)
-            ) count += 1;
+            if ((pending && !transactions[i].executed) || (executed && transactions[i].executed)) count += 1;
     }
 
     /// @dev Returns list of owners.
@@ -390,11 +355,7 @@ contract MultiSigWallet {
     /// @dev Returns array with owner addresses, which confirmed transaction.
     /// @param transactionId Transaction ID.
     /// @return Returns array of owner addresses.
-    function getConfirmations(uint256 transactionId)
-        public
-        constant
-        returns (address[] _confirmations)
-    {
+    function getConfirmations(uint256 transactionId) public constant returns (address[] _confirmations) {
         address[] memory confirmationsTemp = new address[](owners.length);
         uint256 count = 0;
         uint256 i;
@@ -423,16 +384,12 @@ contract MultiSigWallet {
         uint256 count = 0;
         uint256 i;
         for (i = 0; i < transactionCount; i++)
-            if (
-                (pending && !transactions[i].executed) ||
-                (executed && transactions[i].executed)
-            ) {
+            if ((pending && !transactions[i].executed) || (executed && transactions[i].executed)) {
                 transactionIdsTemp[count] = i;
                 count += 1;
             }
         _transactionIds = new uint256[](to - from);
-        for (i = from; i < to; i++)
-            _transactionIds[i - from] = transactionIdsTemp[i];
+        for (i = from; i < to; i++) _transactionIds[i - from] = transactionIdsTemp[i];
     }
 }
 
@@ -452,10 +409,7 @@ contract MultiSigWalletFactory is Factory {
     /// @param _owners List of initial owners.
     /// @param _required Number of required confirmations.
     /// @return Returns wallet address.
-    function create(address[] _owners, uint256 _required)
-        public
-        returns (address wallet)
-    {
+    function create(address[] _owners, uint256 _required) public returns (address wallet) {
         wallet = new MultiSigWallet(_owners, _required);
         register(wallet);
     }

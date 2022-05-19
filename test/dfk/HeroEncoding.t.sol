@@ -82,12 +82,7 @@ contract HeroEncodingTest is Test {
                 mpRg: 1058,
                 mpLg: 1059
             }),
-            professions: HeroProfessions({
-                mining: 1060,
-                gardening: 1061,
-                foraging: 1062,
-                fishing: 1063
-            })
+            professions: HeroProfessions({mining: 1060, gardening: 1061, foraging: 1062, fishing: 1063})
         });
         bytes memory heroBytes = abi.encode(heroStruct);
         console.logBytes(heroBytes);

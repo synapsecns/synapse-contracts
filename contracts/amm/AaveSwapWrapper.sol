@@ -118,18 +118,9 @@ contract AaveSwapWrapper {
         for (uint8 i = 0; i < amounts.length; i++) {
             uint256 amount = amounts[i];
             if (amount > 0) {
-                UNDERLYING_TOKENS[i].safeTransferFrom(
-                    msg.sender,
-                    address(this),
-                    amount
-                );
+                UNDERLYING_TOKENS[i].safeTransferFrom(msg.sender, address(this), amount);
                 if (isUnderlyingIndex[i] == false) {
-                    LENDING_POOL.deposit(
-                        address(UNDERLYING_TOKENS[i]),
-                        amount,
-                        address(this),
-                        0
-                    );
+                    LENDING_POOL.deposit(address(UNDERLYING_TOKENS[i]), amount, address(this), 0);
                 }
             }
         }
@@ -157,27 +148,15 @@ contract AaveSwapWrapper {
         uint256 deadline
     ) external returns (uint256[] memory) {
         // Transfer LPToken from msg.sender to this contract.
-        IERC20(address(LP_TOKEN)).safeTransferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
+        IERC20(address(LP_TOKEN)).safeTransferFrom(msg.sender, address(this), amount);
         // Remove liquidity
-        uint256[] memory amounts = SWAP.removeLiquidity(
-            amount,
-            minAmounts,
-            deadline
-        );
+        uint256[] memory amounts = SWAP.removeLiquidity(amount, minAmounts, deadline);
         // Send the tokens back to the user
         for (uint8 i = 0; i < amounts.length; i++) {
             if (isUnderlyingIndex[i] == true) {
                 UNDERLYING_TOKENS[i].safeTransfer(msg.sender, amounts[i]);
             } else {
-                LENDING_POOL.withdraw(
-                    address(UNDERLYING_TOKENS[i]),
-                    amounts[i],
-                    msg.sender
-                );
+                LENDING_POOL.withdraw(address(UNDERLYING_TOKENS[i]), amounts[i], msg.sender);
                 // underlyingTokens[i].safeTransfer(msg.sender, amounts[i]);
             }
         }
@@ -200,27 +179,14 @@ contract AaveSwapWrapper {
         uint256 deadline
     ) external returns (uint256) {
         // Transfer LPToken from msg.sender to this contract.
-        IERC20(address(LP_TOKEN)).safeTransferFrom(
-            msg.sender,
-            address(this),
-            tokenAmount
-        );
+        IERC20(address(LP_TOKEN)).safeTransferFrom(msg.sender, address(this), tokenAmount);
         // Withdraw via single token
-        uint256 amount = SWAP.removeLiquidityOneToken(
-            tokenAmount,
-            tokenIndex,
-            minAmount,
-            deadline
-        );
+        uint256 amount = SWAP.removeLiquidityOneToken(tokenAmount, tokenIndex, minAmount, deadline);
         // Transfer the token to msg.sender accordingly
         if (isUnderlyingIndex[tokenIndex] == true) {
             UNDERLYING_TOKENS[tokenIndex].safeTransfer(msg.sender, amount);
         } else {
-            LENDING_POOL.withdraw(
-                address(UNDERLYING_TOKENS[tokenIndex]),
-                amount,
-                msg.sender
-            );
+            LENDING_POOL.withdraw(address(UNDERLYING_TOKENS[tokenIndex]), amount, msg.sender);
         }
         return amount;
     }
@@ -243,34 +209,15 @@ contract AaveSwapWrapper {
         uint256 deadline
     ) external returns (uint256) {
         // Transfer tokens from msg.sender to this contract
-        UNDERLYING_TOKENS[tokenIndexFrom].safeTransferFrom(
-            msg.sender,
-            address(this),
-            dx
-        );
+        UNDERLYING_TOKENS[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
         if (isUnderlyingIndex[tokenIndexFrom] == false) {
-            LENDING_POOL.deposit(
-                address(UNDERLYING_TOKENS[tokenIndexFrom]),
-                dx,
-                address(this),
-                0
-            );
+            LENDING_POOL.deposit(address(UNDERLYING_TOKENS[tokenIndexFrom]), dx, address(this), 0);
         }
         // Execute swap
-        uint256 dy = SWAP.swap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
+        uint256 dy = SWAP.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // Transfer the swapped tokens to msg.sender
         if (isUnderlyingIndex[tokenIndexTo] == false) {
-            LENDING_POOL.withdraw(
-                address(UNDERLYING_TOKENS[tokenIndexTo]),
-                dy,
-                msg.sender
-            );
+            LENDING_POOL.withdraw(address(UNDERLYING_TOKENS[tokenIndexTo]), dy, msg.sender);
         } else {
             UNDERLYING_TOKENS[tokenIndexTo].safeTransfer(msg.sender, dy);
         }
@@ -285,17 +232,11 @@ contract AaveSwapWrapper {
         require(msg.sender == OWNER, "CALLED_BY_NON_OWNER");
         IERC20[] memory tokens = POOLED_TOKENS;
         for (uint256 i = 0; i < tokens.length; i++) {
-            tokens[i].safeTransfer(
-                msg.sender,
-                tokens[i].balanceOf(address(this))
-            );
+            tokens[i].safeTransfer(msg.sender, tokens[i].balanceOf(address(this)));
         }
 
         for (uint256 i = 0; i < UNDERLYING_TOKENS.length; i++) {
-            UNDERLYING_TOKENS[i].safeTransfer(
-                msg.sender,
-                UNDERLYING_TOKENS[i].balanceOf(address(this))
-            );
+            UNDERLYING_TOKENS[i].safeTransfer(msg.sender, UNDERLYING_TOKENS[i].balanceOf(address(this)));
         }
 
         IERC20 lpToken_ = IERC20(address(LP_TOKEN));
@@ -335,11 +276,7 @@ contract AaveSwapWrapper {
      * @param deposit whether this is a deposit or a withdrawal
      * @return token amount the user will receive
      */
-    function calculateTokenAmount(uint256[] calldata amounts, bool deposit)
-        external
-        view
-        returns (uint256)
-    {
+    function calculateTokenAmount(uint256[] calldata amounts, bool deposit) external view returns (uint256) {
         return SWAP.calculateTokenAmount(amounts, deposit);
     }
 
@@ -349,11 +286,7 @@ contract AaveSwapWrapper {
      * @param amount the amount of LP tokens that would be burned on withdrawal
      * @return array of token balances that the user will receive
      */
-    function calculateRemoveLiquidity(uint256 amount)
-        external
-        view
-        returns (uint256[] memory)
-    {
+    function calculateRemoveLiquidity(uint256 amount) external view returns (uint256[] memory) {
         return SWAP.calculateRemoveLiquidity(amount);
     }
 
@@ -365,10 +298,11 @@ contract AaveSwapWrapper {
      * @return availableTokenAmount calculated amount of underlying token
      * available to withdraw
      */
-    function calculateRemoveLiquidityOneToken(
-        uint256 tokenAmount,
-        uint8 tokenIndex
-    ) external view returns (uint256 availableTokenAmount) {
+    function calculateRemoveLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex)
+        external
+        view
+        returns (uint256 availableTokenAmount)
+    {
         return SWAP.calculateRemoveLiquidityOneToken(tokenAmount, tokenIndex);
     }
 
