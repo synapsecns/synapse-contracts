@@ -1,0 +1,4 @@
+# Exclude everything by default
+/**/*
+
+!/contracts/*/**/*.sol
