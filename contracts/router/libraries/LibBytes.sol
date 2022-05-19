@@ -37,6 +37,39 @@ library Bytes {
         }
     }
 
+    /**
+     * Converts byte-arrays to an array of integers
+     */
+    function toArrayUint256(bytes memory _amounts)
+        internal
+        pure
+        returns (uint256[] memory)
+    {
+        // Format amounts
+        uint256 chunks = _amounts.length / 32;
+        uint256[] memory amountsFormatted = new uint256[](chunks);
+        for (uint256 i = 0; i < chunks; i++) {
+            amountsFormatted[i] = toUint256(i * 32 + 32, _amounts);
+        }
+        return amountsFormatted;
+    }
+
+    /**
+     * Converts byte-array to an array of addresses
+     */
+    function toArrayAddress(bytes memory _addresses)
+        internal
+        pure
+        returns (address[] memory)
+    {
+        uint256 chunks = _addresses.length / 32;
+        address[] memory addressesFormatted = new address[](chunks);
+        for (uint256 i = 0; i < chunks; i++) {
+            addressesFormatted[i] = toAddress(i * 32 + 32, _addresses);
+        }
+        return addressesFormatted;
+    }
+
     function mergeBytes(bytes memory a, bytes memory b)
         internal
         pure

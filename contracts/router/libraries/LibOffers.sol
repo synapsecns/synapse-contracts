@@ -50,23 +50,6 @@ library Offers {
         return Offer(_queries.amounts, _queries.adapters, _queries.path);
     }
 
-    /**
-     * Converts byte-arrays to an array of integers
-     */
-    function formatAmounts(bytes memory _amounts)
-        internal
-        pure
-        returns (uint256[] memory)
-    {
-        // Format amounts
-        uint256 chunks = _amounts.length / 32;
-        uint256[] memory amountsFormatted = new uint256[](chunks);
-        for (uint256 i = 0; i < chunks; i++) {
-            amountsFormatted[i] = Bytes.toUint256(i * 32 + 32, _amounts);
-        }
-        return amountsFormatted;
-    }
-
     function containsToken(bytes memory addresses, address token)
         internal
         pure
@@ -82,22 +65,6 @@ library Offers {
     }
 
     /**
-     * Converts byte-array to an array of addresses
-     */
-    function formatAddresses(bytes memory _addresses)
-        internal
-        pure
-        returns (address[] memory)
-    {
-        uint256 chunks = _addresses.length / 32;
-        address[] memory addressesFormatted = new address[](chunks);
-        for (uint256 i = 0; i < chunks; i++) {
-            addressesFormatted[i] = Bytes.toAddress(i * 32 + 32, _addresses);
-        }
-        return addressesFormatted;
-    }
-
-    /**
      * Formats elements in the Offer object from byte-arrays to integers and addresses
      */
     function formatOfferWithGas(Offer memory _queries)
@@ -107,9 +74,9 @@ library Offers {
     {
         return
             FormattedOffer(
-                formatAmounts(_queries.amounts),
-                formatAddresses(_queries.adapters),
-                formatAddresses(_queries.path)
+                Bytes.toArrayUint256(_queries.amounts),
+                Bytes.toArrayAddress(_queries.adapters),
+                Bytes.toArrayAddress(_queries.path)
             );
     }
 }
