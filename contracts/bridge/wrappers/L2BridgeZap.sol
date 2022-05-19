@@ -29,18 +29,10 @@ contract L2BridgeZap {
         WETH_ADDRESS = _wethAddress;
         synapseBridge = _synapseBridge;
         if (_wethAddress != address(0)) {
-            IERC20(_wethAddress).safeApprove(
-                address(_synapseBridge),
-                MAX_UINT256
-            );
+            IERC20(_wethAddress).safeApprove(address(_synapseBridge), MAX_UINT256);
         }
         for (uint256 i = 0; i < _swaps.length; ++i) {
-            _saveSwap(
-                _swaps[i],
-                _tokens[i],
-                address(_synapseBridge),
-                _wethAddress
-            );
+            _saveSwap(_swaps[i], _tokens[i], address(_synapseBridge), _wethAddress);
         }
     }
 
@@ -102,13 +94,7 @@ contract L2BridgeZap {
         tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
         // swap
 
-        uint256 swappedAmount = swap.swap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
+        uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // token already approved for spending in _saveSwap()
         synapseBridge.redeem(to, chainId, token, swappedAmount);
     }
@@ -132,13 +118,7 @@ contract L2BridgeZap {
         tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
         // swap
 
-        uint256 swappedAmount = ISwap(swapMap[address(token)]).swap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
+        uint256 swappedAmount = ISwap(swapMap[address(token)]).swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // token already approved for spending in _saveSwap()
         synapseBridge.redeemAndSwap(
             to,
@@ -171,23 +151,9 @@ contract L2BridgeZap {
         tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
         // swap
 
-        uint256 swappedAmount = swap.swap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
+        uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // token already approved for spending in _saveSwap()
-        synapseBridge.redeemAndRemove(
-            to,
-            chainId,
-            token,
-            swappedAmount,
-            liqTokenIndex,
-            liqMinAmount,
-            liqDeadline
-        );
+        synapseBridge.redeemAndRemove(to, chainId, token, swappedAmount, liqTokenIndex, liqMinAmount, liqDeadline);
     }
 
     /**
@@ -296,13 +262,7 @@ contract L2BridgeZap {
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
 
         // swap
-        uint256 swappedAmount = swap.swap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
+        uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // token already approved for spending in _saveSwap()
         synapseBridge.redeem(to, chainId, token, swappedAmount);
     }
@@ -328,13 +288,7 @@ contract L2BridgeZap {
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
 
         // swap
-        uint256 swappedAmount = swap.swap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
+        uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // token already approved for spending in _saveSwap()
         synapseBridge.redeemAndSwap(
             to,
@@ -373,16 +327,7 @@ contract L2BridgeZap {
         token.safeTransferFrom(msg.sender, address(this), amount);
         // token might have not been approved in _saveSwap()
         _approveIfNeeded(token, amount);
-        synapseBridge.redeemAndSwap(
-            to,
-            chainId,
-            token,
-            amount,
-            tokenIndexFrom,
-            tokenIndexTo,
-            minDy,
-            deadline
-        );
+        synapseBridge.redeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
     }
 
     /**
@@ -408,15 +353,7 @@ contract L2BridgeZap {
         token.safeTransferFrom(msg.sender, address(this), amount);
         // token might have not been approved in _saveSwap()
         _approveIfNeeded(token, amount);
-        synapseBridge.redeemAndRemove(
-            to,
-            chainId,
-            token,
-            amount,
-            liqTokenIndex,
-            liqMinAmount,
-            liqDeadline
-        );
+        synapseBridge.redeemAndRemove(to, chainId, token, amount, liqTokenIndex, liqMinAmount, liqDeadline);
     }
 
     /**
@@ -439,7 +376,7 @@ contract L2BridgeZap {
     }
 
     /**
-     * @notice Allow Synapse:Bridge to spend token, 
+     * @notice Allow Synapse:Bridge to spend token,
      * if existing allowance is not big enough
      */
     function _approveIfNeeded(IERC20 token, uint256 amount) internal {

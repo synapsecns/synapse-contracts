@@ -13,10 +13,8 @@ contract L2ZapTestArb is L2BridgeZapTest {
     address public constant USDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
     address public constant SYN = 0x080F6AEd32Fc474DD5717105Dba5ea57268F46eb;
 
-    address public constant NUSD_POOL =
-        0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40;
-    address public constant NETH_POOL =
-        0xa067668661C84476aFcDc6fA5D758C4c01C34352;
+    address public constant NUSD_POOL = 0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40;
+    address public constant NETH_POOL = 0xa067668661C84476aFcDc6fA5D758C4c01C34352;
 
     constructor() L2BridgeZapTest() {
         IERC20(SYN).approve(address(zap), MAX_UINT256);
@@ -34,10 +32,7 @@ contract L2ZapTestArb is L2BridgeZapTest {
         swaps[1] = NETH_POOL;
         tokens[1] = NETH;
 
-        _zap = deployCode(
-            "L2BridgeZap.sol",
-            abi.encode(WETH, swaps, tokens, BRIDGE)
-        );
+        _zap = deployCode("L2BridgeZap.sol", abi.encode(WETH, swaps, tokens, BRIDGE));
     }
 
     function testDeposit() public {
@@ -64,7 +59,7 @@ contract L2ZapTestArb is L2BridgeZapTest {
 
     function testRedeemAndRemove() public {
         // This will not be completed on the destination chain!
-        // Still needs to be accepted on source chain 
+        // Still needs to be accepted on source chain
         // We're using token that 100% wasn't pre-approved in Zap,
         // as nUSD on some chains won't have a swap pool
         uint256 amount = 10**18;
@@ -76,7 +71,7 @@ contract L2ZapTestArb is L2BridgeZapTest {
 
     function testRedeemAndSwap() public {
         // This will not be completed on the destination chain!
-        // Still needs to be accepted on source chain 
+        // Still needs to be accepted on source chain
         // We're using token that 100% wasn't pre-approved in Zap,
         // as nUSD on some chains won't have a swap pool
         uint256 amount = 10**18;
@@ -121,19 +116,7 @@ contract L2ZapTestArb is L2BridgeZapTest {
         // Don't check data
         emit TokenRedeemAndRemove(user, 0, IERC20(address(0)), 0, 0, 0, 0);
         deal(USDC, user, amount);
-        zap.swapAndRedeemAndRemove(
-            user,
-            1,
-            IERC20(NUSD),
-            1,
-            0,
-            amount,
-            0,
-            MAX_UINT256,
-            2,
-            3,
-            4
-        );
+        zap.swapAndRedeemAndRemove(user, 1, IERC20(NUSD), 1, 0, amount, 0, MAX_UINT256, 2, 3, 4);
     }
 
     function testSwapAndRedeemAndSwap() public {
@@ -143,20 +126,7 @@ contract L2ZapTestArb is L2BridgeZapTest {
         vm.expectEmit(true, false, false, false);
         // Don't check data
         emit TokenRedeemAndSwap(user, 0, IERC20(address(0)), 0, 0, 0, 0, 0);
-        zap.swapAndRedeemAndSwap(
-            user,
-            1,
-            IERC20(NUSD),
-            1,
-            0,
-            amount,
-            0,
-            MAX_UINT256,
-            0,
-            0,
-            0,
-            0
-        );
+        zap.swapAndRedeemAndSwap(user, 1, IERC20(NUSD), 1, 0, amount, 0, MAX_UINT256, 0, 0, 0, 0);
 
         // adjust decimals for WETH
         amount = 10**18;
@@ -165,20 +135,7 @@ contract L2ZapTestArb is L2BridgeZapTest {
         vm.expectEmit(true, false, false, false);
         // Don't check data
         emit TokenRedeemAndSwap(user, 0, IERC20(address(0)), 0, 0, 0, 0, 0);
-        zap.swapAndRedeemAndSwap(
-            user,
-            1,
-            IERC20(NETH),
-            1,
-            0,
-            amount,
-            0,
-            MAX_UINT256,
-            0,
-            0,
-            0,
-            0
-        );
+        zap.swapAndRedeemAndSwap(user, 1, IERC20(NETH), 1, 0, amount, 0, MAX_UINT256, 0, 0, 0, 0);
     }
 
     function testSwapETHAndRedeem() public {
@@ -187,16 +144,7 @@ contract L2ZapTestArb is L2BridgeZapTest {
         // Don't check data
         vm.expectEmit(true, false, false, false);
         emit TokenRedeem(user, 0, IERC20(address(0)), 0);
-        zap.swapETHAndRedeem{value: amount}(
-            user,
-            1,
-            IERC20(NETH),
-            1,
-            0,
-            amount,
-            0,
-            MAX_UINT256
-        );
+        zap.swapETHAndRedeem{value: amount}(user, 1, IERC20(NETH), 1, 0, amount, 0, MAX_UINT256);
     }
 
     function testSwapETHAndRedeemAndSwap() public {
@@ -205,19 +153,6 @@ contract L2ZapTestArb is L2BridgeZapTest {
         // Don't check data
         vm.expectEmit(true, false, false, false);
         emit TokenRedeemAndSwap(user, 0, IERC20(address(0)), 0, 0, 0, 0, 0);
-        zap.swapETHAndRedeemAndSwap{value: amount}(
-            user,
-            1,
-            IERC20(NETH),
-            1,
-            0,
-            amount,
-            0,
-            MAX_UINT256,
-            0,
-            0,
-            0,
-            0
-        );
+        zap.swapETHAndRedeemAndSwap{value: amount}(user, 1, IERC20(NETH), 1, 0, amount, 0, MAX_UINT256, 0, 0, 0, 0);
     }
 }

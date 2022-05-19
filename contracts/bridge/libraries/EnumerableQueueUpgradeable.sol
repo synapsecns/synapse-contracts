@@ -78,10 +78,7 @@ library EnumerableQueueUpgradeable {
         }
 
         queue._keys[queue._tail] = key;
-        queue._data[key] = RetryableTx({
-            storedAtMin: uint32(block.timestamp / 60),
-            toRetry: value
-        });
+        queue._data[key] = RetryableTx({storedAtMin: uint32(block.timestamp / 60), toRetry: value});
 
         ++queue._tail;
 
@@ -110,11 +107,7 @@ library EnumerableQueueUpgradeable {
     /**
      * @notice Checks whether `key` is present in the Queue.
      */
-    function contains(KappaQueue storage queue, bytes32 key)
-        internal
-        view
-        returns (bool)
-    {
+    function contains(KappaQueue storage queue, bytes32 key) internal view returns (bool) {
         return queue._data[key].storedAtMin != 0;
     }
 
@@ -141,15 +134,8 @@ library EnumerableQueueUpgradeable {
      * @dev All return variables will be zero, if `key` is not added to the Queue.
      * `value` will be zero, if `deleteKey(key)` was called previously.
      */
-    function get(KappaQueue storage queue, bytes32 key)
-        internal
-        view
-        returns (bytes memory value, uint32 storedAtMin)
-    {
-        (value, storedAtMin) = (
-            queue._data[key].toRetry,
-            queue._data[key].storedAtMin
-        );
+    function get(KappaQueue storage queue, bytes32 key) internal view returns (bytes memory value, uint32 storedAtMin) {
+        (value, storedAtMin) = (queue._data[key].toRetry, queue._data[key].storedAtMin);
     }
 
     /**

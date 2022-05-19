@@ -58,12 +58,10 @@ contract FraxWrapperTestMovr is Test {
     uint256 private constant SWAP_DENOMINATOR = 10000;
 
     address private constant FRAX = 0x1A93B23281CC1CDE4C4741353F3064709A16197d;
-    address private constant SYN_FRAX =
-        0xE96AC70907ffF3Efee79f502C985A7A21Bce407d;
+    address private constant SYN_FRAX = 0xE96AC70907ffF3Efee79f502C985A7A21Bce407d;
 
     address private constant WMOVR = 0x98878B06940aE243284CA214f92Bb71a2b032B8A;
-    address private constant BRIDGE =
-        0xaeD5b25BE1c3163c907a471082640450F928DDFE;
+    address private constant BRIDGE = 0xaeD5b25BE1c3163c907a471082640450F928DDFE;
 
     address private constant NODE = 0x230A1AC45690B9Ae1176389434610B9526d2f21b;
 
@@ -73,12 +71,7 @@ contract FraxWrapperTestMovr is Test {
     FraxWrapper public immutable pool;
     IL2BridgeZap public immutable zap;
 
-    event TokenRedeem(
-        address indexed to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    );
+    event TokenRedeem(address indexed to, uint256 chainId, IERC20 token, uint256 amount);
 
     constructor() {
         pool = new FraxWrapper(FRAX, SYN_FRAX);
@@ -94,10 +87,7 @@ contract FraxWrapperTestMovr is Test {
         swaps[0] = address(pool);
         tokens[0] = SYN_FRAX;
 
-        _zap = deployCode(
-            "L2BridgeZap.sol",
-            abi.encode(WMOVR, swaps, tokens, BRIDGE)
-        );
+        _zap = deployCode("L2BridgeZap.sol", abi.encode(WMOVR, swaps, tokens, BRIDGE));
     }
 
     function setUp() public {
@@ -109,29 +99,14 @@ contract FraxWrapperTestMovr is Test {
         uint256 balance = IERC20(SYN_FRAX).balanceOf(FRAX);
         uint256 tooMuch = _getAmountIn(balance);
 
-        assertTrue(
-            pool.calculateSwap(1, 0, tooMuch) > 0,
-            "FRAX -> synFRAX (max amount) failed"
-        );
-        assertEq(
-            pool.calculateSwap(1, 0, tooMuch + 1),
-            0,
-            "FRAX -> synFRAX (max amount + 1) not failed"
-        );
+        assertTrue(pool.calculateSwap(1, 0, tooMuch) > 0, "FRAX -> synFRAX (max amount) failed");
+        assertEq(pool.calculateSwap(1, 0, tooMuch + 1), 0, "FRAX -> synFRAX (max amount + 1) not failed");
 
-        uint256 remainingCap = IFrax(FRAX).mint_cap() -
-            IERC20(FRAX).totalSupply();
+        uint256 remainingCap = IFrax(FRAX).mint_cap() - IERC20(FRAX).totalSupply();
         tooMuch = _getAmountIn(remainingCap);
 
-        assertTrue(
-            pool.calculateSwap(0, 1, tooMuch) > 0,
-            "synFRAX -> FRAX (max amount) failed"
-        );
-        assertEq(
-            pool.calculateSwap(0, 1, tooMuch + 1),
-            0,
-            "synFRAX -> FRAX (max amount + 1) not failed"
-        );
+        assertTrue(pool.calculateSwap(0, 1, tooMuch) > 0, "synFRAX -> FRAX (max amount) failed");
+        assertEq(pool.calculateSwap(0, 1, tooMuch + 1), 0, "synFRAX -> FRAX (max amount + 1) not failed");
     }
 
     function testSwapFromFrax(uint256 amount) public {
@@ -144,11 +119,7 @@ contract FraxWrapperTestMovr is Test {
 
         uint256 pre = IERC20(SYN_FRAX).balanceOf(address(this));
         uint256 received = pool.swap(1, 0, amount, 0, UINT_MAX);
-        assertEq(
-            IERC20(SYN_FRAX).balanceOf(address(this)),
-            pre + received,
-            "Returned wrong amount"
-        );
+        assertEq(IERC20(SYN_FRAX).balanceOf(address(this)), pre + received, "Returned wrong amount");
         assertEq(received, quote, "Failed to give correct quote");
     }
 
@@ -162,11 +133,7 @@ contract FraxWrapperTestMovr is Test {
 
         uint256 pre = IERC20(FRAX).balanceOf(address(this));
         uint256 received = pool.swap(0, 1, amount, 0, UINT_MAX);
-        assertEq(
-            IERC20(FRAX).balanceOf(address(this)),
-            pre + received,
-            "Returned wrong amount"
-        );
+        assertEq(IERC20(FRAX).balanceOf(address(this)), pre + received, "Returned wrong amount");
         assertEq(received, quote, "Failed to give correct quote");
     }
 
@@ -180,16 +147,7 @@ contract FraxWrapperTestMovr is Test {
         vm.expectEmit(true, false, false, true);
         emit TokenRedeem(address(this), 1, IERC20(SYN_FRAX), amountOut);
 
-        zap.swapAndRedeem(
-            address(this),
-            1,
-            IERC20(SYN_FRAX),
-            1,
-            0,
-            amount,
-            amountOut,
-            UINT_MAX
-        );
+        zap.swapAndRedeem(address(this), 1, IERC20(SYN_FRAX), 1, 0, amount, amountOut, UINT_MAX);
     }
 
     function testMintAndSwap() public {
@@ -199,7 +157,7 @@ contract FraxWrapperTestMovr is Test {
 
         uint256 pre = IERC20(FRAX).balanceOf(address(this));
         bytes32 kappa = keccak256(bytes("much kappa very wow"));
-        
+
         hoax(NODE);
         IBridge(BRIDGE).mintAndSwap(
             address(this),
@@ -214,24 +172,11 @@ contract FraxWrapperTestMovr is Test {
             kappa
         );
 
-        assertTrue(
-            IERC20(FRAX).balanceOf(address(this)) > pre,
-            "No FRAX received"
-        );
-        assertEq(
-            IERC20(FRAX).balanceOf(address(this)),
-            pre + amountOut,
-            "Wrong amount of FRAX received"
-        );
+        assertTrue(IERC20(FRAX).balanceOf(address(this)) > pre, "No FRAX received");
+        assertEq(IERC20(FRAX).balanceOf(address(this)), pre + amountOut, "Wrong amount of FRAX received");
     }
 
-    function _getAmountIn(uint256 amountOut)
-        internal
-        pure
-        returns (uint256 amountIn)
-    {
-        amountIn =
-            (amountOut * SWAP_DENOMINATOR) /
-            (SWAP_DENOMINATOR - SWAP_FEE);
+    function _getAmountIn(uint256 amountOut) internal pure returns (uint256 amountIn) {
+        amountIn = (amountOut * SWAP_DENOMINATOR) / (SWAP_DENOMINATOR - SWAP_FEE);
     }
 }

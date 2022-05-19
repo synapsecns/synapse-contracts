@@ -18,11 +18,7 @@ contract MessageBusReceiverTest is Test {
     }
 
     function testAddressToBytes32() public {
-        console.logBytes32(
-            addressToBytes32(
-                address(0xDE03e73c3785cE086ca85C6315Df376A4A64C84b)
-            )
-        );
+        console.logBytes32(addressToBytes32(address(0xDE03e73c3785cE086ca85C6315Df376A4A64C84b)));
     }
 
     function bytes32ToAddress(bytes32 bys) public pure returns (address) {
@@ -49,14 +45,9 @@ contract MessageBusReceiverTest is Test {
     function testAuthorizedUpdateMessageStatus() public {
         // bytes32 messageId = testComputeMessageId();
         bytes32 messageId = keccak256("testMessageId");
-        MessageBusReceiver.TxStatus initialStatus = messageBusReceiver
-        .getExecutedMessage(messageId);
-        messageBusReceiver.updateMessageStatus(
-            messageId,
-            MessageBusReceiver.TxStatus.Success
-        );
-        MessageBusReceiver.TxStatus finalStatus = messageBusReceiver
-        .getExecutedMessage(messageId);
+        MessageBusReceiver.TxStatus initialStatus = messageBusReceiver.getExecutedMessage(messageId);
+        messageBusReceiver.updateMessageStatus(messageId, MessageBusReceiver.TxStatus.Success);
+        MessageBusReceiver.TxStatus finalStatus = messageBusReceiver.getExecutedMessage(messageId);
         assertGt(uint256(finalStatus), uint256(initialStatus));
     }
 
@@ -64,10 +55,7 @@ contract MessageBusReceiverTest is Test {
         bytes32 messageId = keccak256("testMessageId");
         vm.prank(address(9999));
         vm.expectRevert("Ownable: caller is not the owner");
-        messageBusReceiver.updateMessageStatus(
-            messageId,
-            MessageBusReceiver.TxStatus.Success
-        );
+        messageBusReceiver.updateMessageStatus(messageId, MessageBusReceiver.TxStatus.Success);
     }
 
     // Authorized actor can update AuthVerifeir library, and it sets correctly
@@ -85,23 +73,13 @@ contract MessageBusReceiverTest is Test {
     function testUnauthorizedMessageSender() public {
         uint256 srcChainId = 1;
         bytes32 srcAddress = addressToBytes32(address(1338));
-        address dstAddress = address(
-            0x2796317b0fF8538F253012862c06787Adfb8cEb6
-        );
+        address dstAddress = address(0x2796317b0fF8538F253012862c06787Adfb8cEb6);
         uint256 nonce = 0;
         bytes memory message = bytes("");
         bytes32 messageId = keccak256("testMessageId");
 
         vm.prank(address(999));
         vm.expectRevert("Unauthenticated caller");
-        messageBusReceiver.executeMessage(
-            srcChainId,
-            srcAddress,
-            dstAddress,
-            200000,
-            nonce,
-            message,
-            messageId
-        );
+        messageBusReceiver.executeMessage(srcChainId, srcAddress, dstAddress, 200000, nonce, message, messageId);
     }
 }

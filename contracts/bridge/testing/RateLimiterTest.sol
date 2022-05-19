@@ -35,7 +35,7 @@ contract RateLimiterTest {
 
     // @dev gets the most recent value returned by storeCheckAndUpdateAllowance
     // reverts if no value stored yet
-    function getLastUpdateValue() external view returns (bool){
+    function getLastUpdateValue() external view returns (bool) {
         require(stored, "no update value has been stored yet");
         return checkAndUpdateReturn;
     }

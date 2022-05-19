@@ -57,10 +57,7 @@ contract ECDSANodeManagement {
     // by other member. The event contains address of the member who tried to
     // submit a public key and a conflicting public key submitted already by other
     // member.
-    event ConflictingPublicKeySubmitted(
-        address indexed submittingMember,
-        bytes conflictingPublicKey
-    );
+    event ConflictingPublicKeySubmitted(address indexed submittingMember, bytes conflictingPublicKey);
 
     // Notification that keep's ECDSA public key has been successfully established.
     event PublicKeyPublished(bytes publicKey);
@@ -87,10 +84,7 @@ contract ECDSANodeManagement {
     /// event.
     /// @param _publicKey Signer's public key.
     function submitPublicKey(bytes calldata _publicKey) external onlyMember {
-        require(
-            !hasMemberSubmittedPublicKey(msg.sender),
-            "Member already submitted a public key"
-        );
+        require(!hasMemberSubmittedPublicKey(msg.sender), "Member already submitted a public key");
 
         require(_publicKey.length == 64, "Public key must be 64 bytes long");
 
@@ -100,16 +94,10 @@ contract ECDSANodeManagement {
         // the currently submitted one.
         uint256 matchingPublicKeysCount = 0;
         for (uint256 i = 0; i < members.length; i++) {
-            if (
-                keccak256(submittedPublicKeys[members[i]]) !=
-                keccak256(_publicKey)
-            ) {
+            if (keccak256(submittedPublicKeys[members[i]]) != keccak256(_publicKey)) {
                 // Emit an event only if compared member already submitted a value.
                 if (hasMemberSubmittedPublicKey(members[i])) {
-                    emit ConflictingPublicKeySubmitted(
-                        msg.sender,
-                        submittedPublicKeys[members[i]]
-                    );
+                    emit ConflictingPublicKeySubmitted(msg.sender, submittedPublicKeys[members[i]]);
                 }
             } else {
                 matchingPublicKeysCount++;
@@ -202,11 +190,7 @@ contract ECDSANodeManagement {
     /// @notice Checks if the member already submitted a public key.
     /// @param _member Address of the member.
     /// @return True if member already submitted a public key, else false.
-    function hasMemberSubmittedPublicKey(address _member)
-        internal
-        view
-        returns (bool)
-    {
+    function hasMemberSubmittedPublicKey(address _member) internal view returns (bool) {
         return submittedPublicKeys[_member].length != 0;
     }
 
@@ -230,11 +214,7 @@ contract ECDSANodeManagement {
     /// @param _publicKey Public key provided as 64-bytes concatenation of
     /// X and Y coordinates (32-bytes each).
     /// @return Ethereum address.
-    function publicKeyToAddress(bytes memory _publicKey)
-        internal
-        pure
-        returns (address)
-    {
+    function publicKeyToAddress(bytes memory _publicKey) internal pure returns (address) {
         // We hash the public key and then truncate last 20 bytes of the digest
         // which is the ethereum address.
         return address(uint160(uint256(keccak256(_publicKey))));

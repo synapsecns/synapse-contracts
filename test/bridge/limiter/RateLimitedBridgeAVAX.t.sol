@@ -6,14 +6,11 @@ import "./RateLimitedBridge.sol";
 
 contract BridgeRateLimiterTestAvax is RateLimitedBridge {
     address public constant BRIDGE = 0xC05e61d0E7a63D27546389B7aD62FdFf5A91aACE;
-    address public constant NUSD_POOL =
-        0xED2a7edd7413021d440b09D654f3b87712abAB66;
+    address public constant NUSD_POOL = 0xED2a7edd7413021d440b09D654f3b87712abAB66;
 
-    IERC20 public constant NUSD =
-        IERC20(0xCFc37A6AB183dd4aED08C204D1c2773c0b1BDf46);
+    IERC20 public constant NUSD = IERC20(0xCFc37A6AB183dd4aED08C204D1c2773c0b1BDf46);
 
-    IERC20 public constant SYN =
-        IERC20(0x1f1E7c893855525b303f99bDF5c3c05Be09ca251);
+    IERC20 public constant SYN = IERC20(0x1f1E7c893855525b303f99bDF5c3c05Be09ca251);
 
     constructor() RateLimitedBridge(BRIDGE, [address(SYN), address(NUSD)]) {
         this;
@@ -21,18 +18,10 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
 
     function testUpgradedCorrectly() public {
         bytes32[] memory kappas = new bytes32[](4);
-        kappas[
-            0
-        ] = 0x86b8965e37f1cce9f656ba75889b2f2298b263eed1c63aea02bed5c8974f63f8;
-        kappas[
-            1
-        ] = 0x0a0f257cd271a186e37f9a27eba2449eb6e653f8504cdcf1da5a3136457bd352;
-        kappas[
-            2
-        ] = 0x3d8fdbb615d44bd698866ece843f3a61b8c9bfc8d63a7ee59687b9af73132db5;
-        kappas[
-            3
-        ] = 0x9d227741cf4247722bbdcd1a910991a24efbb12e5f538410922d07fa0fa42247;
+        kappas[0] = 0x86b8965e37f1cce9f656ba75889b2f2298b263eed1c63aea02bed5c8974f63f8;
+        kappas[1] = 0x0a0f257cd271a186e37f9a27eba2449eb6e653f8504cdcf1da5a3136457bd352;
+        kappas[2] = 0x3d8fdbb615d44bd698866ece843f3a61b8c9bfc8d63a7ee59687b9af73132db5;
+        kappas[3] = 0x9d227741cf4247722bbdcd1a910991a24efbb12e5f538410922d07fa0fa42247;
 
         _testUpgrade(kappas);
     }
@@ -75,35 +64,20 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
                     true
                 );
             }
-            assertEq(
-                rateLimiter.retryQueueLength(),
-                txs,
-                "RateLimiter Queue wrong length"
-            );
+            assertEq(rateLimiter.retryQueueLength(), txs, "RateLimiter Queue wrong length");
 
             uint256 pre = IERC20(NUSD).balanceOf(user);
             hoax(limiter);
             rateLimiter.retryCount(txs);
-            assertEq(
-                rateLimiter.retryQueueLength(),
-                0,
-                "RateLimiter Queue should be empty"
-            );
+            assertEq(rateLimiter.retryQueueLength(), 0, "RateLimiter Queue should be empty");
 
             for (uint256 t = 0; t < txs; ++t) {
-                assertTrue(
-                    IBridge(bridge).kappaExists(kappas[t]),
-                    "Kappa doesn't exist post-bridge"
-                );
+                assertTrue(IBridge(bridge).kappaExists(kappas[t]), "Kappa doesn't exist post-bridge");
             }
 
             uint256 post = IERC20(NUSD).balanceOf(user);
             assertTrue(pre != post, "User hasn't received anything");
-            assertEq(
-                post,
-                pre + uint256(amount) * txs,
-                "User hasn't received full amount"
-            );
+            assertEq(post, pre + uint256(amount) * txs, "User hasn't received full amount");
         }
     }
 
@@ -132,69 +106,38 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
                     true
                 );
             }
-            assertEq(
-                rateLimiter.retryQueueLength(),
-                txs,
-                "RateLimiter Queue wrong length"
-            );
+            assertEq(rateLimiter.retryQueueLength(), txs, "RateLimiter Queue wrong length");
 
             uint256 pre = IERC20(NUSD).balanceOf(user);
             startHoax(limiter);
             // manually push through every third tx
             for (uint256 t = 1; t < txs; t += 3) {
                 rateLimiter.retryByKappa(kappas[t]);
-                assertTrue(
-                    IBridge(bridge).kappaExists(kappas[t]),
-                    "Kappa doesn't exist post-bridge"
-                );
+                assertTrue(IBridge(bridge).kappaExists(kappas[t]), "Kappa doesn't exist post-bridge");
             }
 
             uint256 pushedAmount = (txs + 1) / 3;
             {
-                assertEq(
-                    rateLimiter.unhandledKappasCount(),
-                    txs - pushedAmount,
-                    "Wrong reported unhandled count"
-                );
+                assertEq(rateLimiter.unhandledKappasCount(), txs - pushedAmount, "Wrong reported unhandled count");
                 bytes32[] memory _kappas = rateLimiter.getUnhandledKappas();
-                assertEq(
-                    _kappas.length,
-                    txs - pushedAmount,
-                    "Wrong unhandled kappas length"
-                );
+                assertEq(_kappas.length, txs - pushedAmount, "Wrong unhandled kappas length");
                 uint256 index = 0;
                 for (uint256 t = 0; t < txs; ++t) {
                     if (t % 3 == 1) continue;
-                    assertEq(
-                        kappas[t],
-                        _kappas[index],
-                        "Wrong reported unhandled kappas"
-                    );
+                    assertEq(kappas[t], _kappas[index], "Wrong reported unhandled kappas");
                     ++index;
                 }
             }
 
             uint256 post = IERC20(NUSD).balanceOf(user);
             assertTrue(pre != post, "User hasn't received anything");
-            assertEq(
-                post,
-                pre + uint256(amount) * pushedAmount,
-                "User hasn't received full amount"
-            );
+            assertEq(post, pre + uint256(amount) * pushedAmount, "User hasn't received full amount");
 
             rateLimiter.retryCount(txs);
-            assertEq(
-                rateLimiter.retryQueueLength(),
-                0,
-                "RateLimiter Queue should be empty"
-            );
+            assertEq(rateLimiter.retryQueueLength(), 0, "RateLimiter Queue should be empty");
             uint256 _post = IERC20(NUSD).balanceOf(user);
             assertTrue(post != _post, "User hasn't received anything");
-            assertEq(
-                _post,
-                pre + uint256(amount) * txs,
-                "User hasn't received full amount"
-            );
+            assertEq(_post, pre + uint256(amount) * txs, "User hasn't received full amount");
 
             vm.stopPrank();
         }
@@ -229,14 +172,7 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
         }
 
         // Too early => should revert (bridgeSuccess = false)
-        _checkDelayed(
-            kappa,
-            user,
-            address(rateLimiter),
-            rateLimiter.retryByKappa.selector,
-            abi.encode(kappa),
-            false
-        );
+        _checkDelayed(kappa, user, address(rateLimiter), rateLimiter.retryByKappa.selector, abi.encode(kappa), false);
 
         skip(1);
 
@@ -275,16 +211,9 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
             true
         );
 
-        assertEq(
-            rateLimiter.retryQueueLength(),
-            1,
-            "RateLimiter Queue wrong length"
-        );
+        assertEq(rateLimiter.retryQueueLength(), 1, "RateLimiter Queue wrong length");
 
-        assertFalse(
-            rateLimiter.isKappaFailed(kappa),
-            "wrong isKappaFailed status"
-        );
+        assertFalse(rateLimiter.isKappaFailed(kappa), "wrong isKappaFailed status");
 
         hoax(admin);
         // bridge can no longer mint SYN => part of txs will fail
@@ -292,21 +221,11 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
 
         hoax(limiter);
         rateLimiter.retryCount(1);
-        assertEq(
-            rateLimiter.retryQueueLength(),
-            0,
-            "RateLimiter Queue should be empty"
-        );
+        assertEq(rateLimiter.retryQueueLength(), 0, "RateLimiter Queue should be empty");
 
-        assertTrue(
-            !IBridge(bridge).kappaExists(kappa),
-            "SYN kappa should not exist"
-        );
+        assertTrue(!IBridge(bridge).kappaExists(kappa), "SYN kappa should not exist");
 
-        assertTrue(
-            rateLimiter.isKappaFailed(kappa),
-            "wrong isKappaFailed status"
-        );
+        assertTrue(rateLimiter.isKappaFailed(kappa), "wrong isKappaFailed status");
 
         hoax(user);
         try rateLimiter.retryByKappa(kappa) {
@@ -325,10 +244,7 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
             );
         }
 
-        assertTrue(
-            rateLimiter.isKappaFailed(kappa),
-            "wrong isKappaFailed status"
-        );
+        assertTrue(rateLimiter.isKappaFailed(kappa), "wrong isKappaFailed status");
 
         hoax(admin);
         ISynapseERC20(address(SYN)).grantRole(minterRole, bridge);
@@ -346,10 +262,7 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
             true
         );
 
-        assertFalse(
-            rateLimiter.isKappaFailed(kappa),
-            "wrong isKappaFailed status"
-        );
+        assertFalse(rateLimiter.isKappaFailed(kappa), "wrong isKappaFailed status");
     }
 
     function testRetriesWithFailedTxs(uint96 amount, uint8 txs) public {
@@ -396,11 +309,7 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
                     );
                 }
             }
-            assertEq(
-                rateLimiter.retryQueueLength(),
-                txs,
-                "RateLimiter Queue wrong length"
-            );
+            assertEq(rateLimiter.retryQueueLength(), txs, "RateLimiter Queue wrong length");
 
             hoax(admin);
             // bridge can no longer mint SYN => part of txs will fail
@@ -409,32 +318,18 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
             uint256 pre = NUSD.balanceOf(user);
             hoax(limiter);
             rateLimiter.retryCount(txs);
-            assertEq(
-                rateLimiter.retryQueueLength(),
-                0,
-                "RateLimiter Queue should be empty"
-            );
+            assertEq(rateLimiter.retryQueueLength(), 0, "RateLimiter Queue should be empty");
             for (uint256 t = 0; t < txs; t++) {
                 if (t % 3 == 1) {
-                    assertTrue(
-                        !IBridge(bridge).kappaExists(kappas[t]),
-                        "SYN kappa should not exist"
-                    );
+                    assertTrue(!IBridge(bridge).kappaExists(kappas[t]), "SYN kappa should not exist");
                 } else {
-                    assertTrue(
-                        IBridge(bridge).kappaExists(kappas[t]),
-                        "NUSD kappa should exist"
-                    );
+                    assertTrue(IBridge(bridge).kappaExists(kappas[t]), "NUSD kappa should exist");
                 }
             }
 
             uint256 post = NUSD.balanceOf(user);
             assertTrue(pre != post, "User hasn't received anything: NUSD");
-            assertEq(
-                post,
-                pre + uint256(amount) * (txs - txsSyn),
-                "User hasn't received full amount: NUSD"
-            );
+            assertEq(post, pre + uint256(amount) * (txs - txsSyn), "User hasn't received full amount: NUSD");
 
             hoax(admin);
             ISynapseERC20(address(SYN)).grantRole(minterRole, bridge);
@@ -445,17 +340,10 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
             rateLimiter.retryCount(txs);
 
             for (uint256 t = 1; t < txs; t += 3) {
-                assertTrue(
-                    !IBridge(bridge).kappaExists(kappas[t]),
-                    "SYN kappa should not exist"
-                );
+                assertTrue(!IBridge(bridge).kappaExists(kappas[t]), "SYN kappa should not exist");
             }
 
-            assertEq(
-                pre,
-                SYN.balanceOf(user),
-                "SYN balance should not have changed"
-            );
+            assertEq(pre, SYN.balanceOf(user), "SYN balance should not have changed");
 
             for (uint256 t = 1; t < txs; t += 3) {
                 // anyone should be able to push through a failed tx
@@ -474,11 +362,7 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
 
             post = SYN.balanceOf(user);
             assertTrue(pre != post, "User hasn't received anything: SYN");
-            assertEq(
-                post,
-                pre + uint256(amount) * txsSyn,
-                "User hasn't received full amount: SYN"
-            );
+            assertEq(post, pre + uint256(amount) * txsSyn, "User hasn't received full amount: SYN");
         }
     }
 }

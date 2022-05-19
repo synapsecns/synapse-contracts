@@ -18,12 +18,10 @@ contract L2ZapTestAvax is L2BridgeZapTest {
     // WETH.e
     address public constant WETH = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
 
-    address public constant NUSD_POOL =
-        0xED2a7edd7413021d440b09D654f3b87712abAB66;
+    address public constant NUSD_POOL = 0xED2a7edd7413021d440b09D654f3b87712abAB66;
 
     // Wrapper for Aave pool
-    address public constant NETH_POOL =
-        0xdd60483Ace9B215a7c019A44Be2F22Aa9982652E;
+    address public constant NETH_POOL = 0xdd60483Ace9B215a7c019A44Be2F22Aa9982652E;
 
     constructor() L2BridgeZapTest() {
         IERC20(NUSD).approve(address(zap), MAX_UINT256);
@@ -43,10 +41,7 @@ contract L2ZapTestAvax is L2BridgeZapTest {
         swaps[1] = NETH_POOL;
         tokens[1] = NETH;
 
-        _zap = deployCode(
-            "L2BridgeZap.sol",
-            abi.encode(WAVAX, swaps, tokens, BRIDGE)
-        );
+        _zap = deployCode("L2BridgeZap.sol", abi.encode(WAVAX, swaps, tokens, BRIDGE));
     }
 
     function testDeposit() public {
@@ -139,19 +134,7 @@ contract L2ZapTestAvax is L2BridgeZapTest {
         // Don't check data
         emit TokenRedeemAndRemove(user, 0, IERC20(address(0)), 0, 0, 0, 0);
         deal(DAI, user, amount);
-        zap.swapAndRedeemAndRemove(
-            user,
-            1,
-            IERC20(NUSD),
-            1,
-            0,
-            amount,
-            0,
-            MAX_UINT256,
-            0,
-            0,
-            0
-        );
+        zap.swapAndRedeemAndRemove(user, 1, IERC20(NUSD), 1, 0, amount, 0, MAX_UINT256, 0, 0, 0);
     }
 
     function testSwapAndRedeemAndSwap() public {
@@ -161,39 +144,13 @@ contract L2ZapTestAvax is L2BridgeZapTest {
         vm.expectEmit(true, false, false, false);
         // Don't check data
         emit TokenRedeemAndSwap(user, 0, IERC20(address(0)), 0, 0, 0, 0, 0);
-        zap.swapAndRedeemAndSwap(
-            user,
-            1,
-            IERC20(NUSD),
-            1,
-            0,
-            amount,
-            0,
-            MAX_UINT256,
-            0,
-            0,
-            0,
-            0
-        );
+        zap.swapAndRedeemAndSwap(user, 1, IERC20(NUSD), 1, 0, amount, 0, MAX_UINT256, 0, 0, 0, 0);
 
         deal(WETH, user, amount);
         vm.expectEmit(true, false, false, false);
         // Don't check data
         emit TokenRedeemAndSwap(user, 0, IERC20(address(0)), 0, 0, 0, 0, 0);
-        zap.swapAndRedeemAndSwap(
-            user,
-            1,
-            IERC20(NETH),
-            1,
-            0,
-            amount,
-            0,
-            MAX_UINT256,
-            0,
-            0,
-            0,
-            0
-        );
+        zap.swapAndRedeemAndSwap(user, 1, IERC20(NETH), 1, 0, amount, 0, MAX_UINT256, 0, 0, 0, 0);
     }
 
     // testSwapETHAndRedeem N/A on AVAX

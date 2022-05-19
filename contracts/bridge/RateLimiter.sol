@@ -19,12 +19,7 @@ interface IBridge {
 
 // @title RateLimiter
 // @dev a bridge asset rate limiter based on https://github.com/gnosis/safe-modules/blob/master/allowances/contracts/AlowanceModule.sol
-contract RateLimiter is
-    Initializable,
-    AccessControlUpgradeable,
-    ReentrancyGuardUpgradeable,
-    IRateLimiter
-{
+contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, IRateLimiter {
     using EnumerableQueueUpgradeable for EnumerableQueueUpgradeable.KappaQueue;
     /*** STATE ***/
 
@@ -54,11 +49,7 @@ contract RateLimiter is
 
     event FailedTx(bytes32 indexed kappa);
 
-    event SetAllowance(
-        address indexed token,
-        uint96 allowanceAmount,
-        uint16 resetTime
-    );
+    event SetAllowance(address indexed token, uint96 allowanceAmount, uint16 resetTime);
 
     event ResetAllowance(address indexed token);
 
@@ -83,11 +74,7 @@ contract RateLimiter is
 
     /*** VIEWS ***/
 
-    function getTokenAllowance(address token)
-        external
-        view
-        returns (uint256[4] memory)
-    {
+    function getTokenAllowance(address token) external view returns (uint256[4] memory) {
         Allowance memory allowance = _getAllowance(token);
         return [
             uint256(allowance.amount),
@@ -120,11 +107,7 @@ contract RateLimiter is
         (key, payload, storedAtMin) = rateLimitedQueue.at(index);
     }
 
-    function getTransactionByKappa(bytes32 kappa)
-        external
-        view
-        returns (bytes memory payload, uint32 storedAtMin)
-    {
+    function getTransactionByKappa(bytes32 kappa) external view returns (bytes memory payload, uint32 storedAtMin) {
         (payload, storedAtMin) = rateLimitedQueue.get(kappa);
     }
 
@@ -132,18 +115,12 @@ contract RateLimiter is
         return failedRetries[kappa].length > 0;
     }
 
-    function getUnhandledKappas()
-        external
-        view
-        returns (bytes32[] memory kappas)
-    {
+    function getUnhandledKappas() external view returns (bytes32[] memory kappas) {
         uint256 length = rateLimitedQueue.length();
         uint256 kappaCount = 0;
         bytes32[] memory _kappas = new bytes32[](length);
         for (uint256 index = 0; index < length; ++index) {
-            (bytes32 kappa, bytes memory payload, ) = rateLimitedQueue.at(
-                index
-            );
+            (bytes32 kappa, bytes memory payload, ) = rateLimitedQueue.at(index);
             if (payload.length > 0) {
                 // store unhandled kappa for later retrieval
                 ++kappaCount;
@@ -172,17 +149,11 @@ contract RateLimiter is
 
     /*** RESTRICTED: GOVERNANCE ***/
 
-    function setBridgeAddress(address bridge)
-        external
-        onlyRole(GOVERNANCE_ROLE)
-    {
+    function setBridgeAddress(address bridge) external onlyRole(GOVERNANCE_ROLE) {
         BRIDGE_ADDRESS = bridge;
     }
 
-    function setRetryTimeout(uint32 _retryTimeout)
-        external
-        onlyRole(GOVERNANCE_ROLE)
-    {
+    function setRetryTimeout(uint32 _retryTimeout) external onlyRole(GOVERNANCE_ROLE) {
         require(_retryTimeout >= MIN_RETRY_TIMEOUT, "Timeout too short");
         retryTimeout = _retryTimeout;
     }
@@ -224,9 +195,7 @@ contract RateLimiter is
         uint32 currentMin = uint32(block.timestamp / 60);
         if (resetBaseMin > 0) {
             require(resetBaseMin <= currentMin, "resetBaseMin <= currentMin");
-            allowance.lastResetMin =
-                currentMin -
-                ((currentMin - resetBaseMin) % resetTimeMin);
+            allowance.lastResetMin = currentMin - ((currentMin - resetBaseMin) % resetTimeMin);
         } else if (allowance.lastResetMin == 0) {
             allowance.lastResetMin = currentMin;
         }
@@ -238,10 +207,7 @@ contract RateLimiter is
 
     /*** RESTRICTED: BRIDGE ***/
 
-    function addToRetryQueue(bytes32 kappa, bytes memory toRetry)
-        external
-        onlyRole(BRIDGE_ROLE)
-    {
+    function addToRetryQueue(bytes32 kappa, bytes memory toRetry) external onlyRole(BRIDGE_ROLE) {
         rateLimitedQueue.add(kappa, toRetry);
     }
 
@@ -275,49 +241,32 @@ contract RateLimiter is
 
     /*** INTERNAL: ALLOWANCE ***/
 
-    function _getAllowance(address token)
-        internal
-        view
-        returns (Allowance memory allowance)
-    {
+    function _getAllowance(address token) internal view returns (Allowance memory allowance) {
         allowance = allowances[token];
         // solium-disable-next-line security/no-block-members
         uint32 currentMin = uint32(block.timestamp / 60);
         // Check if we should reset the time. We do this on load to minimize storage read/ writes
-        if (
-            allowance.resetTimeMin > 0 &&
-            allowance.lastResetMin <= currentMin - allowance.resetTimeMin
-        ) {
+        if (allowance.resetTimeMin > 0 && allowance.lastResetMin <= currentMin - allowance.resetTimeMin) {
             allowance.spent = 0;
             // Resets happen in regular intervals and `lastResetMin` should be aligned to that
-            allowance.lastResetMin =
-                currentMin -
-                ((currentMin - allowance.lastResetMin) %
-                    allowance.resetTimeMin);
+            allowance.lastResetMin = currentMin - ((currentMin - allowance.lastResetMin) % allowance.resetTimeMin);
         }
         return allowance;
     }
 
-    function _updateAllowance(address token, Allowance memory allowance)
-        internal
-    {
+    function _updateAllowance(address token, Allowance memory allowance) internal {
         allowances[token] = allowance;
     }
 
     /*** RETRY FUNCTIONS ***/
 
     function retryByKappa(bytes32 kappa) external {
-        (bytes memory toRetry, uint32 storedAtMin) = rateLimitedQueue.get(
-            kappa
-        );
+        (bytes memory toRetry, uint32 storedAtMin) = rateLimitedQueue.get(kappa);
         if (toRetry.length > 0) {
             if (!hasRole(LIMITER_ROLE, msg.sender)) {
                 // Permissionless retry is only available once timeout is finished
                 uint32 currentMin = uint32(block.timestamp / 60);
-                require(
-                    currentMin >= storedAtMin + retryTimeout,
-                    "Retry timeout not finished"
-                );
+                require(currentMin >= storedAtMin + retryTimeout, "Retry timeout not finished");
             }
             rateLimitedQueue.deleteKey(kappa);
             _retry(kappa, toRetry);
@@ -330,14 +279,11 @@ contract RateLimiter is
 
     function retryCount(uint8 count) external onlyRole(LIMITER_ROLE) {
         // no issues casting to uint8 here. If length is greater then 255, min is always taken
-        uint8 attempts = uint8(
-            MathUpgradeable.min(uint256(count), rateLimitedQueue.length())
-        );
+        uint8 attempts = uint8(MathUpgradeable.min(uint256(count), rateLimitedQueue.length()));
 
         for (uint8 i = 0; i < attempts; i++) {
             // check out the first element
-            (bytes32 kappa, bytes memory toRetry, ) = rateLimitedQueue
-            .popFront();
+            (bytes32 kappa, bytes memory toRetry, ) = rateLimitedQueue.popFront();
 
             if (toRetry.length > 0) {
                 _retry(kappa, toRetry);
@@ -359,9 +305,7 @@ contract RateLimiter is
         bytes memory toRetry = failedRetries[kappa];
         if (toRetry.length > 0) {
             failedRetries[kappa] = bytes("");
-            (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(
-                toRetry
-            );
+            (bool success, bytes memory returnData) = BRIDGE_ADDRESS.call(toRetry);
             require(
                 success,
                 string(
@@ -376,11 +320,7 @@ contract RateLimiter is
         }
     }
 
-    function _getRevertMsg(bytes memory _returnData)
-        internal
-        pure
-        returns (string memory)
-    {
+    function _getRevertMsg(bytes memory _returnData) internal pure returns (string memory) {
         // If the _res length is less than 68, then the transaction failed silently (without a revert message)
         if (_returnData.length < 68) return "Transaction reverted silently";
 

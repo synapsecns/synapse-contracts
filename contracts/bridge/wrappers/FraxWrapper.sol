@@ -45,11 +45,7 @@ contract FraxWrapper {
      * @param tokenAddress address of the token
      * @return index index of the given token address
      */
-    function getTokenIndex(address tokenAddress)
-        external
-        view
-        returns (uint8 index)
-    {
+    function getTokenIndex(address tokenAddress) external view returns (uint8 index) {
         if (tokenAddress == synFrax) {
             index = 0;
         } else if (tokenAddress == synFrax) {
@@ -75,9 +71,7 @@ contract FraxWrapper {
             // synFRAX -> FRAX
             amount = dx;
             if (!IFrax(frax).fee_exempt_list(address(this))) {
-                amount -=
-                    (amount * IFrax(frax).swap_fees(synFrax, 0)) /
-                    PRICE_PRECISION;
+                amount -= (amount * IFrax(frax).swap_fees(synFrax, 0)) / PRICE_PRECISION;
             }
             uint256 _newTotalSupply = IERC20(frax).totalSupply() + amount;
             if (IFrax(frax).mint_cap() < _newTotalSupply) {
@@ -88,9 +82,7 @@ contract FraxWrapper {
             // FRAX -> synFRAX
             amount = dx;
             if (!IFrax(frax).fee_exempt_list(address(this))) {
-                amount -=
-                    (amount * IFrax(frax).swap_fees(synFrax, 1)) /
-                    PRICE_PRECISION;
+                amount -= (amount * IFrax(frax).swap_fees(synFrax, 1)) / PRICE_PRECISION;
             }
             if (IERC20(synFrax).balanceOf(frax) < amount) {
                 // if FRAX contract doesn't have enough synFRAX, swap will fail

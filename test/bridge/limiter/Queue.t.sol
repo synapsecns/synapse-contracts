@@ -93,10 +93,7 @@ contract QueueTest is Test {
             (bytes32 key, bytes memory value, ) = queue.popFront();
 
             assertTrue(!queue.contains(key), "Key not deleted");
-            assertTrue(
-                keccak256(abi.encode(key)) == keccak256(value),
-                "Wrong value"
-            );
+            assertTrue(keccak256(abi.encode(key)) == keccak256(value), "Wrong value");
 
             (value, ) = queue.get(key);
             assertTrue(value.length == 0, "Data remains after deletion");

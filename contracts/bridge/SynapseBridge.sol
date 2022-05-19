@@ -19,12 +19,7 @@ interface IERC20Mintable is IERC20 {
     function mint(address to, uint256 amount) external;
 }
 
-contract SynapseBridge is
-    Initializable,
-    AccessControlUpgradeable,
-    ReentrancyGuardUpgradeable,
-    PausableUpgradeable
-{
+contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Mintable;
     using SafeMath for uint256;
@@ -84,32 +79,10 @@ contract SynapseBridge is
         }
     }
 
-    event TokenDeposit(
-        address indexed to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    );
-    event TokenRedeem(
-        address indexed to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    );
-    event TokenWithdraw(
-        address indexed to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 indexed kappa
-    );
-    event TokenMint(
-        address indexed to,
-        IERC20Mintable token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 indexed kappa
-    );
+    event TokenDeposit(address indexed to, uint256 chainId, IERC20 token, uint256 amount);
+    event TokenRedeem(address indexed to, uint256 chainId, IERC20 token, uint256 amount);
+    event TokenWithdraw(address indexed to, IERC20 token, uint256 amount, uint256 fee, bytes32 indexed kappa);
+    event TokenMint(address indexed to, IERC20Mintable token, uint256 amount, uint256 fee, bytes32 indexed kappa);
     event TokenDepositAndSwap(
         address indexed to,
         uint256 chainId,
@@ -164,19 +137,10 @@ contract SynapseBridge is
     );
 
     // v2 events
-    event TokenRedeemV2(
-        bytes32 indexed to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    );
+    event TokenRedeemV2(bytes32 indexed to, uint256 chainId, IERC20 token, uint256 amount);
 
     // VIEW FUNCTIONS ***/
-    function getFeeBalance(address tokenAddress)
-        external
-        view
-        returns (uint256)
-    {
+    function getFeeBalance(address tokenAddress) external view returns (uint256) {
         return fees[tokenAddress];
     }
 
@@ -213,10 +177,7 @@ contract SynapseBridge is
     // RATE LIMITER FUNCTIONS ***/
     // @dev check and update the rate limiter allowances. Bypass the rate limiter
     // if it is a 0-address
-    function _isRateLimited(address token, uint256 amount)
-        internal
-        returns (bool)
-    {
+    function _isRateLimited(address token, uint256 amount) internal returns (bool) {
         // save a bit of gas on reads
         IRateLimiter _rateLimiter = rateLimiter;
         if (!rateLimiterEnabled || address(_rateLimiter) == address(0)) {
@@ -284,16 +245,7 @@ contract SynapseBridge is
         uint256 minDy,
         uint256 deadline
     ) external nonReentrant whenNotPaused {
-        emit TokenDepositAndSwap(
-            to,
-            chainId,
-            token,
-            amount,
-            tokenIndexFrom,
-            tokenIndexTo,
-            minDy,
-            deadline
-        );
+        emit TokenDepositAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
         token.safeTransferFrom(msg.sender, address(this), amount);
     }
 
@@ -318,16 +270,7 @@ contract SynapseBridge is
         uint256 minDy,
         uint256 deadline
     ) external nonReentrant whenNotPaused {
-        emit TokenRedeemAndSwap(
-            to,
-            chainId,
-            token,
-            amount,
-            tokenIndexFrom,
-            tokenIndexTo,
-            minDy,
-            deadline
-        );
+        emit TokenRedeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
         token.burnFrom(msg.sender, amount);
     }
 
@@ -350,15 +293,7 @@ contract SynapseBridge is
         uint256 swapMinAmount,
         uint256 swapDeadline
     ) external nonReentrant whenNotPaused {
-        emit TokenRedeemAndRemove(
-            to,
-            chainId,
-            token,
-            amount,
-            swapTokenIndex,
-            swapMinAmount,
-            swapDeadline
-        );
+        emit TokenRedeemAndRemove(to, chainId, token, amount, swapTokenIndex, swapMinAmount, swapDeadline);
         token.burnFrom(msg.sender, amount);
     }
 
@@ -398,23 +333,13 @@ contract SynapseBridge is
         uint256 fee,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(
-            hasRole(NODEGROUP_ROLE, msg.sender),
-            "Caller is not a node group"
-        );
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
 
         bool rateLimited = _isRateLimited(address(token), amount);
         if (rateLimited) {
             rateLimiter.addToRetryQueue(
                 kappa,
-                abi.encodeWithSelector(
-                    this.retryWithdraw.selector,
-                    to,
-                    address(token),
-                    amount,
-                    fee,
-                    kappa
-                )
+                abi.encodeWithSelector(this.retryWithdraw.selector, to, address(token), amount, fee, kappa)
             );
         } else {
             _doWithdraw(to, token, amount, fee, kappa);
@@ -437,23 +362,13 @@ contract SynapseBridge is
         uint256 fee,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(
-            hasRole(NODEGROUP_ROLE, msg.sender),
-            "Caller is not a node group"
-        );
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
 
         bool rateLimited = _isRateLimited(address(token), amount);
         if (rateLimited) {
             rateLimiter.addToRetryQueue(
                 kappa,
-                abi.encodeWithSelector(
-                    this.retryMint.selector,
-                    to,
-                    address(token),
-                    amount,
-                    fee,
-                    kappa
-                )
+                abi.encodeWithSelector(this.retryMint.selector, to, address(token), amount, fee, kappa)
             );
         } else {
             _doMint(to, token, amount, fee, kappa);
@@ -486,10 +401,7 @@ contract SynapseBridge is
         uint256 deadline,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(
-            hasRole(NODEGROUP_ROLE, msg.sender),
-            "Caller is not a node group"
-        );
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
 
         bool rateLimited = _isRateLimited(address(token), amount);
         if (rateLimited) {
@@ -510,18 +422,7 @@ contract SynapseBridge is
                 )
             );
         } else {
-            _doMintAndSwap(
-                to,
-                token,
-                amount,
-                fee,
-                pool,
-                tokenIndexFrom,
-                tokenIndexTo,
-                minDy,
-                deadline,
-                kappa
-            );
+            _doMintAndSwap(to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa);
         }
     }
 
@@ -548,10 +449,7 @@ contract SynapseBridge is
         uint256 swapDeadline,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(
-            hasRole(NODEGROUP_ROLE, msg.sender),
-            "Caller is not a node group"
-        );
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
 
         bool rateLimited = _isRateLimited(address(token), amount);
 
@@ -572,17 +470,7 @@ contract SynapseBridge is
                 )
             );
         } else {
-            _doWithdrawAndRemove(
-                to,
-                token,
-                amount,
-                fee,
-                pool,
-                swapTokenIndex,
-                swapMinAmount,
-                swapDeadline,
-                kappa
-            );
+            _doWithdrawAndRemove(to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa);
         }
     }
 
@@ -603,10 +491,7 @@ contract SynapseBridge is
         uint256 fee,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(
-            hasRole(RATE_LIMITER_ROLE, msg.sender),
-            "Caller is not rate limiter"
-        );
+        require(hasRole(RATE_LIMITER_ROLE, msg.sender), "Caller is not rate limiter");
 
         _doWithdraw(to, IERC20(token), amount, fee, kappa);
     }
@@ -627,10 +512,7 @@ contract SynapseBridge is
         uint256 fee,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(
-            hasRole(RATE_LIMITER_ROLE, msg.sender),
-            "Caller is not rate limiter"
-        );
+        require(hasRole(RATE_LIMITER_ROLE, msg.sender), "Caller is not rate limiter");
 
         _doMint(to, token, amount, fee, kappa);
     }
@@ -661,23 +543,9 @@ contract SynapseBridge is
         uint256 deadline,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(
-            hasRole(RATE_LIMITER_ROLE, msg.sender),
-            "Caller is not rate limiter"
-        );
+        require(hasRole(RATE_LIMITER_ROLE, msg.sender), "Caller is not rate limiter");
 
-        _doMintAndSwap(
-            to,
-            token,
-            amount,
-            fee,
-            pool,
-            tokenIndexFrom,
-            tokenIndexTo,
-            minDy,
-            deadline,
-            kappa
-        );
+        _doMintAndSwap(to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa);
     }
 
     /**
@@ -703,22 +571,9 @@ contract SynapseBridge is
         uint256 swapDeadline,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(
-            hasRole(RATE_LIMITER_ROLE, msg.sender),
-            "Caller is not rate limiter"
-        );
+        require(hasRole(RATE_LIMITER_ROLE, msg.sender), "Caller is not rate limiter");
 
-        _doWithdrawAndRemove(
-            to,
-            token,
-            amount,
-            fee,
-            pool,
-            swapTokenIndex,
-            swapMinAmount,
-            swapDeadline,
-            kappa
-        );
+        _doWithdrawAndRemove(to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa);
     }
 
     // BRIDGE FUNCTIONS: INTERNAL IMPLEMENTATION ***/
@@ -794,15 +649,9 @@ contract SynapseBridge is
         // apply fee
         amount = amount.sub(fee);
         token.safeIncreaseAllowance(address(pool), amount);
-        try
-            ISwap(pool).swap(
-                tokenIndexFrom,
-                tokenIndexTo,
-                amount,
-                minDy,
-                deadline
-            )
-        returns (uint256 finalSwappedAmount) {
+        try ISwap(pool).swap(tokenIndexFrom, tokenIndexTo, amount, minDy, deadline) returns (
+            uint256 finalSwappedAmount
+        ) {
             // Swap succeeded, transfer swapped asset
             IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
             // If token is WGAS, this will send native chain GAS
@@ -821,18 +670,7 @@ contract SynapseBridge is
             );
         } catch {
             token.safeTransfer(to, amount);
-            emit TokenMintAndSwap(
-                to,
-                token,
-                amount,
-                fee,
-                tokenIndexFrom,
-                tokenIndexTo,
-                minDy,
-                deadline,
-                false,
-                kappa
-            );
+            emit TokenMintAndSwap(to, token, amount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
         }
     }
 
@@ -858,14 +696,9 @@ contract SynapseBridge is
         // withdrawAndRemove only on Mainnet => no airdrop
 
         token.safeIncreaseAllowance(address(pool), amount);
-        try
-            ISwap(pool).removeLiquidityOneToken(
-                amount,
-                swapTokenIndex,
-                swapMinAmount,
-                swapDeadline
-            )
-        returns (uint256 finalSwappedAmount) {
+        try ISwap(pool).removeLiquidityOneToken(amount, swapTokenIndex, swapMinAmount, swapDeadline) returns (
+            uint256 finalSwappedAmount
+        ) {
             // Swap succeeded, transfer swapped asset
             IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
             swappedTokenTo.safeTransfer(to, finalSwappedAmount);

@@ -163,8 +163,7 @@ contract RateLimitedBridge is Test {
 
     BridgeState public state;
 
-    address public constant NODE_GROUP =
-        0x230A1AC45690B9Ae1176389434610B9526d2f21b;
+    address public constant NODE_GROUP = 0x230A1AC45690B9Ae1176389434610B9526d2f21b;
 
     Utilities internal immutable utils;
 
@@ -181,9 +180,7 @@ contract RateLimitedBridge is Test {
         _saveState(tokens);
 
         utils = new Utilities();
-        address impl = deployCode(
-            "./artifacts/SynapseBridge.sol/SynapseBridge.json"
-        );
+        address impl = deployCode("./artifacts/SynapseBridge.sol/SynapseBridge.json");
         utils.upgradeTo(_bridge, impl);
 
         rateLimiter = new RateLimiter();
@@ -242,45 +239,18 @@ contract RateLimitedBridge is Test {
      */
     function _testUpgrade(bytes32[] memory kappas) internal {
         for (uint256 i = 0; i < kappas.length; ++i) {
-            assertTrue(
-                IBridge(bridge).kappaExists(kappas[i]),
-                "Kappa is missing post-upgrade"
-            );
+            assertTrue(IBridge(bridge).kappaExists(kappas[i]), "Kappa is missing post-upgrade");
         }
 
-        assertEq(
-            state.nodeGroupRole,
-            IBridge(bridge).NODEGROUP_ROLE(),
-            "NODEGROUP_ROLE rekt post-upgrade"
-        );
-        assertEq(
-            state.governanceRole,
-            IBridge(bridge).GOVERNANCE_ROLE(),
-            "GOVERNANCE_ROLE rekt post-upgrade"
-        );
-        assertEq(
-            state.startBlockNumber,
-            IBridge(bridge).startBlockNumber(),
-            "startBlockNumber rekt post-upgrade"
-        );
-        assertEq(
-            state.chainGasAmount,
-            IBridge(bridge).chainGasAmount(),
-            "chainGasAmount rekt post-upgrade"
-        );
-        assertEq(
-            state.wethAddress,
-            IBridge(bridge).WETH_ADDRESS(),
-            "WETH_ADDRESS rekt post-upgrade"
-        );
+        assertEq(state.nodeGroupRole, IBridge(bridge).NODEGROUP_ROLE(), "NODEGROUP_ROLE rekt post-upgrade");
+        assertEq(state.governanceRole, IBridge(bridge).GOVERNANCE_ROLE(), "GOVERNANCE_ROLE rekt post-upgrade");
+        assertEq(state.startBlockNumber, IBridge(bridge).startBlockNumber(), "startBlockNumber rekt post-upgrade");
+        assertEq(state.chainGasAmount, IBridge(bridge).chainGasAmount(), "chainGasAmount rekt post-upgrade");
+        assertEq(state.wethAddress, IBridge(bridge).WETH_ADDRESS(), "WETH_ADDRESS rekt post-upgrade");
 
         uint256 length = state.tokens.length;
         for (uint256 i = 0; i < length; ++i) {
-            assertEq(
-                state.fees[i],
-                IBridge(bridge).getFeeBalance(state.tokens[i]),
-                "fees rekt post-upgrade"
-            );
+            assertEq(state.fees[i], IBridge(bridge).getFeeBalance(state.tokens[i]), "fees rekt post-upgrade");
         }
 
         assertEq(IBridge(bridge).bridgeVersion(), 7, "Bridge not upgraded");
@@ -316,38 +286,12 @@ contract RateLimitedBridge is Test {
 
         bytes32 kappa = utils.getNextKappa();
 
-        bytes memory payload = _getPayload(
-            token,
-            amountBridged,
-            0,
-            extraParams,
-            kappa
-        );
+        bytes memory payload = _getPayload(token, amountBridged, 0, extraParams, kappa);
 
-        _checkAccess(
-            bridge,
-            bridgeSelector,
-            payload,
-            "Caller is not a node group"
-        );
-        _checkAccess(
-            bridge,
-            retrySelector,
-            payload,
-            "Caller is not rate limiter"
-        );
+        _checkAccess(bridge, bridgeSelector, payload, "Caller is not a node group");
+        _checkAccess(bridge, retrySelector, payload, "Caller is not rate limiter");
 
-        _checkCompleted(
-            token,
-            amountBridged,
-            0,
-            kappa,
-            NODE_GROUP,
-            bridge,
-            bridgeSelector,
-            payload,
-            checkBalance
-        );
+        _checkCompleted(token, amountBridged, 0, kappa, NODE_GROUP, bridge, bridgeSelector, payload, checkBalance);
 
         amountBridged = amount - amountBridged + 1;
         kappa = utils.getNextKappa();
@@ -379,11 +323,7 @@ contract RateLimitedBridge is Test {
         bytes memory extraParams,
         bytes32 kappa
     ) internal view returns (bytes memory payload) {
-        payload = abi.encodePacked(
-            abi.encode(user, token, amount, fee),
-            extraParams,
-            kappa
-        );
+        payload = abi.encodePacked(abi.encode(user, token, amount, fee), extraParams, kappa);
     }
 
     function _checkAccess(
@@ -393,9 +333,7 @@ contract RateLimitedBridge is Test {
         string memory revertMsg
     ) internal {
         hoax(attacker);
-        (bool success, bytes memory returnData) = _contract.call(
-            abi.encodePacked(selector, payload)
-        );
+        (bool success, bytes memory returnData) = _contract.call(abi.encodePacked(selector, payload));
         assertTrue(!success, "Attacker gained access");
         string memory _revertMsg = _getRevertMsg(returnData);
         assertEq(revertMsg, _revertMsg, "Unexpected revert message");
@@ -407,19 +345,10 @@ contract RateLimitedBridge is Test {
         bytes memory payload,
         bytes32 neededRole
     ) internal {
-        _checkAccess(
-            _contract,
-            selector,
-            payload,
-            _getAccessControlRevertMsg(neededRole, attacker)
-        );
+        _checkAccess(_contract, selector, payload, _getAccessControlRevertMsg(neededRole, attacker));
     }
 
-    function _getAccessControlRevertMsg(bytes32 role, address account)
-        internal
-        pure
-        returns (string memory revertMsg)
-    {
+    function _getAccessControlRevertMsg(bytes32 role, address account) internal pure returns (string memory revertMsg) {
         revertMsg = string(
             abi.encodePacked(
                 "AccessControl: account ",
@@ -447,24 +376,14 @@ contract RateLimitedBridge is Test {
     ) internal {
         uint256 pre = token.balanceOf(user);
 
-        assertTrue(
-            !IBridge(bridge).kappaExists(kappa),
-            "Kappa exists pre-bridge"
-        );
+        assertTrue(!IBridge(bridge).kappaExists(kappa), "Kappa exists pre-bridge");
         _submitBridgeTx(executor, _contract, selector, payload, true);
-        assertTrue(
-            IBridge(bridge).kappaExists(kappa),
-            "Kappa doesn't exist post-bridge"
-        );
+        assertTrue(IBridge(bridge).kappaExists(kappa), "Kappa doesn't exist post-bridge");
 
         if (checkBalance) {
             uint256 post = token.balanceOf(user);
             assertTrue(pre != post, "User hasn't received anything");
-            assertEq(
-                pre + amount - fee,
-                post,
-                "User hasn't received full amount"
-            );
+            assertEq(pre + amount - fee, post, "User hasn't received full amount");
         }
     }
 
@@ -479,21 +398,13 @@ contract RateLimitedBridge is Test {
         bytes memory payload,
         bool callSuccess
     ) internal {
-        assertTrue(
-            !IBridge(bridge).kappaExists(kappa),
-            "Kappa exists pre-bridge"
-        );
+        assertTrue(!IBridge(bridge).kappaExists(kappa), "Kappa exists pre-bridge");
         _submitBridgeTx(executor, _contract, selector, payload, callSuccess);
-        assertTrue(
-            !IBridge(bridge).kappaExists(kappa),
-            "Transaction wasn't delayed"
-        );
+        assertTrue(!IBridge(bridge).kappaExists(kappa), "Transaction wasn't delayed");
     }
 
     function _getBridgeBalance(IERC20 token) internal view returns (uint256) {
-        return
-            token.balanceOf(bridge) -
-            IBridge(bridge).getFeeBalance(address(token));
+        return token.balanceOf(bridge) - IBridge(bridge).getFeeBalance(address(token));
     }
 
     /**
@@ -508,9 +419,7 @@ contract RateLimitedBridge is Test {
         bool callSuccess
     ) internal {
         hoax(executor);
-        (bool success, bytes memory returnData) = _contract.call(
-            abi.encodePacked(selector, payload)
-        );
+        (bool success, bytes memory returnData) = _contract.call(abi.encodePacked(selector, payload));
         if (callSuccess) {
             assertTrue(success, _getRevertMsg(returnData));
         } else {
@@ -520,19 +429,10 @@ contract RateLimitedBridge is Test {
 
     function _setAllowance(IERC20 token, uint96 amount) internal {
         hoax(limiter);
-        rateLimiter.setAllowance(
-            address(token),
-            amount,
-            60,
-            uint32(block.timestamp / 60)
-        );
+        rateLimiter.setAllowance(address(token), amount, 60, uint32(block.timestamp / 60));
     }
 
-    function _getRevertMsg(bytes memory _returnData)
-        internal
-        pure
-        returns (string memory)
-    {
+    function _getRevertMsg(bytes memory _returnData) internal pure returns (string memory) {
         // If the _res length is less than 68, then the transaction failed silently (without a revert message)
         if (_returnData.length < 68) return "Transaction reverted silently";
 

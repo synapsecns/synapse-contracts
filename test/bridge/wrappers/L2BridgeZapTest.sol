@@ -132,18 +132,8 @@ interface IL2BridgeZap {
 }
 
 abstract contract L2BridgeZapTest is Test {
-    event TokenDeposit(
-        address indexed to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    );
-    event TokenRedeem(
-        address indexed to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    );
+    event TokenDeposit(address indexed to, uint256 chainId, IERC20 token, uint256 amount);
+    event TokenRedeem(address indexed to, uint256 chainId, IERC20 token, uint256 amount);
     event TokenDepositAndSwap(
         address indexed to,
         uint256 chainId,
@@ -173,12 +163,7 @@ abstract contract L2BridgeZapTest is Test {
         uint256 swapMinAmount,
         uint256 swapDeadline
     );
-    event TokenRedeemV2(
-        bytes32 indexed to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    );
+    event TokenRedeemV2(bytes32 indexed to, uint256 chainId, IERC20 token, uint256 amount);
 
     IL2BridgeZap public immutable zap;
     address public immutable user;

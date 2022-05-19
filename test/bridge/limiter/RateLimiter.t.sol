@@ -3,7 +3,6 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
 
-
 import {RateLimiter} from "src-bridge/RateLimiter.sol";
 import {Utilities} from "../utilities/Utilities.sol";
 
@@ -21,12 +20,7 @@ contract RateLimiterFoundryTest is Test {
         rateLimiter = new RateLimiter();
         utils = new Utilities();
         rateLimiter.initialize();
-        token = IERC20(
-            deployCode(
-                "artifacts/GenericERC20.sol/GenericERC20.json",
-                abi.encode("USDC", "USDC", 6)
-            )
-        );
+        token = IERC20(deployCode("artifacts/GenericERC20.sol/GenericERC20.json", abi.encode("USDC", "USDC", 6)));
     }
 
     function setUp() public {
@@ -43,12 +37,7 @@ contract RateLimiterFoundryTest is Test {
         _checkAllowance(amount, 0, 60, RESET_BASE_MIN);
 
         // Try overwriting the allowance settings
-        rateLimiter.setAllowance(
-            address(token),
-            amount / 2,
-            120,
-            RESET_BASE_MIN - 60
-        );
+        rateLimiter.setAllowance(address(token), amount / 2, 120, RESET_BASE_MIN - 60);
         _checkAllowance(amount / 2, 0, 120, RESET_BASE_MIN - 60);
     }
 
@@ -66,10 +55,7 @@ contract RateLimiterFoundryTest is Test {
         uint96 spent = 0;
 
         for (uint256 i = 0; i < amounts.length; ++i) {
-            assertTrue(
-                rateLimiter.checkAndUpdateAllowance(address(token), amounts[i]),
-                "Failed to spend below max"
-            );
+            assertTrue(rateLimiter.checkAndUpdateAllowance(address(token), amounts[i]), "Failed to spend below max");
             spent += amounts[i];
             _checkAllowance(type(uint96).max, spent, 60, RESET_BASE_MIN);
         }
@@ -80,10 +66,7 @@ contract RateLimiterFoundryTest is Test {
 
         _setAllowance(amount);
 
-        assertTrue(
-            rateLimiter.checkAndUpdateAllowance(address(token), amount),
-            "Failed to spend exactly max"
-        );
+        assertTrue(rateLimiter.checkAndUpdateAllowance(address(token), amount), "Failed to spend exactly max");
         _checkAllowance(amount, amount, 60, RESET_BASE_MIN);
     }
 
@@ -93,10 +76,7 @@ contract RateLimiterFoundryTest is Test {
 
         _setAllowance(amount);
 
-        assertTrue(
-            !rateLimiter.checkAndUpdateAllowance(address(token), amount + 1),
-            "Managed to spend over max"
-        );
+        assertTrue(!rateLimiter.checkAndUpdateAllowance(address(token), amount + 1), "Managed to spend over max");
 
         _checkAllowance(amount, 0, 60, RESET_BASE_MIN);
     }
@@ -122,13 +102,12 @@ contract RateLimiterFoundryTest is Test {
         vm.assume(tx_count > 1);
         vm.assume(tx_count < 10);
 
-        for (uint256 i = 0; i < tx_count; ++i){
+        for (uint256 i = 0; i < tx_count; ++i) {
             bytes32 kappa = utils.getNextKappa();
             bytes memory expectedPayload = abi.encodePacked(kappa, i);
             rateLimiter.addToRetryQueue(kappa, expectedPayload);
 
-            (bytes memory payload, uint32 storedAtMin) =
-                rateLimiter.getTransactionByKappa(kappa);
+            (bytes memory payload, uint32 storedAtMin) = rateLimiter.getTransactionByKappa(kappa);
             assertEq(payload, expectedPayload);
 
             // without removing anything these txes should be in order
@@ -145,9 +124,7 @@ contract RateLimiterFoundryTest is Test {
         uint32 resetTimeMin,
         uint32 lastResetMin
     ) internal {
-        uint256[4] memory allowance = rateLimiter.getTokenAllowance(
-            address(token)
-        );
+        uint256[4] memory allowance = rateLimiter.getTokenAllowance(address(token));
         assertEq(allowance[0], amount, "amount differs");
         assertEq(allowance[1], spent, "spent differs");
         assertEq(allowance[2], resetTimeMin, "resetTimeMin differs");
