@@ -7,14 +7,12 @@ import "../interfaces/IMessageBus.sol";
 import "@openzeppelin/contracts-upgradeable-4.5.0/access/OwnableUpgradeable.sol";
 
 abstract contract SynMessagingReceiverUpgradeable is ISynMessagingReceiver, OwnableUpgradeable {
-    
     address public messageBus;
 
     // Maps chain ID to the bytes32 trusted addresses allowed to be source senders
     mapping(uint256 => bytes32) internal trustedRemoteLookup;
 
     event SetTrustedRemote(uint256 _srcChainId, bytes32 _srcAddress);
-
 
     /**
      * @notice Executes a message called by MessageBus (MessageBusReceiver)
@@ -39,18 +37,21 @@ abstract contract SynMessagingReceiverUpgradeable is ISynMessagingReceiver, Owna
     }
 
     // Logic here handling messsage contents
-    function _handleMessage(bytes32 _srcAddress,
+    function _handleMessage(
+        bytes32 _srcAddress,
         uint256 _srcChainId,
         bytes memory _message,
-        address _executor) internal virtual;
+        address _executor
+    ) internal virtual;
 
-
-    function _send(bytes32 _receiver,
+    function _send(
+        bytes32 _receiver,
         uint256 _dstChainId,
         bytes memory _message,
-        bytes memory _options) internal virtual {
-            require(trustedRemoteLookup[_dstChainId] != bytes32(0), "Receiver not trusted remote");
-            IMessageBus(messageBus).sendMessage{value: msg.value}(_receiver, _dstChainId, _message, _options);
+        bytes memory _options
+    ) internal virtual {
+        require(trustedRemoteLookup[_dstChainId] != bytes32(0), "Receiver not trusted remote");
+        IMessageBus(messageBus).sendMessage{value: msg.value}(_receiver, _dstChainId, _message, _options);
     }
 
     //** Config Functions */
@@ -58,7 +59,7 @@ abstract contract SynMessagingReceiverUpgradeable is ISynMessagingReceiver, Owna
         messageBus = _messageBus;
     }
 
-     // allow owner to set trusted addresses allowed to be source senders
+    // allow owner to set trusted addresses allowed to be source senders
     function setTrustedRemote(uint256 _srcChainId, bytes32 _srcAddress) external onlyOwner {
         trustedRemoteLookup[_srcChainId] = _srcAddress;
         emit SetTrustedRemote(_srcChainId, _srcAddress);
@@ -75,5 +76,4 @@ abstract contract SynMessagingReceiverUpgradeable is ISynMessagingReceiver, Owna
      * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
      */
     uint256[48] private __gap;
-
 }

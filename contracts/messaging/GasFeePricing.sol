@@ -44,37 +44,22 @@ contract GasFeePricing is Ownable {
      * @notice Returns srcGasToken fee to charge in wei for the cross-chain message based on the gas limit
      * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits. Contains data on gas limit to submit tx with.
      */
-    function estimateGasFee(uint256 _dstChainId, bytes memory _options)
-        external
-        view
-        returns (uint256)
-    {
+    function estimateGasFee(uint256 _dstChainId, bytes memory _options) external view returns (uint256) {
         uint256 gasLimit;
         // temporary gas limit set
         if (_options.length != 0) {
-            (
-                uint16 _txType,
-                uint256 _gasLimit,
-                uint256 _dstAirdrop,
-                bytes32 _dstAddress
-            ) = decodeOptions(_options);
+            (uint16 _txType, uint256 _gasLimit, uint256 _dstAirdrop, bytes32 _dstAddress) = decodeOptions(_options);
             gasLimit = _gasLimit;
         } else {
             gasLimit = 200000;
         }
 
-        uint256 minFee = ((dstGasPriceInWei[_dstChainId] *
-            dstGasTokenRatio[_dstChainId] *
-            gasLimit) / 10**18);
+        uint256 minFee = ((dstGasPriceInWei[_dstChainId] * dstGasTokenRatio[_dstChainId] * gasLimit) / 10**18);
 
         return minFee;
     }
 
-    function encodeOptions(uint16 txType, uint256 gasLimit)
-        public
-        pure
-        returns (bytes memory)
-    {
+    function encodeOptions(uint16 txType, uint256 gasLimit) public pure returns (bytes memory) {
         return abi.encodePacked(txType, gasLimit);
     }
 
@@ -98,10 +83,7 @@ contract GasFeePricing is Ownable {
         )
     {
         // decoding the _options - reverts if type 2 and there is no dstNativeAddress
-        require(
-            _options.length == 34 || _options.length > 66,
-            "Wrong _adapterParameters size"
-        );
+        require(_options.length == 34 || _options.length > 66, "Wrong _adapterParameters size");
         uint16 txType;
         uint256 gasLimit;
         uint256 dstNativeAmt;

@@ -26,7 +26,11 @@ contract PingPong is ISynMessagingReceiver {
         pingsEnabled = false;
     }
 
-    function ping(uint256 _dstChainId, address _dstPingPongAddr, uint256 pings) public {
+    function ping(
+        uint256 _dstChainId,
+        address _dstPingPongAddr,
+        uint256 pings
+    ) public {
         require(address(this).balance > 0, "the balance of this contract needs to be able to pay for native gas");
         require(pingsEnabled, "pingsEnabled is false. messages stopped");
         require(maxPings > pings, "maxPings has been reached, no more looping");
@@ -40,7 +44,10 @@ contract PingPong is ISynMessagingReceiver {
         require(address(this).balance >= fee, "not enough gas for fees");
 
         messageBus.sendMessage{value: fee}(
-            bytes32(uint256(uint160(_dstPingPongAddr))), _dstChainId, message, bytes("")
+            bytes32(uint256(uint160(_dstPingPongAddr))),
+            _dstChainId,
+            message,
+            bytes("")
         );
     }
 

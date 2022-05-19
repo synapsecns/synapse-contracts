@@ -37,9 +37,7 @@ contract L2BridgeZap {
             {
                 uint8 i;
                 for (; i < 32; i++) {
-                    try ISwap(_swapOne).getToken(i) returns (
-                        IERC20 token
-                    ) {
+                    try ISwap(_swapOne).getToken(i) returns (IERC20 token) {
                         swapTokensMap[_swapOne].push(token);
                         token.safeApprove(address(_swapOne), MAX_UINT256);
                         token.safeApprove(address(synapseBridge), MAX_UINT256);
@@ -54,9 +52,7 @@ contract L2BridgeZap {
             {
                 uint8 i;
                 for (; i < 32; i++) {
-                    try ISwap(_swapTwo).getToken(i) returns (
-                        IERC20 token
-                    ) {
+                    try ISwap(_swapTwo).getToken(i) returns (IERC20 token) {
                         swapTokensMap[_swapTwo].push(token);
                         token.safeApprove(address(_swapTwo), MAX_UINT256);
                         token.safeApprove(address(synapseBridge), MAX_UINT256);
@@ -83,9 +79,7 @@ contract L2BridgeZap {
         uint8 tokenIndexTo,
         uint256 dx
     ) external view virtual returns (uint256) {
-        ISwap swap = ISwap(
-            swapMap[address(token)]
-        );
+        ISwap swap = ISwap(swapMap[address(token)]);
         return swap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
     }
 
@@ -102,25 +96,12 @@ contract L2BridgeZap {
         ISwap swap = ISwap(swapMap[address(token)]);
         require(address(swap) != address(0), "Swap is 0x00");
         IERC20[] memory tokens = swapTokensMap[address(swap)];
-        tokens[tokenIndexFrom].safeTransferFrom(
-            msg.sender,
-            address(this),
-            dx
-        );
+        tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
         // swap
 
-        uint256 swappedAmount = swap.swap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
+        uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // deposit into bridge, gets nUSD
-        if (
-            token.allowance(address(this), address(synapseBridge)) <
-            swappedAmount
-        ) {
+        if (token.allowance(address(this), address(synapseBridge)) < swappedAmount) {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
         }
         synapseBridge.redeem(to, chainId, token, swappedAmount);
@@ -140,26 +121,14 @@ contract L2BridgeZap {
         uint256 swapMinDy,
         uint256 swapDeadline
     ) external {
-        require(
-            address(swapMap[address(token)]) != address(0),
-            "Swap is 0x00"
-        );
-        IERC20[] memory tokens = swapTokensMap[
-            swapMap[address(token)]
-        ];
-        tokens[tokenIndexFrom].safeTransferFrom(
-            msg.sender,
-            address(this),
-            dx
-        );
+        require(address(swapMap[address(token)]) != address(0), "Swap is 0x00");
+        IERC20[] memory tokens = swapTokensMap[swapMap[address(token)]];
+        tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
         // swap
 
         uint256 swappedAmount = ISwap(swapMap[address(token)]).swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // deposit into bridge, gets nUSD
-        if (
-            token.allowance(address(this), address(synapseBridge)) <
-            swappedAmount
-        ) {
+        if (token.allowance(address(this), address(synapseBridge)) < swappedAmount) {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
         }
         synapseBridge.redeemAndSwap(
@@ -190,36 +159,15 @@ contract L2BridgeZap {
         ISwap swap = ISwap(swapMap[address(token)]);
         require(address(swap) != address(0), "Swap is 0x00");
         IERC20[] memory tokens = swapTokensMap[address(swap)];
-        tokens[tokenIndexFrom].safeTransferFrom(
-            msg.sender,
-            address(this),
-            dx
-        );
+        tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
         // swap
 
-        uint256 swappedAmount = swap.swap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
+        uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // deposit into bridge, gets nUSD
-        if (
-            token.allowance(address(this), address(synapseBridge)) <
-            swappedAmount
-        ) {
+        if (token.allowance(address(this), address(synapseBridge)) < swappedAmount) {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
         }
-        synapseBridge.redeemAndRemove(
-            to,
-            chainId,
-            token,
-            swappedAmount,
-            liqTokenIndex,
-            liqMinAmount,
-            liqDeadline
-        );
+        synapseBridge.redeemAndRemove(to, chainId, token, swappedAmount, liqTokenIndex, liqMinAmount, liqDeadline);
     }
 
     /**
@@ -263,46 +211,53 @@ contract L2BridgeZap {
     }
 
     /**
-   * @notice Wraps SynapseBridge deposit() function to make it compatible w/ ETH -> WETH conversions
-   * @param to address on other chain to bridge assets to
-   * @param chainId which chain to bridge assets onto
-   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   **/
-  function depositETH(
-    address to,
-    uint256 chainId,
-    uint256 amount
+     * @notice Wraps SynapseBridge deposit() function to make it compatible w/ ETH -> WETH conversions
+     * @param to address on other chain to bridge assets to
+     * @param chainId which chain to bridge assets onto
+     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+     **/
+    function depositETH(
+        address to,
+        uint256 chainId,
+        uint256 amount
     ) external payable {
-      require(msg.value > 0 && msg.value == amount, 'INCORRECT MSG VALUE');
-      IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
-      synapseBridge.deposit(to, chainId, IERC20(WETH_ADDRESS), amount);
+        require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
+        IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+        synapseBridge.deposit(to, chainId, IERC20(WETH_ADDRESS), amount);
     }
 
-
-  /**
-   * @notice Wraps SynapseBridge depositAndSwap() function to make it compatible w/ ETH -> WETH conversions
-   * @param to address on other chain to bridge assets to
-   * @param chainId which chain to bridge assets onto
-   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   * @param tokenIndexFrom the token the user wants to swap from
-   * @param tokenIndexTo the token the user wants to swap to
-   * @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
-   * @param deadline latest timestamp to accept this transaction
-   **/
-  function depositETHAndSwap(
-    address to,
-    uint256 chainId,
-    uint256 amount,
-    uint8 tokenIndexFrom,
-    uint8 tokenIndexTo,
-    uint256 minDy,
-    uint256 deadline
+    /**
+     * @notice Wraps SynapseBridge depositAndSwap() function to make it compatible w/ ETH -> WETH conversions
+     * @param to address on other chain to bridge assets to
+     * @param chainId which chain to bridge assets onto
+     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+     * @param tokenIndexFrom the token the user wants to swap from
+     * @param tokenIndexTo the token the user wants to swap to
+     * @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
+     * @param deadline latest timestamp to accept this transaction
+     **/
+    function depositETHAndSwap(
+        address to,
+        uint256 chainId,
+        uint256 amount,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline
     ) external payable {
-      require(msg.value > 0 && msg.value == amount, 'INCORRECT MSG VALUE');
-      IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
-      synapseBridge.depositAndSwap(to, chainId, IERC20(WETH_ADDRESS), amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
+        require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
+        IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+        synapseBridge.depositAndSwap(
+            to,
+            chainId,
+            IERC20(WETH_ADDRESS),
+            amount,
+            tokenIndexFrom,
+            tokenIndexTo,
+            minDy,
+            deadline
+        );
     }
-
 
     function swapETHAndRedeem(
         address to,
@@ -321,16 +276,9 @@ contract L2BridgeZap {
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
 
         // swap
-        uint256 swappedAmount = swap.swap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
+        uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         synapseBridge.redeem(to, chainId, token, swappedAmount);
     }
-
 
     function swapETHAndRedeemAndSwap(
         address to,
@@ -353,19 +301,18 @@ contract L2BridgeZap {
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
 
         // swap
-        uint256 swappedAmount = swap.swap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
-        synapseBridge.redeemAndSwap(to, chainId, token, swappedAmount,swapTokenIndexFrom,
+        uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
+        synapseBridge.redeemAndSwap(
+            to,
+            chainId,
+            token,
+            swappedAmount,
+            swapTokenIndexFrom,
             swapTokenIndexTo,
             swapMinDy,
-            swapDeadline);
+            swapDeadline
+        );
     }
-
 
     /**
      * @notice Wraps redeemAndSwap on SynapseBridge.sol
@@ -393,16 +340,7 @@ contract L2BridgeZap {
         if (token.allowance(address(this), address(synapseBridge)) < amount) {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
         }
-        synapseBridge.redeemAndSwap(
-            to,
-            chainId,
-            token,
-            amount,
-            tokenIndexFrom,
-            tokenIndexTo,
-            minDy,
-            deadline
-        );
+        synapseBridge.redeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
     }
 
     /**
@@ -429,24 +367,16 @@ contract L2BridgeZap {
         if (token.allowance(address(this), address(synapseBridge)) < amount) {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
         }
-        synapseBridge.redeemAndRemove(
-            to,
-            chainId,
-            token,
-            amount,
-            liqTokenIndex,
-            liqMinAmount,
-            liqDeadline
-        );
+        synapseBridge.redeemAndRemove(to, chainId, token, amount, liqTokenIndex, liqMinAmount, liqDeadline);
     }
 
     /**
-    * @notice Wraps SynapseBridge redeemv2() function
-   * @param to address on other chain to bridge assets to
-   * @param chainId which chain to bridge assets onto
-   * @param token ERC20 compatible token to redeem into the bridge
-   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   **/
+     * @notice Wraps SynapseBridge redeemv2() function
+     * @param to address on other chain to bridge assets to
+     * @param chainId which chain to bridge assets onto
+     * @param token ERC20 compatible token to redeem into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+     **/
     function redeemv2(
         bytes32 to,
         uint256 chainId,
