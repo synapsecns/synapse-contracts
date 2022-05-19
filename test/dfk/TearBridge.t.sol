@@ -54,20 +54,13 @@ contract TearBridgeTest is Test {
         vm.label(node, "Node");
 
         authVerifier = new AuthVerifier(node);
-        messageBus = new MessageBus(
-            address(gasFeePricing),
-            address(authVerifier)
-        );
+        messageBus = new MessageBus(address(gasFeePricing), address(authVerifier));
         gaiaTears = new GaiaTears();
 
         tearBridge = new TearBridge(address(messageBus), address(gaiaTears));
         tearBridge.setMsgGasLimit(800000);
         gaiaTears.grantRole(keccak256("MINTER_ROLE"), address(tearBridge));
-        gasFeePricing.setCostPerChain(
-            1666700000,
-            2000000000,
-            100000000000000000
-        );
+        gasFeePricing.setCostPerChain(1666700000, 2000000000, 100000000000000000);
         gasFeePricing.setCostPerChain(335, 2000000000, 100000000000000000);
         tearBridge.setTrustedRemote(1666700000, bytes32("trustedRemoteB"));
         tearBridge.setTrustedRemote(335, bytes32("trustedRemoteA"));
@@ -99,20 +92,12 @@ contract TearBridgeTest is Test {
     }
 
     function testGaiaExecuteMessage() public {
-        MessageFormat memory msgFormat = MessageFormat({
-            dstUser: users[1],
-            dstTearAmount: 1000
-        });
+        MessageFormat memory msgFormat = MessageFormat({dstUser: users[1], dstTearAmount: 1000});
 
         bytes memory message = abi.encode(msgFormat);
         assertEq(gaiaTears.balanceOf(users[1]), 0);
         vm.prank(address(messageBus));
-        tearBridge.executeMessage(
-            bytes32("trustedRemoteB"),
-            1666700000,
-            message,
-            msg.sender
-        );
+        tearBridge.executeMessage(bytes32("trustedRemoteB"), 1666700000, message, msg.sender);
         assertEq(gaiaTears.balanceOf(users[1]), 1000);
     }
 }

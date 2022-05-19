@@ -16,7 +16,7 @@ contract MoonriverBridgeZap {
 
     ISynapseBridge synapseBridge;
     address payable public immutable WETH_ADDRESS;
-    IFrax private  constant CANOLICAL_FRAX = IFrax(0x1A93B23281CC1CDE4C4741353F3064709A16197d);
+    IFrax private constant CANOLICAL_FRAX = IFrax(0x1A93B23281CC1CDE4C4741353F3064709A16197d);
     IERC20 private constant SYN_FRAX = IERC20(0xE96AC70907ffF3Efee79f502C985A7A21Bce407d);
 
     mapping(address => address) public swapMap;
@@ -41,9 +41,7 @@ contract MoonriverBridgeZap {
             {
                 uint8 i;
                 for (; i < 32; i++) {
-                    try ISwap(_swapOne).getToken(i) returns (
-                        IERC20 token
-                    ) {
+                    try ISwap(_swapOne).getToken(i) returns (IERC20 token) {
                         swapTokensMap[_swapOne].push(token);
                         token.safeApprove(address(_swapOne), MAX_UINT256);
                         token.safeApprove(address(synapseBridge), MAX_UINT256);
@@ -58,9 +56,7 @@ contract MoonriverBridgeZap {
             {
                 uint8 i;
                 for (; i < 32; i++) {
-                    try ISwap(_swapTwo).getToken(i) returns (
-                        IERC20 token
-                    ) {
+                    try ISwap(_swapTwo).getToken(i) returns (IERC20 token) {
                         swapTokensMap[_swapTwo].push(token);
                         token.safeApprove(address(_swapTwo), MAX_UINT256);
                         token.safeApprove(address(synapseBridge), MAX_UINT256);
@@ -87,9 +83,7 @@ contract MoonriverBridgeZap {
         uint8 tokenIndexTo,
         uint256 dx
     ) external view virtual returns (uint256) {
-        ISwap swap = ISwap(
-            swapMap[address(token)]
-        );
+        ISwap swap = ISwap(swapMap[address(token)]);
         return swap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
     }
 
@@ -106,25 +100,12 @@ contract MoonriverBridgeZap {
         ISwap swap = ISwap(swapMap[address(token)]);
         require(address(swap) != address(0), "Swap is 0x00");
         IERC20[] memory tokens = swapTokensMap[address(swap)];
-        tokens[tokenIndexFrom].safeTransferFrom(
-            msg.sender,
-            address(this),
-            dx
-        );
+        tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
         // swap
 
-        uint256 swappedAmount = swap.swap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
+        uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // deposit into bridge, gets nUSD
-        if (
-            token.allowance(address(this), address(synapseBridge)) <
-            swappedAmount
-        ) {
+        if (token.allowance(address(this), address(synapseBridge)) < swappedAmount) {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
         }
         synapseBridge.redeem(to, chainId, token, swappedAmount);
@@ -144,26 +125,14 @@ contract MoonriverBridgeZap {
         uint256 swapMinDy,
         uint256 swapDeadline
     ) external {
-        require(
-            address(swapMap[address(token)]) != address(0),
-            "Swap is 0x00"
-        );
-        IERC20[] memory tokens = swapTokensMap[
-            swapMap[address(token)]
-        ];
-        tokens[tokenIndexFrom].safeTransferFrom(
-            msg.sender,
-            address(this),
-            dx
-        );
+        require(address(swapMap[address(token)]) != address(0), "Swap is 0x00");
+        IERC20[] memory tokens = swapTokensMap[swapMap[address(token)]];
+        tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
         // swap
 
         uint256 swappedAmount = ISwap(swapMap[address(token)]).swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // deposit into bridge, gets nUSD
-        if (
-            token.allowance(address(this), address(synapseBridge)) <
-            swappedAmount
-        ) {
+        if (token.allowance(address(this), address(synapseBridge)) < swappedAmount) {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
         }
         synapseBridge.redeemAndSwap(
@@ -194,36 +163,15 @@ contract MoonriverBridgeZap {
         ISwap swap = ISwap(swapMap[address(token)]);
         require(address(swap) != address(0), "Swap is 0x00");
         IERC20[] memory tokens = swapTokensMap[address(swap)];
-        tokens[tokenIndexFrom].safeTransferFrom(
-            msg.sender,
-            address(this),
-            dx
-        );
+        tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
         // swap
 
-        uint256 swappedAmount = swap.swap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
+        uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // deposit into bridge, gets nUSD
-        if (
-            token.allowance(address(this), address(synapseBridge)) <
-            swappedAmount
-        ) {
+        if (token.allowance(address(this), address(synapseBridge)) < swappedAmount) {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
         }
-        synapseBridge.redeemAndRemove(
-            to,
-            chainId,
-            token,
-            swappedAmount,
-            liqTokenIndex,
-            liqMinAmount,
-            liqDeadline
-        );
+        synapseBridge.redeemAndRemove(to, chainId, token, swappedAmount, liqTokenIndex, liqMinAmount, liqDeadline);
     }
 
     /**
@@ -255,12 +203,12 @@ contract MoonriverBridgeZap {
     }
 
     /**
- * @notice Wraps SynapseBridge redeemv2() function
-   * @param to address on other chain to bridge assets to
-   * @param chainId which chain to bridge assets onto
-   * @param token ERC20 compatible token to redeem into the bridge
-   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   **/
+     * @notice Wraps SynapseBridge redeemv2() function
+     * @param to address on other chain to bridge assets to
+     * @param chainId which chain to bridge assets onto
+     * @param token ERC20 compatible token to redeem into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+     **/
     function redeemv2(
         bytes32 to,
         uint256 chainId,
@@ -296,22 +244,20 @@ contract MoonriverBridgeZap {
     }
 
     /**
-   * @notice Wraps SynapseBridge deposit() function to make it compatible w/ ETH -> WETH conversions
-   * @param to address on other chain to bridge assets to
-   * @param chainId which chain to bridge assets onto
-   * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-   **/
-  function depositETH(
-    address to,
-    uint256 chainId,
-    uint256 amount
+     * @notice Wraps SynapseBridge deposit() function to make it compatible w/ ETH -> WETH conversions
+     * @param to address on other chain to bridge assets to
+     * @param chainId which chain to bridge assets onto
+     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+     **/
+    function depositETH(
+        address to,
+        uint256 chainId,
+        uint256 amount
     ) external payable {
-      require(msg.value > 0 && msg.value == amount, 'INCORRECT MSG VALUE');
-      IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
-      synapseBridge.deposit(to, chainId, IERC20(WETH_ADDRESS), amount);
+        require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
+        IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+        synapseBridge.deposit(to, chainId, IERC20(WETH_ADDRESS), amount);
     }
-
-
 
     function swapETHAndRedeem(
         address to,
@@ -330,13 +276,7 @@ contract MoonriverBridgeZap {
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
 
         // swap
-        uint256 swappedAmount = swap.swap(
-            tokenIndexFrom,
-            tokenIndexTo,
-            dx,
-            minDy,
-            deadline
-        );
+        uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         synapseBridge.redeem(to, chainId, token, swappedAmount);
     }
 
@@ -366,16 +306,7 @@ contract MoonriverBridgeZap {
         if (token.allowance(address(this), address(synapseBridge)) < amount) {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
         }
-        synapseBridge.redeemAndSwap(
-            to,
-            chainId,
-            token,
-            amount,
-            tokenIndexFrom,
-            tokenIndexTo,
-            minDy,
-            deadline
-        );
+        synapseBridge.redeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
     }
 
     /**
@@ -402,14 +333,6 @@ contract MoonriverBridgeZap {
         if (token.allowance(address(this), address(synapseBridge)) < amount) {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
         }
-        synapseBridge.redeemAndRemove(
-            to,
-            chainId,
-            token,
-            amount,
-            liqTokenIndex,
-            liqMinAmount,
-            liqDeadline
-        );
+        synapseBridge.redeemAndRemove(to, chainId, token, amount, liqTokenIndex, liqMinAmount, liqDeadline);
     }
 }

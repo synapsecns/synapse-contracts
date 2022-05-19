@@ -35,27 +35,11 @@ contract MessageBusSender is Ownable, Pausable {
         uint256 _srcNonce,
         bytes calldata _message
     ) public pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    _srcAddress,
-                    _srcChainId,
-                    _dstAddress,
-                    _dstChainId,
-                    _srcNonce,
-                    _message
-                )
-            );
+        return keccak256(abi.encode(_srcAddress, _srcChainId, _dstAddress, _dstChainId, _srcNonce, _message));
     }
 
-    function estimateFee(uint256 _dstChainId, bytes calldata _options)
-        public
-        returns (uint256)
-    {
-        uint256 fee = IGasFeePricing(gasFeePricing).estimateGasFee(
-            _dstChainId,
-            _options
-        );
+    function estimateFee(uint256 _dstChainId, bytes calldata _options) public returns (uint256) {
+        uint256 fee = IGasFeePricing(gasFeePricing).estimateGasFee(_dstChainId, _options);
         require(fee != 0, "Fee not set");
         return fee;
     }
@@ -78,13 +62,7 @@ contract MessageBusSender is Ownable, Pausable {
         // use tx.origin for gas refund by default, so that older contracts,
         // interacting with MessageBus that don't have a fallback/receive
         // (i.e. not able to receive gas), will continue to work
-        _sendMessage(
-            _receiver,
-            _dstChainId,
-            _message,
-            _options,
-            payable(tx.origin)
-        );
+        _sendMessage(_receiver, _dstChainId, _message, _options, payable(tx.origin));
     }
 
     /**
@@ -104,13 +82,7 @@ contract MessageBusSender is Ownable, Pausable {
         bytes calldata _options,
         address payable _refundAddress
     ) external payable {
-        _sendMessage(
-            _receiver,
-            _dstChainId,
-            _message,
-            _options,
-            _refundAddress
-        );
+        _sendMessage(_receiver, _dstChainId, _message, _options, _refundAddress);
     }
 
     function _sendMessage(
@@ -123,25 +95,8 @@ contract MessageBusSender is Ownable, Pausable {
         require(_dstChainId != block.chainid, "Invalid chainId");
         uint256 fee = estimateFee(_dstChainId, _options);
         require(msg.value >= fee, "Insufficient gas fee");
-        bytes32 msgId = computeMessageId(
-            msg.sender,
-            block.chainid,
-            _receiver,
-            _dstChainId,
-            nonce,
-            _message
-        );
-        emit MessageSent(
-            msg.sender,
-            block.chainid,
-            _receiver,
-            _dstChainId,
-            _message,
-            nonce,
-            _options,
-            fee,
-            msgId
-        );
+        bytes32 msgId = computeMessageId(msg.sender, block.chainid, _receiver, _dstChainId, nonce, _message);
+        emit MessageSent(msg.sender, block.chainid, _receiver, _dstChainId, _message, nonce, _options, fee, msgId);
         fees += fee;
         ++nonce;
         // refund gas fees in case of overpayment
