@@ -84,13 +84,13 @@ contract QueueTest is Test {
 
     function _poll_front(uint256 amount) internal {
         for (uint256 i = 0; i < amount; i++) {
-            queue.pop_front();
+            queue.popFront();
         }
     }
 
     function _pollCheck(uint256 amount) internal {
         for (uint256 i = 0; i < amount; i++) {
-            (bytes32 key, bytes memory value, ) = queue.pop_front();
+            (bytes32 key, bytes memory value, ) = queue.popFront();
 
             assertTrue(!queue.contains(key), "Key not deleted");
             assertTrue(
