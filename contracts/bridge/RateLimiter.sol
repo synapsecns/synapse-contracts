@@ -128,6 +128,10 @@ contract RateLimiter is
         (payload, storedAtMin) = rateLimitedQueue.get(kappa);
     }
 
+    function isKappaFailed(bytes32 kappa) external view returns (bool) {
+        return failedRetries[kappa].length > 0;
+    }
+
     function getUnhandledKappas()
         external
         view

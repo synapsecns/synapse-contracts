@@ -281,6 +281,11 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
             "RateLimiter Queue wrong length"
         );
 
+        assertFalse(
+            rateLimiter.isKappaFailed(kappa),
+            "wrong isKappaFailed status"
+        );
+
         hoax(admin);
         // bridge can no longer mint SYN => part of txs will fail
         ISynapseERC20(address(SYN)).revokeRole(minterRole, bridge);
@@ -296,6 +301,11 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
         assertTrue(
             !IBridge(bridge).kappaExists(kappa),
             "SYN kappa should not exist"
+        );
+
+        assertTrue(
+            rateLimiter.isKappaFailed(kappa),
+            "wrong isKappaFailed status"
         );
 
         hoax(user);
@@ -315,6 +325,11 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
             );
         }
 
+        assertTrue(
+            rateLimiter.isKappaFailed(kappa),
+            "wrong isKappaFailed status"
+        );
+
         hoax(admin);
         ISynapseERC20(address(SYN)).grantRole(minterRole, bridge);
 
@@ -329,6 +344,11 @@ contract BridgeRateLimiterTestAvax is RateLimitedBridge {
             rateLimiter.retryByKappa.selector,
             abi.encode(kappa),
             true
+        );
+
+        assertFalse(
+            rateLimiter.isKappaFailed(kappa),
+            "wrong isKappaFailed status"
         );
     }
 
