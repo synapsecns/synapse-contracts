@@ -61,6 +61,23 @@ function NODEGROUP_ROLE() external view returns (bytes32)
 |---|---|---|
 | _0 | bytes32 | undefined |
 
+### RATE_LIMITER_ROLE
+
+```solidity
+function RATE_LIMITER_ROLE() external view returns (bytes32)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | bytes32 | undefined |
+
 ### WETH_ADDRESS
 
 ```solidity
@@ -373,7 +390,7 @@ Nodes call this function to mint a SynERC20 (or any asset that the bridge is giv
 | pool | contract ISwap | Destination chain&#39;s pool to use to swap SynERC20 -&gt; Asset. The nodes determine this by using PoolConfig.sol. |
 | tokenIndexFrom | uint8 | Index of the SynERC20 asset in the pool |
 | tokenIndexTo | uint8 | Index of the desired final asset |
-| minDy | uint256 | Minumum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20. |
+| minDy | uint256 | Minimum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20. |
 | deadline | uint256 | Epoch time of the deadline that the swap is allowed to be executed. |
 | kappa | bytes32 | kappa* |
 
@@ -405,13 +422,30 @@ function paused() external view returns (bool)
 |---|---|---|
 | _0 | bool | undefined |
 
+### rateLimiter
+
+```solidity
+function rateLimiter() external view returns (contract IRateLimiter)
+```
+
+
+
+
+
+
+#### Returns
+
+| Name | Type | Description |
+|---|---|---|
+| _0 | contract IRateLimiter | undefined |
+
 ### redeem
 
 ```solidity
 function redeem(address to, uint256 chainId, contract ERC20Burnable token, uint256 amount) external nonpayable
 ```
 
-Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain
 
 
 
@@ -430,7 +464,7 @@ Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned 
 function redeemAndRemove(address to, uint256 chainId, contract ERC20Burnable token, uint256 amount, uint8 swapTokenIndex, uint256 swapMinAmount, uint256 swapDeadline) external nonpayable
 ```
 
-Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
+Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
 
 
 
@@ -444,7 +478,7 @@ Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned 
 | amount | uint256 | Amount in native token decimals to transfer cross-chain pre-fees |
 | swapTokenIndex | uint8 | Specifies which of the underlying LP assets the nodes should attempt to redeem for |
 | swapMinAmount | uint256 | Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap |
-| swapDeadline | uint256 | Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token* |
+| swapDeadline | uint256 | Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token* |
 
 ### redeemAndSwap
 
@@ -452,7 +486,7 @@ Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned 
 function redeemAndSwap(address to, uint256 chainId, contract ERC20Burnable token, uint256 amount, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline) external nonpayable
 ```
 
-Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
+Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g &quot;swap&quot; out of the LP token)
 
 
 
@@ -475,7 +509,7 @@ Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned 
 function redeemV2(bytes32 to, uint256 chainId, contract ERC20Burnable token, uint256 amount) external nonpayable
 ```
 
-Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain
 
 
 
@@ -504,6 +538,95 @@ function renounceRole(bytes32 role, address account) external nonpayable
 |---|---|---|
 | role | bytes32 | undefined |
 | account | address | undefined |
+
+### retryMint
+
+```solidity
+function retryMint(address payable to, contract IERC20Mintable token, uint256 amount, uint256 fee, bytes32 kappa) external nonpayable
+```
+
+Rate Limiter call this function to retry a mint of a SynERC20 (or any asset that the bridge is given minter access to). This is called by the nodes after a TokenDeposit event is emitted.
+
+*This means the SynapseBridge.sol contract must have minter access to the token attempting to be minted*
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| to | address payable | address on other chain to redeem underlying assets to |
+| token | contract IERC20Mintable | ERC20 compatible token to deposit into the bridge |
+| amount | uint256 | Amount in native token decimals to transfer cross-chain post-fees |
+| fee | uint256 | Amount in native token decimals to save to the contract as fees |
+| kappa | bytes32 | kappa* |
+
+### retryMintAndSwap
+
+```solidity
+function retryMintAndSwap(address payable to, contract IERC20Mintable token, uint256 amount, uint256 fee, contract ISwap pool, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 minDy, uint256 deadline, bytes32 kappa) external nonpayable
+```
+
+RateLimiter call this function to retry a mint of a SynERC20 (or any asset that the bridge is given minter access to), and then attempt to swap the SynERC20 into the desired destination asset. This is called by the nodes after a TokenDepositAndSwap event is emitted.
+
+*This means the BridgeDeposit.sol contract must have minter access to the token attempting to be minted*
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| to | address payable | address on other chain to redeem underlying assets to |
+| token | contract IERC20Mintable | ERC20 compatible token to deposit into the bridge |
+| amount | uint256 | Amount in native token decimals to transfer cross-chain post-fees |
+| fee | uint256 | Amount in native token decimals to save to the contract as fees |
+| pool | contract ISwap | Destination chain&#39;s pool to use to swap SynERC20 -&gt; Asset. The nodes determine this by using PoolConfig.sol. |
+| tokenIndexFrom | uint8 | Index of the SynERC20 asset in the pool |
+| tokenIndexTo | uint8 | Index of the desired final asset |
+| minDy | uint256 | Minimum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20. |
+| deadline | uint256 | Epoch time of the deadline that the swap is allowed to be executed. |
+| kappa | bytes32 | kappa* |
+
+### retryWithdraw
+
+```solidity
+function retryWithdraw(address to, address token, uint256 amount, uint256 fee, bytes32 kappa) external nonpayable
+```
+
+Function to be called by the rate limiter to retry a withdraw bypassing the rate limiter
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| to | address | address on chain to send underlying assets to |
+| token | address | ERC20 compatible token to withdraw from the bridge |
+| amount | uint256 | Amount in native token decimals to withdraw |
+| fee | uint256 | Amount in native token decimals to save to the contract as fees |
+| kappa | bytes32 | kappa* |
+
+### retryWithdrawAndRemove
+
+```solidity
+function retryWithdrawAndRemove(address to, contract IERC20 token, uint256 amount, uint256 fee, contract ISwap pool, uint8 swapTokenIndex, uint256 swapMinAmount, uint256 swapDeadline, bytes32 kappa) external nonpayable
+```
+
+Function to be called by the rate limiter to retry a withdraw of the underlying assets from the contract
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| to | address | address on chain to send underlying assets to |
+| token | contract IERC20 | ERC20 compatible token to withdraw from the bridge |
+| amount | uint256 | Amount in native token decimals to withdraw |
+| fee | uint256 | Amount in native token decimals to save to the contract as fees |
+| pool | contract ISwap | Destination chain&#39;s pool to use to swap SynERC20 -&gt; Asset. The nodes determine this by using PoolConfig.sol. |
+| swapTokenIndex | uint8 | Specifies which of the underlying LP assets the nodes should attempt to redeem for |
+| swapMinAmount | uint256 | Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap |
+| swapDeadline | uint256 | Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token |
+| kappa | bytes32 | kappa* |
 
 ### revokeRole
 
@@ -537,6 +660,38 @@ function setChainGasAmount(uint256 amount) external nonpayable
 | Name | Type | Description |
 |---|---|---|
 | amount | uint256 | undefined |
+
+### setRateLimiter
+
+```solidity
+function setRateLimiter(contract IRateLimiter _rateLimiter) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| _rateLimiter | contract IRateLimiter | undefined |
+
+### setRateLimiterEnabled
+
+```solidity
+function setRateLimiterEnabled(bool enabled) external nonpayable
+```
+
+
+
+
+
+#### Parameters
+
+| Name | Type | Description |
+|---|---|---|
+| enabled | bool | undefined |
 
 ### setWethAddress
 
@@ -623,7 +778,7 @@ Function to be called by the node group to withdraw the underlying assets from t
 | pool | contract ISwap | Destination chain&#39;s pool to use to swap SynERC20 -&gt; Asset. The nodes determine this by using PoolConfig.sol. |
 | swapTokenIndex | uint8 | Specifies which of the underlying LP assets the nodes should attempt to redeem for |
 | swapMinAmount | uint256 | Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap |
-| swapDeadline | uint256 | Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token |
+| swapDeadline | uint256 | Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token |
 | kappa | bytes32 | kappa* |
 
 ### withdrawFees
@@ -640,7 +795,7 @@ withdraw specified ERC20 token fees to a given address
 
 | Name | Type | Description |
 |---|---|---|
-| token | contract IERC20 | ERC20 token in which fees acccumulated to transfer |
+| token | contract IERC20 | ERC20 token in which fees accumulated to transfer |
 | to | address | Address to send the fees to |
 
 

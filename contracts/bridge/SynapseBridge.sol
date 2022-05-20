@@ -13,6 +13,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 import "./interfaces/ISwap.sol";
 import "./interfaces/IWETH9.sol";
+import "./interfaces/IRateLimiter.sol";
 
 interface IERC20Mintable is IERC20 {
     function mint(address to, uint256 amount) external;
@@ -29,11 +30,19 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     mapping(address => uint256) private fees;
 
     uint256 public startBlockNumber;
-    uint256 public constant bridgeVersion = 6;
+    uint256 public constant bridgeVersion = 7;
     uint256 public chainGasAmount;
     address payable public WETH_ADDRESS;
 
     mapping(bytes32 => bool) private kappaMap;
+
+    // rate limiter
+    IRateLimiter public rateLimiter;
+    bool public rateLimiterEnabled;
+
+    // new role
+
+    bytes32 public constant RATE_LIMITER_ROLE = keccak256("RATE_LIMITER_ROLE");
 
     receive() external payable {}
 
@@ -51,6 +60,16 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     function setWethAddress(address payable _wethAddress) external {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
         WETH_ADDRESS = _wethAddress;
+    }
+
+    function setRateLimiter(IRateLimiter _rateLimiter) external {
+        require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+        rateLimiter = _rateLimiter;
+    }
+
+    function setRateLimiterEnabled(bool enabled) external {
+        require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+        rateLimiterEnabled = enabled;
     }
 
     function addKappas(bytes32[] calldata kappas) external {
@@ -132,7 +151,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     // FEE FUNCTIONS ***/
     /**
      * * @notice withdraw specified ERC20 token fees to a given address
-     * * @param token ERC20 token in which fees acccumulated to transfer
+     * * @param token ERC20 token in which fees accumulated to transfer
      * * @param to Address to send the fees to
      */
     function withdrawFees(IERC20 token, address to) external whenNotPaused {
@@ -155,6 +174,22 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         _unpause();
     }
 
+    // RATE LIMITER FUNCTIONS ***/
+    // @dev check and update the rate limiter allowances. Bypass the rate limiter
+    // if it is a 0-address
+    function _isRateLimited(address token, uint256 amount) internal returns (bool) {
+        // save a bit of gas on reads
+        IRateLimiter _rateLimiter = rateLimiter;
+        if (!rateLimiterEnabled || address(_rateLimiter) == address(0)) {
+            return false;
+        }
+
+        // rate limiter returns true on the successful allowance update
+        return !_rateLimiter.checkAndUpdateAllowance(address(token), amount);
+    }
+
+    // BRIDGE FUNCTIONS: SOURCE CHAIN ***/
+
     /**
      * @notice Relays to nodes to transfers an ERC20 token cross-chain
      * @param to address on other chain to bridge assets to
@@ -173,7 +208,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     }
 
     /**
-     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
+     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain
      * @param to address on other chain to redeem underlying assets to
      * @param chainId which underlying chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
@@ -187,66 +222,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     ) external nonReentrant whenNotPaused {
         emit TokenRedeem(to, chainId, token, amount);
         token.burnFrom(msg.sender, amount);
-    }
-
-    /**
-     * @notice Function to be called by the node group to withdraw the underlying assets from the contract
-     * @param to address on chain to send underlying assets to
-     * @param token ERC20 compatible token to withdraw from the bridge
-     * @param amount Amount in native token decimals to withdraw
-     * @param fee Amount in native token decimals to save to the contract as fees
-     * @param kappa kappa
-     **/
-    function withdraw(
-        address to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 kappa
-    ) external nonReentrant whenNotPaused {
-        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
-        require(amount > fee, "Amount must be greater than fee");
-        require(!kappaMap[kappa], "Kappa is already present");
-        kappaMap[kappa] = true;
-        fees[address(token)] = fees[address(token)].add(fee);
-        if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
-            IWETH9(WETH_ADDRESS).withdraw(amount.sub(fee));
-            (bool success, ) = to.call{value: amount.sub(fee)}("");
-            require(success, "ETH_TRANSFER_FAILED");
-            emit TokenWithdraw(to, token, amount, fee, kappa);
-        } else {
-            emit TokenWithdraw(to, token, amount, fee, kappa);
-            token.safeTransfer(to, amount.sub(fee));
-        }
-    }
-
-    /**
-     * @notice Nodes call this function to mint a SynERC20 (or any asset that the bridge is given minter access to). This is called by the nodes after a TokenDeposit event is emitted.
-     * @dev This means the SynapseBridge.sol contract must have minter access to the token attempting to be minted
-     * @param to address on other chain to redeem underlying assets to
-     * @param token ERC20 compatible token to deposit into the bridge
-     * @param amount Amount in native token decimals to transfer cross-chain post-fees
-     * @param fee Amount in native token decimals to save to the contract as fees
-     * @param kappa kappa
-     **/
-    function mint(
-        address payable to,
-        IERC20Mintable token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 kappa
-    ) external nonReentrant whenNotPaused {
-        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
-        require(amount > fee, "Amount must be greater than fee");
-        require(!kappaMap[kappa], "Kappa is already present");
-        kappaMap[kappa] = true;
-        fees[address(token)] = fees[address(token)].add(fee);
-        emit TokenMint(to, token, amount.sub(fee), fee, kappa);
-        token.mint(address(this), amount);
-        IERC20(token).safeTransfer(to, amount.sub(fee));
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call.value(chainGasAmount)("");
-        }
     }
 
     /**
@@ -275,7 +250,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     }
 
     /**
-     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
+     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
      * @param to address on other chain to redeem underlying assets to
      * @param chainId which underlying chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
@@ -300,14 +275,14 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     }
 
     /**
-     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
+     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
      * @param to address on other chain to redeem underlying assets to
      * @param chainId which underlying chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
      * @param amount Amount in native token decimals to transfer cross-chain pre-fees
      * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
      * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
-     * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
+     * @param swapDeadline Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token
      **/
     function redeemAndRemove(
         address to,
@@ -322,6 +297,84 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         token.burnFrom(msg.sender, amount);
     }
 
+    // BRIDGE FUNCTIONS: SOURCE CHAIN (diff addresses) ***/
+
+    /**
+     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain
+     * @param to address on other chain to redeem underlying assets to
+     * @param chainId which underlying chain to bridge assets onto
+     * @param token ERC20 compatible token to deposit into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+     **/
+    function redeemV2(
+        bytes32 to,
+        uint256 chainId,
+        ERC20Burnable token,
+        uint256 amount
+    ) external nonReentrant whenNotPaused {
+        emit TokenRedeemV2(to, chainId, token, amount);
+        token.burnFrom(msg.sender, amount);
+    }
+
+    // BRIDGE FUNCTIONS: DESTINATION CHAIN ***/
+
+    /**
+     * @notice Function to be called by the node group to withdraw the underlying assets from the contract
+     * @param to address on chain to send underlying assets to
+     * @param token ERC20 compatible token to withdraw from the bridge
+     * @param amount Amount in native token decimals to withdraw
+     * @param fee Amount in native token decimals to save to the contract as fees
+     * @param kappa kappa
+     **/
+    function withdraw(
+        address to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) external nonReentrant whenNotPaused {
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
+
+        bool rateLimited = _isRateLimited(address(token), amount);
+        if (rateLimited) {
+            rateLimiter.addToRetryQueue(
+                kappa,
+                abi.encodeWithSelector(this.retryWithdraw.selector, to, address(token), amount, fee, kappa)
+            );
+        } else {
+            _doWithdraw(to, token, amount, fee, kappa);
+        }
+    }
+
+    /**
+     * @notice Nodes call this function to mint a SynERC20 (or any asset that the bridge is given minter access to). This is called by the nodes after a TokenDeposit event is emitted.
+     * @dev This means the SynapseBridge.sol contract must have minter access to the token attempting to be minted
+     * @param to address on other chain to redeem underlying assets to
+     * @param token ERC20 compatible token to deposit into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain post-fees
+     * @param fee Amount in native token decimals to save to the contract as fees
+     * @param kappa kappa
+     **/
+    function mint(
+        address payable to,
+        IERC20Mintable token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) external nonReentrant whenNotPaused {
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
+
+        bool rateLimited = _isRateLimited(address(token), amount);
+        if (rateLimited) {
+            rateLimiter.addToRetryQueue(
+                kappa,
+                abi.encodeWithSelector(this.retryMint.selector, to, address(token), amount, fee, kappa)
+            );
+        } else {
+            _doMint(to, token, amount, fee, kappa);
+        }
+    }
+
     /**
      * @notice Nodes call this function to mint a SynERC20 (or any asset that the bridge is given minter access to), and then attempt to swap the SynERC20 into the desired destination asset. This is called by the nodes after a TokenDepositAndSwap event is emitted.
      * @dev This means the BridgeDeposit.sol contract must have minter access to the token attempting to be minted
@@ -332,7 +385,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
      * @param pool Destination chain's pool to use to swap SynERC20 -> Asset. The nodes determine this by using PoolConfig.sol.
      * @param tokenIndexFrom Index of the SynERC20 asset in the pool
      * @param tokenIndexTo Index of the desired final asset
-     * @param minDy Minumum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20.
+     * @param minDy Minimum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20.
      * @param deadline Epoch time of the deadline that the swap is allowed to be executed.
      * @param kappa kappa
      **/
@@ -349,87 +402,27 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
-        require(amount > fee, "Amount must be greater than fee");
-        require(!kappaMap[kappa], "Kappa is already present");
-        kappaMap[kappa] = true;
-        fees[address(token)] = fees[address(token)].add(fee);
-        // Transfer gas airdrop
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call.value(chainGasAmount)("");
-        }
-        // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = ISwap(pool).calculateSwap(tokenIndexFrom, tokenIndexTo, amount.sub(fee));
 
-        if (expectedOutput >= minDy) {
-            // proceed with swap
-            token.mint(address(this), amount);
-            token.safeIncreaseAllowance(address(pool), amount);
-            try ISwap(pool).swap(tokenIndexFrom, tokenIndexTo, amount.sub(fee), minDy, deadline) returns (
-                uint256 finalSwappedAmount
-            ) {
-                // Swap succeeded, transfer swapped asset
-                IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
-                if (address(swappedTokenTo) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
-                    IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
-                    (bool success, ) = to.call{value: finalSwappedAmount}("");
-                    require(success, "ETH_TRANSFER_FAILED");
-                    emit TokenMintAndSwap(
-                        to,
-                        token,
-                        finalSwappedAmount,
-                        fee,
-                        tokenIndexFrom,
-                        tokenIndexTo,
-                        minDy,
-                        deadline,
-                        true,
-                        kappa
-                    );
-                } else {
-                    swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-                    emit TokenMintAndSwap(
-                        to,
-                        token,
-                        finalSwappedAmount,
-                        fee,
-                        tokenIndexFrom,
-                        tokenIndexTo,
-                        minDy,
-                        deadline,
-                        true,
-                        kappa
-                    );
-                }
-            } catch {
-                IERC20(token).safeTransfer(to, amount.sub(fee));
-                emit TokenMintAndSwap(
+        bool rateLimited = _isRateLimited(address(token), amount);
+        if (rateLimited) {
+            rateLimiter.addToRetryQueue(
+                kappa,
+                abi.encodeWithSelector(
+                    this.retryMintAndSwap.selector,
                     to,
-                    token,
-                    amount.sub(fee),
+                    address(token),
+                    amount,
                     fee,
+                    address(pool),
                     tokenIndexFrom,
                     tokenIndexTo,
                     minDy,
                     deadline,
-                    false,
                     kappa
-                );
-            }
-        } else {
-            token.mint(address(this), amount);
-            IERC20(token).safeTransfer(to, amount.sub(fee));
-            emit TokenMintAndSwap(
-                to,
-                token,
-                amount.sub(fee),
-                fee,
-                tokenIndexFrom,
-                tokenIndexTo,
-                minDy,
-                deadline,
-                false,
-                kappa
+                )
             );
+        } else {
+            _doMintAndSwap(to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa);
         }
     }
 
@@ -442,7 +435,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
      * @param pool Destination chain's pool to use to swap SynERC20 -> Asset. The nodes determine this by using PoolConfig.sol.
      * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
      * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
-     * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
+     * @param swapDeadline Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token
      * @param kappa kappa
      **/
     function withdrawAndRemove(
@@ -457,52 +450,275 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
+
+        bool rateLimited = _isRateLimited(address(token), amount);
+
+        if (rateLimited) {
+            rateLimiter.addToRetryQueue(
+                kappa,
+                abi.encodeWithSelector(
+                    this.retryWithdrawAndRemove.selector,
+                    to,
+                    address(token),
+                    amount,
+                    fee,
+                    address(pool),
+                    swapTokenIndex,
+                    swapMinAmount,
+                    swapDeadline,
+                    kappa
+                )
+            );
+        } else {
+            _doWithdrawAndRemove(to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa);
+        }
+    }
+
+    // RATE LIMITER FUNCTIONS: DESTINATION CHAIN ***/
+
+    /**
+     * @notice Function to be called by the rate limiter to retry a withdraw bypassing the rate limiter
+     * @param to address on chain to send underlying assets to
+     * @param token ERC20 compatible token to withdraw from the bridge
+     * @param amount Amount in native token decimals to withdraw
+     * @param fee Amount in native token decimals to save to the contract as fees
+     * @param kappa kappa
+     **/
+    function retryWithdraw(
+        address to,
+        address token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) external nonReentrant whenNotPaused {
+        require(hasRole(RATE_LIMITER_ROLE, msg.sender), "Caller is not rate limiter");
+
+        _doWithdraw(to, IERC20(token), amount, fee, kappa);
+    }
+
+    /**
+     * @notice Rate Limiter call this function to retry a mint of a SynERC20 (or any asset that the bridge is given minter access to). This is called by the nodes after a TokenDeposit event is emitted.
+     * @dev This means the SynapseBridge.sol contract must have minter access to the token attempting to be minted
+     * @param to address on other chain to redeem underlying assets to
+     * @param token ERC20 compatible token to deposit into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain post-fees
+     * @param fee Amount in native token decimals to save to the contract as fees
+     * @param kappa kappa
+     **/
+    function retryMint(
+        address payable to,
+        IERC20Mintable token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) external nonReentrant whenNotPaused {
+        require(hasRole(RATE_LIMITER_ROLE, msg.sender), "Caller is not rate limiter");
+
+        _doMint(to, token, amount, fee, kappa);
+    }
+
+    /**
+     * @notice RateLimiter call this function to retry a mint of a SynERC20 (or any asset that the bridge is given minter access to), and then attempt to swap the SynERC20 into the desired destination asset. This is called by the nodes after a TokenDepositAndSwap event is emitted.
+     * @dev This means the BridgeDeposit.sol contract must have minter access to the token attempting to be minted
+     * @param to address on other chain to redeem underlying assets to
+     * @param token ERC20 compatible token to deposit into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain post-fees
+     * @param fee Amount in native token decimals to save to the contract as fees
+     * @param pool Destination chain's pool to use to swap SynERC20 -> Asset. The nodes determine this by using PoolConfig.sol.
+     * @param tokenIndexFrom Index of the SynERC20 asset in the pool
+     * @param tokenIndexTo Index of the desired final asset
+     * @param minDy Minimum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20.
+     * @param deadline Epoch time of the deadline that the swap is allowed to be executed.
+     * @param kappa kappa
+     **/
+    function retryMintAndSwap(
+        address payable to,
+        IERC20Mintable token,
+        uint256 amount,
+        uint256 fee,
+        ISwap pool,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline,
+        bytes32 kappa
+    ) external nonReentrant whenNotPaused {
+        require(hasRole(RATE_LIMITER_ROLE, msg.sender), "Caller is not rate limiter");
+
+        _doMintAndSwap(to, token, amount, fee, pool, tokenIndexFrom, tokenIndexTo, minDy, deadline, kappa);
+    }
+
+    /**
+     * @notice Function to be called by the rate limiter to retry a withdraw of the underlying assets from the contract
+     * @param to address on chain to send underlying assets to
+     * @param token ERC20 compatible token to withdraw from the bridge
+     * @param amount Amount in native token decimals to withdraw
+     * @param fee Amount in native token decimals to save to the contract as fees
+     * @param pool Destination chain's pool to use to swap SynERC20 -> Asset. The nodes determine this by using PoolConfig.sol.
+     * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
+     * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
+     * @param swapDeadline Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token
+     * @param kappa kappa
+     **/
+    function retryWithdrawAndRemove(
+        address to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        ISwap pool,
+        uint8 swapTokenIndex,
+        uint256 swapMinAmount,
+        uint256 swapDeadline,
+        bytes32 kappa
+    ) external nonReentrant whenNotPaused {
+        require(hasRole(RATE_LIMITER_ROLE, msg.sender), "Caller is not rate limiter");
+
+        _doWithdrawAndRemove(to, token, amount, fee, pool, swapTokenIndex, swapMinAmount, swapDeadline, kappa);
+    }
+
+    // BRIDGE FUNCTIONS: INTERNAL IMPLEMENTATION ***/
+
+    // _doWithdraw bypasses the rate limiter. See withdraw for documentation
+    function _doWithdraw(
+        address to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) internal {
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
-        // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(amount.sub(fee), swapTokenIndex);
 
-        if (expectedOutput >= swapMinAmount) {
-            token.safeIncreaseAllowance(address(pool), amount.sub(fee));
-            try
-                ISwap(pool).removeLiquidityOneToken(amount.sub(fee), swapTokenIndex, swapMinAmount, swapDeadline)
-            returns (uint256 finalSwappedAmount) {
-                // Swap succeeded, transfer swapped asset
-                IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
-                swappedTokenTo.safeTransfer(to, finalSwappedAmount);
-                emit TokenWithdrawAndRemove(
-                    to,
-                    token,
-                    finalSwappedAmount,
-                    fee,
-                    swapTokenIndex,
-                    swapMinAmount,
-                    swapDeadline,
-                    true,
-                    kappa
-                );
-            } catch {
-                IERC20(token).safeTransfer(to, amount.sub(fee));
-                emit TokenWithdrawAndRemove(
-                    to,
-                    token,
-                    amount.sub(fee),
-                    fee,
-                    swapTokenIndex,
-                    swapMinAmount,
-                    swapDeadline,
-                    false,
-                    kappa
-                );
-            }
-        } else {
-            token.safeTransfer(to, amount.sub(fee));
+        // withdraw can happen on chains other than mainnet
+        _doGasAirdrop(to);
+
+        // apply fee
+        amount = amount.sub(fee);
+
+        // If token is WGAS, this will send native chain GAS
+        _transferTokenWithUnwrap(to, token, amount);
+        emit TokenWithdraw(to, token, amount, fee, kappa);
+    }
+
+    // _doMint bypasses the rate limiter. See mint for documentation
+    function _doMint(
+        address payable to,
+        IERC20Mintable token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) internal {
+        require(amount > fee, "Amount must be greater than fee");
+        require(!kappaMap[kappa], "Kappa is already present");
+        kappaMap[kappa] = true;
+        fees[address(token)] = fees[address(token)].add(fee);
+        _doGasAirdrop(to);
+
+        token.mint(address(this), amount);
+        // apply fee
+        amount = amount.sub(fee);
+        IERC20(token).safeTransfer(to, amount);
+
+        emit TokenMint(to, token, amount, fee, kappa);
+    }
+
+    // _doMintAndSwap bypasses the rate limiter. See mintAndSwap for documentation
+    function _doMintAndSwap(
+        address payable to,
+        IERC20Mintable token,
+        uint256 amount,
+        uint256 fee,
+        ISwap pool,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline,
+        bytes32 kappa
+    ) internal {
+        require(amount > fee, "Amount must be greater than fee");
+        require(!kappaMap[kappa], "Kappa is already present");
+        kappaMap[kappa] = true;
+        fees[address(token)] = fees[address(token)].add(fee);
+        // Transfer gas airdrop
+        _doGasAirdrop(to);
+
+        // proceed with swap
+        token.mint(address(this), amount);
+        // apply fee
+        amount = amount.sub(fee);
+        token.safeIncreaseAllowance(address(pool), amount);
+        try ISwap(pool).swap(tokenIndexFrom, tokenIndexTo, amount, minDy, deadline) returns (
+            uint256 finalSwappedAmount
+        ) {
+            // Swap succeeded, transfer swapped asset
+            IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
+            // If token is WGAS, this will send native chain GAS
+            _transferTokenWithUnwrap(to, swappedTokenTo, finalSwappedAmount);
+            emit TokenMintAndSwap(
+                to,
+                token,
+                finalSwappedAmount,
+                fee,
+                tokenIndexFrom,
+                tokenIndexTo,
+                minDy,
+                deadline,
+                true,
+                kappa
+            );
+        } catch {
+            token.safeTransfer(to, amount);
+            emit TokenMintAndSwap(to, token, amount, fee, tokenIndexFrom, tokenIndexTo, minDy, deadline, false, kappa);
+        }
+    }
+
+    // _doWithdrawAndRemove bypasses the rate limiter. See withdrawAndRemove for documentation
+    function _doWithdrawAndRemove(
+        address to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        ISwap pool,
+        uint8 swapTokenIndex,
+        uint256 swapMinAmount,
+        uint256 swapDeadline,
+        bytes32 kappa
+    ) internal {
+        require(amount > fee, "Amount must be greater than fee");
+        require(!kappaMap[kappa], "Kappa is already present");
+        kappaMap[kappa] = true;
+        // apply fees
+        fees[address(token)] = fees[address(token)].add(fee);
+        amount = amount.sub(fee);
+
+        // withdrawAndRemove only on Mainnet => no airdrop
+
+        token.safeIncreaseAllowance(address(pool), amount);
+        try ISwap(pool).removeLiquidityOneToken(amount, swapTokenIndex, swapMinAmount, swapDeadline) returns (
+            uint256 finalSwappedAmount
+        ) {
+            // Swap succeeded, transfer swapped asset
+            IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);
+            swappedTokenTo.safeTransfer(to, finalSwappedAmount);
             emit TokenWithdrawAndRemove(
                 to,
                 token,
-                amount.sub(fee),
+                finalSwappedAmount,
+                fee,
+                swapTokenIndex,
+                swapMinAmount,
+                swapDeadline,
+                true,
+                kappa
+            );
+        } catch {
+            token.safeTransfer(to, amount);
+            emit TokenWithdrawAndRemove(
+                to,
+                token,
+                amount,
                 fee,
                 swapTokenIndex,
                 swapMinAmount,
@@ -513,21 +729,31 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         }
     }
 
-    // BRIDGE FUNCTIONS TO HANDLE DIFF ADDRESSES
-    /**
-     * @notice Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain
-     * @param to address on other chain to redeem underlying assets to
-     * @param chainId which underlying chain to bridge assets onto
-     * @param token ERC20 compatible token to deposit into the bridge
-     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-     **/
-    function redeemV2(
-        bytes32 to,
-        uint256 chainId,
-        ERC20Burnable token,
+    // TOKEN TRANSFER ***/
+
+    function _transferTokenWithUnwrap(
+        address to,
+        IERC20 token,
         uint256 amount
-    ) external nonReentrant whenNotPaused {
-        emit TokenRedeemV2(to, chainId, token, amount);
-        token.burnFrom(msg.sender, amount);
+    ) internal {
+        // save gas on reads
+        address payable weth = WETH_ADDRESS;
+        if (address(token) == weth && weth != address(0)) {
+            IWETH9(weth).withdraw(amount);
+            (bool success, ) = to.call{value: amount}("");
+            require(success, "ETH_TRANSFER_FAILED");
+        } else {
+            token.safeTransfer(to, amount);
+        }
+    }
+
+    // GAS AIRDROP ***/
+
+    function _doGasAirdrop(address to) internal {
+        // save gas on reads
+        uint256 amount = chainGasAmount;
+        if (amount != 0 && address(this).balance >= amount) {
+            to.call{value: amount}("");
+        }
     }
 }

@@ -52,7 +52,9 @@
     "@nomiclabs/hardhat-etherscan": "^2.1.2",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@nomiclabs/hardhat-web3": "^2.0.0",
+    "@openzeppelin/hardhat-upgrades": "^1.17.0",
     "@primitivefi/hardhat-dodoc": "^0.2.3",
+    "@stdlib/time-now": "^0.0.8",
     "@typechain/ethers-v5": "^7.0.0",
     "@typechain/hardhat": "^2.0.1",
     "@types/chai": "^4.2.18",
@@ -82,6 +84,7 @@
     "prettier": "^2.3.0",
     "prettier-plugin-solidity": "^1.0.0-beta.11",
     "shelljs": "^0.8.4",
+    "sinon": "^13.0.1",
     "sol-merger": "^3.1.0",
     "solhint": "^3.3.6",
     "solhint-plugin-prettier": "0.0.5",
@@ -90,6 +93,7 @@
     "ts-generator": "^0.1.1",
     "ts-node": "^10.0.0",
     "typechain": "^5.1.2",
-    "typescript": "^4.3.2"
+    "typescript": "^4.3.2",
+    "typescript-string-operations": "^1.4.1"
   }
 }
