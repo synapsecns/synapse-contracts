@@ -11,7 +11,7 @@ import "../../contracts/messaging/dfk/auctions/AssistingAuctionUpgradeable.sol";
 import "../../contracts/messaging/dfk/StatScienceUpgradeable.sol";
 import "../../contracts/messaging/dfk/HeroCoreUpgradeable.sol";
 
-import "../../contracts/messaging/MessageBus.sol";
+import "../../contracts/messaging/MessageBusUpgradeable.sol";
 import "../../contracts/messaging/GasFeePricing.sol";
 import "../../contracts/messaging/AuthVerifier.sol";
 import "../../contracts/messaging/apps/PingPong.sol";
@@ -20,7 +20,7 @@ import "../../contracts/messaging/AuthVerifier.sol";
 contract HeroBridgeUpgradeableTest is Test {
     Utilities internal utils;
     address payable[] internal users;
-    MessageBus public messageBusChainA;
+    MessageBusUpgradeable public messageBusChainA;
     PingPong public pingPongChainA;
     GasFeePricing public gasFeePricingChainA;
     AuthVerifier public authVerifierChainA;
@@ -63,7 +63,8 @@ contract HeroBridgeUpgradeableTest is Test {
         vm.label(node, "Node");
 
         authVerifierChainA = new AuthVerifier(node);
-        messageBusChainA = new MessageBus(address(gasFeePricingChainA), address(authVerifierChainA));
+        messageBusChainA = new MessageBusUpgradeable();
+        messageBusChainA.initialize(address(gasFeePricingChainA), address(authVerifierChainA));
 
         randomGeneratorChainA = new RandomGenerator();
         statScienceUpgradeableChainA = new StatScienceUpgradeable(address(randomGeneratorChainA));

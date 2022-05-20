@@ -6,14 +6,14 @@ import {Utilities} from "../utils/Utilities.sol";
 import "../../contracts/messaging/dfk/bridge/TearBridge.sol";
 import "../../contracts/messaging/dfk/inventory/GaiaTears.sol";
 
-import "../../contracts/messaging/MessageBus.sol";
+import "../../contracts/messaging/MessageBusUpgradeable.sol";
 import "../../contracts/messaging/GasFeePricing.sol";
 import "../../contracts/messaging/AuthVerifier.sol";
 
 contract TearBridgeTest is Test {
     Utilities internal utils;
     address payable[] internal users;
-    MessageBus public messageBus;
+    MessageBusUpgradeable public messageBus;
     GasFeePricing public gasFeePricing;
     AuthVerifier public authVerifier;
     TearBridge public tearBridge;
@@ -54,7 +54,8 @@ contract TearBridgeTest is Test {
         vm.label(node, "Node");
 
         authVerifier = new AuthVerifier(node);
-        messageBus = new MessageBus(address(gasFeePricing), address(authVerifier));
+        messageBus = new MessageBusUpgradeable();
+        messageBus.initialize(address(gasFeePricing), address(authVerifier));
         gaiaTears = new GaiaTears();
 
         tearBridge = new TearBridge(address(messageBus), address(gaiaTears));

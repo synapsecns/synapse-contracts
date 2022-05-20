@@ -2,22 +2,18 @@
 
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
-import "@openzeppelin/contracts-4.5.0/security/Pausable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable-4.5.0/security/PausableUpgradeable.sol";
+
 import "./interfaces/IAuthVerifier.sol";
 import "./interfaces/ISynMessagingReceiver.sol";
 
-contract MessageBusReceiver is Ownable, Pausable {
-    address public authVerifier;
-
+contract MessageBusReceiverUpgradeable is OwnableUpgradeable, PausableUpgradeable {
     enum TxStatus {
         Null,
         Success,
         Fail
     }
-
-    // Store all successfully executed messages
-    mapping(bytes32 => TxStatus) internal executedMessages;
 
     // TODO: Rename to follow one standard convention -> Send -> Receive?
     event Executed(
@@ -29,7 +25,18 @@ contract MessageBusReceiver is Ownable, Pausable {
     );
     event CallReverted(string reason);
 
-    constructor(address _authVerifier) {
+    address public authVerifier;
+
+    // Store all successfully executed messages
+    mapping(bytes32 => TxStatus) internal executedMessages;
+
+    function __MessageBusReceiver_init(address _authVerifier) internal {
+        __Ownable_init_unchained();
+        __Pausable_init_unchained();
+        __MessageBusReceiver_init_unchained(_authVerifier);
+    }
+
+    function __MessageBusReceiver_init_unchained(address _authVerifier) internal {
         authVerifier = _authVerifier;
     }
 
@@ -106,4 +113,11 @@ contract MessageBusReceiver is Ownable, Pausable {
         require(_authVerifier != address(0), "Cannot set to 0");
         authVerifier = _authVerifier;
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[48] private __gap;
 }
