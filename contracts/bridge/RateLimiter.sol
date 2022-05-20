@@ -278,7 +278,7 @@ contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuard
 
     /*** RETRY FUNCTIONS ***/
 
-    function retryByKappa(bytes32 kappa) external {
+    function retryByKappa(bytes32 kappa) public {
         (bytes memory toRetry, uint32 storedAtMin) = rateLimitedQueue.get(kappa);
         if (toRetry.length > 0) {
             if (!hasRole(LIMITER_ROLE, msg.sender)) {
@@ -292,6 +292,12 @@ contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuard
             // Try looking up in the failed txs:
             // anyone should be able to do so, with no timeout
             _retryFailed(kappa);
+        }
+    }
+
+    function retryByKappas(bytes32[] memory kappas) external {
+        for (uint8 i = 0; i < kappas.length; i++) {
+            retryByKappa(kappas[i]);
         }
     }
 
