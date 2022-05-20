@@ -183,7 +183,7 @@ contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuard
         uint96 allowanceAmount,
         uint16 resetTimeMin,
         uint32 resetBaseMin
-    ) external onlyRole(LIMITER_ROLE) {
+    ) public onlyRole(LIMITER_ROLE) {
         Allowance memory allowance = _getAllowance(token);
         if (!allowance.initialized) {
             // New token
@@ -203,6 +203,24 @@ contract RateLimiter is Initializable, AccessControlUpgradeable, ReentrancyGuard
         allowance.amount = allowanceAmount;
         _updateAllowance(token, allowance);
         emit SetAllowance(token, allowanceAmount, resetTimeMin);
+    }
+
+    /**
+     * @notice Sets allowances for multiple tkoens
+     * @param tokens[] to update the allowance for
+     * @param allowanceAmounts[] for the token
+     * @param resetTimeMins[] minimum reset time (amount goes to 0 after this)
+     * @param resetBaseMins[] amount Amount in native token decimals to transfer cross-chain pre-fees
+     **/
+    function setAllowances(
+        address[] memory tokens,
+        uint96[] memory allowanceAmounts,
+        uint16[] memory resetTimeMins,
+        uint32[] memory resetBaseMins
+    ) external onlyRole(LIMITER_ROLE) {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            setAllowance(tokens[i], allowanceAmounts[i], resetTimeMins[i], resetBaseMins[i]);
+        }
     }
 
     /*** RESTRICTED: BRIDGE ***/

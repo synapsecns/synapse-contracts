@@ -41,6 +41,48 @@ contract RateLimiterFoundryTest is Test {
         _checkAllowance(amount / 2, 0, 120, RESET_BASE_MIN - 60);
     }
 
+    struct TestToken {
+        address tokenAddress;
+        uint96 tokenAmount;
+        uint16 resetTimeMin;
+        uint32 resetBaseMin;
+    }
+
+    function testBulkSetAllowance(uint96 amount, uint8 token_count) public {
+        vm.assume(amount > 0);
+        vm.assume(token_count > 0);
+
+        // mock out some tokens
+        address[] memory tokens = new address[](token_count);
+        uint96[] memory allowanceAmounts = new uint96[](token_count);
+        uint16[] memory resetTimeMins = new uint16[](token_count);
+        uint32[] memory resetBaseMins = new uint32[](token_count);
+
+        for (uint256 i = 0; i < token_count; i++) {
+            TestToken memory newToken = TestToken({
+                tokenAddress: address(4),
+                tokenAmount: uint96(token_count) * 10,
+                resetTimeMin: uint16(token_count) * 2,
+                resetBaseMin: uint32(token_count) * 3
+            });
+
+            tokens[i] = (newToken.tokenAddress);
+            allowanceAmounts[i] = (newToken.tokenAmount);
+            resetTimeMins[i] = (newToken.resetTimeMin);
+            resetBaseMins[i] = (newToken.resetBaseMin);
+        }
+
+        // bulk set allowances
+        rateLimiter.setAllowances(tokens, allowanceAmounts, resetTimeMins, resetBaseMins);
+
+        for (uint256 i = 0; i < token_count; i++) {
+            uint256[4] memory res = rateLimiter.getTokenAllowance(tokens[i]);
+            assertEq(res[0], allowanceAmounts[i]);
+            assertEq(res[1], 0);
+            assertEq(res[2], resetTimeMins[i]);
+        }
+    }
+
     function testUpdateAllowance(uint96 amount) public {
         vm.assume(amount > 10);
 
