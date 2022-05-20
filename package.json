@@ -11,7 +11,7 @@
     "test:coverage": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" hardhat coverage",
     "prepublishOnly": "npm run build",
     "lint": "npm run prettier && solhint --fix -c .solhint.json --ignore-path .prettierignore contracts/**/*.sol test/**/*.sol",
-    "prettier": "prettier --write **.sol *.ts",
+    "prettier": "prettier --write '**/*.(sol|ts)'",
     "hardhat:clean": "hardhat clean",
     "prepare": "husky install"
   },
@@ -79,7 +79,7 @@
     "husky": "^6.0.0",
     "lint-staged": "^11.0.0",
     "mocha": "^9.2.1",
-    "prettier": "^2.3.0",
+    "prettier": "^2.6.2",
     "prettier-plugin-solidity": "^1.0.0-beta.11",
     "shelljs": "^0.8.4",
     "sol-merger": "^3.1.0",
