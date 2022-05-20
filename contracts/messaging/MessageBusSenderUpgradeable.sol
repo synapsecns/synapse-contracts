@@ -6,8 +6,9 @@ import "@openzeppelin/contracts-upgradeable-4.5.0/access/OwnableUpgradeable.sol"
 import "@openzeppelin/contracts-upgradeable-4.5.0/security/PausableUpgradeable.sol";
 
 import "./interfaces/IGasFeePricing.sol";
+import "./ContextChainIdUpgradeable.sol";
 
-contract MessageBusSenderUpgradeable is OwnableUpgradeable, PausableUpgradeable {
+contract MessageBusSenderUpgradeable is OwnableUpgradeable, PausableUpgradeable, ContextChainIdUpgradeable {
     address public gasFeePricing;
     uint64 public nonce;
     uint256 public fees;
@@ -99,11 +100,12 @@ contract MessageBusSenderUpgradeable is OwnableUpgradeable, PausableUpgradeable 
         bytes calldata _options,
         address payable _refundAddress
     ) internal {
-        require(_dstChainId != block.chainid, "Invalid chainId");
+        uint256 srcChainId = _chainId();
+        require(_dstChainId != srcChainId, "Invalid chainId");
         uint256 fee = estimateFee(_dstChainId, _options);
         require(msg.value >= fee, "Insufficient gas fee");
-        bytes32 msgId = computeMessageId(msg.sender, block.chainid, _receiver, _dstChainId, nonce, _message);
-        emit MessageSent(msg.sender, block.chainid, _receiver, _dstChainId, _message, nonce, _options, fee, msgId);
+        bytes32 msgId = computeMessageId(msg.sender, srcChainId, _receiver, _dstChainId, nonce, _message);
+        emit MessageSent(msg.sender, srcChainId, _receiver, _dstChainId, _message, nonce, _options, fee, msgId);
         fees += fee;
         ++nonce;
         // refund gas fees in case of overpayment
