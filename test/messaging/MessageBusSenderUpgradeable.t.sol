@@ -42,11 +42,7 @@ contract MessageBusSenderUpgradeableTest is Test {
         MessageBusUpgradeable impl = new MessageBusUpgradeable();
         // Setup proxy with needed logic and custom admin,
         // we don't need to upgrade anything, so no need to setup ProxyAdmin
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(impl),
-            address(420),
-            bytes("")
-        );
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(impl), address(420), bytes(""));
         messageBusSender = MessageBusUpgradeable(address(proxy));
         messageBusSender.initialize(address(gasFeePricing), address(0));
     }
@@ -58,10 +54,7 @@ contract MessageBusSenderUpgradeableTest is Test {
 
     // Test fee query on a set dstChain
     function testEstimateFee() public {
-        uint256 estimatedFee = messageBusSender.estimateFee(
-            gasFeePricingTest.expectedDstChainId(),
-            bytes("")
-        );
+        uint256 estimatedFee = messageBusSender.estimateFee(gasFeePricingTest.expectedDstChainId(), bytes(""));
         assertEq(estimatedFee, gasFeePricingTest.expectedFeeDst43114());
     }
 
@@ -78,10 +71,7 @@ contract MessageBusSenderUpgradeableTest is Test {
 
     // Enforce fees above returned fee amount from fee calculator
     function testFailSendMessageWithLowFees() public {
-        uint256 estimatedFee = messageBusSender.estimateFee(
-            gasFeePricingTest.expectedDstChainId(),
-            bytes("")
-        );
+        uint256 estimatedFee = messageBusSender.estimateFee(gasFeePricingTest.expectedDstChainId(), bytes(""));
         bytes32 receiverAddress = addressToBytes32(address(1337));
         messageBusSender.sendMessage{value: estimatedFee - 1}(
             receiverAddress,
@@ -93,10 +83,7 @@ contract MessageBusSenderUpgradeableTest is Test {
 
     // Fee calculator reverts upon 0 fees (Fee is unset)
     function testFailMessageOnUnsetFees() public {
-        uint256 estimatedFee = messageBusSender.estimateFee(
-            gasFeePricingTest.expectedDstChainId() - 1,
-            bytes("")
-        );
+        uint256 estimatedFee = messageBusSender.estimateFee(gasFeePricingTest.expectedDstChainId() - 1, bytes(""));
         bytes32 receiverAddress = addressToBytes32(address(1337));
         messageBusSender.sendMessage{value: estimatedFee}(
             receiverAddress,
@@ -108,10 +95,7 @@ contract MessageBusSenderUpgradeableTest is Test {
 
     // Send message without reversion, pay correct amount of fees, emit correct event
     function testSendMessage() public {
-        uint256 estimatedFee = messageBusSender.estimateFee(
-            gasFeePricingTest.expectedDstChainId(),
-            bytes("")
-        );
+        uint256 estimatedFee = messageBusSender.estimateFee(gasFeePricingTest.expectedDstChainId(), bytes(""));
         uint64 currentNonce = messageBusSender.nonce();
         bytes32 receiverAddress = addressToBytes32(address(1337));
         // TODO: Check data, so false should become true
@@ -137,10 +121,7 @@ contract MessageBusSenderUpgradeableTest is Test {
 
     // Send message without reversion, pay correct amount of fees, emit correct event
     function testWithdrawFees() public {
-        uint256 estimatedFee = messageBusSender.estimateFee(
-            gasFeePricingTest.expectedDstChainId(),
-            bytes("")
-        );
+        uint256 estimatedFee = messageBusSender.estimateFee(gasFeePricingTest.expectedDstChainId(), bytes(""));
         uint64 currentNonce = messageBusSender.nonce();
         bytes32 receiverAddress = addressToBytes32(address(1337));
         // TODO: Check data, so false should become true

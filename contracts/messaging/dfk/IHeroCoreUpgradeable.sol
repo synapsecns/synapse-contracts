@@ -7,7 +7,7 @@ import {HeroCrystal} from "./types/CrystalTypes.sol";
 
 interface IHeroCoreUpgradeable {
     function bridgeMint(uint256 _id, address _to) external;
-    
+
     function DEFAULT_ADMIN_ROLE() external view returns (bytes32);
 
     function MINTER_ROLE() external view returns (bytes32);

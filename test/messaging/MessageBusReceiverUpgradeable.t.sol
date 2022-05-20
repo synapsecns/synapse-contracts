@@ -17,11 +17,7 @@ contract MessageBusReceiverUpgradeableTest is Test {
         MessageBusUpgradeable impl = new MessageBusUpgradeable();
         // Setup proxy with needed logic and custom admin,
         // we don't need to upgrade anything, so no need to setup ProxyAdmin
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
-            address(impl),
-            address(420),
-            bytes("")
-        );
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(impl), address(420), bytes(""));
         messageBusReceiver = MessageBusUpgradeable(address(proxy));
         messageBusReceiver.initialize(address(0), address(authVerifier));
     }
@@ -60,14 +56,9 @@ contract MessageBusReceiverUpgradeableTest is Test {
     function testAuthorizedUpdateMessageStatus() public {
         // bytes32 messageId = testComputeMessageId();
         bytes32 messageId = keccak256("testMessageId");
-        MessageBusUpgradeable.TxStatus initialStatus = messageBusReceiver
-        .getExecutedMessage(messageId);
-        messageBusReceiver.updateMessageStatus(
-            messageId,
-            MessageBusReceiverUpgradeable.TxStatus.Success
-        );
-        MessageBusUpgradeable.TxStatus finalStatus = messageBusReceiver
-        .getExecutedMessage(messageId);
+        MessageBusUpgradeable.TxStatus initialStatus = messageBusReceiver.getExecutedMessage(messageId);
+        messageBusReceiver.updateMessageStatus(messageId, MessageBusReceiverUpgradeable.TxStatus.Success);
+        MessageBusUpgradeable.TxStatus finalStatus = messageBusReceiver.getExecutedMessage(messageId);
         assertGt(uint256(finalStatus), uint256(initialStatus));
     }
 
@@ -75,10 +66,7 @@ contract MessageBusReceiverUpgradeableTest is Test {
         bytes32 messageId = keccak256("testMessageId");
         vm.prank(address(9999));
         vm.expectRevert("Ownable: caller is not the owner");
-        messageBusReceiver.updateMessageStatus(
-            messageId,
-            MessageBusReceiverUpgradeable.TxStatus.Success
-        );
+        messageBusReceiver.updateMessageStatus(messageId, MessageBusReceiverUpgradeable.TxStatus.Success);
     }
 
     // Authorized actor can update AuthVerifeir library, and it sets correctly
@@ -96,23 +84,13 @@ contract MessageBusReceiverUpgradeableTest is Test {
     function testUnauthorizedMessageSender() public {
         uint256 srcChainId = 1;
         bytes32 srcAddress = addressToBytes32(address(1338));
-        address dstAddress = address(
-            0x2796317b0fF8538F253012862c06787Adfb8cEb6
-        );
+        address dstAddress = address(0x2796317b0fF8538F253012862c06787Adfb8cEb6);
         uint256 nonce = 0;
         bytes memory message = bytes("");
         bytes32 messageId = keccak256("testMessageId");
 
         vm.prank(address(999));
         vm.expectRevert("Unauthenticated caller");
-        messageBusReceiver.executeMessage(
-            srcChainId,
-            srcAddress,
-            dstAddress,
-            200000,
-            nonce,
-            message,
-            messageId
-        );
+        messageBusReceiver.executeMessage(srcChainId, srcAddress, dstAddress, 200000, nonce, message, messageId);
     }
 }

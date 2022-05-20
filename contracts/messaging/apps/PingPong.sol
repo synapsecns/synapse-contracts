@@ -31,10 +31,7 @@ contract PingPong is ISynMessagingReceiver {
         address _dstPingPongAddr,
         uint256 pings
     ) public {
-        require(
-            address(this).balance > 0,
-            "the balance of this contract needs to be able to pay for native gas"
-        );
+        require(address(this).balance > 0, "the balance of this contract needs to be able to pay for native gas");
         require(pingsEnabled, "pingsEnabled is false. messages stopped");
         require(maxPings > pings, "maxPings has been reached, no more looping");
 

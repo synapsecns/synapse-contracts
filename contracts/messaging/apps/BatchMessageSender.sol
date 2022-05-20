@@ -28,14 +28,7 @@ contract BatchMessageSender is SynMessagingReceiver {
         // use tx.origin for gas refund by default, so that older contracts,
         // interacting with MessageBus that don't have a fallback/receive
         // (i.e. not able to receive gas), will continue to work
-        _sendMultipleMessages(
-            _receiver,
-            _dstChainId,
-            _message,
-            _options,
-            fees,
-            payable(tx.origin)
-        );
+        _sendMultipleMessages(_receiver, _dstChainId, _message, _options, fees, payable(tx.origin));
     }
 
     /**
@@ -53,14 +46,7 @@ contract BatchMessageSender is SynMessagingReceiver {
         // use tx.origin for gas refund by default, so that older contracts,
         // interacting with MessageBus that don't have a fallback/receive
         // (i.e. not able to receive gas), will continue to work
-        _sendMultipleMessages(
-            _receiver,
-            _dstChainId,
-            _message,
-            _options,
-            _fees,
-            payable(tx.origin)
-        );
+        _sendMultipleMessages(_receiver, _dstChainId, _message, _options, _fees, payable(tx.origin));
     }
 
     /**
@@ -77,14 +63,7 @@ contract BatchMessageSender is SynMessagingReceiver {
     ) external payable {
         require(_message.length > 0, "No messages found");
         uint256[] memory fees = _splitFeeBetweenMessages(_message.length);
-        _sendMultipleMessages(
-            _receiver,
-            _dstChainId,
-            _message,
-            _options,
-            fees,
-            _refundAddress
-        );
+        _sendMultipleMessages(_receiver, _dstChainId, _message, _options, fees, _refundAddress);
     }
 
     /**
@@ -100,20 +79,10 @@ contract BatchMessageSender is SynMessagingReceiver {
         address payable _refundAddress
     ) external payable {
         require(_message.length > 0, "No messages found");
-        _sendMultipleMessages(
-            _receiver,
-            _dstChainId,
-            _message,
-            _options,
-            _fees,
-            _refundAddress
-        );
+        _sendMultipleMessages(_receiver, _dstChainId, _message, _options, _fees, _refundAddress);
     }
 
-    function _splitFeeBetweenMessages(uint256 _amount)
-        internal
-        returns (uint256[] memory fees)
-    {
+    function _splitFeeBetweenMessages(uint256 _amount) internal returns (uint256[] memory fees) {
         uint256 feePerMessage = msg.value / _amount;
         fees = new uint256[](_amount);
         // Use avg fee for the first N-1 messages
@@ -132,10 +101,7 @@ contract BatchMessageSender is SynMessagingReceiver {
         uint256[] memory _fees,
         address payable _refundAddress
     ) internal {
-        require(
-            _receiver.length == _dstChainId.length,
-            "dstChainId bad length"
-        );
+        require(_receiver.length == _dstChainId.length, "dstChainId bad length");
         require(_receiver.length == _message.length, "message bad length");
         require(_receiver.length == _options.length, "options bad length");
         require(_receiver.length == _fees.length, "fees bad length");
@@ -148,10 +114,7 @@ contract BatchMessageSender is SynMessagingReceiver {
 
         // Care for block gas limit
         for (uint16 i = 0; i < _message.length; i++) {
-            require(
-                trustedRemoteLookup[_dstChainId[i]] != bytes32(0),
-                "Receiver not trusted remote"
-            );
+            require(trustedRemoteLookup[_dstChainId[i]] != bytes32(0), "Receiver not trusted remote");
             IMessageBus(messageBus).sendMessage{value: _fees[i]}(
                 _receiver[i],
                 _dstChainId[i],
