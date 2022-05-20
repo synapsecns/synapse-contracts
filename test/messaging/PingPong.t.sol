@@ -2,7 +2,7 @@ pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
 import {Utilities} from "../utils/Utilities.sol";
-import "../../contracts/messaging/MessageBus.sol";
+import "../../contracts/messaging/MessageBusUpgradeable.sol";
 import "../../contracts/messaging/GasFeePricing.sol";
 import "../../contracts/messaging/AuthVerifier.sol";
 import "../../contracts/messaging/apps/PingPong.sol";
@@ -13,14 +13,14 @@ contract PingPongTest is Test {
     address payable[] internal users;
     // Chain A 1000
     uint256 chainA = 1000;
-    MessageBus public messageBusChainA;
+    MessageBusUpgradeable public messageBusChainA;
     PingPong public pingPongChainA;
     GasFeePricing public gasFeePricingChainA;
     AuthVerifier public authVerifierChainA;
 
     // Chain B 2000
     uint256 chainB = 2000;
-    MessageBus public messageBusChainB;
+    MessageBusUpgradeable public messageBusChainB;
     PingPong public pingPongChainB;
     GasFeePricing public gasFeePricingChainB;
     AuthVerifier public authVerifierChainB;
@@ -45,7 +45,7 @@ contract PingPongTest is Test {
 
     event Executed(
         bytes32 msgId,
-        MessageBus.TxStatus status,
+        MessageBusUpgradeable.TxStatus status,
         address indexed _dstAddress,
         uint64 srcChainId,
         uint64 srcNonce
@@ -60,8 +60,10 @@ contract PingPongTest is Test {
         vm.label(node, "Node");
         authVerifierChainA = new AuthVerifier(node);
         authVerifierChainB = new AuthVerifier(node);
-        messageBusChainA = new MessageBus(address(gasFeePricingChainA), address(authVerifierChainA));
-        messageBusChainB = new MessageBus(address(gasFeePricingChainB), address(authVerifierChainB));
+        messageBusChainA = new MessageBusUpgradeable();
+        messageBusChainA.initialize(address(gasFeePricingChainA), address(authVerifierChainA));
+        messageBusChainB = new MessageBusUpgradeable();
+        messageBusChainB.initialize(address(gasFeePricingChainB), address(authVerifierChainB));
         pingPongChainA = new PingPong(address(messageBusChainA));
         vm.label(address(pingPongChainA), "PingChainA");
         pingPongChainB = new PingPong(address(messageBusChainB));
