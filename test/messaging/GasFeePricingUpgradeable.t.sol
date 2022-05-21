@@ -96,6 +96,7 @@ contract GasFeePricingUpgradeableTest is Test {
             ),
             "Ownable: caller is not the owner"
         );
+
         utils.checkAccess(
             _gfp,
             abi.encodeWithSelector(GasFeePricingUpgradeable.setDstChainConfig.selector, 0, 0, 0),
@@ -111,6 +112,7 @@ contract GasFeePricingUpgradeableTest is Test {
             ),
             "Ownable: caller is not the owner"
         );
+
         utils.checkAccess(
             _gfp,
             abi.encodeWithSelector(
@@ -120,16 +122,30 @@ contract GasFeePricingUpgradeableTest is Test {
             ),
             "Ownable: caller is not the owner"
         );
+
+        utils.checkAccess(
+            _gfp,
+            abi.encodeWithSelector(GasFeePricingUpgradeable.setMinGasUsageFee.selector, 0),
+            "Ownable: caller is not the owner"
+        );
+        utils.checkAccess(
+            _gfp,
+            abi.encodeWithSelector(GasFeePricingUpgradeable.setMinGasUsageFeeUsd.selector, 0),
+            "Ownable: caller is not the owner"
+        );
+
         utils.checkAccess(
             _gfp,
             abi.encodeWithSelector(GasFeePricingUpgradeable.updateChainConfig.selector, 0, 0),
             "Ownable: caller is not the owner"
         );
+
         utils.checkAccess(
             _gfp,
             abi.encodeWithSelector(GasFeePricingUpgradeable.updateChainInfo.selector, 0, 0),
             "Ownable: caller is not the owner"
         );
+
         utils.checkAccess(
             _gfp,
             abi.encodeWithSelector(GasFeePricingUpgradeable.updateMarkups.selector, 0, 0),
@@ -148,6 +164,8 @@ contract GasFeePricingUpgradeableTest is Test {
         assertEq(gasFeePricing.markupGasUsage(), markupGasUsage, "Failed to init: markupGasUsage");
         assertEq(gasFeePricing.messageBus(), address(messageBus), "Failed to init: messageBus");
     }
+
+    function testSetCostPerChain() public {}
 
     /*┌──────────────────────────────────────────────────────────────────────┐
       │                          INTERNAL CHECKERS                           │

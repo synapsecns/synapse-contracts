@@ -72,6 +72,8 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     ChainConfig public srcConfig;
     ChainInfo public srcInfo;
 
+    uint256 public minGasUsageFee;
+
     // how much message sender is paying, multiple of "estimated price"
     // markup of 100% means user is paying exactly the projected price
     // set this more than 100% to make sure messaging fees cover the expenses to deliver the msg
@@ -81,6 +83,8 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     /*┌──────────────────────────────────────────────────────────────────────┐
       │                              CONSTANTS                               │
       └──────────────────────────────────────────────────────────────────────┘*/
+
+    uint256 public constant DEFAULT_MIN_FEE_USD = 10**18;
 
     uint256 public constant DEFAULT_GAS_LIMIT = 200000;
     uint256 public constant MARKUP_DENOMINATOR = 100;
@@ -101,6 +105,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         __Ownable_init_unchained();
         messageBus = _messageBus;
         srcInfo.gasTokenPrice = uint96(_srcGasTokenPrice);
+        minGasUsageFee = _calculateMinGasUsageFee(DEFAULT_MIN_FEE_USD, _srcGasTokenPrice);
         _updateMarkups(_markupGasDrop, _markupGasUsage);
     }
 
@@ -157,7 +162,12 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         uint256 feeGasUsage = (_gasLimit * dstRatio.gasUnitPriceRatio) / 10**18;
 
         // Sum up the fees multiplied by their respective markups
-        fee = (feeGasDrop * _markupGasDrop + feeGasUsage * _markupGasUsage) / MARKUP_DENOMINATOR;
+        feeGasDrop = (feeGasDrop * _markupGasDrop) / MARKUP_DENOMINATOR;
+        feeGasUsage = (feeGasUsage * _markupGasUsage) / MARKUP_DENOMINATOR;
+        // Check if gas usage fee is lower than minimum
+        uint256 _minGasUsageFee = minGasUsageFee;
+        if (feeGasUsage < _minGasUsageFee) feeGasUsage = _minGasUsageFee;
+        fee = feeGasDrop + feeGasUsage;
     }
 
     /// @notice Get total gas fee for calling updateChainInfo()
@@ -179,6 +189,14 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
             totalFee += fee;
             fees[i] = fee;
         }
+    }
+
+    function _calculateMinGasUsageFee(uint256 _minFeeUsd, uint256 _gasTokenPrice)
+        internal
+        pure
+        returns (uint256 minFee)
+    {
+        minFee = (_minFeeUsd * 10**18) / _gasTokenPrice;
     }
 
     /// @dev Converts address to bytes32
@@ -248,6 +266,16 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         for (uint256 i = 0; i < _dstChainIds.length; ++i) {
             dstGasFeePricing[_dstChainIds[i]] = _addressToBytes32(_dstGasFeePricing[i]);
         }
+    }
+
+    /// @notice Update the minimum fee for gas usage on message delivery. Quoted in src chain wei.
+    function setMinGasUsageFee(uint256 _minGasUsageFee) external onlyOwner {
+        minGasUsageFee = _minGasUsageFee;
+    }
+
+    /// @notice Update the minimum fee for gas usage on message delivery. Quoted in USD.
+    function setMinGasUsageFeeUsd(uint256 _minGasUsageFeeUsd) external onlyOwner {
+        minGasUsageFee = _calculateMinGasUsageFee(_minGasUsageFeeUsd, srcInfo.gasTokenPrice);
     }
 
     /// @notice Update information about source chain config:
