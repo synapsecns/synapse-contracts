@@ -201,7 +201,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
 
     /// @notice Update information about gas unit/token price for a bunch of chains.
     /// Handy for initial setup.
-    function setCostPerChain(
+    function setCostPerChains(
         uint256[] memory _dstChainIds,
         uint256[] memory _gasUnitPrices,
         uint256[] memory _gasTokenPrices
@@ -212,6 +212,30 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         );
         for (uint256 i = 0; i < _dstChainIds.length; ++i) {
             _updateDstChainInfo(_dstChainIds[i], _gasUnitPrices[i], _gasTokenPrices[i]);
+        }
+    }
+
+    /// @dev Update config (gasLimit for sending messages to chain, max gas airdrop) for a dst chain.
+    function setDstChainConfig(
+        uint256 _dstChainId,
+        uint256 _gasAmountNeeded,
+        uint256 _maxGasDrop
+    ) external onlyOwner {
+        _updateDstChainConfig(_dstChainId, _gasAmountNeeded, _maxGasDrop);
+    }
+
+    /// @dev Update config (gasLimit for sending messages to chain, max gas airdrop) for a bunch of chains.
+    function setDstChainConfigs(
+        uint256[] memory _dstChainIds,
+        uint256[] memory _gasAmountsNeeded,
+        uint256[] memory _maxGasDrops
+    ) external onlyOwner {
+        require(
+            _dstChainIds.length == _gasAmountsNeeded.length && _dstChainIds.length == _maxGasDrops.length,
+            "!arrays"
+        );
+        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
+            _updateDstChainConfig(_dstChainIds[i], _gasAmountsNeeded[i], _maxGasDrops[i]);
         }
     }
 
