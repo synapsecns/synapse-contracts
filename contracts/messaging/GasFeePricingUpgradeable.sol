@@ -45,38 +45,57 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     /*┌──────────────────────────────────────────────────────────────────────┐
       │                                EVENTS                                │
       └──────────────────────────────────────────────────────────────────────┘*/
-
+    /// @dev see "Structs" docs
     event ChainInfoUpdated(uint256 indexed chainId, uint256 gasTokenPrice, uint256 gasUnitPrice);
-
+    /// @dev see "Source chain storage" docs
     event MarkupsUpdated(uint256 markupGasDrop, uint256 markupGasUsage);
 
     /*┌──────────────────────────────────────────────────────────────────────┐
       │                      DESTINATION CHAINS STORAGE                      │
       └──────────────────────────────────────────────────────────────────────┘*/
 
-    // dstChainId => Info
+    /// @dev dstChainId => Info
     mapping(uint256 => ChainInfo) public dstInfo;
-    // dstChainId => Ratios
+    /// @dev dstChainId => Ratios
     mapping(uint256 => ChainRatios) public dstRatios;
-    // dstChainId => Config
+    /// @dev dstChainId => Config
     mapping(uint256 => ChainConfig) public dstConfig;
-    // dstChainId => GasFeePricing contract address
+    /// @dev dstChainId => GasFeePricing contract address
     mapping(uint256 => bytes32) public dstGasFeePricing;
-
+    /// @dev list of all dst chain ids
     uint256[] internal dstChainIds;
 
     /*┌──────────────────────────────────────────────────────────────────────┐
       │                         SOURCE CHAIN STORAGE                         │
       └──────────────────────────────────────────────────────────────────────┘*/
-
+    /// @dev See "Structs" docs
     ChainConfig public srcConfig;
     ChainInfo public srcInfo;
-
+    /// @dev Minimum fee related to gas usage on dst chain
     uint256 public minGasUsageFee;
 
-    // how much message sender is paying, multiple of "estimated price"
-    // markup of 100% means user is paying exactly the projected price
-    // set this more than 100% to make sure messaging fees cover the expenses to deliver the msg
+    /**
+     * @notice Whenever the messaging fee is calculated, it takes into account things as:
+     * gas token prices on src and dst chain, gas limit for executing message on dst chain
+     * and gas unit price on dst chain. In other words, message sender is paying dst chain
+     * gas fees (to cover gas usage and gasdrop), but in src chain gas token.
+     * The price values are static, though are supposed to be updated in the event of high
+     * volatility. It is implied that gas token/unit prices reflect respective latest
+     * average prices.
+     *
+     * Because of this, the markups are used, both for "gas drop fee", and "gas usage fee".
+     * Markup is a value of 100% or higher. This is the coefficient applied to
+     * "projected gas fee", that is calculated using static gas token/unit prices.
+     * Markup of 100% means that exactly "projected gas fee" will be charged, markup of 150%
+     * will result in fee that is 50% higher than "projected", etc.
+     *
+     * There are separate markups for gasDrop and gasUsage. gasDropFee is calculated only using
+     * src and dst gas token prices, while gasUsageFee also takes into account dst chain gas
+     * unit price, which is an extra source of volatility.
+     *
+     * Generally, markupGasUsage >= markupGasDrop >= 100%. While markups can be set to 100%,
+     * this is not recommended.
+     */
     uint128 public markupGasDrop;
     uint128 public markupGasUsage;
 
@@ -296,7 +315,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     }
 
     /// @notice Updates markups, that are used for determining how much fee
-    //  to charge on top of "projected gas cost" of delivering the message
+    /// to charge on top of "projected gas cost" of delivering the message
     function updateMarkups(uint128 _markupGasDrop, uint128 _markupGasUsage) external onlyOwner {
         _updateMarkups(_markupGasDrop, _markupGasUsage);
     }
