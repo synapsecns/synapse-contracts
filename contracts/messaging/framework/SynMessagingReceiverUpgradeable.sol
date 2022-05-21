@@ -44,15 +44,17 @@ abstract contract SynMessagingReceiverUpgradeable is ISynMessagingReceiver, Owna
         address _executor
     ) internal virtual;
 
+    // Send a message using full msg.value as fees, refund extra to msg.sender
     function _send(
         bytes32 _receiver,
         uint256 _dstChainId,
         bytes memory _message,
         bytes memory _options
     ) internal virtual {
-        _send(_receiver, _dstChainId, _message, _options, payable(msg.sender));
+        _send(_receiver, _dstChainId, _message, _options, msg.value, payable(msg.sender));
     }
 
+    // Send a message using full msg.value as fees, refund extra to specified address
     function _send(
         bytes32 _receiver,
         uint256 _dstChainId,
@@ -60,14 +62,58 @@ abstract contract SynMessagingReceiverUpgradeable is ISynMessagingReceiver, Owna
         bytes memory _options,
         address payable _refundAddress
     ) internal virtual {
-        require(trustedRemoteLookup[_dstChainId] != bytes32(0), "Receiver not trusted remote");
-        IMessageBus(messageBus).sendMessage{value: msg.value}(
-            _receiver,
-            _dstChainId,
-            _message,
-            _options,
-            _refundAddress
+        _send(_receiver, _dstChainId, _message, _options, msg.value, _refundAddress);
+    }
+
+    // Send a message to a bunch of chains, refund extra fees to specified address
+    function _send(
+        bytes32[] memory _receivers,
+        uint256[] memory _dstChainIds,
+        bytes memory _message,
+        bytes[] memory _options,
+        uint256[] memory _fees,
+        address payable _refundAddress
+    ) internal {
+        require(
+            _receivers.length == _fees.length && _dstChainIds.length == _fees.length && _options.length == _fees.length,
+            "!arrays"
         );
+        for (uint256 i = 0; i < _fees.length; ++i) {
+            _send(_receivers[i], _dstChainIds[i], _message, _options[i], _fees[i], _refundAddress);
+        }
+    }
+
+    // Send a bunch of messages to a bunch of chains, refund extra fees to specified address
+    function _send(
+        bytes32[] memory _receivers,
+        uint256[] memory _dstChainIds,
+        bytes[] memory _messages,
+        bytes[] memory _options,
+        uint256[] memory _fees,
+        address payable _refundAddress
+    ) internal {
+        require(
+            _receivers.length == _fees.length &&
+                _dstChainIds.length == _fees.length &&
+                _messages.length == _fees.length &&
+                _options.length == _fees.length,
+            "!arrays"
+        );
+        for (uint256 i = 0; i < _fees.length; ++i) {
+            _send(_receivers[i], _dstChainIds[i], _messages[i], _options[i], _fees[i], _refundAddress);
+        }
+    }
+
+    function _send(
+        bytes32 _receiver,
+        uint256 _dstChainId,
+        bytes memory _message,
+        bytes memory _options,
+        uint256 _fee,
+        address payable _refundAddress
+    ) internal {
+        require(trustedRemoteLookup[_dstChainId] != bytes32(0), "Receiver not trusted remote");
+        IMessageBus(messageBus).sendMessage{value: _fee}(_receiver, _dstChainId, _message, _options, _refundAddress);
     }
 
     //** Config Functions */
