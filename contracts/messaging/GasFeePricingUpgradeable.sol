@@ -7,9 +7,9 @@ import "./interfaces/IGasFeePricing.sol";
 import "./libraries/Options.sol";
 
 contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePricing {
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                                      STRUCTS                                   
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                               STRUCTS                                │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     /// @dev Dst chain's basic variables, that are unlikely to change over time.
     struct ChainConfig {
@@ -42,17 +42,17 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         // This number is expressed in src chain wei
     }
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                                       EVENTS                                   
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                                EVENTS                                │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     event ChainInfoUpdated(uint256 indexed chainId, uint256 gasTokenPrice, uint256 gasUnitPrice);
 
     event MarkupsUpdated(uint256 markupGasDrop, uint256 markupGasUsage);
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                             DESTINATION CHAINS STORAGE                         
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                      DESTINATION CHAINS STORAGE                      │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     // dstChainId => Info
     mapping(uint256 => ChainInfo) public dstInfo;
@@ -65,9 +65,9 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
 
     uint256[] internal dstChainIds;
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                                SOURCE CHAIN STORAGE                            
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                         SOURCE CHAIN STORAGE                         │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     ChainConfig public srcConfig;
     ChainInfo public srcInfo;
@@ -78,9 +78,9 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     uint128 public markupGasDrop;
     uint128 public markupGasUsage;
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                                     CONSTANTS                                  
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                              CONSTANTS                               │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     uint256 public constant DEFAULT_GAS_LIMIT = 200000;
     uint256 public constant MARKUP_DENOMINATOR = 100;
@@ -88,9 +88,9 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     uint8 public constant CHAIN_CONFIG_UPDATED = 1;
     uint8 public constant CHAIN_INFO_UPDATED = 2;
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                                    INITIALIZER                                 
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                             INITIALIZER                              │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     function initialize(
         address _messageBus,
@@ -104,9 +104,9 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         _updateMarkups(_markupGasDrop, _markupGasUsage);
     }
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                                       VIEWS                                    
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                                VIEWS                                 │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     /// @notice Get the fee for sending a message to dst chain with given options
     function estimateGasFee(uint256 _dstChainId, bytes calldata _options) external view returns (uint256 fee) {
@@ -186,9 +186,9 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         return bytes32(uint256(uint160(_addr)));
     }
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                                     ONLY OWNER                                 
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                              ONLY OWNER                              │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     /// @dev Update information about gas unit/token price for a dst chain.
     function setCostPerChain(
@@ -273,9 +273,9 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         _updateMarkups(_markupGasDrop, _markupGasUsage);
     }
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                                 UPDATE STATE LOGIC                             
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                          UPDATE STATE LOGIC                          │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     /// @dev Updates information about src chain gas token/unit price.
     /// All the dst chain ratios are updated as well, if gas token price changed
@@ -360,9 +360,9 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         emit MarkupsUpdated(_markupGasDrop, _markupGasUsage);
     }
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                                  MESSAGING LOGIC                               
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                           MESSAGING LOGIC                            │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     /// @dev Sends "something updated" messages to all registered dst chains
     function _sendUpdateMessages(

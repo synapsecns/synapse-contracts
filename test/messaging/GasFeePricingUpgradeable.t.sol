@@ -38,9 +38,9 @@ contract GasFeePricingUpgradeableTest is Test {
         this;
     }
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                                       SETUP                                    
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                                SETUP                                 │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     function setUp() public {
         utils = new Utilities();
@@ -61,9 +61,9 @@ contract GasFeePricingUpgradeableTest is Test {
         gasFeePricing.initialize(address(messageBus), srcVars.gasTokenPrice, markupGasDrop, markupGasUsage);
     }
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                                   SECURITY TESTS                               
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                            SECURITY TESTS                            │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     function testInitialized() public {
         utils.checkAccess(
@@ -137,9 +137,9 @@ contract GasFeePricingUpgradeableTest is Test {
         );
     }
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                               GETTERS/SETTERS TESTS                            
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                        GETTERS/SETTERS TESTS                         │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     function testInitializedCorrectly() public {
         (uint128 _gasTokenPrice, ) = gasFeePricing.srcInfo();
@@ -149,9 +149,9 @@ contract GasFeePricingUpgradeableTest is Test {
         assertEq(gasFeePricing.messageBus(), address(messageBus), "Failed to init: messageBus");
     }
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                                 INTERNAL CHECKERS                              
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                          INTERNAL CHECKERS                           │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     function _checkDstChainConfig(uint256 _dstChainId) internal {
         (uint128 gasAmountNeeded, uint128 maxGasDrop) = gasFeePricing.dstConfig(_dstChainId);
@@ -186,9 +186,9 @@ contract GasFeePricingUpgradeableTest is Test {
         assertEq(gasUnitPrice, srcVars.gasUnitPrice, "gasUnitPrice is incorrect");
     }
 
-    /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
-                                  INTERNAL SETTERS                              
-    __________________________________________________________________________*/
+    /*┌──────────────────────────────────────────────────────────────────────┐
+      │                           INTERNAL SETTERS                           │
+      └──────────────────────────────────────────────────────────────────────┘*/
 
     function _setDstChainConfig(
         uint256 _dstChainId,
