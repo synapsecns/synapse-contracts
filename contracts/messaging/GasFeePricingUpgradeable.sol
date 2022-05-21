@@ -102,6 +102,23 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
 
     /// @notice Get the fee for sending a message to dst chain with given options
     function estimateGasFee(uint256 _dstChainId, bytes calldata _options) external view returns (uint256 fee) {
+        fee = _estimateGasFee(_dstChainId, _options);
+    }
+
+    /// @notice Get the fee for sending a message to a bunch of chains with given options
+    function estimateGasFees(uint256[] calldata _dstChainIds, bytes[] calldata _options)
+        external
+        view
+        returns (uint256 fee)
+    {
+        require(_dstChainIds.length == _options.length, "!arrays");
+        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
+            fee = fee + _estimateGasFee(_dstChainIds[i], _options[i]);
+        }
+    }
+
+    /// @dev Extracts the gas information from options and calculates the messaging fee
+    function _estimateGasFee(uint256 _dstChainId, bytes calldata _options) internal view returns (uint256 fee) {
         uint256 gasLimit;
         uint256 dstAirdrop;
         if (_options.length != 0) {
