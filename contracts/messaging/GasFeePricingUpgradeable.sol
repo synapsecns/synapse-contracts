@@ -69,6 +69,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
                                 SOURCE CHAIN STORAGE                            
     __________________________________________________________________________*/
 
+    ChainConfig public srcConfig;
     ChainInfo public srcInfo;
 
     // how much message sender is paying, multiple of "estimated price"
@@ -83,6 +84,9 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
 
     uint256 public constant DEFAULT_GAS_LIMIT = 200000;
     uint256 public constant MARKUP_DENOMINATOR = 100;
+
+    uint8 public constant CHAIN_CONFIG_UPDATED = 1;
+    uint8 public constant CHAIN_INFO_UPDATED = 2;
 
     /*‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾‾
                                     INITIALIZER                                 
@@ -192,7 +196,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         uint256 _gasUnitPrice,
         uint256 _gasTokenPrice
     ) external onlyOwner {
-        _setCostPerChain(_dstChainId, _gasUnitPrice, _gasTokenPrice);
+        _updateDstChainInfo(_dstChainId, _gasUnitPrice, _gasTokenPrice);
     }
 
     /// @notice Update information about gas unit/token price for a bunch of chains.
@@ -207,7 +211,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
             "!arrays"
         );
         for (uint256 i = 0; i < _dstChainIds.length; ++i) {
-            _setCostPerChain(_dstChainIds[i], _gasUnitPrices[i], _gasTokenPrices[i]);
+            _updateDstChainInfo(_dstChainIds[i], _gasUnitPrices[i], _gasTokenPrices[i]);
         }
     }
 
@@ -222,32 +226,21 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         }
     }
 
+    /// @notice Update information about source chain config:
+    /// amount of gas needed to do _updateDstChainInfo()
+    /// and maximum airdrop available on this chain
+    function updateChainConfig(uint256 _gasAmountNeeded, uint256 _maxGasDrop) external payable onlyOwner {
+        _sendUpdateMessages(CHAIN_CONFIG_UPDATED, _gasAmountNeeded, _maxGasDrop);
+        srcConfig = ChainConfig({gasAmountNeeded: uint128(_gasAmountNeeded), maxGasDrop: uint128(_maxGasDrop)});
+    }
+
     /// @notice Update information about source chain gas token/unit price on all configured dst chains,
     /// as well as on the source chain itself.
     function updateChainInfo(uint256 _gasTokenPrice, uint256 _gasUnitPrice) external payable onlyOwner {
-        (uint256 totalFee, uint256[] memory fees) = _estimateUpdateFees();
-        require(msg.value >= totalFee, "msg.value doesn't cover all the fees");
-
-        // TODO: replace placeholder with actual message
-        bytes memory message = bytes("");
-        uint256[] memory chainIds = dstChainIds;
-        bytes32[] memory receivers = new bytes32[](chainIds.length);
-        bytes[] memory options = new bytes[](chainIds.length);
-
-        for (uint256 i = 0; i < chainIds.length; ++i) {
-            uint256 chainId = chainIds[i];
-            uint256 gasLimit = dstConfig[chainId].gasAmountNeeded;
-            if (gasLimit == 0) gasLimit = DEFAULT_GAS_LIMIT;
-
-            receivers[i] = dstGasFeePricing[chainId];
-            options[i] = Options.encode(gasLimit);
-        }
-
         // send messages before updating the values, so that it's possible to use
         // estimateUpdateFees() to calculate the needed fee for the update
-        _send(receivers, chainIds, message, options, fees, payable(msg.sender));
-        _updateChainInfo(_gasTokenPrice, _gasUnitPrice);
-        if (msg.value > totalFee) payable(msg.sender).transfer(msg.value - totalFee);
+        _sendUpdateMessages(CHAIN_INFO_UPDATED, _gasTokenPrice, _gasUnitPrice);
+        _updateSrcChainInfo(_gasTokenPrice, _gasUnitPrice);
     }
 
     /// @notice Updates markups, that are used for determining how much fee
@@ -260,9 +253,42 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
                                  UPDATE STATE LOGIC                             
     __________________________________________________________________________*/
 
+    /// @dev Updates information about src chain gas token/unit price.
+    /// All the dst chain ratios are updated as well, if gas token price changed
+    function _updateSrcChainInfo(uint256 _gasTokenPrice, uint256 _gasUnitPrice) internal {
+        if (srcInfo.gasTokenPrice != _gasTokenPrice) {
+            // update ratios only if gas token price has changed
+            uint256[] memory chainIds = dstChainIds;
+            for (uint256 i = 0; i < chainIds.length; ++i) {
+                uint256 chainId = chainIds[i];
+                ChainInfo memory info = dstInfo[chainId];
+                _updateDstChainRatios(_gasTokenPrice, chainId, info.gasTokenPrice, info.gasUnitPrice);
+            }
+        }
+
+        srcInfo = ChainInfo({gasTokenPrice: uint128(_gasTokenPrice), gasUnitPrice: uint128(_gasUnitPrice)});
+
+        // TODO: use context chainid here
+        emit ChainInfoUpdated(block.chainid, _gasTokenPrice, _gasUnitPrice);
+    }
+
+    /// @dev Updates dst chain config:
+    /// Amount of gas needed to do _updateDstChainInfo()
+    /// Maximum airdrop available on this chain
+    function _updateDstChainConfig(
+        uint256 _dstChainId,
+        uint256 _gasAmountNeeded,
+        uint256 _maxGasDrop
+    ) internal {
+        dstConfig[_dstChainId] = ChainConfig({
+            gasAmountNeeded: uint128(_gasAmountNeeded),
+            maxGasDrop: uint128(_maxGasDrop)
+        });
+    }
+
     /// @dev Updates information about dst chain gas token/unit price.
     /// Dst chain ratios are updated as well.
-    function _setCostPerChain(
+    function _updateDstChainInfo(
         uint256 _dstChainId,
         uint256 _gasUnitPrice,
         uint256 _gasTokenPrice
@@ -280,32 +306,13 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
             gasTokenPrice: uint128(_gasTokenPrice),
             gasUnitPrice: uint128(_gasUnitPrice)
         });
-        _updateChainRatios(_srcGasTokenPrice, _dstChainId, _gasTokenPrice, _gasUnitPrice);
+        _updateDstChainRatios(_srcGasTokenPrice, _dstChainId, _gasTokenPrice, _gasUnitPrice);
 
         emit ChainInfoUpdated(_dstChainId, _gasTokenPrice, _gasUnitPrice);
     }
 
-    /// @dev Updates information about src chain gas token/unit price.
-    /// All the dst chain ratios are updated as well, if gas token price changed
-    function _updateChainInfo(uint256 _gasTokenPrice, uint256 _gasUnitPrice) internal {
-        if (srcInfo.gasTokenPrice != _gasTokenPrice) {
-            // update ratios only if gas token price has changed
-            uint256[] memory chainIds = dstChainIds;
-            for (uint256 i = 0; i < chainIds.length; ++i) {
-                uint256 chainId = chainIds[i];
-                ChainInfo memory info = dstInfo[chainId];
-                _updateChainRatios(_gasTokenPrice, chainId, info.gasTokenPrice, info.gasUnitPrice);
-            }
-        }
-
-        srcInfo = ChainInfo({gasTokenPrice: uint128(_gasTokenPrice), gasUnitPrice: uint128(_gasUnitPrice)});
-
-        // TODO: use context chainid here
-        emit ChainInfoUpdated(block.chainid, _gasTokenPrice, _gasUnitPrice);
-    }
-
     /// @dev Updates gas token/unit ratios for a given dst chain
-    function _updateChainRatios(
+    function _updateDstChainRatios(
         uint256 _srcGasTokenPrice,
         uint256 _dstChainId,
         uint256 _dstGasTokenPrice,
@@ -333,11 +340,70 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
                                   MESSAGING LOGIC                               
     __________________________________________________________________________*/
 
+    /// @dev Sends "something updated" messages to all registered dst chains
+    function _sendUpdateMessages(
+        uint8 _msgType,
+        uint256 _newValueA,
+        uint256 _newValueB
+    ) internal {
+        (uint256 totalFee, uint256[] memory fees) = _estimateUpdateFees();
+        require(msg.value >= totalFee, "msg.value doesn't cover all the fees");
+
+        bytes memory message = _encodeMessage(_msgType, uint128(_newValueA), uint128(_newValueB));
+        uint256[] memory chainIds = dstChainIds;
+        bytes32[] memory receivers = new bytes32[](chainIds.length);
+        bytes[] memory options = new bytes[](chainIds.length);
+
+        for (uint256 i = 0; i < chainIds.length; ++i) {
+            uint256 chainId = chainIds[i];
+            uint256 gasLimit = dstConfig[chainId].gasAmountNeeded;
+            if (gasLimit == 0) gasLimit = DEFAULT_GAS_LIMIT;
+
+            receivers[i] = dstGasFeePricing[chainId];
+            options[i] = Options.encode(gasLimit);
+        }
+
+        _send(receivers, chainIds, message, options, fees, payable(msg.sender));
+        if (msg.value > totalFee) payable(msg.sender).transfer(msg.value - totalFee);
+    }
+
     /// @dev Handles the received message.
     function _handleMessage(
-        bytes32 _srcAddress,
+        bytes32,
         uint256 _srcChainId,
         bytes memory _message,
-        address _executor
-    ) internal override {}
+        address
+    ) internal override {
+        (uint8 msgType, uint128 newValueA, uint128 newValueB) = _decodeMessage(_message);
+        if (msgType == CHAIN_CONFIG_UPDATED) {
+            _updateDstChainConfig(_srcChainId, newValueA, newValueB);
+        } else if (msgType == CHAIN_INFO_UPDATED) {
+            _updateDstChainInfo(_srcChainId, newValueA, newValueB);
+        } else {
+            revert("Unknown message type");
+        }
+    }
+
+    /// @dev Encodes "something updated" message. We're taking advantage that
+    /// whether it's chain config or info, it's always two uint128 values that were updated.
+    function _encodeMessage(
+        uint8 _msgType,
+        uint128 _newValueA,
+        uint128 _newValueB
+    ) internal pure returns (bytes memory) {
+        return abi.encode(_msgType, _newValueA, _newValueB);
+    }
+
+    /// @dev Decodes "something updated" message.
+    function _decodeMessage(bytes memory _message)
+        internal
+        pure
+        returns (
+            uint8 msgType,
+            uint128 newValueA,
+            uint128 newValueB
+        )
+    {
+        (msgType, newValueA, newValueB) = abi.decode(_message, (uint8, uint128, uint128));
+    }
 }
