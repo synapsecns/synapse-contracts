@@ -287,7 +287,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         minGasUsageFee = _minGasUsageFee;
     }
 
-    /// @notice Update the minimum fee for gas usage on message delivery. Quoted in USD.
+    /// @notice Update the minimum fee for gas usage on message delivery. Quoted in USD, scaled to wei.
     function setMinFeeUsd(uint256 _minGasUsageFeeUsd) external onlyOwner {
         minGasUsageFee = _calculateMinGasUsageFee(_minGasUsageFeeUsd, srcInfo.gasTokenPrice);
     }

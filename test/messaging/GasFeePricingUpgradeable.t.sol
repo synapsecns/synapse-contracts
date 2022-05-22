@@ -164,6 +164,7 @@ contract GasFeePricingUpgradeableTest is Test {
         (uint128 _gasTokenPrice, ) = gasFeePricing.srcInfo();
         assertEq(_gasTokenPrice, srcVars.gasTokenPrice, "Failed to init: gasTokenPrice");
         assertEq(gasFeePricing.messageBus(), address(messageBus), "Failed to init: messageBus");
+        _checkMinFeeUsd(10**18);
     }
 
     function testSetCostPerChain() public {}
@@ -197,6 +198,15 @@ contract GasFeePricingUpgradeableTest is Test {
             srcVars.gasTokenPrice;
         assertEq(gasTokenPriceRatio, _gasTokenPriceRatio, "gasTokenPriceRatio is incorrect");
         assertEq(gasUnitPriceRatio, _gasUnitPriceRatio, "gasUnitPriceRatio is incorrect");
+    }
+
+    function _checkMinFee(uint256 _expectedMinFee) internal {
+        assertEq(gasFeePricing.minGasUsageFee(), _expectedMinFee, "minGasUsageFee is incorrect");
+    }
+
+    function _checkMinFeeUsd(uint256 _expectedMinFeeUsd) internal {
+        uint256 _expectedMinFee = (_expectedMinFeeUsd * 10**18) / srcVars.gasTokenPrice;
+        _checkMinFee(_expectedMinFee);
     }
 
     function _checkSrcConfig() internal {
