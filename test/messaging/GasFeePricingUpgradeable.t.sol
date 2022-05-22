@@ -82,11 +82,6 @@ contract GasFeePricingUpgradeableTest is Test {
         address _gfp = address(gasFeePricing);
         utils.checkAccess(
             _gfp,
-            abi.encodeWithSelector(GasFeePricingUpgradeable.setDstAddress.selector, new uint256[](1), new address[](1)),
-            "Ownable: caller is not the owner"
-        );
-        utils.checkAccess(
-            _gfp,
             abi.encodeWithSelector(
                 GasFeePricingUpgradeable.setDstConfig.selector,
                 new uint256[](1),
@@ -259,13 +254,6 @@ contract GasFeePricingUpgradeableTest is Test {
             dstVars[_dstChainIds[i]].markupGasUsage = _markupsGasUsage[i];
         }
         gasFeePricing.setDstMarkups(_dstChainIds, _markupsGasDrop, _markupsGasUsage);
-    }
-
-    function _setDstAddress(uint256[] memory _dstChainIds, address[] memory _dstGasFeePricing) internal {
-        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
-            dstVars[_dstChainIds[i]].gasFeePricing = _dstGasFeePricing[i];
-        }
-        gasFeePricing.setDstAddress(_dstChainIds, _dstGasFeePricing);
     }
 
     function _updateSrcConfig(uint256 _gasAmountNeeded, uint256 _maxGasDrop) internal {

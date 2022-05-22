@@ -89,8 +89,6 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     mapping(uint256 => ChainRatios) public dstRatios;
     /// @dev dstChainId => Config
     mapping(uint256 => ChainConfig) public dstConfig;
-    /// @dev dstChainId => GasFeePricing contract address
-    mapping(uint256 => bytes32) public dstGasFeePricing;
     /// @dev list of all dst chain ids
     uint256[] internal dstChainIds;
 
@@ -218,22 +216,9 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         minFee = (_minFeeUsd * 10**18) / _gasTokenPrice;
     }
 
-    /// @dev Converts address to bytes32
-    function _addressToBytes32(address _addr) internal pure returns (bytes32) {
-        return bytes32(uint256(uint160(_addr)));
-    }
-
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                              ONLY OWNER                              ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
-
-    /// @notice Update GasFeePricing addresses on a bunch of dst chains. Needed for cross-chain setups.
-    function setDstAddress(uint256[] memory _dstChainIds, address[] memory _dstGasFeePricing) external onlyOwner {
-        require(_dstChainIds.length == _dstGasFeePricing.length, "!arrays");
-        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
-            dstGasFeePricing[_dstChainIds[i]] = _addressToBytes32(_dstGasFeePricing[i]);
-        }
-    }
 
     /// @dev Update config (gasLimit for sending messages to chain, max gas airdrop) for a bunch of chains.
     function setDstConfig(
@@ -424,7 +409,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
             uint256 gasLimit = dstConfig[chainId].gasAmountNeeded;
             if (gasLimit == 0) gasLimit = DEFAULT_GAS_LIMIT;
 
-            receivers[i] = dstGasFeePricing[chainId];
+            receivers[i] = trustedRemoteLookup[chainId];
             options[i] = Options.encode(gasLimit);
         }
 
