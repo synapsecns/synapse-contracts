@@ -341,7 +341,13 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         uint256 _gasUnitPrice,
         uint256 _gasTokenPrice
     ) internal {
-        require(_gasUnitPrice != 0 && _gasTokenPrice != 0, "Can't set to zero");
+        /**
+         * @dev Some chains (i.e. Aurora) allow free transactions,
+         * so we're not checking gasUnitPrice for being zero.
+         * gasUnitPrice is never used as denominator, and there's
+         * a minimum fee for gas usage, so this can't be taken advantage of.
+         */
+        require(_gasTokenPrice != 0, "Dst gas token price is not set");
         uint256 _srcGasTokenPrice = srcInfo.gasTokenPrice;
         require(_srcGasTokenPrice != 0, "Src gas token price is not set");
 
