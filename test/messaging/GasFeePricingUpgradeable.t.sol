@@ -241,7 +241,7 @@ contract GasFeePricingUpgradeableTest is Test {
             dstVars[_dstChainIds[i]].gasTokenPrice = _gasTokenPrices[i];
             dstVars[_dstChainIds[i]].gasUnitPrice = _gasUnitPrices[i];
         }
-        gasFeePricing.setDstInfo(_dstChainIds, _gasUnitPrices, _gasTokenPrices);
+        gasFeePricing.setDstInfo(_dstChainIds, _gasTokenPrices, _gasUnitPrices);
     }
 
     function _setDstMarkups(

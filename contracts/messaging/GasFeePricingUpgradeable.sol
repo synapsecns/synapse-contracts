@@ -239,8 +239,8 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     /// Handy for initial setup.
     function setDstInfo(
         uint256[] memory _dstChainIds,
-        uint256[] memory _gasUnitPrices,
-        uint256[] memory _gasTokenPrices
+        uint256[] memory _gasTokenPrices,
+        uint256[] memory _gasUnitPrices
     ) external onlyOwner {
         require(
             _dstChainIds.length == _gasUnitPrices.length && _dstChainIds.length == _gasTokenPrices.length,
@@ -281,6 +281,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     /// amount of gas needed to do _updateDstChainInfo()
     /// and maximum airdrop available on this chain
     function updateSrcConfig(uint256 _gasAmountNeeded, uint256 _maxGasDrop) external payable onlyOwner {
+        require(_gasAmountNeeded != 0, "Gas amount is not set");
         _sendUpdateMessages(uint8(GasFeePricingUpdates.MsgType.UPDATE_CONFIG), _gasAmountNeeded, _maxGasDrop);
         ChainConfig memory config = srcConfig;
         config.gasAmountNeeded = uint112(_gasAmountNeeded);
@@ -291,6 +292,13 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     /// @notice Update information about source chain gas token/unit price on all configured dst chains,
     /// as well as on the source chain itself.
     function updateSrcInfo(uint256 _gasTokenPrice, uint256 _gasUnitPrice) external payable onlyOwner {
+        /**
+         * @dev Some chains (i.e. Aurora) allow free transactions,
+         * so we're not checking gasUnitPrice for being zero.
+         * gasUnitPrice is never used as denominator, and there's
+         * a minimum fee for gas usage, so this can't be taken advantage of.
+         */
+        require(_gasTokenPrice != 0, "Gas token price is not set");
         // send messages before updating the values, so that it's possible to use
         // estimateUpdateFees() to calculate the needed fee for the update
         _sendUpdateMessages(uint8(GasFeePricingUpdates.MsgType.UPDATE_INFO), _gasTokenPrice, _gasUnitPrice);
@@ -328,6 +336,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         uint256 _gasAmountNeeded,
         uint256 _maxGasDrop
     ) internal {
+        require(_gasAmountNeeded != 0, "Gas amount is not set");
         ChainConfig memory config = dstConfig[_dstChainId];
         config.gasAmountNeeded = uint112(_gasAmountNeeded);
         config.maxGasDrop = uint112(_maxGasDrop);
