@@ -46,9 +46,12 @@ contract GasFeePricingUpgradeableTest is Test {
         utils = new Utilities();
         authVerifier = new AuthVerifier(NODE);
 
+        // src gas token is worth exactly 1 USD
         srcVars.gasTokenPrice = 10**18;
-        markupGasDrop = 150;
-        markupGasUsage = 200;
+        // take 50% on top of airdrop value
+        markupGasDrop = 50;
+        // take 100% on top of gasUsage value
+        markupGasUsage = 100;
 
         MessageBusUpgradeable busImpl = new MessageBusUpgradeable();
         GasFeePricingUpgradeable pricingImpl = new GasFeePricingUpgradeable();

@@ -84,16 +84,16 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
      * average prices.
      *
      * Because of this, the markups are used, both for "gas drop fee", and "gas usage fee".
-     * Markup is a value of 100% or higher. This is the coefficient applied to
+     * Markup is a value of 0% or higher. This is the coefficient applied to
      * "projected gas fee", that is calculated using static gas token/unit prices.
-     * Markup of 100% means that exactly "projected gas fee" will be charged, markup of 150%
+     * Markup of 0% means that exactly "projected gas fee" will be charged, markup of 50%
      * will result in fee that is 50% higher than "projected", etc.
      *
      * There are separate markups for gasDrop and gasUsage. gasDropFee is calculated only using
      * src and dst gas token prices, while gasUsageFee also takes into account dst chain gas
      * unit price, which is an extra source of volatility.
      *
-     * Generally, markupGasUsage >= markupGasDrop >= 100%. While markups can be set to 100%,
+     * Generally, markupGasUsage >= markupGasDrop >= 0%. While markups can be set to 0%,
      * this is not recommended.
      */
     uint128 public markupGasDrop;
@@ -181,8 +181,8 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         uint256 feeGasUsage = (_gasLimit * dstRatio.gasUnitPriceRatio) / 10**18;
 
         // Sum up the fees multiplied by their respective markups
-        feeGasDrop = (feeGasDrop * _markupGasDrop) / MARKUP_DENOMINATOR;
-        feeGasUsage = (feeGasUsage * _markupGasUsage) / MARKUP_DENOMINATOR;
+        feeGasDrop = (feeGasDrop * (_markupGasDrop + MARKUP_DENOMINATOR)) / MARKUP_DENOMINATOR;
+        feeGasUsage = (feeGasUsage * (_markupGasUsage + MARKUP_DENOMINATOR)) / MARKUP_DENOMINATOR;
         // Check if gas usage fee is lower than minimum
         uint256 _minGasUsageFee = minGasUsageFee;
         if (feeGasUsage < _minGasUsageFee) feeGasUsage = _minGasUsageFee;
@@ -314,8 +314,8 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         _updateSrcChainInfo(_gasTokenPrice, _gasUnitPrice);
     }
 
-    /// @notice Updates markups, that are used for determining how much fee
-    /// to charge on top of "projected gas cost" of delivering the message
+    /// @notice Updates markups (see "Source chain storage" docs), that are used for determining
+    /// how much fee to charge on top of "projected gas cost" of delivering the message.
     function updateMarkups(uint128 _markupGasDrop, uint128 _markupGasUsage) external onlyOwner {
         _updateMarkups(_markupGasDrop, _markupGasUsage);
     }
@@ -395,14 +395,9 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         });
     }
 
-    /// @dev Updates the markups.
-    /// Markup = 100% means exactly the "projected gas cost" will be charged.
-    /// Thus, markup can't be lower than 100%.
+    /// @dev Updates the markups (see "Source chain storage" docs).
+    /// Markup = 0% means exactly the "projected gas cost" will be charged.
     function _updateMarkups(uint128 _markupGasDrop, uint128 _markupGasUsage) internal {
-        require(
-            _markupGasDrop >= MARKUP_DENOMINATOR && _markupGasUsage >= MARKUP_DENOMINATOR,
-            "Markup can not be lower than 1"
-        );
         (markupGasDrop, markupGasUsage) = (_markupGasDrop, _markupGasUsage);
         emit MarkupsUpdated(_markupGasDrop, _markupGasUsage);
     }
