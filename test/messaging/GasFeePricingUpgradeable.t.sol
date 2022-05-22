@@ -31,6 +31,9 @@ contract GasFeePricingUpgradeableTest is Test {
 
     mapping(uint256 => ChainVars) internal dstVars;
 
+    uint256[] internal dstChainIds;
+    uint256 internal constant TEST_CHAINS = 5;
+
     address public constant NODE = address(1337);
 
     // enable receiving overpaid fees
@@ -58,13 +61,22 @@ contract GasFeePricingUpgradeableTest is Test {
         // I don't have extra 10M laying around, so let's initialize those proxies
         messageBus.initialize(address(gasFeePricing), address(authVerifier));
         gasFeePricing.initialize(address(messageBus), srcVars.gasTokenPrice);
+
+        dstChainIds = new uint256[](TEST_CHAINS);
+        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
+            uint256 dstChainId = i + 1;
+            dstChainIds[i] = dstChainId;
+            address dstGasFeePricing = utils.getNextUserAddress();
+            dstVars[dstChainId].gasFeePricing = dstGasFeePricing;
+            gasFeePricing.setTrustedRemote(dstChainId, utils.addressToBytes32(dstGasFeePricing));
+        }
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                            SECURITY TESTS                            ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function testInitialized() public {
+    function testIsInitialized() public {
         utils.checkAccess(
             address(messageBus),
             abi.encodeWithSelector(MessageBusUpgradeable.initialize.selector, address(0), address(0)),
@@ -162,7 +174,204 @@ contract GasFeePricingUpgradeableTest is Test {
         _checkMinFeeUsd(10**18);
     }
 
-    function testSetCostPerChain() public {}
+    function testSetDstConfig() public {
+        uint256[] memory gasAmountsNeeded = new uint256[](TEST_CHAINS);
+        uint256[] memory maxGasDrops = new uint256[](TEST_CHAINS);
+        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
+            gasAmountsNeeded[i] = (i + 1) * 420420;
+            maxGasDrops[i] = (i + 1) * 10**18;
+        }
+        _setDstConfig(dstChainIds, gasAmountsNeeded, maxGasDrops);
+        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
+            _checkDstConfig(dstChainIds[i]);
+        }
+    }
+
+    function testSetDstConfigZeroDropSucceeds() public {
+        uint256[] memory gasAmountsNeeded = new uint256[](TEST_CHAINS);
+        uint256[] memory maxGasDrops = new uint256[](TEST_CHAINS);
+        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
+            gasAmountsNeeded[i] = (i + 1) * 133769;
+            maxGasDrops[i] = i * 10**18;
+        }
+        _setDstConfig(dstChainIds, gasAmountsNeeded, maxGasDrops);
+        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
+            _checkDstConfig(dstChainIds[i]);
+        }
+    }
+
+    function testSetDstConfigZeroGasReverts() public {
+        uint256[] memory gasAmountsNeeded = new uint256[](TEST_CHAINS);
+        uint256[] memory maxGasDrops = new uint256[](TEST_CHAINS);
+        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
+            gasAmountsNeeded[i] = i * 133769;
+            maxGasDrops[i] = (i + 1) * 10**18;
+        }
+        utils.checkRevert(
+            address(this),
+            address(gasFeePricing),
+            abi.encodeWithSelector(
+                GasFeePricingUpgradeable.setDstConfig.selector,
+                dstChainIds,
+                gasAmountsNeeded,
+                maxGasDrops
+            ),
+            "Gas amount is not set"
+        );
+    }
+
+    function testSetDstInfo() public {
+        (uint256[] memory gasUnitPrices, uint256[] memory gasTokenPrices) = _generateTestInfoValues();
+        _setDstInfo(dstChainIds, gasTokenPrices, gasUnitPrices);
+        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
+            uint256 chainId = dstChainIds[i];
+            _checkDstInfo(chainId);
+            _checkDstRatios(chainId);
+        }
+    }
+
+    function testSetDstInfoZeroTokenPriceReverts() public {
+        (uint256[] memory gasTokenPrices, uint256[] memory gasUnitPrices) = _generateTestInfoValues();
+        gasTokenPrices[2] = 0;
+        utils.checkRevert(
+            address(this),
+            address(gasFeePricing),
+            abi.encodeWithSelector(
+                GasFeePricingUpgradeable.setDstInfo.selector,
+                dstChainIds,
+                gasTokenPrices,
+                gasUnitPrices
+            ),
+            "Dst gas token price is not set"
+        );
+    }
+
+    function testSetDstInfoZeroUnitPriceSucceeds() public {
+        (uint256[] memory gasTokenPrices, uint256[] memory gasUnitPrices) = _generateTestInfoValues();
+        gasTokenPrices[2] = 100 * 10**18;
+        gasUnitPrices[3] = 0;
+        _setDstInfo(dstChainIds, gasTokenPrices, gasUnitPrices);
+        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
+            uint256 chainId = dstChainIds[i];
+            _checkDstInfo(chainId);
+            _checkDstRatios(chainId);
+        }
+    }
+
+    function _generateTestInfoValues()
+        internal
+        pure
+        returns (uint256[] memory gasTokenPrices, uint256[] memory gasUnitPrices)
+    {
+        gasTokenPrices = new uint256[](TEST_CHAINS);
+        gasUnitPrices = new uint256[](TEST_CHAINS);
+        // 100 gwei, gasToken = $2000
+        gasTokenPrices[0] = 2000 * 10**18;
+        gasUnitPrices[0] = 100 * 10**9;
+        // 5 gwei, gasToken = $1000
+        gasTokenPrices[1] = 1000 * 10**18;
+        gasUnitPrices[1] = 5 * 10**9;
+        // 2000 gwei, gasToken = $0.5
+        gasTokenPrices[2] = (5 * 10**18) / 10;
+        gasUnitPrices[2] = 2000 * 10**9;
+        // 1 gwei, gasToken = $2000
+        gasTokenPrices[3] = 2000 * 10**18;
+        gasUnitPrices[3] = 10**9;
+        // 0.04 gwei, gasToken = $0.01
+        gasTokenPrices[4] = (1 * 10**18) / 100;
+        gasUnitPrices[4] = (4 * 10**9) / 100;
+    }
+
+    function testSetDstMarkups() public {
+        uint16[] memory markupsGasDrop = new uint16[](TEST_CHAINS);
+        uint16[] memory markupsGasUsage = new uint16[](TEST_CHAINS);
+        for (uint16 i = 0; i < TEST_CHAINS; ++i) {
+            // this will set the first chain markups to [0, 0]
+            markupsGasDrop[i] = i * 13;
+            markupsGasUsage[i] = i * 42;
+        }
+        _setDstMarkups(dstChainIds, markupsGasDrop, markupsGasUsage);
+        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
+            _checkDstMarkups(dstChainIds[i]);
+        }
+    }
+
+    function testSetMinFee() public {
+        uint256 minGasUsageFee = 1234567890;
+        gasFeePricing.setMinFee(minGasUsageFee);
+        _checkMinFee(minGasUsageFee);
+    }
+
+    function testSetMinFeeUsd(uint16 alphaUsd) public {
+        uint256 minGasFeeUsageUsd = uint256(alphaUsd) * 10**16;
+        gasFeePricing.setMinFeeUsd(minGasFeeUsageUsd);
+        _checkMinFeeUsd(minGasFeeUsageUsd);
+    }
+
+    function testUpdateSrcConfig() public {
+        uint256 gasAmountNeeded = 10**6;
+        uint256 maxGasDrop = 10 * 10**18;
+        _updateSrcConfig(gasAmountNeeded, maxGasDrop);
+        _checkSrcConfig();
+    }
+
+    function testUpdateSrcConfigZeroDropSucceeds() public {
+        uint256 gasAmountNeeded = 2 * 10**6;
+        // should be able to set to zero
+        uint256 maxGasDrop = 0;
+        _updateSrcConfig(gasAmountNeeded, maxGasDrop);
+        _checkSrcConfig();
+    }
+
+    function testUpdateSrcConfigZeroGasReverts() public {
+        // should NOT be able to set to zero
+        uint256 gasAmountNeeded = 0;
+        uint256 maxGasDrop = 10**18;
+        utils.checkRevert(
+            address(this),
+            address(gasFeePricing),
+            abi.encodeWithSelector(GasFeePricingUpgradeable.updateSrcConfig.selector, gasAmountNeeded, maxGasDrop),
+            "Gas amount is not set"
+        );
+    }
+
+    function testUpdateSrcInfo() public {
+        testSetDstInfo();
+
+        uint256 gasTokenPrice = 2 * 10**18;
+        uint256 gasUnitPrice = 10 * 10**9;
+        _updateSrcInfo(gasTokenPrice, gasUnitPrice);
+        _checkSrcInfo();
+        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
+            _checkDstRatios(i + 1);
+        }
+    }
+
+    function testUpdateSrcInfoZeroTokenPriceReverts() public {
+        testSetDstInfo();
+
+        uint256 gasTokenPrice = 0;
+        uint256 gasUnitPrice = 10 * 10**9;
+
+        utils.checkRevert(
+            address(this),
+            address(gasFeePricing),
+            abi.encodeWithSelector(GasFeePricingUpgradeable.updateSrcInfo.selector, gasTokenPrice, gasUnitPrice),
+            "Gas token price is not set"
+        );
+    }
+
+    function testUpdateSrcInfoZeroUnitPriceSucceeds() public {
+        testSetDstInfo();
+
+        uint256 gasTokenPrice = 4 * 10**17;
+        uint256 gasUnitPrice = 0;
+        _updateSrcInfo(gasTokenPrice, gasUnitPrice);
+        _checkSrcInfo();
+        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
+            _checkDstRatios(i + 1);
+        }
+    }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                          INTERNAL CHECKERS                           ║*▕
