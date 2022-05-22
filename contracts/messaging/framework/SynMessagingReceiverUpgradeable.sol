@@ -12,7 +12,7 @@ abstract contract SynMessagingReceiverUpgradeable is ISynMessagingReceiver, Owna
     // Maps chain ID to the bytes32 trusted addresses allowed to be source senders
     mapping(uint256 => bytes32) internal trustedRemoteLookup;
 
-    event SetTrustedRemote(uint256 _srcChainId, bytes32 _srcAddress);
+    event SetTrustedRemote(uint256 indexed _srcChainId, bytes32 _srcAddress);
 
     /**
      * @notice Executes a message called by MessageBus (MessageBusReceiver)
@@ -123,6 +123,17 @@ abstract contract SynMessagingReceiverUpgradeable is ISynMessagingReceiver, Owna
 
     // allow owner to set trusted addresses allowed to be source senders
     function setTrustedRemote(uint256 _srcChainId, bytes32 _srcAddress) external onlyOwner {
+        _setTrustedRemote(_srcChainId, _srcAddress);
+    }
+
+    function setTrustedRemotes(uint256[] memory _srcChainIds, bytes32[] memory _srcAddresses) external onlyOwner {
+        require(_srcChainIds.length == _srcAddresses.length, "!arrays");
+        for (uint256 i = 0; i < _srcChainIds.length; ++i) {
+            _setTrustedRemote(_srcChainIds[i], _srcAddresses[i]);
+        }
+    }
+
+    function _setTrustedRemote(uint256 _srcChainId, bytes32 _srcAddress) internal {
         trustedRemoteLookup[_srcChainId] = _srcAddress;
         emit SetTrustedRemote(_srcChainId, _srcAddress);
     }
