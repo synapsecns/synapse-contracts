@@ -5,6 +5,7 @@ pragma solidity 0.8.13;
 import "./framework/SynMessagingReceiverUpgradeable.sol";
 import "./interfaces/IGasFeePricing.sol";
 import "./libraries/Options.sol";
+import "./libraries/GasFeePricingUpdates.sol";
 
 contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePricing {
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -112,9 +113,6 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
 
     uint256 public constant DEFAULT_GAS_LIMIT = 200000;
     uint256 public constant MARKUP_DENOMINATOR = 100;
-
-    uint8 public constant CHAIN_CONFIG_UPDATED = 1;
-    uint8 public constant CHAIN_INFO_UPDATED = 2;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                             INITIALIZER                              ║*▕
@@ -303,7 +301,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     /// amount of gas needed to do _updateDstChainInfo()
     /// and maximum airdrop available on this chain
     function updateChainConfig(uint256 _gasAmountNeeded, uint256 _maxGasDrop) external payable onlyOwner {
-        _sendUpdateMessages(CHAIN_CONFIG_UPDATED, _gasAmountNeeded, _maxGasDrop);
+        _sendUpdateMessages(uint8(GasFeePricingUpdates.MsgType.UPDATE_CONFIG), _gasAmountNeeded, _maxGasDrop);
         ChainConfig memory config = srcConfig;
         config.gasAmountNeeded = uint112(_gasAmountNeeded);
         config.maxGasDrop = uint112(_maxGasDrop);
@@ -315,7 +313,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     function updateChainInfo(uint256 _gasTokenPrice, uint256 _gasUnitPrice) external payable onlyOwner {
         // send messages before updating the values, so that it's possible to use
         // estimateUpdateFees() to calculate the needed fee for the update
-        _sendUpdateMessages(CHAIN_INFO_UPDATED, _gasTokenPrice, _gasUnitPrice);
+        _sendUpdateMessages(uint8(GasFeePricingUpdates.MsgType.UPDATE_INFO), _gasTokenPrice, _gasUnitPrice);
         _updateSrcChainInfo(_gasTokenPrice, _gasUnitPrice);
     }
 
@@ -437,7 +435,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         (uint256 totalFee, uint256[] memory fees) = _estimateUpdateFees();
         require(msg.value >= totalFee, "msg.value doesn't cover all the fees");
 
-        bytes memory message = _encodeMessage(_msgType, uint128(_newValueA), uint128(_newValueB));
+        bytes memory message = GasFeePricingUpdates.encode(_msgType, uint128(_newValueA), uint128(_newValueB));
         uint256[] memory chainIds = dstChainIds;
         bytes32[] memory receivers = new bytes32[](chainIds.length);
         bytes[] memory options = new bytes[](chainIds.length);
@@ -462,36 +460,13 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         bytes memory _message,
         address
     ) internal override {
-        (uint8 msgType, uint128 newValueA, uint128 newValueB) = _decodeMessage(_message);
-        if (msgType == CHAIN_CONFIG_UPDATED) {
+        (uint8 msgType, uint128 newValueA, uint128 newValueB) = GasFeePricingUpdates.decode(_message);
+        if (msgType == uint8(GasFeePricingUpdates.MsgType.UPDATE_CONFIG)) {
             _updateDstChainConfig(_srcChainId, newValueA, newValueB);
-        } else if (msgType == CHAIN_INFO_UPDATED) {
+        } else if (msgType == uint8(GasFeePricingUpdates.MsgType.UPDATE_INFO)) {
             _updateDstChainInfo(_srcChainId, newValueA, newValueB);
         } else {
             revert("Unknown message type");
         }
-    }
-
-    /// @dev Encodes "something updated" message. We're taking advantage that
-    /// whether it's chain config or info, it's always two uint128 values that were updated.
-    function _encodeMessage(
-        uint8 _msgType,
-        uint128 _newValueA,
-        uint128 _newValueB
-    ) internal pure returns (bytes memory) {
-        return abi.encode(_msgType, _newValueA, _newValueB);
-    }
-
-    /// @dev Decodes "something updated" message.
-    function _decodeMessage(bytes memory _message)
-        internal
-        pure
-        returns (
-            uint8 msgType,
-            uint128 newValueA,
-            uint128 newValueB
-        )
-    {
-        (msgType, newValueA, newValueB) = abi.decode(_message, (uint8, uint128, uint128));
     }
 }

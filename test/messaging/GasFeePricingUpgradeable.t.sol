@@ -8,6 +8,7 @@ import {Utilities} from "../utils/Utilities.sol";
 import "src-messaging/AuthVerifier.sol";
 import "src-messaging/GasFeePricingUpgradeable.sol";
 import "src-messaging/MessageBusUpgradeable.sol";
+import "src-messaging/libraries/GasFeePricingUpdates.sol";
 
 contract GasFeePricingUpgradeableTest is Test {
     struct ChainVars {
@@ -154,6 +155,22 @@ contract GasFeePricingUpgradeableTest is Test {
             ),
             "Ownable: caller is not the owner"
         );
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                            ENCODING TESTS                            ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function testEncodeDecode(
+        uint8 msgType,
+        uint128 newValueA,
+        uint128 newValueB
+    ) public {
+        bytes memory message = GasFeePricingUpdates.encode(msgType, newValueA, newValueB);
+        (uint8 _msgType, uint128 _newValueA, uint128 _newValueB) = GasFeePricingUpdates.decode(message);
+        assertEq(_msgType, msgType, "Failed to encode msgType");
+        assertEq(_newValueA, newValueA, "Failed to encode newValueA");
+        assertEq(_newValueB, newValueB, "Failed to encode newValueB");
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
