@@ -15,6 +15,8 @@ contract GasFeePricingUpgradeableTest is Test {
         uint256 gasUnitPrice;
         uint256 gasAmountNeeded;
         uint256 maxGasDrop;
+        uint256 markupGasDrop;
+        uint256 markupGasUsage;
         address gasFeePricing;
     }
 
@@ -25,9 +27,6 @@ contract GasFeePricingUpgradeableTest is Test {
     MessageBusUpgradeable internal messageBus;
 
     ChainVars internal srcVars;
-
-    uint128 internal markupGasDrop;
-    uint128 internal markupGasUsage;
 
     mapping(uint256 => ChainVars) internal dstVars;
 
@@ -48,10 +47,6 @@ contract GasFeePricingUpgradeableTest is Test {
 
         // src gas token is worth exactly 1 USD
         srcVars.gasTokenPrice = 10**18;
-        // take 50% on top of airdrop value
-        markupGasDrop = 50;
-        // take 100% on top of gasUsage value
-        markupGasUsage = 100;
 
         MessageBusUpgradeable busImpl = new MessageBusUpgradeable();
         GasFeePricingUpgradeable pricingImpl = new GasFeePricingUpgradeable();
@@ -61,7 +56,7 @@ contract GasFeePricingUpgradeableTest is Test {
 
         // I don't have extra 10M laying around, so let's initialize those proxies
         messageBus.initialize(address(gasFeePricing), address(authVerifier));
-        gasFeePricing.initialize(address(messageBus), srcVars.gasTokenPrice, markupGasDrop, markupGasUsage);
+        gasFeePricing.initialize(address(messageBus), srcVars.gasTokenPrice);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -151,7 +146,12 @@ contract GasFeePricingUpgradeableTest is Test {
 
         utils.checkAccess(
             _gfp,
-            abi.encodeWithSelector(GasFeePricingUpgradeable.updateMarkups.selector, 0, 0),
+            abi.encodeWithSelector(
+                GasFeePricingUpgradeable.updateMarkups.selector,
+                new uint256[](1),
+                new uint16[](1),
+                new uint16[](1)
+            ),
             "Ownable: caller is not the owner"
         );
     }
@@ -163,8 +163,6 @@ contract GasFeePricingUpgradeableTest is Test {
     function testInitializedCorrectly() public {
         (uint128 _gasTokenPrice, ) = gasFeePricing.srcInfo();
         assertEq(_gasTokenPrice, srcVars.gasTokenPrice, "Failed to init: gasTokenPrice");
-        assertEq(gasFeePricing.markupGasDrop(), markupGasDrop, "Failed to init: markupGasDrop");
-        assertEq(gasFeePricing.markupGasUsage(), markupGasUsage, "Failed to init: markupGasUsage");
         assertEq(gasFeePricing.messageBus(), address(messageBus), "Failed to init: messageBus");
     }
 
@@ -175,7 +173,7 @@ contract GasFeePricingUpgradeableTest is Test {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function _checkDstChainConfig(uint256 _dstChainId) internal {
-        (uint128 gasAmountNeeded, uint128 maxGasDrop) = gasFeePricing.dstConfig(_dstChainId);
+        (uint112 gasAmountNeeded, uint112 maxGasDrop, , ) = gasFeePricing.dstConfig(_dstChainId);
         assertEq(gasAmountNeeded, dstVars[_dstChainId].gasAmountNeeded, "dstGasAmountNeeded is incorrect");
         assertEq(maxGasDrop, dstVars[_dstChainId].maxGasDrop, "dstMaxGasDrop is incorrect");
     }
@@ -184,6 +182,12 @@ contract GasFeePricingUpgradeableTest is Test {
         (uint128 gasTokenPrice, uint128 gasUnitPrice) = gasFeePricing.dstInfo(_dstChainId);
         assertEq(gasTokenPrice, dstVars[_dstChainId].gasTokenPrice, "dstGasTokenPrice is incorrect");
         assertEq(gasUnitPrice, dstVars[_dstChainId].gasUnitPrice, "dstGasUnitPrice is incorrect");
+    }
+
+    function _checkDstChainMarkups(uint256 _dstChainId) internal {
+        (, , uint16 markupGasDrop, uint16 markupGasUsage) = gasFeePricing.dstConfig(_dstChainId);
+        assertEq(markupGasDrop, dstVars[_dstChainId].markupGasDrop, "dstMarkupGasDrop is incorrect");
+        assertEq(markupGasUsage, dstVars[_dstChainId].markupGasUsage, "dstMarkupGasUsage is incorrect");
     }
 
     function _checkDstChainRatios(uint256 _dstChainId) internal {
@@ -196,7 +200,7 @@ contract GasFeePricingUpgradeableTest is Test {
     }
 
     function _checkSrcChainConfig() internal {
-        (uint128 gasAmountNeeded, uint128 maxGasDrop) = gasFeePricing.srcConfig();
+        (uint112 gasAmountNeeded, uint112 maxGasDrop, , ) = gasFeePricing.srcConfig();
         assertEq(gasAmountNeeded, srcVars.gasAmountNeeded, "srcGasAmountNeeded is incorrect");
         assertEq(maxGasDrop, srcVars.maxGasDrop, "srcMaxGasDrop is incorrect");
     }
@@ -262,6 +266,18 @@ contract GasFeePricingUpgradeableTest is Test {
         gasFeePricing.setGasFeePricingAddresses(_dstChainIds, _dstGasFeePricing);
     }
 
+    function _setDstMarkups(
+        uint256[] memory _dstChainIds,
+        uint16[] memory _markupsGasDrop,
+        uint16[] memory _markupsGasUsage
+    ) internal {
+        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
+            dstVars[_dstChainIds[i]].markupGasDrop = _markupsGasDrop[i];
+            dstVars[_dstChainIds[i]].markupGasUsage = _markupsGasUsage[i];
+        }
+        gasFeePricing.updateMarkups(_dstChainIds, _markupsGasDrop, _markupsGasUsage);
+    }
+
     function _setSrcChainConfig(uint256 _gasAmountNeeded, uint256 _maxGasDrop) internal {
         srcVars.gasAmountNeeded = _gasAmountNeeded;
         srcVars.maxGasDrop = _maxGasDrop;
@@ -274,11 +290,5 @@ contract GasFeePricingUpgradeableTest is Test {
         srcVars.gasUnitPrice = _gasUnitPrice;
         uint256 fee = gasFeePricing.estimateUpdateFees();
         gasFeePricing.updateChainInfo{value: fee}(_gasTokenPrice, _gasUnitPrice);
-    }
-
-    function _setSrcMarkups(uint128 _markupGasDrop, uint128 _markupGasUsage) internal {
-        markupGasDrop = _markupGasDrop;
-        markupGasUsage = _markupGasUsage;
-        gasFeePricing.updateMarkups(_markupGasDrop, _markupGasUsage);
     }
 }

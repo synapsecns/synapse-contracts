@@ -11,12 +11,39 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     ▏*║                               STRUCTS                                ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    /**
+     * @notice Whenever the messaging fee is calculated, it takes into account things as:
+     * gas token prices on src and dst chain, gas limit for executing message on dst chain
+     * and gas unit price on dst chain. In other words, message sender is paying dst chain
+     * gas fees (to cover gas usage and gasdrop), but in src chain gas token.
+     * The price values are static, though are supposed to be updated in the event of high
+     * volatility. It is implied that gas token/unit prices reflect respective latest
+     * average prices.
+     *
+     * Because of this, the markups are used, both for "gas drop fee", and "gas usage fee".
+     * Markup is a value of 0% or higher. This is the coefficient applied to
+     * "projected gas fee", that is calculated using static gas token/unit prices.
+     * Markup of 0% means that exactly "projected gas fee" will be charged, markup of 50%
+     * will result in fee that is 50% higher than "projected", etc.
+     *
+     * There are separate markups for gasDrop and gasUsage. gasDropFee is calculated only using
+     * src and dst gas token prices, while gasUsageFee also takes into account dst chain gas
+     * unit price, which is an extra source of volatility.
+     *
+     * Generally, markupGasUsage >= markupGasDrop >= 0%. While markups can be set to 0%,
+     * this is not recommended.
+     */
+
     /// @dev Dst chain's basic variables, that are unlikely to change over time.
     struct ChainConfig {
         // Amount of gas units needed to receive "update chainInfo" message
-        uint128 gasAmountNeeded;
+        uint112 gasAmountNeeded;
         // Maximum gas airdrop available on chain
-        uint128 maxGasDrop;
+        uint112 maxGasDrop;
+        // Markup for gas airdrop
+        uint16 markupGasDrop;
+        // Markup for gas usage
+        uint16 markupGasUsage;
     }
 
     /// @dev Information about dst chain's gas price, which can change over time
@@ -48,8 +75,8 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
 
     /// @dev see "Structs" docs
     event ChainInfoUpdated(uint256 indexed chainId, uint256 gasTokenPrice, uint256 gasUnitPrice);
-    /// @dev see "Source chain storage" docs
-    event MarkupsUpdated(uint256 markupGasDrop, uint256 markupGasUsage);
+    /// @dev see "Structs" docs
+    event MarkupsUpdated(uint256 indexed chainId, uint256 markupGasDrop, uint256 markupGasUsage);
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                      DESTINATION CHAINS STORAGE                      ║*▕
@@ -71,35 +98,11 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /// @dev See "Structs" docs
+    /// srcConfig.markupGasDrop and srcConfig.markupGasUsage values are not used
     ChainConfig public srcConfig;
     ChainInfo public srcInfo;
     /// @dev Minimum fee related to gas usage on dst chain
     uint256 public minGasUsageFee;
-
-    /**
-     * @notice Whenever the messaging fee is calculated, it takes into account things as:
-     * gas token prices on src and dst chain, gas limit for executing message on dst chain
-     * and gas unit price on dst chain. In other words, message sender is paying dst chain
-     * gas fees (to cover gas usage and gasdrop), but in src chain gas token.
-     * The price values are static, though are supposed to be updated in the event of high
-     * volatility. It is implied that gas token/unit prices reflect respective latest
-     * average prices.
-     *
-     * Because of this, the markups are used, both for "gas drop fee", and "gas usage fee".
-     * Markup is a value of 0% or higher. This is the coefficient applied to
-     * "projected gas fee", that is calculated using static gas token/unit prices.
-     * Markup of 0% means that exactly "projected gas fee" will be charged, markup of 50%
-     * will result in fee that is 50% higher than "projected", etc.
-     *
-     * There are separate markups for gasDrop and gasUsage. gasDropFee is calculated only using
-     * src and dst gas token prices, while gasUsageFee also takes into account dst chain gas
-     * unit price, which is an extra source of volatility.
-     *
-     * Generally, markupGasUsage >= markupGasDrop >= 0%. While markups can be set to 0%,
-     * this is not recommended.
-     */
-    uint128 public markupGasDrop;
-    uint128 public markupGasUsage;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                              CONSTANTS                               ║*▕
@@ -117,17 +120,11 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     ▏*║                             INITIALIZER                              ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function initialize(
-        address _messageBus,
-        uint256 _srcGasTokenPrice,
-        uint128 _markupGasDrop,
-        uint128 _markupGasUsage
-    ) external initializer {
+    function initialize(address _messageBus, uint256 _srcGasTokenPrice) external initializer {
         __Ownable_init_unchained();
         messageBus = _messageBus;
         srcInfo.gasTokenPrice = uint96(_srcGasTokenPrice);
         minGasUsageFee = _calculateMinGasUsageFee(DEFAULT_MIN_FEE_USD, _srcGasTokenPrice);
-        _updateMarkups(_markupGasDrop, _markupGasUsage);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -153,18 +150,19 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
 
     /// @dev Extracts the gas information from options and calculates the messaging fee
     function _estimateGasFee(uint256 _dstChainId, bytes calldata _options) internal view returns (uint256 fee) {
+        ChainConfig memory config = dstConfig[_dstChainId];
         uint256 gasAirdrop;
         uint256 gasLimit;
         if (_options.length != 0) {
             (gasLimit, gasAirdrop, ) = Options.decode(_options);
             if (gasAirdrop != 0) {
-                require(gasAirdrop <= dstConfig[_dstChainId].maxGasDrop, "GasDrop higher than max");
+                require(gasAirdrop <= config.maxGasDrop, "GasDrop higher than max");
             }
         } else {
             gasLimit = DEFAULT_GAS_LIMIT;
         }
 
-        fee = _estimateGasFee(_dstChainId, gasAirdrop, gasLimit);
+        fee = _estimateGasFee(_dstChainId, gasAirdrop, gasLimit, config.markupGasDrop, config.markupGasUsage);
     }
 
     /// @dev Returns a gas fee for sending a message to dst chain, given the amount of gas to airdrop,
@@ -172,10 +170,11 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     function _estimateGasFee(
         uint256 _dstChainId,
         uint256 _gasAirdrop,
-        uint256 _gasLimit
+        uint256 _gasLimit,
+        uint256 _markupGasDrop,
+        uint256 _markupGasUsage
     ) internal view returns (uint256 fee) {
         ChainRatios memory dstRatio = dstRatios[_dstChainId];
-        (uint128 _markupGasDrop, uint128 _markupGasUsage) = (markupGasDrop, markupGasUsage);
 
         // Calculate how much gas airdrop is worth in src chain wei
         uint256 feeGasDrop = (_gasAirdrop * dstRatio.gasTokenPriceRatio) / 10**18;
@@ -203,10 +202,11 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         fees = new uint256[](_chainIds.length);
         for (uint256 i = 0; i < _chainIds.length; ++i) {
             uint256 chainId = _chainIds[i];
-            uint256 gasLimit = dstConfig[chainId].gasAmountNeeded;
+            ChainConfig memory config = dstConfig[chainId];
+            uint256 gasLimit = config.gasAmountNeeded;
             if (gasLimit == 0) gasLimit = DEFAULT_GAS_LIMIT;
 
-            uint256 fee = _estimateGasFee(chainId, 0, gasLimit);
+            uint256 fee = _estimateGasFee(chainId, 0, gasLimit, config.markupGasDrop, config.markupGasUsage);
             totalFee += fee;
             fees[i] = fee;
         }
@@ -304,7 +304,10 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     /// and maximum airdrop available on this chain
     function updateChainConfig(uint256 _gasAmountNeeded, uint256 _maxGasDrop) external payable onlyOwner {
         _sendUpdateMessages(CHAIN_CONFIG_UPDATED, _gasAmountNeeded, _maxGasDrop);
-        srcConfig = ChainConfig({gasAmountNeeded: uint128(_gasAmountNeeded), maxGasDrop: uint128(_maxGasDrop)});
+        ChainConfig memory config = srcConfig;
+        config.gasAmountNeeded = uint112(_gasAmountNeeded);
+        config.maxGasDrop = uint112(_maxGasDrop);
+        srcConfig = config;
     }
 
     /// @notice Update information about source chain gas token/unit price on all configured dst chains,
@@ -316,10 +319,20 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         _updateSrcChainInfo(_gasTokenPrice, _gasUnitPrice);
     }
 
-    /// @notice Updates markups (see "Source chain storage" docs), that are used for determining
+    /// @notice Updates markups (see "Structs" docs) for a bunch of chains. Markups are used for determining
     /// how much fee to charge on top of "projected gas cost" of delivering the message.
-    function updateMarkups(uint128 _markupGasDrop, uint128 _markupGasUsage) external onlyOwner {
-        _updateMarkups(_markupGasDrop, _markupGasUsage);
+    function updateMarkups(
+        uint256[] memory _dstChainIds,
+        uint16[] memory _markupsGasDrop,
+        uint16[] memory _markupsGasUsage
+    ) external onlyOwner {
+        require(
+            _dstChainIds.length == _markupsGasDrop.length && _dstChainIds.length == _markupsGasUsage.length,
+            "!arrays"
+        );
+        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
+            _updateMarkups(_dstChainIds[i], _markupsGasDrop[i], _markupsGasUsage[i]);
+        }
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -353,10 +366,10 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         uint256 _gasAmountNeeded,
         uint256 _maxGasDrop
     ) internal {
-        dstConfig[_dstChainId] = ChainConfig({
-            gasAmountNeeded: uint128(_gasAmountNeeded),
-            maxGasDrop: uint128(_maxGasDrop)
-        });
+        ChainConfig memory config = dstConfig[_dstChainId];
+        config.gasAmountNeeded = uint112(_gasAmountNeeded);
+        config.maxGasDrop = uint112(_maxGasDrop);
+        dstConfig[_dstChainId] = config;
     }
 
     /// @dev Updates information about dst chain gas token/unit price.
@@ -397,11 +410,18 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         });
     }
 
-    /// @dev Updates the markups (see "Source chain storage" docs).
+    /// @dev Updates the markups (see "Structs" docs).
     /// Markup = 0% means exactly the "projected gas cost" will be charged.
-    function _updateMarkups(uint128 _markupGasDrop, uint128 _markupGasUsage) internal {
-        (markupGasDrop, markupGasUsage) = (_markupGasDrop, _markupGasUsage);
-        emit MarkupsUpdated(_markupGasDrop, _markupGasUsage);
+    function _updateMarkups(
+        uint256 _dstChainId,
+        uint16 _markupGasDrop,
+        uint16 _markupGasUsage
+    ) internal {
+        ChainConfig memory config = dstConfig[_dstChainId];
+        config.markupGasDrop = _markupGasDrop;
+        config.markupGasUsage = _markupGasUsage;
+        dstConfig[_dstChainId] = config;
+        emit MarkupsUpdated(_dstChainId, _markupGasDrop, _markupGasUsage);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
