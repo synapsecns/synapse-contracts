@@ -82,77 +82,60 @@ contract GasFeePricingUpgradeableTest is Test {
         address _gfp = address(gasFeePricing);
         utils.checkAccess(
             _gfp,
-            abi.encodeWithSelector(GasFeePricingUpgradeable.setCostPerChain.selector, 0, 0, 0),
+            abi.encodeWithSelector(GasFeePricingUpgradeable.setDstAddress.selector, new uint256[](1), new address[](1)),
             "Ownable: caller is not the owner"
         );
         utils.checkAccess(
             _gfp,
             abi.encodeWithSelector(
-                GasFeePricingUpgradeable.setCostPerChains.selector,
+                GasFeePricingUpgradeable.setDstConfig.selector,
                 new uint256[](1),
                 new uint256[](1),
                 new uint256[](1)
             ),
             "Ownable: caller is not the owner"
         );
-
-        utils.checkAccess(
-            _gfp,
-            abi.encodeWithSelector(GasFeePricingUpgradeable.setDstChainConfig.selector, 0, 0, 0),
-            "Ownable: caller is not the owner"
-        );
         utils.checkAccess(
             _gfp,
             abi.encodeWithSelector(
-                GasFeePricingUpgradeable.setDstChainConfigs.selector,
+                GasFeePricingUpgradeable.setDstInfo.selector,
                 new uint256[](1),
                 new uint256[](1),
                 new uint256[](1)
             ),
             "Ownable: caller is not the owner"
         );
-
         utils.checkAccess(
             _gfp,
             abi.encodeWithSelector(
-                GasFeePricingUpgradeable.setGasFeePricingAddresses.selector,
-                new uint256[](1),
-                new address[](1)
-            ),
-            "Ownable: caller is not the owner"
-        );
-
-        utils.checkAccess(
-            _gfp,
-            abi.encodeWithSelector(GasFeePricingUpgradeable.setMinGasUsageFee.selector, 0),
-            "Ownable: caller is not the owner"
-        );
-        utils.checkAccess(
-            _gfp,
-            abi.encodeWithSelector(GasFeePricingUpgradeable.setMinGasUsageFeeUsd.selector, 0),
-            "Ownable: caller is not the owner"
-        );
-
-        utils.checkAccess(
-            _gfp,
-            abi.encodeWithSelector(GasFeePricingUpgradeable.updateChainConfig.selector, 0, 0),
-            "Ownable: caller is not the owner"
-        );
-
-        utils.checkAccess(
-            _gfp,
-            abi.encodeWithSelector(GasFeePricingUpgradeable.updateChainInfo.selector, 0, 0),
-            "Ownable: caller is not the owner"
-        );
-
-        utils.checkAccess(
-            _gfp,
-            abi.encodeWithSelector(
-                GasFeePricingUpgradeable.updateMarkups.selector,
+                GasFeePricingUpgradeable.setDstMarkups.selector,
                 new uint256[](1),
                 new uint16[](1),
                 new uint16[](1)
             ),
+            "Ownable: caller is not the owner"
+        );
+
+        utils.checkAccess(
+            _gfp,
+            abi.encodeWithSelector(GasFeePricingUpgradeable.setMinFee.selector, 0),
+            "Ownable: caller is not the owner"
+        );
+        utils.checkAccess(
+            _gfp,
+            abi.encodeWithSelector(GasFeePricingUpgradeable.setMinFeeUsd.selector, 0),
+            "Ownable: caller is not the owner"
+        );
+
+        utils.checkAccess(
+            _gfp,
+            abi.encodeWithSelector(GasFeePricingUpgradeable.updateSrcConfig.selector, 0, 0),
+            "Ownable: caller is not the owner"
+        );
+
+        utils.checkAccess(
+            _gfp,
+            abi.encodeWithSelector(GasFeePricingUpgradeable.updateSrcInfo.selector, 0, 0),
             "Ownable: caller is not the owner"
         );
     }
@@ -189,25 +172,25 @@ contract GasFeePricingUpgradeableTest is Test {
     ▏*║                          INTERNAL CHECKERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function _checkDstChainConfig(uint256 _dstChainId) internal {
+    function _checkDstConfig(uint256 _dstChainId) internal {
         (uint112 gasAmountNeeded, uint112 maxGasDrop, , ) = gasFeePricing.dstConfig(_dstChainId);
         assertEq(gasAmountNeeded, dstVars[_dstChainId].gasAmountNeeded, "dstGasAmountNeeded is incorrect");
         assertEq(maxGasDrop, dstVars[_dstChainId].maxGasDrop, "dstMaxGasDrop is incorrect");
     }
 
-    function _checkDstChainInfo(uint256 _dstChainId) internal {
+    function _checkDstInfo(uint256 _dstChainId) internal {
         (uint128 gasTokenPrice, uint128 gasUnitPrice) = gasFeePricing.dstInfo(_dstChainId);
         assertEq(gasTokenPrice, dstVars[_dstChainId].gasTokenPrice, "dstGasTokenPrice is incorrect");
         assertEq(gasUnitPrice, dstVars[_dstChainId].gasUnitPrice, "dstGasUnitPrice is incorrect");
     }
 
-    function _checkDstChainMarkups(uint256 _dstChainId) internal {
+    function _checkDstMarkups(uint256 _dstChainId) internal {
         (, , uint16 markupGasDrop, uint16 markupGasUsage) = gasFeePricing.dstConfig(_dstChainId);
         assertEq(markupGasDrop, dstVars[_dstChainId].markupGasDrop, "dstMarkupGasDrop is incorrect");
         assertEq(markupGasUsage, dstVars[_dstChainId].markupGasUsage, "dstMarkupGasUsage is incorrect");
     }
 
-    function _checkDstChainRatios(uint256 _dstChainId) internal {
+    function _checkDstRatios(uint256 _dstChainId) internal {
         (uint96 gasTokenPriceRatio, uint160 gasUnitPriceRatio) = gasFeePricing.dstRatios(_dstChainId);
         uint256 _gasTokenPriceRatio = (dstVars[_dstChainId].gasTokenPrice * 10**18) / srcVars.gasTokenPrice;
         uint256 _gasUnitPriceRatio = (dstVars[_dstChainId].gasUnitPrice * dstVars[_dstChainId].gasTokenPrice * 10**18) /
@@ -216,13 +199,13 @@ contract GasFeePricingUpgradeableTest is Test {
         assertEq(gasUnitPriceRatio, _gasUnitPriceRatio, "gasUnitPriceRatio is incorrect");
     }
 
-    function _checkSrcChainConfig() internal {
+    function _checkSrcConfig() internal {
         (uint112 gasAmountNeeded, uint112 maxGasDrop, , ) = gasFeePricing.srcConfig();
         assertEq(gasAmountNeeded, srcVars.gasAmountNeeded, "srcGasAmountNeeded is incorrect");
         assertEq(maxGasDrop, srcVars.maxGasDrop, "srcMaxGasDrop is incorrect");
     }
 
-    function _checkSrcChainInfo() internal {
+    function _checkSrcInfo() internal {
         (uint128 gasTokenPrice, uint128 gasUnitPrice) = gasFeePricing.srcInfo();
         assertEq(gasTokenPrice, srcVars.gasTokenPrice, "srcGasTokenPrice is incorrect");
         assertEq(gasUnitPrice, srcVars.gasUnitPrice, "gasUnitPrice is incorrect");
@@ -232,17 +215,7 @@ contract GasFeePricingUpgradeableTest is Test {
     ▏*║                           INTERNAL SETTERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function _setDstChainConfig(
-        uint256 _dstChainId,
-        uint256 _gasAmountNeeded,
-        uint256 _maxGasDrop
-    ) internal {
-        dstVars[_dstChainId].gasAmountNeeded = _gasAmountNeeded;
-        dstVars[_dstChainId].maxGasDrop = _maxGasDrop;
-        gasFeePricing.setDstChainConfig(_dstChainId, _gasAmountNeeded, _maxGasDrop);
-    }
-
-    function _setDstChainConfigs(
+    function _setDstConfig(
         uint256[] memory _dstChainIds,
         uint256[] memory _gasAmountsNeeded,
         uint256[] memory _maxGasDrops
@@ -251,20 +224,10 @@ contract GasFeePricingUpgradeableTest is Test {
             dstVars[_dstChainIds[i]].gasAmountNeeded = _gasAmountsNeeded[i];
             dstVars[_dstChainIds[i]].maxGasDrop = _maxGasDrops[i];
         }
-        gasFeePricing.setDstChainConfigs(_dstChainIds, _gasAmountsNeeded, _maxGasDrops);
+        gasFeePricing.setDstConfig(_dstChainIds, _gasAmountsNeeded, _maxGasDrops);
     }
 
-    function _setDstChainInfo(
-        uint256 _dstChainId,
-        uint256 _gasTokenPrice,
-        uint256 _gasUnitPrice
-    ) internal {
-        dstVars[_dstChainId].gasTokenPrice = _gasTokenPrice;
-        dstVars[_dstChainId].gasUnitPrice = _gasUnitPrice;
-        gasFeePricing.setCostPerChain(_dstChainId, _gasUnitPrice, _gasTokenPrice);
-    }
-
-    function _setDstChainsInfo(
+    function _setDstInfo(
         uint256[] memory _dstChainIds,
         uint256[] memory _gasTokenPrices,
         uint256[] memory _gasUnitPrices
@@ -273,14 +236,7 @@ contract GasFeePricingUpgradeableTest is Test {
             dstVars[_dstChainIds[i]].gasTokenPrice = _gasTokenPrices[i];
             dstVars[_dstChainIds[i]].gasUnitPrice = _gasUnitPrices[i];
         }
-        gasFeePricing.setCostPerChains(_dstChainIds, _gasUnitPrices, _gasTokenPrices);
-    }
-
-    function _setDstGasFeePricingAddresses(uint256[] memory _dstChainIds, address[] memory _dstGasFeePricing) internal {
-        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
-            dstVars[_dstChainIds[i]].gasFeePricing = _dstGasFeePricing[i];
-        }
-        gasFeePricing.setGasFeePricingAddresses(_dstChainIds, _dstGasFeePricing);
+        gasFeePricing.setDstInfo(_dstChainIds, _gasUnitPrices, _gasTokenPrices);
     }
 
     function _setDstMarkups(
@@ -292,20 +248,27 @@ contract GasFeePricingUpgradeableTest is Test {
             dstVars[_dstChainIds[i]].markupGasDrop = _markupsGasDrop[i];
             dstVars[_dstChainIds[i]].markupGasUsage = _markupsGasUsage[i];
         }
-        gasFeePricing.updateMarkups(_dstChainIds, _markupsGasDrop, _markupsGasUsage);
+        gasFeePricing.setDstMarkups(_dstChainIds, _markupsGasDrop, _markupsGasUsage);
     }
 
-    function _setSrcChainConfig(uint256 _gasAmountNeeded, uint256 _maxGasDrop) internal {
+    function _setDstAddress(uint256[] memory _dstChainIds, address[] memory _dstGasFeePricing) internal {
+        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
+            dstVars[_dstChainIds[i]].gasFeePricing = _dstGasFeePricing[i];
+        }
+        gasFeePricing.setDstAddress(_dstChainIds, _dstGasFeePricing);
+    }
+
+    function _updateSrcConfig(uint256 _gasAmountNeeded, uint256 _maxGasDrop) internal {
         srcVars.gasAmountNeeded = _gasAmountNeeded;
         srcVars.maxGasDrop = _maxGasDrop;
         uint256 fee = gasFeePricing.estimateUpdateFees();
-        gasFeePricing.updateChainConfig{value: fee}(_gasAmountNeeded, _maxGasDrop);
+        gasFeePricing.updateSrcConfig{value: fee}(_gasAmountNeeded, _maxGasDrop);
     }
 
-    function _setSrcChainInfo(uint256 _gasTokenPrice, uint256 _gasUnitPrice) internal {
+    function _updateSrcInfo(uint256 _gasTokenPrice, uint256 _gasUnitPrice) internal {
         srcVars.gasTokenPrice = _gasTokenPrice;
         srcVars.gasUnitPrice = _gasUnitPrice;
         uint256 fee = gasFeePricing.estimateUpdateFees();
-        gasFeePricing.updateChainInfo{value: fee}(_gasTokenPrice, _gasUnitPrice);
+        gasFeePricing.updateSrcInfo{value: fee}(_gasTokenPrice, _gasUnitPrice);
     }
 }

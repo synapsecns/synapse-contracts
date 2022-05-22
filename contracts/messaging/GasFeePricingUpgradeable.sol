@@ -7,7 +7,7 @@ import "./interfaces/IGasFeePricing.sol";
 import "./libraries/Options.sol";
 import "./libraries/GasFeePricingUpdates.sol";
 
-contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePricing {
+contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                               STRUCTS                                ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
@@ -227,42 +227,16 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
     ▏*║                              ONLY OWNER                              ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    /// @dev Update information about gas unit/token price for a dst chain.
-    function setCostPerChain(
-        uint256 _dstChainId,
-        uint256 _gasUnitPrice,
-        uint256 _gasTokenPrice
-    ) external onlyOwner {
-        _updateDstChainInfo(_dstChainId, _gasUnitPrice, _gasTokenPrice);
-    }
-
-    /// @notice Update information about gas unit/token price for a bunch of chains.
-    /// Handy for initial setup.
-    function setCostPerChains(
-        uint256[] memory _dstChainIds,
-        uint256[] memory _gasUnitPrices,
-        uint256[] memory _gasTokenPrices
-    ) external onlyOwner {
-        require(
-            _dstChainIds.length == _gasUnitPrices.length && _dstChainIds.length == _gasTokenPrices.length,
-            "!arrays"
-        );
+    /// @notice Update GasFeePricing addresses on a bunch of dst chains. Needed for cross-chain setups.
+    function setDstAddress(uint256[] memory _dstChainIds, address[] memory _dstGasFeePricing) external onlyOwner {
+        require(_dstChainIds.length == _dstGasFeePricing.length, "!arrays");
         for (uint256 i = 0; i < _dstChainIds.length; ++i) {
-            _updateDstChainInfo(_dstChainIds[i], _gasUnitPrices[i], _gasTokenPrices[i]);
+            dstGasFeePricing[_dstChainIds[i]] = _addressToBytes32(_dstGasFeePricing[i]);
         }
     }
 
-    /// @dev Update config (gasLimit for sending messages to chain, max gas airdrop) for a dst chain.
-    function setDstChainConfig(
-        uint256 _dstChainId,
-        uint256 _gasAmountNeeded,
-        uint256 _maxGasDrop
-    ) external onlyOwner {
-        _updateDstChainConfig(_dstChainId, _gasAmountNeeded, _maxGasDrop);
-    }
-
     /// @dev Update config (gasLimit for sending messages to chain, max gas airdrop) for a bunch of chains.
-    function setDstChainConfigs(
+    function setDstConfig(
         uint256[] memory _dstChainIds,
         uint256[] memory _gasAmountsNeeded,
         uint256[] memory _maxGasDrops
@@ -276,50 +250,25 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         }
     }
 
-    /// @notice Update GasFeePricing addresses on a bunch of dst chains. Needed for cross-chain setups.
-    function setGasFeePricingAddresses(uint256[] memory _dstChainIds, address[] memory _dstGasFeePricing)
-        external
-        onlyOwner
-    {
-        require(_dstChainIds.length == _dstGasFeePricing.length, "!arrays");
+    /// @notice Update information about gas unit/token price for a bunch of chains.
+    /// Handy for initial setup.
+    function setDstInfo(
+        uint256[] memory _dstChainIds,
+        uint256[] memory _gasUnitPrices,
+        uint256[] memory _gasTokenPrices
+    ) external onlyOwner {
+        require(
+            _dstChainIds.length == _gasUnitPrices.length && _dstChainIds.length == _gasTokenPrices.length,
+            "!arrays"
+        );
         for (uint256 i = 0; i < _dstChainIds.length; ++i) {
-            dstGasFeePricing[_dstChainIds[i]] = _addressToBytes32(_dstGasFeePricing[i]);
+            _updateDstChainInfo(_dstChainIds[i], _gasUnitPrices[i], _gasTokenPrices[i]);
         }
     }
 
-    /// @notice Update the minimum fee for gas usage on message delivery. Quoted in src chain wei.
-    function setMinGasUsageFee(uint256 _minGasUsageFee) external onlyOwner {
-        minGasUsageFee = _minGasUsageFee;
-    }
-
-    /// @notice Update the minimum fee for gas usage on message delivery. Quoted in USD.
-    function setMinGasUsageFeeUsd(uint256 _minGasUsageFeeUsd) external onlyOwner {
-        minGasUsageFee = _calculateMinGasUsageFee(_minGasUsageFeeUsd, srcInfo.gasTokenPrice);
-    }
-
-    /// @notice Update information about source chain config:
-    /// amount of gas needed to do _updateDstChainInfo()
-    /// and maximum airdrop available on this chain
-    function updateChainConfig(uint256 _gasAmountNeeded, uint256 _maxGasDrop) external payable onlyOwner {
-        _sendUpdateMessages(uint8(GasFeePricingUpdates.MsgType.UPDATE_CONFIG), _gasAmountNeeded, _maxGasDrop);
-        ChainConfig memory config = srcConfig;
-        config.gasAmountNeeded = uint112(_gasAmountNeeded);
-        config.maxGasDrop = uint112(_maxGasDrop);
-        srcConfig = config;
-    }
-
-    /// @notice Update information about source chain gas token/unit price on all configured dst chains,
-    /// as well as on the source chain itself.
-    function updateChainInfo(uint256 _gasTokenPrice, uint256 _gasUnitPrice) external payable onlyOwner {
-        // send messages before updating the values, so that it's possible to use
-        // estimateUpdateFees() to calculate the needed fee for the update
-        _sendUpdateMessages(uint8(GasFeePricingUpdates.MsgType.UPDATE_INFO), _gasTokenPrice, _gasUnitPrice);
-        _updateSrcChainInfo(_gasTokenPrice, _gasUnitPrice);
-    }
-
-    /// @notice Updates markups (see "Structs" docs) for a bunch of chains. Markups are used for determining
+    /// @notice Sets markups (see "Structs" docs) for a bunch of chains. Markups are used for determining
     /// how much fee to charge on top of "projected gas cost" of delivering the message.
-    function updateMarkups(
+    function setDstMarkups(
         uint256[] memory _dstChainIds,
         uint16[] memory _markupsGasDrop,
         uint16[] memory _markupsGasUsage
@@ -331,6 +280,36 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable, IGasFeePri
         for (uint256 i = 0; i < _dstChainIds.length; ++i) {
             _updateMarkups(_dstChainIds[i], _markupsGasDrop[i], _markupsGasUsage[i]);
         }
+    }
+
+    /// @notice Update the minimum fee for gas usage on message delivery. Quoted in src chain wei.
+    function setMinFee(uint256 _minGasUsageFee) external onlyOwner {
+        minGasUsageFee = _minGasUsageFee;
+    }
+
+    /// @notice Update the minimum fee for gas usage on message delivery. Quoted in USD.
+    function setMinFeeUsd(uint256 _minGasUsageFeeUsd) external onlyOwner {
+        minGasUsageFee = _calculateMinGasUsageFee(_minGasUsageFeeUsd, srcInfo.gasTokenPrice);
+    }
+
+    /// @notice Update information about source chain config:
+    /// amount of gas needed to do _updateDstChainInfo()
+    /// and maximum airdrop available on this chain
+    function updateSrcConfig(uint256 _gasAmountNeeded, uint256 _maxGasDrop) external payable onlyOwner {
+        _sendUpdateMessages(uint8(GasFeePricingUpdates.MsgType.UPDATE_CONFIG), _gasAmountNeeded, _maxGasDrop);
+        ChainConfig memory config = srcConfig;
+        config.gasAmountNeeded = uint112(_gasAmountNeeded);
+        config.maxGasDrop = uint112(_maxGasDrop);
+        srcConfig = config;
+    }
+
+    /// @notice Update information about source chain gas token/unit price on all configured dst chains,
+    /// as well as on the source chain itself.
+    function updateSrcInfo(uint256 _gasTokenPrice, uint256 _gasUnitPrice) external payable onlyOwner {
+        // send messages before updating the values, so that it's possible to use
+        // estimateUpdateFees() to calculate the needed fee for the update
+        _sendUpdateMessages(uint8(GasFeePricingUpdates.MsgType.UPDATE_INFO), _gasTokenPrice, _gasUnitPrice);
+        _updateSrcChainInfo(_gasTokenPrice, _gasUnitPrice);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
