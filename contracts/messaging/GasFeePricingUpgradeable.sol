@@ -45,7 +45,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
      *                   to receive "update chain Config/Info" message
      *                   uint80 => max value ~= 10**24
      * - minGasUsageFeeUsd: minimum amount of "gas usage" part of total messaging fee,
-     *                      when sending message to given remote chain.
+     *                      when sending message to a given chain.
      *                      Quoted in USD, multiplied by USD_DENOMINATOR
      *                      uint32 => max value ~= 4 * 10**9
      * These are universal values, and they should be the same on all GasFeePricing
@@ -201,44 +201,46 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
 
     /// @dev Extracts the gas information from options and calculates the messaging fee
     function _estimateGasFee(uint256 _remoteChainId, bytes calldata _options) internal view returns (uint256 fee) {
-        ChainConfig memory config = remoteConfig[_remoteChainId];
         uint256 gasAirdrop;
         uint256 gasLimit;
         if (_options.length != 0) {
             (gasLimit, gasAirdrop, ) = Options.decode(_options);
-            if (gasAirdrop != 0) {
-                require(gasAirdrop <= config.gasDropMax, "GasDrop higher than max");
-            }
         } else {
             gasLimit = DEFAULT_GAS_LIMIT;
         }
-
-        fee = _estimateGasFee(_remoteChainId, gasAirdrop, gasLimit, config.markupGasDrop, config.markupGasUsage);
+        fee = _estimateGasFee(_remoteChainId, gasAirdrop, gasLimit);
     }
 
     /// @dev Returns a gas fee for sending a message to remote chain, given the amount of gas to airdrop,
     /// and amount of gas units for message execution on remote chain.
     function _estimateGasFee(
-        uint256 _remoteChainId,
+        uint256 _chainId,
         uint256 _gasAirdrop,
-        uint256 _gasLimit,
-        uint256 _markupGasDrop,
-        uint256 _markupGasUsage
+        uint256 _gasLimit
     ) internal view returns (uint256 fee) {
-        ChainRatios memory remoteRatio = remoteRatios[_remoteChainId];
+        // Read config/info for destination (remote) chain
+        ChainConfig memory dstConfig = remoteConfig[_chainId];
+        ChainInfo memory dstInfo = remoteInfo[_chainId];
+        // Read info for source (local) chain
+        ChainInfo memory srcInfo = localInfo;
+        require(_gasAirdrop <= dstConfig.markupGasDrop, "GasDrop higher than max");
 
-        // Calculate how much gas airdrop is worth in local chain wei
-        uint256 feeGasDrop = (_gasAirdrop * remoteRatio.gasTokenPriceRatio) / 10**18;
-        // Calculate how much gas usage is worth in local chain wei
-        uint256 feeGasUsage = (_gasLimit * remoteRatio.gasUnitPriceRatio) / 10**18;
+        // Calculate how much [gas airdrop] is worth in [local chain wei]
+        uint256 feeGasDrop = (_gasAirdrop * dstInfo.gasTokenPrice) / srcInfo.gasTokenPrice;
+        // Calculate how much [gas usage] is worth in [local chain wei]
+        uint256 feeGasUsage = (_gasLimit * dstInfo.gasUnitPrice * dstInfo.gasTokenPrice) / srcInfo.gasTokenPrice;
 
         // Sum up the fees multiplied by their respective markups
-        feeGasDrop = (feeGasDrop * (_markupGasDrop + MARKUP_DENOMINATOR)) / MARKUP_DENOMINATOR;
-        feeGasUsage = (feeGasUsage * (_markupGasUsage + MARKUP_DENOMINATOR)) / MARKUP_DENOMINATOR;
-        // TODO: implement remote-chain-specific minGasUsageFee
-        // Check if gas usage fee is lower than minimum
-        // uint256 _minGasUsageFee = minGasUsageFee;
-        // if (feeGasUsage < _minGasUsageFee) feeGasUsage = _minGasUsageFee;
+        feeGasDrop = (feeGasDrop * (dstConfig.markupGasDrop + MARKUP_DENOMINATOR)) / MARKUP_DENOMINATOR;
+        feeGasUsage = (feeGasUsage * (dstConfig.markupGasUsage + MARKUP_DENOMINATOR)) / MARKUP_DENOMINATOR;
+
+        // Calculate min fee (specific to destination chain)
+        // Multiply by 10**18 to convert to wei
+        // Multiply by 10**18 again, as gasTokenPrice is scaled by 10**18
+        // Divide by USD_DENOMINATOR, as minGasUsageFeeUsd is scaled by USD_DENOMINATOR
+        uint256 minFee = (dstConfig.minGasUsageFeeUsd * 10**36) / (srcInfo.gasTokenPrice * USD_DENOMINATOR);
+        if (feeGasUsage < minFee) feeGasUsage = minFee;
+
         fee = feeGasDrop + feeGasUsage;
     }
 
@@ -254,11 +256,10 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         fees = new uint256[](_chainIds.length);
         for (uint256 i = 0; i < _chainIds.length; ++i) {
             uint256 chainId = _chainIds[i];
-            ChainConfig memory config = remoteConfig[chainId];
-            uint256 gasLimit = config.gasUnitsRcvMsg;
+            uint256 gasLimit = remoteConfig[chainId].gasUnitsRcvMsg;
             if (gasLimit == 0) gasLimit = DEFAULT_GAS_LIMIT;
 
-            uint256 fee = _estimateGasFee(chainId, 0, gasLimit, config.markupGasDrop, config.markupGasUsage);
+            uint256 fee = _estimateGasFee(chainId, 0, gasLimit);
             totalFee += fee;
             fees[i] = fee;
         }
