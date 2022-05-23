@@ -16,6 +16,7 @@ contract GasFeePricingUpgradeableTest is Test {
         uint256 gasUnitPrice;
         uint256 gasDropMax;
         uint256 gasUnitsRcvMsg;
+        uint256 minGasUsageFeeUsd;
         uint256 markupGasDrop;
         uint256 markupGasUsage;
         address gasFeePricing;
@@ -97,8 +98,9 @@ contract GasFeePricingUpgradeableTest is Test {
             abi.encodeWithSelector(
                 GasFeePricingUpgradeable.setRemoteConfig.selector,
                 new uint256[](1),
-                new uint256[](1),
-                new uint256[](1)
+                new uint112[](1),
+                new uint80[](1),
+                new uint32[](1)
             ),
             "Ownable: caller is not the owner"
         );
@@ -107,8 +109,8 @@ contract GasFeePricingUpgradeableTest is Test {
             abi.encodeWithSelector(
                 GasFeePricingUpgradeable.setRemoteInfo.selector,
                 new uint256[](1),
-                new uint256[](1),
-                new uint256[](1)
+                new uint128[](1),
+                new uint128[](1)
             ),
             "Ownable: caller is not the owner"
         );
@@ -125,18 +127,7 @@ contract GasFeePricingUpgradeableTest is Test {
 
         utils.checkAccess(
             _gfp,
-            abi.encodeWithSelector(GasFeePricingUpgradeable.setMinFee.selector, 0),
-            "Ownable: caller is not the owner"
-        );
-        utils.checkAccess(
-            _gfp,
-            abi.encodeWithSelector(GasFeePricingUpgradeable.setMinFeeUsd.selector, 0),
-            "Ownable: caller is not the owner"
-        );
-
-        utils.checkAccess(
-            _gfp,
-            abi.encodeWithSelector(GasFeePricingUpgradeable.updateLocalConfig.selector, 0, 0),
+            abi.encodeWithSelector(GasFeePricingUpgradeable.updateLocalConfig.selector, 0, 0, 0),
             "Ownable: caller is not the owner"
         );
 
@@ -151,14 +142,25 @@ contract GasFeePricingUpgradeableTest is Test {
     ▏*║                            ENCODING TESTS                            ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function testEncodeDecode(
-        uint8 msgType,
-        uint128 newValueA,
-        uint128 newValueB
+    function testEncodeConfig(
+        uint112 newValueA,
+        uint80 newValueB,
+        uint32 newValueC
     ) public {
-        bytes memory message = GasFeePricingUpdates.encode(msgType, newValueA, newValueB);
-        (uint8 _msgType, uint128 _newValueA, uint128 _newValueB) = GasFeePricingUpdates.decode(message);
-        assertEq(_msgType, msgType, "Failed to encode msgType");
+        bytes memory message = GasFeePricingUpdates.encodeConfig(newValueA, newValueB, newValueC);
+        uint8 _msgType = GasFeePricingUpdates.messageType(message);
+        (uint112 _newValueA, uint80 _newValueB, uint32 _newValueC) = GasFeePricingUpdates.decodeConfig(message);
+        assertEq(_msgType, uint8(GasFeePricingUpdates.MsgType.UPDATE_CONFIG), "Failed to encode msgType");
+        assertEq(_newValueA, newValueA, "Failed to encode newValueA");
+        assertEq(_newValueB, newValueB, "Failed to encode newValueB");
+        assertEq(_newValueC, newValueC, "Failed to encode newValueC");
+    }
+
+    function testEncodeInfo(uint128 newValueA, uint128 newValueB) public {
+        bytes memory message = GasFeePricingUpdates.encodeInfo(newValueA, newValueB);
+        uint8 _msgType = GasFeePricingUpdates.messageType(message);
+        (uint128 _newValueA, uint128 _newValueB) = GasFeePricingUpdates.decodeInfo(message);
+        assertEq(_msgType, uint8(GasFeePricingUpdates.MsgType.UPDATE_INFO), "Failed to encode msgType");
         assertEq(_newValueA, newValueA, "Failed to encode newValueA");
         assertEq(_newValueB, newValueB, "Failed to encode newValueB");
     }
@@ -171,41 +173,61 @@ contract GasFeePricingUpgradeableTest is Test {
         (uint128 _gasTokenPrice, ) = gasFeePricing.localInfo();
         assertEq(_gasTokenPrice, localVars.gasTokenPrice, "Failed to init: gasTokenPrice");
         assertEq(gasFeePricing.messageBus(), address(messageBus), "Failed to init: messageBus");
-        _checkMinFeeUsd(10**18);
     }
 
     function testSetRemoteConfig() public {
-        uint256[] memory gasUnitsRcvMsg = new uint256[](TEST_CHAINS);
-        uint256[] memory gasDropMax = new uint256[](TEST_CHAINS);
+        uint112[] memory gasDropMax = new uint112[](TEST_CHAINS);
+        uint80[] memory gasUnitsRcvMsg = new uint80[](TEST_CHAINS);
+        uint32[] memory minGasUsageFeeUsd = new uint32[](TEST_CHAINS);
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
-            gasUnitsRcvMsg[i] = (i + 1) * 420420;
-            gasDropMax[i] = (i + 1) * 10**18;
+            gasDropMax[i] = uint112((i + 1) * 10**18);
+            gasUnitsRcvMsg[i] = uint80((i + 1) * 420420);
+            minGasUsageFeeUsd[i] = uint32((i + 1) * 10000);
         }
-        _setRemoteConfig(remoteChainIds, gasDropMax, gasUnitsRcvMsg);
+        _setRemoteConfig(remoteChainIds, gasDropMax, gasUnitsRcvMsg, minGasUsageFeeUsd);
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
             _checkRemoteConfig(remoteChainIds[i]);
         }
     }
 
     function testSetRemoteConfigZeroDropSucceeds() public {
-        uint256[] memory gasDropMax = new uint256[](TEST_CHAINS);
-        uint256[] memory gasUnitsRcvMsg = new uint256[](TEST_CHAINS);
+        uint112[] memory gasDropMax = new uint112[](TEST_CHAINS);
+        uint80[] memory gasUnitsRcvMsg = new uint80[](TEST_CHAINS);
+        uint32[] memory minGasUsageFeeUsd = new uint32[](TEST_CHAINS);
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
-            gasDropMax[i] = i * 10**18;
-            gasUnitsRcvMsg[i] = (i + 1) * 133769;
+            gasDropMax[i] = uint112(i * 10**17);
+            gasUnitsRcvMsg[i] = uint80((i + 1) * 133769);
+            minGasUsageFeeUsd[i] = uint32((i + 1) * 1000);
         }
-        _setRemoteConfig(remoteChainIds, gasDropMax, gasUnitsRcvMsg);
+        _setRemoteConfig(remoteChainIds, gasDropMax, gasUnitsRcvMsg, minGasUsageFeeUsd);
+        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
+            _checkRemoteConfig(remoteChainIds[i]);
+        }
+    }
+
+    function testSetRemoteConfigZeroFeeSucceeds() public {
+        uint112[] memory gasDropMax = new uint112[](TEST_CHAINS);
+        uint80[] memory gasUnitsRcvMsg = new uint80[](TEST_CHAINS);
+        uint32[] memory minGasUsageFeeUsd = new uint32[](TEST_CHAINS);
+        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
+            gasDropMax[i] = uint112((i + 1) * 10**16);
+            gasUnitsRcvMsg[i] = uint80((i + 1) * 696969);
+            minGasUsageFeeUsd[i] = uint32(i * 5000);
+        }
+        _setRemoteConfig(remoteChainIds, gasDropMax, gasUnitsRcvMsg, minGasUsageFeeUsd);
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
             _checkRemoteConfig(remoteChainIds[i]);
         }
     }
 
     function testSetRemoteConfigZeroGasReverts() public {
-        uint256[] memory gasDropMax = new uint256[](TEST_CHAINS);
-        uint256[] memory gasUnitsRcvMsg = new uint256[](TEST_CHAINS);
+        uint112[] memory gasDropMax = new uint112[](TEST_CHAINS);
+        uint80[] memory gasUnitsRcvMsg = new uint80[](TEST_CHAINS);
+        uint32[] memory minGasUsageFeeUsd = new uint32[](TEST_CHAINS);
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
-            gasDropMax[i] = (i + 1) * 10**18;
-            gasUnitsRcvMsg[i] = i * 133769;
+            gasDropMax[i] = uint112((i + 1) * 10**15);
+            gasUnitsRcvMsg[i] = uint80(i * 123456);
+            minGasUsageFeeUsd[i] = uint32((i + 1) * 5000);
         }
         utils.checkRevert(
             address(this),
@@ -214,14 +236,15 @@ contract GasFeePricingUpgradeableTest is Test {
                 GasFeePricingUpgradeable.setRemoteConfig.selector,
                 remoteChainIds,
                 gasDropMax,
-                gasUnitsRcvMsg
+                gasUnitsRcvMsg,
+                minGasUsageFeeUsd
             ),
             "Gas amount is not set"
         );
     }
 
     function testSetRemoteInfo() public {
-        (uint256[] memory gasTokenPrices, uint256[] memory gasUnitPrices) = _generateTestInfoValues();
+        (uint128[] memory gasTokenPrices, uint128[] memory gasUnitPrices) = _generateTestInfoValues();
         _setRemoteInfo(remoteChainIds, gasTokenPrices, gasUnitPrices);
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
             uint256 chainId = remoteChainIds[i];
@@ -231,7 +254,7 @@ contract GasFeePricingUpgradeableTest is Test {
     }
 
     function testSetRemoteInfoZeroTokenPriceReverts() public {
-        (uint256[] memory gasTokenPrices, uint256[] memory gasUnitPrices) = _generateTestInfoValues();
+        (uint128[] memory gasTokenPrices, uint128[] memory gasUnitPrices) = _generateTestInfoValues();
         gasTokenPrices[2] = 0;
         utils.checkRevert(
             address(this),
@@ -247,7 +270,7 @@ contract GasFeePricingUpgradeableTest is Test {
     }
 
     function testSetRemoteInfoZeroUnitPriceSucceeds() public {
-        (uint256[] memory gasTokenPrices, uint256[] memory gasUnitPrices) = _generateTestInfoValues();
+        (uint128[] memory gasTokenPrices, uint128[] memory gasUnitPrices) = _generateTestInfoValues();
         gasTokenPrices[2] = 100 * 10**18;
         gasUnitPrices[3] = 0;
         _setRemoteInfo(remoteChainIds, gasTokenPrices, gasUnitPrices);
@@ -261,10 +284,10 @@ contract GasFeePricingUpgradeableTest is Test {
     function _generateTestInfoValues()
         internal
         pure
-        returns (uint256[] memory gasTokenPrices, uint256[] memory gasUnitPrices)
+        returns (uint128[] memory gasTokenPrices, uint128[] memory gasUnitPrices)
     {
-        gasTokenPrices = new uint256[](TEST_CHAINS);
-        gasUnitPrices = new uint256[](TEST_CHAINS);
+        gasTokenPrices = new uint128[](TEST_CHAINS);
+        gasUnitPrices = new uint128[](TEST_CHAINS);
         // 100 gwei, gasToken = $2000
         gasTokenPrices[0] = 2000 * 10**18;
         gasUnitPrices[0] = 100 * 10**9;
@@ -296,42 +319,48 @@ contract GasFeePricingUpgradeableTest is Test {
         }
     }
 
-    function testSetMinFee() public {
-        uint256 minGasUsageFee = 1234567890;
-        gasFeePricing.setMinFee(minGasUsageFee);
-        _checkMinFee(minGasUsageFee);
-    }
-
-    function testSetMinFeeUsd(uint16 alphaUsd) public {
-        uint256 minGasFeeUsageUsd = uint256(alphaUsd) * 10**16;
-        gasFeePricing.setMinFeeUsd(minGasFeeUsageUsd);
-        _checkMinFeeUsd(minGasFeeUsageUsd);
-    }
-
     function testUpdateLocalConfig() public {
-        uint256 gasDropMax = 10 * 10**18;
-        uint256 gasUnitsRcvMsg = 10**6;
-        _updateLocalConfig(gasDropMax, gasUnitsRcvMsg);
+        uint112 gasDropMax = 10 * 10**18;
+        uint80 gasUnitsRcvMsg = 10**6;
+        uint32 minGasUsageFeeUsd = 10**4;
+
+        _updateLocalConfig(gasDropMax, gasUnitsRcvMsg, minGasUsageFeeUsd);
         _checkLocalConfig();
     }
 
     function testUpdateLocalConfigZeroDropSucceeds() public {
         // should be able to set to zero
-        uint256 gasDropMax = 0;
-        uint256 gasUnitsRcvMsg = 2 * 10**6;
-        _updateLocalConfig(gasDropMax, gasUnitsRcvMsg);
+        uint112 gasDropMax = 0;
+        uint80 gasUnitsRcvMsg = 2 * 10**6;
+        uint32 minGasUsageFeeUsd = 2 * 10**4;
+        _updateLocalConfig(gasDropMax, gasUnitsRcvMsg, minGasUsageFeeUsd);
+        _checkLocalConfig();
+    }
+
+    function testUpdateLocalConfigZeroFeeSucceeds() public {
+        uint112 gasDropMax = 5 * 10**18;
+        uint80 gasUnitsRcvMsg = 2 * 10**6;
+        // should be able to set to zero
+        uint32 minGasUsageFeeUsd = 0;
+        _updateLocalConfig(gasDropMax, gasUnitsRcvMsg, minGasUsageFeeUsd);
         _checkLocalConfig();
     }
 
     function testUpdateLocalConfigZeroGasReverts() public {
-        uint256 gasDropMax = 10**18;
+        uint112 gasDropMax = 10**18;
         // should NOT be able to set to zero
-        uint256 gasUnitsRcvMsg = 0;
+        uint80 gasUnitsRcvMsg = 0;
+        uint32 minGasUsageFeeUsd = 3 * 10**4;
 
         utils.checkRevert(
             address(this),
             address(gasFeePricing),
-            abi.encodeWithSelector(GasFeePricingUpgradeable.updateLocalConfig.selector, gasDropMax, gasUnitsRcvMsg),
+            abi.encodeWithSelector(
+                GasFeePricingUpgradeable.updateLocalConfig.selector,
+                gasDropMax,
+                gasUnitsRcvMsg,
+                minGasUsageFeeUsd
+            ),
             "Gas amount is not set"
         );
     }
@@ -339,8 +368,8 @@ contract GasFeePricingUpgradeableTest is Test {
     function testUpdateLocalInfo() public {
         testSetRemoteInfo();
 
-        uint256 gasTokenPrice = 2 * 10**18;
-        uint256 gasUnitPrice = 10 * 10**9;
+        uint128 gasTokenPrice = 2 * 10**18;
+        uint128 gasUnitPrice = 10 * 10**9;
         _updateLocalInfo(gasTokenPrice, gasUnitPrice);
         _checkLocalInfo();
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
@@ -351,8 +380,8 @@ contract GasFeePricingUpgradeableTest is Test {
     function testUpdateLocalInfoZeroTokenPriceReverts() public {
         testSetRemoteInfo();
 
-        uint256 gasTokenPrice = 0;
-        uint256 gasUnitPrice = 10 * 10**9;
+        uint128 gasTokenPrice = 0;
+        uint128 gasUnitPrice = 10 * 10**9;
 
         utils.checkRevert(
             address(this),
@@ -365,8 +394,8 @@ contract GasFeePricingUpgradeableTest is Test {
     function testUpdateLocalInfoZeroUnitPriceSucceeds() public {
         testSetRemoteInfo();
 
-        uint256 gasTokenPrice = 4 * 10**17;
-        uint256 gasUnitPrice = 0;
+        uint128 gasTokenPrice = 4 * 10**17;
+        uint128 gasUnitPrice = 0;
         _updateLocalInfo(gasTokenPrice, gasUnitPrice);
         _checkLocalInfo();
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
@@ -379,9 +408,12 @@ contract GasFeePricingUpgradeableTest is Test {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function _checkRemoteConfig(uint256 _chainId) internal {
-        (uint112 gasDropMax, uint112 gasUnitsRcvMsg, , ) = gasFeePricing.remoteConfig(_chainId);
+        (uint112 gasDropMax, uint80 gasUnitsRcvMsg, uint32 minGasUsageFeeUsd, , ) = gasFeePricing.remoteConfig(
+            _chainId
+        );
         assertEq(gasDropMax, remoteVars[_chainId].gasDropMax, "remoteMaxGasDrop is incorrect");
         assertEq(gasUnitsRcvMsg, remoteVars[_chainId].gasUnitsRcvMsg, "remoteGasUnitsRcvMsg is incorrect");
+        assertEq(minGasUsageFeeUsd, remoteVars[_chainId].minGasUsageFeeUsd, "remoteMinGasUsageFeeUsd is incorrect");
     }
 
     function _checkRemoteInfo(uint256 _chainId) internal {
@@ -391,7 +423,7 @@ contract GasFeePricingUpgradeableTest is Test {
     }
 
     function _checkRemoteMarkups(uint256 _chainId) internal {
-        (, , uint16 markupGasDrop, uint16 markupGasUsage) = gasFeePricing.remoteConfig(_chainId);
+        (, , , uint16 markupGasDrop, uint16 markupGasUsage) = gasFeePricing.remoteConfig(_chainId);
         assertEq(markupGasDrop, remoteVars[_chainId].markupGasDrop, "remoteMarkupGasDrop is incorrect");
         assertEq(markupGasUsage, remoteVars[_chainId].markupGasUsage, "remoteMarkupGasUsage is incorrect");
     }
@@ -405,19 +437,11 @@ contract GasFeePricingUpgradeableTest is Test {
         assertEq(gasUnitPriceRatio, _gasUnitPriceRatio, "gasUnitPriceRatio is incorrect");
     }
 
-    function _checkMinFee(uint256 _expectedMinFee) internal {
-        assertEq(gasFeePricing.minGasUsageFee(), _expectedMinFee, "minGasUsageFee is incorrect");
-    }
-
-    function _checkMinFeeUsd(uint256 _expectedMinFeeUsd) internal {
-        uint256 _expectedMinFee = (_expectedMinFeeUsd * 10**18) / localVars.gasTokenPrice;
-        _checkMinFee(_expectedMinFee);
-    }
-
     function _checkLocalConfig() internal {
-        (uint112 gasDropMax, uint112 gasUnitsRcvMsg, , ) = gasFeePricing.localConfig();
+        (uint112 gasDropMax, uint80 gasUnitsRcvMsg, uint32 minGasUsageFeeUsd, , ) = gasFeePricing.localConfig();
         assertEq(gasDropMax, localVars.gasDropMax, "localMaxGasDrop is incorrect");
         assertEq(gasUnitsRcvMsg, localVars.gasUnitsRcvMsg, "localGasUnitsRcvMsg is incorrect");
+        assertEq(minGasUsageFeeUsd, localVars.minGasUsageFeeUsd, "localMinGasUsageFeeUsd is incorrect");
     }
 
     function _checkLocalInfo() internal {
@@ -432,24 +456,28 @@ contract GasFeePricingUpgradeableTest is Test {
 
     function _setRemoteConfig(
         uint256[] memory _chainIds,
-        uint256[] memory _gasDropMax,
-        uint256[] memory _gasUnitsRcvMsg
+        uint112[] memory _gasDropMax,
+        uint80[] memory _gasUnitsRcvMsg,
+        uint32[] memory _minGasUsageFeeUsd
     ) internal {
         for (uint256 i = 0; i < _chainIds.length; ++i) {
-            remoteVars[_chainIds[i]].gasDropMax = _gasDropMax[i];
-            remoteVars[_chainIds[i]].gasUnitsRcvMsg = _gasUnitsRcvMsg[i];
+            uint256 chainId = _chainIds[i];
+            remoteVars[chainId].gasDropMax = _gasDropMax[i];
+            remoteVars[chainId].gasUnitsRcvMsg = _gasUnitsRcvMsg[i];
+            remoteVars[chainId].minGasUsageFeeUsd = _minGasUsageFeeUsd[i];
         }
-        gasFeePricing.setRemoteConfig(_chainIds, _gasDropMax, _gasUnitsRcvMsg);
+        gasFeePricing.setRemoteConfig(_chainIds, _gasDropMax, _gasUnitsRcvMsg, _minGasUsageFeeUsd);
     }
 
     function _setRemoteInfo(
         uint256[] memory _chainIds,
-        uint256[] memory _gasTokenPrice,
-        uint256[] memory _gasUnitPrice
+        uint128[] memory _gasTokenPrice,
+        uint128[] memory _gasUnitPrice
     ) internal {
         for (uint256 i = 0; i < _chainIds.length; ++i) {
-            remoteVars[_chainIds[i]].gasTokenPrice = _gasTokenPrice[i];
-            remoteVars[_chainIds[i]].gasUnitPrice = _gasUnitPrice[i];
+            uint256 chainId = _chainIds[i];
+            remoteVars[chainId].gasTokenPrice = _gasTokenPrice[i];
+            remoteVars[chainId].gasUnitPrice = _gasUnitPrice[i];
         }
         gasFeePricing.setRemoteInfo(_chainIds, _gasTokenPrice, _gasUnitPrice);
     }
@@ -466,14 +494,19 @@ contract GasFeePricingUpgradeableTest is Test {
         gasFeePricing.setRemoteMarkups(_chainIds, _markupGasDrop, _markupGasUsage);
     }
 
-    function _updateLocalConfig(uint256 _gasDropMax, uint256 _gasUnitsRcvMsg) internal {
+    function _updateLocalConfig(
+        uint112 _gasDropMax,
+        uint80 _gasUnitsRcvMsg,
+        uint32 _minGasUsageFeeUsd
+    ) internal {
         localVars.gasDropMax = _gasDropMax;
         localVars.gasUnitsRcvMsg = _gasUnitsRcvMsg;
+        localVars.minGasUsageFeeUsd = _minGasUsageFeeUsd;
         uint256 fee = gasFeePricing.estimateUpdateFees();
-        gasFeePricing.updateLocalConfig{value: fee}(_gasDropMax, _gasUnitsRcvMsg);
+        gasFeePricing.updateLocalConfig{value: fee}(_gasDropMax, _gasUnitsRcvMsg, _minGasUsageFeeUsd);
     }
 
-    function _updateLocalInfo(uint256 _gasTokenPrice, uint256 _gasUnitPrice) internal {
+    function _updateLocalInfo(uint128 _gasTokenPrice, uint128 _gasUnitPrice) internal {
         localVars.gasTokenPrice = _gasTokenPrice;
         localVars.gasUnitPrice = _gasUnitPrice;
         uint256 fee = gasFeePricing.estimateUpdateFees();

@@ -43,10 +43,14 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
      *               uint112 => max value ~= 5 * 10**33
      * - gasUnitsRcvMsg: Amount of gas units needed for GasFeePricing contract
      *                   to receive "update chain Config/Info" message
-     *                   uint112 => max value ~= 5 * 10**33
+     *                   uint80 => max value ~= 10**24
+     * - minGasUsageFeeUsd: minimum amount of "gas usage" part of total messaging fee,
+     *                      when sending message to given remote chain.
+     *                      Quoted in USD, multiplied by USD_DENOMINATOR
+     *                      uint32 => max value ~= 4 * 10**9
      * These are universal values, and they should be the same on all GasFeePricing
      * contracts.
-     *
+     * ═══════════════════════════════════════════════════════════════════════════════════════
      * Some of the values, however, are set unique for every "local-remote" chain combination:
      * - markupGasDrop: Markup for gas airdrop
      *                  uint16 => max value = 65535
@@ -67,7 +71,8 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     struct ChainConfig {
         /// @dev Values below are synchronized cross-chain
         uint112 gasDropMax;
-        uint112 gasUnitsRcvMsg;
+        uint80 gasUnitsRcvMsg;
+        uint32 minGasUsageFeeUsd;
         /// @dev Values below are local-chain specific
         uint16 markupGasDrop;
         uint16 markupGasUsage;
@@ -154,17 +159,14 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     /// localConfig.markupGasDrop and localConfig.markupGasUsage values are not used
     ChainConfig public localConfig;
     ChainInfo public localInfo;
-    /// @dev Minimum fee related to gas usage on remote chain
-    uint256 public minGasUsageFee;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                              CONSTANTS                               ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    uint256 public constant DEFAULT_MIN_FEE_USD = 10**18;
-
     uint256 public constant DEFAULT_GAS_LIMIT = 200000;
     uint256 public constant MARKUP_DENOMINATOR = 100;
+    uint256 public constant USD_DENOMINATOR = 10000;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                             INITIALIZER                              ║*▕
@@ -174,7 +176,6 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         __Ownable_init_unchained();
         messageBus = _messageBus;
         localInfo.gasTokenPrice = uint96(_localGasTokenPrice);
-        minGasUsageFee = _calculateMinGasUsageFee(DEFAULT_MIN_FEE_USD, _localGasTokenPrice);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -234,9 +235,10 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         // Sum up the fees multiplied by their respective markups
         feeGasDrop = (feeGasDrop * (_markupGasDrop + MARKUP_DENOMINATOR)) / MARKUP_DENOMINATOR;
         feeGasUsage = (feeGasUsage * (_markupGasUsage + MARKUP_DENOMINATOR)) / MARKUP_DENOMINATOR;
+        // TODO: implement remote-chain-specific minGasUsageFee
         // Check if gas usage fee is lower than minimum
-        uint256 _minGasUsageFee = minGasUsageFee;
-        if (feeGasUsage < _minGasUsageFee) feeGasUsage = _minGasUsageFee;
+        // uint256 _minGasUsageFee = minGasUsageFee;
+        // if (feeGasUsage < _minGasUsageFee) feeGasUsage = _minGasUsageFee;
         fee = feeGasDrop + feeGasUsage;
     }
 
@@ -277,15 +279,18 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     /// @dev Update config (gasLimit for sending messages to chain, max gas airdrop) for a bunch of chains.
     function setRemoteConfig(
         uint256[] memory _remoteChainId,
-        uint256[] memory _gasDropMax,
-        uint256[] memory _gasUnitsRcvMsg
+        uint112[] memory _gasDropMax,
+        uint80[] memory _gasUnitsRcvMsg,
+        uint32[] memory _minGasUsageFeeUsd
     ) external onlyOwner {
         require(
-            _remoteChainId.length == _gasDropMax.length && _remoteChainId.length == _gasUnitsRcvMsg.length,
+            _remoteChainId.length == _gasDropMax.length &&
+                _remoteChainId.length == _gasUnitsRcvMsg.length &&
+                _remoteChainId.length == _minGasUsageFeeUsd.length,
             "!arrays"
         );
         for (uint256 i = 0; i < _remoteChainId.length; ++i) {
-            _updateRemoteChainConfig(_remoteChainId[i], _gasDropMax[i], _gasUnitsRcvMsg[i]);
+            _updateRemoteChainConfig(_remoteChainId[i], _gasDropMax[i], _gasUnitsRcvMsg[i], _minGasUsageFeeUsd[i]);
         }
     }
 
@@ -293,8 +298,8 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     /// Handy for initial setup.
     function setRemoteInfo(
         uint256[] memory _remoteChainId,
-        uint256[] memory _gasTokenPrice,
-        uint256[] memory _gasUnitPrice
+        uint128[] memory _gasTokenPrice,
+        uint128[] memory _gasUnitPrice
     ) external onlyOwner {
         require(
             _remoteChainId.length == _gasTokenPrice.length && _remoteChainId.length == _gasUnitPrice.length,
@@ -321,31 +326,26 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         }
     }
 
-    /// @notice Update the minimum fee for gas usage on message delivery. Quoted in local chain wei.
-    function setMinFee(uint256 _minGasUsageFee) external onlyOwner {
-        minGasUsageFee = _minGasUsageFee;
-    }
-
-    /// @notice Update the minimum fee for gas usage on message delivery. Quoted in USD, scaled to wei.
-    function setMinFeeUsd(uint256 _minGasUsageFeeUsd) external onlyOwner {
-        minGasUsageFee = _calculateMinGasUsageFee(_minGasUsageFeeUsd, localInfo.gasTokenPrice);
-    }
-
     /// @notice Update information about local chain config:
     /// amount of gas needed to do _updateRemoteChainInfo()
     /// and maximum airdrop available on this chain
-    function updateLocalConfig(uint256 _gasDropMax, uint256 _gasUnitsRcvMsg) external payable onlyOwner {
+    function updateLocalConfig(
+        uint112 _gasDropMax,
+        uint80 _gasUnitsRcvMsg,
+        uint32 _minGasUsageFeeUsd
+    ) external payable onlyOwner {
         require(_gasUnitsRcvMsg != 0, "Gas amount is not set");
-        _sendUpdateMessages(uint8(GasFeePricingUpdates.MsgType.UPDATE_CONFIG), _gasDropMax, _gasUnitsRcvMsg);
+        _sendUpdateMessages(GasFeePricingUpdates.encodeConfig(_gasDropMax, _gasUnitsRcvMsg, _minGasUsageFeeUsd));
         ChainConfig memory config = localConfig;
-        config.gasDropMax = uint112(_gasDropMax);
-        config.gasUnitsRcvMsg = uint112(_gasUnitsRcvMsg);
+        config.gasDropMax = _gasDropMax;
+        config.gasUnitsRcvMsg = _gasUnitsRcvMsg;
+        config.minGasUsageFeeUsd = _minGasUsageFeeUsd;
         localConfig = config;
     }
 
     /// @notice Update information about local chain gas token/unit price on all configured remote chains,
     /// as well as on the local chain itself.
-    function updateLocalInfo(uint256 _gasTokenPrice, uint256 _gasUnitPrice) external payable onlyOwner {
+    function updateLocalInfo(uint128 _gasTokenPrice, uint128 _gasUnitPrice) external payable onlyOwner {
         /**
          * @dev Some chains (i.e. Aurora) allow free transactions,
          * so we're not checking gasUnitPrice for being zero.
@@ -355,7 +355,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         require(_gasTokenPrice != 0, "Gas token price is not set");
         // send messages before updating the values, so that it's possible to use
         // estimateUpdateFees() to calculate the needed fee for the update
-        _sendUpdateMessages(uint8(GasFeePricingUpdates.MsgType.UPDATE_INFO), _gasTokenPrice, _gasUnitPrice);
+        _sendUpdateMessages(GasFeePricingUpdates.encodeInfo(_gasTokenPrice, _gasUnitPrice));
         _updateLocalChainInfo(_gasTokenPrice, _gasUnitPrice);
     }
 
@@ -365,7 +365,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
 
     /// @dev Updates information about local chain gas token/unit price.
     /// All the remote chain ratios are updated as well, if gas token price changed
-    function _updateLocalChainInfo(uint256 _gasTokenPrice, uint256 _gasUnitPrice) internal {
+    function _updateLocalChainInfo(uint128 _gasTokenPrice, uint128 _gasUnitPrice) internal {
         if (localInfo.gasTokenPrice != _gasTokenPrice) {
             // update ratios only if gas token price has changed
             uint256[] memory chainIds = remoteChainIds;
@@ -376,7 +376,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
             }
         }
 
-        localInfo = ChainInfo({gasTokenPrice: uint128(_gasTokenPrice), gasUnitPrice: uint128(_gasUnitPrice)});
+        localInfo = ChainInfo({gasTokenPrice: _gasTokenPrice, gasUnitPrice: _gasUnitPrice});
 
         // TODO: use context chainid here
         emit ChainInfoUpdated(block.chainid, _gasTokenPrice, _gasUnitPrice);
@@ -387,13 +387,15 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     /// Maximum airdrop available on this chain
     function _updateRemoteChainConfig(
         uint256 _remoteChainId,
-        uint256 _gasDropMax,
-        uint256 _gasUnitsRcvMsg
+        uint112 _gasDropMax,
+        uint80 _gasUnitsRcvMsg,
+        uint32 _minGasUsageFeeUsd
     ) internal {
         require(_gasUnitsRcvMsg != 0, "Gas amount is not set");
         ChainConfig memory config = remoteConfig[_remoteChainId];
-        config.gasDropMax = uint112(_gasDropMax);
-        config.gasUnitsRcvMsg = uint112(_gasUnitsRcvMsg);
+        config.gasDropMax = _gasDropMax;
+        config.gasUnitsRcvMsg = _gasUnitsRcvMsg;
+        config.minGasUsageFeeUsd = _minGasUsageFeeUsd;
         remoteConfig[_remoteChainId] = config;
     }
 
@@ -401,8 +403,8 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     /// Remote chain ratios are updated as well.
     function _updateRemoteChainInfo(
         uint256 _remoteChainId,
-        uint256 _gasTokenPrice,
-        uint256 _gasUnitPrice
+        uint128 _gasTokenPrice,
+        uint128 _gasUnitPrice
     ) internal {
         /**
          * @dev Some chains (i.e. Aurora) allow free transactions,
@@ -419,10 +421,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
             remoteChainIds.push(_remoteChainId);
         }
 
-        remoteInfo[_remoteChainId] = ChainInfo({
-            gasTokenPrice: uint128(_gasTokenPrice),
-            gasUnitPrice: uint128(_gasUnitPrice)
-        });
+        remoteInfo[_remoteChainId] = ChainInfo({gasTokenPrice: _gasTokenPrice, gasUnitPrice: _gasUnitPrice});
         _updateRemoteChainRatios(_localGasTokenPrice, _remoteChainId, _gasTokenPrice, _gasUnitPrice);
 
         emit ChainInfoUpdated(_remoteChainId, _gasTokenPrice, _gasUnitPrice);
@@ -460,15 +459,10 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /// @dev Sends "something updated" messages to all registered remote chains
-    function _sendUpdateMessages(
-        uint8 _msgType,
-        uint256 _newValueA,
-        uint256 _newValueB
-    ) internal {
+    function _sendUpdateMessages(bytes memory _message) internal {
         (uint256 totalFee, uint256[] memory fees) = _estimateUpdateFees();
         require(msg.value >= totalFee, "msg.value doesn't cover all the fees");
 
-        bytes memory message = GasFeePricingUpdates.encode(_msgType, uint128(_newValueA), uint128(_newValueB));
         uint256[] memory chainIds = remoteChainIds;
         bytes32[] memory receivers = new bytes32[](chainIds.length);
         bytes[] memory options = new bytes[](chainIds.length);
@@ -482,7 +476,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
             options[i] = Options.encode(gasLimit);
         }
 
-        _send(receivers, chainIds, message, options, fees, payable(msg.sender));
+        _send(receivers, chainIds, _message, options, fees, payable(msg.sender));
         if (msg.value > totalFee) payable(msg.sender).transfer(msg.value - totalFee);
     }
 
@@ -493,11 +487,15 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         bytes memory _message,
         address
     ) internal override {
-        (uint8 msgType, uint128 newValueA, uint128 newValueB) = GasFeePricingUpdates.decode(_message);
+        uint8 msgType = GasFeePricingUpdates.messageType(_message);
         if (msgType == uint8(GasFeePricingUpdates.MsgType.UPDATE_CONFIG)) {
-            _updateRemoteChainConfig(_localChainId, newValueA, newValueB);
+            (uint112 gasDropMax, uint80 gasUnitsRcvMsg, uint32 minGasUsageFeeUsd) = GasFeePricingUpdates.decodeConfig(
+                _message
+            );
+            _updateRemoteChainConfig(_localChainId, gasDropMax, gasUnitsRcvMsg, minGasUsageFeeUsd);
         } else if (msgType == uint8(GasFeePricingUpdates.MsgType.UPDATE_INFO)) {
-            _updateRemoteChainInfo(_localChainId, newValueA, newValueB);
+            (uint128 gasTokenPrice, uint128 gasUnitPrice) = GasFeePricingUpdates.decodeInfo(_message);
+            _updateRemoteChainInfo(_localChainId, gasTokenPrice, gasUnitPrice);
         } else {
             revert("Unknown message type");
         }
