@@ -35,39 +35,93 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
      * this is not recommended.
      */
 
-    /// @dev Dst chain's basic variables, that are unlikely to change over time.
+    /**
+     * @dev Chain's Config is supposed to be PARTLY synchronized cross-chain, i.e.
+     * GasFeePricing contracts on different chain will have the SAME values for
+     * the same dst chain:
+     * - gasDropMax: maximum gas airdrop available on chain
+     *               uint112 => max value ~= 5 * 10**33
+     * - gasUnitsRcvMsg: Amount of gas units needed for GasFeePricing contract
+     *                   to receive "update chain Config/Info" message
+     *                   uint112 => max value ~= 5 * 10**33
+     * These are universal values, and they should be the same on all GasFeePricing
+     * contracts.
+     *
+     * Some of the values, however, are set unique for every "src-dst" chain combination:
+     * - markupGasDrop: Markup for gas airdrop
+     *                  uint16 => max value = 65535
+     * - markupGasUsage: Markup for gas usage
+     *                   uint16 => max value = 65535
+     * These values depend on correlation between src and dst chains. For instance,
+     * if both chains have the same gas token (like ETH), markup for the gas drop
+     * can be set to 0, as gasDrop is limited, and the slight price difference between ETH
+     * on src and dst chain can not be taken advantage of.
+     *
+     * On the contrary, if src and dst gas tokens have proven to be not that correlated
+     * in terms of their price, higher markup is needed to compensate potential price spikes.
+     *
+     * ChainConfig is optimized to fit into one word of storage.
+     * ChainConfig is not supposed to be updated regularly (the values are more or less persistent).
+     */
+
     struct ChainConfig {
-        // Amount of gas units needed to receive "update chainInfo" message
-        uint112 gasAmountNeeded;
-        // Maximum gas airdrop available on chain
-        uint112 maxGasDrop;
-        // Markup for gas airdrop
+        /// @dev Values below are synchronized cross-chain
+        uint112 gasDropMax;
+        uint112 gasUnitsRcvMsg;
+        /// @dev Values below are src-chain specific
         uint16 markupGasDrop;
-        // Markup for gas usage
         uint16 markupGasUsage;
     }
 
-    /// @dev Information about dst chain's gas price, which can change over time
-    /// due to gas token price movement, or gas spikes.
+    /**
+     * @dev Chain's Info is supposed to be FULLY synchronized cross-chain, i.e.
+     * GasFeePricing contracts on different chain will have the SAME values for
+     * the same dst chain:
+     * - gasTokenPrice: Price of chain's gas token in USD, scaled to wei
+     *                  uint128 => max value ~= 3 * 10**38
+     * - gasUnitPrice: Price of chain's 1 gas unit in wei
+     *                 uint128 => max value ~= 3 * 10**38
+     *
+     * These are universal values, and they should be the same on all GasFeePricing
+     * contracts.
+     *
+     * ChainInfo is optimized to fit into one word of storage.
+     * ChainInfo is supposed to be updated regularly, as the chain's gas token or unit
+     * price changes drastically.
+     */
     struct ChainInfo {
-        // Price of chain's gas token in USD, scaled to wei
+        /// @dev Values below are synchronized cross-chain
         uint128 gasTokenPrice;
-        // Price of chain's 1 gas unit in wei
         uint128 gasUnitPrice;
     }
 
-    /// @dev Ratio between src and dst gas price ratio.
-    /// Used for calculating a fee for sending a msg from src to dst chain.
-    /// Updated whenever "gas information" is changed for either source or destination chain.
+    /**
+     * @dev Chain's Ratios are supposed to be FULLY chain-specific, i.e.
+     * GasFeePricing contracts on different chain will have different values for
+     * the same dst chain:
+     * - gasTokenPriceRatio: USD price ratio of dstGasToken / srcGasToken, scaled to wei
+     *                       uint96 => max value ~= 8 * 10**28
+     * - gasUnitPriceRatio: How much 1 gas unit on dst chain is worth, expressed in src chain wei,
+     *                      multiplied by 10**18 (aka in attoWei = 10^-18 wei)
+     *                      uint160 => max value ~= 10**48
+     * These values are updated whenever "gas information" is updated for either source or destination chain.
+     *
+     * ChainRatios is optimized to fit into one word of storage.
+     */
+
+    /**
+     * @dev Chain's Ratios are used for calculating a fee for sending a msg from src to dst chain.
+     * To calculate cost of tx gas airdrop (assuming gasDrop airdrop value):
+     * (gasDrop * gasTokenPriceRatio) / 10**18
+     * To calculate cost of tx gas usage on dst chain (assuming gasAmount gas units):
+     * (gasAmount * gasUnitPriceRatio) / 10**18
+     *
+     * Both numbers are expressed in src chain wei.
+     */
     struct ChainRatios {
-        // USD price ratio of dstGasToken / srcGasToken, scaled to wei
+        /// @dev Values below are src-chain specific
         uint96 gasTokenPriceRatio;
-        // How much 1 gas unit on dst chain is worth,
-        // expressed in src chain wei, multiplied by 10**18 (aka in attoWei = 10^-18 wei)
         uint160 gasUnitPriceRatio;
-        // To calculate gas cost of tx on dst chain, which consumes gasAmount gas units:
-        // (gasAmount * gasUnitPriceRatio) / 10**18
-        // This number is expressed in src chain wei
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -152,7 +206,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         if (_options.length != 0) {
             (gasLimit, gasAirdrop, ) = Options.decode(_options);
             if (gasAirdrop != 0) {
-                require(gasAirdrop <= config.maxGasDrop, "GasDrop higher than max");
+                require(gasAirdrop <= config.gasDropMax, "GasDrop higher than max");
             }
         } else {
             gasLimit = DEFAULT_GAS_LIMIT;
@@ -199,7 +253,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         for (uint256 i = 0; i < _chainIds.length; ++i) {
             uint256 chainId = _chainIds[i];
             ChainConfig memory config = dstConfig[chainId];
-            uint256 gasLimit = config.gasAmountNeeded;
+            uint256 gasLimit = config.gasUnitsRcvMsg;
             if (gasLimit == 0) gasLimit = DEFAULT_GAS_LIMIT;
 
             uint256 fee = _estimateGasFee(chainId, 0, gasLimit, config.markupGasDrop, config.markupGasUsage);
@@ -222,48 +276,39 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
 
     /// @dev Update config (gasLimit for sending messages to chain, max gas airdrop) for a bunch of chains.
     function setDstConfig(
-        uint256[] memory _dstChainIds,
-        uint256[] memory _gasAmountsNeeded,
-        uint256[] memory _maxGasDrops
+        uint256[] memory _dstChainId,
+        uint256[] memory _gasDropMax,
+        uint256[] memory _gasUnitsRcvMsg
     ) external onlyOwner {
-        require(
-            _dstChainIds.length == _gasAmountsNeeded.length && _dstChainIds.length == _maxGasDrops.length,
-            "!arrays"
-        );
-        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
-            _updateDstChainConfig(_dstChainIds[i], _gasAmountsNeeded[i], _maxGasDrops[i]);
+        require(_dstChainId.length == _gasDropMax.length && _dstChainId.length == _gasUnitsRcvMsg.length, "!arrays");
+        for (uint256 i = 0; i < _dstChainId.length; ++i) {
+            _updateDstChainConfig(_dstChainId[i], _gasDropMax[i], _gasUnitsRcvMsg[i]);
         }
     }
 
     /// @notice Update information about gas unit/token price for a bunch of chains.
     /// Handy for initial setup.
     function setDstInfo(
-        uint256[] memory _dstChainIds,
-        uint256[] memory _gasTokenPrices,
-        uint256[] memory _gasUnitPrices
+        uint256[] memory _dstChainId,
+        uint256[] memory _gasTokenPrice,
+        uint256[] memory _gasUnitPrice
     ) external onlyOwner {
-        require(
-            _dstChainIds.length == _gasUnitPrices.length && _dstChainIds.length == _gasTokenPrices.length,
-            "!arrays"
-        );
-        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
-            _updateDstChainInfo(_dstChainIds[i], _gasUnitPrices[i], _gasTokenPrices[i]);
+        require(_dstChainId.length == _gasTokenPrice.length && _dstChainId.length == _gasUnitPrice.length, "!arrays");
+        for (uint256 i = 0; i < _dstChainId.length; ++i) {
+            _updateDstChainInfo(_dstChainId[i], _gasTokenPrice[i], _gasUnitPrice[i]);
         }
     }
 
     /// @notice Sets markups (see "Structs" docs) for a bunch of chains. Markups are used for determining
     /// how much fee to charge on top of "projected gas cost" of delivering the message.
     function setDstMarkups(
-        uint256[] memory _dstChainIds,
-        uint16[] memory _markupsGasDrop,
-        uint16[] memory _markupsGasUsage
+        uint256[] memory _dstChainId,
+        uint16[] memory _markupGasDrop,
+        uint16[] memory _markupGasUsage
     ) external onlyOwner {
-        require(
-            _dstChainIds.length == _markupsGasDrop.length && _dstChainIds.length == _markupsGasUsage.length,
-            "!arrays"
-        );
-        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
-            _updateMarkups(_dstChainIds[i], _markupsGasDrop[i], _markupsGasUsage[i]);
+        require(_dstChainId.length == _markupGasDrop.length && _dstChainId.length == _markupGasUsage.length, "!arrays");
+        for (uint256 i = 0; i < _dstChainId.length; ++i) {
+            _updateMarkups(_dstChainId[i], _markupGasDrop[i], _markupGasUsage[i]);
         }
     }
 
@@ -280,12 +325,12 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     /// @notice Update information about source chain config:
     /// amount of gas needed to do _updateDstChainInfo()
     /// and maximum airdrop available on this chain
-    function updateSrcConfig(uint256 _gasAmountNeeded, uint256 _maxGasDrop) external payable onlyOwner {
-        require(_gasAmountNeeded != 0, "Gas amount is not set");
-        _sendUpdateMessages(uint8(GasFeePricingUpdates.MsgType.UPDATE_CONFIG), _gasAmountNeeded, _maxGasDrop);
+    function updateSrcConfig(uint256 _gasDropMax, uint256 _gasUnitsRcvMsg) external payable onlyOwner {
+        require(_gasUnitsRcvMsg != 0, "Gas amount is not set");
+        _sendUpdateMessages(uint8(GasFeePricingUpdates.MsgType.UPDATE_CONFIG), _gasDropMax, _gasUnitsRcvMsg);
         ChainConfig memory config = srcConfig;
-        config.gasAmountNeeded = uint112(_gasAmountNeeded);
-        config.maxGasDrop = uint112(_maxGasDrop);
+        config.gasDropMax = uint112(_gasDropMax);
+        config.gasUnitsRcvMsg = uint112(_gasUnitsRcvMsg);
         srcConfig = config;
     }
 
@@ -333,13 +378,13 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     /// Maximum airdrop available on this chain
     function _updateDstChainConfig(
         uint256 _dstChainId,
-        uint256 _gasAmountNeeded,
-        uint256 _maxGasDrop
+        uint256 _gasDropMax,
+        uint256 _gasUnitsRcvMsg
     ) internal {
-        require(_gasAmountNeeded != 0, "Gas amount is not set");
+        require(_gasUnitsRcvMsg != 0, "Gas amount is not set");
         ChainConfig memory config = dstConfig[_dstChainId];
-        config.gasAmountNeeded = uint112(_gasAmountNeeded);
-        config.maxGasDrop = uint112(_maxGasDrop);
+        config.gasDropMax = uint112(_gasDropMax);
+        config.gasUnitsRcvMsg = uint112(_gasUnitsRcvMsg);
         dstConfig[_dstChainId] = config;
     }
 
@@ -347,8 +392,8 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     /// Dst chain ratios are updated as well.
     function _updateDstChainInfo(
         uint256 _dstChainId,
-        uint256 _gasUnitPrice,
-        uint256 _gasTokenPrice
+        uint256 _gasTokenPrice,
+        uint256 _gasUnitPrice
     ) internal {
         /**
          * @dev Some chains (i.e. Aurora) allow free transactions,
@@ -421,7 +466,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
 
         for (uint256 i = 0; i < chainIds.length; ++i) {
             uint256 chainId = chainIds[i];
-            uint256 gasLimit = dstConfig[chainId].gasAmountNeeded;
+            uint256 gasLimit = dstConfig[chainId].gasUnitsRcvMsg;
             if (gasLimit == 0) gasLimit = DEFAULT_GAS_LIMIT;
 
             receivers[i] = trustedRemoteLookup[chainId];

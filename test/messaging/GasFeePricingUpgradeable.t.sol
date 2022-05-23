@@ -14,8 +14,8 @@ contract GasFeePricingUpgradeableTest is Test {
     struct ChainVars {
         uint256 gasTokenPrice;
         uint256 gasUnitPrice;
-        uint256 gasAmountNeeded;
-        uint256 maxGasDrop;
+        uint256 gasDropMax;
+        uint256 gasUnitsRcvMsg;
         uint256 markupGasDrop;
         uint256 markupGasUsage;
         address gasFeePricing;
@@ -175,37 +175,37 @@ contract GasFeePricingUpgradeableTest is Test {
     }
 
     function testSetDstConfig() public {
-        uint256[] memory gasAmountsNeeded = new uint256[](TEST_CHAINS);
-        uint256[] memory maxGasDrops = new uint256[](TEST_CHAINS);
+        uint256[] memory gasUnitsRcvMsg = new uint256[](TEST_CHAINS);
+        uint256[] memory gasDropMax = new uint256[](TEST_CHAINS);
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
-            gasAmountsNeeded[i] = (i + 1) * 420420;
-            maxGasDrops[i] = (i + 1) * 10**18;
+            gasUnitsRcvMsg[i] = (i + 1) * 420420;
+            gasDropMax[i] = (i + 1) * 10**18;
         }
-        _setDstConfig(dstChainIds, gasAmountsNeeded, maxGasDrops);
+        _setDstConfig(dstChainIds, gasDropMax, gasUnitsRcvMsg);
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
             _checkDstConfig(dstChainIds[i]);
         }
     }
 
     function testSetDstConfigZeroDropSucceeds() public {
-        uint256[] memory gasAmountsNeeded = new uint256[](TEST_CHAINS);
-        uint256[] memory maxGasDrops = new uint256[](TEST_CHAINS);
+        uint256[] memory gasDropMax = new uint256[](TEST_CHAINS);
+        uint256[] memory gasUnitsRcvMsg = new uint256[](TEST_CHAINS);
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
-            gasAmountsNeeded[i] = (i + 1) * 133769;
-            maxGasDrops[i] = i * 10**18;
+            gasDropMax[i] = i * 10**18;
+            gasUnitsRcvMsg[i] = (i + 1) * 133769;
         }
-        _setDstConfig(dstChainIds, gasAmountsNeeded, maxGasDrops);
+        _setDstConfig(dstChainIds, gasDropMax, gasUnitsRcvMsg);
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
             _checkDstConfig(dstChainIds[i]);
         }
     }
 
     function testSetDstConfigZeroGasReverts() public {
-        uint256[] memory gasAmountsNeeded = new uint256[](TEST_CHAINS);
-        uint256[] memory maxGasDrops = new uint256[](TEST_CHAINS);
+        uint256[] memory gasDropMax = new uint256[](TEST_CHAINS);
+        uint256[] memory gasUnitsRcvMsg = new uint256[](TEST_CHAINS);
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
-            gasAmountsNeeded[i] = i * 133769;
-            maxGasDrops[i] = (i + 1) * 10**18;
+            gasDropMax[i] = (i + 1) * 10**18;
+            gasUnitsRcvMsg[i] = i * 133769;
         }
         utils.checkRevert(
             address(this),
@@ -213,15 +213,15 @@ contract GasFeePricingUpgradeableTest is Test {
             abi.encodeWithSelector(
                 GasFeePricingUpgradeable.setDstConfig.selector,
                 dstChainIds,
-                gasAmountsNeeded,
-                maxGasDrops
+                gasDropMax,
+                gasUnitsRcvMsg
             ),
             "Gas amount is not set"
         );
     }
 
     function testSetDstInfo() public {
-        (uint256[] memory gasUnitPrices, uint256[] memory gasTokenPrices) = _generateTestInfoValues();
+        (uint256[] memory gasTokenPrices, uint256[] memory gasUnitPrices) = _generateTestInfoValues();
         _setDstInfo(dstChainIds, gasTokenPrices, gasUnitPrices);
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
             uint256 chainId = dstChainIds[i];
@@ -283,14 +283,14 @@ contract GasFeePricingUpgradeableTest is Test {
     }
 
     function testSetDstMarkups() public {
-        uint16[] memory markupsGasDrop = new uint16[](TEST_CHAINS);
-        uint16[] memory markupsGasUsage = new uint16[](TEST_CHAINS);
+        uint16[] memory markupGasDrop = new uint16[](TEST_CHAINS);
+        uint16[] memory markupGasUsage = new uint16[](TEST_CHAINS);
         for (uint16 i = 0; i < TEST_CHAINS; ++i) {
             // this will set the first chain markups to [0, 0]
-            markupsGasDrop[i] = i * 13;
-            markupsGasUsage[i] = i * 42;
+            markupGasDrop[i] = i * 13;
+            markupGasUsage[i] = i * 42;
         }
-        _setDstMarkups(dstChainIds, markupsGasDrop, markupsGasUsage);
+        _setDstMarkups(dstChainIds, markupGasDrop, markupGasUsage);
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
             _checkDstMarkups(dstChainIds[i]);
         }
@@ -309,28 +309,29 @@ contract GasFeePricingUpgradeableTest is Test {
     }
 
     function testUpdateSrcConfig() public {
-        uint256 gasAmountNeeded = 10**6;
-        uint256 maxGasDrop = 10 * 10**18;
-        _updateSrcConfig(gasAmountNeeded, maxGasDrop);
+        uint256 gasDropMax = 10 * 10**18;
+        uint256 gasUnitsRcvMsg = 10**6;
+        _updateSrcConfig(gasDropMax, gasUnitsRcvMsg);
         _checkSrcConfig();
     }
 
     function testUpdateSrcConfigZeroDropSucceeds() public {
-        uint256 gasAmountNeeded = 2 * 10**6;
         // should be able to set to zero
-        uint256 maxGasDrop = 0;
-        _updateSrcConfig(gasAmountNeeded, maxGasDrop);
+        uint256 gasDropMax = 0;
+        uint256 gasUnitsRcvMsg = 2 * 10**6;
+        _updateSrcConfig(gasDropMax, gasUnitsRcvMsg);
         _checkSrcConfig();
     }
 
     function testUpdateSrcConfigZeroGasReverts() public {
+        uint256 gasDropMax = 10**18;
         // should NOT be able to set to zero
-        uint256 gasAmountNeeded = 0;
-        uint256 maxGasDrop = 10**18;
+        uint256 gasUnitsRcvMsg = 0;
+
         utils.checkRevert(
             address(this),
             address(gasFeePricing),
-            abi.encodeWithSelector(GasFeePricingUpgradeable.updateSrcConfig.selector, gasAmountNeeded, maxGasDrop),
+            abi.encodeWithSelector(GasFeePricingUpgradeable.updateSrcConfig.selector, gasDropMax, gasUnitsRcvMsg),
             "Gas amount is not set"
         );
     }
@@ -377,28 +378,28 @@ contract GasFeePricingUpgradeableTest is Test {
     ▏*║                          INTERNAL CHECKERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function _checkDstConfig(uint256 _dstChainId) internal {
-        (uint112 gasAmountNeeded, uint112 maxGasDrop, , ) = gasFeePricing.dstConfig(_dstChainId);
-        assertEq(gasAmountNeeded, dstVars[_dstChainId].gasAmountNeeded, "dstGasAmountNeeded is incorrect");
-        assertEq(maxGasDrop, dstVars[_dstChainId].maxGasDrop, "dstMaxGasDrop is incorrect");
+    function _checkDstConfig(uint256 _chainId) internal {
+        (uint112 gasDropMax, uint112 gasUnitsRcvMsg, , ) = gasFeePricing.dstConfig(_chainId);
+        assertEq(gasDropMax, dstVars[_chainId].gasDropMax, "dstMaxGasDrop is incorrect");
+        assertEq(gasUnitsRcvMsg, dstVars[_chainId].gasUnitsRcvMsg, "dstGasUnitsRcvMsg is incorrect");
     }
 
-    function _checkDstInfo(uint256 _dstChainId) internal {
-        (uint128 gasTokenPrice, uint128 gasUnitPrice) = gasFeePricing.dstInfo(_dstChainId);
-        assertEq(gasTokenPrice, dstVars[_dstChainId].gasTokenPrice, "dstGasTokenPrice is incorrect");
-        assertEq(gasUnitPrice, dstVars[_dstChainId].gasUnitPrice, "dstGasUnitPrice is incorrect");
+    function _checkDstInfo(uint256 _chainId) internal {
+        (uint128 gasTokenPrice, uint128 gasUnitPrice) = gasFeePricing.dstInfo(_chainId);
+        assertEq(gasTokenPrice, dstVars[_chainId].gasTokenPrice, "dstGasTokenPrice is incorrect");
+        assertEq(gasUnitPrice, dstVars[_chainId].gasUnitPrice, "dstGasUnitPrice is incorrect");
     }
 
-    function _checkDstMarkups(uint256 _dstChainId) internal {
-        (, , uint16 markupGasDrop, uint16 markupGasUsage) = gasFeePricing.dstConfig(_dstChainId);
-        assertEq(markupGasDrop, dstVars[_dstChainId].markupGasDrop, "dstMarkupGasDrop is incorrect");
-        assertEq(markupGasUsage, dstVars[_dstChainId].markupGasUsage, "dstMarkupGasUsage is incorrect");
+    function _checkDstMarkups(uint256 _chainId) internal {
+        (, , uint16 markupGasDrop, uint16 markupGasUsage) = gasFeePricing.dstConfig(_chainId);
+        assertEq(markupGasDrop, dstVars[_chainId].markupGasDrop, "dstMarkupGasDrop is incorrect");
+        assertEq(markupGasUsage, dstVars[_chainId].markupGasUsage, "dstMarkupGasUsage is incorrect");
     }
 
-    function _checkDstRatios(uint256 _dstChainId) internal {
-        (uint96 gasTokenPriceRatio, uint160 gasUnitPriceRatio) = gasFeePricing.dstRatios(_dstChainId);
-        uint256 _gasTokenPriceRatio = (dstVars[_dstChainId].gasTokenPrice * 10**18) / srcVars.gasTokenPrice;
-        uint256 _gasUnitPriceRatio = (dstVars[_dstChainId].gasUnitPrice * dstVars[_dstChainId].gasTokenPrice * 10**18) /
+    function _checkDstRatios(uint256 _chainId) internal {
+        (uint96 gasTokenPriceRatio, uint160 gasUnitPriceRatio) = gasFeePricing.dstRatios(_chainId);
+        uint256 _gasTokenPriceRatio = (dstVars[_chainId].gasTokenPrice * 10**18) / srcVars.gasTokenPrice;
+        uint256 _gasUnitPriceRatio = (dstVars[_chainId].gasUnitPrice * dstVars[_chainId].gasTokenPrice * 10**18) /
             srcVars.gasTokenPrice;
         assertEq(gasTokenPriceRatio, _gasTokenPriceRatio, "gasTokenPriceRatio is incorrect");
         assertEq(gasUnitPriceRatio, _gasUnitPriceRatio, "gasUnitPriceRatio is incorrect");
@@ -414,9 +415,9 @@ contract GasFeePricingUpgradeableTest is Test {
     }
 
     function _checkSrcConfig() internal {
-        (uint112 gasAmountNeeded, uint112 maxGasDrop, , ) = gasFeePricing.srcConfig();
-        assertEq(gasAmountNeeded, srcVars.gasAmountNeeded, "srcGasAmountNeeded is incorrect");
-        assertEq(maxGasDrop, srcVars.maxGasDrop, "srcMaxGasDrop is incorrect");
+        (uint112 gasDropMax, uint112 gasUnitsRcvMsg, , ) = gasFeePricing.srcConfig();
+        assertEq(gasDropMax, srcVars.gasDropMax, "srcMaxGasDrop is incorrect");
+        assertEq(gasUnitsRcvMsg, srcVars.gasUnitsRcvMsg, "srcGasUnitsRcvMsg is incorrect");
     }
 
     function _checkSrcInfo() internal {
@@ -430,46 +431,46 @@ contract GasFeePricingUpgradeableTest is Test {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function _setDstConfig(
-        uint256[] memory _dstChainIds,
-        uint256[] memory _gasAmountsNeeded,
-        uint256[] memory _maxGasDrops
+        uint256[] memory _chainIds,
+        uint256[] memory _gasDropMax,
+        uint256[] memory _gasUnitsRcvMsg
     ) internal {
-        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
-            dstVars[_dstChainIds[i]].gasAmountNeeded = _gasAmountsNeeded[i];
-            dstVars[_dstChainIds[i]].maxGasDrop = _maxGasDrops[i];
+        for (uint256 i = 0; i < _chainIds.length; ++i) {
+            dstVars[_chainIds[i]].gasDropMax = _gasDropMax[i];
+            dstVars[_chainIds[i]].gasUnitsRcvMsg = _gasUnitsRcvMsg[i];
         }
-        gasFeePricing.setDstConfig(_dstChainIds, _gasAmountsNeeded, _maxGasDrops);
+        gasFeePricing.setDstConfig(_chainIds, _gasDropMax, _gasUnitsRcvMsg);
     }
 
     function _setDstInfo(
-        uint256[] memory _dstChainIds,
-        uint256[] memory _gasTokenPrices,
-        uint256[] memory _gasUnitPrices
+        uint256[] memory _chainIds,
+        uint256[] memory _gasTokenPrice,
+        uint256[] memory _gasUnitPrice
     ) internal {
-        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
-            dstVars[_dstChainIds[i]].gasTokenPrice = _gasTokenPrices[i];
-            dstVars[_dstChainIds[i]].gasUnitPrice = _gasUnitPrices[i];
+        for (uint256 i = 0; i < _chainIds.length; ++i) {
+            dstVars[_chainIds[i]].gasTokenPrice = _gasTokenPrice[i];
+            dstVars[_chainIds[i]].gasUnitPrice = _gasUnitPrice[i];
         }
-        gasFeePricing.setDstInfo(_dstChainIds, _gasTokenPrices, _gasUnitPrices);
+        gasFeePricing.setDstInfo(_chainIds, _gasTokenPrice, _gasUnitPrice);
     }
 
     function _setDstMarkups(
-        uint256[] memory _dstChainIds,
-        uint16[] memory _markupsGasDrop,
-        uint16[] memory _markupsGasUsage
+        uint256[] memory _chainIds,
+        uint16[] memory _markupGasDrop,
+        uint16[] memory _markupGasUsage
     ) internal {
-        for (uint256 i = 0; i < _dstChainIds.length; ++i) {
-            dstVars[_dstChainIds[i]].markupGasDrop = _markupsGasDrop[i];
-            dstVars[_dstChainIds[i]].markupGasUsage = _markupsGasUsage[i];
+        for (uint256 i = 0; i < _chainIds.length; ++i) {
+            dstVars[_chainIds[i]].markupGasDrop = _markupGasDrop[i];
+            dstVars[_chainIds[i]].markupGasUsage = _markupGasUsage[i];
         }
-        gasFeePricing.setDstMarkups(_dstChainIds, _markupsGasDrop, _markupsGasUsage);
+        gasFeePricing.setDstMarkups(_chainIds, _markupGasDrop, _markupGasUsage);
     }
 
-    function _updateSrcConfig(uint256 _gasAmountNeeded, uint256 _maxGasDrop) internal {
-        srcVars.gasAmountNeeded = _gasAmountNeeded;
-        srcVars.maxGasDrop = _maxGasDrop;
+    function _updateSrcConfig(uint256 _gasDropMax, uint256 _gasUnitsRcvMsg) internal {
+        srcVars.gasDropMax = _gasDropMax;
+        srcVars.gasUnitsRcvMsg = _gasUnitsRcvMsg;
         uint256 fee = gasFeePricing.estimateUpdateFees();
-        gasFeePricing.updateSrcConfig{value: fee}(_gasAmountNeeded, _maxGasDrop);
+        gasFeePricing.updateSrcConfig{value: fee}(_gasDropMax, _gasUnitsRcvMsg);
     }
 
     function _updateSrcInfo(uint256 _gasTokenPrice, uint256 _gasUnitPrice) internal {
