@@ -83,7 +83,6 @@ contract GasFeePricingUpgradeableSettersTest is GasFeePricingSetup {
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
             uint256 chainId = remoteChainIds[i];
             _checkRemoteInfo(chainId);
-            _checkRemoteRatios(chainId);
         }
     }
 
@@ -111,7 +110,6 @@ contract GasFeePricingUpgradeableSettersTest is GasFeePricingSetup {
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
             uint256 chainId = remoteChainIds[i];
             _checkRemoteInfo(chainId);
-            _checkRemoteRatios(chainId);
         }
     }
 
@@ -182,9 +180,6 @@ contract GasFeePricingUpgradeableSettersTest is GasFeePricingSetup {
         uint128 gasUnitPrice = 10 * 10**9;
         _updateLocalInfo(gasTokenPrice, gasUnitPrice);
         _checkLocalInfo();
-        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
-            _checkRemoteRatios(i + 1);
-        }
     }
 
     function testUpdateLocalInfoZeroTokenPriceReverts() public {
@@ -208,8 +203,5 @@ contract GasFeePricingUpgradeableSettersTest is GasFeePricingSetup {
         uint128 gasUnitPrice = 0;
         _updateLocalInfo(gasTokenPrice, gasUnitPrice);
         _checkLocalInfo();
-        for (uint256 i = 0; i < TEST_CHAINS; ++i) {
-            _checkRemoteRatios(i + 1);
-        }
     }
 }

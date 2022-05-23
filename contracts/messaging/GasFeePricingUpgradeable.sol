@@ -100,35 +100,6 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         uint128 gasUnitPrice;
     }
 
-    /**
-     * @dev Chain's Ratios are supposed to be FULLY chain-specific, i.e.
-     * GasFeePricing contracts on different chain will have different values for
-     * the same remote chain:
-     * - gasTokenPriceRatio: USD price ratio of remoteGasToken / localGasToken, scaled to wei
-     *                       uint96 => max value ~= 8 * 10**28
-     * - gasUnitPriceRatio: How much 1 gas unit on remote chain is worth, expressed in local chain wei,
-     *                      multiplied by 10**18 (aka in attoWei = 10^-18 wei)
-     *                      uint160 => max value ~= 10**48
-     * These values are updated whenever "gas information" is updated for either local or remote chain.
-     *
-     * ChainRatios is optimized to fit into one word of storage.
-     */
-
-    /**
-     * @dev Chain's Ratios are used for calculating a fee for sending a msg from local to remote chain.
-     * To calculate cost of tx gas airdrop (assuming gasDrop airdrop value):
-     * (gasDrop * gasTokenPriceRatio) / 10**18
-     * To calculate cost of tx gas usage on remote chain (assuming gasAmount gas units):
-     * (gasAmount * gasUnitPriceRatio) / 10**18
-     *
-     * Both numbers are expressed in local chain wei.
-     */
-    struct ChainRatios {
-        /// @dev Values below are local-chain specific
-        uint96 gasTokenPriceRatio;
-        uint160 gasUnitPriceRatio;
-    }
-
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                                EVENTS                                ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
@@ -144,8 +115,6 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
 
     /// @dev remoteChainId => Info
     mapping(uint256 => ChainInfo) public remoteInfo;
-    /// @dev remoteChainId => Ratios
-    mapping(uint256 => ChainRatios) public remoteRatios;
     /// @dev remoteChainId => Config
     mapping(uint256 => ChainConfig) public remoteConfig;
     /// @dev list of all remote chain ids
@@ -365,18 +334,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /// @dev Updates information about local chain gas token/unit price.
-    /// All the remote chain ratios are updated as well, if gas token price changed
     function _updateLocalChainInfo(uint128 _gasTokenPrice, uint128 _gasUnitPrice) internal {
-        if (localInfo.gasTokenPrice != _gasTokenPrice) {
-            // update ratios only if gas token price has changed
-            uint256[] memory chainIds = remoteChainIds;
-            for (uint256 i = 0; i < chainIds.length; ++i) {
-                uint256 chainId = chainIds[i];
-                ChainInfo memory info = remoteInfo[chainId];
-                _updateRemoteChainRatios(_gasTokenPrice, chainId, info.gasTokenPrice, info.gasUnitPrice);
-            }
-        }
-
         localInfo = ChainInfo({gasTokenPrice: _gasTokenPrice, gasUnitPrice: _gasUnitPrice});
 
         // TODO: use context chainid here
@@ -423,22 +381,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         }
 
         remoteInfo[_remoteChainId] = ChainInfo({gasTokenPrice: _gasTokenPrice, gasUnitPrice: _gasUnitPrice});
-        _updateRemoteChainRatios(_localGasTokenPrice, _remoteChainId, _gasTokenPrice, _gasUnitPrice);
-
         emit ChainInfoUpdated(_remoteChainId, _gasTokenPrice, _gasUnitPrice);
-    }
-
-    /// @dev Updates gas token/unit ratios for a given remote chain
-    function _updateRemoteChainRatios(
-        uint256 _localGasTokenPrice,
-        uint256 _remoteChainId,
-        uint256 _remoteGasTokenPrice,
-        uint256 _remoteGasUnitPrice
-    ) internal {
-        remoteRatios[_remoteChainId] = ChainRatios({
-            gasTokenPriceRatio: uint96((_remoteGasTokenPrice * 10**18) / _localGasTokenPrice),
-            gasUnitPriceRatio: uint160((_remoteGasUnitPrice * _remoteGasTokenPrice * 10**18) / _localGasTokenPrice)
-        });
     }
 
     /// @dev Updates the markups (see "Structs" docs).

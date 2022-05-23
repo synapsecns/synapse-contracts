@@ -126,15 +126,6 @@ abstract contract GasFeePricingSetup is Test {
         assertEq(markupGasUsage, remoteVars[_chainId].markupGasUsage, "remoteMarkupGasUsage is incorrect");
     }
 
-    function _checkRemoteRatios(uint256 _chainId) internal {
-        (uint96 gasTokenPriceRatio, uint160 gasUnitPriceRatio) = gasFeePricing.remoteRatios(_chainId);
-        uint256 _gasTokenPriceRatio = (remoteVars[_chainId].gasTokenPrice * 10**18) / localVars.gasTokenPrice;
-        uint256 _gasUnitPriceRatio = (remoteVars[_chainId].gasUnitPrice * remoteVars[_chainId].gasTokenPrice * 10**18) /
-            localVars.gasTokenPrice;
-        assertEq(gasTokenPriceRatio, _gasTokenPriceRatio, "gasTokenPriceRatio is incorrect");
-        assertEq(gasUnitPriceRatio, _gasUnitPriceRatio, "gasUnitPriceRatio is incorrect");
-    }
-
     function _checkLocalConfig() internal {
         (uint112 gasDropMax, uint80 gasUnitsRcvMsg, uint32 minGasUsageFeeUsd, , ) = gasFeePricing.localConfig();
         assertEq(gasDropMax, localVars.gasDropMax, "localMaxGasDrop is incorrect");
