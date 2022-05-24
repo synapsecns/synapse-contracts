@@ -192,7 +192,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         ChainInfo memory dstInfo = remoteInfo[_chainId];
         // Read info for source (local) chain
         ChainInfo memory srcInfo = localInfo;
-        require(_gasAirdrop <= dstConfig.markupGasDrop, "GasDrop higher than max");
+        require(_gasAirdrop <= dstConfig.gasDropMax, "GasDrop higher than max");
 
         // Calculate how much [gas airdrop] is worth in [local chain wei]
         uint256 feeGasDrop = (_gasAirdrop * dstInfo.gasTokenPrice) / srcInfo.gasTokenPrice;
@@ -207,7 +207,8 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         // Multiply by 10**18 to convert to wei
         // Multiply by 10**18 again, as gasTokenPrice is scaled by 10**18
         // Divide by USD_DENOMINATOR, as minGasUsageFeeUsd is scaled by USD_DENOMINATOR
-        uint256 minFee = (dstConfig.minGasUsageFeeUsd * 10**36) / (srcInfo.gasTokenPrice * USD_DENOMINATOR);
+        uint256 minFee = (uint256(dstConfig.minGasUsageFeeUsd) * 10**36) /
+            (uint256(srcInfo.gasTokenPrice) * USD_DENOMINATOR);
         if (feeGasUsage < minFee) feeGasUsage = minFee;
 
         fee = feeGasDrop + feeGasUsage;

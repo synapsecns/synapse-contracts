@@ -38,7 +38,7 @@ abstract contract GasFeePricingSetup is Test {
     address internal constant NODE = address(1337);
 
     // enable receiving overpaid fees
-    receive() external payable {
+    receive() external payable virtual {
         this;
     }
 

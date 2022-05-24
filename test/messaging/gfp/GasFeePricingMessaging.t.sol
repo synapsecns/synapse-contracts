@@ -18,6 +18,15 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
         bytes32 indexed messageId
     );
 
+    // set this to true to do fee refund test
+    bool internal allowFeeRefund;
+
+    receive() external payable override {
+        // making sure that all fee calculations are correct
+        // i.e. there are no fee refunds
+        if (!allowFeeRefund) revert("Received ether");
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                            ENCODING TESTS                            ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
@@ -60,6 +69,7 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
         bytes memory message = GasFeePricingUpdates.encodeConfig(_gasDropMax, _gasUnitsRcvMsg, _minGasUsageFeeUsd);
 
         _expectMessagingEmits(message);
+        // receive() is disabled, so this will also check if the totalFee is exactly the needed fee
         gasFeePricing.updateLocalConfig{value: totalFee}(_gasDropMax, _gasUnitsRcvMsg, _minGasUsageFeeUsd);
     }
 
@@ -70,6 +80,7 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
         bytes memory message = GasFeePricingUpdates.encodeInfo(_gasTokenPrice, _gasUnitPrice);
 
         _expectMessagingEmits(message);
+        // receive() is disabled, so this will also check if the totalFee is exactly the needed fee
         gasFeePricing.updateLocalInfo{value: totalFee}(_gasTokenPrice, _gasUnitPrice);
     }
 
@@ -113,9 +124,62 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
         _checkRemoteInfo(chainId);
     }
 
+    function testGasDropMaxSucceeds() public {
+        uint112 gasDropMax = 10**18;
+        _testGasDrop(gasDropMax, gasDropMax);
+    }
+
+    function testGasDropTooBigReverts() public {
+        uint112 gasDropMax = 10**18;
+        _testGasDrop(gasDropMax + 1, gasDropMax);
+    }
+
+    function _testGasDrop(uint112 gasDropAmount, uint112 gasDropMax) internal {
+        uint256 chainId = remoteChainIds[0];
+        uint256 gasLimit = 100000;
+        uint128 gasUnitPrice = 10**9;
+        _setupSingleChain(chainId, gasDropMax, 0, uint128(localVars.gasTokenPrice), gasUnitPrice);
+        uint256 fee = gasDropAmount + gasLimit * gasUnitPrice;
+
+        bytes32 receiver = keccak256("Not a fake address");
+
+        bytes memory options = Options.encode(100000, gasDropAmount, receiver);
+
+        if (gasDropAmount > gasDropMax) {
+            vm.expectRevert("GasDrop higher than max");
+        }
+
+        messageBus.sendMessage{value: fee}(receiver, chainId, bytes(""), options);
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                            INTERNAL STUFF                            ║*▕
+    ▏*║                           INTERNAL HELPERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _setupSingleChain(
+        uint256 _chainId,
+        uint112 _gasDropMax,
+        uint32 _minGasUsageFeeUsd,
+        uint128 _gasTokenPrice,
+        uint128 _gasUnitPrice
+    ) internal {
+        uint256[] memory chainIds = new uint256[](1);
+        uint112[] memory gasDropMax = new uint112[](1);
+        uint80[] memory gasUnitsRcvMsg = new uint80[](1);
+        uint32[] memory minGasUsageFeeUsd = new uint32[](1);
+
+        chainIds[0] = _chainId;
+        gasDropMax[0] = _gasDropMax;
+        gasUnitsRcvMsg[0] = 100000;
+        minGasUsageFeeUsd[0] = _minGasUsageFeeUsd;
+        _setRemoteConfig(chainIds, gasDropMax, gasUnitsRcvMsg, minGasUsageFeeUsd);
+
+        uint128[] memory gasTokenPrice = new uint128[](1);
+        uint128[] memory gasUnitPrice = new uint128[](1);
+        gasTokenPrice[0] = _gasTokenPrice;
+        gasUnitPrice[0] = _gasUnitPrice;
+        _setRemoteInfo(chainIds, gasTokenPrice, gasUnitPrice);
+    }
 
     function _expectMessagingEmits(bytes memory message) internal {
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
