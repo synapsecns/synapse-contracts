@@ -5,7 +5,10 @@ pragma solidity 0.8.13;
 import "forge-std/Test.sol";
 import "../../contracts/messaging/HarmonyMessageBusUpgradeable.sol";
 import "../../contracts/messaging/AuthVerifier.sol";
+import "../../contracts/messaging/MessageBusUpgradeable.sol";
 import "./GasFeePricing.t.sol";
+
+import "../utils/Utilities.sol";
 
 import "@openzeppelin/contracts-4.5.0/proxy/transparent/TransparentUpgradeableProxy.sol";
 
@@ -17,6 +20,8 @@ contract HarmonyMessageBusUpgradeableTest is Test {
 
     GasFeePricing public gasFeePricing;
     GasFeePricingTest public gasFeePricingTest;
+
+    Utilities utils;
 
     event MessageSent(
         address indexed sender,
@@ -31,6 +36,7 @@ contract HarmonyMessageBusUpgradeableTest is Test {
     );
 
     function setUp() public {
+        utils = new Utilities();
         // setup gas fee pricing contracts
         gasFeePricing = new GasFeePricing();
         gasFeePricingTest = new GasFeePricingTest();
@@ -133,5 +139,61 @@ contract HarmonyMessageBusUpgradeableTest is Test {
             bytes(""),
             bytes("")
         );
+    }
+
+    function testStorageUpgrade() public {
+        uint256 estimatedFee = messageBus.estimateFee(gasFeePricingTest.expectedDstChainId(), bytes(""));
+        bytes32 receiver = keccak256("receiver");
+        uint256 count = 5;
+        // send a few txs to have non-zero fees, nonce
+        for (uint256 i = 0; i < count; ++i) {
+            messageBus.sendMessage{value: estimatedFee}(
+                receiver,
+                gasFeePricingTest.expectedDstChainId(),
+                bytes(""),
+                bytes("")
+            );
+        }
+
+        // "receive" a few txs to have some stored delivered messageIds
+        for (uint256 i = 0; i < count; ++i) {
+            bytes32 msgId = keccak256(abi.encode("test", i));
+            hoax(address(1337));
+            messageBus.executeMessage(1, receiver, address(this), 100000, i, bytes(""), msgId);
+            require(uint8(messageBus.getExecutedMessage(msgId)) == 1, "msg not delivered");
+        }
+        // sanity check before upgrade
+        _checkState(estimatedFee * count, count);
+
+        MessageBusUpgradeable newImpl = new MessageBusUpgradeable();
+        utils.upgradeTo(address(messageBus), address(newImpl));
+        // check state post upgrade
+        _checkState(estimatedFee * count, count);
+    }
+
+    function executeMessage(
+        bytes32,
+        uint256,
+        bytes calldata,
+        address
+    ) external view {
+        this;
+    }
+
+    function _checkState(uint256 fees, uint256 count) internal {
+        // check MessageBusSender state
+        assertEq(messageBus.gasFeePricing(), address(gasFeePricing), "GasFeePricing rekt");
+        assertEq(messageBus.fees(), fees, "fees rekt");
+        assertEq(messageBus.nonce(), count, "nonce rekt");
+        // check MessageBusReceiver state
+        assertEq(messageBus.authVerifier(), address(authVerifier), "authVerifier rekt");
+        for (uint256 i = 0; i < count; ++i) {
+            bytes32 msgId = keccak256(abi.encode("test", i));
+            assertEq(uint8(messageBus.getExecutedMessage(msgId)), 1, "executedMessages rekt");
+        }
+        // check Ownable state
+        assertEq(messageBus.owner(), address(this), "owner rekt");
+        // check Pausable state
+        assertFalse(messageBus.paused(), "paused rekt");
     }
 }
