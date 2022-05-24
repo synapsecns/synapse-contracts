@@ -58,6 +58,100 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
     ▏*║                           MESSAGING TESTS                            ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    function testMinGasUsageFee() public {
+        uint256 chainId = remoteChainIds[0];
+        uint128 gasUnitPrice = 10 * 10**9;
+        uint128 gasTokenPrice = uint128(localVars.gasTokenPrice * 1000);
+        // min fee = $2
+        uint32 minGasUsageFeeUsd = 20000;
+        _setupSingleChain(chainId, 0, minGasUsageFeeUsd, gasTokenPrice, gasUnitPrice);
+
+        // This gasLimit will result in gasUsage fee exactly $2
+        uint256 gasLimit = 200000;
+        uint256 expectedFee = 2 * 10**18;
+
+        assertEq(
+            gasFeePricing.estimateGasFee(chainId, Options.encode(gasLimit / 2)),
+            expectedFee,
+            "Wrong fee for 100,000 gas"
+        );
+        assertEq(
+            gasFeePricing.estimateGasFee(chainId, Options.encode(gasLimit - 1)),
+            expectedFee,
+            "Wrong fee for 199,999 gas"
+        );
+        assertEq(
+            gasFeePricing.estimateGasFee(chainId, Options.encode(gasLimit)),
+            expectedFee,
+            "Wrong fee for 200,000 gas"
+        );
+        assertEq(
+            gasFeePricing.estimateGasFee(chainId, Options.encode(gasLimit + 1)),
+            (expectedFee * (gasLimit + 1)) / gasLimit,
+            "Wrong fee for 200,001 gas"
+        );
+        assertEq(
+            gasFeePricing.estimateGasFee(chainId, Options.encode(gasLimit * 2)),
+            expectedFee * 2,
+            "Wrong fee for 400,000 gas"
+        );
+    }
+
+    function testMarkupGasDrop() public {
+        uint256 chainId = remoteChainIds[0];
+        // set to 0, so that estimateFee would be only the airdrop cost
+        uint128 gasUnitPrice = 0;
+        uint128 gasTokenPrice = uint128(localVars.gasTokenPrice * 5);
+        uint32 minGasUsageFeeUsd = 0;
+        uint112 gasDropMax = 10**20;
+
+        uint16 markupGasDrop = 69;
+        uint16 markupGasUsage = 100;
+
+        _setupSingleChain(chainId, gasDropMax, minGasUsageFeeUsd, gasTokenPrice, gasUnitPrice);
+        _setupSingleChainMarkups(chainId, markupGasDrop, markupGasUsage);
+
+        bytes32 receiver = keccak256("receiver");
+
+        // (2 * 10**18) remoteGas = (20 * 10**17) remoteGas = (100 * 10**17) localGas;
+        // +69% -> (169 * 10**17) localGas
+        assertEq(
+            gasFeePricing.estimateGasFee(chainId, Options.encode(0, 2 * 10**18, receiver)),
+            169 * 10**17,
+            "Wrong markup for 2 * 10**18 gasDrop"
+        );
+
+        // 2 remoteGas = 10 localGas; +69% = 16 (rounded down)
+        assertEq(
+            gasFeePricing.estimateGasFee(chainId, Options.encode(0, 2, receiver)),
+            16,
+            "Wrong markup for 2 gasDrop"
+        );
+    }
+
+    function testMarkupGasUsage() public {
+        uint256 chainId = remoteChainIds[0];
+        uint128 gasUnitPrice = 2 * 10**9;
+        uint128 gasTokenPrice = uint128(localVars.gasTokenPrice * 5);
+        // set to 0, to check the markup being applied
+        uint32 minGasUsageFeeUsd = 0;
+        uint112 gasDropMax = 0;
+
+        uint16 markupGasDrop = 42;
+        uint16 markupGasUsage = 69;
+
+        _setupSingleChain(chainId, gasDropMax, minGasUsageFeeUsd, gasTokenPrice, gasUnitPrice);
+        _setupSingleChainMarkups(chainId, markupGasDrop, markupGasUsage);
+
+        // (10**6 gasLimit) => (2 * 10**15 remoteGas cost) => (10**16 localGas)
+        // +69% -> 1.69 * 10**16 = 169 * 10**14
+        assertEq(
+            gasFeePricing.estimateGasFee(chainId, Options.encode(10**6)),
+            169 * 10**14,
+            "Wrong markup for 10**6 gasLimit"
+        );
+    }
+
     function testSendUpdateConfig(
         uint112 _gasDropMax,
         uint80 _gasUnitsRcvMsg,
@@ -179,6 +273,20 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
         gasTokenPrice[0] = _gasTokenPrice;
         gasUnitPrice[0] = _gasUnitPrice;
         _setRemoteInfo(chainIds, gasTokenPrice, gasUnitPrice);
+    }
+
+    function _setupSingleChainMarkups(
+        uint256 _chainId,
+        uint16 _markupGasDrop,
+        uint16 _markupGasUsage
+    ) internal {
+        uint256[] memory chainIds = new uint256[](1);
+        uint16[] memory markupGasDrop = new uint16[](1);
+        uint16[] memory markupGasUsage = new uint16[](1);
+        chainIds[0] = _chainId;
+        markupGasDrop[0] = _markupGasDrop;
+        markupGasUsage[0] = _markupGasUsage;
+        _setRemoteMarkups(chainIds, markupGasDrop, markupGasUsage);
     }
 
     function _expectMessagingEmits(bytes memory message) internal {
