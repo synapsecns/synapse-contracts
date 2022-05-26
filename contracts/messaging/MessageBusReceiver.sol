@@ -19,8 +19,8 @@ contract MessageBusReceiver is Ownable, Pausable {
         bytes32 indexed messageId,
         TxStatus status,
         address indexed dstAddress,
-        uint64 indexed srcChainId,
-        uint64 srcNonce
+        uint256 indexed srcChainId,
+        uint256 srcNonce
     );
 
     event CallReverted(string reason);
@@ -102,7 +102,7 @@ contract MessageBusReceiver is Ownable, Pausable {
         }
 
         executedMessages[_messageId] = status;
-        emit Executed(_messageId, status, _dstAddress, uint64(_srcChainId), uint64(_srcNonce));
+        emit Executed(_messageId, status, _dstAddress, _srcChainId, _srcNonce);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

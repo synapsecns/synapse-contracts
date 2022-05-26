@@ -15,7 +15,7 @@ contract MessageBusSender is Ownable, Pausable, ContextChainId {
         bytes32 receiver,
         uint256 indexed dstChainId,
         bytes message,
-        uint64 nonce,
+        uint256 nonce,
         bytes options,
         uint256 fee,
         bytes32 indexed messageId
@@ -28,7 +28,7 @@ contract MessageBusSender is Ownable, Pausable, ContextChainId {
     /// @dev Contract used for calculating fee for sending a message
     IGasFeePricing public pricing;
     /// @dev Nonce of the next send message (in other words, amount of messages sent)
-    uint64 public nonce;
+    uint256 public nonce;
     /// @dev Accrued messaging fees. Withdrawable by the owner.
     uint256 public fees;
 
