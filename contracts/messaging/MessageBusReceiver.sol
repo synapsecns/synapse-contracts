@@ -83,6 +83,7 @@ contract MessageBusReceiver is Ownable, Pausable {
         bytes32 _messageId,
         bytes calldata _proof
     ) external whenNotPaused {
+        /// @dev Sending messages is disabled, when {MessageBus} is paused.
         // In order to guarantee that an individual message is only executed once, a messageId is passed
         // enforce that this message ID hasn't already been tried ever
         require(executedMessages[_messageId] == TxStatus.Null, "Message already executed");

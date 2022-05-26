@@ -91,7 +91,7 @@ contract MessageBusSender is Ownable, Pausable, ContextChainId {
      * @param _receiver The bytes32 address of the destination contract to be called
      * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
      * @param _message The arbitrary payload to pass to the destination chain receiver
-     * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits
+     * @param _options Versioned struct used to instruct message executor on how to proceed with gas limits
      */
     function sendMessage(
         bytes32 _receiver,
@@ -106,10 +106,12 @@ contract MessageBusSender is Ownable, Pausable, ContextChainId {
          * gas back, they should've specified themselves as a refund address.
          *
          * `tx.origin` is always an EOA that submitted the tx, and paid the gas fees,
-         * so returning overspent fees to it makes total sense.
+         * so returning overspent fees to it by default makes sense. This address is
+         * only going to be used for receiving unspent gas, so the usual
+         * "do not use tx.origin" approach can not be applied here.
          *
          * Also, some of the contracts interacting with {MessageBus} might have no way
-         * to receive gas, causing sendMessage to revert in case of overpayment,
+         * to receive gas, causing sendMessage to revert in case of overpayment, if
          * `msg.sender` was used by default.
          */
         // solhint-disable-next-line
@@ -123,7 +125,7 @@ contract MessageBusSender is Ownable, Pausable, ContextChainId {
      * @param _receiver The bytes32 address of the destination contract to be called
      * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
      * @param _message The arbitrary payload to pass to the destination chain receiver
-     * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits
+     * @param _options Versioned struct used to instruct message executor on how to proceed with gas limits
      * @param _refundAddress Address that will receive unspent gas fees
      */
     function sendMessage(
