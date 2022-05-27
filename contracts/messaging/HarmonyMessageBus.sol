@@ -7,11 +7,7 @@ import "./MessageBus.sol";
 contract HarmonyMessageBus is MessageBus {
     uint256 private constant CHAIN_ID = 1666600000;
 
-    constructor(
-        IGasFeePricing _pricing,
-        IAuthVerifier _verifier,
-        IMessageExecutor _executor
-    ) MessageBus(_pricing, _verifier, _executor) {
+    constructor(IAuthVerifier _verifier, IMessageExecutor _executor) MessageBus(_verifier, _executor) {
         this;
     }
 

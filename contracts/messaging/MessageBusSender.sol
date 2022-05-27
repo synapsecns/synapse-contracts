@@ -2,13 +2,10 @@
 
 pragma solidity 0.8.13;
 
-import "./interfaces/IGasFeePricing.sol";
 import "./ContextChainId.sol";
+import "./MessageBusBase.sol";
 
-import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
-import "@openzeppelin/contracts-4.5.0/security/Pausable.sol";
-
-contract MessageBusSender is Ownable, Pausable, ContextChainId {
+contract MessageBusSender is MessageBusBase, ContextChainId {
     event MessageSent(
         address indexed sender,
         uint256 srcChainID,
@@ -21,15 +18,9 @@ contract MessageBusSender is Ownable, Pausable, ContextChainId {
         bytes32 indexed messageId
     );
 
-    /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                               STORAGE                                ║*▕
-    \*╚══════════════════════════════════════════════════════════════════════╝*/
-
-    /// @dev Contract used for calculating fee for sending a message
-    IGasFeePricing public pricing;
-    /// @dev Nonce of the next send message (in other words, amount of messages sent)
+    /// @dev Nonce of the next sent message (amount of messages already sent)
     uint256 public nonce;
-    /// @dev Accrued messaging fees. Withdrawable by the owner.
+    /// @dev Collected messaging fees. Withdrawable by the owner.
     uint256 public fees;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -47,8 +38,8 @@ contract MessageBusSender is Ownable, Pausable, ContextChainId {
         return keccak256(abi.encode(_srcAddress, _srcChainId, _dstAddress, _dstChainId, _srcNonce, _message));
     }
 
-    function estimateFee(uint256 _dstChainId, bytes calldata _options) public returns (uint256) {
-        uint256 fee = pricing.estimateGasFee(_dstChainId, _options);
+    function estimateFee(uint256 _dstChainId, bytes calldata _options) public view returns (uint256) {
+        uint256 fee = executor.estimateGasFee(_dstChainId, _options);
         require(fee != 0, "Fee not set");
         return fee;
     }
@@ -73,11 +64,6 @@ contract MessageBusSender is Ownable, Pausable, ContextChainId {
     function withdrawGasFees(address payable to) external onlyOwner {
         to.transfer(fees);
         delete fees;
-    }
-
-    function updateGasFeePricing(IGasFeePricing _pricing) external onlyOwner {
-        require(address(_pricing) != address(0), "Cannot set to 0");
-        pricing = _pricing;
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

@@ -2,13 +2,9 @@
 
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
-import "@openzeppelin/contracts-4.5.0/security/Pausable.sol";
+import "./MessageBusBase.sol";
 
-import "./interfaces/IAuthVerifier.sol";
-import "./interfaces/IMessageExecutor.sol";
-
-contract MessageBusReceiver is Ownable, Pausable {
+contract MessageBusReceiver is MessageBusBase {
     enum TxStatus {
         Null,
         Success,
@@ -25,35 +21,8 @@ contract MessageBusReceiver is Ownable, Pausable {
 
     event CallReverted(string reason);
 
-    /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                               STORAGE                                ║*▕
-    \*╚══════════════════════════════════════════════════════════════════════╝*/
-
-    /// @dev Contract used for authenticating validator address
-    IAuthVerifier public verifier;
-    /// @dev Contract used for executing received messages
-    IMessageExecutor public executor;
     /// @dev Status of all executed messages
     mapping(bytes32 => TxStatus) public executedMessages;
-
-    /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                              ONLY OWNER                              ║*▕
-    \*╚══════════════════════════════════════════════════════════════════════╝*/
-
-    function updateAuthVerifier(IAuthVerifier _verifier) external onlyOwner {
-        require(address(_verifier) != address(0), "Cannot set to 0");
-        verifier = _verifier;
-    }
-
-    function updateMessageExecutor(IMessageExecutor _executor) external onlyOwner {
-        require(address(_executor) != address(0), "Cannot set to 0");
-        executor = _executor;
-    }
-
-    // TODO: how useful is that, if contract is immutable?
-    function updateMessageStatus(bytes32 _messageId, TxStatus _status) external onlyOwner {
-        executedMessages[_messageId] = _status;
-    }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                           MESSAGING LOGIC                            ║*▕
