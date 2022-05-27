@@ -46,7 +46,7 @@ contract MessageBusSenderUpgradeable is OwnableUpgradeable, PausableUpgradeable,
         return keccak256(abi.encode(_srcAddress, _srcChainId, _dstAddress, _dstChainId, _srcNonce, _message));
     }
 
-    function estimateFee(uint256 _dstChainId, bytes calldata _options) public returns (uint256) {
+    function estimateFee(uint256 _dstChainId, bytes calldata _options) public view returns (uint256) {
         uint256 fee = IGasFeePricing(gasFeePricing).estimateGasFee(_dstChainId, _options);
         require(fee != 0, "Fee not set");
         return fee;

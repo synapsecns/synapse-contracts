@@ -3,12 +3,12 @@ pragma solidity 0.8.13;
 import "forge-std/Test.sol";
 import {Utilities} from "../utils/Utilities.sol";
 
-import "../../contracts/messaging/dfk/bridge/TearBridge.sol";
-import "../../contracts/messaging/dfk/inventory/GaiaTears.sol";
+import "src-messaging/dfk/bridge/TearBridge.sol";
+import "src-messaging/dfk/inventory/GaiaTears.sol";
 
-import "../../contracts/messaging/MessageBusUpgradeable.sol";
-import "../../contracts/messaging/GasFeePricing.sol";
-import "../../contracts/messaging/AuthVerifier.sol";
+import "src-messaging/MessageBusUpgradeable.sol";
+import "src-messaging/GasFeePricing.sol";
+import "src-messaging/AuthVerifier.sol";
 
 contract TearBridgeTest is Test {
     Utilities internal utils;

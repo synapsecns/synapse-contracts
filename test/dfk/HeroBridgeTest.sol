@@ -3,19 +3,19 @@ pragma solidity 0.8.13;
 import "forge-std/Test.sol";
 import {Utilities} from "../utils/Utilities.sol";
 
-import "../../contracts/messaging/dfk/types/HeroTypes.sol";
+import "src-messaging/dfk/types/HeroTypes.sol";
 
-import "../../contracts/messaging/dfk/bridge/HeroBridgeUpgradeable.sol";
-import "../../contracts/messaging/dfk/random/RandomGenerator.sol";
-import "../../contracts/messaging/dfk/auctions/AssistingAuctionUpgradeable.sol";
-import "../../contracts/messaging/dfk/StatScienceUpgradeable.sol";
-import "../../contracts/messaging/dfk/HeroCoreUpgradeable.sol";
+import "src-messaging/dfk/bridge/HeroBridgeUpgradeable.sol";
+import "src-messaging/dfk/random/RandomGenerator.sol";
+import "src-messaging/dfk/auctions/AssistingAuctionUpgradeable.sol";
+import "src-messaging/dfk/StatScienceUpgradeable.sol";
+import "src-messaging/dfk/HeroCoreUpgradeable.sol";
 
-import "../../contracts/messaging/MessageBusUpgradeable.sol";
-import "../../contracts/messaging/GasFeePricing.sol";
-import "../../contracts/messaging/AuthVerifier.sol";
-import "../../contracts/messaging/apps/PingPong.sol";
-import "../../contracts/messaging/AuthVerifier.sol";
+import "src-messaging/MessageBusUpgradeable.sol";
+import "src-messaging/GasFeePricing.sol";
+import "src-messaging/AuthVerifier.sol";
+import "src-messaging/apps/PingPong.sol";
+import "src-messaging/AuthVerifier.sol";
 
 contract HeroBridgeUpgradeableTest is Test {
     Utilities internal utils;

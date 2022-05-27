@@ -2,11 +2,11 @@ pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
 import {Utilities} from "../utils/Utilities.sol";
-import "../../contracts/messaging/MessageBusUpgradeable.sol";
-import "../../contracts/messaging/GasFeePricing.sol";
-import "../../contracts/messaging/AuthVerifier.sol";
-import "../../contracts/messaging/apps/BatchMessageSender.sol";
-import "../../contracts/messaging/AuthVerifier.sol";
+import "src-messaging/MessageBusUpgradeable.sol";
+import "src-messaging/GasFeePricing.sol";
+import "src-messaging/AuthVerifier.sol";
+import "src-messaging/apps/BatchMessageSender.sol";
+import "src-messaging/AuthVerifier.sol";
 
 contract BatchMessageSenderTest is Test {
     Utilities internal utils;
