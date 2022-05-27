@@ -18,6 +18,8 @@ library OptionsLib {
         uint256 _gasDropAmount,
         bytes32 _dstReceiver
     ) internal pure returns (bytes memory) {
+        require(_gasDropAmount != 0, "gasDropAmount empty");
+        require(_dstReceiver != bytes32(0), "dstReceiver empty");
         return abi.encodePacked(uint16(TxType.GASDROP), _gasLimit, _gasDropAmount, _dstReceiver);
     }
 
@@ -44,8 +46,6 @@ library OptionsLib {
                 gasDropAmount := mload(add(_options, 66))
                 dstReceiver := mload(add(_options, 98))
             }
-            require(gasDropAmount != 0, "gasDropAmount empty");
-            require(dstReceiver != bytes32(0), "dstReceiver empty");
         }
     }
 }
