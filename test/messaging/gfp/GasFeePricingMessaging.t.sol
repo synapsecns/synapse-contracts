@@ -3,7 +3,7 @@
 pragma solidity 0.8.13;
 
 import "./GasFeePricingSetup.t.sol";
-import "src-messaging/libraries/Options.sol";
+import "src-messaging/libraries/OptionsLib.sol";
 
 contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
     event MessageSent(
@@ -36,20 +36,20 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
         uint80 newValueB,
         uint32 newValueC
     ) public {
-        bytes memory message = GasFeePricingUpdates.encodeConfig(newValueA, newValueB, newValueC);
-        uint8 _msgType = GasFeePricingUpdates.messageType(message);
-        (uint112 _newValueA, uint80 _newValueB, uint32 _newValueC) = GasFeePricingUpdates.decodeConfig(message);
-        assertEq(_msgType, uint8(GasFeePricingUpdates.MsgType.UPDATE_CONFIG), "Failed to encode msgType");
+        bytes memory message = PricingUpdateLib.encodeConfig(newValueA, newValueB, newValueC);
+        uint8 _msgType = PricingUpdateLib.messageType(message);
+        (uint112 _newValueA, uint80 _newValueB, uint32 _newValueC) = PricingUpdateLib.decodeConfig(message);
+        assertEq(_msgType, uint8(PricingUpdateLib.MsgType.UPDATE_CONFIG), "Failed to encode msgType");
         assertEq(_newValueA, newValueA, "Failed to encode newValueA");
         assertEq(_newValueB, newValueB, "Failed to encode newValueB");
         assertEq(_newValueC, newValueC, "Failed to encode newValueC");
     }
 
     function testEncodeInfo(uint128 newValueA, uint128 newValueB) public {
-        bytes memory message = GasFeePricingUpdates.encodeInfo(newValueA, newValueB);
-        uint8 _msgType = GasFeePricingUpdates.messageType(message);
-        (uint128 _newValueA, uint128 _newValueB) = GasFeePricingUpdates.decodeInfo(message);
-        assertEq(_msgType, uint8(GasFeePricingUpdates.MsgType.UPDATE_INFO), "Failed to encode msgType");
+        bytes memory message = PricingUpdateLib.encodeInfo(newValueA, newValueB);
+        uint8 _msgType = PricingUpdateLib.messageType(message);
+        (uint128 _newValueA, uint128 _newValueB) = PricingUpdateLib.decodeInfo(message);
+        assertEq(_msgType, uint8(PricingUpdateLib.MsgType.UPDATE_INFO), "Failed to encode msgType");
         assertEq(_newValueA, newValueA, "Failed to encode newValueA");
         assertEq(_newValueB, newValueB, "Failed to encode newValueB");
     }
@@ -71,27 +71,27 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
         uint256 expectedFee = 2 * 10**18;
 
         assertEq(
-            gasFeePricing.estimateGasFee(chainId, Options.encode(gasLimit / 2)),
+            gasFeePricing.estimateGasFee(chainId, OptionsLib.encode(gasLimit / 2)),
             expectedFee,
             "Wrong fee for 100,000 gas"
         );
         assertEq(
-            gasFeePricing.estimateGasFee(chainId, Options.encode(gasLimit - 1)),
+            gasFeePricing.estimateGasFee(chainId, OptionsLib.encode(gasLimit - 1)),
             expectedFee,
             "Wrong fee for 199,999 gas"
         );
         assertEq(
-            gasFeePricing.estimateGasFee(chainId, Options.encode(gasLimit)),
+            gasFeePricing.estimateGasFee(chainId, OptionsLib.encode(gasLimit)),
             expectedFee,
             "Wrong fee for 200,000 gas"
         );
         assertEq(
-            gasFeePricing.estimateGasFee(chainId, Options.encode(gasLimit + 1)),
+            gasFeePricing.estimateGasFee(chainId, OptionsLib.encode(gasLimit + 1)),
             (expectedFee * (gasLimit + 1)) / gasLimit,
             "Wrong fee for 200,001 gas"
         );
         assertEq(
-            gasFeePricing.estimateGasFee(chainId, Options.encode(gasLimit * 2)),
+            gasFeePricing.estimateGasFee(chainId, OptionsLib.encode(gasLimit * 2)),
             expectedFee * 2,
             "Wrong fee for 400,000 gas"
         );
@@ -116,14 +116,14 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
         // (2 * 10**18) remoteGas = (20 * 10**17) remoteGas = (100 * 10**17) localGas;
         // +69% -> (169 * 10**17) localGas
         assertEq(
-            gasFeePricing.estimateGasFee(chainId, Options.encode(0, 2 * 10**18, receiver)),
+            gasFeePricing.estimateGasFee(chainId, OptionsLib.encode(0, 2 * 10**18, receiver)),
             169 * 10**17,
             "Wrong markup for 2 * 10**18 gasDrop"
         );
 
         // 2 remoteGas = 10 localGas; +69% = 16 (rounded down)
         assertEq(
-            gasFeePricing.estimateGasFee(chainId, Options.encode(0, 2, receiver)),
+            gasFeePricing.estimateGasFee(chainId, OptionsLib.encode(0, 2, receiver)),
             16,
             "Wrong markup for 2 gasDrop"
         );
@@ -146,7 +146,7 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
         // (10**6 gasLimit) => (2 * 10**15 remoteGas cost) => (10**16 localGas)
         // +69% -> 1.69 * 10**16 = 169 * 10**14
         assertEq(
-            gasFeePricing.estimateGasFee(chainId, Options.encode(10**6)),
+            gasFeePricing.estimateGasFee(chainId, OptionsLib.encode(10**6)),
             169 * 10**14,
             "Wrong markup for 10**6 gasLimit"
         );
@@ -160,7 +160,7 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
         vm.assume(_gasUnitsRcvMsg != 0);
         _prepareSendingTests();
         uint256 totalFee = gasFeePricing.estimateUpdateFees();
-        bytes memory message = GasFeePricingUpdates.encodeConfig(_gasDropMax, _gasUnitsRcvMsg, _minGasUsageFeeUsd);
+        bytes memory message = PricingUpdateLib.encodeConfig(_gasDropMax, _gasUnitsRcvMsg, _minGasUsageFeeUsd);
 
         _expectMessagingEmits(message);
         // receive() is disabled, so this will also check if the totalFee is exactly the needed fee
@@ -171,7 +171,7 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
         vm.assume(_gasTokenPrice != 0);
         _prepareSendingTests();
         uint256 totalFee = gasFeePricing.estimateUpdateFees();
-        bytes memory message = GasFeePricingUpdates.encodeInfo(_gasTokenPrice, _gasUnitPrice);
+        bytes memory message = PricingUpdateLib.encodeInfo(_gasTokenPrice, _gasUnitPrice);
 
         _expectMessagingEmits(message);
         // receive() is disabled, so this will also check if the totalFee is exactly the needed fee
@@ -189,7 +189,7 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
         bytes32 messageId = utils.getNextKappa();
         bytes32 srcAddress = utils.addressToBytes32(remoteVars[chainId].gasFeePricing);
 
-        bytes memory message = GasFeePricingUpdates.encodeConfig(_gasDropMax, _gasUnitsRcvMsg, _minGasUsageFeeUsd);
+        bytes memory message = PricingUpdateLib.encodeConfig(_gasDropMax, _gasUnitsRcvMsg, _minGasUsageFeeUsd);
         hoax(NODE);
         messageBus.executeMessage(chainId, srcAddress, address(gasFeePricing), 100000, 0, message, messageId);
 
@@ -209,7 +209,7 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
         bytes32 messageId = utils.getNextKappa();
         bytes32 srcAddress = utils.addressToBytes32(remoteVars[chainId].gasFeePricing);
 
-        bytes memory message = GasFeePricingUpdates.encodeInfo(_gasTokenPrice, _gasUnitPrice);
+        bytes memory message = PricingUpdateLib.encodeInfo(_gasTokenPrice, _gasUnitPrice);
         hoax(NODE);
         messageBus.executeMessage(chainId, srcAddress, address(gasFeePricing), 100000, 0, message, messageId);
 
@@ -237,7 +237,7 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
 
         bytes32 receiver = keccak256("Not a fake address");
 
-        bytes memory options = Options.encode(100000, gasDropAmount, receiver);
+        bytes memory options = OptionsLib.encode(100000, gasDropAmount, receiver);
 
         if (gasDropAmount > gasDropMax) {
             vm.expectRevert("GasDrop higher than max");
@@ -292,7 +292,7 @@ contract GasFeePricingUpgradeableMessagingTest is GasFeePricingSetup {
     function _expectMessagingEmits(bytes memory message) internal {
         for (uint256 i = 0; i < TEST_CHAINS; ++i) {
             uint256 chainId = remoteChainIds[i];
-            bytes memory options = Options.encode(remoteVars[chainId].gasUnitsRcvMsg);
+            bytes memory options = OptionsLib.encode(remoteVars[chainId].gasUnitsRcvMsg);
             uint256 fee = messageBus.estimateFee(chainId, options);
             bytes32 receiver = utils.addressToBytes32(remoteVars[chainId].gasFeePricing);
             uint64 nonce = uint64(i);

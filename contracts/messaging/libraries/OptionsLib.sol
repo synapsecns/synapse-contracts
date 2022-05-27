@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-library Options {
+library OptionsLib {
     enum TxType {
         UNKNOWN,
         DEFAULT,

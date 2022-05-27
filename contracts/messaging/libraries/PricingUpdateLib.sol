@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-library GasFeePricingUpdates {
+library PricingUpdateLib {
     enum MsgType {
         UNKNOWN,
         UPDATE_CONFIG,

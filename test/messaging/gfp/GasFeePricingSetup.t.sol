@@ -8,7 +8,7 @@ import {Utilities} from "../../utils/Utilities.sol";
 import "src-messaging/AuthVerifier.sol";
 import "src-messaging/GasFeePricingUpgradeable.sol";
 import "src-messaging/MessageBusUpgradeable.sol";
-import "src-messaging/libraries/GasFeePricingUpdates.sol";
+import "src-messaging/libraries/PricingUpdateLib.sol";
 
 abstract contract GasFeePricingSetup is Test {
     struct ChainVars {

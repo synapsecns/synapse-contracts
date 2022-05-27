@@ -4,8 +4,8 @@ pragma solidity 0.8.13;
 
 import "./framework/SynMessagingReceiverUpgradeable.sol";
 import "./interfaces/IGasFeePricing.sol";
-import "./libraries/Options.sol";
-import "./libraries/GasFeePricingUpdates.sol";
+import "./libraries/OptionsLib.sol";
+import "./libraries/PricingUpdateLib.sol";
 
 contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -173,7 +173,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         uint256 gasAirdrop;
         uint256 gasLimit;
         if (_options.length != 0) {
-            (gasLimit, gasAirdrop, ) = Options.decode(_options);
+            (gasLimit, gasAirdrop, ) = OptionsLib.decode(_options);
         } else {
             gasLimit = DEFAULT_GAS_LIMIT;
         }
@@ -306,7 +306,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         uint32 _minGasUsageFeeUsd
     ) external payable onlyOwner {
         require(_gasUnitsRcvMsg != 0, "Gas amount is not set");
-        _sendUpdateMessages(GasFeePricingUpdates.encodeConfig(_gasDropMax, _gasUnitsRcvMsg, _minGasUsageFeeUsd));
+        _sendUpdateMessages(PricingUpdateLib.encodeConfig(_gasDropMax, _gasUnitsRcvMsg, _minGasUsageFeeUsd));
         ChainConfig memory config = localConfig;
         config.gasDropMax = _gasDropMax;
         config.gasUnitsRcvMsg = _gasUnitsRcvMsg;
@@ -326,7 +326,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         require(_gasTokenPrice != 0, "Gas token price is not set");
         // send messages before updating the values, so that it's possible to use
         // estimateUpdateFees() to calculate the needed fee for the update
-        _sendUpdateMessages(GasFeePricingUpdates.encodeInfo(_gasTokenPrice, _gasUnitPrice));
+        _sendUpdateMessages(PricingUpdateLib.encodeInfo(_gasTokenPrice, _gasUnitPrice));
         _updateLocalChainInfo(_gasTokenPrice, _gasUnitPrice);
     }
 
@@ -418,7 +418,7 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
             if (gasLimit == 0) gasLimit = DEFAULT_GAS_LIMIT;
 
             receivers[i] = trustedRemoteLookup[chainId];
-            options[i] = Options.encode(gasLimit);
+            options[i] = OptionsLib.encode(gasLimit);
         }
 
         _send(receivers, chainIds, _message, options, fees, payable(msg.sender));
@@ -432,14 +432,14 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         bytes memory _message,
         address
     ) internal override {
-        uint8 msgType = GasFeePricingUpdates.messageType(_message);
-        if (msgType == uint8(GasFeePricingUpdates.MsgType.UPDATE_CONFIG)) {
-            (uint112 gasDropMax, uint80 gasUnitsRcvMsg, uint32 minGasUsageFeeUsd) = GasFeePricingUpdates.decodeConfig(
+        uint8 msgType = PricingUpdateLib.messageType(_message);
+        if (msgType == uint8(PricingUpdateLib.MsgType.UPDATE_CONFIG)) {
+            (uint112 gasDropMax, uint80 gasUnitsRcvMsg, uint32 minGasUsageFeeUsd) = PricingUpdateLib.decodeConfig(
                 _message
             );
             _updateRemoteChainConfig(_localChainId, gasDropMax, gasUnitsRcvMsg, minGasUsageFeeUsd);
-        } else if (msgType == uint8(GasFeePricingUpdates.MsgType.UPDATE_INFO)) {
-            (uint128 gasTokenPrice, uint128 gasUnitPrice) = GasFeePricingUpdates.decodeInfo(_message);
+        } else if (msgType == uint8(PricingUpdateLib.MsgType.UPDATE_INFO)) {
+            (uint128 gasTokenPrice, uint128 gasUnitPrice) = PricingUpdateLib.decodeInfo(_message);
             _updateRemoteChainInfo(_localChainId, gasTokenPrice, gasUnitPrice);
         } else {
             revert("Unknown message type");
