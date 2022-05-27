@@ -67,7 +67,7 @@ contract GasFeePricingUpgradeableSettersTest is GasFeePricingSetup {
             address(this),
             address(gasFeePricing),
             abi.encodeWithSelector(
-                GasFeePricingUpgradeable.setRemoteConfig.selector,
+                MessageExecutorUpgradeable.setRemoteConfig.selector,
                 remoteChainIds,
                 gasDropMax,
                 gasUnitsRcvMsg,
@@ -93,7 +93,7 @@ contract GasFeePricingUpgradeableSettersTest is GasFeePricingSetup {
             address(this),
             address(gasFeePricing),
             abi.encodeWithSelector(
-                GasFeePricingUpgradeable.setRemoteInfo.selector,
+                MessageExecutorUpgradeable.setRemoteInfo.selector,
                 remoteChainIds,
                 gasTokenPrices,
                 gasUnitPrices
@@ -164,7 +164,7 @@ contract GasFeePricingUpgradeableSettersTest is GasFeePricingSetup {
             address(this),
             address(gasFeePricing),
             abi.encodeWithSelector(
-                GasFeePricingUpgradeable.updateLocalConfig.selector,
+                MessageExecutorUpgradeable.updateLocalConfig.selector,
                 gasDropMax,
                 gasUnitsRcvMsg,
                 minGasUsageFeeUsd
@@ -191,7 +191,7 @@ contract GasFeePricingUpgradeableSettersTest is GasFeePricingSetup {
         utils.checkRevert(
             address(this),
             address(gasFeePricing),
-            abi.encodeWithSelector(GasFeePricingUpgradeable.updateLocalInfo.selector, gasTokenPrice, gasUnitPrice),
+            abi.encodeWithSelector(MessageExecutorUpgradeable.updateLocalInfo.selector, gasTokenPrice, gasUnitPrice),
             "Gas token price is not set"
         );
     }

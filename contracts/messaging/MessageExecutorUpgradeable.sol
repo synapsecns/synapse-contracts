@@ -4,10 +4,13 @@ pragma solidity 0.8.13;
 
 import "./framework/SynMessagingReceiverUpgradeable.sol";
 import "./interfaces/IGasFeePricing.sol";
+import "./libraries/Bytes32AddressLib.sol";
 import "./libraries/OptionsLib.sol";
 import "./libraries/PricingUpdateLib.sol";
 
-contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
+contract MessageExecutorUpgradeable is SynMessagingReceiverUpgradeable {
+    using Bytes32AddressLib for bytes32;
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                               STRUCTS                                ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
@@ -444,5 +447,40 @@ contract GasFeePricingUpgradeable is SynMessagingReceiverUpgradeable {
         } else {
             revert("Unknown message type");
         }
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                       EXECUTING MESSAGES LOGIC                       ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function executeMessage(
+        uint256 _srcChainId,
+        bytes32 _srcAddress,
+        address _dstAddress,
+        bytes calldata _message,
+        bytes calldata _options
+    ) external returns (address gasDropRecipient, uint256 gasDropAmount) {
+        require(msg.sender == messageBus, "!messageBus");
+
+        (uint256 gasLimit, uint256 _gasDropAmount, bytes32 _dstReceiver) = OptionsLib.decode(_options);
+        if (_gasDropAmount != 0) {
+            // check if requested airdrop is not more than max allowed
+            uint256 maxGasDropAmount = localConfig.gasDropMax;
+            // cap gas airdrop to max amount if needed
+            if (_gasDropAmount > maxGasDropAmount) _gasDropAmount = maxGasDropAmount;
+            // check airdrop amount again, in case max amount was 0
+            if (_gasDropAmount != 0) {
+                address payable receiver = payable(_dstReceiver.fromLast20Bytes());
+                if (receiver != address(0)) {
+                    if (receiver.send(_gasDropAmount)) {
+                        gasDropRecipient = receiver;
+                        gasDropAmount = _gasDropAmount;
+                    }
+                }
+            }
+        }
+        // tx.origin is in fact the initial message executor on local chain
+        // TODO: do we need to pass that information though?
+        ISynMessagingReceiver(_dstAddress).executeMessage{gas: gasLimit}(_srcAddress, _srcChainId, _message, tx.origin);
     }
 }

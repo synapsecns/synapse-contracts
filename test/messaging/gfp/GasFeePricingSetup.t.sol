@@ -6,7 +6,7 @@ import "forge-std/Test.sol";
 import {Utilities} from "../../utils/Utilities.sol";
 
 import "src-messaging/AuthVerifier.sol";
-import "src-messaging/GasFeePricingUpgradeable.sol";
+import "src-messaging/MessageExecutorUpgradeable.sol";
 import "src-messaging/MessageBusUpgradeable.sol";
 import "src-messaging/libraries/PricingUpdateLib.sol";
 
@@ -25,7 +25,7 @@ abstract contract GasFeePricingSetup is Test {
     Utilities internal utils;
 
     AuthVerifier internal authVerifier;
-    GasFeePricingUpgradeable internal gasFeePricing;
+    MessageExecutorUpgradeable internal gasFeePricing;
     MessageBusUpgradeable internal messageBus;
 
     ChainVars internal localVars;
@@ -54,10 +54,10 @@ abstract contract GasFeePricingSetup is Test {
         localVars.gasTokenPrice = 10**18;
 
         MessageBusUpgradeable busImpl = new MessageBusUpgradeable();
-        GasFeePricingUpgradeable pricingImpl = new GasFeePricingUpgradeable();
+        MessageExecutorUpgradeable pricingImpl = new MessageExecutorUpgradeable();
 
         messageBus = MessageBusUpgradeable(utils.deployTransparentProxy(address(busImpl)));
-        gasFeePricing = GasFeePricingUpgradeable(utils.deployTransparentProxy(address(pricingImpl)));
+        gasFeePricing = MessageExecutorUpgradeable(utils.deployTransparentProxy(address(pricingImpl)));
 
         // I don't have extra 10M laying around, so let's initialize those proxies
         messageBus.initialize(address(gasFeePricing), address(authVerifier));

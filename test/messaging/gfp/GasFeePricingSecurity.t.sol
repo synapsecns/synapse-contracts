@@ -24,7 +24,7 @@ contract GasFeePricingUpgradeableSecurityTest is GasFeePricingSetup {
 
         utils.checkAccess(
             address(gasFeePricing),
-            abi.encodeWithSelector(GasFeePricingUpgradeable.initialize.selector, address(0), 0, 0, 0),
+            abi.encodeWithSelector(MessageExecutorUpgradeable.initialize.selector, address(0), 0, 0, 0),
             "Initializable: contract is already initialized"
         );
     }
@@ -34,7 +34,7 @@ contract GasFeePricingUpgradeableSecurityTest is GasFeePricingSetup {
         utils.checkAccess(
             _gfp,
             abi.encodeWithSelector(
-                GasFeePricingUpgradeable.setRemoteConfig.selector,
+                MessageExecutorUpgradeable.setRemoteConfig.selector,
                 new uint256[](1),
                 new uint112[](1),
                 new uint80[](1),
@@ -45,7 +45,7 @@ contract GasFeePricingUpgradeableSecurityTest is GasFeePricingSetup {
         utils.checkAccess(
             _gfp,
             abi.encodeWithSelector(
-                GasFeePricingUpgradeable.setRemoteInfo.selector,
+                MessageExecutorUpgradeable.setRemoteInfo.selector,
                 new uint256[](1),
                 new uint128[](1),
                 new uint128[](1)
@@ -55,7 +55,7 @@ contract GasFeePricingUpgradeableSecurityTest is GasFeePricingSetup {
         utils.checkAccess(
             _gfp,
             abi.encodeWithSelector(
-                GasFeePricingUpgradeable.setRemoteMarkups.selector,
+                MessageExecutorUpgradeable.setRemoteMarkups.selector,
                 new uint256[](1),
                 new uint16[](1),
                 new uint16[](1)
@@ -65,13 +65,13 @@ contract GasFeePricingUpgradeableSecurityTest is GasFeePricingSetup {
 
         utils.checkAccess(
             _gfp,
-            abi.encodeWithSelector(GasFeePricingUpgradeable.updateLocalConfig.selector, 0, 0, 0),
+            abi.encodeWithSelector(MessageExecutorUpgradeable.updateLocalConfig.selector, 0, 0, 0),
             "Ownable: caller is not the owner"
         );
 
         utils.checkAccess(
             _gfp,
-            abi.encodeWithSelector(GasFeePricingUpgradeable.updateLocalInfo.selector, 0, 0),
+            abi.encodeWithSelector(MessageExecutorUpgradeable.updateLocalInfo.selector, 0, 0),
             "Ownable: caller is not the owner"
         );
     }
