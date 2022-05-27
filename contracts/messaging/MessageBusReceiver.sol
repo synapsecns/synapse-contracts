@@ -16,7 +16,9 @@ contract MessageBusReceiver is MessageBusBase {
         TxStatus status,
         address indexed dstAddress,
         uint256 indexed srcChainId,
-        uint256 srcNonce
+        uint256 srcNonce,
+        address gasDropRecipient,
+        uint256 gasDropAmount
     );
 
     event CallReverted(string reason);
@@ -61,9 +63,16 @@ contract MessageBusReceiver is MessageBusBase {
         verifier.msgAuth(abi.encode(msg.sender, _messageId, _proof));
 
         TxStatus status;
-        try executor.executeMessage(_srcChainId, _srcAddress, _dstAddress, _message, _options) {
+        address gasDropRecipient;
+        uint256 gasDropAmount;
+        try executor.executeMessage(_srcChainId, _srcAddress, _dstAddress, _message, _options) returns (
+            address _gasDropRecipient,
+            uint256 _gasDropAmount
+        ) {
             // Assuming success state if no revert
             status = TxStatus.Success;
+            gasDropRecipient = _gasDropRecipient;
+            gasDropAmount = _gasDropAmount;
         } catch (bytes memory reason) {
             // call hard reverted & failed
             emit CallReverted(_getRevertMsg(reason));
@@ -71,7 +80,7 @@ contract MessageBusReceiver is MessageBusBase {
         }
 
         executedMessages[_messageId] = status;
-        emit Executed(_messageId, status, _dstAddress, _srcChainId, _srcNonce);
+        emit Executed(_messageId, status, _dstAddress, _srcChainId, _srcNonce, gasDropRecipient, gasDropAmount);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
