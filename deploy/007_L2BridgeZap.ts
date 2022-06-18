@@ -167,7 +167,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     });
   }
 
-
   if ((await getChainId()) === CHAIN_ID.BOBA) {
     await deploy("L2BridgeZap", {
       from: deployer,
