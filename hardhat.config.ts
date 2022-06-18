@@ -109,6 +109,10 @@ let config: HardhatUserConfig = {
       url: "https://evm-cronos.crypto.org",
       gasPrice: 5000 * 1000000000,
     },
+    klatyn: {
+      url: "https://klatyn-rpc-proxy.herokuapp.com/",
+      gasPrice: 250 * 1000000000,
+    }
   },
   paths: {
     artifacts: "./build/artifacts",
@@ -213,6 +217,7 @@ if (process.env.PRIVATE_KEYS) {
     "harmony_testnet",
     "fuji",
     "goerli",
+    "klatyn",
   ];
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
