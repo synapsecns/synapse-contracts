@@ -112,7 +112,7 @@ let config: HardhatUserConfig = {
     klatyn: {
       url: "https://klatyn-rpc-proxy.herokuapp.com/",
       gasPrice: 250 * 1000000000,
-    }
+    },
   },
   paths: {
     artifacts: "./build/artifacts",
