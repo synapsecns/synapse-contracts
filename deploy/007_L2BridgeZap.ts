@@ -151,6 +151,23 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     });
   }
 
+  if ((await getChainId()) === CHAIN_ID.KLATYN) {
+    await deploy("L2BridgeZap", {
+      from: deployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+      args: [
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        (await get("SynapseBridge")).address,
+      ],
+    });
+  }
+
+
   if ((await getChainId()) === CHAIN_ID.BOBA) {
     await deploy("L2BridgeZap", {
       from: deployer,
@@ -240,4 +257,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 export default func;
 func.tags = ["L2BridgeZap"];
-func.dependencies = ["DummyWeth", "WETH"];
+// func.dependencies = ["DummyWeth", "WETH"];
