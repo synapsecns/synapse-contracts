@@ -2,7 +2,7 @@
   "1": {
     "curve": {
       "aave": {
-        "contract": "CurveLendingAdapter",
+        "contract": "CurveWrappedThreeAdapter",
         "params": [
           "Curve Aave 3pool",
           0,
@@ -13,7 +13,7 @@
         "underquote": true
       },
       "basepool": {
-        "contract": "CurveBaseAdapter",
+        "contract": "CurveBaseThreeAdapter",
         "params": [
           "Curve 3pool",
           0,
@@ -24,7 +24,7 @@
         "underquote": true
       },
       "frax": {
-        "contract": "CurveMetaAdapter",
+        "contract": "CurveMetaFourAdapter",
         "params": [
           "Curve FRAX",
           0,
@@ -49,7 +49,7 @@
     },
     "synapse": {
       "nusd": {
-        "contract": "SynapseBaseMainnetAdapter",
+        "contract": "SynapseNexusUsdAdapter",
         "params": [
           "Synapse nUSD",
           0,
