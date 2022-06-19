@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IAdapter} from "./interfaces/IAdapter.sol";
-import {IWETH9} from "../bridge/interfaces/IWETH9.sol";
+import {AdapterBase} from "./AdapterBase.sol";
+import {IAdapter} from "../interfaces/IAdapter.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
-// solhint-disable reason-string
-
-abstract contract Adapter is Ownable, IAdapter {
+abstract contract Adapter is Ownable, AdapterBase, IAdapter {
     using SafeERC20 for IERC20;
 
     string public name;
@@ -125,10 +123,10 @@ abstract contract Adapter is Ownable, IAdapter {
         address tokenOut,
         address to
     ) external returns (uint256 amountOut) {
-        require(amountIn != 0, "Adapter: Insufficient input amount");
-        require(to != address(0), "Adapter: to cannot be zero address");
-        require(tokenIn != tokenOut, "Adapter: Tokens must differ");
-        require(_checkTokens(tokenIn, tokenOut), "Adapter: unknown tokens");
+        require(amountIn != 0, "Insufficient input amount");
+        require(to != address(0), "to cannot be zero address");
+        require(tokenIn != tokenOut, "Tokens must differ");
+        require(_checkTokens(tokenIn, tokenOut), "Tokens not supported");
         _approveIfNeeded(tokenIn, amountIn);
         amountOut = _swap(amountIn, tokenIn, tokenOut, to);
     }
@@ -189,16 +187,7 @@ abstract contract Adapter is Ownable, IAdapter {
      * @dev Implement via _checkAllowance(tokenIn, amount, POOL)
      *      if actually needed
      */
-    function _approveIfNeeded(address, uint256) internal virtual {
-        this;
-    }
-
-    /**
-     * @notice Checks if a swap between two tokens is supported by adapter
-     */
-    function _checkTokens(address, address) internal view virtual returns (bool) {
-        return true;
-    }
+    function _approveIfNeeded(address, uint256) internal virtual {} // solhint-disable-line no-empty-blocks
 
     /**
      * @notice Internal implementation for depositAddress
