@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {ISolidlyPair} from "../interfaces/ISolidlyPair.sol";
-import {Adapter} from "../../Adapter.sol";
+import {ISolidlyPair} from "./interfaces/ISolidlyPair.sol";
+import {Adapter} from "../Adapter.sol";
+import {AdapterInfinite} from "../tokens/AdapterInfinite.sol";
 
 import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 
-// solhint-disable reason-string
-
-contract SolidlyAdapter is Adapter {
+contract SolidlyAdapter is Adapter, AdapterInfinite {
     address public immutable solidlyFactory;
     bool public immutable stable;
 
@@ -45,7 +44,7 @@ contract SolidlyAdapter is Adapter {
         address _pair = _depositAddress(_tokenIn, _tokenOut);
 
         _amountOut = _getPairAmountOut(_pair, _tokenIn, _amountIn);
-        require(_amountOut > 0, "Adapter: Insufficient output amount");
+        require(_amountOut > 0, "Insufficient output amount");
 
         if (_tokenIn < _tokenOut) {
             ISolidlyPair(_pair).swap(0, _amountOut, _to, new bytes(0));

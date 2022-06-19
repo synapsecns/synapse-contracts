@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Adapter} from "../../Adapter.sol";
-
-import {IPlatypusPool} from "../interfaces/IPlatypusPool.sol";
+import {Adapter} from "../Adapter.sol";
+import {AdapterInfinite} from "../tokens/AdapterInfinite.sol";
+import {IPlatypusPool} from "./interfaces/IPlatypusPool.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
-contract PlatypusAdapter is Adapter {
+contract PlatypusAdapter is Adapter, AdapterInfinite {
     IPlatypusPool public immutable pool;
-    mapping(address => bool) public isPoolToken;
 
     constructor(
         string memory _name,
@@ -23,17 +22,11 @@ contract PlatypusAdapter is Adapter {
     function _setPoolTokens() internal {
         address[] memory poolTokens = pool.getTokenAddresses();
         for (uint8 i = 0; i < poolTokens.length; ++i) {
-            address _token = poolTokens[i];
-            isPoolToken[_token] = true;
-            _setInfiniteAllowance(IERC20(_token), address(pool));
+            _setInfiniteAllowance(IERC20(poolTokens[i]), address(pool));
         }
     }
 
     // -- BASE ADAPTER FUNCTIONS
-
-    function _checkTokens(address _tokenIn, address _tokenOut) internal view virtual override returns (bool) {
-        return isPoolToken[_tokenIn] && isPoolToken[_tokenOut];
-    }
 
     function _depositAddress(address, address) internal view override returns (address) {
         return address(this);

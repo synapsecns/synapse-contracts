@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {WrapperAdapter} from "./WrapperAdapter.sol";
 
-import {IFrax} from "../interfaces/IFrax.sol";
+import {IFrax} from "./interfaces/IFrax.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 

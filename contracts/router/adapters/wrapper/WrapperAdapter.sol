@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Adapter} from "../../Adapter.sol";
+import {Adapter} from "../Adapter.sol";
+import {AdapterFinite} from "../tokens/AdapterFinite.sol";
 
-abstract contract WrapperAdapter is Adapter {
+abstract contract WrapperAdapter is Adapter, AdapterFinite {
     address public immutable tokenNative;
     address public immutable tokenWrapped;
 
@@ -17,10 +18,24 @@ abstract contract WrapperAdapter is Adapter {
         tokenWrapped = _tokenWrapped;
     }
 
-    function _checkTokens(address _tokenIn, address _tokenOut) internal view virtual override returns (bool) {
-        return
-            (_tokenIn == tokenNative || _tokenIn == tokenWrapped) &&
-            (_tokenOut == tokenNative || _tokenOut == tokenWrapped);
+    function _checkToken(address token) internal view virtual override returns (bool) {
+        return token == tokenNative || token == tokenWrapped;
+    }
+
+    function _getIndex(address _token) internal view virtual override returns (uint256) {
+        if (_token == tokenNative) return 0;
+        if (_token == tokenWrapped) return 1;
+        revert("Unknown token");
+    }
+
+    function _getToken(uint256 index) internal view virtual override returns (address) {
+        if (index == 0) return tokenNative;
+        if (index == 1) return tokenWrapped;
+        revert("Index out of bounds");
+    }
+
+    function _loadToken(uint256 index) internal view virtual override returns (address) {
+        return _getToken(index);
     }
 
     function _swap(
@@ -29,7 +44,7 @@ abstract contract WrapperAdapter is Adapter {
         address,
         address _to
     ) internal virtual override returns (uint256 _amountOut) {
-        // both tokens are checked to be either A or B
+        // both tokens are checked to be either native or wrapped at this point
         // they are also checked to be different
         if (_tokenIn == tokenNative) {
             _amountOut = _swapNativeToWrapped(_amountIn, _to);
@@ -46,7 +61,7 @@ abstract contract WrapperAdapter is Adapter {
         if (_isPaused()) {
             return 0;
         }
-        // both tokens are checked to be either A or B
+        // both tokens are checked to be either native or wrapped at this point
         // they are also checked to be different
         if (_tokenIn == tokenNative) {
             _amountOut = _queryNativeToWrapped(_amountIn);
