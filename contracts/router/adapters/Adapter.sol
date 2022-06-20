@@ -23,12 +23,10 @@ abstract contract Adapter is Ownable, AdapterBase, IAdapter {
     }
 
     /**
-     * @notice Fallback function
-     * @dev use recoverGAS() to recover GAS sent to this contract
+     * @dev Adapter is supposed to deal with ERC20 tokens only. Use WGAS instead of GAS.
      */
     receive() external payable {
-        // silence the linter
-        this;
+        revert("Adapter does not accept GAS");
     }
 
     /// @dev this is estimated amount of gas that's used by swap() implementation
@@ -65,19 +63,6 @@ abstract contract Adapter is Ownable, AdapterBase, IAdapter {
 
         emit Recovered(address(token), amount);
         token.safeTransfer(msg.sender, amount);
-    }
-
-    /**
-     * @notice Recover GAS from contract
-     */
-    function recoverGAS() external onlyOwner {
-        uint256 amount = address(this).balance;
-        require(amount > 0, "Adapter: Nothing to recover");
-
-        emit Recovered(address(0), amount);
-        //solhint-disable-next-line
-        (bool success, ) = msg.sender.call{value: amount}("");
-        require(success, "GAS transfer failed");
     }
 
     /**
