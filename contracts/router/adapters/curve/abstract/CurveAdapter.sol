@@ -2,16 +2,16 @@
 pragma solidity ^0.8.0;
 
 import {Adapter} from "../../Adapter.sol";
+import {AdapterIndexed} from "../../tokens/AdapterIndexed.sol";
 
 import {ICurvePool} from "../interfaces/ICurvePool.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
-abstract contract CurveAbstractAdapter is Adapter {
+/// @dev Base contract for all Curve adapters.
+abstract contract CurveAdapter is Adapter, AdapterIndexed {
     ICurvePool public immutable pool;
     bool internal immutable directSwapSupported;
-
-    mapping(address => bool) public isPoolToken;
 
     constructor(
         string memory _name,
@@ -21,13 +21,12 @@ abstract contract CurveAbstractAdapter is Adapter {
     ) Adapter(_name, _swapGasEstimate) {
         pool = ICurvePool(_pool);
         directSwapSupported = _directSwapSupported;
-        _setPoolTokens();
+        _setPoolTokensAllowance();
     }
 
-    function _setPoolTokens() internal virtual {
-        for (uint8 i = 0; true; i++) {
+    function _setPoolTokensAllowance() internal virtual {
+        for (uint256 i = 0; true; i++) {
             try pool.coins(i) returns (address _tokenAddress) {
-                _addPoolToken(_tokenAddress, i);
                 _setInfiniteAllowance(IERC20(_tokenAddress), address(pool));
             } catch {
                 break;
@@ -35,14 +34,12 @@ abstract contract CurveAbstractAdapter is Adapter {
         }
     }
 
-    function _addPoolToken(address _tokenAddress, uint8 _index) internal virtual;
-
-    function _checkTokens(address _tokenIn, address _tokenOut) internal view virtual override returns (bool) {
-        return isPoolToken[_tokenIn] && isPoolToken[_tokenOut];
-    }
-
     function _depositAddress(address, address) internal view virtual override returns (address) {
         return address(this);
+    }
+
+    function _loadToken(uint256 index) internal view virtual override returns (address) {
+        return pool.coins(index);
     }
 
     function _swap(

@@ -2,6 +2,9 @@
 
 pragma solidity ^0.8.0;
 
+// solhint-disable func-name-mixedcase
+// solhint-disable var-name-mixedcase
+
 interface ICurvePool {
     // Coin getters
 

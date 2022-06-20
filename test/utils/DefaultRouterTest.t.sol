@@ -5,11 +5,12 @@ import "./DefaultVaultTest.t.sol";
 
 import {Offers} from "src-router/libraries/LibOffers.sol";
 import {IAdapter} from "src-router/interfaces/IAdapter.sol";
-import {ISynapse} from "src-router/adapters/interfaces/ISynapse.sol";
-import {IUniswapV2Factory} from "src-router/adapters/interfaces/IUniswapV2Factory.sol";
-import {IUniswapV2Pair} from "src-router/adapters/interfaces/IUniswapV2Pair.sol";
+import {ISynapse} from "src-router/adapters/synapse/interfaces/ISynapse.sol";
+import {IUniswapV2Factory} from "src-router/adapters/uniswap/interfaces/IUniswapV2Factory.sol";
+import {IUniswapV2Pair} from "src-router/adapters/uniswap/interfaces/IUniswapV2Pair.sol";
 
-import {SynapseBaseAdapter} from "src-router/adapters/synapse/SynapseBaseAdapter.sol";
+import {SynapseBaseTwoAdapter} from "src-router/adapters/synapse/base/SynapseBaseTwoAdapter.sol";
+import {SynapseBaseThreeAdapter} from "src-router/adapters/synapse/base/SynapseBaseThreeAdapter.sol";
 import {UniswapV2Adapter} from "src-router/adapters/uniswap/UniswapV2Adapter.sol";
 
 import {Swap08} from "src-amm08/Swap08.sol";
@@ -242,7 +243,14 @@ contract DefaultRouterTest is DefaultVaultTest {
 
         pool.addLiquidity(amounts, 0, MAX_UINT);
 
-        adapter = new SynapseBaseAdapter(adapterName, 0, address(pool));
+        if (tokens.length == 2) {
+            adapter = new SynapseBaseTwoAdapter(adapterName, 0, address(pool));
+        } else if (tokens.length == 3) {
+            adapter = new SynapseBaseThreeAdapter(adapterName, 0, address(pool));
+        } else {
+            revert("Unexpected amount of tokens");
+        }
+
         allAdapters.push(address(adapter));
 
         vm.label(address(pool), poolName);

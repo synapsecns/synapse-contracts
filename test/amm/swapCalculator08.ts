@@ -152,11 +152,11 @@ describe("SwapCalculator 0.8", async function () {
       await USDT.approve(swap.address, MAX_UINT256)
       await SUSD.approve(swap.address, MAX_UINT256)
 
-      const swapAddCalculatorFactory = await ethers.getContractFactory(
-        "contracts/router/helper/SwapCalculator.sol:SwapCalculator",
+      const swapCalculatorFactory = await ethers.getContractFactory(
+        "contracts/router/adapters/synapse/calc/SwapCalculator.sol:SwapCalculator",
       )
 
-      swapCalculator = (await swapAddCalculatorFactory.deploy(
+      swapCalculator = (await swapCalculatorFactory.deploy(
         swap.address,
       )) as SwapCalculator
     },

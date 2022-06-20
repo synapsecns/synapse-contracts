@@ -22,10 +22,27 @@ abstract contract DefaultVaultForkedTest is DefaultVaultForkedSetup {
         _testUpgrade(kappas);
     }
 
-    function testAllAdapters(uint256 amountIn, uint8 indexFrom) public {
+    function testAllAdapterSwaps(uint256 amountIn, uint8 indexFrom) public {
         uint256 amount = adapters.length;
         for (uint256 i = 0; i < amount; ++i) {
             _testAdapterSwaps(IAdapter(adapters[i]), indexFrom, amountIn);
+        }
+    }
+
+    function testAllAdapterTokens() public {
+        uint256 amount = adapters.length;
+        for (uint256 i = 0; i < amount; ++i) {
+            Adapter adapter = Adapter(payable(adapters[i]));
+            address[] memory tokens = adapterTestTokens[address(adapter)];
+            uint256 length = tokens.length;
+            for (uint256 j = 0; j < length; ++j) {
+                address tokenIn = tokens[j];
+                for (uint256 k = 0; k < length; ++k) {
+                    if (k == j) continue;
+                    address tokenOut = tokens[k];
+                    assertTrue(adapter.isSwapSupported(tokenIn, tokenOut), "Unsupported tokens found");
+                }
+            }
         }
     }
 

@@ -1,30 +1,26 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {CurveAbstractAdapter} from "./CurveAbstractAdapter.sol";
+import {CurveAdapter} from "./CurveAdapter.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
+import {SafeCast} from "@openzeppelin/contracts-4.5.0/utils/math/SafeCast.sol";
 
-contract CurveTriCryptoAdapter is CurveAbstractAdapter {
-    /**
-        @dev TriCrypto Adapter is using uint256 for indexes
-        and is using exchange() for swaps
-     */
-
-    mapping(address => uint256) public tokenIndex;
-
+/**
+ * @dev Base contract for Curve BasePool adapters:
+ *      - indices: int128
+ *      - swap method: exchange()
+ */
+abstract contract CurveBaseAdapter is CurveAdapter {
     constructor(
         string memory _name,
         uint256 _swapGasEstimate,
         address _pool,
         bool _directSwapSupported
-    ) CurveAbstractAdapter(_name, _swapGasEstimate, _pool, _directSwapSupported) {
-        this;
-    }
+    ) CurveAdapter(_name, _swapGasEstimate, _pool, _directSwapSupported) {} // solhint-disable-line no-empty-blocks
 
-    function _addPoolToken(address _tokenAddress, uint8 _index) internal virtual override {
-        isPoolToken[_tokenAddress] = true;
-        tokenIndex[_tokenAddress] = _index;
+    function _castIndex(address _token) internal view returns (int128) {
+        return int128(int256(_getIndex(_token)));
     }
 
     function _doDirectSwap(
@@ -34,7 +30,7 @@ contract CurveTriCryptoAdapter is CurveAbstractAdapter {
         address _to
     ) internal virtual override returns (uint256 _amountOut) {
         _amountOut = IERC20(_tokenOut).balanceOf(_to);
-        pool.exchange(tokenIndex[_tokenIn], tokenIndex[_tokenOut], _amountIn, 0, _to);
+        pool.exchange(_castIndex(_tokenIn), _castIndex(_tokenOut), _amountIn, 0, _to);
         _amountOut = IERC20(_tokenOut).balanceOf(_to) - _amountOut;
     }
 
@@ -43,7 +39,7 @@ contract CurveTriCryptoAdapter is CurveAbstractAdapter {
         address _tokenIn,
         address _tokenOut
     ) internal virtual override returns (uint256 _amountOut) {
-        pool.exchange(tokenIndex[_tokenIn], tokenIndex[_tokenOut], _amountIn, 0);
+        pool.exchange(_castIndex(_tokenIn), _castIndex(_tokenOut), _amountIn, 0);
         // Imagine not returning amount of swapped tokens
         _amountOut = IERC20(_tokenOut).balanceOf(address(this));
     }
@@ -53,7 +49,7 @@ contract CurveTriCryptoAdapter is CurveAbstractAdapter {
         address _tokenIn,
         address _tokenOut
     ) internal view virtual override returns (uint256 _amountOut) {
-        try pool.get_dy(tokenIndex[_tokenIn], tokenIndex[_tokenOut], _amountIn) returns (uint256 _amt) {
+        try pool.get_dy(_castIndex(_tokenIn), _castIndex(_tokenOut), _amountIn) returns (uint256 _amt) {
             // -1 to account for rounding errors.
             // This will underquote by 1 wei sometimes, but that's life
             _amountOut = _amt != 0 ? _amt - 1 : 0;

@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IUniswapV2Pair} from "../interfaces/IUniswapV2Pair.sol";
-import {Adapter} from "../../Adapter.sol";
+import {IUniswapV2Pair} from "./interfaces/IUniswapV2Pair.sol";
+import {Adapter} from "../Adapter.sol";
+import {AdapterUniversal} from "../tokens/AdapterUniversal.sol";
 
 import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 
-//solhint-disable reason-string
-
-contract UniswapV2Adapter is Adapter {
+/// @dev Uniswap adapter supports arbitrary amount of tokens
+contract UniswapV2Adapter is Adapter, AdapterUniversal {
     // in base points
-    //solhint-disable-next-line
-    uint128 internal immutable MULTIPLIER_WITH_FEE;
-    uint128 internal constant MULTIPLIER = 10000;
+    uint256 internal immutable multiplierWithFee;
+    uint256 internal constant MULTIPLIER = 10000;
 
     address public immutable uniswapV2Factory;
     bytes32 internal immutable initCodeHash;
@@ -28,8 +27,8 @@ contract UniswapV2Adapter is Adapter {
         bytes32 _initCodeHash,
         uint256 _fee
     ) Adapter(_name, _swapGasEstimate) {
-        require(_fee < MULTIPLIER, "Fee is too high. Must be less than multiplier");
-        MULTIPLIER_WITH_FEE = uint128(MULTIPLIER - _fee);
+        require(_fee < MULTIPLIER, "Fee must be less than multiplier");
+        multiplierWithFee = MULTIPLIER - _fee;
         uniswapV2Factory = _uniswapV2FactoryAddress;
         initCodeHash = _initCodeHash;
     }
@@ -48,10 +47,8 @@ contract UniswapV2Adapter is Adapter {
         address _to
     ) internal virtual override returns (uint256 _amountOut) {
         address _pair = _depositAddress(_tokenIn, _tokenOut);
-
         _amountOut = _getPairAmountOut(_pair, _tokenIn, _tokenOut, _amountIn);
-        require(_amountOut > 0, "Adapter: Insufficient output amount");
-
+        require(_amountOut > 0, "Insufficient output amount");
         if (_tokenIn < _tokenOut) {
             IUniswapV2Pair(_pair).swap(0, _amountOut, _to, new bytes(0));
         } else {
@@ -65,7 +62,6 @@ contract UniswapV2Adapter is Adapter {
         address _tokenOut
     ) internal view virtual override returns (uint256 _amountOut) {
         address _pair = _depositAddress(_tokenIn, _tokenOut);
-
         _amountOut = _getPairAmountOut(_pair, _tokenIn, _tokenOut, _amountIn);
     }
 
@@ -82,9 +78,7 @@ contract UniswapV2Adapter is Adapter {
                 } else {
                     _amountOut = _calcAmountOut(_amountIn, _reserve1, _reserve0);
                 }
-            } catch {
-                this;
-            }
+            } catch {} // solhint-disable-line no-empty-blocks
         }
     }
 
@@ -97,8 +91,7 @@ contract UniswapV2Adapter is Adapter {
         if (_reserveIn == 0 || _reserveOut == 0) {
             return 0;
         }
-        uint256 amountInWithFee = _amountIn * MULTIPLIER_WITH_FEE;
-
+        uint256 amountInWithFee = _amountIn * multiplierWithFee;
         _amountOut = (amountInWithFee * _reserveOut) / (_reserveIn * MULTIPLIER + amountInWithFee);
     }
 }

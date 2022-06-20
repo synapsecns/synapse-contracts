@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Adapter} from "../../Adapter.sol";
+import {Adapter} from "../Adapter.sol";
+import {AdapterUniversal} from "../tokens/AdapterUniversal.sol";
 
-import {IGmxReader} from "../interfaces/IGmxReader.sol";
-import {IGmxVault} from "../interfaces/IGmxVault.sol";
+import {IGmxReader} from "./interfaces/IGmxReader.sol";
+import {IGmxVault} from "./interfaces/IGmxVault.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
-contract GmxAdapter is Adapter {
+contract GmxAdapter is Adapter, AdapterUniversal {
     IGmxVault public immutable vault;
     IGmxReader public immutable reader;
-
-    mapping(address => bool) public isPoolToken;
 
     constructor(
         string memory _name,
@@ -22,19 +21,6 @@ contract GmxAdapter is Adapter {
     ) Adapter(_name, _swapGasEstimate) {
         vault = IGmxVault(_vault);
         reader = IGmxReader(_reader);
-        _setPoolTokens();
-    }
-
-    function _setPoolTokens() internal {
-        uint256 _amount = vault.allWhitelistedTokensLength();
-        for (uint256 index = 0; index < _amount; ++index) {
-            address _token = vault.allWhitelistedTokens(index);
-            isPoolToken[_token] = true;
-        }
-    }
-
-    function _checkTokens(address _tokenIn, address _tokenOut) internal view virtual override returns (bool) {
-        return isPoolToken[_tokenIn] && isPoolToken[_tokenOut];
     }
 
     function _depositAddress(address, address) internal view override returns (address) {
