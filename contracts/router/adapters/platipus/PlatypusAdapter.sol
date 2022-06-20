@@ -2,12 +2,12 @@
 pragma solidity ^0.8.0;
 
 import {Adapter} from "../Adapter.sol";
-import {AdapterInfinite} from "../tokens/AdapterInfinite.sol";
+import {AdapterUniversal} from "../tokens/AdapterUniversal.sol";
 import {IPlatypusPool} from "./interfaces/IPlatypusPool.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
-contract PlatypusAdapter is Adapter, AdapterInfinite {
+contract PlatypusAdapter is Adapter, AdapterUniversal {
     IPlatypusPool public immutable pool;
 
     constructor(

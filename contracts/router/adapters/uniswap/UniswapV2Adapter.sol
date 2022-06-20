@@ -3,12 +3,12 @@ pragma solidity ^0.8.0;
 
 import {IUniswapV2Pair} from "./interfaces/IUniswapV2Pair.sol";
 import {Adapter} from "../Adapter.sol";
-import {AdapterInfinite} from "../tokens/AdapterInfinite.sol";
+import {AdapterUniversal} from "../tokens/AdapterUniversal.sol";
 
 import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 
 /// @dev Uniswap adapter supports arbitrary amount of tokens
-contract UniswapV2Adapter is Adapter, AdapterInfinite {
+contract UniswapV2Adapter is Adapter, AdapterUniversal {
     // in base points
     uint256 internal immutable multiplierWithFee;
     uint256 internal constant MULTIPLIER = 10000;

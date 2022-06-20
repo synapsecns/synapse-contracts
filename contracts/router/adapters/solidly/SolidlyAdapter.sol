@@ -3,11 +3,11 @@ pragma solidity ^0.8.0;
 
 import {ISolidlyPair} from "./interfaces/ISolidlyPair.sol";
 import {Adapter} from "../Adapter.sol";
-import {AdapterInfinite} from "../tokens/AdapterInfinite.sol";
+import {AdapterUniversal} from "../tokens/AdapterUniversal.sol";
 
 import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 
-contract SolidlyAdapter is Adapter, AdapterInfinite {
+contract SolidlyAdapter is Adapter, AdapterUniversal {
     address public immutable solidlyFactory;
     bool public immutable stable;
 

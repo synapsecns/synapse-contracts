@@ -3,11 +3,12 @@ pragma solidity ^0.8.0;
 
 import {ISynapse} from "../interfaces/ISynapse.sol";
 import {Adapter} from "../../Adapter.sol";
+import {AdapterIndexed} from "../../tokens/AdapterIndexed.sol";
 import {SwapCalculator} from "../calc/SwapCalculator.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
-abstract contract SynapseAdapter is SwapCalculator, Adapter {
+abstract contract SynapseAdapter is SwapCalculator, Adapter, AdapterIndexed {
     constructor(
         string memory _name,
         uint256 _swapGasEstimate,

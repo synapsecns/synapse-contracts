@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {AdapterFinite} from "./AdapterFinite.sol";
+import {AdapterIndexed} from "./AdapterIndexed.sol";
 
 /// @dev This adapter supports exactly four tokens.
-abstract contract AdapterFour is AdapterFinite {
+abstract contract AdapterFour is AdapterIndexed {
     address internal immutable tokenZero;
     address internal immutable tokenOne;
     address internal immutable tokenTwo;

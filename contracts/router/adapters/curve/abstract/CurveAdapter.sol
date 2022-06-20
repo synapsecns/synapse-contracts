@@ -2,13 +2,14 @@
 pragma solidity ^0.8.0;
 
 import {Adapter} from "../../Adapter.sol";
+import {AdapterIndexed} from "../../tokens/AdapterIndexed.sol";
 
 import {ICurvePool} from "../interfaces/ICurvePool.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 /// @dev Base contract for all Curve adapters.
-abstract contract CurveAdapter is Adapter {
+abstract contract CurveAdapter is Adapter, AdapterIndexed {
     ICurvePool public immutable pool;
     bool internal immutable directSwapSupported;
 

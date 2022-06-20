@@ -2,14 +2,14 @@
 pragma solidity ^0.8.0;
 
 import {Adapter} from "../Adapter.sol";
-import {AdapterInfinite} from "../tokens/AdapterInfinite.sol";
+import {AdapterUniversal} from "../tokens/AdapterUniversal.sol";
 
 import {IGmxReader} from "./interfaces/IGmxReader.sol";
 import {IGmxVault} from "./interfaces/IGmxVault.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
-contract GmxAdapter is Adapter, AdapterInfinite {
+contract GmxAdapter is Adapter, AdapterUniversal {
     IGmxVault public immutable vault;
     IGmxReader public immutable reader;
 

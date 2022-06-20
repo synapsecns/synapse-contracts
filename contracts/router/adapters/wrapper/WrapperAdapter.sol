@@ -2,9 +2,9 @@
 pragma solidity ^0.8.0;
 
 import {Adapter} from "../Adapter.sol";
-import {AdapterFinite} from "../tokens/AdapterFinite.sol";
+import {AdapterIndexed} from "../tokens/AdapterIndexed.sol";
 
-abstract contract WrapperAdapter is Adapter, AdapterFinite {
+abstract contract WrapperAdapter is Adapter, AdapterIndexed {
     address public immutable tokenNative;
     address public immutable tokenWrapped;
 
