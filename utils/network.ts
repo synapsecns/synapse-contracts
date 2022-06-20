@@ -15,4 +15,4 @@ export const CHAIN_ID = {
   ARBITRUM: "42161",
   AURORA: "1313161554",
   HARMONY: "1666600000",
-}
+};

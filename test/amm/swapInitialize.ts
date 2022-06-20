@@ -1,64 +1,54 @@
-import { Signer } from "ethers"
-import { ZERO_ADDRESS } from "../utils"
-import { solidity } from "ethereum-waffle"
-import { deployments, ethers } from "hardhat"
+import { Signer } from "ethers";
+import { ZERO_ADDRESS } from "../utils";
+import { solidity } from "ethereum-waffle";
+import { deployments, ethers } from "hardhat";
 
-import { GenericERC20 } from "../../build/typechain/GenericERC20"
-import { Swap } from "../../build/typechain/Swap"
-import chai from "chai"
+import { GenericERC20 } from "../../build/typechain/GenericERC20";
+import { Swap } from "../../build/typechain/Swap";
+import chai from "chai";
 
-chai.use(solidity)
-const { expect } = chai
+chai.use(solidity);
+const { expect } = chai;
 
 describe("Swap", () => {
-  let signers: Array<Signer>
-  let swap: Swap
-  let firstToken: GenericERC20
-  let secondToken: GenericERC20
-  let owner: Signer
+  let signers: Array<Signer>;
+  let swap: Swap;
+  let firstToken: GenericERC20;
+  let secondToken: GenericERC20;
+  let owner: Signer;
 
   // Test Values
-  const INITIAL_A_VALUE = 50
-  const SWAP_FEE = 1e7
-  const LP_TOKEN_NAME = "Test LP Token Name"
-  const LP_TOKEN_SYMBOL = "TESTLP"
+  const INITIAL_A_VALUE = 50;
+  const SWAP_FEE = 1e7;
+  const LP_TOKEN_NAME = "Test LP Token Name";
+  const LP_TOKEN_SYMBOL = "TESTLP";
 
-  const setupTest = deployments.createFixture(
-    async ({ deployments, ethers }) => {
-      const { get } = deployments
-      await deployments.fixture() // ensure you start from a fresh deployments
+  const setupTest = deployments.createFixture(async ({ deployments, ethers }) => {
+    const { get } = deployments;
+    await deployments.fixture(); // ensure you start from a fresh deployments
 
-      signers = await ethers.getSigners()
-      owner = signers[0]
+    signers = await ethers.getSigners();
+    owner = signers[0];
 
-      // Deploy dummy tokens
-      const erc20Factory = await ethers.getContractFactory("GenericERC20")
+    // Deploy dummy tokens
+    const erc20Factory = await ethers.getContractFactory("GenericERC20");
 
-      firstToken = (await erc20Factory.deploy(
-        "First Token",
-        "FIRST",
-        "18",
-      )) as GenericERC20
+    firstToken = (await erc20Factory.deploy("First Token", "FIRST", "18")) as GenericERC20;
 
-      secondToken = (await erc20Factory.deploy(
-        "Second Token",
-        "SECOND",
-        "18",
-      )) as GenericERC20
+    secondToken = (await erc20Factory.deploy("Second Token", "SECOND", "18")) as GenericERC20;
 
-      const swapFactory = await ethers.getContractFactory("Swap", {
-        libraries: {
-          SwapUtils: (await get("SwapUtils")).address,
-          AmplificationUtils: (await get("AmplificationUtils")).address,
-        },
-      })
-      swap = (await swapFactory.deploy()) as Swap
-    },
-  )
+    const swapFactory = await ethers.getContractFactory("Swap", {
+      libraries: {
+        SwapUtils: (await get("SwapUtils")).address,
+        AmplificationUtils: (await get("AmplificationUtils")).address,
+      },
+    });
+    swap = (await swapFactory.deploy()) as Swap;
+  });
 
   beforeEach(async function () {
-    await setupTest()
-  })
+    await setupTest();
+  });
 
   describe("swapStorage#constructor", () => {
     it("Reverts with '_pooledTokens.length <= 1'", async function () {
@@ -73,10 +63,10 @@ describe("Swap", () => {
           0,
           (
             await deployments.get("LPToken")
-          ).address,
-        ),
-      ).to.be.revertedWith("_pooledTokens.length <= 1")
-    })
+          ).address
+        )
+      ).to.be.revertedWith("_pooledTokens.length <= 1");
+    });
 
     it("Reverts with '_pooledTokens.length > 32'", async function () {
       await expect(
@@ -90,10 +80,10 @@ describe("Swap", () => {
           0,
           (
             await deployments.get("LPToken")
-          ).address,
-        ),
-      ).to.be.revertedWith("_pooledTokens.length > 32")
-    })
+          ).address
+        )
+      ).to.be.revertedWith("_pooledTokens.length > 32");
+    });
 
     it("Reverts with '_pooledTokens decimals mismatch'", async function () {
       await expect(
@@ -107,10 +97,10 @@ describe("Swap", () => {
           0,
           (
             await deployments.get("LPToken")
-          ).address,
-        ),
-      ).to.be.revertedWith("_pooledTokens decimals mismatch")
-    })
+          ).address
+        )
+      ).to.be.revertedWith("_pooledTokens decimals mismatch");
+    });
 
     it("Reverts with 'Duplicate tokens'", async function () {
       await expect(
@@ -124,10 +114,10 @@ describe("Swap", () => {
           0,
           (
             await deployments.get("LPToken")
-          ).address,
-        ),
-      ).to.be.revertedWith("Duplicate tokens")
-    })
+          ).address
+        )
+      ).to.be.revertedWith("Duplicate tokens");
+    });
 
     it("Reverts with 'The 0 address isn't an ERC-20'", async function () {
       await expect(
@@ -141,10 +131,10 @@ describe("Swap", () => {
           0,
           (
             await deployments.get("LPToken")
-          ).address,
-        ),
-      ).to.be.revertedWith("The 0 address isn't an ERC-20")
-    })
+          ).address
+        )
+      ).to.be.revertedWith("The 0 address isn't an ERC-20");
+    });
 
     it("Reverts with 'Token decimals exceeds max'", async function () {
       await expect(
@@ -158,10 +148,10 @@ describe("Swap", () => {
           0,
           (
             await deployments.get("LPToken")
-          ).address,
-        ),
-      ).to.be.revertedWith("Token decimals exceeds max")
-    })
+          ).address
+        )
+      ).to.be.revertedWith("Token decimals exceeds max");
+    });
 
     it("Reverts with '_a exceeds maximum'", async function () {
       await expect(
@@ -175,10 +165,10 @@ describe("Swap", () => {
           0,
           (
             await deployments.get("LPToken")
-          ).address,
-        ),
-      ).to.be.revertedWith("_a exceeds maximum")
-    })
+          ).address
+        )
+      ).to.be.revertedWith("_a exceeds maximum");
+    });
 
     it("Reverts with '_fee exceeds maximum'", async function () {
       await expect(
@@ -192,10 +182,10 @@ describe("Swap", () => {
           0,
           (
             await deployments.get("LPToken")
-          ).address,
-        ),
-      ).to.be.revertedWith("_fee exceeds maximum")
-    })
+          ).address
+        )
+      ).to.be.revertedWith("_fee exceeds maximum");
+    });
 
     it("Reverts with '_adminFee exceeds maximum'", async function () {
       await expect(
@@ -209,10 +199,10 @@ describe("Swap", () => {
           10e10 + 1,
           (
             await deployments.get("LPToken")
-          ).address,
-        ),
-      ).to.be.revertedWith("_adminFee exceeds maximum")
-    })
+          ).address
+        )
+      ).to.be.revertedWith("_adminFee exceeds maximum");
+    });
 
     it("Reverts when the LPToken target does not implement initialize function", async function () {
       await expect(
@@ -224,9 +214,9 @@ describe("Swap", () => {
           INITIAL_A_VALUE,
           SWAP_FEE,
           0,
-          ZERO_ADDRESS,
-        ),
-      ).to.be.reverted
-    })
-  })
-})
+          ZERO_ADDRESS
+        )
+      ).to.be.reverted;
+    });
+  });
+});
