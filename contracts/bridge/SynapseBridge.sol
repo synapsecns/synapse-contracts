@@ -218,7 +218,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
             emit TokenWithdraw(to, token, amount, fee, kappa);
             token.safeTransfer(to, amount.sub(fee));
         }
-        // TODO: enable airdrop on withdraw()
+        // Transfer gas airdrop
+        _doGasAirdrop(to);
     }
 
     /**
