@@ -218,6 +218,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
             emit TokenWithdraw(to, token, amount, fee, kappa);
             token.safeTransfer(to, amount.sub(fee));
         }
+        // TODO: enable airdrop on withdraw()
     }
 
     /**
@@ -244,9 +245,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         emit TokenMint(to, token, amount.sub(fee), fee, kappa);
         token.mint(address(this), amount);
         IERC20(token).safeTransfer(to, amount.sub(fee));
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call.value(chainGasAmount)("");
-        }
+        // Transfer gas airdrop
+        _doGasAirdrop(to);
     }
 
     /**
@@ -353,10 +353,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
-        // Transfer gas airdrop
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call.value(chainGasAmount)("");
-        }
         // first check to make sure more will be given than min amount required
         uint256 expectedOutput = ISwap(pool).calculateSwap(tokenIndexFrom, tokenIndexTo, amount.sub(fee));
 
@@ -431,6 +427,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
                 kappa
             );
         }
+        // Transfer gas airdrop
+        _doGasAirdrop(to);
     }
 
     /**
@@ -511,6 +509,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
                 kappa
             );
         }
+        // withdrawAndRemove() happens only on Mainnet, where gas airdrop is disabled
     }
 
     // BRIDGE FUNCTIONS TO HANDLE DIFF ADDRESSES
@@ -529,5 +528,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     ) external nonReentrant whenNotPaused {
         emit TokenRedeemV2(to, chainId, token, amount);
         token.burnFrom(msg.sender, amount);
+    }
+
+    function _doGasAirdrop(address to) internal returns (uint256 airdroppedAmount) {
+        uint256 airdropValue = chainGasAmount;
+        if (airdropValue > 0 && address(this).balance >= airdropValue) {
+            (bool success, ) = to.call{value: airdropValue}("");
+            if (success) airdroppedAmount = airdropValue;
+        }
     }
 }
