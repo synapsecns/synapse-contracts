@@ -110,7 +110,7 @@ let config: HardhatUserConfig = {
       gasPrice: 5000 * 1000000000,
     },
     klatyn: {
-      url: "https://klatyn-rpc-proxy.herokuapp.com/",
+      url: "https://cypress.chain.thebifrost.io/",
       gasPrice: 250 * 1000000000,
     },
   },
