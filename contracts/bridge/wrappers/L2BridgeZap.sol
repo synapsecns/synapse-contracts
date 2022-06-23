@@ -142,9 +142,7 @@ contract L2BridgeZap {
         IERC20 token,
         uint256 amount
     ) external {
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        // set infinite allowance if it hasn't been set before
-        _setInfiniteAllowance(token, address(synapseBridge));
+        _pullAndApprove(token, amount);
         synapseBridge.redeem(to, chainId, token, amount);
     }
 
@@ -161,9 +159,7 @@ contract L2BridgeZap {
         IERC20 token,
         uint256 amount
     ) external {
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        // set infinite allowance if it hasn't been set before
-        _setInfiniteAllowance(token, address(synapseBridge));
+        _pullAndApprove(token, amount);
         synapseBridge.deposit(to, chainId, token, amount);
     }
 
@@ -295,9 +291,7 @@ contract L2BridgeZap {
         uint256 minDy,
         uint256 deadline
     ) external {
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        // set infinite allowance if it hasn't been set before
-        _setInfiniteAllowance(token, address(synapseBridge));
+        _pullAndApprove(token, amount);
         synapseBridge.redeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
     }
 
@@ -321,9 +315,7 @@ contract L2BridgeZap {
         uint256 liqMinAmount,
         uint256 liqDeadline
     ) external {
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        // set infinite allowance if it hasn't been set before
-        _setInfiniteAllowance(token, address(synapseBridge));
+        _pullAndApprove(token, amount);
         synapseBridge.redeemAndRemove(to, chainId, token, amount, liqTokenIndex, liqMinAmount, liqDeadline);
     }
 
@@ -340,15 +332,19 @@ contract L2BridgeZap {
         IERC20 token,
         uint256 amount
     ) external {
-        token.safeTransferFrom(msg.sender, address(this), amount);
-        // set infinite allowance if it hasn't been set before
-        _setInfiniteAllowance(token, address(synapseBridge));
+        _pullAndApprove(token, amount);
         synapseBridge.redeemv2(to, chainId, token, amount);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                           INTERNAL HELPERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _pullAndApprove(IERC20 _token, uint256 _amount) internal {
+        _token.safeTransferFrom(msg.sender, address(this), _amount);
+        // set infinite allowance if it hasn't been set before
+        _setInfiniteAllowance(_token, address(synapseBridge));
+    }
 
     function _setInfiniteAllowance(IERC20 _token, address _spender) internal {
         uint256 allowance = _token.allowance(address(this), _spender);
