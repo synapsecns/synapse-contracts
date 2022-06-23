@@ -17,8 +17,16 @@ contract BridgeTestAvax is DefaultBridgeForkTest {
             originToken: ZERO
         });
 
+    // kappas present at block 13897000
+    bytes32[4] private kappas = [
+        bytes32(0x156feccddaf55f130f9685cc7660769919a777b548c580e4f62977ae7a6b5dc3),
+        bytes32(0xd6f1ba89bb5210df0d1fef6822774be36010a82b85a7fc2b2be7fa7845967d0e),
+        bytes32(0x27174336b55a799bfa24804089354e0c962d89944ca3533da5512a5b6544d49f),
+        bytes32(0x2fb5a5a3a37a82d063e3e87a5c4a0857298d0ed60650095b74e981b728003e6b)
+    ];
+
     bool internal constant IS_MAINNET = false;
     bool internal constant IS_GAS_ETH = false;
 
-    constructor() DefaultBridgeForkTest(IS_MAINNET, IS_GAS_ETH, setup) {} // solhint-disable-line no-empty-blocks
+    constructor() DefaultBridgeForkTest(IS_MAINNET, IS_GAS_ETH, setup, kappas) {} // solhint-disable-line no-empty-blocks
 }

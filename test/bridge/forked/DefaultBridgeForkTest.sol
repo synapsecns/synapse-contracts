@@ -6,6 +6,8 @@ import {Utilities} from "../../utils/Utilities.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
+// solhint-disable func-name-mixedcase
+
 interface ISwap {
     function calculateSwap(
         uint8 tokenIndexFrom,
@@ -22,9 +24,21 @@ interface ISwap {
 }
 
 interface IBridge {
+    function NODEGROUP_ROLE() external view returns (bytes32);
+
+    function GOVERNANCE_ROLE() external view returns (bytes32);
+
+    function startBlockNumber() external view returns (uint256);
+
+    function bridgeVersion() external view returns (uint256);
+
     function chainGasAmount() external view returns (uint256);
 
+    function WETH_ADDRESS() external view returns (address payable);
+
     function getFeeBalance(IERC20 token) external view returns (uint256);
+
+    function kappaExists(bytes32 kappa) external view returns (bool);
 
     function mint(
         address to,
@@ -68,8 +82,6 @@ interface IBridge {
     ) external;
 }
 
-// solhint-disable func-name-mixedcase
-
 abstract contract DefaultBridgeForkTest is Test {
     struct BridgeTestSetup {
         address bridge;
@@ -87,6 +99,18 @@ abstract contract DefaultBridgeForkTest is Test {
         uint256 bridgeTokenFees;
         uint256 userGasBalance;
         uint256 userTokenBalance;
+    }
+
+    // every public getter (including constants cause I'm paranoid)
+    struct BridgeState {
+        bytes32 nodeGroupRole;
+        bytes32 governanceRole;
+        uint256 startBlockNumber;
+        uint256 chainGasAmount;
+        address payable wethAddress;
+        uint256 feesEth;
+        uint256 feesUsd;
+        uint256 feesSyn;
     }
 
     IBridge internal bridge;
@@ -116,6 +140,8 @@ abstract contract DefaultBridgeForkTest is Test {
     IERC20 internal originToken;
 
     bytes32 private _kappa;
+    BridgeState private _bridgeState;
+    bytes32[4] private _existingKappas;
 
     Utilities internal utils;
 
@@ -132,7 +158,8 @@ abstract contract DefaultBridgeForkTest is Test {
     constructor(
         bool _isMainnet,
         bool _isGasEth,
-        BridgeTestSetup memory _setup
+        BridgeTestSetup memory _setup,
+        bytes32[4] memory _kappas
     ) {
         isMainnet = _isMainnet;
         isGasEth = _isGasEth;
@@ -146,6 +173,8 @@ abstract contract DefaultBridgeForkTest is Test {
         wgas = IERC20(_setup.wgas);
         syn = IERC20(_setup.syn);
         originToken = IERC20(_setup.originToken);
+
+        _existingKappas = _kappas;
 
         gasAirdropAmount = bridge.chainGasAmount();
         _kappa = keccak256("very real so genuine wow");
@@ -163,9 +192,9 @@ abstract contract DefaultBridgeForkTest is Test {
             }
         }
 
+        _saveBridgeState();
         address bridgeImpl = deployCode("artifacts/SynapseBridge.sol/SynapseBridge.json");
         utils.upgradeTo(address(bridge), bridgeImpl);
-        // TODO: verify correct storage behavior post-upgrade
     }
 
     function test_mint() public {
@@ -267,6 +296,34 @@ abstract contract DefaultBridgeForkTest is Test {
         }
     }
 
+    function test_upgrade() public {
+        assertEq(_bridgeState.nodeGroupRole, bridge.NODEGROUP_ROLE(), "NODEGROUP_ROLE rekt post-upgrade");
+        assertEq(_bridgeState.governanceRole, bridge.GOVERNANCE_ROLE(), "GOVERNANCE_ROLE rekt post-upgrade");
+        assertEq(_bridgeState.startBlockNumber, bridge.startBlockNumber(), "startBlockNumber rekt post-upgrade");
+        assertEq(_bridgeState.chainGasAmount, bridge.chainGasAmount(), "chainGasAmount rekt post-upgrade");
+        assertEq(_bridgeState.wethAddress, bridge.WETH_ADDRESS(), "WETH_ADDRESS rekt post-upgrade");
+
+        if (address(neth) != ZERO) {
+            assertEq(bridge.getFeeBalance(neth), _bridgeState.feesEth, "Eth fees rekt post-upgrade");
+        } else if (address(weth) != ZERO) {
+            assertEq(bridge.getFeeBalance(weth), _bridgeState.feesEth, "Eth fees rekt post-upgrade");
+        }
+
+        if (address(nusd) != ZERO) {
+            assertEq(bridge.getFeeBalance(nusd), _bridgeState.feesUsd, "Usd fees rekt post-upgrade");
+        }
+
+        if (address(syn) != ZERO) {
+            assertEq(bridge.getFeeBalance(syn), _bridgeState.feesSyn, "Usd fees rekt post-upgrade");
+        }
+
+        for (uint256 i = 0; i < _existingKappas.length; ++i) {
+            assertTrue(bridge.kappaExists(_existingKappas[i]), "Kappa is missing post-upgrade");
+        }
+
+        assertEq(bridge.bridgeVersion(), 7, "Bridge version not bumped");
+    }
+
     function _checkSnapshots(
         Snapshot memory _pre,
         Snapshot memory _post,
@@ -293,5 +350,28 @@ abstract contract DefaultBridgeForkTest is Test {
     function _nextKappa() internal returns (bytes32 nextKappa) {
         nextKappa = _kappa;
         _kappa = keccak256(abi.encode(nextKappa));
+    }
+
+    function _saveBridgeState() private {
+        BridgeState memory state;
+        state.nodeGroupRole = bridge.NODEGROUP_ROLE();
+        state.governanceRole = bridge.GOVERNANCE_ROLE();
+        state.startBlockNumber = bridge.startBlockNumber();
+        state.chainGasAmount = bridge.chainGasAmount();
+        state.wethAddress = bridge.WETH_ADDRESS();
+
+        if (address(neth) != ZERO) {
+            state.feesEth = bridge.getFeeBalance(neth);
+        } else if (address(weth) != ZERO) {
+            state.feesEth = bridge.getFeeBalance(weth);
+        }
+        if (address(nusd) != ZERO) state.feesUsd = bridge.getFeeBalance(nusd);
+        if (address(syn) != ZERO) state.feesSyn = bridge.getFeeBalance(syn);
+
+        for (uint256 i = 0; i < _existingKappas.length; ++i) {
+            assert(bridge.kappaExists(_existingKappas[i]));
+        }
+
+        _bridgeState = state;
     }
 }
