@@ -21,48 +21,18 @@ contract L2BridgeZap {
 
     constructor(
         address payable _wethAddress,
-        address _swapOne,
-        address tokenOne,
-        address _swapTwo,
-        address tokenTwo,
+        address[] memory _swaps,
+        address[] memory _bridgeTokens,
         ISynapseBridge _synapseBridge
     ) public {
+        require(_swaps.length == _bridgeTokens.length, "!arrays");
         WETH_ADDRESS = _wethAddress;
         synapseBridge = _synapseBridge;
-        swapMap[tokenOne] = _swapOne;
-        swapMap[tokenTwo] = _swapTwo;
         if (_wethAddress != address(0)) {
-            IERC20(_wethAddress).safeIncreaseAllowance(address(_synapseBridge), MAX_UINT256);
+            _setInfiniteAllowance(IERC20(_wethAddress), address(_synapseBridge));
         }
-        if (address(_swapOne) != address(0)) {
-            {
-                uint8 i;
-                for (; i < 32; i++) {
-                    try ISwap(_swapOne).getToken(i) returns (IERC20 token) {
-                        swapTokensMap[_swapOne].push(token);
-                        token.safeApprove(address(_swapOne), MAX_UINT256);
-                        token.safeApprove(address(_synapseBridge), MAX_UINT256);
-                    } catch {
-                        break;
-                    }
-                }
-                require(i > 1, "swap must have at least 2 tokens");
-            }
-        }
-        if (address(_swapTwo) != address(0)) {
-            {
-                uint8 i;
-                for (; i < 32; i++) {
-                    try ISwap(_swapTwo).getToken(i) returns (IERC20 token) {
-                        swapTokensMap[_swapTwo].push(token);
-                        token.safeApprove(address(_swapTwo), MAX_UINT256);
-                        token.safeApprove(address(_synapseBridge), MAX_UINT256);
-                    } catch {
-                        break;
-                    }
-                }
-                require(i > 1, "swap must have at least 2 tokens");
-            }
+        for (uint256 i = 0; i < _swaps.length; ++i) {
+            _setTokenPool(ISwap(_swaps[i]), _bridgeTokens[i], address(_synapseBridge));
         }
     }
 
@@ -390,5 +360,51 @@ contract L2BridgeZap {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
         }
         synapseBridge.redeemv2(to, chainId, token, amount);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                           INTERNAL HELPERS                           ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _setInfiniteAllowance(IERC20 _token, address _spender) internal {
+        uint256 allowance = _token.allowance(address(this), _spender);
+        // check if inf allowance has been granted
+        if (allowance != MAX_UINT256) {
+            /// @dev We can get away with using approve instead of safeApprove,
+            /// as we're either setting the allowance to zero, or changing it from zero
+
+            // If allowance is non-zero, we need to clear it first, as some tokens
+            // have a built-in defense against changing allowance from non-zero to non-zero.
+            // eg: USDT on Mainnet
+            if (allowance != 0) _token.approve(_spender, 0);
+            _token.approve(_spender, MAX_UINT256);
+        }
+    }
+
+    function _setTokenPool(
+        ISwap _swap,
+        address _bridgeToken,
+        address _synapseBridge
+    ) internal {
+        // do nothing, if swap is already saved
+        // SLOAD + SSTORE doesn't waste any gas compared to just SSTORE
+        if (swapMap[_bridgeToken] == address(_swap)) return;
+        swapMap[_bridgeToken] = address(_swap);
+
+        // store tokens from a swap pool exactly once
+        if (swapTokensMap[address(_swap)].length == 0) {
+            for (uint256 i = 0; ; ++i) {
+                try _swap.getToken(uint8(i)) returns (IERC20 token) {
+                    swapTokensMap[address(_swap)].push(token);
+                    // allow swap pool to spend all pool tokens
+                    _setInfiniteAllowance(token, address(_swap));
+                } catch {
+                    break;
+                }
+            }
+        }
+
+        // allow bridge to spend _bridgeToken
+        _setInfiniteAllowance(IERC20(_bridgeToken), address(_synapseBridge));
     }
 }
