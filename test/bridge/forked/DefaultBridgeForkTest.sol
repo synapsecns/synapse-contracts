@@ -203,340 +203,119 @@ abstract contract DefaultBridgeForkTest is Test {
     }
 
     function test_mint() public {
-        if (address(syn) == ZERO) {
-            emit log_string("Skipping mint: no testing token configured");
-            return;
-        }
-        bytes32 kappa = _nextKappa();
-        Snapshot memory pre = _makeSnapshot(syn, syn);
-        vm.prank(NODE);
-        bridge.mint(USER, syn, AMOUNT_FULL, FEE, kappa);
-        Snapshot memory post = _makeSnapshot(syn, syn);
-        _checkSnapshots(pre, post, gasAirdropAmount, AMOUNT);
+        if (_checkTokenTestSkipped(syn, "mint")) return;
+        _test_mint(syn);
     }
 
     function test_mintAndSwap_neth() public {
-        if (isMainnet) {
-            emit log_string("Skipping mintAndSwap_neth on Mainnet");
-            return;
+        if (_checkPoolSwapTestSkipped(nethPool, "swap_neth")) return;
+        uint256 quote = nethPool.calculateSwap(0, 1, AMOUNT);
+        if (isGasEth) {
+            _test_mintAndSwap(neth, NULL, nethPool, 0, 1, quote, block.timestamp, quote, 0);
+        } else {
+            _test_mintAndSwap(neth, weth, nethPool, 0, 1, quote, block.timestamp, 0, quote);
         }
-        if (address(nethPool) == ZERO) {
-            emit log_string("Skipping mintAndSwap_neth: no pool configured");
-            return;
-        }
-        bytes32 kappa = _nextKappa();
-        Snapshot memory pre = isGasEth ? _makeSnapshot(neth, NULL) : _makeSnapshot(neth, weth);
-        uint256 expectedSwap = nethPool.calculateSwap(0, 1, AMOUNT);
-        vm.prank(NODE);
-        bridge.mintAndSwap(USER, neth, AMOUNT_FULL, FEE, nethPool, 0, 1, expectedSwap, block.timestamp, kappa);
-        Snapshot memory post = isGasEth ? _makeSnapshot(neth, NULL) : _makeSnapshot(neth, weth);
-        _checkSnapshots(pre, post, gasAirdropAmount + (isGasEth ? expectedSwap : 0), (isGasEth ? 0 : expectedSwap));
     }
 
     function test_mintAndSwap_neth_amountOutTooLow() public {
-        if (isMainnet) {
-            emit log_string("Skipping mintAndSwap_neth on Mainnet");
-            return;
-        }
-        if (address(nethPool) == ZERO) {
-            emit log_string("Skipping mintAndSwap_neth: no pool configured");
-            return;
-        }
-        bytes32 kappa = _nextKappa();
-        Snapshot memory pre = _makeSnapshot(neth, neth);
-        uint256 expectedSwap = nethPool.calculateSwap(0, 1, AMOUNT);
-        vm.prank(NODE);
-        bridge.mintAndSwap(USER, neth, AMOUNT_FULL, FEE, nethPool, 0, 1, 2 * expectedSwap, block.timestamp, kappa);
-        Snapshot memory post = _makeSnapshot(neth, neth);
-        _checkSnapshots(pre, post, gasAirdropAmount, AMOUNT);
+        if (_checkPoolSwapTestSkipped(nethPool, "swap_neth")) return;
+        uint256 quote = 2 * nethPool.calculateSwap(0, 1, AMOUNT);
+        _test_mintAndSwap(neth, neth, nethPool, 0, 1, quote, type(uint256).max, 0, AMOUNT);
     }
 
     function test_mintAndSwap_neth_deadlineFailed() public {
-        if (isMainnet) {
-            emit log_string("Skipping mintAndSwap_neth on Mainnet");
-            return;
-        }
-        if (address(nethPool) == ZERO) {
-            emit log_string("Skipping mintAndSwap_neth: no pool configured");
-            return;
-        }
-        bytes32 kappa = _nextKappa();
-        Snapshot memory pre = _makeSnapshot(neth, neth);
-        vm.prank(NODE);
-        bridge.mintAndSwap(USER, neth, AMOUNT_FULL, FEE, nethPool, 0, 1, 0, block.timestamp - 1, kappa);
-        Snapshot memory post = _makeSnapshot(neth, neth);
-        _checkSnapshots(pre, post, gasAirdropAmount, AMOUNT);
+        if (_checkPoolSwapTestSkipped(nethPool, "swap_neth")) return;
+        _test_mintAndSwap(neth, neth, nethPool, 0, 1, 0, block.timestamp - 1, 0, AMOUNT);
     }
 
     function test_mintAndSwap_neth_wrongIndices() public {
-        if (isMainnet) {
-            emit log_string("Skipping mintAndSwap_neth on Mainnet");
-            return;
-        }
-        if (address(nethPool) == ZERO) {
-            emit log_string("Skipping mintAndSwap_neth: no pool configured");
-            return;
-        }
-        if (!WRONG_INDEX_TEST_ENABLED) {
-            emit log_string("Tests with wrong indices not yet enabled");
-            return;
-        }
+        if (_checkPoolSwapTestSkipped(nethPool, "swap_neth")) return;
+        if (_checkWrongIndexTestSkipped()) return;
         for (uint8 indexFrom = 0; indexFrom <= 1; ++indexFrom) {
-            bytes32 kappa = _nextKappa();
-            Snapshot memory pre = _makeSnapshot(neth, neth);
-            vm.prank(NODE);
-            bridge.mintAndSwap(USER, neth, AMOUNT_FULL, FEE, nethPool, indexFrom, 0, 0, block.timestamp, kappa);
-            Snapshot memory post = _makeSnapshot(neth, neth);
-            _checkSnapshots(pre, post, gasAirdropAmount, AMOUNT);
+            _test_mintAndSwap(neth, neth, nethPool, indexFrom, 0, 0, type(uint256).max, 0, AMOUNT);
         }
     }
 
     function test_mintAndSwap_nusd() public {
-        if (isMainnet) {
-            emit log_string("Skipping mintAndSwap_nusd on Mainnet");
-            return;
-        }
-        if (address(nusdPool) == ZERO) {
-            emit log_string("Skipping mintAndSwap_nusd: no pool configured");
-            return;
-        }
+        if (_checkPoolSwapTestSkipped(nusdPool, "swap_nusd")) return;
         uint256 amount = nusdPoolTokens.length;
         // start from 1 to skip nUSD
         for (uint8 indexTo = 1; indexTo < amount; ++indexTo) {
-            IERC20 testToken = nusdPoolTokens[indexTo];
-            bytes32 kappa = _nextKappa();
-            Snapshot memory pre = _makeSnapshot(nusd, testToken);
-            uint256 expectedSwap = nusdPool.calculateSwap(0, indexTo, AMOUNT);
-            vm.prank(NODE);
-            bridge.mintAndSwap(
-                USER,
-                nusd,
-                AMOUNT_FULL,
-                FEE,
-                nusdPool,
-                0,
-                indexTo,
-                expectedSwap,
-                block.timestamp,
-                kappa
-            );
-            Snapshot memory post = _makeSnapshot(nusd, testToken);
-            _checkSnapshots(pre, post, gasAirdropAmount, expectedSwap);
+            uint256 quote = nusdPool.calculateSwap(0, indexTo, AMOUNT);
+            _test_mintAndSwap(nusd, nusdPoolTokens[indexTo], nusdPool, 0, indexTo, quote, block.timestamp, 0, quote);
         }
     }
 
     function test_mintAndSwap_nusd_amountOutTooLow() public {
-        if (isMainnet) {
-            emit log_string("Skipping mintAndSwap_nusd on Mainnet");
-            return;
-        }
-        if (address(nusdPool) == ZERO) {
-            emit log_string("Skipping mintAndSwap_nusd: no pool configured");
-            return;
-        }
+        if (_checkPoolSwapTestSkipped(nusdPool, "swap_nusd")) return;
         uint256 amount = nusdPoolTokens.length;
         // start from 1 to skip nUSD
         for (uint8 indexTo = 1; indexTo < amount; ++indexTo) {
-            bytes32 kappa = _nextKappa();
-            Snapshot memory pre = _makeSnapshot(nusd, nusd);
-            uint256 expectedSwap = nusdPool.calculateSwap(0, indexTo, AMOUNT);
-            vm.prank(NODE);
-            bridge.mintAndSwap(
-                USER,
-                nusd,
-                AMOUNT_FULL,
-                FEE,
-                nusdPool,
-                0,
-                indexTo,
-                2 * expectedSwap,
-                block.timestamp,
-                kappa
-            );
-            Snapshot memory post = _makeSnapshot(nusd, nusd);
-            _checkSnapshots(pre, post, gasAirdropAmount, AMOUNT);
+            uint256 quote = 2 * nusdPool.calculateSwap(0, indexTo, AMOUNT);
+            _test_mintAndSwap(nusd, nusd, nusdPool, 0, indexTo, quote, type(uint256).max, 0, AMOUNT);
         }
     }
 
     function test_mintAndSwap_nusd_deadlineFailed() public {
-        if (isMainnet) {
-            emit log_string("Skipping mintAndSwap_nusd on Mainnet");
-            return;
-        }
-        if (address(nusdPool) == ZERO) {
-            emit log_string("Skipping mintAndSwap_nusd: no pool configured");
-            return;
-        }
+        if (_checkPoolSwapTestSkipped(nusdPool, "swap_nusd")) return;
         uint256 amount = nusdPoolTokens.length;
         // start from 1 to skip nUSD
         for (uint8 indexTo = 1; indexTo < amount; ++indexTo) {
-            bytes32 kappa = _nextKappa();
-            Snapshot memory pre = _makeSnapshot(nusd, nusd);
-            vm.prank(NODE);
-
-            bridge.mintAndSwap(USER, nusd, AMOUNT_FULL, FEE, nusdPool, 0, indexTo, 0, block.timestamp - 1, kappa);
-            Snapshot memory post = _makeSnapshot(nusd, nusd);
-            _checkSnapshots(pre, post, gasAirdropAmount, AMOUNT);
+            _test_mintAndSwap(nusd, nusd, nusdPool, 0, indexTo, 0, block.timestamp - 1, 0, AMOUNT);
         }
     }
 
     function test_mintAndSwap_nusd_wrongIndices() public {
-        if (isMainnet) {
-            emit log_string("Skipping mintAndSwap_nusd on Mainnet");
-            return;
-        }
-        if (address(nusdPool) == ZERO) {
-            emit log_string("Skipping mintAndSwap_nusd: no pool configured");
-            return;
-        }
-        if (!WRONG_INDEX_TEST_ENABLED) {
-            emit log_string("Tests with wrong indices not yet enabled");
-            return;
-        }
+        if (_checkPoolSwapTestSkipped(nusdPool, "swap_nusd")) return;
+        if (_checkWrongIndexTestSkipped()) return;
         for (uint8 indexFrom = 0; indexFrom < nusdPoolTokens.length; ++indexFrom) {
-            bytes32 kappa = _nextKappa();
-            Snapshot memory pre = _makeSnapshot(nusd, nusd);
-            vm.prank(NODE);
-            bridge.mintAndSwap(USER, nusd, AMOUNT_FULL, FEE, nusdPool, indexFrom, 0, 0, block.timestamp, kappa);
-            Snapshot memory post = _makeSnapshot(nusd, nusd);
-            _checkSnapshots(pre, post, gasAirdropAmount, AMOUNT);
+            _test_mintAndSwap(nusd, nusd, nusdPool, indexFrom, 0, 0, block.timestamp, 0, AMOUNT);
         }
     }
 
     function test_withdraw() public {
-        IERC20 testToken = originToken;
-        if (address(testToken) == ZERO) {
-            emit log_string("Skipping withdraw: no testing token configured");
-            return;
-        }
-        bytes32 kappa = _nextKappa();
-        Snapshot memory pre = _makeSnapshot(testToken, testToken);
-        vm.prank(NODE);
-        bridge.withdraw(USER, testToken, AMOUNT_FULL, FEE, kappa);
-        Snapshot memory post = _makeSnapshot(testToken, testToken);
-        _checkSnapshots(pre, post, gasAirdropAmount, AMOUNT);
+        if (_checkTokenTestSkipped(originToken, "withdraw")) return;
+        _test_withdraw(originToken, originToken, 0, AMOUNT);
     }
 
     function test_withdraw_gas() public {
-        IERC20 testToken = wgas;
-        if (address(testToken) == ZERO) {
-            emit log_string("Skipping withdraw_gas: no testing token configured");
-            return;
-        }
-        bytes32 kappa = _nextKappa();
-        Snapshot memory pre = _makeSnapshot(testToken, NULL);
-        vm.prank(NODE);
-        bridge.withdraw(USER, testToken, AMOUNT_FULL, FEE, kappa);
-        Snapshot memory post = _makeSnapshot(testToken, NULL);
-        _checkSnapshots(pre, post, gasAirdropAmount + AMOUNT, 0);
+        if (_checkTokenTestSkipped(wgas, "withdraw_gas")) return;
+        _test_withdraw(wgas, NULL, AMOUNT, 0);
     }
 
     function test_withdrawAndRemove() public {
-        if (!isMainnet) {
-            emit log_string("Skipping withdrawAndRemove: not mainnet");
-            return;
-        }
-        if (address(nusdPool) == ZERO) {
-            emit log_string("Skipping withdrawAndRemove: no pool configured");
-            return;
-        }
+        if (_checkPoolRemoveTestSkipped(nusdPool, "remove_nusd")) return;
         uint256 amount = nusdPoolTokens.length;
         // nUSD is not in the pool, start from 0
         for (uint8 indexTo = 0; indexTo < amount; ++indexTo) {
-            IERC20 testToken = nusdPoolTokens[indexTo];
-            bytes32 kappa = _nextKappa();
-            Snapshot memory pre = _makeSnapshot(nusd, testToken);
-            uint256 expectedRemove = nusdPool.calculateRemoveLiquidityOneToken(AMOUNT, indexTo);
-            vm.prank(NODE);
-            bridge.withdrawAndRemove(
-                USER,
-                nusd,
-                AMOUNT_FULL,
-                FEE,
-                nusdPool,
-                indexTo,
-                expectedRemove,
-                block.timestamp,
-                kappa
-            );
-            Snapshot memory post = _makeSnapshot(nusd, testToken);
-            _checkSnapshots(pre, post, gasAirdropAmount, expectedRemove);
+            uint256 quote = nusdPool.calculateRemoveLiquidityOneToken(AMOUNT, indexTo);
+            _test_withdrawAndRemove(nusdPoolTokens[indexTo], indexTo, quote, block.timestamp, quote);
         }
     }
 
     function test_withdrawAndRemove_amountOutTooLow() public {
-        if (!isMainnet) {
-            emit log_string("Skipping withdrawAndRemove: not mainnet");
-            return;
-        }
-        if (address(nusdPool) == ZERO) {
-            emit log_string("Skipping withdrawAndRemove: no pool configured");
-            return;
-        }
+        if (_checkPoolRemoveTestSkipped(nusdPool, "remove_nusd")) return;
         uint256 amount = nusdPoolTokens.length;
         // nUSD is not in the pool, start from 0
         for (uint8 indexTo = 0; indexTo < amount; ++indexTo) {
-            bytes32 kappa = _nextKappa();
-            Snapshot memory pre = _makeSnapshot(nusd, nusd);
-            uint256 expectedRemove = nusdPool.calculateRemoveLiquidityOneToken(AMOUNT, indexTo);
-            vm.prank(NODE);
-            bridge.withdrawAndRemove(
-                USER,
-                nusd,
-                AMOUNT_FULL,
-                FEE,
-                nusdPool,
-                indexTo,
-                2 * expectedRemove,
-                block.timestamp,
-                kappa
-            );
-            Snapshot memory post = _makeSnapshot(nusd, nusd);
-            _checkSnapshots(pre, post, gasAirdropAmount, AMOUNT);
+            uint256 quote = 2 * nusdPool.calculateRemoveLiquidityOneToken(AMOUNT, indexTo);
+            _test_withdrawAndRemove(nusd, indexTo, quote, type(uint256).max, AMOUNT);
         }
     }
 
     function test_withdrawAndRemove_deadlineFailed() public {
-        if (!isMainnet) {
-            emit log_string("Skipping withdrawAndRemove: not mainnet");
-            return;
-        }
-        if (address(nusdPool) == ZERO) {
-            emit log_string("Skipping withdrawAndRemove: no pool configured");
-            return;
-        }
+        if (_checkPoolRemoveTestSkipped(nusdPool, "remove_nusd")) return;
         uint256 amount = nusdPoolTokens.length;
         // nUSD is not in the pool, start from 0
         for (uint8 indexTo = 0; indexTo < amount; ++indexTo) {
-            bytes32 kappa = _nextKappa();
-            Snapshot memory pre = _makeSnapshot(nusd, nusd);
-            vm.prank(NODE);
-            bridge.withdrawAndRemove(USER, nusd, AMOUNT_FULL, FEE, nusdPool, indexTo, 0, block.timestamp - 1, kappa);
-            Snapshot memory post = _makeSnapshot(nusd, nusd);
-            _checkSnapshots(pre, post, gasAirdropAmount, AMOUNT);
+            _test_withdrawAndRemove(nusd, indexTo, 0, block.timestamp - 1, AMOUNT);
         }
     }
 
     function test_withdrawAndRemove_wrongIndex() public {
-        if (!isMainnet) {
-            emit log_string("Skipping withdrawAndRemove: not mainnet");
-            return;
-        }
-        if (address(nusdPool) == ZERO) {
-            emit log_string("Skipping withdrawAndRemove: no pool configured");
-            return;
-        }
-        if (!WRONG_INDEX_TEST_ENABLED) {
-            emit log_string("Tests with wrong indices not yet enabled");
-            return;
-        }
-        bytes32 kappa = _nextKappa();
-        uint8 indexTo = uint8(nusdPoolTokens.length);
-        Snapshot memory pre = _makeSnapshot(nusd, nusd);
-        vm.prank(NODE);
-        bridge.withdrawAndRemove(USER, nusd, AMOUNT_FULL, FEE, nusdPool, indexTo, 0, block.timestamp, kappa);
-        Snapshot memory post = _makeSnapshot(nusd, nusd);
-        _checkSnapshots(pre, post, gasAirdropAmount, AMOUNT);
+        if (_checkPoolRemoveTestSkipped(nusdPool, "remove_nusd")) return;
+        if (_checkWrongIndexTestSkipped()) return;
+        _test_withdrawAndRemove(nusd, uint8(nusdPoolTokens.length), 0, type(uint256).max, AMOUNT);
     }
 
     function test_upgrade() public {
@@ -565,6 +344,44 @@ abstract contract DefaultBridgeForkTest is Test {
         }
 
         assertEq(bridge.bridgeVersion(), 7, "Bridge version not bumped");
+    }
+
+    function _assertKappa(bytes32 kappa) internal view {
+        assert(bridge.kappaExists(kappa));
+    }
+
+    function _checkTokenTestSkipped(IERC20 token, string memory testName) internal returns (bool skipped) {
+        if (address(token) == ZERO) {
+            emit log_string(string.concat("Skipping ", testName, ": no token configured"));
+            skipped = true;
+        }
+    }
+
+    function _checkPoolSwapTestSkipped(ISwap pool, string memory testName) internal returns (bool skipped) {
+        if (isMainnet) {
+            emit log_string(string.concat("Skipping ", testName, ": no swap tests on Mainnet"));
+            skipped = true;
+        } else if (address(pool) == ZERO) {
+            emit log_string(string.concat("Skipping ", testName, ": no pool configured"));
+            skipped = true;
+        }
+    }
+
+    function _checkPoolRemoveTestSkipped(ISwap pool, string memory testName) internal returns (bool skipped) {
+        if (!isMainnet) {
+            emit log_string(string.concat("Skipping ", testName, ": remove tests are Mainnet-only"));
+            skipped = true;
+        } else if (address(pool) == ZERO) {
+            emit log_string(string.concat("Skipping ", testName, ": no pool configured"));
+            skipped = true;
+        }
+    }
+
+    function _checkWrongIndexTestSkipped() internal returns (bool skipped) {
+        if (!WRONG_INDEX_TEST_ENABLED) {
+            emit log_string("Tests with wrong indices not yet enabled");
+            skipped = true;
+        }
     }
 
     function _checkSnapshots(
@@ -612,9 +429,69 @@ abstract contract DefaultBridgeForkTest is Test {
         if (address(syn) != ZERO) state.feesSyn = bridge.getFeeBalance(syn);
 
         for (uint256 i = 0; i < _existingKappas.length; ++i) {
-            assert(bridge.kappaExists(_existingKappas[i]));
+            _assertKappa(_existingKappas[i]);
         }
 
         _bridgeState = state;
+    }
+
+    function _test_mint(IERC20 bridgeToken) internal {
+        bytes32 kappa = _nextKappa();
+        Snapshot memory pre = _makeSnapshot(bridgeToken, bridgeToken);
+        vm.prank(NODE);
+        bridge.mint(USER, bridgeToken, AMOUNT_FULL, FEE, kappa);
+        Snapshot memory post = _makeSnapshot(bridgeToken, bridgeToken);
+        _checkSnapshots(pre, post, gasAirdropAmount, AMOUNT);
+    }
+
+    function _test_mintAndSwap(
+        IERC20 bridgeToken,
+        IERC20 receivedToken,
+        ISwap pool,
+        uint8 indexFrom,
+        uint8 indexTo,
+        uint256 quote,
+        uint256 deadline,
+        uint256 expectedGas,
+        uint256 expectedToken
+    ) internal {
+        bytes32 kappa = _nextKappa();
+        Snapshot memory pre = _makeSnapshot(bridgeToken, receivedToken);
+        vm.prank(NODE);
+        bridge.mintAndSwap(USER, bridgeToken, AMOUNT_FULL, FEE, pool, indexFrom, indexTo, quote, deadline, kappa);
+        Snapshot memory post = _makeSnapshot(bridgeToken, receivedToken);
+        _checkSnapshots(pre, post, gasAirdropAmount + expectedGas, expectedToken);
+        _assertKappa(kappa);
+    }
+
+    function _test_withdraw(
+        IERC20 bridgeToken,
+        IERC20 receivedToken,
+        uint256 expectedGas,
+        uint256 expectedToken
+    ) internal {
+        bytes32 kappa = _nextKappa();
+        Snapshot memory pre = _makeSnapshot(bridgeToken, receivedToken);
+        vm.prank(NODE);
+        bridge.withdraw(USER, bridgeToken, AMOUNT_FULL, FEE, kappa);
+        Snapshot memory post = _makeSnapshot(bridgeToken, receivedToken);
+        _checkSnapshots(pre, post, gasAirdropAmount + expectedGas, expectedToken);
+        _assertKappa(kappa);
+    }
+
+    function _test_withdrawAndRemove(
+        IERC20 receivedToken,
+        uint8 indexTo,
+        uint256 quote,
+        uint256 deadline,
+        uint256 expectedToken
+    ) internal {
+        bytes32 kappa = _nextKappa();
+        Snapshot memory pre = _makeSnapshot(nusd, receivedToken);
+        vm.prank(NODE);
+        bridge.withdrawAndRemove(USER, nusd, AMOUNT_FULL, FEE, nusdPool, indexTo, quote, deadline, kappa);
+        Snapshot memory post = _makeSnapshot(nusd, receivedToken);
+        _checkSnapshots(pre, post, gasAirdropAmount, expectedToken);
+        _assertKappa(kappa);
     }
 }
