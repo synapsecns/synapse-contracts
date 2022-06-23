@@ -183,12 +183,13 @@ abstract contract DefaultBridgeForkTest is Test {
     }
 
     function setUp() public {
-        uint256 length = 0;
-        for (; ; ++length) {
-            try nusdPool.getToken(uint8(length)) returns (IERC20 token) {
-                nusdPoolTokens.push(token);
-            } catch {
-                break;
+        if (address(nusdPool) != ZERO) {
+            for (uint8 index = 0; ; ++index) {
+                try nusdPool.getToken(index) returns (IERC20 token) {
+                    nusdPoolTokens.push(token);
+                } catch {
+                    break;
+                }
             }
         }
 
@@ -198,6 +199,10 @@ abstract contract DefaultBridgeForkTest is Test {
     }
 
     function test_mint() public {
+        if (address(syn) == ZERO) {
+            emit log_string("Skipping mint: no testing token configured");
+            return;
+        }
         bytes32 kappa = _nextKappa();
         Snapshot memory pre = _makeSnapshot(syn, syn);
         vm.prank(NODE);
@@ -209,6 +214,10 @@ abstract contract DefaultBridgeForkTest is Test {
     function test_mintAndSwap_neth() public {
         if (isMainnet) {
             emit log_string("Skipping mintAndSwap_neth on Mainnet");
+            return;
+        }
+        if (address(nethPool) == ZERO) {
+            emit log_string("Skipping mintAndSwap_neth: no pool configured");
             return;
         }
         bytes32 kappa = _nextKappa();
@@ -223,6 +232,10 @@ abstract contract DefaultBridgeForkTest is Test {
     function test_mintAndSwap_nusd() public {
         if (isMainnet) {
             emit log_string("Skipping mintAndSwap_nusd on Mainnet");
+            return;
+        }
+        if (address(nusdPool) == ZERO) {
+            emit log_string("Skipping mintAndSwap_nusd: no pool configured");
             return;
         }
         uint256 amount = nusdPoolTokens.length;
@@ -270,6 +283,10 @@ abstract contract DefaultBridgeForkTest is Test {
     function test_withdrawAndRemove() public {
         if (!isMainnet) {
             emit log_string("Skipping withdrawAndRemove: not mainnet");
+            return;
+        }
+        if (address(nusdPool) == ZERO) {
+            emit log_string("Skipping withdrawAndRemove: no pool configured");
             return;
         }
         uint256 amount = nusdPoolTokens.length;
