@@ -68,13 +68,9 @@ contract L2BridgeZap {
         require(address(swap) != address(0), "Swap is 0x00");
         IERC20[] memory tokens = swapTokensMap[swap];
         tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
-        // swap
-
+        // swap allowance was given in _setTokenPool()
         uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
-        // deposit into bridge, gets nUSD
-        if (token.allowance(address(this), address(synapseBridge)) < swappedAmount) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // synapseBridge allowance was given in _setTokenPool()
         synapseBridge.redeem(to, chainId, token, swappedAmount);
     }
 
@@ -95,13 +91,9 @@ contract L2BridgeZap {
         require(address(swapMap[token]) != address(0), "Swap is 0x00");
         IERC20[] memory tokens = swapTokensMap[swapMap[token]];
         tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
-        // swap
-
+        // swap allowance was given in _setTokenPool()
         uint256 swappedAmount = swapMap[token].swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
-        // deposit into bridge, gets nUSD
-        if (token.allowance(address(this), address(synapseBridge)) < swappedAmount) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // synapseBridge allowance was given in _setTokenPool()
         synapseBridge.redeemAndSwap(
             to,
             chainId,
@@ -131,13 +123,9 @@ contract L2BridgeZap {
         require(address(swap) != address(0), "Swap is 0x00");
         IERC20[] memory tokens = swapTokensMap[swap];
         tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
-        // swap
-
+        // swap allowance was given in _setTokenPool()
         uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
-        // deposit into bridge, gets nUSD
-        if (token.allowance(address(this), address(synapseBridge)) < swappedAmount) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // synapseBridge allowance was given in _setTokenPool()
         synapseBridge.redeemAndRemove(to, chainId, token, swappedAmount, liqTokenIndex, liqMinAmount, liqDeadline);
     }
 
@@ -155,9 +143,8 @@ contract L2BridgeZap {
         uint256 amount
     ) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
-        if (token.allowance(address(this), address(synapseBridge)) < amount) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // set infinite allowance if it hasn't been set before
+        _setInfiniteAllowance(token, address(synapseBridge));
         synapseBridge.redeem(to, chainId, token, amount);
     }
 
@@ -175,9 +162,8 @@ contract L2BridgeZap {
         uint256 amount
     ) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
-        if (token.allowance(address(this), address(synapseBridge)) < amount) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // set infinite allowance if it hasn't been set before
+        _setInfiniteAllowance(token, address(synapseBridge));
         synapseBridge.deposit(to, chainId, token, amount);
     }
 
@@ -194,6 +180,7 @@ contract L2BridgeZap {
     ) external payable {
         require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+        // WETH inf allowance was set in the constructor
         synapseBridge.deposit(to, chainId, IERC20(WETH_ADDRESS), amount);
     }
 
@@ -218,6 +205,7 @@ contract L2BridgeZap {
     ) external payable {
         require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+        // WETH inf allowance was set in the constructor
         synapseBridge.depositAndSwap(
             to,
             chainId,
@@ -245,9 +233,9 @@ contract L2BridgeZap {
         ISwap swap = swapMap[token];
         require(address(swap) != address(0), "Swap is 0x00");
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
-
-        // swap
+        // swap allowance was given in _setTokenPool()
         uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
+        // synapseBridge allowance was given in _setTokenPool()
         synapseBridge.redeem(to, chainId, token, swappedAmount);
     }
 
@@ -270,9 +258,9 @@ contract L2BridgeZap {
         ISwap swap = swapMap[token];
         require(address(swap) != address(0), "Swap is 0x00");
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
-
-        // swap
+        // swap allowance was given in _setTokenPool()
         uint256 swappedAmount = swap.swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
+        // synapseBridge allowance was given in _setTokenPool()
         synapseBridge.redeemAndSwap(
             to,
             chainId,
@@ -308,9 +296,8 @@ contract L2BridgeZap {
         uint256 deadline
     ) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
-        if (token.allowance(address(this), address(synapseBridge)) < amount) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // set infinite allowance if it hasn't been set before
+        _setInfiniteAllowance(token, address(synapseBridge));
         synapseBridge.redeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
     }
 
@@ -335,9 +322,8 @@ contract L2BridgeZap {
         uint256 liqDeadline
     ) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
-        if (token.allowance(address(this), address(synapseBridge)) < amount) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // set infinite allowance if it hasn't been set before
+        _setInfiniteAllowance(token, address(synapseBridge));
         synapseBridge.redeemAndRemove(to, chainId, token, amount, liqTokenIndex, liqMinAmount, liqDeadline);
     }
 
@@ -355,10 +341,8 @@ contract L2BridgeZap {
         uint256 amount
     ) external {
         token.safeTransferFrom(msg.sender, address(this), amount);
-
-        if (token.allowance(address(this), address(synapseBridge)) < amount) {
-            token.safeApprove(address(synapseBridge), MAX_UINT256);
-        }
+        // set infinite allowance if it hasn't been set before
+        _setInfiniteAllowance(token, address(synapseBridge));
         synapseBridge.redeemv2(to, chainId, token, amount);
     }
 
