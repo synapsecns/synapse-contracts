@@ -19,8 +19,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const LP_TOKEN_NAME = "oUSDT-LP";
     const LP_TOKEN_SYMBOL = "oUSDT-LP";
     const INITIAL_A = 1000;
-    const SWAP_FEE = 4e6; // 4bps
-    const ADMIN_FEE = 0; // 0%
+    const SWAP_FEE = 2e6; // 2bps
+    const ADMIN_FEE = 6e9; // 60%
 
     const receipt = await execute(
       "SwapDeployer",
