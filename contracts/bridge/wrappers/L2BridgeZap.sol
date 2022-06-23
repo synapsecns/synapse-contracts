@@ -10,13 +10,14 @@ import "../interfaces/IWETH9.sol";
 contract L2BridgeZap {
     using SafeERC20 for IERC20;
 
-    ISynapseBridge synapseBridge;
+    ISynapseBridge public immutable synapseBridge;
+    // solhint-disable-next-line var-name-mixedcase
     address payable public immutable WETH_ADDRESS;
 
     mapping(address => address) public swapMap;
     mapping(address => IERC20[]) public swapTokensMap;
 
-    uint256 constant MAX_UINT256 = 2**256 - 1;
+    uint256 internal constant MAX_UINT256 = 2**256 - 1;
 
     constructor(
         address payable _wethAddress,
@@ -40,7 +41,7 @@ contract L2BridgeZap {
                     try ISwap(_swapOne).getToken(i) returns (IERC20 token) {
                         swapTokensMap[_swapOne].push(token);
                         token.safeApprove(address(_swapOne), MAX_UINT256);
-                        token.safeApprove(address(synapseBridge), MAX_UINT256);
+                        token.safeApprove(address(_synapseBridge), MAX_UINT256);
                     } catch {
                         break;
                     }
@@ -55,7 +56,7 @@ contract L2BridgeZap {
                     try ISwap(_swapTwo).getToken(i) returns (IERC20 token) {
                         swapTokensMap[_swapTwo].push(token);
                         token.safeApprove(address(_swapTwo), MAX_UINT256);
-                        token.safeApprove(address(synapseBridge), MAX_UINT256);
+                        token.safeApprove(address(_synapseBridge), MAX_UINT256);
                     } catch {
                         break;
                     }
