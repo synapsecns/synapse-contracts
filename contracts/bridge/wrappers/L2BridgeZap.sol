@@ -14,15 +14,15 @@ contract L2BridgeZap {
     // solhint-disable-next-line var-name-mixedcase
     address payable public immutable WETH_ADDRESS;
 
-    mapping(address => address) public swapMap;
-    mapping(address => IERC20[]) public swapTokensMap;
+    mapping(IERC20 => ISwap) public swapMap;
+    mapping(ISwap => IERC20[]) public swapTokensMap;
 
     uint256 internal constant MAX_UINT256 = 2**256 - 1;
 
     constructor(
         address payable _wethAddress,
-        address[] memory _swaps,
-        address[] memory _bridgeTokens,
+        ISwap[] memory _swaps,
+        IERC20[] memory _bridgeTokens,
         ISynapseBridge _synapseBridge
     ) public {
         require(_swaps.length == _bridgeTokens.length, "!arrays");
@@ -32,7 +32,7 @@ contract L2BridgeZap {
             _setInfiniteAllowance(IERC20(_wethAddress), address(_synapseBridge));
         }
         for (uint256 i = 0; i < _swaps.length; ++i) {
-            _setTokenPool(ISwap(_swaps[i]), _bridgeTokens[i], address(_synapseBridge));
+            _setTokenPool(_swaps[i], _bridgeTokens[i], address(_synapseBridge));
         }
     }
 
@@ -50,7 +50,7 @@ contract L2BridgeZap {
         uint8 tokenIndexTo,
         uint256 dx
     ) external view virtual returns (uint256) {
-        ISwap swap = ISwap(swapMap[address(token)]);
+        ISwap swap = swapMap[token];
         return swap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
     }
 
@@ -64,9 +64,9 @@ contract L2BridgeZap {
         uint256 minDy,
         uint256 deadline
     ) external {
-        ISwap swap = ISwap(swapMap[address(token)]);
+        ISwap swap = swapMap[token];
         require(address(swap) != address(0), "Swap is 0x00");
-        IERC20[] memory tokens = swapTokensMap[address(swap)];
+        IERC20[] memory tokens = swapTokensMap[swap];
         tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
         // swap
 
@@ -92,12 +92,12 @@ contract L2BridgeZap {
         uint256 swapMinDy,
         uint256 swapDeadline
     ) external {
-        require(address(swapMap[address(token)]) != address(0), "Swap is 0x00");
-        IERC20[] memory tokens = swapTokensMap[swapMap[address(token)]];
+        require(address(swapMap[token]) != address(0), "Swap is 0x00");
+        IERC20[] memory tokens = swapTokensMap[swapMap[token]];
         tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
         // swap
 
-        uint256 swappedAmount = ISwap(swapMap[address(token)]).swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
+        uint256 swappedAmount = swapMap[token].swap(tokenIndexFrom, tokenIndexTo, dx, minDy, deadline);
         // deposit into bridge, gets nUSD
         if (token.allowance(address(this), address(synapseBridge)) < swappedAmount) {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
@@ -127,9 +127,9 @@ contract L2BridgeZap {
         uint256 liqMinAmount,
         uint256 liqDeadline
     ) external {
-        ISwap swap = ISwap(swapMap[address(token)]);
+        ISwap swap = swapMap[token];
         require(address(swap) != address(0), "Swap is 0x00");
-        IERC20[] memory tokens = swapTokensMap[address(swap)];
+        IERC20[] memory tokens = swapTokensMap[swap];
         tokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
         // swap
 
@@ -242,7 +242,7 @@ contract L2BridgeZap {
     ) external payable {
         require(WETH_ADDRESS != address(0), "WETH 0");
         require(msg.value > 0 && msg.value == dx, "INCORRECT MSG VALUE");
-        ISwap swap = ISwap(swapMap[address(token)]);
+        ISwap swap = swapMap[token];
         require(address(swap) != address(0), "Swap is 0x00");
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
 
@@ -267,7 +267,7 @@ contract L2BridgeZap {
     ) external payable {
         require(WETH_ADDRESS != address(0), "WETH 0");
         require(msg.value > 0 && msg.value == dx, "INCORRECT MSG VALUE");
-        ISwap swap = ISwap(swapMap[address(token)]);
+        ISwap swap = swapMap[token];
         require(address(swap) != address(0), "Swap is 0x00");
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
 
@@ -383,19 +383,19 @@ contract L2BridgeZap {
 
     function _setTokenPool(
         ISwap _swap,
-        address _bridgeToken,
+        IERC20 _bridgeToken,
         address _synapseBridge
     ) internal {
         // do nothing, if swap is already saved
         // SLOAD + SSTORE doesn't waste any gas compared to just SSTORE
-        if (swapMap[_bridgeToken] == address(_swap)) return;
-        swapMap[_bridgeToken] = address(_swap);
+        if (address(swapMap[_bridgeToken]) == address(_swap)) return;
+        swapMap[_bridgeToken] = _swap;
 
         // store tokens from a swap pool exactly once
-        if (swapTokensMap[address(_swap)].length == 0) {
+        if (swapTokensMap[_swap].length == 0) {
             for (uint256 i = 0; ; ++i) {
                 try _swap.getToken(uint8(i)) returns (IERC20 token) {
-                    swapTokensMap[address(_swap)].push(token);
+                    swapTokensMap[_swap].push(token);
                     // allow swap pool to spend all pool tokens
                     _setInfiniteAllowance(token, address(_swap));
                 } catch {
