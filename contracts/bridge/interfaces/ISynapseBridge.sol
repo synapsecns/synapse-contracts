@@ -33,7 +33,7 @@ interface ISynapseBridge {
         uint256 amount
     ) external;
 
-    function redeemv2(
+    function redeemV2(
         bytes32 to,
         uint256 chainId,
         IERC20 token,

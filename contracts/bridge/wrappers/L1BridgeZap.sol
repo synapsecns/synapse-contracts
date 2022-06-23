@@ -339,13 +339,13 @@ contract L1BridgeZap {
     }
 
     /**
-     * @notice Wraps SynapseBridge redeemv2() function
+     * @notice Wraps SynapseBridge redeemV2() function
      * @param to address on other chain to bridge assets to
      * @param chainId which chain to bridge assets onto
      * @param token ERC20 compatible token to redeem into the bridge
      * @param amount Amount in native token decimals to transfer cross-chain pre-fees
      **/
-    function redeemv2(
+    function redeemV2(
         bytes32 to,
         uint256 chainId,
         IERC20 token,
@@ -356,6 +356,6 @@ contract L1BridgeZap {
         if (token.allowance(address(this), address(synapseBridge)) < amount) {
             token.safeApprove(address(synapseBridge), MAX_UINT256);
         }
-        synapseBridge.redeemv2(to, chainId, token, amount);
+        synapseBridge.redeemV2(to, chainId, token, amount);
     }
 }
