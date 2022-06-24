@@ -84,6 +84,7 @@ interface IBridge {
 }
 
 abstract contract DefaultBridgeForkTest is Test {
+    using stdStorage for StdStorage;
     struct BridgeTestSetup {
         address bridge;
         address nethPool;
@@ -200,6 +201,23 @@ abstract contract DefaultBridgeForkTest is Test {
         _saveBridgeState();
         address bridgeImpl = deployCode("artifacts/SynapseBridge.sol/SynapseBridge.json");
         utils.upgradeTo(address(bridge), bridgeImpl);
+    }
+
+    function test_enableAirdrop() public {
+        if (gasAirdropAmount != 0) {
+            emit log_string("Skipping: airdrop already enabled");
+            return;
+        }
+        gasAirdropAmount = AMOUNT / 10;
+        stdstore.target(address(bridge)).sig(IBridge.chainGasAmount.selector).checked_write(gasAirdropAmount);
+        require(bridge.chainGasAmount() == gasAirdropAmount, "Failed to set gas airdrop");
+        deal(address(bridge), 10 * AMOUNT);
+
+        test_mint();
+        test_mintAndSwap_neth();
+        test_mintAndSwap_nusd();
+        test_withdraw();
+        test_withdraw_gas();
     }
 
     function test_mint() public {
