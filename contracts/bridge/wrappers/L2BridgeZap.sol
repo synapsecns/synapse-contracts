@@ -174,6 +174,7 @@ contract L2BridgeZap {
         uint256 chainId,
         uint256 amount
     ) external payable {
+        require(WETH_ADDRESS != address(0), "WETH 0");
         require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
         // WETH inf allowance was set in the constructor
@@ -199,6 +200,7 @@ contract L2BridgeZap {
         uint256 minDy,
         uint256 deadline
     ) external payable {
+        require(WETH_ADDRESS != address(0), "WETH 0");
         require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
         // WETH inf allowance was set in the constructor
