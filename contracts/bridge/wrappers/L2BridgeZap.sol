@@ -72,7 +72,7 @@ contract L2BridgeZap is Ownable {
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                            ZAP FUNCTIONS                             ║*▕
+    ▏*║                         ZAP FUNCTIONS: SWAP                          ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function swapAndRedeem(
@@ -150,92 +150,9 @@ contract L2BridgeZap is Ownable {
         synapseBridge.redeemAndRemove(to, chainId, token, swappedAmount, liqTokenIndex, liqMinAmount, liqDeadline);
     }
 
-    /**
-     * @notice wraps SynapseBridge redeem()
-     * @param to address on other chain to redeem underlying assets to
-     * @param chainId which underlying chain to bridge assets onto
-     * @param token ERC20 compatible token to deposit into the bridge
-     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-     **/
-    function redeem(
-        address to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    ) external {
-        _pullAndApprove(token, amount);
-        synapseBridge.redeem(to, chainId, token, amount);
-    }
-
-    /**
-     * @notice wraps SynapseBridge redeem()
-     * @param to address on other chain to redeem underlying assets to
-     * @param chainId which underlying chain to bridge assets onto
-     * @param token ERC20 compatible token to deposit into the bridge
-     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-     **/
-    function deposit(
-        address to,
-        uint256 chainId,
-        IERC20 token,
-        uint256 amount
-    ) external {
-        _pullAndApprove(token, amount);
-        synapseBridge.deposit(to, chainId, token, amount);
-    }
-
-    /**
-     * @notice Wraps SynapseBridge deposit() function to make it compatible w/ ETH -> WETH conversions
-     * @param to address on other chain to bridge assets to
-     * @param chainId which chain to bridge assets onto
-     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-     **/
-    function depositETH(
-        address to,
-        uint256 chainId,
-        uint256 amount
-    ) external payable {
-        require(WETH_ADDRESS != address(0), "WETH 0");
-        require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
-        IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
-        // WETH inf allowance was set in the constructor
-        synapseBridge.deposit(to, chainId, IERC20(WETH_ADDRESS), amount);
-    }
-
-    /**
-     * @notice Wraps SynapseBridge depositAndSwap() function to make it compatible w/ ETH -> WETH conversions
-     * @param to address on other chain to bridge assets to
-     * @param chainId which chain to bridge assets onto
-     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-     * @param tokenIndexFrom the token the user wants to swap from
-     * @param tokenIndexTo the token the user wants to swap to
-     * @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
-     * @param deadline latest timestamp to accept this transaction
-     **/
-    function depositETHAndSwap(
-        address to,
-        uint256 chainId,
-        uint256 amount,
-        uint8 tokenIndexFrom,
-        uint8 tokenIndexTo,
-        uint256 minDy,
-        uint256 deadline
-    ) external payable {
-        require(WETH_ADDRESS != address(0), "WETH 0");
-        require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
-        IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
-        // WETH inf allowance was set in the constructor
-        synapseBridge.depositAndSwap(
-            to,
-            chainId,
-            IERC20(WETH_ADDRESS),
-            amount,
-            tokenIndexFrom,
-            tokenIndexTo,
-            minDy,
-            deadline
-        );
-    }
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                      ZAP FUNCTIONS: SWAP (ETH)                       ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function swapETHAndRedeem(
         address to,
@@ -290,6 +207,27 @@ contract L2BridgeZap is Ownable {
             swapMinDy,
             swapDeadline
         );
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                    ZAP FUNCTIONS: REDEEM│DEPOSIT                     ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    /**
+     * @notice Wraps SynapseBridge redeem()
+     * @param to address on other chain to redeem underlying assets to
+     * @param chainId which underlying chain to bridge assets onto
+     * @param token ERC20 compatible token to deposit into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+     **/
+    function redeem(
+        address to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    ) external {
+        _pullAndApprove(token, amount);
+        synapseBridge.redeem(to, chainId, token, amount);
     }
 
     /**
@@ -359,6 +297,80 @@ contract L2BridgeZap is Ownable {
         synapseBridge.redeemV2(to, chainId, token, amount);
     }
 
+    /**
+     * @notice Wraps SynapseBridge deposit()
+     * @param to address on other chain to redeem underlying assets to
+     * @param chainId which underlying chain to bridge assets onto
+     * @param token ERC20 compatible token to deposit into the bridge
+     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+     **/
+    function deposit(
+        address to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    ) external {
+        _pullAndApprove(token, amount);
+        synapseBridge.deposit(to, chainId, token, amount);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                     ZAP FUNCTIONS: DEPOSIT (ETH)                     ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    /**
+     * @notice Wraps SynapseBridge deposit() function to make it compatible w/ ETH -> WETH conversions
+     * @param to address on other chain to bridge assets to
+     * @param chainId which chain to bridge assets onto
+     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+     **/
+    function depositETH(
+        address to,
+        uint256 chainId,
+        uint256 amount
+    ) external payable {
+        require(WETH_ADDRESS != address(0), "WETH 0");
+        require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
+        IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+        // WETH inf allowance was set in the constructor
+        synapseBridge.deposit(to, chainId, IERC20(WETH_ADDRESS), amount);
+    }
+
+    /**
+     * @notice Wraps SynapseBridge depositAndSwap() function to make it compatible w/ ETH -> WETH conversions
+     * @param to address on other chain to bridge assets to
+     * @param chainId which chain to bridge assets onto
+     * @param amount Amount in native token decimals to transfer cross-chain pre-fees
+     * @param tokenIndexFrom the token the user wants to swap from
+     * @param tokenIndexTo the token the user wants to swap to
+     * @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
+     * @param deadline latest timestamp to accept this transaction
+     **/
+    function depositETHAndSwap(
+        address to,
+        uint256 chainId,
+        uint256 amount,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline
+    ) external payable {
+        require(WETH_ADDRESS != address(0), "WETH 0");
+        require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
+        IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
+        // WETH inf allowance was set in the constructor
+        synapseBridge.depositAndSwap(
+            to,
+            chainId,
+            IERC20(WETH_ADDRESS),
+            amount,
+            tokenIndexFrom,
+            tokenIndexTo,
+            minDy,
+            deadline
+        );
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                           INTERNAL HELPERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
@@ -393,8 +405,7 @@ contract L2BridgeZap is Ownable {
         // SLOAD + SSTORE doesn't waste any gas compared to just SSTORE
         if (address(swapMap[_bridgeToken]) == address(_swap)) return;
         swapMap[_bridgeToken] = _swap;
-
-        // store tokens from a swap pool exactly once
+        // load tokens from a swap pool exactly once
         if (swapTokensMap[_swap].length == 0) {
             for (uint256 i = 0; ; ++i) {
                 try _swap.getToken(uint8(i)) returns (IERC20 token) {
@@ -406,7 +417,6 @@ contract L2BridgeZap is Ownable {
                 }
             }
         }
-
         // allow bridge to spend _bridgeToken
         _setInfiniteAllowance(IERC20(_bridgeToken), address(_synapseBridge));
     }
