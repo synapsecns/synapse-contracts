@@ -277,7 +277,7 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
         if (_checkIfSwapTestSkipped()) return;
         (uint256 globalIndex, uint8 ethIndex, uint8 bridgeTokenIndex) = _findEthPool();
         if (ethIndex == bridgeTokenIndex) {
-            emit log_string("Skipping: ETH pool not found");
+            emit log_string("Skipping: pool with WGAS not found");
             return;
         }
 
