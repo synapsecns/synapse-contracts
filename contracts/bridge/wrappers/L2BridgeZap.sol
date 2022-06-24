@@ -3,11 +3,12 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/ISwap.sol";
 import "../interfaces/ISynapseBridge.sol";
 import "../interfaces/IWETH9.sol";
 
-contract L2BridgeZap {
+contract L2BridgeZap is Ownable {
     using SafeERC20 for IERC20;
 
     ISynapseBridge public immutable synapseBridge;
@@ -53,6 +54,26 @@ contract L2BridgeZap {
         ISwap swap = swapMap[token];
         return swap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
     }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                              ONLY OWNER                              ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function setInfiniteAllowance(IERC20 _token, address _spender) external onlyOwner {
+        _setInfiniteAllowance(_token, _spender);
+    }
+
+    function setTokenPool(ISwap _swap, IERC20 _bridgeToken) external onlyOwner {
+        _setTokenPool(_swap, _bridgeToken, address(synapseBridge));
+    }
+
+    function removeTokenPool(IERC20 _bridgeToken) external onlyOwner {
+        swapMap[_bridgeToken] = ISwap(address(0));
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                            ZAP FUNCTIONS                             ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function swapAndRedeem(
         address to,
