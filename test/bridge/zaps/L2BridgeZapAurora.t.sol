@@ -28,6 +28,7 @@ contract L2BridgeZapTestAurora is DefaultL2BridgeZapTest {
     function test_updatePool() public {
         _clearSavedPools();
         _addBridgePool(NUSD, NUSD_POOL_NEW);
+        zap.setTokenPool(ISwap(NUSD_POOL_NEW), IERC20(NUSD));
 
         (uint8 bridgeTokenIndex, uint8 swapTokens) = _getBridgeTokenIndex(0);
         IERC20 bridgeToken = IERC20(NUSD);
@@ -37,13 +38,12 @@ contract L2BridgeZapTestAurora is DefaultL2BridgeZapTest {
             IERC20 tokenFrom = _getToken(0, indexFrom);
             // Use 1.0 worth of tokens for swapping
             uint256 amount = 10**ERC20(address(tokenFrom)).decimals();
-            // TODO: estimate the metapool swap quote
-            uint256 quote = 0;
             // deal test tokens to user and approve Zap to spend them
             _prepareTestTokens(tokenFrom, amount);
+            uint256 quote = _getQuoteExact(0, indexFrom, bridgeTokenIndex, amount);
             _logSwapTest(0, indexFrom, bridgeTokenIndex);
             // need exact quote to be able to check data
-            vm.expectEmit(true, false, false, false);
+            vm.expectEmit(true, true, true, true);
             _runTest_swapAndRedeemAndSwap(bridgeToken, indexFrom, bridgeTokenIndex, amount, quote);
         }
     }

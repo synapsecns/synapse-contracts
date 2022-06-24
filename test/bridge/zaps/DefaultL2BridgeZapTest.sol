@@ -36,6 +36,8 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
 
     IL2BridgeZap internal zap;
 
+    Utilities internal utils;
+
     uint256 internal constant CHAIN_ID = 69;
     uint256 internal constant AMOUNT = 10**18;
     address internal constant USER = address(1337420);
@@ -58,6 +60,7 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
         zap = IL2BridgeZap(deployCode("L2BridgeZap.sol", abi.encode(wethAddress, swaps, bridgeTokens, synapseBridge)));
 
         dummyToken = deployCode("ERC20Mock.sol", abi.encode("TEST", "TEST", 0));
+        utils = new Utilities();
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -481,6 +484,33 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
         uint256 _amount
     ) internal view returns (uint256) {
         return ISwap(swaps[_globalIndex]).calculateSwap(_indexFrom, _indexTo, _amount);
+    }
+
+    function _getQuoteExact(
+        uint256 _globalIndex,
+        uint8 _indexFrom,
+        uint8 _indexTo,
+        uint256 _amount
+    ) internal returns (uint256 quote) {
+        ISwap swap = ISwap(swaps[_globalIndex]);
+        IERC20 tokenFrom = _getToken(_globalIndex, _indexFrom);
+        vm.prank(USER);
+        tokenFrom.approve(address(swap), _amount);
+        // Gigabrain move: call pool.swap(), save the returned value and use if for the revert message.
+        // This gets the swap quote without actually swaping the token.
+        // Handy in testing only if pool.calculateSwap() is off by a few bps.
+        try
+            utils.peekReturnValue(
+                USER,
+                address(swap),
+                abi.encodeWithSelector(ISwap.swap.selector, _indexFrom, _indexTo, _amount, 0, block.timestamp),
+                0
+            )
+        {
+            assert(false);
+        } catch Error(string memory reason) {
+            quote = abi.decode(bytes(reason), (uint256));
+        }
     }
 
     function _logSwapTest(
