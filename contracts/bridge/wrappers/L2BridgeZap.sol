@@ -27,6 +27,7 @@ contract L2BridgeZap is Ownable {
         ISynapseBridge _synapseBridge
     ) public {
         require(_swaps.length == _bridgeTokens.length, "!arrays");
+        require(_wethAddress != address(0), "WETH 0");
         WETH_ADDRESS = _wethAddress;
         synapseBridge = _synapseBridge;
         if (_wethAddress != address(0)) {
@@ -215,7 +216,6 @@ contract L2BridgeZap is Ownable {
         uint256 minDy,
         uint256 deadline
     ) external payable {
-        require(WETH_ADDRESS != address(0), "WETH 0");
         require(msg.value > 0 && msg.value == dx, "INCORRECT MSG VALUE");
         ISwap swap = swapMap[token];
         require(address(swap) != address(0), "Swap is 0x00");
@@ -255,7 +255,6 @@ contract L2BridgeZap is Ownable {
         uint256 swapMinDy,
         uint256 swapDeadline
     ) external payable {
-        require(WETH_ADDRESS != address(0), "WETH 0");
         require(msg.value > 0 && msg.value == dx, "INCORRECT MSG VALUE");
         ISwap swap = swapMap[token];
         require(address(swap) != address(0), "Swap is 0x00");
@@ -393,7 +392,6 @@ contract L2BridgeZap is Ownable {
         uint256 chainId,
         uint256 amount
     ) external payable {
-        require(WETH_ADDRESS != address(0), "WETH 0");
         require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
         // WETH inf allowance was set in the constructor
@@ -419,7 +417,6 @@ contract L2BridgeZap is Ownable {
         uint256 minDy,
         uint256 deadline
     ) external payable {
-        require(WETH_ADDRESS != address(0), "WETH 0");
         require(msg.value > 0 && msg.value == amount, "INCORRECT MSG VALUE");
         IWETH9(WETH_ADDRESS).deposit{value: msg.value}();
         // WETH inf allowance was set in the constructor

@@ -387,10 +387,6 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function _test_noSwap_ETH_generic(function() _runTest) internal {
-        if (wethAddress == ZERO) {
-            emit log_string("Skipping: WETH_ADDRESS not configured");
-            return;
-        }
         deal(USER, AMOUNT);
         _logNoSwapTest(IERC20(wethAddress));
         vm.expectEmit(true, true, true, true);
