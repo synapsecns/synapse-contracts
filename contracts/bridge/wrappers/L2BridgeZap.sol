@@ -271,7 +271,7 @@ contract L2BridgeZap {
 
     /**
      * @notice Wraps redeemAndSwap on SynapseBridge.sol
-     * Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
+     * Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
      * @param to address on other chain to redeem underlying assets to
      * @param chainId which underlying chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
@@ -297,14 +297,14 @@ contract L2BridgeZap {
 
     /**
      * @notice Wraps redeemAndRemove on SynapseBridge
-     * Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
+     * Relays to nodes that (typically) a wrapped synAsset ERC20 token has been burned and the underlying needs to be redeemed on the native chain. This function indicates to the nodes that they should attempt to redeem the LP token for the underlying assets (E.g "swap" out of the LP token)
      * @param to address on other chain to redeem underlying assets to
      * @param chainId which underlying chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
      * @param amount Amount of (typically) LP token to pass to the nodes to attempt to removeLiquidity() with to redeem for the underlying assets of the LP token
      * @param liqTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
      * @param liqMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
-     * @param liqDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
+     * @param liqDeadline Specifies the deadline that the nodes are allowed to try to redeem/swap the LP token
      **/
     function redeemAndRemove(
         address to,
