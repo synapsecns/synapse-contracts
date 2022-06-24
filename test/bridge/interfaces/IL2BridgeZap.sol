@@ -2,8 +2,19 @@
 pragma solidity ^0.8.0;
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
+import {ISwap} from "./ISwap.sol";
 
 interface IL2BridgeZap {
+    function swapMap(IERC20 _token) external view returns (ISwap);
+
+    function swapTokensMap(ISwap _swap) external view returns (IERC20[] memory);
+
+    function setInfiniteAllowance(IERC20 _token, address _spender) external;
+
+    function setTokenPool(ISwap _swap, IERC20 _bridgeToken) external;
+
+    function removeTokenPool(IERC20 _bridgeToken) external;
+
     function swapAndRedeem(
         address to,
         uint256 chainId,

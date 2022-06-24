@@ -29,6 +29,8 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
     IERC20 internal tokenDeposit;
     IERC20 internal tokenRedeem;
 
+    address internal dummyToken;
+
     address[] internal swaps;
     address[] internal bridgeTokens;
 
@@ -54,6 +56,51 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
 
     function setUp() public virtual {
         zap = IL2BridgeZap(deployCode("L2BridgeZap.sol", abi.encode(wethAddress, swaps, bridgeTokens, synapseBridge)));
+
+        dummyToken = deployCode("ERC20Mock.sol", abi.encode("TEST", "TEST", 0));
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                  TEST FUNCTIONS: RESTRICTED ACCESS                   ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+    
+    function test_setInfiniteAllowance() public {
+        IERC20 token = IERC20(dummyToken);
+        zap.setInfiniteAllowance(token, USER);
+        assertEq(token.allowance(address(zap), USER), type(uint256).max, "Allowance not set");
+    }
+
+    function test_setInfiniteAllowance_asNotOwner() public {
+        vm.prank(USER);
+        vm.expectRevert("Ownable: caller is not the owner");
+        zap.setInfiniteAllowance(IERC20(dummyToken), USER);
+    }
+
+    function test_setTokenPool() public {
+        if (_checkIfSwapTestSkipped()) return;
+        ISwap swap = ISwap(swaps[0]);
+        IERC20 token = IERC20(dummyToken);
+        zap.setTokenPool(swap, token);
+        assertEq(address(zap.swapMap(token)), address(swap), "Swap pool not set");
+    }
+
+    function test_setTokenPool_asNotOwner() public {
+        vm.prank(USER);
+        vm.expectRevert("Ownable: caller is not the owner");
+        zap.setTokenPool(ISwap(address(0)), IERC20(dummyToken));
+    }
+
+    function test_removeTokenPool() public {
+        if (_checkIfSwapTestSkipped()) return;
+        IERC20 bridgeToken = IERC20(bridgeTokens[0]);
+        zap.removeTokenPool(bridgeToken);
+        assertEq(address(zap.swapMap(bridgeToken)), address(0), "Swap pool not removed");
+    }
+
+    function test_removeTokenPool_asNotOwner() public {
+        vm.prank(USER);
+        vm.expectRevert("Ownable: caller is not the owner");
+        zap.removeTokenPool(IERC20(dummyToken));
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -345,14 +392,14 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
 
     function _checkIfSwapTestSkipped() internal returns (bool skipped) {
         if (swaps.length == 0) {
-            emit log_string("Skipping: no swaps configured");
+            emit log_string("Skipping: no swap pools configured");
             skipped = true;
         }
     }
 
     function _checkIfNoSwapTestSkipped(IERC20 _token) internal returns (bool skipped) {
         if (address(_token) == ZERO) {
-            emit log_string("Skipping: no token configured");
+            emit log_string("Skipping: no bridge token configured");
             skipped = true;
         }
     }
