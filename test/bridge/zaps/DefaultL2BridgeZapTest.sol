@@ -63,7 +63,7 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                  TEST FUNCTIONS: RESTRICTED ACCESS                   ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
-    
+
     function test_setInfiniteAllowance() public {
         IERC20 token = IERC20(dummyToken);
         zap.setInfiniteAllowance(token, USER);
@@ -127,6 +127,17 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
         _test_swap_ETH_generic(_runTest_swapETHAndRedeemAndSwap);
     }
 
+    function _testAllTokenSwaps() internal {
+        test_swapAndRedeem();
+        test_swapAndRedeemAndSwap();
+        test_swapAndRedeemAndRemove();
+    }
+
+    function _testAllETHSwaps() internal {
+        test_swapETHAndRedeem();
+        test_swapETHAndRedeemAndSwap();
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                       TEST FUNCTIONS: NO SWAP                        ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
@@ -163,7 +174,7 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
     ▏*║                      SWAP TESTS IMPLEMENTATION                       ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function _test_swap_generic(function(IERC20, uint8, uint8, uint256) _runTest) internal {
+    function _test_swap_generic(function(IERC20, uint8, uint8, uint256, uint256) _runTest) internal {
         if (_checkIfSwapTestSkipped()) return;
         for (uint256 index = 0; index < swaps.length; ++index) {
             // check all bridge tokens that were set up
@@ -172,13 +183,16 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
             for (uint8 indexFrom = 0; indexFrom < swapTokens; ++indexFrom) {
                 // check all candidates for "initial token"
                 if (indexFrom == bridgeTokenIndex) continue;
+                IERC20 tokenFrom = _getToken(index, indexFrom);
+                // Use 1.0 worth of tokens for swapping
+                uint256 amount = 10**ERC20(address(tokenFrom)).decimals();
                 // get quote for swap, will be used for event checking
-                uint256 quote = _getQuote(index, indexFrom, bridgeTokenIndex);
+                uint256 quote = _getQuote(index, indexFrom, bridgeTokenIndex, amount);
                 // deal test tokens to user and approve Zap to spend them
-                _prepareTestTokens(_getToken(index, indexFrom));
+                _prepareTestTokens(tokenFrom, amount);
                 _logSwapTest(index, indexFrom, bridgeTokenIndex);
                 vm.expectEmit(true, true, true, true);
-                _runTest(bridgeToken, indexFrom, bridgeTokenIndex, quote);
+                _runTest(bridgeToken, indexFrom, bridgeTokenIndex, amount, quote);
             }
         }
     }
@@ -187,17 +201,28 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
         IERC20 _bridgeToken,
         uint8 _indexFrom,
         uint8 _bridgeTokenIndex,
+        uint256 _amount,
         uint256 _quote
     ) internal {
         emit TokenRedeem(USER, CHAIN_ID, _bridgeToken, _quote);
         vm.prank(USER);
-        zap.swapAndRedeem(USER, CHAIN_ID, _bridgeToken, _indexFrom, _bridgeTokenIndex, AMOUNT, _quote, block.timestamp);
+        zap.swapAndRedeem(
+            USER,
+            CHAIN_ID,
+            _bridgeToken,
+            _indexFrom,
+            _bridgeTokenIndex,
+            _amount,
+            _quote,
+            block.timestamp
+        );
     }
 
     function _runTest_swapAndRedeemAndSwap(
         IERC20 _bridgeToken,
         uint8 _indexFrom,
         uint8 _bridgeTokenIndex,
+        uint256 _amount,
         uint256 _quote
     ) internal {
         // Use different non-zero placeholder values for testing remote chain arguments
@@ -209,7 +234,7 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
             _bridgeToken,
             _indexFrom,
             _bridgeTokenIndex,
-            AMOUNT,
+            _amount,
             _quote,
             block.timestamp,
             1,
@@ -223,6 +248,7 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
         IERC20 _bridgeToken,
         uint8 _indexFrom,
         uint8 _bridgeTokenIndex,
+        uint256 _amount,
         uint256 _quote
     ) internal {
         // Use different non-zero placeholder values for testing remote chain arguments
@@ -234,7 +260,7 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
             _bridgeToken,
             _indexFrom,
             _bridgeTokenIndex,
-            AMOUNT,
+            _amount,
             _quote,
             block.timestamp,
             1,
@@ -256,7 +282,7 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
         }
 
         IERC20 bridgeToken = IERC20(bridgeTokens[globalIndex]);
-        uint256 quote = _getQuote(globalIndex, ethIndex, bridgeTokenIndex);
+        uint256 quote = _getQuote(globalIndex, ethIndex, bridgeTokenIndex, AMOUNT);
         deal(USER, AMOUNT);
 
         _logSwapTest(globalIndex, ethIndex, bridgeTokenIndex);
@@ -315,7 +341,7 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
 
     function _test_noSwap_generic(IERC20 _token, function(IERC20) _runTest) internal {
         if (_checkIfNoSwapTestSkipped(_token)) return;
-        _prepareTestTokens(_token);
+        _prepareTestTokens(_token, AMOUNT);
         _logNoSwapTest(_token);
         vm.expectEmit(true, true, true, true);
         _runTest(_token);
@@ -404,6 +430,11 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
         }
     }
 
+    function _clearSavedPools() internal {
+        delete swaps;
+        delete bridgeTokens;
+    }
+
     function _findEthPool()
         internal
         view
@@ -446,9 +477,10 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
     function _getQuote(
         uint256 _globalIndex,
         uint8 _indexFrom,
-        uint8 _indexTo
+        uint8 _indexTo,
+        uint256 _amount
     ) internal view returns (uint256) {
-        return ISwap(swaps[_globalIndex]).calculateSwap(_indexFrom, _indexTo, AMOUNT);
+        return ISwap(swaps[_globalIndex]).calculateSwap(_indexFrom, _indexTo, _amount);
     }
 
     function _logSwapTest(
@@ -466,16 +498,16 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
         emit log_string(string.concat("Bridging ", token.symbol()));
     }
 
-    function _prepareTestTokens(IERC20 token) internal {
-        if (address(token) == wethAddress) {
-            deal(USER, AMOUNT);
+    function _prepareTestTokens(IERC20 _token, uint256 _amount) internal {
+        if (address(_token) == wethAddress) {
+            deal(USER, _amount);
             vm.prank(USER);
-            IWETH9(wethAddress).deposit{value: AMOUNT}();
+            IWETH9(wethAddress).deposit{value: _amount}();
         } else {
-            deal(address(token), USER, AMOUNT, true);
+            deal(address(_token), USER, _amount, true);
         }
         vm.prank(USER);
-        token.approve(address(zap), AMOUNT);
+        _token.approve(address(zap), _amount);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
