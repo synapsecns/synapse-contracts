@@ -280,7 +280,7 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
         if (_checkIfSwapTestSkipped()) return;
         (uint256 globalIndex, uint8 ethIndex, uint8 bridgeTokenIndex) = _findEthPool();
         if (ethIndex == bridgeTokenIndex) {
-            emit log_string("Skipping: pool with WGAS not found");
+            emit log_string(string.concat("Skipping: pool with ", _getSymbol(IERC20(wethAddress)), " not found"));
             return;
         }
 
@@ -473,6 +473,10 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
         return ISwap(swaps[_globalIndex]).getToken(_poolIndex);
     }
 
+    function _getSymbol(IERC20 _token) internal view returns (string memory) {
+        return ERC20(address(_token)).symbol();
+    }
+
     function _getQuote(
         uint256 _globalIndex,
         uint8 _indexFrom,
@@ -514,14 +518,13 @@ abstract contract DefaultL2BridgeZapTest is Test, BridgeEvents {
         uint8 _indexFrom,
         uint8 _indexTo
     ) internal {
-        ERC20 tokenFrom = ERC20(address(_getToken(_globalIndex, _indexFrom)));
-        ERC20 tokenTo = ERC20(address(_getToken(_globalIndex, _indexTo)));
-        emit log_string(string.concat(tokenFrom.symbol(), " -> ", tokenTo.symbol()));
+        IERC20 tokenFrom = _getToken(_globalIndex, _indexFrom);
+        IERC20 tokenTo = _getToken(_globalIndex, _indexTo);
+        emit log_string(string.concat(_getSymbol(tokenFrom), " -> ", _getSymbol(tokenTo)));
     }
 
     function _logNoSwapTest(IERC20 _token) internal {
-        ERC20 token = ERC20(address(_token));
-        emit log_string(string.concat("Bridging ", token.symbol()));
+        emit log_string(string.concat("Bridging ", _getSymbol(_token)));
     }
 
     function _prepareTestTokens(IERC20 _token, uint256 _amount) internal {
