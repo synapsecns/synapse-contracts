@@ -213,9 +213,9 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
             IWETH9(WETH_ADDRESS).withdraw(amount.sub(fee));
             (bool success, ) = to.call{value: amount.sub(fee)}("");
             require(success, "ETH_TRANSFER_FAILED");
-            emit TokenWithdraw(to, token, amount, fee, kappa);
+            emit TokenWithdraw(to, token, amount.sub(fee), fee, kappa);
         } else {
-            emit TokenWithdraw(to, token, amount, fee, kappa);
+            emit TokenWithdraw(to, token, amount.sub(fee), fee, kappa);
             token.safeTransfer(to, amount.sub(fee));
         }
     }
