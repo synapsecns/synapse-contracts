@@ -4,97 +4,23 @@ pragma solidity 0.8.13;
 import "forge-std/Test.sol";
 import {Utilities} from "../../utils/Utilities.sol";
 
+import {IBridge} from "../interfaces/IBridge.sol";
+import {ISwap} from "../interfaces/ISwap.sol";
+
+import {ERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
 
-interface ISwap {
-    function calculateSwap(
-        uint8 tokenIndexFrom,
-        uint8 tokenIndexTo,
-        uint256 dx
-    ) external view returns (uint256);
-
-    function calculateRemoveLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex)
-        external
-        view
-        returns (uint256 availableTokenAmount);
-
-    function getToken(uint8 index) external view returns (IERC20);
-}
-
-interface IBridge {
-    function NODEGROUP_ROLE() external view returns (bytes32);
-
-    function GOVERNANCE_ROLE() external view returns (bytes32);
-
-    function startBlockNumber() external view returns (uint256);
-
-    function bridgeVersion() external view returns (uint256);
-
-    function chainGasAmount() external view returns (uint256);
-
-    function WETH_ADDRESS() external view returns (address payable);
-
-    function getFeeBalance(IERC20 token) external view returns (uint256);
-
-    function kappaExists(bytes32 kappa) external view returns (bool);
-
-    function mint(
-        address to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 kappa
-    ) external;
-
-    function mintAndSwap(
-        address to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        ISwap pool,
-        uint8 tokenIndexFrom,
-        uint8 tokenIndexTo,
-        uint256 minDy,
-        uint256 deadline,
-        bytes32 kappa
-    ) external;
-
-    function withdraw(
-        address to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        bytes32 kappa
-    ) external;
-
-    function withdrawAndRemove(
-        address to,
-        IERC20 token,
-        uint256 amount,
-        uint256 fee,
-        ISwap pool,
-        uint8 swapTokenIndex,
-        uint256 swapMinAmount,
-        uint256 swapDeadline,
-        bytes32 kappa
-    ) external;
-}
-
 abstract contract DefaultBridgeForkTest is Test {
     using stdStorage for StdStorage;
+
     struct BridgeTestSetup {
         address bridge;
-        address nethPool;
-        address nusdPool;
-        address neth;
-        address weth;
         address wgas;
-        address nusd;
-        address syn;
-        address originToken;
+        address tokenMint;
+        address tokenWithdraw;
     }
 
     struct Snapshot {
@@ -110,43 +36,37 @@ abstract contract DefaultBridgeForkTest is Test {
         uint256 startBlockNumber;
         uint256 chainGasAmount;
         address payable wethAddress;
-        uint256 feesEth;
-        uint256 feesUsd;
-        uint256 feesSyn;
     }
 
     IBridge internal bridge;
-
     uint256 internal gasAirdropAmount;
 
-    ISwap internal nethPool;
-    ISwap internal nusdPool;
-    IERC20[] internal nusdPoolTokens;
+    // nUSD should be added first
+    ISwap[] internal swaps;
+    IERC20[] internal bridgeTokens;
+    mapping(ISwap => IERC20[]) internal swapTokensMap;
 
     // nUSD and nETH behave differently on Mainnet
     bool internal immutable isMainnet;
-    // whether ETH is the gas token
-    bool internal immutable isGasEth;
-
-    IERC20 internal neth;
-    IERC20 internal weth;
-    IERC20 internal nusd;
+    // Whether WGAS is deposited/withdrawn from the Bridge
+    bool internal immutable isGasWithdrawable;
 
     // for testing withdraw() into native gas on applicable chains
     IERC20 internal wgas;
+    // for testing mint() on applicable chains
+    IERC20 internal tokenMint;
+    // for testing withdraw() on applicable chains
+    IERC20 internal tokenWithdraw;
 
-    // SYN can be minted on every chain
-    IERC20 internal syn;
-
-    // Token that's originated on tested chain, i.e. bridged by withdraw()
-    IERC20 internal originToken;
-
-    bytes32 private _kappa;
-    BridgeState private _bridgeState;
-    bytes32[4] private _existingKappas;
+    // state of bridge pre-upgrade
+    BridgeState private bridgeState;
+    bytes32[4] private existingKappas;
+    uint256[] private tokenFees;
 
     Utilities internal utils;
+    bytes32 private nextKappa;
 
+    // common test values
     uint256 internal constant AMOUNT = 10**18;
     uint256 internal constant FEE = 10**17;
     uint256 internal constant AMOUNT_FULL = AMOUNT + FEE;
@@ -162,272 +82,154 @@ abstract contract DefaultBridgeForkTest is Test {
 
     constructor(
         bool _isMainnet,
-        bool _isGasEth,
+        bool _isGasWithdrawable,
         BridgeTestSetup memory _setup,
         bytes32[4] memory _kappas
     ) {
         isMainnet = _isMainnet;
-        isGasEth = _isGasEth;
+        isGasWithdrawable = _isGasWithdrawable;
 
         bridge = IBridge(_setup.bridge);
-        nethPool = ISwap(_setup.nethPool);
-        nusdPool = ISwap(_setup.nusdPool);
-        neth = IERC20(_setup.neth);
-        weth = IERC20(_setup.weth);
-        nusd = IERC20(_setup.nusd);
         wgas = IERC20(_setup.wgas);
-        syn = IERC20(_setup.syn);
-        originToken = IERC20(_setup.originToken);
+        tokenMint = IERC20(_setup.tokenMint);
+        tokenWithdraw = IERC20(_setup.tokenWithdraw);
 
-        _existingKappas = _kappas;
+        existingKappas = _kappas;
 
         gasAirdropAmount = bridge.chainGasAmount();
-        _kappa = keccak256("very real so genuine wow");
-
-        utils = new Utilities();
+        nextKappa = keccak256("very real so genuine wow");
     }
 
     function setUp() public {
-        if (address(nusdPool) != ZERO) {
-            for (uint8 index = 0; ; ++index) {
-                try nusdPool.getToken(index) returns (IERC20 token) {
-                    nusdPoolTokens.push(token);
-                } catch {
-                    break;
-                }
-            }
-        }
-
+        utils = new Utilities();
+        _initSwapArrays();
         _saveBridgeState();
         address bridgeImpl = deployCode("artifacts/SynapseBridge.sol/SynapseBridge.json");
         utils.upgradeTo(address(bridge), bridgeImpl);
     }
 
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                        TESTS: ENABLE AIRDROP                         ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
     function test_enableAirdrop() public {
-        if (gasAirdropAmount != 0) {
-            emit log_string("Skipping: airdrop already enabled");
-            return;
-        }
+        if (_checkEnableAirdropTestSkipped()) return;
         gasAirdropAmount = AMOUNT / 10;
         stdstore.target(address(bridge)).sig(IBridge.chainGasAmount.selector).checked_write(gasAirdropAmount);
         require(bridge.chainGasAmount() == gasAirdropAmount, "Failed to set gas airdrop");
         deal(address(bridge), 10 * AMOUNT);
 
         test_mint();
-        test_mintAndSwap_neth();
-        test_mintAndSwap_nusd();
+        test_mintAndSwap();
         test_withdraw();
         test_withdraw_gas();
     }
 
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                        TESTS: BRIDGE W/O SWAP                        ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
     function test_mint() public {
-        if (_checkTokenTestSkipped(syn, "mint")) return;
-        _test_mint(syn);
-    }
-
-    function test_mintAndSwap_neth() public {
-        if (_checkPoolSwapTestSkipped(nethPool, "swap_neth")) return;
-        uint256 quote = nethPool.calculateSwap(0, 1, AMOUNT);
-        if (isGasEth) {
-            _test_mintAndSwap(neth, NULL, nethPool, 0, 1, quote, block.timestamp, quote, 0);
-        } else {
-            _test_mintAndSwap(neth, weth, nethPool, 0, 1, quote, block.timestamp, 0, quote);
-        }
-    }
-
-    function test_mintAndSwap_neth_amountOutTooLow() public {
-        if (_checkPoolSwapTestSkipped(nethPool, "swap_neth")) return;
-        uint256 quote = 2 * nethPool.calculateSwap(0, 1, AMOUNT);
-        _test_mintAndSwap(neth, neth, nethPool, 0, 1, quote, type(uint256).max, 0, AMOUNT);
-    }
-
-    function test_mintAndSwap_neth_deadlineFailed() public {
-        if (_checkPoolSwapTestSkipped(nethPool, "swap_neth")) return;
-        _test_mintAndSwap(neth, neth, nethPool, 0, 1, 0, block.timestamp - 1, 0, AMOUNT);
-    }
-
-    function test_mintAndSwap_neth_wrongIndices() public {
-        if (_checkPoolSwapTestSkipped(nethPool, "swap_neth")) return;
-        if (_checkWrongIndexTestSkipped()) return;
-        for (uint8 indexFrom = 0; indexFrom <= 1; ++indexFrom) {
-            _test_mintAndSwap(neth, neth, nethPool, indexFrom, 0, 0, type(uint256).max, 0, AMOUNT);
-        }
-    }
-
-    function test_mintAndSwap_nusd() public {
-        if (_checkPoolSwapTestSkipped(nusdPool, "swap_nusd")) return;
-        uint256 amount = nusdPoolTokens.length;
-        // start from 1 to skip nUSD
-        for (uint8 indexTo = 1; indexTo < amount; ++indexTo) {
-            uint256 quote = nusdPool.calculateSwap(0, indexTo, AMOUNT);
-            _test_mintAndSwap(nusd, nusdPoolTokens[indexTo], nusdPool, 0, indexTo, quote, block.timestamp, 0, quote);
-        }
-    }
-
-    function test_mintAndSwap_nusd_amountOutTooLow() public {
-        if (_checkPoolSwapTestSkipped(nusdPool, "swap_nusd")) return;
-        uint256 amount = nusdPoolTokens.length;
-        // start from 1 to skip nUSD
-        for (uint8 indexTo = 1; indexTo < amount; ++indexTo) {
-            uint256 quote = 2 * nusdPool.calculateSwap(0, indexTo, AMOUNT);
-            _test_mintAndSwap(nusd, nusd, nusdPool, 0, indexTo, quote, type(uint256).max, 0, AMOUNT);
-        }
-    }
-
-    function test_mintAndSwap_nusd_deadlineFailed() public {
-        if (_checkPoolSwapTestSkipped(nusdPool, "swap_nusd")) return;
-        uint256 amount = nusdPoolTokens.length;
-        // start from 1 to skip nUSD
-        for (uint8 indexTo = 1; indexTo < amount; ++indexTo) {
-            _test_mintAndSwap(nusd, nusd, nusdPool, 0, indexTo, 0, block.timestamp - 1, 0, AMOUNT);
-        }
-    }
-
-    function test_mintAndSwap_nusd_wrongIndices() public {
-        if (_checkPoolSwapTestSkipped(nusdPool, "swap_nusd")) return;
-        if (_checkWrongIndexTestSkipped()) return;
-        for (uint8 indexFrom = 0; indexFrom < nusdPoolTokens.length; ++indexFrom) {
-            _test_mintAndSwap(nusd, nusd, nusdPool, indexFrom, 0, 0, block.timestamp, 0, AMOUNT);
-        }
+        if (_checkSimpleTestSkipped(tokenMint)) return;
+        _test_simple(tokenMint, bridge.mint);
     }
 
     function test_withdraw() public {
-        if (_checkTokenTestSkipped(originToken, "withdraw")) return;
-        _test_withdraw(originToken, originToken, 0, AMOUNT);
+        if (_checkSimpleTestSkipped(tokenWithdraw)) return;
+        _test_simple(tokenWithdraw, bridge.withdraw);
     }
 
     function test_withdraw_gas() public {
-        if (_checkTokenTestSkipped(wgas, "withdraw_gas")) return;
-        _test_withdraw(wgas, NULL, AMOUNT, 0);
+        if (_checkSimpleTestSkipped(isGasWithdrawable ? wgas : NULL)) return;
+        _test_simple(wgas, bridge.withdraw);
     }
 
-    function test_withdrawAndRemove() public {
-        if (_checkPoolRemoveTestSkipped(nusdPool, "remove_nusd")) return;
-        uint256 amount = nusdPoolTokens.length;
-        // nUSD is not in the pool, start from 0
-        for (uint8 indexTo = 0; indexTo < amount; ++indexTo) {
-            uint256 quote = nusdPool.calculateRemoveLiquidityOneToken(AMOUNT, indexTo);
-            _test_withdrawAndRemove(nusdPoolTokens[indexTo], indexTo, quote, block.timestamp, quote);
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                       TESTS: BRIDGE WITH SWAP                        ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_mintAndSwap() public {
+        if (_checkSwapTestSkipped()) return;
+        for (uint256 i = 0; i < swaps.length; ++i) {
+            _test_swap(bridgeTokens[i], swaps[i], 0, 0);
         }
+    }
+
+    function test_mintAndSwap_amountOutTooLow() public {
+        if (_checkSwapTestSkipped()) return;
+        for (uint256 i = 0; i < swaps.length; ++i) {
+            _test_swap(bridgeTokens[i], swaps[i], type(uint256).max, type(uint256).max);
+        }
+    }
+
+    function test_mintAndSwap_deadlineFailed() public {
+        if (_checkSwapTestSkipped()) return;
+        for (uint256 i = 0; i < swaps.length; ++i) {
+            _test_swap(bridgeTokens[i], swaps[i], 0, block.timestamp - 1);
+        }
+    }
+
+    function test_mintAndSwap_wrongIndices() public {
+        if (_checkSwapTestSkipped()) return;
+        if (_checkWrongIndexTestSkipped()) return;
+        for (uint256 i = 0; i < swaps.length; ++i) {
+            _test_mintAndSwap(bridgeTokens[i], bridgeTokens[i], swaps[i], 0, 0, 0, type(uint256).max, 0, AMOUNT);
+        }
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                      TESTS: BRIDGE WITH REMOVE                       ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_withdrawAndRemove() public {
+        if (_checkRemoveTestSkipped()) return;
+        _test_remove(bridgeTokens[0], swaps[0], 0, 0);
     }
 
     function test_withdrawAndRemove_amountOutTooLow() public {
-        if (_checkPoolRemoveTestSkipped(nusdPool, "remove_nusd")) return;
-        uint256 amount = nusdPoolTokens.length;
-        // nUSD is not in the pool, start from 0
-        for (uint8 indexTo = 0; indexTo < amount; ++indexTo) {
-            uint256 quote = 2 * nusdPool.calculateRemoveLiquidityOneToken(AMOUNT, indexTo);
-            _test_withdrawAndRemove(nusd, indexTo, quote, type(uint256).max, AMOUNT);
-        }
+        if (_checkRemoveTestSkipped()) return;
+        _test_remove(bridgeTokens[0], swaps[0], type(uint256).max, type(uint256).max);
     }
 
     function test_withdrawAndRemove_deadlineFailed() public {
-        if (_checkPoolRemoveTestSkipped(nusdPool, "remove_nusd")) return;
-        uint256 amount = nusdPoolTokens.length;
-        // nUSD is not in the pool, start from 0
-        for (uint8 indexTo = 0; indexTo < amount; ++indexTo) {
-            _test_withdrawAndRemove(nusd, indexTo, 0, block.timestamp - 1, AMOUNT);
-        }
+        if (_checkRemoveTestSkipped()) return;
+        _test_remove(bridgeTokens[0], swaps[0], 0, block.timestamp - 1);
     }
 
     function test_withdrawAndRemove_wrongIndex() public {
-        if (_checkPoolRemoveTestSkipped(nusdPool, "remove_nusd")) return;
+        if (_checkRemoveTestSkipped()) return;
         if (_checkWrongIndexTestSkipped()) return;
-        _test_withdrawAndRemove(nusd, uint8(nusdPoolTokens.length), 0, type(uint256).max, AMOUNT);
+        _test_withdrawAndRemove(
+            bridgeTokens[0],
+            bridgeTokens[0],
+            swaps[0],
+            uint8(swapTokensMap[swaps[0]].length),
+            0,
+            type(uint256).max,
+            AMOUNT
+        );
     }
 
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                            TESTS: UPGRADE                            ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
     function test_upgrade() public {
-        assertEq(_bridgeState.nodeGroupRole, bridge.NODEGROUP_ROLE(), "NODEGROUP_ROLE rekt post-upgrade");
-        assertEq(_bridgeState.governanceRole, bridge.GOVERNANCE_ROLE(), "GOVERNANCE_ROLE rekt post-upgrade");
-        assertEq(_bridgeState.startBlockNumber, bridge.startBlockNumber(), "startBlockNumber rekt post-upgrade");
-        assertEq(_bridgeState.chainGasAmount, bridge.chainGasAmount(), "chainGasAmount rekt post-upgrade");
-        assertEq(_bridgeState.wethAddress, bridge.WETH_ADDRESS(), "WETH_ADDRESS rekt post-upgrade");
+        assertEq(bridge.NODEGROUP_ROLE(), bridgeState.nodeGroupRole, "NODEGROUP_ROLE rekt post-upgrade");
+        assertEq(bridge.GOVERNANCE_ROLE(), bridgeState.governanceRole, "GOVERNANCE_ROLE rekt post-upgrade");
+        assertEq(bridge.startBlockNumber(), bridgeState.startBlockNumber, "startBlockNumber rekt post-upgrade");
+        assertEq(bridge.chainGasAmount(), bridgeState.chainGasAmount, "chainGasAmount rekt post-upgrade");
+        assertEq(bridge.WETH_ADDRESS(), bridgeState.wethAddress, "WETH_ADDRESS rekt post-upgrade");
 
-        if (address(neth) != ZERO) {
-            assertEq(bridge.getFeeBalance(neth), _bridgeState.feesEth, "Eth fees rekt post-upgrade");
-        } else if (address(weth) != ZERO) {
-            assertEq(bridge.getFeeBalance(weth), _bridgeState.feesEth, "Eth fees rekt post-upgrade");
+        for (uint256 i = 0; i < bridgeTokens.length; ++i) {
+            assertEq(bridge.getFeeBalance(bridgeTokens[i]), tokenFees[i], "fees rekt post-upgrade");
         }
 
-        if (address(nusd) != ZERO) {
-            assertEq(bridge.getFeeBalance(nusd), _bridgeState.feesUsd, "Usd fees rekt post-upgrade");
-        }
-
-        if (address(syn) != ZERO) {
-            assertEq(bridge.getFeeBalance(syn), _bridgeState.feesSyn, "Usd fees rekt post-upgrade");
-        }
-
-        for (uint256 i = 0; i < _existingKappas.length; ++i) {
-            assertTrue(bridge.kappaExists(_existingKappas[i]), "Kappa is missing post-upgrade");
+        for (uint256 i = 0; i < existingKappas.length; ++i) {
+            assertTrue(bridge.kappaExists(existingKappas[i]), "Kappa is missing post-upgrade");
         }
 
         assertEq(bridge.bridgeVersion(), 7, "Bridge version not bumped");
-    }
-
-    function _assertKappa(bytes32 kappa) internal view {
-        assert(bridge.kappaExists(kappa));
-    }
-
-    function _checkTokenTestSkipped(IERC20 token, string memory testName) internal returns (bool skipped) {
-        if (address(token) == ZERO) {
-            emit log_string(string.concat("Skipping ", testName, ": no token configured"));
-            skipped = true;
-        }
-    }
-
-    function _checkPoolSwapTestSkipped(ISwap pool, string memory testName) internal returns (bool skipped) {
-        if (isMainnet) {
-            emit log_string(string.concat("Skipping ", testName, ": no swap tests on Mainnet"));
-            skipped = true;
-        } else if (address(pool) == ZERO) {
-            emit log_string(string.concat("Skipping ", testName, ": no pool configured"));
-            skipped = true;
-        }
-    }
-
-    function _checkPoolRemoveTestSkipped(ISwap pool, string memory testName) internal returns (bool skipped) {
-        if (!isMainnet) {
-            emit log_string(string.concat("Skipping ", testName, ": remove tests are Mainnet-only"));
-            skipped = true;
-        } else if (address(pool) == ZERO) {
-            emit log_string(string.concat("Skipping ", testName, ": no pool configured"));
-            skipped = true;
-        }
-    }
-
-    function _checkWrongIndexTestSkipped() internal returns (bool skipped) {
-        if (!WRONG_INDEX_TEST_ENABLED) {
-            emit log_string("Tests with wrong indices not yet enabled");
-            skipped = true;
-        }
-    }
-
-    function _checkSnapshots(
-        Snapshot memory _pre,
-        Snapshot memory _post,
-        uint256 _expectedGas,
-        uint256 _expectedToken
-    ) internal {
-        require(_post.bridgeTokenFees >= _pre.bridgeTokenFees, "WTF: fees reduced");
-        assertEq(_post.bridgeTokenFees - _pre.bridgeTokenFees, FEE, "Incorrect bridgeFee");
-
-        require(_post.userGasBalance >= _pre.userGasBalance, "WFT: user gas balance reduced");
-        assertEq(_post.userGasBalance - _pre.userGasBalance, _expectedGas, "Incorrect amount of gas received");
-
-        require(_post.userTokenBalance >= _pre.userTokenBalance, "WFT: user token balance reduced");
-        assertEq(_post.userTokenBalance - _pre.userTokenBalance, _expectedToken, "Incorrect amount of tokens received");
-    }
-
-    function _makeSnapshot(IERC20 _bridgeToken, IERC20 _testToken) internal view returns (Snapshot memory snapshot) {
-        snapshot.bridgeTokenFees = bridge.getFeeBalance(_bridgeToken);
-        snapshot.userGasBalance = USER.balance;
-        // skip in case received asset is gas
-        if (address(_testToken) != ZERO) snapshot.userTokenBalance = _testToken.balanceOf(USER);
-    }
-
-    function _nextKappa() internal returns (bytes32 nextKappa) {
-        nextKappa = _kappa;
-        _kappa = keccak256(abi.encode(nextKappa));
     }
 
     function _saveBridgeState() private {
@@ -438,28 +240,124 @@ abstract contract DefaultBridgeForkTest is Test {
         state.chainGasAmount = bridge.chainGasAmount();
         state.wethAddress = bridge.WETH_ADDRESS();
 
-        if (address(neth) != ZERO) {
-            state.feesEth = bridge.getFeeBalance(neth);
-        } else if (address(weth) != ZERO) {
-            state.feesEth = bridge.getFeeBalance(weth);
-        }
-        if (address(nusd) != ZERO) state.feesUsd = bridge.getFeeBalance(nusd);
-        if (address(syn) != ZERO) state.feesSyn = bridge.getFeeBalance(syn);
-
-        for (uint256 i = 0; i < _existingKappas.length; ++i) {
-            _assertKappa(_existingKappas[i]);
+        for (uint256 i = 0; i < bridgeTokens.length; ++i) {
+            tokenFees.push(bridge.getFeeBalance(bridgeTokens[i]));
         }
 
-        _bridgeState = state;
+        for (uint256 i = 0; i < existingKappas.length; ++i) {
+            _assertKappa(existingKappas[i]);
+        }
+
+        bridgeState = state;
     }
 
-    function _test_mint(IERC20 bridgeToken) internal {
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                     INTERNAL FUNCTIONS: BRIDGING                     ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _assertKappa(bytes32 kappa) internal view {
+        assert(bridge.kappaExists(kappa));
+    }
+
+    function _nextKappa() internal returns (bytes32 kappa) {
+        kappa = nextKappa;
+        nextKappa = keccak256(abi.encode(kappa));
+    }
+
+    function _makeSnapshot(IERC20 _bridgeToken, IERC20 _testToken) internal view returns (Snapshot memory snapshot) {
+        snapshot.bridgeTokenFees = bridge.getFeeBalance(_bridgeToken);
+        snapshot.userGasBalance = USER.balance;
+        // skip in case received asset is gas
+        if (address(_testToken) != ZERO) snapshot.userTokenBalance = _testToken.balanceOf(USER);
+    }
+
+    function _checkSnapshots(
+        Snapshot memory _pre,
+        Snapshot memory _post,
+        uint256 _expectedGas,
+        uint256 _expectedToken
+    ) internal {
+        _expectedGas += gasAirdropAmount;
+        require(_post.bridgeTokenFees >= _pre.bridgeTokenFees, "WTF: fees reduced");
+        assertEq(_post.bridgeTokenFees - _pre.bridgeTokenFees, FEE, "Incorrect bridgeFee");
+
+        require(_post.userGasBalance >= _pre.userGasBalance, "WFT: user gas balance reduced");
+        assertEq(_post.userGasBalance - _pre.userGasBalance, _expectedGas, "Incorrect amount of gas received");
+
+        require(_post.userTokenBalance >= _pre.userTokenBalance, "WFT: user token balance reduced");
+        assertEq(_post.userTokenBalance - _pre.userTokenBalance, _expectedToken, "Incorrect amount of tokens received");
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                     TEST IMPLEMENTATION: NO SWAP                     ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _test_simple(
+        IERC20 _bridgeToken,
+        function(address, IERC20, uint256, uint256, bytes32) external _bridgeFunc
+    ) internal {
+        _logSimpleTest(_bridgeToken);
         bytes32 kappa = _nextKappa();
-        Snapshot memory pre = _makeSnapshot(bridgeToken, bridgeToken);
+        IERC20 receivedToken = address(_bridgeToken) == address(wgas) ? NULL : _bridgeToken;
+        Snapshot memory pre = _makeSnapshot(_bridgeToken, receivedToken);
         vm.prank(NODE);
-        bridge.mint(USER, bridgeToken, AMOUNT_FULL, FEE, kappa);
-        Snapshot memory post = _makeSnapshot(bridgeToken, bridgeToken);
-        _checkSnapshots(pre, post, gasAirdropAmount, AMOUNT);
+        _bridgeFunc(USER, _bridgeToken, AMOUNT_FULL, FEE, kappa);
+        Snapshot memory post = _makeSnapshot(_bridgeToken, receivedToken);
+        if (receivedToken == NULL) {
+            _checkSnapshots(pre, post, AMOUNT, 0);
+        } else {
+            _checkSnapshots(pre, post, 0, AMOUNT);
+        }
+        _assertKappa(kappa);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                      TEST IMPLEMENTATION: SWAP                       ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _test_swap(
+        IERC20 _bridgeToken,
+        ISwap _swap,
+        uint256 _adjustedQuote,
+        uint256 _adjustedTimestamp
+    ) internal {
+        bool isFailed = _adjustedQuote != 0 || _adjustedTimestamp != 0;
+        uint8 indexFrom = _findToken(_swap, _bridgeToken);
+        IERC20[] memory poolTokens = swapTokensMap[_swap];
+        for (uint8 indexTo = 0; indexTo < poolTokens.length; ++indexTo) {
+            if (indexFrom == indexTo) continue;
+            if (isFailed) {
+                _test_mintAndSwap(
+                    _bridgeToken,
+                    _bridgeToken,
+                    _swap,
+                    indexFrom,
+                    indexTo,
+                    _adjustedQuote,
+                    _adjustedTimestamp,
+                    0,
+                    AMOUNT
+                );
+            } else {
+                _logSwapTest(_swap, indexFrom, indexTo);
+                uint256 quote = _swap.calculateSwap(indexFrom, indexTo, AMOUNT);
+                IERC20 receivedToken = poolTokens[indexTo];
+                (uint256 expectedGas, uint256 expectedToken) = address(receivedToken) == address(wgas)
+                    ? (quote, uint256(0))
+                    : (uint256(0), quote);
+                _test_mintAndSwap(
+                    _bridgeToken,
+                    receivedToken,
+                    _swap,
+                    indexFrom,
+                    indexTo,
+                    quote,
+                    block.timestamp,
+                    expectedGas,
+                    expectedToken
+                );
+            }
+        }
     }
 
     function _test_mintAndSwap(
@@ -478,38 +376,175 @@ abstract contract DefaultBridgeForkTest is Test {
         vm.prank(NODE);
         bridge.mintAndSwap(USER, bridgeToken, AMOUNT_FULL, FEE, pool, indexFrom, indexTo, quote, deadline, kappa);
         Snapshot memory post = _makeSnapshot(bridgeToken, receivedToken);
-        _checkSnapshots(pre, post, gasAirdropAmount + expectedGas, expectedToken);
+        _checkSnapshots(pre, post, expectedGas, expectedToken);
         _assertKappa(kappa);
     }
 
-    function _test_withdraw(
-        IERC20 bridgeToken,
-        IERC20 receivedToken,
-        uint256 expectedGas,
-        uint256 expectedToken
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                     TEST IMPLEMENTATION:: REMOVE                     ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _test_remove(
+        IERC20 _bridgeToken,
+        ISwap _swap,
+        uint256 _adjustedQuote,
+        uint256 _adjustedTimestamp
     ) internal {
-        bytes32 kappa = _nextKappa();
-        Snapshot memory pre = _makeSnapshot(bridgeToken, receivedToken);
-        vm.prank(NODE);
-        bridge.withdraw(USER, bridgeToken, AMOUNT_FULL, FEE, kappa);
-        Snapshot memory post = _makeSnapshot(bridgeToken, receivedToken);
-        _checkSnapshots(pre, post, gasAirdropAmount + expectedGas, expectedToken);
-        _assertKappa(kappa);
+        bool isFailed = _adjustedQuote != 0 || _adjustedTimestamp != 0;
+        IERC20[] memory poolTokens = swapTokensMap[_swap];
+        for (uint8 indexTo = 0; indexTo < poolTokens.length; ++indexTo) {
+            if (!isFailed) _logRemoveTest(_bridgeToken, _swap, indexTo);
+            uint256 quote = _swap.calculateRemoveLiquidityOneToken(AMOUNT, indexTo);
+            _test_withdrawAndRemove(
+                _bridgeToken,
+                isFailed ? _bridgeToken : poolTokens[indexTo],
+                _swap,
+                indexTo,
+                isFailed ? _adjustedQuote : quote,
+                isFailed ? _adjustedTimestamp : block.timestamp,
+                isFailed ? AMOUNT : quote
+            );
+        }
     }
 
     function _test_withdrawAndRemove(
-        IERC20 receivedToken,
-        uint8 indexTo,
-        uint256 quote,
-        uint256 deadline,
-        uint256 expectedToken
+        IERC20 _bridgeToken,
+        IERC20 _receivedToken,
+        ISwap _swap,
+        uint8 _indexTo,
+        uint256 _quote,
+        uint256 _deadline,
+        uint256 _expectedToken
     ) internal {
         bytes32 kappa = _nextKappa();
-        Snapshot memory pre = _makeSnapshot(nusd, receivedToken);
+        Snapshot memory pre = _makeSnapshot(_bridgeToken, _receivedToken);
         vm.prank(NODE);
-        bridge.withdrawAndRemove(USER, nusd, AMOUNT_FULL, FEE, nusdPool, indexTo, quote, deadline, kappa);
-        Snapshot memory post = _makeSnapshot(nusd, receivedToken);
-        _checkSnapshots(pre, post, gasAirdropAmount, expectedToken);
+        bridge.withdrawAndRemove(USER, _bridgeToken, AMOUNT_FULL, FEE, _swap, _indexTo, _quote, _deadline, kappa);
+        Snapshot memory post = _makeSnapshot(_bridgeToken, _receivedToken);
+        _checkSnapshots(pre, post, 0, _expectedToken);
         _assertKappa(kappa);
     }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                          INTERNAL FUNCTIONS                          ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _addTokenPool(address _bridgeToken, address _swap) internal {
+        ISwap swap = ISwap(_swap);
+
+        bridgeTokens.push(IERC20(_bridgeToken));
+        swaps.push(swap);
+
+        bool bridgeTokenFound = false;
+
+        for (uint8 index = 0; ; ++index) {
+            try swap.getToken(index) returns (IERC20 token) {
+                swapTokensMap[swap].push(token);
+                if (address(token) == _bridgeToken) bridgeTokenFound = true;
+            } catch {
+                break;
+            }
+        }
+
+        // nUSD is not in Nexus pool on Ethereum
+        require(isMainnet || bridgeTokenFound, "!bridge token");
+    }
+
+    function _getSymbol(IERC20 _token) internal view returns (string memory) {
+        return ERC20(address(_token)).symbol();
+    }
+
+    function _findToken(ISwap _swap, IERC20 _token) internal view returns (uint8 tokenIndex) {
+        for (uint8 index = 0; ; ++index) {
+            try _swap.getToken(index) returns (IERC20 token) {
+                if (address(token) == address(_token)) {
+                    return index;
+                }
+            } catch {
+                break;
+            }
+        }
+        revert("Token not found");
+    }
+
+    function _logSwap(IERC20 _tokenFrom, IERC20 _tokenTo) internal {
+        emit log_string(string.concat(_getSymbol(_tokenFrom), " -> ", _getSymbol(_tokenTo)));
+    }
+
+    function _logSimpleTest(IERC20 _token) internal {
+        emit log_string(string.concat("Bridging ", _getSymbol(_token)));
+    }
+
+    function _logSwapTest(
+        ISwap _swap,
+        uint8 _indexFrom,
+        uint8 _indexTo
+    ) internal {
+        IERC20 tokenFrom = swapTokensMap[_swap][_indexFrom];
+        IERC20 tokenTo = swapTokensMap[_swap][_indexTo];
+        _logSwap(tokenFrom, tokenTo);
+    }
+
+    function _logRemoveTest(
+        IERC20 _bridgeToken,
+        ISwap _swap,
+        uint8 _indexTo
+    ) internal {
+        IERC20 tokenTo = swapTokensMap[_swap][_indexTo];
+        _logSwap(_bridgeToken, tokenTo);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                        SKIPPED TESTS CHECKERS                        ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _checkEnableAirdropTestSkipped() internal returns (bool skipped) {
+        if (gasAirdropAmount != 0) {
+            emit log_string("Skipping: airdrop already enabled");
+            skipped = true;
+        } else if (isMainnet) {
+            emit log_string("Skipping: no airdrop on mainnet");
+            skipped = true;
+        }
+    }
+
+    function _checkSimpleTestSkipped(IERC20 _token) internal returns (bool skipped) {
+        if (address(_token) == ZERO) {
+            emit log_string(string.concat("Skipping: no token configured"));
+            skipped = true;
+        }
+    }
+
+    function _checkRemoveTestSkipped() internal returns (bool skipped) {
+        if (!isMainnet) {
+            emit log_string(string.concat("Skipping: remove tests are Mainnet-only"));
+            skipped = true;
+        } else if (swaps.length == 0) {
+            emit log_string("Skipping: no pools configured");
+            skipped = true;
+        }
+    }
+
+    function _checkSwapTestSkipped() internal returns (bool skipped) {
+        if (isMainnet) {
+            emit log_string("Skipping: no swap tests on Mainnet");
+            skipped = true;
+        } else if (swaps.length == 0) {
+            emit log_string("Skipping: no pools configured");
+            skipped = true;
+        }
+    }
+
+    function _checkWrongIndexTestSkipped() internal returns (bool skipped) {
+        if (!WRONG_INDEX_TEST_ENABLED) {
+            emit log_string("Skipping: wrong indices tests not enabled yet");
+            skipped = true;
+        }
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                          VIRTUAL FUNCTIONS                           ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _initSwapArrays() internal virtual;
 }
