@@ -22,6 +22,8 @@ interface IBridge {
 
     function kappaExists(bytes32 kappa) external view returns (bool);
 
+    function setWethAddress(address payable _wethAddress) external;
+
     function mint(
         address to,
         IERC20 token,

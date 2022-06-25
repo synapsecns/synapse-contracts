@@ -116,8 +116,7 @@ abstract contract DefaultBridgeForkTest is Test, BridgeEvents {
     function test_enableAirdrop() public {
         if (_checkEnableAirdropTestSkipped()) return;
         gasAirdropAmount = AMOUNT / 10;
-        stdstore.target(address(bridge)).sig(IBridge.chainGasAmount.selector).checked_write(gasAirdropAmount);
-        require(bridge.chainGasAmount() == gasAirdropAmount, "Failed to set gas airdrop");
+        _setAirdropAmount();
         deal(address(bridge), 10 * AMOUNT);
 
         test_mint();
@@ -529,6 +528,16 @@ abstract contract DefaultBridgeForkTest is Test, BridgeEvents {
     ) internal {
         IERC20 tokenTo = swapTokensMap[_swap][_indexTo];
         _logSwap(_bridgeToken, tokenTo);
+    }
+
+    function _setAirdropAmount() internal {
+        stdstore.target(address(bridge)).sig(IBridge.chainGasAmount.selector).checked_write(gasAirdropAmount);
+        require(bridge.chainGasAmount() == gasAirdropAmount, "Failed to set gas airdrop");
+    }
+
+    function _setWethAddress(address _admin) internal {
+        vm.prank(_admin);
+        bridge.setWethAddress(payable(address(wgas)));
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
