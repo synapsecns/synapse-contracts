@@ -6,6 +6,7 @@ import {Utilities} from "../../utils/Utilities.sol";
 
 import {IBridge} from "../interfaces/IBridge.sol";
 import {ISwap} from "../interfaces/ISwap.sol";
+import {BridgeEvents} from "../interfaces/BridgeEvents.sol";
 
 import {ERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
@@ -13,7 +14,7 @@ import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
 
-abstract contract DefaultBridgeForkTest is Test {
+abstract contract DefaultBridgeForkTest is Test, BridgeEvents {
     using stdStorage for StdStorage;
 
     struct BridgeTestSetup {
@@ -131,17 +132,17 @@ abstract contract DefaultBridgeForkTest is Test {
 
     function test_mint() public {
         if (_checkSimpleTestSkipped(tokenMint)) return;
-        _test_simple(tokenMint, bridge.mint);
+        _test_simple(tokenMint, true);
     }
 
     function test_withdraw() public {
         if (_checkSimpleTestSkipped(tokenWithdraw)) return;
-        _test_simple(tokenWithdraw, bridge.withdraw);
+        _test_simple(tokenWithdraw, false);
     }
 
     function test_withdraw_gas() public {
         if (_checkSimpleTestSkipped(isGasWithdrawable ? wgas : NULL)) return;
-        _test_simple(wgas, bridge.withdraw);
+        _test_simple(wgas, false);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -173,7 +174,7 @@ abstract contract DefaultBridgeForkTest is Test {
         if (_checkSwapTestSkipped()) return;
         if (_checkWrongIndexTestSkipped()) return;
         for (uint256 i = 0; i < swaps.length; ++i) {
-            _test_mintAndSwap(bridgeTokens[i], bridgeTokens[i], swaps[i], 0, 0, 0, type(uint256).max, 0, AMOUNT);
+            _test_mintAndSwap(bridgeTokens[i], bridgeTokens[i], swaps[i], 0, 0, 0, type(uint256).max, 0, AMOUNT, false);
         }
     }
 
@@ -206,7 +207,8 @@ abstract contract DefaultBridgeForkTest is Test {
             uint8(swapTokensMap[swaps[0]].length),
             0,
             type(uint256).max,
-            AMOUNT
+            AMOUNT,
+            false
         );
     }
 
@@ -292,16 +294,21 @@ abstract contract DefaultBridgeForkTest is Test {
     ▏*║                     TEST IMPLEMENTATION: NO SWAP                     ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function _test_simple(
-        IERC20 _bridgeToken,
-        function(address, IERC20, uint256, uint256, bytes32) external _bridgeFunc
-    ) internal {
+    function _test_simple(IERC20 _bridgeToken, bool _isMint) internal {
         _logSimpleTest(_bridgeToken);
         bytes32 kappa = _nextKappa();
         IERC20 receivedToken = address(_bridgeToken) == address(wgas) ? NULL : _bridgeToken;
         Snapshot memory pre = _makeSnapshot(_bridgeToken, receivedToken);
+        vm.expectEmit(true, true, true, true);
         vm.prank(NODE);
-        _bridgeFunc(USER, _bridgeToken, AMOUNT_FULL, FEE, kappa);
+        if (_isMint) {
+            emit TokenMint(USER, _bridgeToken, AMOUNT, FEE, kappa);
+            bridge.mint(USER, _bridgeToken, AMOUNT_FULL, FEE, kappa);
+        } else {
+            emit TokenWithdraw(USER, _bridgeToken, AMOUNT, FEE, kappa);
+            bridge.withdraw(USER, _bridgeToken, AMOUNT_FULL, FEE, kappa);
+        }
+
         Snapshot memory post = _makeSnapshot(_bridgeToken, receivedToken);
         if (receivedToken == NULL) {
             _checkSnapshots(pre, post, AMOUNT, 0);
@@ -336,7 +343,8 @@ abstract contract DefaultBridgeForkTest is Test {
                     _adjustedQuote,
                     _adjustedTimestamp,
                     0,
-                    AMOUNT
+                    AMOUNT,
+                    false
                 );
             } else {
                 _logSwapTest(_swap, indexFrom, indexTo);
@@ -354,7 +362,8 @@ abstract contract DefaultBridgeForkTest is Test {
                     quote,
                     block.timestamp,
                     expectedGas,
-                    expectedToken
+                    expectedToken,
+                    true
                 );
             }
         }
@@ -369,10 +378,24 @@ abstract contract DefaultBridgeForkTest is Test {
         uint256 quote,
         uint256 deadline,
         uint256 expectedGas,
-        uint256 expectedToken
+        uint256 expectedToken,
+        bool swapSuccess
     ) internal {
         bytes32 kappa = _nextKappa();
         Snapshot memory pre = _makeSnapshot(bridgeToken, receivedToken);
+        vm.expectEmit(true, true, true, true);
+        emit TokenMintAndSwap(
+            USER,
+            bridgeToken,
+            expectedGas + expectedToken,
+            FEE,
+            indexFrom,
+            indexTo,
+            quote,
+            deadline,
+            swapSuccess,
+            kappa
+        );
         vm.prank(NODE);
         bridge.mintAndSwap(USER, bridgeToken, AMOUNT_FULL, FEE, pool, indexFrom, indexTo, quote, deadline, kappa);
         Snapshot memory post = _makeSnapshot(bridgeToken, receivedToken);
@@ -381,7 +404,7 @@ abstract contract DefaultBridgeForkTest is Test {
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                     TEST IMPLEMENTATION:: REMOVE                     ║*▕
+    ▏*║                     TEST IMPLEMENTATION: REMOVE                      ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function _test_remove(
@@ -402,7 +425,8 @@ abstract contract DefaultBridgeForkTest is Test {
                 indexTo,
                 isFailed ? _adjustedQuote : quote,
                 isFailed ? _adjustedTimestamp : block.timestamp,
-                isFailed ? AMOUNT : quote
+                isFailed ? AMOUNT : quote,
+                !isFailed
             );
         }
     }
@@ -414,10 +438,23 @@ abstract contract DefaultBridgeForkTest is Test {
         uint8 _indexTo,
         uint256 _quote,
         uint256 _deadline,
-        uint256 _expectedToken
+        uint256 _expectedToken,
+        bool _swapSuccess
     ) internal {
         bytes32 kappa = _nextKappa();
         Snapshot memory pre = _makeSnapshot(_bridgeToken, _receivedToken);
+        vm.expectEmit(true, true, true, true);
+        emit TokenWithdrawAndRemove(
+            USER,
+            _bridgeToken,
+            _expectedToken,
+            FEE,
+            _indexTo,
+            _quote,
+            _deadline,
+            _swapSuccess,
+            kappa
+        );
         vm.prank(NODE);
         bridge.withdrawAndRemove(USER, _bridgeToken, AMOUNT_FULL, FEE, _swap, _indexTo, _quote, _deadline, kappa);
         Snapshot memory post = _makeSnapshot(_bridgeToken, _receivedToken);
