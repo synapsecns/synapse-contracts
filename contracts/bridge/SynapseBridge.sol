@@ -29,7 +29,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     mapping(address => uint256) private fees;
 
     uint256 public startBlockNumber;
-    uint256 public constant bridgeVersion = 6;
+    uint256 public constant bridgeVersion = 7;
     uint256 public chainGasAmount;
     address payable public WETH_ADDRESS;
 
@@ -213,9 +213,9 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
             IWETH9(WETH_ADDRESS).withdraw(amount.sub(fee));
             (bool success, ) = to.call{value: amount.sub(fee)}("");
             require(success, "ETH_TRANSFER_FAILED");
-            emit TokenWithdraw(to, token, amount, fee, kappa);
+            emit TokenWithdraw(to, token, amount.sub(fee), fee, kappa);
         } else {
-            emit TokenWithdraw(to, token, amount, fee, kappa);
+            emit TokenWithdraw(to, token, amount.sub(fee), fee, kappa);
             token.safeTransfer(to, amount.sub(fee));
         }
         // Transfer gas airdrop
