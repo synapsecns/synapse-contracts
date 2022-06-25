@@ -7,14 +7,9 @@ contract BridgeTestEth is DefaultBridgeForkTest {
     BridgeTestSetup private setup =
         BridgeTestSetup({
             bridge: 0x2796317b0fF8538F253012862c06787Adfb8cEb6,
-            nethPool: ZERO,
-            nusdPool: 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8,
-            neth: ZERO,
-            weth: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
             wgas: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
-            nusd: 0x1B84765dE8B7566e4cEAF4D0fD3c5aF52D3DdE4F,
-            syn: 0x0f2D719407FdBeFF09D87557AbB7232601FD9F29,
-            originToken: 0x853d955aCEf822Db058eb8505911ED77F175b99e // FRAX
+            tokenMint: 0x0f2D719407FdBeFF09D87557AbB7232601FD9F29, // SYN
+            tokenWithdraw: 0x853d955aCEf822Db058eb8505911ED77F175b99e // FRAX
         });
 
     // kappas present at block 14650000
@@ -26,7 +21,14 @@ contract BridgeTestEth is DefaultBridgeForkTest {
     ];
 
     bool internal constant IS_MAINNET = true;
-    bool internal constant IS_GAS_ETH = true;
+    bool internal constant IS_GAS_WITHDRAWABLE = true;
 
-    constructor() DefaultBridgeForkTest(IS_MAINNET, IS_GAS_ETH, setup, kappas) {} // solhint-disable-line no-empty-blocks
+    address internal constant NUSD = 0x1B84765dE8B7566e4cEAF4D0fD3c5aF52D3DdE4F;
+    address internal constant NUSD_POOL = 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8;
+
+    constructor() DefaultBridgeForkTest(IS_MAINNET, IS_GAS_WITHDRAWABLE, setup, kappas) {} // solhint-disable-line no-empty-blocks
+
+    function _initSwapArrays() internal override {
+        _addTokenPool(NUSD, NUSD_POOL);
+    }
 }
