@@ -443,19 +443,16 @@ contract L2BridgeZap is Ownable {
         _setInfiniteAllowance(_token, address(synapseBridge));
     }
 
-    /// @dev Sets infinite allowance for a token using as little token.approve() call as possible.
+    /// @dev Sets infinite allowance for a token using as little token.safeApprove() call as possible.
     function _setInfiniteAllowance(IERC20 _token, address _spender) internal {
         uint256 allowance = _token.allowance(address(this), _spender);
         // check if inf allowance has been granted
         if (allowance != MAX_UINT256) {
-            /// @dev We can get away with using approve instead of safeApprove,
-            /// as we're either setting the allowance to zero, or changing it from zero
-
             // If allowance is non-zero, we need to clear it first, as some tokens
             // have a built-in defense against changing allowance from non-zero to non-zero.
             // eg: USDT on Mainnet
-            if (allowance != 0) _token.approve(_spender, 0);
-            _token.approve(_spender, MAX_UINT256);
+            if (allowance != 0) _token.safeApprove(_spender, 0);
+            _token.safeApprove(_spender, MAX_UINT256);
         }
     }
 
