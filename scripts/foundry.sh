@@ -23,3 +23,6 @@ forge test --match-contract "$1.*TestAurora$" --fork-url $AURORA_API --fork-bloc
 
 Test contracts ending with exactly "TestBoba" require Boba RPC and block number: 2022-06-25
 forge test --match-contract "$1.*TestBoba$" --fork-url $BOBA_API --fork-block-number 697000 -vvv || exit 1
+
+# Test contracts ending with exactly "TestBSC" require BSC RPC and block number: 2022-06-25
+forge test --match-contract "$1.*TestBSC$" --fork-url $BSC_API --fork-block-number 19000000 -vvv || exit 1

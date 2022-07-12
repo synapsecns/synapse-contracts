@@ -46,6 +46,7 @@ jobs:
       ARBITRUM_API: ${{ secrets.ARBITRUM_API }}
       AURORA_API: https://mainnet.aurora.dev
       AVAX_API: https://api.avax.network/ext/bc/C/rpc
+      BSC_API: ${{ secrets.BSC_API }}
       BOBA_API: https://mainnet.boba.network
       MOVR_API: https://moonriver.api.onfinality.io/public
       OPTIMISM_API: ${{ secrets.OPTIMISM_API }}
