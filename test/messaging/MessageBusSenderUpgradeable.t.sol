@@ -3,8 +3,8 @@
 pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
-import "../../contracts/messaging/MessageBusUpgradeable.sol";
-import "../../contracts/messaging/GasFeePricing.sol";
+import "src-messaging/MessageBusUpgradeable.sol";
+import "src-messaging/GasFeePricing.sol";
 
 import "./GasFeePricing.t.sol";
 

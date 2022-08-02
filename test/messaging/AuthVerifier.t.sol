@@ -1,7 +1,7 @@
 pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
-import "../../contracts/messaging/AuthVerifier.sol";
+import "src-messaging/AuthVerifier.sol";
 
 contract AuthVerifierTest is Test {
     AuthVerifier public authVerifier;
