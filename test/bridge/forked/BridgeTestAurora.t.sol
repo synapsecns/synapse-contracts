@@ -33,4 +33,11 @@ contract BridgeTestAurora is DefaultBridgeForkTest {
     function _initSwapArrays() internal override {
         _addTokenPool(NUSD, NUSD_POOL);
     }
+
+    function test_update_nUSD() public {
+        delete bridgeTokens;
+        delete swaps;
+        _addTokenPool(NUSD, NUSD_POOL_NEW);
+        test_mintAndSwap();
+    }
 }
