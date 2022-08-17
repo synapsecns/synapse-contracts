@@ -83,8 +83,11 @@ contract OptimismSwapWrapper {
     IERC20 internal constant SUSD = IERC20(0x8c6f28f2F1A3C87F0f938b96d27520d9751ec8d9);
     IERC20 internal constant USDT = IERC20(0x94b008aA00579c1307B0EF2c499aD98a8ce58e58);
 
-    /// @notice USDC index, important because all multi swaps are routed through USDC
+    uint256 internal constant NUSD_INDEX = 0;
     uint256 internal constant USDC_INDEX = 1;
+    uint256 internal constant DAI_INDEX = 2;
+    uint256 internal constant SUSD_INDEX = 3;
+    uint256 internal constant USDT_INDEX = 4;
     uint256 internal constant COINS = 5;
 
     /// @notice Synapse nUSD/USDC
@@ -251,14 +254,12 @@ contract OptimismSwapWrapper {
     }
 
     function _getCurveIndex(uint256 _tokenIndex) internal pure returns (int128 index) {
-        if (_tokenIndex == 2) {
-            // DAI
+        // Order of tokens in the Curve pool is DAI, USDC, USDT
+        if (_tokenIndex == DAI_INDEX) {
             index = 0;
-        } else if (_tokenIndex == 1) {
-            // USDC
+        } else if (_tokenIndex == USDC_INDEX) {
             index = 1;
-        } else if (_tokenIndex == 4) {
-            // USDT
+        } else if (_tokenIndex == USDT_INDEX) {
             index = 2;
         } else {
             // return -1 for unsupported token index
@@ -277,15 +278,15 @@ contract OptimismSwapWrapper {
     }
 
     function _getToken(uint256 _tokenIndex) internal pure returns (IERC20 token) {
-        if (_tokenIndex == 0) {
+        if (_tokenIndex == NUSD_INDEX) {
             token = NUSD;
-        } else if (_tokenIndex == 1) {
+        } else if (_tokenIndex == USDC_INDEX) {
             token = USDC;
-        } else if (_tokenIndex == 2) {
+        } else if (_tokenIndex == DAI_INDEX) {
             token = DAI;
-        } else if (_tokenIndex == 3) {
+        } else if (_tokenIndex == SUSD_INDEX) {
             token = SUSD;
-        } else if (_tokenIndex == 4) {
+        } else if (_tokenIndex == USDT_INDEX) {
             token = USDT;
         }
         /// @dev token is IERC20(address(0)) for unsupported indexes
@@ -293,13 +294,13 @@ contract OptimismSwapWrapper {
 
     /// @dev Gets pool address for direct swap between USDC and other token.
     function _getTokenPoolAddress(uint256 _tokenIndex) internal pure returns (address pool) {
-        if (_tokenIndex == 0) {
+        if (_tokenIndex == NUSD_INDEX) {
             pool = SYNAPSE_NUSD_POOL;
-        } else if (_tokenIndex == 2) {
+        } else if (_tokenIndex == DAI_INDEX) {
             pool = VELODROME_DAI_POOL;
-        } else if (_tokenIndex == 3) {
+        } else if (_tokenIndex == SUSD_INDEX) {
             pool = VELODROME_SUSD_POOL;
-        } else if (_tokenIndex == 4) {
+        } else if (_tokenIndex == USDT_INDEX) {
             pool = CURVE_USDT_POOL;
         }
         /// @dev pool is address(0) if _tokenIndex is USDC, or out of range
