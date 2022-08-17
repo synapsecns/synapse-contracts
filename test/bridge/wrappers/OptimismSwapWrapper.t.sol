@@ -153,7 +153,7 @@ contract SwapWrapperTestOpt is Test {
         for (uint8 indexFrom = 0; indexFrom < COINS; ++indexFrom) {
             for (uint8 indexTo = 0; indexTo < COINS; ++indexTo) {
                 if (indexFrom != indexTo) {
-                    (, uint256 amountIn) = _prepareSwap(indexFrom, indexTo);
+                    uint256 amountIn = _prepareSwap(indexFrom, indexTo);
                     uint256 quoteOut = swap.calculateSwap(indexFrom, indexTo, amountIn);
                     assert(quoteOut != 0);
                     vm.expectRevert("Swap didn't result in min tokens");
@@ -164,7 +164,7 @@ contract SwapWrapperTestOpt is Test {
     }
 
     function _checkSwap(uint8 _indexFrom, uint8 _indexTo) internal {
-        (, uint256 amountIn) = _prepareSwap(_indexFrom, _indexTo);
+        uint256 amountIn = _prepareSwap(_indexFrom, _indexTo);
         IERC20 tokenOut = _getToken(_indexTo);
         // Get swap quote
         uint256 quoteOut = swap.calculateSwap(_indexFrom, _indexTo, amountIn);
@@ -205,18 +205,18 @@ contract SwapWrapperTestOpt is Test {
         assertEq(quoteOut, curveQuote, "Quote doesn't match Curve");
     }
 
-    function _prepareSwap(uint8 _indexFrom, uint8 _indexTo) internal returns (IERC20 tokenIn, uint256 amountIn) {
+    function _prepareSwap(uint8 _indexFrom, uint8 _indexTo) internal returns (uint256 amountIn) {
         assert(_indexFrom != _indexTo);
-        tokenIn = _getToken(_indexFrom);
-        amountIn = _getTestAmountIn(address(tokenIn));
+        address tokenIn = address(_getToken(_indexFrom));
+        amountIn = _getTestAmountIn(tokenIn);
         // Mint test tokens
-        if (address(tokenIn) == SUSD) {
+        if (tokenIn == SUSD) {
             // Minting test sUSD is pure pain
-            TokenState state = SynthUSD(address(tokenIn)).target().tokenState();
+            TokenState state = SynthUSD(tokenIn).target().tokenState();
             vm.prank(state.associatedContract());
             state.setBalanceOf(address(this), amountIn);
         } else {
-            deal(address(tokenIn), address(this), amountIn);
+            deal(tokenIn, address(this), amountIn);
         }
     }
 
