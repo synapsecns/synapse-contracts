@@ -120,6 +120,15 @@ contract OptimismSwapWrapper {
     ▏*║                          EXTERNAL FUNCTIONS                          ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    /**
+     * @notice Wrapper for ISaddle.swap()
+     * @param tokenIndexFrom    the token the user wants to swap from
+     * @param tokenIndexTo      the token the user wants to swap to
+     * @param dx                the amount of tokens the user wants to swap from
+     * @param minDy             the min amount the user would like to receive, or revert.
+     * @param deadline          latest timestamp to accept this transaction
+     * @return amountOut        amount of tokens bought
+     */
     function swap(
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
@@ -157,6 +166,14 @@ contract OptimismSwapWrapper {
     ▏*║                                VIEWS                                 ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    /**
+     * @notice Wrapper for ISaddle.calculateSwap()
+     * @param tokenIndexFrom    the token the user wants to sell
+     * @param tokenIndexTo      the token the user wants to buy
+     * @param dx                the amount of tokens the user wants to sell. If the token charges
+     *                          a fee on transfers, use the amount that gets transferred after the fee.
+     * @return amountOut        amount of tokens the user will receive
+     */
     function calculateSwap(
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
@@ -177,6 +194,11 @@ contract OptimismSwapWrapper {
         }
     }
 
+    /**
+     * @notice Wrapper for ISaddle.getToken()
+     * @param index     the index of the token
+     * @return token    address of the token at given index
+     */
     function getToken(uint8 index) external pure returns (IERC20 token) {
         token = _getToken(index);
         require(address(token) != address(0), "Out of range");
@@ -186,6 +208,17 @@ contract OptimismSwapWrapper {
     ▏*║                          INTERNAL FUNCTIONS                          ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    /**
+     * @notice Performs a swap between tokens through given pool,
+     * assuming tokens to sell are already in this contract.
+     * @param _pool         Pool to execute the swap through
+     * @param _indexFrom    Index of token to sell (see _getToken())
+     * @param _indexTo      Index of token to buy (see _getToken())
+     * @param _amountIn     Amount of tokens to sell
+     * @param _minAmountOut Minimum amount of tokens to buy, or tx will revert
+     * @param _recipient    Address to transfer bought tokens to
+     * @return amountOut    Amount of token bought
+     */
     function _directSwap(
         address _pool,
         uint256 _indexFrom,
@@ -233,6 +266,14 @@ contract OptimismSwapWrapper {
         require(amountOut >= _minAmountOut, "Swap didn't result in min tokens");
     }
 
+    /**
+     * @notice Get a quote for a swap between two tokens via a given pool.
+     * @param _pool         Pool to execute the swap through
+     * @param _indexFrom    Index of token to sell (see _getToken())
+     * @param _indexTo      Index of token to buy (see _getToken())
+     * @param _amountIn     Amount of tokens to sell
+     * @return amountOut    Quote for amount of tokens to buy
+     */
     function _getDirectAmountOut(
         address _pool,
         uint256 _indexFrom,
@@ -256,6 +297,11 @@ contract OptimismSwapWrapper {
         /// @dev amountOut is 0 if direct swap is not supported
     }
 
+    /**
+     * @notice Gets a token's index in the Curve DAI/USDC/USDT pool.
+     * @param _tokenIndex   This contract's index of token (see _getToken())
+     * @return index        Index of token in the Curve pool
+     */
     function _getCurveIndex(uint256 _tokenIndex) internal pure returns (int128 index) {
         // Order of tokens in the Curve pool is DAI, USDC, USDT
         if (_tokenIndex == DAI_INDEX) {
@@ -270,7 +316,13 @@ contract OptimismSwapWrapper {
         }
     }
 
-    /// @dev Gets pool address for direct swap between two tokens.
+    /**
+     * @notice Gets pool address for direct swap between two tokens.
+     * @dev Returns address(0) if swap is not possible.
+     * @param _indexFrom    Index of token to sell (see _getToken())
+     * @param _indexTo      Index of token to buy (see _getToken())
+     * @return pool         Pool address that can do tokenFrom -> tokenTo swap
+     */
     function _getDirectSwap(uint256 _indexFrom, uint256 _indexTo) internal pure returns (address pool) {
         if (_indexFrom == USDC_INDEX) {
             // Get pool for USDC -> * swap
@@ -287,6 +339,12 @@ contract OptimismSwapWrapper {
         /// @dev pool is address(0) if direct swap is not supported.
     }
 
+    /**
+     * @notice Gets token represented by a given index in this contract.
+     * @dev Returns address(0) if token index is out of bounds.
+     * @param _tokenIndex   This contract's index of token
+     * @return token        Token represented by `_tokenIndex`
+     */
     function _getToken(uint256 _tokenIndex) internal pure returns (IERC20 token) {
         if (_tokenIndex == NUSD_INDEX) {
             token = NUSD;
@@ -302,7 +360,12 @@ contract OptimismSwapWrapper {
         /// @dev token is IERC20(address(0)) for unsupported indexes
     }
 
-    /// @dev Gets pool address for direct swap between USDC and other token.
+    /**
+     * @notice Gets pool address for direct swap between USDC and a given token.
+     * @dev Returns address(0) if swap is not possible.
+     * @param _tokenIndex   Index of token to swap (see _getToken())
+     * @return pool         Pool address that can do `_tokenIndex` <> USDC swap
+     */
     function _getDirectSwapUSDC(uint256 _tokenIndex) internal pure returns (address pool) {
         if (_tokenIndex == NUSD_INDEX) {
             pool = SYNAPSE_NUSD_POOL;
