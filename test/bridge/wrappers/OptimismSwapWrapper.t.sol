@@ -19,6 +19,14 @@ interface TokenState {
     function setBalanceOf(address, uint256) external;
 }
 
+interface ICurveTest is ICurve {
+    function coins(uint256) external view returns (address);
+}
+
+interface ISynapseTest is ISynapse {
+    function getTokenIndex(address) external view returns (uint8);
+}
+
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
 contract SwapWrapperTestOpt is Test {
@@ -31,6 +39,11 @@ contract SwapWrapperTestOpt is Test {
     address internal constant USDT = 0x94b008aA00579c1307B0EF2c499aD98a8ce58e58;
 
     uint8 internal constant COINS = 5;
+
+    ISynapseTest internal constant SYNAPSE_POOL = ISynapseTest(0xF44938b0125A6662f9536281aD2CD6c499F22004);
+    IVelodrome internal constant VELODROME_DAI_POOL = IVelodrome(0x4F7ebc19844259386DBdDB7b2eB759eeFc6F8353);
+    IVelodrome internal constant VELODROME_SUSD_POOL = IVelodrome(0xd16232ad60188B68076a235c65d692090caba155);
+    ICurveTest internal constant CURVE_POOL = ICurveTest(0x1337BedC9D22ecbe766dF105c9623922A27963EC);
 
     OptimismSwapWrapper internal swap;
 
@@ -83,6 +96,28 @@ contract SwapWrapperTestOpt is Test {
         uint256 amountIn = _getTestAmountIn(NUSD);
         assertEq(swap.calculateSwap(0, COINS, amountIn), 0, "nUSD -> ????");
         assertEq(swap.calculateSwap(COINS, 0, amountIn), 0, "???? -> nUSD");
+    }
+
+    function test_calculateSwap_directSynapse() public {
+        _checkDirectSynapseQuote(NUSD, USDC);
+        _checkDirectSynapseQuote(USDC, NUSD);
+    }
+
+    function test_calculateSwap_directVelodrome() public {
+        _checkDirectVelodromeQuote(USDC, DAI, VELODROME_DAI_POOL);
+        _checkDirectVelodromeQuote(DAI, USDC, VELODROME_DAI_POOL);
+
+        _checkDirectVelodromeQuote(USDC, SUSD, VELODROME_SUSD_POOL);
+        _checkDirectVelodromeQuote(SUSD, USDC, VELODROME_SUSD_POOL);
+    }
+
+    function test_calculateSwap_directCurve() public {
+        _checkDirectCurveQuote(DAI, USDT);
+        _checkDirectCurveQuote(USDT, DAI);
+
+        _checkDirectCurveQuote(USDC, USDT);
+        _checkDirectCurveQuote(USDT, USDC);
+        // DAI <> USDC is done via Velodrome
     }
 
     function test_swap() public {
@@ -141,6 +176,35 @@ contract SwapWrapperTestOpt is Test {
         assertEq(quoteOut, amountOut, "Failed to give accurate quote");
     }
 
+    function _checkDirectSynapseQuote(address _tokenFrom, address _tokenTo) internal {
+        uint256 amountIn = _getTestAmountIn(_tokenFrom);
+        uint256 quoteOut = swap.calculateSwap(_getIndex(_tokenFrom), _getIndex(_tokenTo), amountIn);
+        uint256 synapseQuote = SYNAPSE_POOL.calculateSwap(
+            SYNAPSE_POOL.getTokenIndex(_tokenFrom),
+            SYNAPSE_POOL.getTokenIndex(_tokenTo),
+            amountIn
+        );
+        assertEq(quoteOut, synapseQuote, "Quote doesn't match Synapse");
+    }
+
+    function _checkDirectVelodromeQuote(
+        address _tokenFrom,
+        address _tokenTo,
+        IVelodrome _pool
+    ) internal {
+        uint256 amountIn = _getTestAmountIn(_tokenFrom);
+        uint256 quoteOut = swap.calculateSwap(_getIndex(_tokenFrom), _getIndex(_tokenTo), amountIn);
+        uint256 velodromeQuote = _pool.getAmountOut(amountIn, _tokenFrom);
+        assertEq(quoteOut, velodromeQuote, "Quote doesn't match Velodrome");
+    }
+
+    function _checkDirectCurveQuote(address _tokenFrom, address _tokenTo) internal {
+        uint256 amountIn = _getTestAmountIn(_tokenFrom);
+        uint256 quoteOut = swap.calculateSwap(_getIndex(_tokenFrom), _getIndex(_tokenTo), amountIn);
+        uint256 curveQuote = CURVE_POOL.get_dy(_getCurveIndex(_tokenFrom), _getCurveIndex(_tokenTo), amountIn);
+        assertEq(quoteOut, curveQuote, "Quote doesn't match Curve");
+    }
+
     function _prepareSwap(uint8 _indexFrom, uint8 _indexTo) internal returns (IERC20 tokenIn, uint256 amountIn) {
         assert(_indexFrom != _indexTo);
         tokenIn = _getToken(_indexFrom);
@@ -154,6 +218,22 @@ contract SwapWrapperTestOpt is Test {
         } else {
             deal(address(tokenIn), address(this), amountIn);
         }
+    }
+
+    function _getCurveIndex(address _token) internal view returns (int128) {
+        for (uint256 index = 0; index < 3; ++index) {
+            if (CURVE_POOL.coins(index) == _token) {
+                return int128(int256(index));
+            }
+        }
+        revert("Token not found");
+    }
+
+    function _getIndex(address _token) internal view returns (uint8) {
+        for (uint8 index = 0; index < COINS; ++index) {
+            if (address(_getToken(index)) == _token) return index;
+        }
+        revert("Token not found");
     }
 
     function _getToken(uint8 _index) internal view returns (IERC20) {

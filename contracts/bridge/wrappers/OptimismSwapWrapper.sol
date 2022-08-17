@@ -111,7 +111,7 @@ contract OptimismSwapWrapper {
         USDC.safeApprove(SYNAPSE_NUSD_POOL, MAX_UINT);
         // Velodrome pools don't need approvals
         // Approve Curve DAI/USDC/USDT Pool
-        // We don't need DAI approval, as we don't use Curve pool for DAI swaps
+        DAI.safeApprove(CURVE_USDT_POOL, MAX_UINT);
         USDC.safeApprove(CURVE_USDT_POOL, MAX_UINT);
         USDT.safeApprove(CURVE_USDT_POOL, MAX_UINT);
     }
@@ -138,15 +138,18 @@ contract OptimismSwapWrapper {
         // Use actual transferred amount for the swap
         dx = tokenFrom.balanceOf(address(this)) - balanceBefore;
         // Check if direct swap is possible
-        if (tokenIndexFrom == USDC_INDEX || tokenIndexTo == USDC_INDEX) {
-            amountOut = _directSwap(tokenIndexFrom, tokenIndexTo, dx, minDy, msg.sender);
+        address pool = _getDirectSwap(tokenIndexFrom, tokenIndexTo);
+        if (pool != address(0)) {
+            amountOut = _directSwap(pool, tokenIndexFrom, tokenIndexTo, dx, minDy, msg.sender);
         } else {
             // First, perform tokenFrom -> USDC swap, recipient is this contract
+            pool = _getDirectSwap(tokenIndexFrom, USDC_INDEX);
             // Don't check minAmountOut
-            amountOut = _directSwap(tokenIndexFrom, USDC_INDEX, dx, 0, address(this));
+            amountOut = _directSwap(pool, tokenIndexFrom, USDC_INDEX, dx, 0, address(this));
             // Then, perform USDC -> tokenTo swap, recipient is the user
+            pool = _getDirectSwap(USDC_INDEX, tokenIndexTo);
             // Check minAmountOut
-            amountOut = _directSwap(USDC_INDEX, tokenIndexTo, amountOut, minDy, msg.sender);
+            amountOut = _directSwap(pool, USDC_INDEX, tokenIndexTo, amountOut, minDy, msg.sender);
         }
     }
 
@@ -161,13 +164,16 @@ contract OptimismSwapWrapper {
     ) external view returns (uint256 amountOut) {
         if (tokenIndexFrom == tokenIndexTo) return 0;
         // Check if direct swap is possible
-        if (tokenIndexFrom == USDC_INDEX || tokenIndexTo == USDC_INDEX) {
-            amountOut = _getDirectAmountOut(tokenIndexFrom, tokenIndexTo, dx);
+        address pool = _getDirectSwap(tokenIndexFrom, tokenIndexTo);
+        if (pool != address(0)) {
+            amountOut = _getDirectAmountOut(pool, tokenIndexFrom, tokenIndexTo, dx);
         } else {
             // First, get tokenFrom -> USDC quote
-            amountOut = _getDirectAmountOut(tokenIndexFrom, USDC_INDEX, dx);
+            pool = _getDirectSwap(tokenIndexFrom, USDC_INDEX);
+            amountOut = _getDirectAmountOut(pool, tokenIndexFrom, USDC_INDEX, dx);
             // Then, get USDC -> tokenTo quote
-            amountOut = _getDirectAmountOut(USDC_INDEX, tokenIndexTo, amountOut);
+            pool = _getDirectSwap(USDC_INDEX, tokenIndexTo);
+            amountOut = _getDirectAmountOut(pool, USDC_INDEX, tokenIndexTo, amountOut);
         }
     }
 
@@ -181,46 +187,44 @@ contract OptimismSwapWrapper {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function _directSwap(
+        address _pool,
         uint256 _indexFrom,
         uint256 _indexTo,
         uint256 _amountIn,
         uint256 _minAmountOut,
         address _recipient
     ) internal returns (uint256 amountOut) {
-        // Get swap pool for a direct trade
-        address pool = _getPoolAddress(_indexFrom, _indexTo);
-        require(pool != address(0), "Swap not supported");
-        if (pool == SYNAPSE_NUSD_POOL) {
+        if (_pool == SYNAPSE_NUSD_POOL) {
             // Indexes in Synapse pool match the indexes in SwapWrapper
             // solhint-disable-next-line not-rely-on-time
-            amountOut = ISynapse(pool).swap(uint8(_indexFrom), uint8(_indexTo), _amountIn, 0, block.timestamp);
+            amountOut = ISynapse(_pool).swap(uint8(_indexFrom), uint8(_indexTo), _amountIn, 0, block.timestamp);
             // Transfer tokens to recipient, if needed
             if (_recipient != address(this)) {
                 _getToken(_indexTo).safeTransfer(_recipient, amountOut);
             }
-        } else if (pool == CURVE_USDT_POOL) {
+        } else if (_pool == CURVE_USDT_POOL) {
             // Get corresponding Curve indexes and perform a swap
-            amountOut = ICurve(pool).exchange(
+            amountOut = ICurve(_pool).exchange(
                 _getCurveIndex(_indexFrom),
                 _getCurveIndex(_indexTo),
                 _amountIn,
                 0,
                 _recipient
             );
-        } else if (pool == VELODROME_DAI_POOL || pool == VELODROME_SUSD_POOL) {
+        } else if (_pool == VELODROME_DAI_POOL || _pool == VELODROME_SUSD_POOL) {
             // Get starting token
             IERC20 tokenFrom = _getToken(_indexFrom);
             // Get a quote
-            amountOut = IVelodrome(pool).getAmountOut(_amountIn, address(tokenFrom));
+            amountOut = IVelodrome(_pool).getAmountOut(_amountIn, address(tokenFrom));
             // Transfer starting token to Pair contract
-            tokenFrom.safeTransfer(address(pool), _amountIn);
+            tokenFrom.safeTransfer(address(_pool), _amountIn);
             // USDC is token0 in both USDC/DAI and USDC/sUSD pool,
             // because USDC address is lexicographically smaller
             (uint256 amount0Out, uint256 amount1Out) = (_indexFrom == USDC_INDEX)
                 ? (uint256(0), amountOut)
                 : (amountOut, uint256(0));
             // Perform a swap
-            IVelodrome(pool).swap(amount0Out, amount1Out, _recipient, bytes(""));
+            IVelodrome(_pool).swap(amount0Out, amount1Out, _recipient, bytes(""));
         } else {
             // Sanity check: should never reach this
             assert(false);
@@ -230,25 +234,24 @@ contract OptimismSwapWrapper {
     }
 
     function _getDirectAmountOut(
+        address _pool,
         uint256 _indexFrom,
         uint256 _indexTo,
         uint256 _amountIn
     ) internal view returns (uint256 amountOut) {
         // First, check input amount
         if (_amountIn == 0) return 0;
-        // Then get swap pool for a direct trade
-        address pool = _getPoolAddress(_indexFrom, _indexTo);
-        if (pool == SYNAPSE_NUSD_POOL) {
+        if (_pool == SYNAPSE_NUSD_POOL) {
             // Indexes in Synapse pool match the indexes in SwapWrapper
-            amountOut = ISynapse(pool).calculateSwap(uint8(_indexFrom), uint8(_indexTo), _amountIn);
-        } else if (pool == CURVE_USDT_POOL) {
+            amountOut = ISynapse(_pool).calculateSwap(uint8(_indexFrom), uint8(_indexTo), _amountIn);
+        } else if (_pool == CURVE_USDT_POOL) {
             // Get corresponding Curve indexes and get a quote
-            amountOut = ICurve(pool).get_dy(_getCurveIndex(_indexFrom), _getCurveIndex(_indexTo), _amountIn);
-        } else if (pool == VELODROME_DAI_POOL || pool == VELODROME_SUSD_POOL) {
+            amountOut = ICurve(_pool).get_dy(_getCurveIndex(_indexFrom), _getCurveIndex(_indexTo), _amountIn);
+        } else if (_pool == VELODROME_DAI_POOL || _pool == VELODROME_SUSD_POOL) {
             // Get starting token
             IERC20 tokenFrom = _getToken(_indexFrom);
             // Get a quote
-            amountOut = IVelodrome(pool).getAmountOut(_amountIn, address(tokenFrom));
+            amountOut = IVelodrome(_pool).getAmountOut(_amountIn, address(tokenFrom));
         }
         /// @dev amountOut is 0 if direct swap is not supported
     }
@@ -262,19 +265,26 @@ contract OptimismSwapWrapper {
         } else if (_tokenIndex == USDT_INDEX) {
             index = 2;
         } else {
-            // return -1 for unsupported token index
-            index = -1;
+            // Sanity check: should never reach this
+            assert(false);
         }
     }
 
     /// @dev Gets pool address for direct swap between two tokens.
-    function _getPoolAddress(uint256 _indexFrom, uint256 _indexTo) internal pure returns (address pool) {
+    function _getDirectSwap(uint256 _indexFrom, uint256 _indexTo) internal pure returns (address pool) {
         if (_indexFrom == USDC_INDEX) {
-            pool = _getTokenPoolAddress(_indexTo);
+            // Get pool for USDC -> * swap
+            pool = _getDirectSwapUSDC(_indexTo);
         } else if (_indexTo == USDC_INDEX) {
-            pool = _getTokenPoolAddress(_indexFrom);
+            // Get pool for * -> USDC swap
+            pool = _getDirectSwapUSDC(_indexFrom);
+        } else if (
+            (_indexFrom == DAI_INDEX && _indexTo == USDT_INDEX) || (_indexFrom == USDT_INDEX && _indexTo == DAI_INDEX)
+        ) {
+            // DAI <-> USDT can be done via Curve pool
+            pool = CURVE_USDT_POOL;
         }
-        /// @dev pool is address(0) if neither of tokens is USDC.
+        /// @dev pool is address(0) if direct swap is not supported.
     }
 
     function _getToken(uint256 _tokenIndex) internal pure returns (IERC20 token) {
@@ -293,7 +303,7 @@ contract OptimismSwapWrapper {
     }
 
     /// @dev Gets pool address for direct swap between USDC and other token.
-    function _getTokenPoolAddress(uint256 _tokenIndex) internal pure returns (address pool) {
+    function _getDirectSwapUSDC(uint256 _tokenIndex) internal pure returns (address pool) {
         if (_tokenIndex == NUSD_INDEX) {
             pool = SYNAPSE_NUSD_POOL;
         } else if (_tokenIndex == DAI_INDEX) {
