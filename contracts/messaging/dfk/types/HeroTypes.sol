@@ -107,3 +107,4 @@ struct Hero {
     HeroStatGrowth secondaryStatGrowth;
     HeroProfessions professions;
 }
+

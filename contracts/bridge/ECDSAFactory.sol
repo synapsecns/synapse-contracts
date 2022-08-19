@@ -46,7 +46,11 @@ contract ECDSAFactory is Ownable {
         uint256 honestThreshold
     ) external onlyOwner returns (address) {
         address nodeClone = Clones.clone(nodeMgmtAddress);
-        IECDSANodeManagement(nodeClone).initialize(owner, members, honestThreshold);
+        IECDSANodeManagement(nodeClone).initialize(
+            owner,
+            members,
+            honestThreshold
+        );
 
         latestNodeGroup.keepAddress = nodeClone;
         latestNodeGroup.members = members;

@@ -41,16 +41,7 @@ contract HeroAuctionUpgradeable is ERC721AuctionBaseUpgradeable {
         require(!assistingAuction.isOnAuction(_tokenId), "assisting");
 
         _escrow(msg.sender, _tokenId);
-        Auction memory auction = Auction(
-            msg.sender,
-            _tokenId,
-            _startingPrice,
-            _endingPrice,
-            _duration,
-            uint64(block.timestamp),
-            _winner,
-            true
-        );
+        Auction memory auction = Auction(msg.sender, _tokenId, _startingPrice, _endingPrice, _duration, uint64(block.timestamp), _winner, true);
         _addAuction(_tokenId, auction);
     }
 

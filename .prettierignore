@@ -1,6 +1,0 @@
-artifacts/*
-build/*
-flattened/*
-lib/*
-contracts/MultisigWallet/*
-contracts/amm/*

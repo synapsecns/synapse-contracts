@@ -3,7 +3,11 @@
 pragma solidity 0.6.12;
 
 library AddressArrayUtils {
-    function contains(address[] memory self, address _address) internal pure returns (bool) {
+    function contains(address[] memory self, address _address)
+        internal
+        pure
+        returns (bool)
+    {
         for (uint256 i = 0; i < self.length; i++) {
             if (_address == self[i]) {
                 return true;

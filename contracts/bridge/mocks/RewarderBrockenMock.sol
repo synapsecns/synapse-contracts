@@ -3,22 +3,15 @@
 pragma solidity 0.6.12;
 import "../interfaces/IRewarder.sol";
 
+
 contract RewarderBrokenMock is IRewarder {
-    function onSynapseReward(
-        uint256,
-        address,
-        address,
-        uint256,
-        uint256
-    ) external override {
+
+    function onSynapseReward (uint256, address, address, uint256, uint256) override external {
         revert();
     }
 
-    function pendingTokens(
-        uint256 pid,
-        address user,
-        uint256 synapseAmount
-    ) external view override returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
+    function pendingTokens(uint256 pid, address user, uint256 synapseAmount) override external view returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts){
         revert();
     }
+  
 }

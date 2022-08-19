@@ -21,14 +21,28 @@ contract TearBridge is SynMessagingReceiver {
         gaiaTears = _gaiaTear;
     }
 
-    function _createMessage(address _dstUserAddress, uint256 _dstTearAmount) internal pure returns (bytes memory) {
+    function _createMessage(address _dstUserAddress, uint256 _dstTearAmount)
+        internal
+        pure
+        returns (bytes memory)
+    {
         // create the message here from the nested struct
-        MessageFormat memory msgFormat = MessageFormat({dstUser: _dstUserAddress, dstTearAmount: _dstTearAmount});
+        MessageFormat memory msgFormat = MessageFormat({
+            dstUser: _dstUserAddress,
+            dstTearAmount: _dstTearAmount
+        });
         return abi.encode(msgFormat);
     }
 
-    function _decodeMessage(bytes memory _message) internal pure returns (MessageFormat memory) {
-        MessageFormat memory decodedMessage = abi.decode(_message, (MessageFormat));
+    function _decodeMessage(bytes memory _message)
+        internal
+        pure
+        returns (MessageFormat memory)
+    {
+        MessageFormat memory decodedMessage = abi.decode(
+            _message,
+            (MessageFormat)
+        );
         return decodedMessage;
     }
 
@@ -36,7 +50,10 @@ contract TearBridge is SynMessagingReceiver {
         return abi.encodePacked(uint16(1), msgGasLimit);
     }
 
-    function sendTear(uint256 _tearsAmount, uint256 _dstChainId) external payable {
+    function sendTear(uint256 _tearsAmount, uint256 _dstChainId)
+        external
+        payable
+    {
         uint256 tearsAmount = _tearsAmount;
         uint256 dstChainId = _dstChainId;
         // Tears now burnt, equivalent amount will be bridged to dstChainId
@@ -73,8 +90,16 @@ contract TearBridge is SynMessagingReceiver {
     ) internal override {
         bytes32 trustedRemote = trustedRemoteLookup[_dstChainId];
         require(trustedRemote != bytes32(0), "No remote app set for dst chain");
-        require(trustedRemote == _receiver, "Receiver is not in trusted remote apps");
-        IMessageBus(messageBus).sendMessage{value: msg.value}(_receiver, _dstChainId, _message, _options);
+        require(
+            trustedRemote == _receiver,
+            "Receiver is not in trusted remote apps"
+        );
+        IMessageBus(messageBus).sendMessage{value: msg.value}(
+            _receiver,
+            _dstChainId,
+            _message,
+            _options
+        );
     }
 
     function setMsgGasLimit(uint256 _msgGasLimit) external onlyOwner {

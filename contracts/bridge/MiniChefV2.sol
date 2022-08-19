@@ -56,13 +56,43 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
     uint256 public synapsePerSecond;
     uint256 private constant ACC_SYNAPSE_PRECISION = 1e12;
 
-    event Deposit(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
-    event Withdraw(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
-    event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
+    event Deposit(
+        address indexed user,
+        uint256 indexed pid,
+        uint256 amount,
+        address indexed to
+    );
+    event Withdraw(
+        address indexed user,
+        uint256 indexed pid,
+        uint256 amount,
+        address indexed to
+    );
+    event EmergencyWithdraw(
+        address indexed user,
+        uint256 indexed pid,
+        uint256 amount,
+        address indexed to
+    );
     event Harvest(address indexed user, uint256 indexed pid, uint256 amount);
-    event LogPoolAddition(uint256 indexed pid, uint256 allocPoint, IERC20 indexed lpToken, IRewarder indexed rewarder);
-    event LogSetPool(uint256 indexed pid, uint256 allocPoint, IRewarder indexed rewarder, bool overwrite);
-    event LogUpdatePool(uint256 indexed pid, uint64 lastRewardTime, uint256 lpSupply, uint256 accSynapsePerShare);
+    event LogPoolAddition(
+        uint256 indexed pid,
+        uint256 allocPoint,
+        IERC20 indexed lpToken,
+        IRewarder indexed rewarder
+    );
+    event LogSetPool(
+        uint256 indexed pid,
+        uint256 allocPoint,
+        IRewarder indexed rewarder,
+        bool overwrite
+    );
+    event LogUpdatePool(
+        uint256 indexed pid,
+        uint64 lastRewardTime,
+        uint256 lpSupply,
+        uint256 accSynapsePerShare
+    );
     event LogSynapsePerSecond(uint256 synapsePerSecond);
 
     /// @param _synapse The SYNAPSE token contract address.
@@ -90,9 +120,18 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
         rewarder.push(_rewarder);
 
         poolInfo.push(
-            PoolInfo({allocPoint: allocPoint.to64(), lastRewardTime: block.timestamp.to64(), accSynapsePerShare: 0})
+            PoolInfo({
+                allocPoint: allocPoint.to64(),
+                lastRewardTime: block.timestamp.to64(),
+                accSynapsePerShare: 0
+            })
         );
-        emit LogPoolAddition(lpToken.length.sub(1), allocPoint, _lpToken, _rewarder);
+        emit LogPoolAddition(
+            lpToken.length.sub(1),
+            allocPoint,
+            _lpToken,
+            _rewarder
+        );
     }
 
     /// @notice Update the given pool's SYNAPSE allocation point and `IRewarder` contract. Can only be called by the owner.
@@ -106,12 +145,19 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
         IRewarder _rewarder,
         bool overwrite
     ) public onlyOwner {
-        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
+        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(
+            _allocPoint
+        );
         poolInfo[_pid].allocPoint = _allocPoint.to64();
         if (overwrite) {
             rewarder[_pid] = _rewarder;
         }
-        emit LogSetPool(_pid, _allocPoint, overwrite ? _rewarder : rewarder[_pid], overwrite);
+        emit LogSetPool(
+            _pid,
+            _allocPoint,
+            overwrite ? _rewarder : rewarder[_pid],
+            overwrite
+        );
     }
 
     /// @notice Sets the synapse per second to be distributed. Can only be called by the owner.
@@ -125,17 +171,28 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
     /// @param _pid The index of the pool. See `poolInfo`.
     /// @param _user Address of user.
     /// @return pending SYNAPSE reward for a given user.
-    function pendingSynapse(uint256 _pid, address _user) external view returns (uint256 pending) {
+    function pendingSynapse(uint256 _pid, address _user)
+        external
+        view
+        returns (uint256 pending)
+    {
         PoolInfo memory pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accSynapsePerShare = pool.accSynapsePerShare;
         uint256 lpSupply = lpToken[_pid].balanceOf(address(this));
         if (block.timestamp > pool.lastRewardTime && lpSupply != 0) {
             uint256 time = block.timestamp.sub(pool.lastRewardTime);
-            uint256 synapseReward = time.mul(synapsePerSecond).mul(pool.allocPoint) / totalAllocPoint;
-            accSynapsePerShare = accSynapsePerShare.add(synapseReward.mul(ACC_SYNAPSE_PRECISION) / lpSupply);
+            uint256 synapseReward = time.mul(synapsePerSecond).mul(
+                pool.allocPoint
+            ) / totalAllocPoint;
+            accSynapsePerShare = accSynapsePerShare.add(
+                synapseReward.mul(ACC_SYNAPSE_PRECISION) / lpSupply
+            );
         }
-        pending = int256(user.amount.mul(accSynapsePerShare) / ACC_SYNAPSE_PRECISION).sub(user.rewardDebt).toUInt256();
+        pending = int256(
+            user.amount.mul(accSynapsePerShare) / ACC_SYNAPSE_PRECISION
+        ).sub(user.rewardDebt)
+        .toUInt256();
     }
 
     /// @notice Update reward variables for all pools. Be careful of gas spending!
@@ -156,14 +213,22 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
             uint256 lpSupply = lpToken[pid].balanceOf(address(this));
             if (lpSupply > 0) {
                 uint256 time = block.timestamp.sub(pool.lastRewardTime);
-                uint256 synapseReward = time.mul(synapsePerSecond).mul(pool.allocPoint) / totalAllocPoint;
+                uint256 synapseReward = time.mul(synapsePerSecond).mul(
+                    pool.allocPoint
+                ) / totalAllocPoint;
                 pool.accSynapsePerShare = pool.accSynapsePerShare.add(
-                    (synapseReward.mul(ACC_SYNAPSE_PRECISION) / lpSupply).to128()
+                    (synapseReward.mul(ACC_SYNAPSE_PRECISION) / lpSupply)
+                    .to128()
                 );
             }
             pool.lastRewardTime = block.timestamp.to64();
             poolInfo[pid] = pool;
-            emit LogUpdatePool(pid, pool.lastRewardTime, lpSupply, pool.accSynapsePerShare);
+            emit LogUpdatePool(
+                pid,
+                pool.lastRewardTime,
+                lpSupply,
+                pool.accSynapsePerShare
+            );
         }
     }
 
@@ -181,7 +246,9 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
 
         // Effects
         user.amount = user.amount.add(amount);
-        user.rewardDebt = user.rewardDebt.add(int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION));
+        user.rewardDebt = user.rewardDebt.add(
+            int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION)
+        );
 
         // Interactions
         IRewarder _rewarder = rewarder[pid];
@@ -207,7 +274,9 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
         UserInfo storage user = userInfo[pid][msg.sender];
 
         // Effects
-        user.rewardDebt = user.rewardDebt.sub(int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION));
+        user.rewardDebt = user.rewardDebt.sub(
+            int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION)
+        );
         user.amount = user.amount.sub(amount);
 
         // Interactions
@@ -227,8 +296,12 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
     function harvest(uint256 pid, address to) public {
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
-        int256 accumulatedSynapse = int256(user.amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION);
-        uint256 _pendingSynapse = accumulatedSynapse.sub(user.rewardDebt).toUInt256();
+        int256 accumulatedSynapse = int256(
+            user.amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION
+        );
+        uint256 _pendingSynapse = accumulatedSynapse
+        .sub(user.rewardDebt)
+        .toUInt256();
 
         // Effects
         user.rewardDebt = accumulatedSynapse;
@@ -240,7 +313,13 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
 
         IRewarder _rewarder = rewarder[pid];
         if (address(_rewarder) != address(0)) {
-            _rewarder.onSynapseReward(pid, msg.sender, to, _pendingSynapse, user.amount);
+            _rewarder.onSynapseReward(
+                pid,
+                msg.sender,
+                to,
+                _pendingSynapse,
+                user.amount
+            );
         }
 
         emit Harvest(msg.sender, pid, _pendingSynapse);
@@ -257,11 +336,17 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
     ) public {
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][msg.sender];
-        int256 accumulatedSynapse = int256(user.amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION);
-        uint256 _pendingSynapse = accumulatedSynapse.sub(user.rewardDebt).toUInt256();
+        int256 accumulatedSynapse = int256(
+            user.amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION
+        );
+        uint256 _pendingSynapse = accumulatedSynapse
+        .sub(user.rewardDebt)
+        .toUInt256();
 
         // Effects
-        user.rewardDebt = accumulatedSynapse.sub(int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION));
+        user.rewardDebt = accumulatedSynapse.sub(
+            int256(amount.mul(pool.accSynapsePerShare) / ACC_SYNAPSE_PRECISION)
+        );
         user.amount = user.amount.sub(amount);
 
         // Interactions
@@ -269,7 +354,13 @@ contract MiniChefV2 is BoringOwnable, BoringBatchable {
 
         IRewarder _rewarder = rewarder[pid];
         if (address(_rewarder) != address(0)) {
-            _rewarder.onSynapseReward(pid, msg.sender, to, _pendingSynapse, user.amount);
+            _rewarder.onSynapseReward(
+                pid,
+                msg.sender,
+                to,
+                _pendingSynapse,
+                user.amount
+            );
         }
 
         lpToken[pid].safeTransfer(to, amount);

@@ -31,7 +31,10 @@ abstract contract SynMessagingReceiver is ISynMessagingReceiver, Ownable {
         // Must be called by the MessageBus/MessageBus for security
         require(msg.sender == messageBus, "caller is not message bus");
         // Must also be from a trusted source app
-        require(_srcAddress == trustedRemoteLookup[_srcChainId], "Invalid source sending app");
+        require(
+            _srcAddress == trustedRemoteLookup[_srcChainId],
+            "Invalid source sending app"
+        );
 
         _handleMessage(_srcAddress, _srcChainId, _message, _executor);
     }
@@ -60,7 +63,10 @@ abstract contract SynMessagingReceiver is ISynMessagingReceiver, Ownable {
         bytes memory _options,
         address payable _refundAddress
     ) internal virtual {
-        require(trustedRemoteLookup[_dstChainId] != bytes32(0), "Receiver not trusted remote");
+        require(
+            trustedRemoteLookup[_dstChainId] != bytes32(0),
+            "Receiver not trusted remote"
+        );
         IMessageBus(messageBus).sendMessage{value: msg.value}(
             _receiver,
             _dstChainId,
@@ -76,13 +82,20 @@ abstract contract SynMessagingReceiver is ISynMessagingReceiver, Ownable {
     }
 
     // allow owner to set trusted addresses allowed to be source senders
-    function setTrustedRemote(uint256 _srcChainId, bytes32 _srcAddress) external onlyOwner {
+    function setTrustedRemote(uint256 _srcChainId, bytes32 _srcAddress)
+        external
+        onlyOwner
+    {
         trustedRemoteLookup[_srcChainId] = _srcAddress;
         emit SetTrustedRemote(_srcChainId, _srcAddress);
     }
 
     //** View functions */
-    function getTrustedRemote(uint256 _chainId) external view returns (bytes32 trustedRemote) {
+    function getTrustedRemote(uint256 _chainId)
+        external
+        view
+        returns (bytes32 trustedRemote)
+    {
         return trustedRemoteLookup[_chainId];
     }
 }
