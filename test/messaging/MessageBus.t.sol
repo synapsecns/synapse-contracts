@@ -3,23 +3,16 @@
 pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
-import "../../contracts/messaging/MessageBusUpgradeable.sol";
+import "../../contracts/messaging/MessageBus.sol";
 import "../../contracts/messaging/AuthVerifier.sol";
 
-import "@openzeppelin/contracts-4.5.0/proxy/transparent/TransparentUpgradeableProxy.sol";
-
-contract MessageBusUpgradeableTest is Test {
-    MessageBusUpgradeable public messageBus;
+contract MessageBusTest is Test {
+    MessageBus public messageBus;
     AuthVerifier public authVerifier;
 
     function setUp() public {
         authVerifier = new AuthVerifier(address(1337));
-        MessageBusUpgradeable impl = new MessageBusUpgradeable();
-        // Setup proxy with needed logic and custom admin,
-        // we don't need to upgrade anything, so no need to setup ProxyAdmin
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(impl), address(420), bytes(""));
-        messageBus = MessageBusUpgradeable(address(proxy));
-        messageBus.initialize(address(messageBus), address(authVerifier));
+        messageBus = new MessageBus(address(messageBus), address(authVerifier));
     }
 
     function testUnauthorizedPauseUnpause() public {

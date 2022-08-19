@@ -2,7 +2,7 @@ pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
 import {Utilities} from "../utils/Utilities.sol";
-import "../../contracts/messaging/MessageBusUpgradeable.sol";
+import "../../contracts/messaging/MessageBus.sol";
 import "../../contracts/messaging/GasFeePricing.sol";
 import "../../contracts/messaging/AuthVerifier.sol";
 import "../../contracts/messaging/apps/BatchMessageSender.sol";
@@ -12,7 +12,7 @@ contract BatchMessageSenderTest is Test {
     Utilities internal utils;
     address payable[] internal users;
 
-    MessageBusUpgradeable public messageBusChainA;
+    MessageBus public messageBusChainA;
     GasFeePricing public gasFeePricingChainA;
     AuthVerifier public authVerifierChainA;
     BatchMessageSender public batchMessageSenderChainA;
@@ -33,7 +33,7 @@ contract BatchMessageSenderTest is Test {
 
     event Executed(
         bytes32 msgId,
-        MessageBusUpgradeable.TxStatus status,
+        MessageBus.TxStatus status,
         address indexed _dstAddress,
         uint64 srcChainId,
         uint64 srcNonce
@@ -46,8 +46,7 @@ contract BatchMessageSenderTest is Test {
         node = users[0];
         vm.label(node, "Node");
         authVerifierChainA = new AuthVerifier(node);
-        messageBusChainA = new MessageBusUpgradeable();
-        messageBusChainA.initialize(address(gasFeePricingChainA), address(authVerifierChainA));
+        messageBusChainA = new MessageBus(address(gasFeePricingChainA), address(authVerifierChainA));
         batchMessageSenderChainA = new BatchMessageSender(address(messageBusChainA));
         vm.label(address(batchMessageSenderChainA), "BatchMessageSenderChainA");
         gasFeePricingChainA.setCostPerChain(43113, 30000000000, 25180000000000000);

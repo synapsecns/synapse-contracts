@@ -46,27 +46,19 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     });
 
     const messageBusDeploy = await deploy("MessageBus", {
-      contract: "MessageBusUpgradeable",
       from: deployer,
       log: true,
       skipIfAlreadyDeployed: true,
-      args: [],
-      proxy: {
-        owner: (await get("DevMultisig")).address,
-        proxyContract: "OpenZeppelinTransparentProxy",
-      },
+      args: [(await get("GasFeePricing")).address, (await get("AuthVerifier")).address],
     });
 
     if (messageBusDeploy.newlyDeployed) {
       await execute(
         "MessageBus",
         { from: deployer, log: true },
-        "initialize",
+        "transferOwnership",
         (
-          await get("GasFeePricing")
-        ).address,
-        (
-          await get("AuthVerifier")
+          await get("DevMultisig")
         ).address
       );
     }
