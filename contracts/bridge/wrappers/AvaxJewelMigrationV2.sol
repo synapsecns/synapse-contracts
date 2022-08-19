@@ -16,11 +16,14 @@ contract AvaxJewelMigrationV2 is Ownable {
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Mintable;
 
-    ISynapseBridge public constant SYNAPSE_BRIDGE = ISynapseBridge(0xC05e61d0E7a63D27546389B7aD62FdFf5A91aACE);
+    ISynapseBridge public constant SYNAPSE_BRIDGE =
+        ISynapseBridge(0xC05e61d0E7a63D27546389B7aD62FdFf5A91aACE);
     // MULTICHAIN JEWEL
-    IERC20 public constant LEGACY_TOKEN = IERC20(0x4f60a160D8C2DDdaAfe16FCC57566dB84D674BD6);
+    IERC20 public constant LEGACY_TOKEN =
+        IERC20(0x4f60a160D8C2DDdaAfe16FCC57566dB84D674BD6);
     // SYNAPSE JEWEL
-    IERC20Mintable public constant NEW_TOKEN = IERC20Mintable(0x997Ddaa07d716995DE90577C123Db411584E5E46);
+    IERC20Mintable public constant NEW_TOKEN =
+        IERC20Mintable(0x997Ddaa07d716995DE90577C123Db411584E5E46);
     uint256 private constant MAX_UINT256 = 2**256 - 1;
 
     uint256 private constant HARMONY_ID = 1666600000;

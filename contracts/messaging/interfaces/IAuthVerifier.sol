@@ -8,7 +8,10 @@ interface IAuthVerifier {
      * @param _authData A bytes32 address encoded via abi.encode(address)
      * @return authenticated returns true if bytes data submitted and decoded to the address is correct
      */
-    function msgAuth(bytes calldata _authData) external view returns (bool authenticated);
+    function msgAuth(bytes calldata _authData)
+        external
+        view
+        returns (bool authenticated);
 
     /**
      * @notice Permissioned method to support upgrades to the library

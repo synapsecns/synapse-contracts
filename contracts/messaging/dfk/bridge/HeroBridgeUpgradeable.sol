@@ -12,7 +12,10 @@ pragma solidity 0.8.13;
 /** @title Core app for handling cross chain messaging passing to bridge Hero NFTs
  */
 
-contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable {
+contract HeroBridgeUpgradeable is
+    Initializable,
+    SynMessagingReceiverUpgradeable
+{
     address public heroes;
     address public assistingAuction;
     uint256 public msgGasLimit;
@@ -51,8 +54,15 @@ contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable
         return abi.encode(msgFormat);
     }
 
-    function _decodeMessage(bytes memory _message) internal pure returns (MessageFormat memory) {
-        MessageFormat memory decodedMessage = abi.decode(_message, (MessageFormat));
+    function _decodeMessage(bytes memory _message)
+        internal
+        pure
+        returns (MessageFormat memory)
+    {
+        MessageFormat memory decodedMessage = abi.decode(
+            _message,
+            (MessageFormat)
+        );
         return decodedMessage;
     }
 
@@ -73,21 +83,38 @@ contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable
         uint256 dstChainId = _dstChainId;
         Hero memory heroToBridge = IHeroCoreUpgradeable(heroes).getHero(heroId);
         // revert if the hero is on a quest
-        require(heroToBridge.state.currentQuest == address(0), "hero is questing");
+        require(
+            heroToBridge.state.currentQuest == address(0),
+            "hero is questing"
+        );
 
         // revert if the hero is on auction
-        require((IAssistingAuction(assistingAuction).isOnAuction(heroId)) == false, "assisting auction");
+        require(
+            (IAssistingAuction(assistingAuction).isOnAuction(heroId)) == false,
+            "assisting auction"
+        );
 
         bytes32 receiver = trustedRemoteLookup[dstChainId];
         // _createMessage(heroId, dstUserAddress, Hero);
         // Only bridgeable directly to the caller of this contract
         // @dev do not call this function from other contracts
-        bytes memory msgToPass = _createMessage(heroId, msg.sender, heroToBridge);
+        bytes memory msgToPass = _createMessage(
+            heroId,
+            msg.sender,
+            heroToBridge
+        );
         // Create _options
         bytes memory options = _createOptions();
 
-        IHeroCoreUpgradeable(heroes).transferFrom(msg.sender, address(this), heroId);
-        require(IHeroCoreUpgradeable(heroes).ownerOf(heroId) == address(this), "Failed to lock Hero");
+        IHeroCoreUpgradeable(heroes).transferFrom(
+            msg.sender,
+            address(this),
+            heroId
+        );
+        require(
+            IHeroCoreUpgradeable(heroes).ownerOf(heroId) == address(this),
+            "Failed to lock Hero"
+        );
         // Hero now locked, message can be safely emitted
 
         _send(receiver, dstChainId, msgToPass, options);
@@ -116,14 +143,20 @@ contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable
         uint256 dstHeroId = passedMsg.dstHeroId;
 
         // will revert if non-existent Hero
-        try IHeroCoreUpgradeable(heroes).ownerOf(dstHeroId) returns (address heroOwner) {
+        try IHeroCoreUpgradeable(heroes).ownerOf(dstHeroId) returns (
+            address heroOwner
+        ) {
             /** 
                 If heroId does exist (which means it should be locked on this contract), as it was bridged before.
                 Transfer it to message.dstUserAddress
                 */
 
             if (heroOwner == address(this)) {
-                IHeroCoreUpgradeable(heroes).safeTransferFrom(address(this), dstUser, dstHeroId);
+                IHeroCoreUpgradeable(heroes).safeTransferFrom(
+                    address(this),
+                    dstUser,
+                    dstHeroId
+                );
             }
         } catch {
             /** 
@@ -147,11 +180,22 @@ contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable
     ) internal override {
         bytes32 trustedRemote = trustedRemoteLookup[_dstChainId];
         require(trustedRemote != bytes32(0), "No remote app set for dst chain");
-        require(trustedRemote == _receiver, "Receiver is not in trusted remote apps");
-        IMessageBus(messageBus).sendMessage{value: msg.value}(_receiver, _dstChainId, _message, _options);
+        require(
+            trustedRemote == _receiver,
+            "Receiver is not in trusted remote apps"
+        );
+        IMessageBus(messageBus).sendMessage{value: msg.value}(
+            _receiver,
+            _dstChainId,
+            _message,
+            _options
+        );
     }
 
-    function setAssistingAuctionAddress(address _assistingAuction) external onlyOwner {
+    function setAssistingAuctionAddress(address _assistingAuction)
+        external
+        onlyOwner
+    {
         assistingAuction = _assistingAuction;
     }
 

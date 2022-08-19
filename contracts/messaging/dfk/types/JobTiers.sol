@@ -9,3 +9,4 @@ enum JobTier {
     EXALTED,
     TRANSCENDENT
 }
+

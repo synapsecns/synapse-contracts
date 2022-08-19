@@ -33,7 +33,11 @@ contract MessageBusReceiver is Ownable, Pausable {
         authVerifier = _authVerifier;
     }
 
-    function getExecutedMessage(bytes32 _messageId) external view returns (TxStatus) {
+    function getExecutedMessage(bytes32 _messageId)
+        external
+        view
+        returns (TxStatus)
+    {
         return executedMessages[_messageId];
     }
 
@@ -57,7 +61,10 @@ contract MessageBusReceiver is Ownable, Pausable {
     ) external whenNotPaused {
         // In order to guarantee that an individual message is only executed once, a messageId is passed
         // enforce that this message ID hasn't already been tried ever
-        require(executedMessages[_messageId] == TxStatus.Null, "Message already executed");
+        require(
+            executedMessages[_messageId] == TxStatus.Null,
+            "Message already executed"
+        );
         // Authenticate executeMessage, will revert if not authenticated
         IAuthVerifier(authVerifier).msgAuth(abi.encode(msg.sender));
 
@@ -79,13 +86,23 @@ contract MessageBusReceiver is Ownable, Pausable {
         }
 
         executedMessages[_messageId] = status;
-        emit Executed(_messageId, status, _dstAddress, uint64(_srcChainId), uint64(_nonce));
+        emit Executed(
+            _messageId,
+            status,
+            _dstAddress,
+            uint64(_srcChainId),
+            uint64(_nonce)
+        );
     }
 
     /** HELPER VIEW FUNCTION */
     // https://ethereum.stackexchange.com/a/83577
     // https://github.com/Uniswap/v3-periphery/blob/v1.0.0/contracts/base/Multicall.sol
-    function _getRevertMsg(bytes memory _returnData) internal pure returns (string memory) {
+    function _getRevertMsg(bytes memory _returnData)
+        internal
+        pure
+        returns (string memory)
+    {
         // If the _res length is less than 68, then the transaction failed silently (without a revert message)
         if (_returnData.length < 68) return "Transaction reverted silently";
         // solhint-disable-next-line
@@ -98,7 +115,10 @@ contract MessageBusReceiver is Ownable, Pausable {
 
     /** CONTRACT CONFIG */
 
-    function updateMessageStatus(bytes32 _messageId, TxStatus _status) external onlyOwner {
+    function updateMessageStatus(bytes32 _messageId, TxStatus _status)
+        external
+        onlyOwner
+    {
         executedMessages[_messageId] = _status;
     }
 

@@ -49,6 +49,7 @@ node_modules
 cache
 artifacts
 
+.vscode
 build
 tenderly.yaml
 

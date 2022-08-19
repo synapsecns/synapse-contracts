@@ -138,9 +138,7 @@ contract StatScienceUpgradeable is AccessControlUpgradeable {
         uint8[8] memory statsArray = [0, 1, 2, 3, 4, 5, 6, 7];
         for (uint256 i = 0; i < _numStats; i++) {
             // Choose a random index between 0 and 7 - i so that it decreases each time it runs.
-            uint256 randomIndex = IRandomGenerator(randomGenerator).getRandom(
-                RandomInputs(0, (7 - i), _crystal.createdBlock, 5, _crystalId)
-            );
+            uint256 randomIndex = IRandomGenerator(randomGenerator).getRandom(RandomInputs(0, (7 - i), _crystal.createdBlock, 5, _crystalId));
 
             // Grab the stat from the random index.
             uint8 randomStat = statsArray[randomIndex];
@@ -165,89 +163,26 @@ contract StatScienceUpgradeable is AccessControlUpgradeable {
         uint8[8] memory statsIncreased;
         if (_rarity == Rarity.MYTHIC) {
             // +2 to three random, mutually exclusive stats
-            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(
-                _heroStats,
-                statsIncreased,
-                3,
-                2,
-                _crystal,
-                _crystalId
-            );
+            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(_heroStats, statsIncreased, 3, 2, _crystal, _crystalId);
             // then +1 to three random, mutually exclusive stats
-            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(
-                _heroStats,
-                statsIncreased,
-                3,
-                1,
-                _crystal,
-                _crystalId
-            );
+            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(_heroStats, statsIncreased, 3, 1, _crystal, _crystalId);
             // then +1 to a random stat.
-            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(
-                _heroStats,
-                statsIncreased,
-                1,
-                1,
-                _crystal,
-                _crystalId
-            );
+            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(_heroStats, statsIncreased, 1, 1, _crystal, _crystalId);
         } else if (_rarity == Rarity.LEGENDARY) {
             // +2 to one random stat,
-            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(
-                _heroStats,
-                statsIncreased,
-                1,
-                2,
-                _crystal,
-                _crystalId
-            );
+            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(_heroStats, statsIncreased, 1, 2, _crystal, _crystalId);
             // then +1 to three random, mutually exclusive stats
-            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(
-                _heroStats,
-                statsIncreased,
-                3,
-                1,
-                _crystal,
-                _crystalId
-            );
+            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(_heroStats, statsIncreased, 3, 1, _crystal, _crystalId);
             // then an additional +1 to two random stat, mutually exclusive stats.
-            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(
-                _heroStats,
-                statsIncreased,
-                2,
-                1,
-                _crystal,
-                _crystalId
-            );
+            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(_heroStats, statsIncreased, 2, 1, _crystal, _crystalId);
         } else if (_rarity == Rarity.RARE) {
             // +1 to three random, mutually exclusive stats
-            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(
-                _heroStats,
-                statsIncreased,
-                3,
-                1,
-                _crystal,
-                _crystalId
-            );
+            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(_heroStats, statsIncreased, 3, 1, _crystal, _crystalId);
             // then an additional +1 to a random stat (including any stats that received a bonus already)
-            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(
-                _heroStats,
-                statsIncreased,
-                1,
-                1,
-                _crystal,
-                _crystalId
-            );
+            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(_heroStats, statsIncreased, 1, 1, _crystal, _crystalId);
         } else if (_rarity == Rarity.UNCOMMON) {
             // +1 to two random, mutually exclusive stats
-            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(
-                _heroStats,
-                statsIncreased,
-                2,
-                1,
-                _crystal,
-                _crystalId
-            );
+            (_heroStats, statsIncreased) = _addMutualExclusiveStatBonuses(_heroStats, statsIncreased, 2, 1, _crystal, _crystalId);
         }
 
         return (_heroStats, statsIncreased);

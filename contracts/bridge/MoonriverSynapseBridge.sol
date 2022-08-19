@@ -19,10 +19,18 @@ interface IERC20Mintable is IERC20 {
 }
 
 interface IFrax {
-    function exchangeOldForCanonical(address bridge_token_address, uint256 token_amount) external returns (uint256);
+    function exchangeOldForCanonical(
+        address bridge_token_address,
+        uint256 token_amount
+    ) external returns (uint256);
 }
 
-contract MRSynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
+contract MRSynapseBridge is
+    Initializable,
+    AccessControlUpgradeable,
+    ReentrancyGuardUpgradeable,
+    PausableUpgradeable
+{
     using SafeERC20 for IERC20;
     using SafeERC20 for IERC20Mintable;
     using SafeMath for uint256;
@@ -64,10 +72,32 @@ contract MRSynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyG
         }
     }
 
-    event TokenDeposit(address indexed to, uint256 chainId, IERC20 token, uint256 amount);
-    event TokenRedeem(address indexed to, uint256 chainId, IERC20 token, uint256 amount);
-    event TokenWithdraw(address indexed to, IERC20 token, uint256 amount, uint256 fee, bytes32 indexed kappa);
-    event TokenMint(address indexed to, IERC20Mintable token, uint256 amount, uint256 fee, bytes32 indexed kappa);
+    event TokenDeposit(
+        address indexed to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    );
+    event TokenRedeem(
+        address indexed to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    );
+    event TokenWithdraw(
+        address indexed to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 indexed kappa
+    );
+    event TokenMint(
+        address indexed to,
+        IERC20Mintable token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 indexed kappa
+    );
     event TokenDepositAndSwap(
         address indexed to,
         uint256 chainId,
@@ -122,10 +152,19 @@ contract MRSynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyG
     );
 
     // v2 events
-    event TokenRedeemV2(bytes32 indexed to, uint256 chainId, IERC20 token, uint256 amount);
+    event TokenRedeemV2(
+        bytes32 indexed to,
+        uint256 chainId,
+        IERC20 token,
+        uint256 amount
+    );
 
     // VIEW FUNCTIONS ***/
-    function getFeeBalance(address tokenAddress) external view returns (uint256) {
+    function getFeeBalance(address tokenAddress)
+        external
+        view
+        returns (uint256)
+    {
         return fees[tokenAddress];
     }
 
@@ -208,7 +247,10 @@ contract MRSynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyG
         uint256 fee,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
+        require(
+            hasRole(NODEGROUP_ROLE, msg.sender),
+            "Caller is not a node group"
+        );
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
@@ -240,7 +282,10 @@ contract MRSynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyG
         uint256 fee,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
+        require(
+            hasRole(NODEGROUP_ROLE, msg.sender),
+            "Caller is not a node group"
+        );
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
@@ -249,14 +294,18 @@ contract MRSynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyG
         token.mint(address(this), amount);
         // checks if synFRAX
         if (address(token) == 0xE96AC70907ffF3Efee79f502C985A7A21Bce407d) {
-            token.safeIncreaseAllowance(0x1A93B23281CC1CDE4C4741353F3064709A16197d, amount.sub(fee));
+            token.safeIncreaseAllowance(
+                0x1A93B23281CC1CDE4C4741353F3064709A16197d,
+                amount.sub(fee)
+            );
             try
-                IFrax(0x1A93B23281CC1CDE4C4741353F3064709A16197d).exchangeOldForCanonical(
-                    address(token),
-                    amount.sub(fee)
-                )
+                IFrax(0x1A93B23281CC1CDE4C4741353F3064709A16197d)
+                    .exchangeOldForCanonical(address(token), amount.sub(fee))
             returns (uint256 canolical_tokens_out) {
-                IERC20(0x1A93B23281CC1CDE4C4741353F3064709A16197d).safeTransfer(to, canolical_tokens_out);
+                IERC20(0x1A93B23281CC1CDE4C4741353F3064709A16197d).safeTransfer(
+                    to,
+                    canolical_tokens_out
+                );
             } catch {
                 IERC20(token).safeTransfer(to, amount.sub(fee));
             }
@@ -289,7 +338,16 @@ contract MRSynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyG
         uint256 minDy,
         uint256 deadline
     ) external nonReentrant whenNotPaused {
-        emit TokenDepositAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
+        emit TokenDepositAndSwap(
+            to,
+            chainId,
+            token,
+            amount,
+            tokenIndexFrom,
+            tokenIndexTo,
+            minDy,
+            deadline
+        );
         token.safeTransferFrom(msg.sender, address(this), amount);
     }
 
@@ -314,7 +372,16 @@ contract MRSynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyG
         uint256 minDy,
         uint256 deadline
     ) external nonReentrant whenNotPaused {
-        emit TokenRedeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
+        emit TokenRedeemAndSwap(
+            to,
+            chainId,
+            token,
+            amount,
+            tokenIndexFrom,
+            tokenIndexTo,
+            minDy,
+            deadline
+        );
         token.burnFrom(msg.sender, amount);
     }
 
@@ -337,7 +404,15 @@ contract MRSynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyG
         uint256 swapMinAmount,
         uint256 swapDeadline
     ) external nonReentrant whenNotPaused {
-        emit TokenRedeemAndRemove(to, chainId, token, amount, swapTokenIndex, swapMinAmount, swapDeadline);
+        emit TokenRedeemAndRemove(
+            to,
+            chainId,
+            token,
+            amount,
+            swapTokenIndex,
+            swapMinAmount,
+            swapDeadline
+        );
         token.burnFrom(msg.sender, amount);
     }
 
@@ -367,7 +442,10 @@ contract MRSynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyG
         uint256 deadline,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
+        require(
+            hasRole(NODEGROUP_ROLE, msg.sender),
+            "Caller is not a node group"
+        );
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
@@ -377,18 +455,31 @@ contract MRSynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyG
             to.call.value(chainGasAmount)("");
         }
         // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = ISwap(pool).calculateSwap(tokenIndexFrom, tokenIndexTo, amount.sub(fee));
+        uint256 expectedOutput = ISwap(pool).calculateSwap(
+            tokenIndexFrom,
+            tokenIndexTo,
+            amount.sub(fee)
+        );
 
         if (expectedOutput >= minDy) {
             // proceed with swap
             token.mint(address(this), amount);
             token.safeIncreaseAllowance(address(pool), amount);
-            try ISwap(pool).swap(tokenIndexFrom, tokenIndexTo, amount.sub(fee), minDy, deadline) returns (
-                uint256 finalSwappedAmount
-            ) {
+            try
+                ISwap(pool).swap(
+                    tokenIndexFrom,
+                    tokenIndexTo,
+                    amount.sub(fee),
+                    minDy,
+                    deadline
+                )
+            returns (uint256 finalSwappedAmount) {
                 // Swap succeeded, transfer swapped asset
                 IERC20 swappedTokenTo = ISwap(pool).getToken(tokenIndexTo);
-                if (address(swappedTokenTo) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
+                if (
+                    address(swappedTokenTo) == WETH_ADDRESS &&
+                    WETH_ADDRESS != address(0)
+                ) {
                     IWETH9(WETH_ADDRESS).withdraw(finalSwappedAmount);
                     (bool success, ) = to.call{value: finalSwappedAmount}("");
                     require(success, "ETH_TRANSFER_FAILED");
@@ -475,18 +566,29 @@ contract MRSynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyG
         uint256 swapDeadline,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
-        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
+        require(
+            hasRole(NODEGROUP_ROLE, msg.sender),
+            "Caller is not a node group"
+        );
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
         // first check to make sure more will be given than min amount required
-        uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(amount.sub(fee), swapTokenIndex);
+        uint256 expectedOutput = ISwap(pool).calculateRemoveLiquidityOneToken(
+            amount.sub(fee),
+            swapTokenIndex
+        );
 
         if (expectedOutput >= swapMinAmount) {
             token.safeIncreaseAllowance(address(pool), amount.sub(fee));
             try
-                ISwap(pool).removeLiquidityOneToken(amount.sub(fee), swapTokenIndex, swapMinAmount, swapDeadline)
+                ISwap(pool).removeLiquidityOneToken(
+                    amount.sub(fee),
+                    swapTokenIndex,
+                    swapMinAmount,
+                    swapDeadline
+                )
             returns (uint256 finalSwappedAmount) {
                 // Swap succeeded, transfer swapped asset
                 IERC20 swappedTokenTo = ISwap(pool).getToken(swapTokenIndex);

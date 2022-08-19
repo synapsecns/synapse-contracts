@@ -45,7 +45,10 @@ contract MessageBusSenderTest is Test {
 
     // Test fee query on a set dstChain
     function testEstimateFee() public {
-        uint256 estimatedFee = messageBusSender.estimateFee(gasFeePricingTest.expectedDstChainId(), bytes(""));
+        uint256 estimatedFee = messageBusSender.estimateFee(
+            gasFeePricingTest.expectedDstChainId(),
+            bytes("")
+        );
         assertEq(estimatedFee, gasFeePricingTest.expectedFeeDst43114());
     }
 
@@ -62,7 +65,10 @@ contract MessageBusSenderTest is Test {
 
     // Enforce fees above returned fee amount from fee calculator
     function testFailSendMessageWithLowFees() public {
-        uint256 estimatedFee = messageBusSender.estimateFee(gasFeePricingTest.expectedDstChainId(), bytes(""));
+        uint256 estimatedFee = messageBusSender.estimateFee(
+            gasFeePricingTest.expectedDstChainId(),
+            bytes("")
+        );
         bytes32 receiverAddress = addressToBytes32(address(1337));
         messageBusSender.sendMessage{value: estimatedFee - 1}(
             receiverAddress,
@@ -74,7 +80,10 @@ contract MessageBusSenderTest is Test {
 
     // Fee calculator reverts upon 0 fees (Fee is unset)
     function testFailMessageOnUnsetFees() public {
-        uint256 estimatedFee = messageBusSender.estimateFee(gasFeePricingTest.expectedDstChainId() - 1, bytes(""));
+        uint256 estimatedFee = messageBusSender.estimateFee(
+            gasFeePricingTest.expectedDstChainId() - 1,
+            bytes("")
+        );
         bytes32 receiverAddress = addressToBytes32(address(1337));
         messageBusSender.sendMessage{value: estimatedFee}(
             receiverAddress,
@@ -86,7 +95,10 @@ contract MessageBusSenderTest is Test {
 
     // Send message without reversion, pay correct amount of fees, emit correct event
     function testSendMessage() public {
-        uint256 estimatedFee = messageBusSender.estimateFee(gasFeePricingTest.expectedDstChainId(), bytes(""));
+        uint256 estimatedFee = messageBusSender.estimateFee(
+            gasFeePricingTest.expectedDstChainId(),
+            bytes("")
+        );
         uint64 currentNonce = messageBusSender.nonce();
         bytes32 receiverAddress = addressToBytes32(address(1337));
         // TODO: Check data, so false should become true
@@ -112,7 +124,10 @@ contract MessageBusSenderTest is Test {
 
     // Send message without reversion, pay correct amount of fees, emit correct event
     function testWithdrawFees() public {
-        uint256 estimatedFee = messageBusSender.estimateFee(gasFeePricingTest.expectedDstChainId(), bytes(""));
+        uint256 estimatedFee = messageBusSender.estimateFee(
+            gasFeePricingTest.expectedDstChainId(),
+            bytes("")
+        );
         uint64 currentNonce = messageBusSender.nonce();
         bytes32 receiverAddress = addressToBytes32(address(1337));
         // TODO: Check data, so false should become true
@@ -139,8 +154,18 @@ contract MessageBusSenderTest is Test {
     }
 
     function testAddressABIEncode() public {
-        console.logBytes(abi.encode(address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9)));
-        console.logBytes32(addressToBytes32(address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9)));
-        console.logBytes(abi.encodePacked(address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9)));
+        console.logBytes(
+            abi.encode(address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9))
+        );
+        console.logBytes32(
+            addressToBytes32(
+                address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9)
+            )
+        );
+        console.logBytes(
+            abi.encodePacked(
+                address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9)
+            )
+        );
     }
 }
