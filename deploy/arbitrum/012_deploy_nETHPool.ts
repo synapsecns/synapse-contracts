@@ -1,30 +1,33 @@
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DeployFunction } from "hardhat-deploy/types";
-import { CHAIN_ID } from "../../utils/network";
+import { HardhatRuntimeEnvironment } from "hardhat/types"
+import { DeployFunction } from "hardhat-deploy/types"
+import { CHAIN_ID } from "../../utils/network"
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts, getChainId } = hre;
-  const { execute, get, getOrNull, log, read, save } = deployments;
-  const { deployer } = await getNamedAccounts();
+  const { deployments, getNamedAccounts, getChainId } = hre
+  const { execute, get, getOrNull, log, read, save } = deployments
+  const { deployer } = await getNamedAccounts()
 
   // Manually check if the pool is already deployed
-  let ETHPool = await getOrNull("ETHPool");
+  let ETHPool = await getOrNull("ETHPool")
   if (ETHPool) {
-    log(`reusing "ETHPool" at ${ETHPool.address}`);
+    log(`reusing "ETHPool" at ${ETHPool.address}`)
   } else if (
     (await getChainId()) != CHAIN_ID.ARBITRUM &&
     (await getChainId()) != CHAIN_ID.HARDHAT
   ) {
-    log(`Not Arbitrum or Hardhat`);
+    log(`Not Arbitrum or Hardhat`)
   } else {
     // Constructor arguments
-    const TOKEN_ADDRESSES = [(await get("nETH")).address, (await get("WETH")).address];
-    const TOKEN_DECIMALS = [18, 18];
-    const LP_TOKEN_NAME = "nETH-LP";
-    const LP_TOKEN_SYMBOL = "nETH-LP";
-    const INITIAL_A = 50;
-    const SWAP_FEE = 4e6; // 4bps
-    const ADMIN_FEE = 0;
+    const TOKEN_ADDRESSES = [
+      (await get("nETH")).address,
+      (await get("WETH")).address
+    ]
+    const TOKEN_DECIMALS = [18, 18]
+    const LP_TOKEN_NAME = "nETH-LP"
+    const LP_TOKEN_SYMBOL = "nETH-LP"
+    const INITIAL_A = 50
+    const SWAP_FEE = 4e6 // 4bps
+    const ADMIN_FEE = 0
 
     const receipt = await execute(
       "SwapDeployer",
@@ -42,26 +45,35 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       ADMIN_FEE,
       (
         await get("LPToken")
-      ).address
-    );
+      ).address,
+    )
 
-    const newPoolEvent = receipt?.events?.find((e: any) => e["event"] == "NewSwapPool");
-    const usdSwapAddress = newPoolEvent["args"]["swapAddress"];
-    log(`deployed ETH pool clone (targeting "SwapFlashLoan") at ${usdSwapAddress}`);
+    const newPoolEvent = receipt?.events?.find(
+      (e: any) => e["event"] == "NewSwapPool",
+    )
+    const usdSwapAddress = newPoolEvent["args"]["swapAddress"]
+    log(
+      `deployed ETH pool clone (targeting "SwapFlashLoan") at ${usdSwapAddress}`,
+    )
     await save("ETHPool", {
       abi: (await get("SwapFlashLoan")).abi,
       address: usdSwapAddress,
-    });
+    })
 
-    const lpTokenAddress = (await read("ETHPool", "swapStorage")).lpToken;
-    log(`ETH pool LP Token at ${lpTokenAddress}`);
+    const lpTokenAddress = (await read("ETHPool", "swapStorage")).lpToken
+    log(`ETH pool LP Token at ${lpTokenAddress}`)
 
     await save("ETHPoolLPToken", {
       abi: (await get("WETH")).abi, // Generic ERC20 ABI
       address: lpTokenAddress,
-    });
+    })
   }
-};
-export default func;
-func.tags = ["ETHPool"];
-func.dependencies = ["SwapUtils", "SwapDeployer", "SwapFlashLoan", "USDPoolTokens"];
+}
+export default func
+func.tags = ["ETHPool"]
+func.dependencies = [
+  "SwapUtils",
+  "SwapDeployer",
+  "SwapFlashLoan",
+  "USDPoolTokens",
+]

@@ -1,12 +1,12 @@
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DeployFunction } from "hardhat-deploy/types";
-import { CHAIN_ID } from "../utils/network";
-import { includes } from "lodash";
+import { HardhatRuntimeEnvironment } from "hardhat/types"
+import { DeployFunction } from "hardhat-deploy/types"
+import { CHAIN_ID } from "../utils/network"
+import {includes} from "lodash";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts, getChainId } = hre;
-  const { deploy, execute, save, getOrNull } = deployments;
-  const { deployer } = await getNamedAccounts();
+  const { deployments, getNamedAccounts, getChainId } = hre
+  const { deploy, execute, save, getOrNull } = deployments
+  const { deployer } = await getNamedAccounts()
 
   // If it's on hardhat, mint test tokens
   if ((await getChainId()) == CHAIN_ID.HARDHAT) {
@@ -351,17 +351,15 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         },
       ],
       address: deployer,
-    });
+    })
   }
 
-  if (
-    includes([CHAIN_ID.MOONBEAM, CHAIN_ID.CRONOS, CHAIN_ID.METIS, CHAIN_ID.DFK], await getChainId())
-  ) {
+  if ((includes([CHAIN_ID.MOONBEAM, CHAIN_ID.CRONOS, CHAIN_ID.METIS, CHAIN_ID.DFK], await getChainId()))) {
     await deploy("MultiSigWalletFactory", {
       from: deployer,
       log: true,
       skipIfAlreadyDeployed: true,
-    });
+    })
 
     if ((await getOrNull("DevMultisig")) == null) {
       await execute(
@@ -369,11 +367,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         { from: deployer, log: true },
         "create",
         [deployer],
-        1
-      );
+        1,
+      )
     }
   }
-};
+}
 
-export default func;
-func.tags = ["DevMultisig"];
+export default func
+func.tags = ["DevMultisig"]

@@ -1,11 +1,11 @@
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DeployFunction } from "hardhat-deploy/types";
-import { CHAIN_ID } from "../../utils/network";
+import { HardhatRuntimeEnvironment } from "hardhat/types"
+import { DeployFunction } from "hardhat-deploy/types"
+import { CHAIN_ID } from "../../utils/network"
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts, getChainId } = hre;
-  const { execute, get, getOrNull, log, read, save } = deployments;
-  const { deployer } = await getNamedAccounts();
+  const { deployments, getNamedAccounts, getChainId } = hre
+  const { execute, get, getOrNull, log, read, save } = deployments
+  const { deployer } = await getNamedAccounts()
 
   // // Manually check if the pool is already deployed
   // let USDPool = await getOrNull("USDPool")
@@ -94,7 +94,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   //     address: lpTokenAddress,
   //   })
   // }
-};
+}
 
-export default func;
-func.tags = ["USDPool"];
+export default func
+func.tags = ["USDPool"]
