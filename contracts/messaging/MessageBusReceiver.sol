@@ -16,7 +16,7 @@ contract MessageBusReceiver is Ownable {
     }
 
     // Store all successfully executed messages
-    mapping(bytes32 => TxStatus) internal executedMessages;
+    mapping(bytes32 => TxStatus) executedMessages;
 
     // TODO: Rename to follow one standard convention -> Send -> Receive?
     event Executed(
@@ -58,14 +58,17 @@ contract MessageBusReceiver is Ownable {
         bytes calldata _message,
         bytes32 _messageId
     ) external {
-        // In order to guarantee that an individual message is only executed once, a messageId is passed
+        // In order to guarentee that an individual message is only executed once, a messageId is passed
         // enforce that this message ID hasn't already been tried ever
+        bytes32 messageId = _messageId;
         require(
-            executedMessages[_messageId] == TxStatus.Null,
+            executedMessages[messageId] == TxStatus.Null,
             "Message already executed"
         );
         // Authenticate executeMessage, will revert if not authenticated
         IAuthVerifier(authVerifier).msgAuth(abi.encode(msg.sender));
+        // Message is now in-flight, adjust status
+        // executedMessages[messageId] = TxStatus.Pending;
 
         TxStatus status;
         try
@@ -80,13 +83,13 @@ contract MessageBusReceiver is Ownable {
             status = TxStatus.Success;
         } catch (bytes memory reason) {
             // call hard reverted & failed
-            emit CallReverted(_getRevertMsg(reason));
+            emit CallReverted(getRevertMsg(reason));
             status = TxStatus.Fail;
         }
 
-        executedMessages[_messageId] = status;
+        executedMessages[messageId] = status;
         emit Executed(
-            _messageId,
+            messageId,
             status,
             _dstAddress,
             uint64(_srcChainId),
@@ -97,14 +100,13 @@ contract MessageBusReceiver is Ownable {
     /** HELPER VIEW FUNCTION */
     // https://ethereum.stackexchange.com/a/83577
     // https://github.com/Uniswap/v3-periphery/blob/v1.0.0/contracts/base/Multicall.sol
-    function _getRevertMsg(bytes memory _returnData)
-        internal
+    function getRevertMsg(bytes memory _returnData)
+        private
         pure
         returns (string memory)
     {
         // If the _res length is less than 68, then the transaction failed silently (without a revert message)
         if (_returnData.length < 68) return "Transaction reverted silently";
-        // solhint-disable-next-line
         assembly {
             // Slice the sighash.
             _returnData := add(_returnData, 0x04)
@@ -115,13 +117,13 @@ contract MessageBusReceiver is Ownable {
     /** CONTRACT CONFIG */
 
     function updateMessageStatus(bytes32 _messageId, TxStatus _status)
-        external
+        public
         onlyOwner
     {
         executedMessages[_messageId] = _status;
     }
 
-    function updateAuthVerifier(address _authVerifier) external onlyOwner {
+    function updateAuthVerifier(address _authVerifier) public onlyOwner {
         require(_authVerifier != address(0), "Cannot set to 0");
         authVerifier = _authVerifier;
     }
