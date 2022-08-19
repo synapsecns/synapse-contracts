@@ -45,7 +45,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       skipIfAlreadyDeployed: true,
       args: [
         "0x0000000000000000000000000000000000000000",
-        (await get("TrisolarisMetaSwapDeposit")).address,
+        (await get("nUSDPoolV2")).address,
         (await get("nUSD")).address,
         "0x0000000000000000000000000000000000000000",
         "0x0000000000000000000000000000000000000000",
