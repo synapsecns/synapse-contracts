@@ -1,13 +1,14 @@
-import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { DeployFunction } from "hardhat-deploy/types";
-import { CHAIN_ID } from "../utils/network";
+import { HardhatRuntimeEnvironment } from "hardhat/types"
+import { DeployFunction } from "hardhat-deploy/types"
+import { CHAIN_ID } from "../utils/network"
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-  const { deployments, getNamedAccounts, getChainId } = hre;
-  const { get, execute, getOrNull, log, save } = deployments;
-  const { deployer } = await getNamedAccounts();
+  const { deployments, getNamedAccounts, getChainId } = hre
+  const { get, execute, getOrNull, log, save } = deployments
+  const { deployer } = await getNamedAccounts()
 
-  if ((await getChainId()) != CHAIN_ID.MOONBEAM) {
+  if (
+    (await getChainId()) != CHAIN_ID.MOONBEAM) {
     if ((await getOrNull("nUSD")) == null) {
       const receipt = await execute(
         "SynapseERC20Factory",
@@ -19,20 +20,22 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         "nUSD",
         "nUSD",
         "18",
-        deployer
+        deployer,
         // (
         //   await get("DevMultisig")
         // ).address,
-      );
+      )
 
-      const newTokenEvent = receipt?.events?.find((e: any) => e["event"] == "SynapseERC20Created");
-      const tokenAddress = newTokenEvent["args"]["contractAddress"];
-      log(`deployed nUSD token at ${tokenAddress}`);
+      const newTokenEvent = receipt?.events?.find(
+        (e: any) => e["event"] == "SynapseERC20Created",
+      )
+      const tokenAddress = newTokenEvent["args"]["contractAddress"]
+      log(`deployed nUSD token at ${tokenAddress}`)
 
       await save("nUSD", {
         abi: (await get("SynapseERC20")).abi, // Generic ERC20 ABI
         address: tokenAddress,
-      });
+      })
 
       await execute(
         "nUSD",
@@ -41,8 +44,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6",
         (
           await get("SynapseBridge")
-        ).address
-      );
+        ).address,
+      )
 
       await execute(
         "nUSD",
@@ -51,19 +54,19 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         "0x0000000000000000000000000000000000000000000000000000000000000000",
         (
           await get("DevMultisig")
-        ).address
-      );
+        ).address,
+      )
 
       await execute(
         "nUSD",
         { from: deployer, log: true },
         "renounceRole",
         "0x0000000000000000000000000000000000000000000000000000000000000000",
-        deployer
-      );
+        deployer,
+      )
     }
   }
-};
+}
 
-export default func;
-func.tags = ["nUSD"];
+export default func
+func.tags = ["nUSD"]
