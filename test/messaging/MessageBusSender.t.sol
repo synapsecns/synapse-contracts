@@ -1,17 +1,13 @@
-// SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
-import "../../contracts/messaging/MessageBusUpgradeable.sol";
+import "../../contracts/messaging/MessageBusSender.sol";
 import "../../contracts/messaging/GasFeePricing.sol";
 
 import "./GasFeePricing.t.sol";
 
-import "@openzeppelin/contracts-4.5.0/proxy/transparent/TransparentUpgradeableProxy.sol";
-
-contract MessageBusSenderUpgradeableTest is Test {
-    MessageBusUpgradeable public messageBusSender;
+contract MessageBusSenderTest is Test {
+    MessageBusSender public messageBusSender;
     GasFeePricing public gasFeePricing;
     GasFeePricingTest public gasFeePricingTest;
 
@@ -39,12 +35,7 @@ contract MessageBusSenderUpgradeableTest is Test {
             gasFeePricingTest.expectedDstGasPrice(),
             gasFeePricingTest.expectedGasTokenPriceRatio()
         );
-        MessageBusUpgradeable impl = new MessageBusUpgradeable();
-        // Setup proxy with needed logic and custom admin,
-        // we don't need to upgrade anything, so no need to setup ProxyAdmin
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(address(impl), address(420), bytes(""));
-        messageBusSender = MessageBusUpgradeable(address(proxy));
-        messageBusSender.initialize(address(gasFeePricing), address(0));
+        messageBusSender = new MessageBusSender(address(gasFeePricing));
     }
 
     // Constructor initialized properly
@@ -148,10 +139,8 @@ contract MessageBusSenderUpgradeableTest is Test {
     }
 
     function testAddressABIEncode() public {
-        address _address = 0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9;
-        emit log_named_bytes("  abi.encode", abi.encode(_address));
-        emit log_named_bytes32("     bytes32", addressToBytes32(_address));
-        emit log_named_bytes("encodePacked", abi.encodePacked(_address));
-        emit log_named_address("     address", _address);
+        console.logBytes(abi.encode(address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9)));
+        console.logBytes32(addressToBytes32(address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9)));
+        console.logBytes(abi.encodePacked(address(0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9)));
     }
 }

@@ -2,23 +2,16 @@
 
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts-upgradeable-4.5.0/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable-4.5.0/security/PausableUpgradeable.sol";
-
+import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
+import "@openzeppelin/contracts-4.5.0/security/Pausable.sol";
 import "./interfaces/IGasFeePricing.sol";
 
-contract MessageBusSenderUpgradeable is OwnableUpgradeable, PausableUpgradeable {
+contract MessageBusSender is Ownable, Pausable {
     address public gasFeePricing;
     uint64 public nonce;
     uint256 public fees;
 
-    function __MessageBusSender_init(address _gasFeePricing) internal onlyInitializing {
-        __Ownable_init_unchained();
-        __Pausable_init_unchained();
-        __MessageBusSender_init_unchained(_gasFeePricing);
-    }
-
-    function __MessageBusSender_init_unchained(address _gasFeePricing) internal onlyInitializing {
+    constructor(address _gasFeePricing) {
         gasFeePricing = _gasFeePricing;
     }
 
@@ -136,11 +129,4 @@ contract MessageBusSenderUpgradeable is OwnableUpgradeable, PausableUpgradeable 
         require(_gasFeePricing != address(0), "Cannot set to 0");
         gasFeePricing = _gasFeePricing;
     }
-
-    /**
-     * @dev This empty reserved space is put in place to allow future versions to add new
-     * variables without shifting down storage in the inheritance chain.
-     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-     */
-    uint256[47] private __gap;
 }

@@ -2,18 +2,22 @@
 
 pragma solidity 0.8.13;
 
-import "@openzeppelin/contracts-upgradeable-4.5.0/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable-4.5.0/security/PausableUpgradeable.sol";
-
+import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
+import "@openzeppelin/contracts-4.5.0/security/Pausable.sol";
 import "./interfaces/IAuthVerifier.sol";
 import "./interfaces/ISynMessagingReceiver.sol";
 
-contract MessageBusReceiverUpgradeable is OwnableUpgradeable, PausableUpgradeable {
+contract MessageBusReceiver is Ownable, Pausable {
+    address public authVerifier;
+
     enum TxStatus {
         Null,
         Success,
         Fail
     }
+
+    // Store all successfully executed messages
+    mapping(bytes32 => TxStatus) internal executedMessages;
 
     // TODO: Rename to follow one standard convention -> Send -> Receive?
     event Executed(
@@ -25,18 +29,7 @@ contract MessageBusReceiverUpgradeable is OwnableUpgradeable, PausableUpgradeabl
     );
     event CallReverted(string reason);
 
-    address public authVerifier;
-
-    // Store all successfully executed messages
-    mapping(bytes32 => TxStatus) internal executedMessages;
-
-    function __MessageBusReceiver_init(address _authVerifier) internal {
-        __Ownable_init_unchained();
-        __Pausable_init_unchained();
-        __MessageBusReceiver_init_unchained(_authVerifier);
-    }
-
-    function __MessageBusReceiver_init_unchained(address _authVerifier) internal {
+    constructor(address _authVerifier) {
         authVerifier = _authVerifier;
     }
 
@@ -113,11 +106,4 @@ contract MessageBusReceiverUpgradeable is OwnableUpgradeable, PausableUpgradeabl
         require(_authVerifier != address(0), "Cannot set to 0");
         authVerifier = _authVerifier;
     }
-
-    /**
-     * @dev This empty reserved space is put in place to allow future versions to add new
-     * variables without shifting down storage in the inheritance chain.
-     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
-     */
-    uint256[48] private __gap;
 }
