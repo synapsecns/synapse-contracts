@@ -12,7 +12,6 @@ export const CHAIN_ID = {
   METIS: "1088",
   MOONBEAM: "1284",
   MOONRIVER: "1285",
-  KLATYN: "8217",
   HARDHAT: "31337",
   FUJI: "43113",
   AVALANCHE: "43114",
