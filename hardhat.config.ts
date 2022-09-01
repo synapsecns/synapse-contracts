@@ -51,7 +51,7 @@ let config: HardhatUserConfig = {
       gasPrice: 6 * 1000000000,
     },
     dogechain: {
-      url: "https://rpc-us.dogechain.dog/"
+      url: "https://rpc-us.dogechain.dog/",
     },
     polygon: {
       url: "https://polygon-rpc.com",
@@ -221,7 +221,7 @@ if (process.env.PRIVATE_KEYS) {
     "fuji",
     "goerli",
     "klatyn",
-    "dogechain"
+    "dogechain",
   ];
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
