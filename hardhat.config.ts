@@ -87,7 +87,7 @@ let config: HardhatUserConfig = {
     },
     dfk: {
       url: "https://subnets.avax.network/defi-kingdoms/dfk-chain/rpc",
-      gas: 1000000
+      gas: 1000000,
     },
     dfk_testnet: {
       url: "https://subnets.avax.network/defi-kingdoms/dfk-chain-testnet/rpc	",
