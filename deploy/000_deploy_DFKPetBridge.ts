@@ -37,7 +37,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (
           await get("MessageBus")
         ).address,
-        PetBridgeConfig[chainId].petcore,
+        PetBridgeConfig[chainId].petcore
       );
 
       await execute(
@@ -51,4 +51,3 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 export default func;
 func.tags = ["DFKPetBridge"];
-func.dependencies = ["Messaging"];
