@@ -28,7 +28,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       log: true,
       skipIfAlreadyDeployed: true,
       args: [
-        "0x0000000000000000000000000000000000000000",
+        (await get("WMATIC")).address,
         (await get("nUSDPoolV2")).address,
         (await get("nUSD")).address,
         "0x0000000000000000000000000000000000000000",
@@ -60,7 +60,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       log: true,
       skipIfAlreadyDeployed: true,
       args: [
-        "0x0000000000000000000000000000000000000000",
+        (await get("WFTM")).address,
         (await get("nUSDPoolV3")).address,
         (await get("nUSD")).address,
         (await get("ETHPool")).address,
@@ -157,7 +157,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       log: true,
       skipIfAlreadyDeployed: true,
       args: [
-        "0x0000000000000000000000000000000000000000",
+        (await get("WKLAY")).address,
         "0x0000000000000000000000000000000000000000",
         "0x0000000000000000000000000000000000000000",
         "0x0000000000000000000000000000000000000000",
