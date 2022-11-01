@@ -15,10 +15,13 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     [CHAIN_ID.HARMONY]: {
       petcore: "0xAC9AFb5900C8A27B766bCad3A37423DC0F4C22d3",
     },
+    [CHAIN_ID.KLATYN]: {
+      petcore: "0x6362b205b539afb5FC369277365441c1dC6fAa28"
+    }
   };
 
   // MAINNET
-  if (includes([CHAIN_ID.DFK, CHAIN_ID.HARMONY], chainId)) {
+  if (includes([CHAIN_ID.DFK, CHAIN_ID.HARMONY, CHAIN_ID.KLATYN], chainId)) {
     const heroBridgeDeployResult = await deploy("PetBridgeUpgradeable", {
       from: deployer,
       log: true,

@@ -16,7 +16,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         CHAIN_ID.HARMONY,
         CHAIN_ID.FUJI,
         CHAIN_ID.GOERLI,
-        CHAIN_ID.KLATYN
+        CHAIN_ID.KLATYN,
       ],
       await getChainId()
     )
