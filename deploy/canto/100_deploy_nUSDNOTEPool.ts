@@ -10,23 +10,16 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // Manually check if the pool is already deployed
   let nUSDNOTEPool = await getOrNull("nUSDNOTEPool");
-  if (
-    nUSDNOTEPool
-  ) {
-    log(`reusing "nUSDPoolV3" at ${nUSDNOTEPool}`)
+  if (nUSDNOTEPool) {
+    log(`reusing "nUSDPoolV3" at ${nUSDNOTEPool}`);
   } else {
     // Constructor arguments
     let TOKEN_ADDRESSES = [];
     let TOKEN_DECIMALS = [];
     let INITIAL_A = 70;
-    if (
-      (await getChainId()) === CHAIN_ID.CANTO
-    ) {
-      TOKEN_ADDRESSES = [
-        (await get("nUSD")).address,
-        (await get("NOTE")).address
-      ];
-      TOKEN_DECIMALS = [18, 18]
+    if ((await getChainId()) === CHAIN_ID.CANTO) {
+      TOKEN_ADDRESSES = [(await get("nUSD")).address, (await get("NOTE")).address];
+      TOKEN_DECIMALS = [18, 18];
     }
 
     const LP_TOKEN_NAME = "nUSD NOTE LP";
