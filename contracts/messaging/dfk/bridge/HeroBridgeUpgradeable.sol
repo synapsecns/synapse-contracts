@@ -75,6 +75,9 @@ contract HeroBridgeUpgradeable is Initializable, SynMessagingReceiverUpgradeable
         // revert if the hero is on a quest
         require(heroToBridge.state.currentQuest == address(0), "hero is questing");
 
+        // revert if the hero is on auction
+        require((IAssistingAuction(assistingAuction).isOnAuction(heroId)) == false, "assisting auction");
+
         bytes32 receiver = trustedRemoteLookup[dstChainId];
         // _createMessage(heroId, dstUserAddress, Hero);
         // Only bridgeable directly to the caller of this contract
