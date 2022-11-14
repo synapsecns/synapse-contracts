@@ -28,7 +28,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     [CHAIN_ID.KLATYN]: {
       heroes: "0x268CC8248FFB72Cd5F3e73A9a20Fa2FF40EfbA61",
       auction: "0xA2cef1763e59198025259d76Ce8F9E60d27B17B5",
-    }
+    },
   };
 
   // TESTNET

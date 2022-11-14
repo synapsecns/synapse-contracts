@@ -16,8 +16,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       petcore: "0xAC9AFb5900C8A27B766bCad3A37423DC0F4C22d3",
     },
     [CHAIN_ID.KLATYN]: {
-      petcore: "0x6362b205b539afb5FC369277365441c1dC6fAa28"
-    }
+      petcore: "0x6362b205b539afb5FC369277365441c1dC6fAa28",
+    },
   };
 
   // MAINNET
