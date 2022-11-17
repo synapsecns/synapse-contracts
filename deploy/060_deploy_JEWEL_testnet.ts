@@ -7,7 +7,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { get, execute, getOrNull, log, save } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  if (await getChainId() == CHAIN_ID.KLAYTN_TESTNET) {
+  if ((await getChainId()) == CHAIN_ID.KLAYTN_TESTNET) {
     if ((await getOrNull("JEWEL")) == null) {
       const receipt = await execute(
         "SynapseERC20Factory",
@@ -33,12 +33,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         abi: (await get("SynapseERC20")).abi, // Generic ERC20 ABI
         address: tokenAddress,
       });
-
-
     }
   }
 };
 
 export default func;
 func.tags = ["JEWEL_TESTNET"];
-

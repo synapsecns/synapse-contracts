@@ -223,7 +223,7 @@ if (process.env.PRIVATE_KEYS) {
     "fuji",
     "goerli",
     "klatyn",
-    "klaytn_testnet"
+    "klaytn_testnet",
   ];
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
