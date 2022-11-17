@@ -114,6 +114,10 @@ let config: HardhatUserConfig = {
       url: "https://public-node-api.klaytnapi.com/v1/cypress",
       gasPrice: 250 * 1000000000,
     },
+    klaytn_testnet: {
+      url: "https://api.baobab.klaytn.net:8651",
+      gasPrice: 250 * 1000000000,
+    },
   },
   paths: {
     artifacts: "./build/artifacts",
@@ -219,6 +223,7 @@ if (process.env.PRIVATE_KEYS) {
     "fuji",
     "goerli",
     "klatyn",
+    "klaytn_testnet"
   ];
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
