@@ -47,6 +47,7 @@ jobs:
       AVAX_API: https://api.avax.network/ext/bc/C/rpc
       MOVR_API: https://moonriver.api.onfinality.io/public
       OPTIMISM_API: ${{ secrets.OPTIMISM_API }}
+      CANTO_API: https://canto.slingshot.finance
       FOUNDRY_FUZZ_RUNS: 64
 
     steps:
