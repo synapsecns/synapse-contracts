@@ -114,6 +114,9 @@ let config: HardhatUserConfig = {
       url: "https://klatyn-rpc-proxy.herokuapp.com/",
       gasPrice: 250 * 1000000000,
     },
+    canto: {
+      url: "https://canto.slingshot.finance",
+    },
   },
   paths: {
     artifacts: "./build/artifacts",
@@ -228,6 +231,7 @@ if (process.env.PRIVATE_KEYS) {
     "fuji",
     "goerli",
     "klatyn",
+    "canto",
   ];
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {

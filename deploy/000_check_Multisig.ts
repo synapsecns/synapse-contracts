@@ -356,7 +356,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   if (
     includes(
-      [CHAIN_ID.MOONBEAM, CHAIN_ID.CRONOS, CHAIN_ID.METIS, CHAIN_ID.DFK, CHAIN_ID.KLATYN],
+      [
+        CHAIN_ID.MOONBEAM,
+        CHAIN_ID.CRONOS,
+        CHAIN_ID.METIS,
+        CHAIN_ID.DFK,
+        CHAIN_ID.KLATYN,
+        CHAIN_ID.CANTO,
+      ],
       await getChainId()
     )
   ) {
