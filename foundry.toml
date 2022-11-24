@@ -1,4 +1,4 @@
-[default]
+[profile.default]
 optimizer = true
 optimizer_runs = 200
 auto_detect_solc = true
@@ -7,12 +7,12 @@ out = "artifacts"
 libs = ["node_modules"]
 
 ## set only when the `hardhat` profile is selected
-[hardhat]
+[profile.hardhat]
 src = "contracts"
 out = "artifacts"
 libs = ["node_modules"]
 
-[ci]
+[profile.ci]
 verbosity = 4
 
 # See more config options https://github.com/gakonst/foundry/tree/master/config
