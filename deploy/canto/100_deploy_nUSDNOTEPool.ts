@@ -8,6 +8,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { execute, get, getOrNull, log, read, save } = deployments;
   const { deployer } = await getNamedAccounts();
 
+  if ((await getChainId()) != CHAIN_ID.CANTO) {
+    return;
+  }
+
   // Manually check if the pool is already deployed
   let nUSDNOTEPool = await getOrNull("nUSDNOTEPool");
   if (nUSDNOTEPool) {
@@ -17,10 +21,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let TOKEN_ADDRESSES = [];
     let TOKEN_DECIMALS = [];
     let INITIAL_A = 70;
-    if ((await getChainId()) === CHAIN_ID.CANTO) {
-      TOKEN_ADDRESSES = [(await get("nUSD")).address, (await get("NOTE")).address];
-      TOKEN_DECIMALS = [18, 18];
-    }
+
+    TOKEN_ADDRESSES = [(await get("nUSD")).address, (await get("NOTE")).address];
+    TOKEN_DECIMALS = [18, 18];
 
     const LP_TOKEN_NAME = "nUSD NOTE LP";
     const LP_TOKEN_SYMBOL = "nUSD-LP";
