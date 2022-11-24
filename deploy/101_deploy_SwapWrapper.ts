@@ -7,7 +7,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get, getOrNull, log, read, save } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  if ((await getChainId()) == CHAIN_ID.CANTO) {
+  if ((await getChainId()) === CHAIN_ID.CANTO) {
     // SwapWrapper doesn't require any params and doesn't have an owner
     await deploy("CantoSwapWrapper", {
       from: deployer,
