@@ -16,6 +16,7 @@ contract ERC677Token is SynapseERC20 {
 
     /**
      * @dev transfer token to a contract address with additional data if the recipient is a contact.
+     * Note: data will not be passed to the recipient, if this was called from the recipient's constructor.
      * @param _to The address to transfer to.
      * @param _value The amount to be transferred.
      * @param _data The extra data to be passed to the receiving contract.
@@ -28,6 +29,7 @@ contract ERC677Token is SynapseERC20 {
         super.transfer(_to, _value);
         emit Transfer(msg.sender, _to, _value, _data);
         if (isContract(_to)) {
+            // Fallback will NOT be triggered, if this is called from `_to` constructor
             contractFallback(_to, _value, _data);
         }
         return true;
@@ -43,8 +45,12 @@ contract ERC677Token is SynapseERC20 {
         IERC677Receiver(_to).onTokenTransfer(msg.sender, _value, _data);
     }
 
-    function isContract(address _addr) private returns (bool hasCode) {
+    function isContract(address _addr) private view returns (bool hasCode) {
+        // This method relies on extcodesize, which returns 0 for contracts in
+        // construction, since the code is only stored at the end of the
+        // constructor execution.
         uint256 length;
+        // solhint-disable-next-line no-inline-assembly
         assembly {
             length := extcodesize(_addr)
         }
