@@ -25,19 +25,19 @@ contract ERC677Token is SynapseERC20 {
         address _to,
         uint256 _value,
         bytes calldata _data
-    ) public returns (bool success) {
+    ) external returns (bool success) {
         super.transfer(_to, _value);
         emit Transfer(msg.sender, _to, _value, _data);
-        if (isContract(_to)) {
+        if (_isContract(_to)) {
             // Fallback will NOT be triggered, if this is called from `_to` constructor
-            contractFallback(_to, _value, _data);
+            _contractFallback(_to, _value, _data);
         }
         return true;
     }
 
     // PRIVATE
 
-    function contractFallback(
+    function _contractFallback(
         address _to,
         uint256 _value,
         bytes calldata _data
@@ -45,7 +45,7 @@ contract ERC677Token is SynapseERC20 {
         IERC677Receiver(_to).onTokenTransfer(msg.sender, _value, _data);
     }
 
-    function isContract(address _addr) private view returns (bool hasCode) {
+    function _isContract(address _addr) private view returns (bool hasCode) {
         // This method relies on extcodesize, which returns 0 for contracts in
         // construction, since the code is only stored at the end of the
         // constructor execution.
