@@ -3,25 +3,17 @@ pragma solidity 0.6.12;
 
 import "./SynapseERC20.sol";
 
-contract ERC677 is SynapseERC20 {
-    function transferAndCall(
-        address to,
-        uint256 value,
-        bytes data
-    ) returns (bool success);
-
-    event Transfer(address indexed from, address indexed to, uint256 value, bytes data);
-}
-
-contract ERC677Receiver {
+interface IERC677Receiver {
     function onTokenTransfer(
         address _sender,
         uint256 _value,
-        bytes _data
-    );
+        bytes calldata _data
+    ) external;
 }
 
-contract ERC677Token is ERC677 {
+contract ERC677Token is SynapseERC20 {
+    
+    event Transfer(address indexed from, address indexed to, uint256 value, bytes data);
     /**
      * @dev transfer token to a contract address with additional data if the recipient is a contact.
      * @param _to The address to transfer to.
@@ -31,10 +23,10 @@ contract ERC677Token is ERC677 {
     function transferAndCall(
         address _to,
         uint256 _value,
-        bytes _data
+        bytes calldata _data
     ) public returns (bool success) {
         super.transfer(_to, _value);
-        Transfer(msg.sender, _to, _value, _data);
+        emit Transfer(msg.sender, _to, _value, _data);
         if (isContract(_to)) {
             contractFallback(_to, _value, _data);
         }
@@ -46,10 +38,9 @@ contract ERC677Token is ERC677 {
     function contractFallback(
         address _to,
         uint256 _value,
-        bytes _data
+        bytes calldata _data
     ) private {
-        ERC677Receiver receiver = ERC677Receiver(_to);
-        receiver.onTokenTransfer(msg.sender, _value, _data);
+        IERC677Receiver(_to).onTokenTransfer(msg.sender, _value, _data);
     }
 
     function isContract(address _addr) private returns (bool hasCode) {
