@@ -12,8 +12,8 @@ interface IERC677Receiver {
 }
 
 contract ERC677Token is SynapseERC20 {
-    
     event Transfer(address indexed from, address indexed to, uint256 value, bytes data);
+
     /**
      * @dev transfer token to a contract address with additional data if the recipient is a contact.
      * @param _to The address to transfer to.
