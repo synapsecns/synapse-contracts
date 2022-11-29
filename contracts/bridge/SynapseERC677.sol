@@ -11,7 +11,7 @@ interface IERC677Receiver {
     ) external;
 }
 
-contract ERC677Token is SynapseERC20 {
+contract SynapseERC677 is SynapseERC20 {
     event Transfer(address indexed from, address indexed to, uint256 value, bytes data);
 
     /**
