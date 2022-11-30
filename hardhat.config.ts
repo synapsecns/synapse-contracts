@@ -111,7 +111,7 @@ let config: HardhatUserConfig = {
       gasPrice: 5000 * 1000000000,
     },
     klatyn: {
-      url: "https://klatyn-rpc-proxy.herokuapp.com/",
+      url: "https://klaytn02.fandom.finance",
       gasPrice: 250 * 1000000000,
     },
   },
