@@ -5,6 +5,7 @@ auto_detect_solc = true
 src = "contracts"
 out = "artifacts"
 libs = ["node_modules"]
+fs_permissions = [{ access = "read", path = "./artifacts"}]
 
 ## set only when the `hardhat` profile is selected
 [profile.hardhat]
