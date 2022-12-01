@@ -10,13 +10,14 @@ contract WKlayUnwrapper is Ownable {
     using SafeERC20 for IERC20;
 
     IWETH9 public constant WKLAY = IWETH9(payable(0x5819b6af194A78511c79C85Ea68D2377a7e9335f));
-    address public constant BRIDGE = 0xAf41a65F786339e7911F4acDAD6BD49426F2Dc6b;
+    address public immutable bridge;
 
     /**
      * @notice Creates a contract to unwrap WKLAY. Sets governance address as the owner.
      * Governance functions are limited to rescuing the locked tokens/KLAY.
      */
-    constructor(address governance) public {
+    constructor(address _bridge, address governance) public {
+        bridge = _bridge;
         transferOwnership(governance);
     }
 
@@ -46,7 +47,7 @@ contract WKlayUnwrapper is Ownable {
      * @param amount    Transfer amount
      */
     function withdraw(uint256 amount) external {
-        require(msg.sender == BRIDGE, "!bridge");
+        require(msg.sender == bridge, "!bridge");
         WKLAY.withdraw(amount);
         _transferKLAY(msg.sender, amount);
     }

@@ -33,7 +33,7 @@ interface IBridge {
 }
 
 interface IWKlayUnwrapper {
-    function BRIDGE() external view returns (address);
+    function bridge() external view returns (address);
 
     function WKLAY() external view returns (address payable);
 
@@ -74,7 +74,8 @@ contract KlaytnSynapseBridgeTest is Test {
         vm.createSelectFork(cantoRPC, TEST_BLOCK_NUMBER);
         utils = new Utilities();
         // Deploy 0.6.12 contracts, needs to be done via deployCode from 0.8.17 test
-        unwrapper = IWKlayUnwrapper(deployCode("WKlayUnwrapper.sol", abi.encode(GOV)));
+        // Constructor params are (bridge, governance)
+        unwrapper = IWKlayUnwrapper(deployCode("WKlayUnwrapper.sol", abi.encode(BRIDGE, GOV)));
         bridgeImpl = deployCode("KlaytnSynapseBridge.sol", abi.encode(unwrapper));
     }
 

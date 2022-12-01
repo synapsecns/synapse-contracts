@@ -7,7 +7,7 @@ import "@openzeppelin/contracts-4.5.0/token/ERC20/ERC20.sol";
 
 // solhint-disable func-name-mixedcase
 interface IWKlayUnwrapper {
-    function BRIDGE() external view returns (address);
+    function bridge() external view returns (address);
 
     function WKLAY() external view returns (address payable);
 
@@ -39,7 +39,8 @@ contract WKlayUnwrapperTest is Test {
         // Deploy WETH to WKLAY address, so we don't need to fork anything
         vm.etch(WKLAY, wklay.code);
         // Deploy 0.6.12 contract, needs to be done via deployCode from 0.8.17 test
-        unwrapper = IWKlayUnwrapper(deployCode("WKlayUnwrapper.sol", abi.encode(GOV)));
+        // Constructor params are (bridge, governance)
+        unwrapper = IWKlayUnwrapper(deployCode("WKlayUnwrapper.sol", abi.encode(BRIDGE, GOV)));
         // Mint some test WKLAY
         deal(address(this), MINT_AMOUNT);
         IWETH9(WKLAY).deposit{value: MINT_AMOUNT}();
@@ -48,7 +49,7 @@ contract WKlayUnwrapperTest is Test {
     }
 
     function test_setup() public {
-        assertEq(unwrapper.BRIDGE(), BRIDGE, "!bridge");
+        assertEq(unwrapper.bridge(), BRIDGE, "!bridge");
         assertEq(address(unwrapper.WKLAY()), WKLAY, "!WKLAY");
         assertEq(unwrapper.owner(), GOV, "!owner");
     }
