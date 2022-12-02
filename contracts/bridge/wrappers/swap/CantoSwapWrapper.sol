@@ -35,10 +35,11 @@ interface ICantoDex {
 
 /**
  * @notice Contract mimicking Saddle swap interface to connect following pools:
- * - Synapse    nUSD/NOTE
+ * - Synapse    nUSD/USDC
  * - CantoDex   NOTE/USDC
  * - CantoDex   NOTE/USDT
- * Swaps between "disconnected" coins are routed through NOTE.
+ * Swaps between "disconnected" coins are routed through USDC (and NOTE for USDT).
+ * nUSD <> USDC <> NOTE <> USDT
  */
 contract CantoSwapWrapper {
     using SafeERC20 for IERC20;
@@ -73,11 +74,11 @@ contract CantoSwapWrapper {
     uint256 internal constant COINS = 4;
 
     /// @notice Synapse nUSD/NOTE
-    address internal constant SYNAPSE_NUSD_POOL = 0x07379565cD8B0CaE7c60Dc78e7f601b34AF2A21c;
+    address internal constant SYNAPSE_NUSD_USDC = 0xb1Da21B0531257a7E5aEfa0cd3CbF23AfC674cE1;
     /// @notice CantoDEX NOTE/USDC
-    address internal constant CANTO_DEX_USDC_POOL = 0x9571997a66D63958e1B3De9647C22bD6b9e7228c;
+    address internal constant CANTO_DEX_NOTE_USDC = 0x9571997a66D63958e1B3De9647C22bD6b9e7228c;
     /// @notice CantoDEX NOTE/USDT
-    address internal constant CANTO_DEX_USDT_POOL = 0x35DB1f3a6A6F07f82C76fCC415dB6cFB1a7df833;
+    address internal constant CANTO_DEX_NOTE_USDT = 0x35DB1f3a6A6F07f82C76fCC415dB6cFB1a7df833;
 
     uint256 internal constant MAX_UINT = type(uint256).max;
 
@@ -87,8 +88,8 @@ contract CantoSwapWrapper {
 
     constructor() {
         // Approve spending by Synapse Pool
-        NUSD.safeApprove(SYNAPSE_NUSD_POOL, MAX_UINT);
-        NOTE.safeApprove(SYNAPSE_NUSD_POOL, MAX_UINT);
+        NUSD.safeApprove(SYNAPSE_NUSD_USDC, MAX_UINT);
+        NOTE.safeApprove(SYNAPSE_NUSD_USDC, MAX_UINT);
         // CantoDEX pools don't need approvals
     }
 
@@ -203,7 +204,7 @@ contract CantoSwapWrapper {
         uint256 minAmountOut,
         address recipient
     ) internal returns (uint256 amountOut) {
-        if (pool == SYNAPSE_NUSD_POOL) {
+        if (pool == SYNAPSE_NUSD_USDC) {
             // Perform a swap through Synapse pool: check output amount, but don't check timestamp
             // Indexes in Synapse pool match the indexes in SwapWrapper
             amountOut = ISynapse(pool).swap({
@@ -217,7 +218,7 @@ contract CantoSwapWrapper {
             if (recipient != address(this)) {
                 _getToken(indexTo).safeTransfer(recipient, amountOut);
             }
-        } else if (pool == CANTO_DEX_USDC_POOL || pool == CANTO_DEX_USDT_POOL) {
+        } else if (pool == CANTO_DEX_NOTE_USDC || pool == CANTO_DEX_NOTE_USDT) {
             // Get starting token
             IERC20 tokenFrom = _getToken(indexFrom);
             // Get a quote, and check it against minimum amount out
@@ -258,10 +259,10 @@ contract CantoSwapWrapper {
     ) internal view returns (uint256 amountOut) {
         // First, check input amount
         if (amountIn == 0) return 0;
-        if (pool == SYNAPSE_NUSD_POOL) {
+        if (pool == SYNAPSE_NUSD_USDC) {
             // Indexes in Synapse pool match the indexes in SwapWrapper
             amountOut = ISynapse(pool).calculateSwap(uint8(indexFrom), uint8(indexTo), amountIn);
-        } else if (pool == CANTO_DEX_USDC_POOL || pool == CANTO_DEX_USDT_POOL) {
+        } else if (pool == CANTO_DEX_NOTE_USDC || pool == CANTO_DEX_NOTE_USDT) {
             // Get starting token
             IERC20 tokenFrom = _getToken(indexFrom);
             // Get a quote
@@ -316,14 +317,25 @@ contract CantoSwapWrapper {
     function _getDirectSwapNOTE(uint256 tokenIndex) internal pure returns (address pool) {
         if (tokenIndex == NUSD_INDEX) {
             // nUSD <> NOTE is routed through Synapse
-            pool = SYNAPSE_NUSD_POOL;
+            pool = SYNAPSE_NUSD_USDC;
         } else if (tokenIndex == USDC_INDEX) {
             // USDC <> NOTE is routed through CantoDEX
-            pool = CANTO_DEX_USDC_POOL;
+            pool = CANTO_DEX_NOTE_USDC;
         } else if (tokenIndex == USDT_INDEX) {
             // USDT <> NOTE is routed through CantoDEX
-            pool = CANTO_DEX_USDT_POOL;
+            pool = CANTO_DEX_NOTE_USDT;
         }
         /// @dev pool is address(0) if tokenIndex is NOTE_INDEX, or out of range
+    }
+
+    function _getSynapseIndex(uint256 tokenIndex) internal pure returns (uint8 synapseIndex) {
+        if (tokenIndex == NUSD_INDEX) {
+            synapseIndex = 0;
+        } else if (tokenIndex == USDC_INDEX) {
+            synapseIndex = 1;
+        } else {
+            // Sanity check: should never reach this
+            assert(false);
+        }
     }
 }
