@@ -8,12 +8,18 @@ import "../../../../contracts/bridge/wrappers/swap/CantoSwapWrapper.sol";
 import {ERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/ERC20.sol";
 
 interface ISynapseTest is ISynapse {
+    function addLiquidity(
+        uint256[] memory amounts,
+        uint256 minToMint,
+        uint256 deadline
+    ) external;
+
     function getTokenIndex(address) external view returns (uint8);
 }
 
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
-contract SwapWrapperTestCanto is Test {
+contract NewSwapWrapperTestCanto is Test {
     using SafeERC20 for IERC20;
 
     address internal constant NUSD = 0xD8836aF2e565D3Befce7D906Af63ee45a57E8f80;
@@ -23,25 +29,36 @@ contract SwapWrapperTestCanto is Test {
 
     uint8 internal constant COINS = 4;
 
-    ISynapseTest internal constant SYNAPSE_POOL = ISynapseTest(0x07379565cD8B0CaE7c60Dc78e7f601b34AF2A21c);
+    ISynapseTest internal constant SYNAPSE_POOL = ISynapseTest(0xb1Da21B0531257a7E5aEfa0cd3CbF23AfC674cE1);
     ICantoDex internal constant CANTO_DEX_USDC_POOL = ICantoDex(0x9571997a66D63958e1B3De9647C22bD6b9e7228c);
     ICantoDex internal constant CANTO_DEX_USDT_POOL = ICantoDex(0x35DB1f3a6A6F07f82C76fCC415dB6cFB1a7df833);
 
     CantoSwapWrapper internal swap;
 
     function setUp() public {
-        swap = new CantoSwapWrapper();
-        for (uint8 i = 0; i < COINS; ++i) {
-            swap.getToken(i).safeApprove(address(swap), type(uint256).max);
-        }
         vm.label(NUSD, "nUSD");
         vm.label(NOTE, "NOTE");
         vm.label(USDC, "USDC");
         vm.label(USDT, "USDT");
 
-        vm.label(address(SYNAPSE_POOL), "nUSD Pool");
-        vm.label(address(CANTO_DEX_USDC_POOL), "USDC Pool");
-        vm.label(address(CANTO_DEX_USDT_POOL), "USDT Pool");
+        vm.label(address(SYNAPSE_POOL), "nUSD/USDC");
+        vm.label(address(CANTO_DEX_USDC_POOL), "NOTE/USDC");
+        vm.label(address(CANTO_DEX_USDT_POOL), "NOTE/USDT");
+
+        swap = new CantoSwapWrapper();
+        for (uint8 i = 0; i < COINS; ++i) {
+            swap.getToken(i).safeApprove(address(swap), type(uint256).max);
+        }
+
+        // Provide initial liquidity in Synapse pool
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = _getTestAmountIn(NUSD) * 100;
+        amounts[1] = _getTestAmountIn(USDC) * 100;
+        deal(NUSD, address(this), amounts[0]);
+        deal(USDC, address(this), amounts[1]);
+        IERC20(NUSD).safeApprove(address(SYNAPSE_POOL), type(uint256).max);
+        IERC20(USDC).safeApprove(address(SYNAPSE_POOL), type(uint256).max);
+        SYNAPSE_POOL.addLiquidity(amounts, 0, block.timestamp);
     }
 
     function test_tokenNames() public {
@@ -77,8 +94,8 @@ contract SwapWrapperTestCanto is Test {
     }
 
     function test_calculateSwap_directSynapse() public {
-        _checkDirectSynapseQuote(NUSD, NOTE);
-        _checkDirectSynapseQuote(NOTE, NUSD);
+        _checkDirectSynapseQuote(NUSD, USDC);
+        _checkDirectSynapseQuote(USDC, NUSD);
     }
 
     function test_calculateSwap_directCantoDEX() public {
