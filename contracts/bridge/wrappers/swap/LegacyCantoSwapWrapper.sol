@@ -40,7 +40,7 @@ interface ICantoDex {
  * - CantoDex   NOTE/USDT
  * Swaps between "disconnected" coins are routed through NOTE.
  */
-contract CantoSwapWrapper {
+contract LegacyCantoSwapWrapper {
     using SafeERC20 for IERC20;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

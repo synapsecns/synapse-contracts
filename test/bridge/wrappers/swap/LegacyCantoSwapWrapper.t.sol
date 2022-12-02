@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 
 import "forge-std/Test.sol";
 
-import "../../../../contracts/bridge/wrappers/swap/CantoSwapWrapper.sol";
+import "../../../../contracts/bridge/wrappers/swap/LegacyCantoSwapWrapper.sol";
 import {ERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/ERC20.sol";
 
 interface ISynapseTest is ISynapse {
@@ -13,7 +13,7 @@ interface ISynapseTest is ISynapse {
 
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
-contract SwapWrapperTestCanto is Test {
+contract LegacySwapWrapperTestCanto is Test {
     using SafeERC20 for IERC20;
 
     address internal constant NUSD = 0xD8836aF2e565D3Befce7D906Af63ee45a57E8f80;
@@ -27,10 +27,10 @@ contract SwapWrapperTestCanto is Test {
     ICantoDex internal constant CANTO_DEX_USDC_POOL = ICantoDex(0x9571997a66D63958e1B3De9647C22bD6b9e7228c);
     ICantoDex internal constant CANTO_DEX_USDT_POOL = ICantoDex(0x35DB1f3a6A6F07f82C76fCC415dB6cFB1a7df833);
 
-    CantoSwapWrapper internal swap;
+    LegacyCantoSwapWrapper internal swap;
 
     function setUp() public {
-        swap = new CantoSwapWrapper();
+        swap = new LegacyCantoSwapWrapper();
         for (uint8 i = 0; i < COINS; ++i) {
             swap.getToken(i).safeApprove(address(swap), type(uint256).max);
         }
