@@ -1,4 +1,3 @@
-
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
 import { CHAIN_ID } from "../../utils/network";
@@ -9,6 +8,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { execute, get, getOrNull, log, read, save } = deployments;
   const { deployer } = await getNamedAccounts();
 
+  if ((await getChainId()) != CHAIN_ID.CANTO) {
+    return;
+  }
+
   // Manually check if the pool is already deployed
   let nUSDUSDCPool = await getOrNull("nUSDUSDCPool");
   if (nUSDUSDCPool) {
@@ -18,10 +21,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let TOKEN_ADDRESSES = [];
     let TOKEN_DECIMALS = [];
     let INITIAL_A = 800;
-    if ((await getChainId()) === CHAIN_ID.CANTO) {
-      TOKEN_ADDRESSES = [(await get("nUSD")).address, (await get("USDC")).address];
-      TOKEN_DECIMALS = [18, 6];
-    }
+
+    TOKEN_ADDRESSES = [(await get("nUSD")).address, (await get("USDC")).address];
+    TOKEN_DECIMALS = [18, 6];
 
     const LP_TOKEN_NAME = "nUSD NOTE LP";
     const LP_TOKEN_SYMBOL = "nUSD-LP";
