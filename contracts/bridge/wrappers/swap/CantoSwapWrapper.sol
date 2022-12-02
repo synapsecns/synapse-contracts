@@ -89,7 +89,7 @@ contract CantoSwapWrapper {
     constructor() {
         // Approve spending by Synapse Pool
         NUSD.safeApprove(SYNAPSE_NUSD_USDC, MAX_UINT);
-        NOTE.safeApprove(SYNAPSE_NUSD_USDC, MAX_UINT);
+        USDC.safeApprove(SYNAPSE_NUSD_USDC, MAX_UINT);
         // CantoDEX pools don't need approvals
     }
 
@@ -122,20 +122,25 @@ contract CantoSwapWrapper {
         // First, pull tokens from the user
         tokenFrom.safeTransferFrom(msg.sender, address(this), dx);
         // Use actual transferred amount for the swap
-        dx = tokenFrom.balanceOf(address(this)) - balanceBefore;
-        // Check if direct swap is possible
-        address pool = _getDirectSwap(tokenIndexFrom, tokenIndexTo);
-        if (pool != address(0)) {
-            amountOut = _directSwap(pool, tokenIndexFrom, tokenIndexTo, dx, minDy, msg.sender);
-        } else {
-            // First, perform tokenFrom -> NOTE swap, recipient is this contract
-            pool = _getDirectSwap(tokenIndexFrom, NOTE_INDEX);
-            // Don't check minAmountOut
-            amountOut = _directSwap(pool, tokenIndexFrom, NOTE_INDEX, dx, 0, address(this));
-            // Then, perform NOTE -> tokenTo swap, recipient is the user
-            pool = _getDirectSwap(NOTE_INDEX, tokenIndexTo);
-            // Check minAmountOut
-            amountOut = _directSwap(pool, NOTE_INDEX, tokenIndexTo, amountOut, minDy, msg.sender);
+        amountOut = tokenFrom.balanceOf(address(this)) - balanceBefore;
+        // Do a series of swaps until the requested token is reached
+        while (tokenIndexFrom != tokenIndexTo) {
+            // Get the swap. It will be either the needed direct swap,
+            // or a swap in the right direction (for the multi-hop swap)
+            (uint256 indexTo, address pool) = _getSwap(tokenIndexFrom, tokenIndexTo);
+            // Perform a swap using the derived values
+            // Don't check minAmountOut until the very last swap
+            // Transfer tokens to msg.sender in the very last swap
+            amountOut = _directSwap({
+                pool: pool,
+                indexFrom: tokenIndexFrom,
+                indexTo: indexTo,
+                amountIn: amountOut,
+                minAmountOut: indexTo == tokenIndexTo ? minDy : 0,
+                recipient: indexTo == tokenIndexTo ? msg.sender : address(this)
+            });
+            // Update current token
+            tokenIndexFrom = uint8(indexTo);
         }
     }
 
@@ -156,18 +161,22 @@ contract CantoSwapWrapper {
         uint8 tokenIndexTo,
         uint256 dx
     ) external view returns (uint256 amountOut) {
-        if (tokenIndexFrom == tokenIndexTo) return 0;
-        // Check if direct swap is possible
-        address pool = _getDirectSwap(tokenIndexFrom, tokenIndexTo);
-        if (pool != address(0)) {
-            amountOut = _getDirectAmountOut(pool, tokenIndexFrom, tokenIndexTo, dx);
-        } else {
-            // First, get tokenFrom -> NOTE quote
-            pool = _getDirectSwap(tokenIndexFrom, NOTE_INDEX);
-            amountOut = _getDirectAmountOut(pool, tokenIndexFrom, NOTE_INDEX, dx);
-            // Then, get NOTE -> tokenTo quote
-            pool = _getDirectSwap(NOTE_INDEX, tokenIndexTo);
-            amountOut = _getDirectAmountOut(pool, NOTE_INDEX, tokenIndexTo, amountOut);
+        if (tokenIndexFrom == tokenIndexTo || tokenIndexFrom >= COINS || tokenIndexTo >= COINS) return 0;
+        amountOut = dx;
+        // Get the quotes for swaps until the requested token is reached
+        while (tokenIndexFrom != tokenIndexTo) {
+            // Get the swap. It will be either the needed direct swap,
+            // or a swap in the right direction (for the multi-hop swap)
+            (uint256 indexTo, address pool) = _getSwap(tokenIndexFrom, tokenIndexTo);
+            // Get a quote for the  swap using the derived values
+            amountOut = _getDirectAmountOut({
+                pool: pool,
+                indexFrom: tokenIndexFrom,
+                indexTo: indexTo,
+                amountIn: amountOut
+            });
+            // Update current token
+            tokenIndexFrom = uint8(indexTo);
         }
     }
 
@@ -206,10 +215,10 @@ contract CantoSwapWrapper {
     ) internal returns (uint256 amountOut) {
         if (pool == SYNAPSE_NUSD_USDC) {
             // Perform a swap through Synapse pool: check output amount, but don't check timestamp
-            // Indexes in Synapse pool match the indexes in SwapWrapper
+            // Calculate Synapse indexes
             amountOut = ISynapse(pool).swap({
-                tokenIndexFrom: uint8(indexFrom),
-                tokenIndexTo: uint8(indexTo),
+                tokenIndexFrom: _getSynapseIndex(indexFrom),
+                tokenIndexTo: _getSynapseIndex(indexTo),
                 dx: amountIn,
                 minDy: minAmountOut,
                 deadline: MAX_UINT
@@ -260,8 +269,12 @@ contract CantoSwapWrapper {
         // First, check input amount
         if (amountIn == 0) return 0;
         if (pool == SYNAPSE_NUSD_USDC) {
-            // Indexes in Synapse pool match the indexes in SwapWrapper
-            amountOut = ISynapse(pool).calculateSwap(uint8(indexFrom), uint8(indexTo), amountIn);
+            // Calculate Synapse indexes and get the quote
+            amountOut = ISynapse(pool).calculateSwap({
+                tokenIndexFrom: _getSynapseIndex(indexFrom),
+                tokenIndexTo: _getSynapseIndex(indexTo),
+                dx: amountIn
+            });
         } else if (pool == CANTO_DEX_NOTE_USDC || pool == CANTO_DEX_NOTE_USDT) {
             // Get starting token
             IERC20 tokenFrom = _getToken(indexFrom);
@@ -269,24 +282,6 @@ contract CantoSwapWrapper {
             amountOut = ICantoDex(pool).getAmountOut(amountIn, address(tokenFrom));
         }
         /// @dev amountOut is 0 if direct swap is not supported
-    }
-
-    /**
-     * @notice Gets pool address for direct swap between two tokens.
-     * @dev Returns address(0) if swap is not possible.
-     * @param indexFrom    Index of token to sell (see _getToken())
-     * @param indexTo      Index of token to buy (see _getToken())
-     * @return pool         Pool address that can do tokenFrom -> tokenTo swap
-     */
-    function _getDirectSwap(uint256 indexFrom, uint256 indexTo) internal pure returns (address pool) {
-        if (indexFrom == NOTE_INDEX) {
-            // Get pool for NOTE -> * swap
-            pool = _getDirectSwapNOTE(indexTo);
-        } else if (indexTo == NOTE_INDEX) {
-            // Get pool for * -> NOTE swap
-            pool = _getDirectSwapNOTE(indexFrom);
-        }
-        /// @dev pool is address(0) if direct swap is not supported.
     }
 
     /**
@@ -309,25 +304,50 @@ contract CantoSwapWrapper {
     }
 
     /**
-     * @notice Gets pool address for direct swap between NOTE and a given token.
-     * @dev Returns address(0) if swap is not possible.
-     * @param tokenIndex   Index of token to swap (see _getToken())
-     * @return pool         Pool address that can do `tokenIndex` <> NOTE swap
+     * @notice Gets needed swap in order to get from `indexFrom` to `indexRequested`
+     * Returns either the direct swap, if possible. Or a swap in a needed direction,
+     * if multi-hop swap is required.
      */
-    function _getDirectSwapNOTE(uint256 tokenIndex) internal pure returns (address pool) {
-        if (tokenIndex == NUSD_INDEX) {
-            // nUSD <> NOTE is routed through Synapse
+    function _getSwap(uint256 indexFrom, uint256 indexRequested)
+        internal
+        pure
+        returns (uint256 tokenIndexTo, address pool)
+    {
+        // nUSD <> USDC <> NOTE <> USDT
+        if (indexFrom == NUSD_INDEX) {
+            // nUSD can be only swapped to USDC
+            tokenIndexTo = USDC_INDEX;
             pool = SYNAPSE_NUSD_USDC;
-        } else if (tokenIndex == USDC_INDEX) {
-            // USDC <> NOTE is routed through CantoDEX
-            pool = CANTO_DEX_NOTE_USDC;
-        } else if (tokenIndex == USDT_INDEX) {
-            // USDT <> NOTE is routed through CantoDEX
+        } else if (indexFrom == USDC_INDEX) {
+            // USDC can be swapped to nUSD or NOTE
+            if (indexRequested == NUSD_INDEX) {
+                tokenIndexTo = NUSD_INDEX;
+                pool = SYNAPSE_NUSD_USDC;
+            } else {
+                // NOTE is the path we want to take for the multi-hop swap
+                tokenIndexTo = NOTE_INDEX;
+                pool = CANTO_DEX_NOTE_USDC;
+            }
+        } else if (indexFrom == NOTE_INDEX) {
+            // NOTE can be swapped to USDC or USDT
+            if (indexRequested == USDT_INDEX) {
+                tokenIndexTo = USDT_INDEX;
+                pool = CANTO_DEX_NOTE_USDT;
+            } else {
+                // USDC is the path we want to take for the multi-hop swap
+                tokenIndexTo = USDC_INDEX;
+                pool = CANTO_DEX_NOTE_USDC;
+            }
+        } else if (indexFrom == USDT_INDEX) {
+            // USDT can only be swapped to NOTE
+            tokenIndexTo = NOTE_INDEX;
             pool = CANTO_DEX_NOTE_USDT;
         }
-        /// @dev pool is address(0) if tokenIndex is NOTE_INDEX, or out of range
     }
 
+    /**
+     * @notice Returns the index for the given token in the Synapse nUSD/USDC pool
+     */
     function _getSynapseIndex(uint256 tokenIndex) internal pure returns (uint8 synapseIndex) {
         if (tokenIndex == NUSD_INDEX) {
             synapseIndex = 0;
