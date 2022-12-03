@@ -6,7 +6,7 @@ import "../interfaces/IRewarder.sol";
 import "@boringcrypto/boring-solidity/contracts/libraries/BoringERC20.sol";
 import "@boringcrypto/boring-solidity/contracts/libraries/BoringMath.sol";
 import "@boringcrypto/boring-solidity/contracts/BoringOwnable.sol";
-import "../MasterChefV2.sol";
+import "../MiniChefV2.sol";
 
 /// @author @0xKeno
 contract BonusRewarder is IRewarder, BoringOwnable {
@@ -47,7 +47,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     uint256 public rewardPerSecond;
     uint256 private constant ACC_TOKEN_PRECISION = 1e12;
 
-    address private immutable MASTERCHEF_V2;
+    address private immutable miniChefV2;
 
     uint256 internal unlocked;
     modifier lock() {
@@ -67,11 +67,11 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     constructor(
         IERC20 _rewardToken,
         uint256 _rewardPerSecond,
-        address _MASTERCHEF_V2
+        address _miniChefV2
     ) public {
         rewardToken = _rewardToken;
         rewardPerSecond = _rewardPerSecond;
-        MASTERCHEF_V2 = _MASTERCHEF_V2;
+        miniChefV2 = _miniChefV2;
         unlocked = 1;
     }
 
@@ -122,8 +122,8 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         emit LogRewardPerSecond(_rewardPerSecond);
     }
 
-    modifier onlyMCV2 {
-        require(msg.sender == MASTERCHEF_V2, "Only MCV2 can call this function.");
+    modifier onlyMCV2() {
+        require(msg.sender == miniChefV2, "Only MCV2 can call this function");
         _;
     }
 
@@ -185,7 +185,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         PoolInfo memory pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accSushiPerShare = pool.accSushiPerShare;
-        uint256 lpSupply = MasterChefV2(MASTERCHEF_V2).lpToken(_pid).balanceOf(MASTERCHEF_V2);
+        uint256 lpSupply = MiniChefV2(miniChefV2).lpToken(_pid).balanceOf(miniChefV2);
         if (block.timestamp > pool.lastRewardTime && lpSupply != 0) {
             uint256 time = block.timestamp.sub(pool.lastRewardTime);
             uint256 sushiReward = time.mul(rewardPerSecond).mul(pool.allocPoint) / totalAllocPoint;
@@ -211,7 +211,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     function updatePool(uint256 pid) public returns (PoolInfo memory pool) {
         pool = poolInfo[pid];
         if (block.timestamp > pool.lastRewardTime) {
-            uint256 lpSupply = MasterChefV2(MASTERCHEF_V2).lpToken(pid).balanceOf(MASTERCHEF_V2);
+            uint256 lpSupply = MiniChefV2(miniChefV2).lpToken(pid).balanceOf(miniChefV2);
 
             if (lpSupply > 0) {
                 uint256 time = block.timestamp.sub(pool.lastRewardTime);
