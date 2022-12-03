@@ -14,9 +14,6 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     using BoringMath128 for uint128;
     using BoringERC20 for IERC20;
 
-    /// @notice Address of the bonus reward token
-    IERC20 public immutable rewardToken;
-
     /// @notice Info of each MCV2 user.
     /// `amount` LP token amount the user has provided.
     /// `rewardDebt` The amount of rewardToken entitled to the user.
@@ -34,6 +31,21 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         uint64 allocPoint;
     }
 
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                        CONSTANTS & IMMUTABLES                        ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    uint256 private constant ACC_TOKEN_PRECISION = 1e12;
+
+    address private immutable miniChefV2;
+
+    /// @notice Address of the bonus reward token
+    IERC20 public immutable rewardToken;
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                               STORAGE                                ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
     /// @notice Info of each pool.
     mapping(uint256 => PoolInfo) public poolInfo;
 
@@ -45,17 +57,12 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     uint256 totalAllocPoint;
 
     uint256 public rewardPerSecond;
-    uint256 private constant ACC_TOKEN_PRECISION = 1e12;
-
-    address private immutable miniChefV2;
 
     uint256 internal unlocked;
-    modifier lock() {
-        require(unlocked == 1, "LOCKED");
-        unlocked = 2;
-        _;
-        unlocked = 1;
-    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                                EVENTS                                ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     event LogOnReward(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
     event LogPoolAddition(uint256 indexed pid, uint256 allocPoint);
@@ -63,6 +70,10 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     event LogUpdatePool(uint256 indexed pid, uint64 lastRewardTime, uint256 lpSupply, uint256 accRewardsPerShare);
     event LogRewardPerSecond(uint256 rewardPerSecond);
     event LogInit();
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                       CONSTRUCTOR & MODIFIERS                        ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     constructor(
         IERC20 _rewardToken,
@@ -74,6 +85,22 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         miniChefV2 = _miniChefV2;
         unlocked = 1;
     }
+
+    modifier lock() {
+        require(unlocked == 1, "LOCKED");
+        unlocked = 2;
+        _;
+        unlocked = 1;
+    }
+
+    modifier onlyMCV2() {
+        require(msg.sender == miniChefV2, "Only MCV2 can call this function");
+        _;
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                      RESTRICTED: ONLY MINICHEF                       ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function onSynapseReward(
         uint256 pid,
@@ -103,34 +130,9 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         emit LogOnReward(_user, pid, pending - user.unpaidRewards, to);
     }
 
-    function pendingTokens(
-        uint256 pid,
-        address user,
-        uint256
-    ) external view override returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
-        IERC20[] memory _rewardTokens = new IERC20[](1);
-        _rewardTokens[0] = (rewardToken);
-        uint256[] memory _rewardAmounts = new uint256[](1);
-        _rewardAmounts[0] = pendingToken(pid, user);
-        return (_rewardTokens, _rewardAmounts);
-    }
-
-    /// @notice Sets the rewardToken per second to be distributed. Can only be called by the owner.
-    /// @param _rewardPerSecond The amount of rewardToken to be distributed per second.
-    function setRewardPerSecond(uint256 _rewardPerSecond) public onlyOwner {
-        rewardPerSecond = _rewardPerSecond;
-        emit LogRewardPerSecond(_rewardPerSecond);
-    }
-
-    modifier onlyMCV2() {
-        require(msg.sender == miniChefV2, "Only MCV2 can call this function");
-        _;
-    }
-
-    /// @notice Returns the number of MCV2 pools.
-    function poolLength() public view returns (uint256 pools) {
-        pools = poolIds.length;
-    }
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                        RESTRICTED: ONLY OWNER                        ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /// @notice Add a new LP to the pool. Can only be called by the owner.
     /// DO NOT add the same LP token more than once. Rewards will be messed up if you do.
@@ -177,24 +179,16 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         }
     }
 
-    /// @notice View function to see pending Token
-    /// @param _pid The index of the pool. See `poolInfo`.
-    /// @param _user Address of user.
-    /// @return pending rewardToken reward for a given user.
-    function pendingToken(uint256 _pid, address _user) public view returns (uint256 pending) {
-        PoolInfo memory pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][_user];
-        uint256 accRewardsPerShare = pool.accRewardsPerShare;
-        uint256 lpSupply = MiniChefV2(miniChefV2).lpToken(_pid).balanceOf(miniChefV2);
-        if (block.timestamp > pool.lastRewardTime && lpSupply != 0) {
-            uint256 time = block.timestamp.sub(pool.lastRewardTime);
-            uint256 bonusTokenReward = time.mul(rewardPerSecond).mul(pool.allocPoint) / totalAllocPoint;
-            accRewardsPerShare = accRewardsPerShare.add(bonusTokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply);
-        }
-        pending = (user.amount.mul(accRewardsPerShare) / ACC_TOKEN_PRECISION).sub(user.rewardDebt).add(
-            user.unpaidRewards
-        );
+    /// @notice Sets the rewardToken per second to be distributed. Can only be called by the owner.
+    /// @param _rewardPerSecond The amount of rewardToken to be distributed per second.
+    function setRewardPerSecond(uint256 _rewardPerSecond) public onlyOwner {
+        rewardPerSecond = _rewardPerSecond;
+        emit LogRewardPerSecond(_rewardPerSecond);
     }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                        UNPROTECTED FUNCTIONS                         ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /// @notice Update reward variables for all pools. Be careful of gas spending!
     /// @param pids Pool IDs of all to be updated. Make sure to update all active pools.
@@ -224,5 +218,45 @@ contract BonusRewarder is IRewarder, BoringOwnable {
             poolInfo[pid] = pool;
             emit LogUpdatePool(pid, pool.lastRewardTime, lpSupply, pool.accRewardsPerShare);
         }
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                                VIEWS                                 ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function pendingTokens(
+        uint256 pid,
+        address user,
+        uint256
+    ) external view override returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
+        IERC20[] memory _rewardTokens = new IERC20[](1);
+        _rewardTokens[0] = (rewardToken);
+        uint256[] memory _rewardAmounts = new uint256[](1);
+        _rewardAmounts[0] = pendingToken(pid, user);
+        return (_rewardTokens, _rewardAmounts);
+    }
+
+    /// @notice Returns the number of MCV2 pools.
+    function poolLength() public view returns (uint256 pools) {
+        pools = poolIds.length;
+    }
+
+    /// @notice View function to see pending Token
+    /// @param _pid The index of the pool. See `poolInfo`.
+    /// @param _user Address of user.
+    /// @return pending SYNAPSE reward for a given user.
+    function pendingToken(uint256 _pid, address _user) public view returns (uint256 pending) {
+        PoolInfo memory pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][_user];
+        uint256 accRewardsPerShare = pool.accRewardsPerShare;
+        uint256 lpSupply = MiniChefV2(miniChefV2).lpToken(_pid).balanceOf(miniChefV2);
+        if (block.timestamp > pool.lastRewardTime && lpSupply != 0) {
+            uint256 time = block.timestamp.sub(pool.lastRewardTime);
+            uint256 bonusTokenReward = time.mul(rewardPerSecond).mul(pool.allocPoint) / totalAllocPoint;
+            accRewardsPerShare = accRewardsPerShare.add(bonusTokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply);
+        }
+        pending = (user.amount.mul(accRewardsPerShare) / ACC_TOKEN_PRECISION).sub(user.rewardDebt).add(
+            user.unpaidRewards
+        );
     }
 }
