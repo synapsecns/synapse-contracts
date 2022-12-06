@@ -6,7 +6,6 @@ import "../interfaces/IRewarder.sol";
 import "@boringcrypto/boring-solidity/contracts/libraries/BoringERC20.sol";
 import "@boringcrypto/boring-solidity/contracts/libraries/BoringMath.sol";
 import "@boringcrypto/boring-solidity/contracts/BoringOwnable.sol";
-import "../MiniChefV2.sol";
 
 /// @author @0xKeno
 contract BonusRewarder is IRewarder, BoringOwnable {
@@ -31,11 +30,13 @@ contract BonusRewarder is IRewarder, BoringOwnable {
      * @param accRewardsPerShare    Lifetime rewards per 1 LP token scaled by ACC_TOKEN_PRECISION.
      * @param lastRewardTime        Timestamp when `accRewardsPerShare` was last updated.
      * @param allocPoint            The amount of allocation points assigned to the pool.
+     * @param totalLpSupply         Total amount of LP tokens staked in BonusRewarder
      */
-    struct PoolInfo {
+    struct BonusPoolInfo {
         uint128 accRewardsPerShare;
         uint64 lastRewardTime;
         uint64 allocPoint;
+        uint256 totalLpSupply;
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -56,7 +57,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /// @notice Info of each pool.
-    mapping(uint256 => PoolInfo) public poolInfo;
+    mapping(uint256 => BonusPoolInfo) public poolInfo;
     /// @notice IDs of all pools added to BonusRewarder. Must match with the pool ID in MiniChef.
     uint256[] public poolIds;
 
@@ -130,7 +131,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         uint256,
         uint256 lpToken
     ) external override onlyMCV2 lock {
-        PoolInfo memory pool = updatePool(pid);
+        BonusPoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][_user];
         uint256 pending;
         // Calculate pending user bonus token rewards, if user triggered {onSynapseReward} before.
@@ -155,6 +156,8 @@ contract BonusRewarder is IRewarder, BoringOwnable {
                 user.unpaidRewards = 0;
             }
         }
+        // Update total pool LP supply: subtract previous user balance, add new one
+        poolInfo[pid].totalLpSupply = poolInfo[pid].totalLpSupply.sub(user.amount).add(lpToken);
         user.amount = lpToken;
         user.rewardDebt = lpToken.mul(pool.accRewardsPerShare) / ACC_TOKEN_PRECISION;
         emit LogOnReward(_user, pid, pending - user.unpaidRewards, to);
@@ -173,10 +176,11 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         uint256 lastRewardTime = block.timestamp;
         totalAllocPoint = totalAllocPoint.add(allocPoint);
 
-        poolInfo[_pid] = PoolInfo({
+        poolInfo[_pid] = BonusPoolInfo({
             allocPoint: allocPoint.to64(),
             lastRewardTime: lastRewardTime.to64(),
-            accRewardsPerShare: 0
+            accRewardsPerShare: 0,
+            totalLpSupply: 0
         });
         poolIds.push(_pid);
         emit LogPoolAddition(_pid, allocPoint);
@@ -232,11 +236,11 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     /// @notice Update reward variables of the given pool.
     /// @param pid The index of the pool. See `poolInfo`.
     /// @return pool Returns the pool that was updated.
-    function updatePool(uint256 pid) public returns (PoolInfo memory pool) {
+    function updatePool(uint256 pid) public returns (BonusPoolInfo memory pool) {
         pool = poolInfo[pid];
         if (block.timestamp > pool.lastRewardTime) {
-            // Get total amount of pool LP tokens staked in MiniChef
-            uint256 lpSupply = MiniChefV2(miniChefV2).lpToken(pid).balanceOf(miniChefV2);
+            // Get total amount of pool LP tokens staked in BonusRewarder
+            uint256 lpSupply = pool.totalLpSupply;
             if (lpSupply > 0) {
                 // How much time passed since last calculation
                 uint256 time = block.timestamp.sub(pool.lastRewardTime);
@@ -278,11 +282,11 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     /// @param _user Address of user.
     /// @return pending SYNAPSE reward for a given user.
     function pendingToken(uint256 _pid, address _user) public view returns (uint256 pending) {
-        PoolInfo memory pool = poolInfo[_pid];
+        BonusPoolInfo memory pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accRewardsPerShare = pool.accRewardsPerShare;
-        // Get total amount of pool LP tokens staked in MiniChef
-        uint256 lpSupply = MiniChefV2(miniChefV2).lpToken(_pid).balanceOf(miniChefV2);
+        // Get total amount of pool LP tokens staked in BonusRewarder
+        uint256 lpSupply = pool.totalLpSupply;
         if (block.timestamp > pool.lastRewardTime && lpSupply != 0) {
             // How much time passed since last calculation
             uint256 time = block.timestamp.sub(pool.lastRewardTime);
