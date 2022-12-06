@@ -35,9 +35,9 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     ▏*║                        CONSTANTS & IMMUTABLES                        ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    uint256 private constant ACC_TOKEN_PRECISION = 1e12;
+    uint256 internal constant ACC_TOKEN_PRECISION = 1e12;
 
-    address private immutable miniChefV2;
+    address public immutable miniChefV2;
 
     /// @notice Address of the bonus reward token
     IERC20 public immutable rewardToken;
@@ -54,7 +54,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     /// @notice Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
     /// @dev Total allocation points. Must be the sum of all allocation points in all pools.
-    uint256 totalAllocPoint;
+    uint256 public totalAllocPoint;
 
     uint256 public rewardPerSecond;
 
@@ -138,7 +138,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     /// DO NOT add the same LP token more than once. Rewards will be messed up if you do.
     /// @param allocPoint AP of the new pool.
     /// @param _pid Pid on MCV2
-    function add(uint256 allocPoint, uint256 _pid) public onlyOwner {
+    function add(uint256 allocPoint, uint256 _pid) external onlyOwner {
         require(poolInfo[_pid].lastRewardTime == 0, "Pool already exists");
         uint256 lastRewardTime = block.timestamp;
         totalAllocPoint = totalAllocPoint.add(allocPoint);
@@ -155,7 +155,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     /// @notice Update the given pool's rewardToken allocation point and `IRewarder` contract. Can only be called by the owner.
     /// @param _pid The index of the pool. See `poolInfo`.
     /// @param _allocPoint New AP of the pool.
-    function set(uint256 _pid, uint256 _allocPoint) public onlyOwner {
+    function set(uint256 _pid, uint256 _allocPoint) external onlyOwner {
         totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(_allocPoint);
         poolInfo[_pid].allocPoint = _allocPoint.to64();
         emit LogSetPool(_pid, _allocPoint);
@@ -171,7 +171,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         address token,
         uint256 amount,
         address payable to
-    ) public onlyOwner {
+    ) external onlyOwner {
         if (token == address(0)) {
             to.transfer(amount);
         } else {
@@ -181,7 +181,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
 
     /// @notice Sets the rewardToken per second to be distributed. Can only be called by the owner.
     /// @param _rewardPerSecond The amount of rewardToken to be distributed per second.
-    function setRewardPerSecond(uint256 _rewardPerSecond) public onlyOwner {
+    function setRewardPerSecond(uint256 _rewardPerSecond) external onlyOwner {
         rewardPerSecond = _rewardPerSecond;
         emit LogRewardPerSecond(_rewardPerSecond);
     }
@@ -237,7 +237,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     }
 
     /// @notice Returns the number of MCV2 pools.
-    function poolLength() public view returns (uint256 pools) {
+    function poolLength() external view returns (uint256 pools) {
         pools = poolIds.length;
     }
 
