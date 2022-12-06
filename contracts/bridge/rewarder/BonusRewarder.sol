@@ -262,11 +262,10 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         address user,
         uint256
     ) external view override returns (IERC20[] memory rewardTokens, uint256[] memory rewardAmounts) {
-        IERC20[] memory _rewardTokens = new IERC20[](1);
-        _rewardTokens[0] = (rewardToken);
-        uint256[] memory _rewardAmounts = new uint256[](1);
-        _rewardAmounts[0] = pendingToken(pid, user);
-        return (_rewardTokens, _rewardAmounts);
+        rewardTokens = new IERC20[](1);
+        rewardTokens[0] = (rewardToken);
+        rewardAmounts = new uint256[](1);
+        rewardAmounts[0] = pendingToken(pid, user);
     }
 
     /// @notice Returns the number of MCV2 pools.
