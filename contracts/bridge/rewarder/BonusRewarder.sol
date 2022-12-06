@@ -14,17 +14,24 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     using BoringMath128 for uint128;
     using BoringERC20 for IERC20;
 
-    /// @notice Info of each MCV2 user.
-    /// `amount` LP token amount the user has provided.
-    /// `rewardDebt` The amount of rewardToken entitled to the user.
+    /**
+     * @notice Info of each BonusRewarder user.
+     * @param amount        LP token amount the user has provided.
+     * @param rewardDebt    Accumulated rewards at the time of last user interaction.
+     * @param unpaidRewards Rolled over amount of rewards that wasn't paid during last interaction.
+     */
     struct UserInfo {
         uint256 amount;
         uint256 rewardDebt;
         uint256 unpaidRewards;
     }
 
-    /// @notice Info of each MCV2 pool.
-    /// `allocPoint` The amount of allocation points assigned to the pool.
+    /**
+     * @notice Info of each BonusRewarder pool.
+     * @param accRewardsPerShare    Lifetime rewards per 1 LP token scaled by ACC_TOKEN_PRECISION.
+     * @param lastRewardTime        Timestamp when `accRewardsPerShare` was last updated.
+     * @param allocPoint            The amount of allocation points assigned to the pool.
+     */
     struct PoolInfo {
         uint128 accRewardsPerShare;
         uint64 lastRewardTime;
@@ -35,8 +42,10 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     ▏*║                        CONSTANTS & IMMUTABLES                        ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    /// @dev Multiplier for storing the accumulated rewards. Increases division precision.
     uint256 internal constant ACC_TOKEN_PRECISION = 1e12;
 
+    /// @notice Address of the MiniChef where the LP tokens are staked
     address public immutable miniChefV2;
 
     /// @notice Address of the bonus reward token
@@ -48,16 +57,16 @@ contract BonusRewarder is IRewarder, BoringOwnable {
 
     /// @notice Info of each pool.
     mapping(uint256 => PoolInfo) public poolInfo;
-
+    /// @notice IDs of all pools added to BonusRewarder. Must match with the pool ID in MiniChef.
     uint256[] public poolIds;
 
     /// @notice Info of each user that stakes LP tokens.
     mapping(uint256 => mapping(address => UserInfo)) public userInfo;
-    /// @dev Total allocation points. Must be the sum of all allocation points in all pools.
+    /// @notice Total allocation points. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint;
-
+    /// @notice Amount of rewardToken emitted per second
     uint256 public rewardPerSecond;
-
+    /// @dev Flag indicating that a lock-protected function is entered.
     uint256 internal unlocked;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -102,6 +111,18 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     ▏*║                      RESTRICTED: ONLY MINICHEF                       ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    /**
+     * @notice Triggered whenever user interacts with MiniChefV2. That is:
+     * - miniChefV2.deposit()
+     * - miniChefV2.withdraw()
+     * - miniChefV2.harvest()
+     * - miniChefV2.withdrawAndHarvest()
+     * - miniChefV2.emergencyWithdraw()
+     * @param pid       Pool ID that user interacted with in MiniChefV2
+     * @param _user     User address
+     * @param to        Address where the rewards should be transferred
+     * @param lpToken   Amount of user LP tokens in MiniChefV2 AFTER the interaction
+     */
     function onSynapseReward(
         uint256 pid,
         address _user,
@@ -112,15 +133,24 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         PoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][_user];
         uint256 pending;
+        // Calculate pending user bonus token rewards, if user triggered {onSynapseReward} before.
+        // Otherwise, this is considered a user "deposit" into BonusRewarder.
         if (user.amount > 0) {
+            // First, we calculate total accumulated rewards for `user.amount` LP tokens.
+            // Then, we subtract the amount of accumulated rewards at the last user interaction.
+            // That gives us the amount of token rewards earned since last interaction.
+            // Finally, we add the amount of unpaid rewards at the last interaction.
             pending = (user.amount.mul(pool.accRewardsPerShare) / ACC_TOKEN_PRECISION).sub(user.rewardDebt).add(
                 user.unpaidRewards
             );
             uint256 balance = rewardToken.balanceOf(address(this));
             if (pending > balance) {
+                // If BonusRewarder doesn't have enough tokens, pay out as much as possible.
                 rewardToken.safeTransfer(to, balance);
+                // Store the remainder for the next time.
                 user.unpaidRewards = pending - balance;
             } else {
+                // If BonusRewarder has enough tokens, pay out the rewards fully.
                 rewardToken.safeTransfer(to, pending);
                 user.unpaidRewards = 0;
             }
@@ -205,11 +235,14 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     function updatePool(uint256 pid) public returns (PoolInfo memory pool) {
         pool = poolInfo[pid];
         if (block.timestamp > pool.lastRewardTime) {
+            // Get total amount of pool LP tokens staked in MiniChef
             uint256 lpSupply = MiniChefV2(miniChefV2).lpToken(pid).balanceOf(miniChefV2);
-
             if (lpSupply > 0) {
+                // How much time passed since last calculation
                 uint256 time = block.timestamp.sub(pool.lastRewardTime);
+                // Calculate bonus token rewards for the pool for the last period
                 uint256 bonusTokenReward = time.mul(rewardPerSecond).mul(pool.allocPoint) / totalAllocPoint;
+                // Update total rewards for 1 LP token scaled up by ACC_TOKEN_PRECISION
                 pool.accRewardsPerShare = pool.accRewardsPerShare.add(
                     (bonusTokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply).to128()
                 );
@@ -249,12 +282,20 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         PoolInfo memory pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accRewardsPerShare = pool.accRewardsPerShare;
+        // Get total amount of pool LP tokens staked in MiniChef
         uint256 lpSupply = MiniChefV2(miniChefV2).lpToken(_pid).balanceOf(miniChefV2);
         if (block.timestamp > pool.lastRewardTime && lpSupply != 0) {
+            // How much time passed since last calculation
             uint256 time = block.timestamp.sub(pool.lastRewardTime);
+            // Calculate bonus token rewards for the pool for the last period
             uint256 bonusTokenReward = time.mul(rewardPerSecond).mul(pool.allocPoint) / totalAllocPoint;
+            // Update total rewards for 1 LP token scaled up by ACC_TOKEN_PRECISION
             accRewardsPerShare = accRewardsPerShare.add(bonusTokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply);
         }
+        // First, we calculate total accumulated rewards for `user.amount` LP tokens.
+        // Then, we subtract the amount of accumulated rewards at the last user interaction.
+        // That gives us the amount of token rewards earned since last interaction.
+        // Finally, we add the amount of unpaid rewards at the last interaction.
         pending = (user.amount.mul(accRewardsPerShare) / ACC_TOKEN_PRECISION).sub(user.rewardDebt).add(
             user.unpaidRewards
         );
