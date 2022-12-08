@@ -1,0 +1,436 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.12;
+pragma experimental ABIEncoderV2;
+
+import "forge-std/Test.sol";
+
+import "../../contracts/bridge/MiniChefV2.sol";
+import {BonusRewarder} from "../../contracts/bridge/rewarder/BonusRewarder.sol";
+
+import "@openzeppelin/contracts/utils/Strings.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+// solhint-disable func-name-mixedcase
+// solhint-disable not-rely-on-time
+contract BonusRewarderTest is Test {
+    IERC20 internal syn;
+    IERC20 internal rewardToken;
+    IERC20[] internal lpTokens;
+
+    MiniChefV2 internal miniChef;
+    BonusRewarder internal bonusRewarder;
+
+    uint256 internal rewardPerSecond;
+    uint256 internal poolsAdded;
+    uint256 internal totalAllocPoint;
+
+    uint256 internal constant PRECISION = 10**12;
+
+    uint256 internal constant LP_TOKENS = 4;
+    address internal constant OWNER = address(1234567890);
+
+    address internal constant ALICE = address(100);
+    address internal constant BOB = address(101);
+    address internal constant CAROL = address(102);
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                                EVENTS                                ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    event LogOnReward(address indexed user, uint256 indexed pid, uint256 amount, address indexed to);
+    event LogPoolAddition(uint256 indexed pid, uint256 allocPoint);
+    event LogSetPool(uint256 indexed pid, uint256 allocPoint);
+    event LogUpdatePool(uint256 indexed pid, uint64 lastRewardTime, uint256 lpSupply, uint256 accRewardsPerShare);
+    event LogRewardPerSecond(uint256 rewardPerSecond);
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                                SETUP                                 ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function setUp() public {
+        syn = _deployERC20("SYN");
+        rewardToken = _deployERC20("REWARD");
+        lpTokens = new IERC20[](LP_TOKENS);
+        for (uint256 i = 0; i < LP_TOKENS; ++i) {
+            string memory name = string(abi.encodePacked("LP_", Strings.toString(i)));
+            lpTokens[i] = _deployERC20(name);
+        }
+
+        miniChef = new MiniChefV2(syn);
+        for (uint256 i = 0; i < LP_TOKENS; ++i) {
+            miniChef.add({allocPoint: 1, _lpToken: lpTokens[i], _rewarder: IRewarder(address(0))});
+        }
+        vm.label(address(miniChef), "MiniChef");
+
+        bonusRewarder = new BonusRewarder({
+            _rewardToken: rewardToken,
+            _rewardPerSecond: 0,
+            _miniChefV2: address(miniChef)
+        });
+        bonusRewarder.transferOwnership({newOwner: OWNER, direct: true, renounce: false});
+        vm.label(address(bonusRewarder), "Rewarder");
+
+        _setupUser(ALICE);
+        _setupUser(BOB);
+        _setupUser(CAROL);
+
+        vm.label(ALICE, "Alice");
+        vm.label(BOB, "Bob");
+        vm.label(CAROL, "Carol");
+        vm.label(OWNER, "Owner");
+    }
+
+    function test_setUp() public {
+        assertEq(bonusRewarder.miniChefV2(), address(miniChef), "!miniChefV2");
+        assertEq(bonusRewarder.owner(), OWNER, "!owner");
+        assertEq(bonusRewarder.poolLength(), 0, "!poolLength");
+        assertEq(bonusRewarder.rewardPerSecond(), 0, "!rewardPerSecond");
+        assertEq(bonusRewarder.totalAllocPoint(), 0, "!totalAllocPoint");
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                  TESTS: RESTRICTED ACCESS (REVERTS)                  ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_onSynapseReward_onlyMinichef(address caller) public {
+        vm.assume(caller != address(miniChef));
+        vm.expectRevert("Only MCV2 can call this function");
+        vm.prank(caller);
+        bonusRewarder.onSynapseReward(0, address(0), address(0), 0, 0);
+    }
+
+    function test_add_onlyOwner(address caller) public {
+        vm.assume(caller != OWNER);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        bonusRewarder.add(0, 0);
+    }
+
+    function test_set_onlyOwner(address caller) public {
+        vm.assume(caller != OWNER);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        bonusRewarder.set(0, 0);
+    }
+
+    function test_reclaimTokens_onlyOwner(address caller) public {
+        vm.assume(caller != OWNER);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        bonusRewarder.reclaimTokens(address(0), 0, address(0));
+    }
+
+    function test_setRewardPerSecond_onlyOwner(address caller) public {
+        vm.assume(caller != OWNER);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        bonusRewarder.setRewardPerSecond(0);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                       TESTS: RESTRICTED ACCESS                       ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_add(uint8 pid, uint8 allocPoint) public {
+        vm.expectEmit(true, true, true, true, address(bonusRewarder));
+        emit LogPoolAddition(pid, allocPoint);
+        vm.prank(OWNER);
+        bonusRewarder.add(allocPoint, pid);
+        (
+            uint128 _accRewardsPerShare,
+            uint64 _lastRewardTime,
+            uint64 _allocPoint,
+            uint256 _totalLpSupply
+        ) = bonusRewarder.poolInfo(pid);
+        assertEq(_accRewardsPerShare, uint256(0), "!accRewardsPerShare");
+        assertEq(_lastRewardTime, block.timestamp, "!lastRewardTime");
+        assertEq(_allocPoint, uint256(allocPoint), "!allocPoint");
+        assertEq(_totalLpSupply, 0, "!totalLpSupply");
+
+        ++poolsAdded;
+        totalAllocPoint += allocPoint;
+        assertEq(bonusRewarder.poolIds(poolsAdded - 1), pid, "!poolIds");
+        assertEq(bonusRewarder.totalAllocPoint(), totalAllocPoint, "!totalAllocPoint");
+    }
+
+    function test_set(
+        uint8 pid,
+        uint8 allocPointOld,
+        uint8 allocPointNew
+    ) public {
+        vm.assume(allocPointOld != allocPointNew);
+        test_add(pid, allocPointOld);
+        vm.expectEmit(true, true, true, true, address(bonusRewarder));
+        emit LogSetPool(pid, allocPointNew);
+        vm.prank(OWNER);
+        bonusRewarder.set(pid, allocPointNew);
+        (, , uint64 _allocPoint, ) = bonusRewarder.poolInfo(pid);
+        assertEq(_allocPoint, uint256(allocPointNew), "!allocPoint");
+        totalAllocPoint = totalAllocPoint - allocPointOld + allocPointNew;
+        assertEq(bonusRewarder.totalAllocPoint(), totalAllocPoint, "!totalAllocPoint");
+    }
+
+    function test_reclaimTokens() public {
+        deal(address(syn), address(bonusRewarder), 10);
+        vm.prank(OWNER);
+        bonusRewarder.reclaimTokens(address(syn), 1, payable(OWNER));
+        assertEq(syn.balanceOf(OWNER), 1, "Token not reclaimed");
+    }
+
+    function test_reclaimTokens_ETH() public {
+        deal(address(bonusRewarder), 10);
+        vm.prank(OWNER);
+        bonusRewarder.reclaimTokens(address(0), 1, payable(OWNER));
+        assertEq(OWNER.balance, 1, "ETH not reclaimed");
+    }
+
+    function test_setRewardPerSecond(uint32 _rewardPerSecond) public {
+        vm.expectEmit(true, true, true, true, address(bonusRewarder));
+        emit LogRewardPerSecond(_rewardPerSecond);
+        vm.prank(OWNER);
+        bonusRewarder.setRewardPerSecond(_rewardPerSecond);
+        assertEq(bonusRewarder.rewardPerSecond(), _rewardPerSecond, "!rewardPerSecond");
+        rewardPerSecond = _rewardPerSecond;
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                        TESTS: UPDATING POOLS                         ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_updatePool() public {
+        test_setRewardPerSecond({_rewardPerSecond: 100});
+        _setupPools({amount: 1});
+        uint256 lpAmount = 42;
+        // Alice makes a deposit
+        _fakeInteraction({pid: 0, user: ALICE, lpTokenAmount: lpAmount});
+        uint256 skipTime = 1 hours;
+        skip(skipTime);
+        uint256 totalRewards = rewardPerSecond * skipTime;
+        uint256 accRewardsPerShare = (totalRewards * PRECISION) / lpAmount;
+        vm.expectEmit(true, true, true, true, address(bonusRewarder));
+        emit LogUpdatePool({
+            pid: 0,
+            lastRewardTime: uint64(block.timestamp),
+            lpSupply: lpAmount,
+            accRewardsPerShare: accRewardsPerShare
+        });
+        bonusRewarder.updatePool({pid: 0});
+        (
+            uint128 _accRewardsPerShare,
+            uint64 _lastRewardTime,
+            uint64 _allocPoint,
+            uint256 _totalLpSupply
+        ) = bonusRewarder.poolInfo(0);
+        assertEq(_accRewardsPerShare, accRewardsPerShare, "!accRewardsPerShare");
+        assertEq(_lastRewardTime, block.timestamp, "!lastRewardTime");
+        assertEq(_allocPoint, uint256(1), "!allocPoint");
+        assertEq(_totalLpSupply, lpAmount, "!totalLpSupply");
+    }
+
+    function test_massUpdatePools() public {
+        test_setRewardPerSecond({_rewardPerSecond: 100});
+        _setupPools({amount: LP_TOKENS});
+        uint256[] memory lpAmounts = new uint256[](LP_TOKENS);
+        for (uint256 i = 0; i < LP_TOKENS; ++i) {
+            lpAmounts[i] = 42 + i;
+            // Alice makes a deposit
+            _fakeInteraction({pid: i, user: ALICE, lpTokenAmount: lpAmounts[i]});
+        }
+        uint256 skipTime = 1 hours;
+        skip(skipTime);
+        uint256 totalRewards = rewardPerSecond * skipTime;
+        uint256[] memory accRewardsPerShare = new uint256[](LP_TOKENS);
+        uint256[] memory pids = new uint256[](LP_TOKENS);
+        for (uint256 i = 0; i < LP_TOKENS; ++i) {
+            pids[i] = i;
+            // Pool alloc point is (i + 1)
+            uint256 totalPoolRewards = (totalRewards * (i + 1)) / totalAllocPoint;
+            accRewardsPerShare[i] = (totalPoolRewards * PRECISION) / lpAmounts[i];
+            vm.expectEmit(true, true, true, true, address(bonusRewarder));
+            emit LogUpdatePool({
+                pid: pids[i],
+                lastRewardTime: uint64(block.timestamp),
+                lpSupply: lpAmounts[i],
+                accRewardsPerShare: accRewardsPerShare[i]
+            });
+        }
+        bonusRewarder.massUpdatePools(pids);
+        for (uint256 i = 0; i < LP_TOKENS; ++i) {
+            (
+                uint128 _accRewardsPerShare,
+                uint64 _lastRewardTime,
+                uint64 _allocPoint,
+                uint256 _totalLpSupply
+            ) = bonusRewarder.poolInfo(i);
+            assertEq(_accRewardsPerShare, accRewardsPerShare[i], "!accRewardsPerShare");
+            assertEq(_lastRewardTime, block.timestamp, "!lastRewardTime");
+            assertEq(_allocPoint, i + 1, "!allocPoint");
+            assertEq(_totalLpSupply, lpAmounts[i], "!totalLpSupply");
+        }
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                       TESTS: ON SYNAPSE REWARD                       ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_onSynapseReward_deposit() public {
+        _setupPools({amount: 1});
+        vm.expectEmit(true, true, true, true, address(bonusRewarder));
+        emit LogOnReward({user: ALICE, pid: 0, amount: 0, to: ALICE});
+        deposit(ALICE, 0, 0);
+    }
+
+    function test_onSynapseReward_withdraw() public {
+        _setupPools({amount: 1});
+        vm.expectEmit(true, true, true, true, address(bonusRewarder));
+        emit LogOnReward({user: ALICE, pid: 0, amount: 0, to: ALICE});
+        withdraw(ALICE, 0, 0);
+    }
+
+    function test_onSynapseReward_harvest() public {
+        _setupPools({amount: 1});
+        vm.expectEmit(true, true, true, true, address(bonusRewarder));
+        emit LogOnReward({user: ALICE, pid: 0, amount: 0, to: ALICE});
+        harvest(ALICE, 0);
+    }
+
+    function test_onSynapseReward_withdrawAndHarvest() public {
+        _setupPools({amount: 1});
+        vm.expectEmit(true, true, true, true, address(bonusRewarder));
+        emit LogOnReward({user: ALICE, pid: 0, amount: 0, to: ALICE});
+        withdrawAndHarvest(ALICE, 0, 0);
+    }
+
+    function test_onSynapseReward_emergencyWithdraw() public {
+        _setupPools({amount: 1});
+        vm.expectEmit(true, true, true, true, address(bonusRewarder));
+        emit LogOnReward({user: ALICE, pid: 0, amount: 0, to: ALICE});
+        emergencyWithdraw(ALICE, 0);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                           END TO END TESTS                           ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_singlePool() public {
+        deal(address(rewardToken), address(bonusRewarder), 10**18);
+        uint256 expectedA;
+        uint256 expectedB;
+        uint256 expectedC;
+        // Alice and Bob deposit before Rewarder is set up
+        deposit({user: ALICE, pid: 0, amount: 10});
+        deposit({user: BOB, pid: 0, amount: 10});
+        test_setRewardPerSecond({_rewardPerSecond: 100});
+        _setupPools({amount: 1});
+        skip(1000);
+        assertEq(bonusRewarder.pendingToken(0, ALICE), 0, "Alice didn't opt in: phase 0");
+        assertEq(bonusRewarder.pendingToken(0, BOB), 0, "Bob didn't opt in: phase 0");
+        assertEq(bonusRewarder.pendingToken(0, CAROL), 0, "Carol didn't opt in: phase 0");
+        // 1000 seconds later, Carol is the only user who opted in (PHASE 1)
+        deposit({user: CAROL, pid: 0, amount: 1});
+        assertEq(bonusRewarder.pendingToken(0, CAROL), 0, "Carol just opted in: phase 1");
+        skip(1000);
+        expectedC = 1000 * rewardPerSecond;
+        assertEq(bonusRewarder.pendingToken(0, ALICE), 0, "Alice didn't opt in: phase 1");
+        assertEq(bonusRewarder.pendingToken(0, BOB), 0, "Bob didn't opt in: phase 1");
+        assertEq(bonusRewarder.pendingToken(0, CAROL), expectedC, "Carol mismatch: phase 1");
+        // Alice withdraws 1 token, Bob does a harvest: they both opted in by doing so
+        // New ratio is Alice : 9, Bob: 10, Carol : 1 (PHASE 2)
+        withdraw({user: ALICE, pid: 0, amount: 1});
+        harvest({user: BOB, pid: 0});
+        skip(1000);
+        expectedA = (1000 * rewardPerSecond * 9) / 20;
+        expectedB = (1000 * rewardPerSecond * 10) / 20;
+        // Carol didn't interact with the pool, so pending rewards roll over
+        expectedC = expectedC + (1000 * rewardPerSecond * 1) / 20;
+        assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA, "Alice mismatch: phase 2");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: phase 2");
+        assertEq(bonusRewarder.pendingToken(0, CAROL), expectedC, "Carol mismatch: phase 2");
+        // Alice withdraws everything, Carol deposits 5 more
+        // New ratio is Alice : 0, Bob: 10, Carol : 6 (PHASE 3)
+        withdraw({user: ALICE, pid: 0, amount: 9});
+        deposit({user: CAROL, pid: 0, amount: 5});
+        skip(1000);
+        expectedA = 0;
+        // Bob didn't interact with the pool, so pending rewards roll over
+        expectedB = expectedB + (1000 * rewardPerSecond * 10) / 16;
+        expectedC = (1000 * rewardPerSecond * 6) / 16;
+        assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA, "Alice mismatch: phase 3");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: phase 3");
+        assertEq(bonusRewarder.pendingToken(0, CAROL), expectedC, "Carol mismatch: phase 3");
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                          USER INTERACTIONS                           ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function deposit(
+        address user,
+        uint256 pid,
+        uint256 amount
+    ) public {
+        vm.prank(user);
+        miniChef.deposit(pid, amount, user);
+    }
+
+    function withdraw(
+        address user,
+        uint256 pid,
+        uint256 amount
+    ) public {
+        vm.prank(user);
+        miniChef.withdraw(pid, amount, user);
+    }
+
+    function harvest(address user, uint256 pid) public {
+        vm.prank(user);
+        miniChef.harvest(pid, user);
+    }
+
+    function withdrawAndHarvest(
+        address user,
+        uint256 pid,
+        uint256 amount
+    ) public {
+        vm.prank(user);
+        miniChef.withdrawAndHarvest(pid, amount, user);
+    }
+
+    function emergencyWithdraw(address user, uint256 pid) public {
+        vm.prank(user);
+        miniChef.emergencyWithdraw(pid, user);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                           INTERNAL HELPERS                           ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _deployERC20(string memory name) internal returns (IERC20 token) {
+        token = IERC20(address(new ERC20(name, name)));
+        vm.label(address(token), name);
+    }
+
+    function _fakeInteraction(
+        uint256 pid,
+        address user,
+        uint256 lpTokenAmount
+    ) internal {
+        vm.prank(address(miniChef));
+        bonusRewarder.onSynapseReward(pid, user, user, 0, lpTokenAmount);
+    }
+
+    function _setupPools(uint256 amount) internal {
+        for (uint8 i = 0; i < amount; ++i) {
+            test_add({pid: i, allocPoint: i + 1});
+            miniChef.set({_pid: i, _allocPoint: 0, _rewarder: bonusRewarder, overwrite: true});
+        }
+    }
+
+    function _setupUser(address user) internal {
+        for (uint256 i = 0; i < LP_TOKENS; ++i) {
+            vm.prank(user);
+            lpTokens[i].approve(address(miniChef), type(uint256).max);
+            deal(address(lpTokens[i]), user, 1000);
+        }
+    }
+}
