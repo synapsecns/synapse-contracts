@@ -7,6 +7,10 @@ import "@boringcrypto/boring-solidity/contracts/libraries/BoringERC20.sol";
 import "@boringcrypto/boring-solidity/contracts/libraries/BoringMath.sol";
 import "@boringcrypto/boring-solidity/contracts/BoringOwnable.sol";
 
+interface IMiniChef {
+    function rewarder(uint256) external view returns (address);
+}
+
 /// @author @0xKeno
 contract BonusRewarder is IRewarder, BoringOwnable {
     using BoringMath for uint256;
@@ -136,6 +140,15 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         uint256,
         uint256 lpToken
     ) external override onlyMCV2 lock {
+        _onSynapseReward(pid, _user, to, lpToken);
+    }
+
+    function _onSynapseReward(
+        uint256 pid,
+        address _user,
+        address to,
+        uint256 lpToken
+    ) internal {
         BonusPoolInfo memory pool = updatePool(pid);
         UserInfo storage user = userInfo[pid][_user];
         uint256 pending;
@@ -240,6 +253,16 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                        UNPROTECTED FUNCTIONS                         ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    /// @notice Claim rewards by interacting with BonusRewarder directly,
+    /// if it has been disconnected from MiniChef.
+    /// @dev Will revert, if rewarder is still connected for the selected pool.
+    function claimEndedRewards(uint256 pid, address to) external {
+        require(IMiniChef(miniChefV2).rewarder(pid) != address(this), "Rewarder is connected");
+        // Claim rewards, and stop rewards for the user
+        // For that we pretend that user withdrawn all tokens from MiniChef
+        _onSynapseReward({pid: pid, _user: msg.sender, to: to, lpToken: 0});
+    }
 
     /// @notice Update reward variables for all pools. Be careful of gas spending!
     /// @param pids Pool IDs of all to be updated. Make sure to update all active pools.

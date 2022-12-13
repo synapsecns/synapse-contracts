@@ -559,6 +559,42 @@ contract BonusRewarderTest is Test {
         assertEq(rewardToken.balanceOf(BOB), totalB, "Bob mismatch: total claimed rewards");
     }
 
+    function test_claimEndedRewards() public {
+        deal(address(rewardToken), address(bonusRewarder), 10**18);
+        uint256 phaseTime = 1000;
+        test_setRewardPerSecond({_rewardPerSecond: 100});
+        _setupPools({amount: 1});
+        deposit({user: ALICE, pid: 0, amount: 1});
+        skip(phaseTime);
+        // Disconnect rewarder from the MinChef
+        miniChef.set({_pid: 0, _allocPoint: 1, _rewarder: IRewarder(address(0)), overwrite: true});
+        skip(phaseTime);
+        uint256 expectedA = 2 * rewardPerSecond * phaseTime;
+        assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA, "Alice mismatch: after disconnect");
+        harvest({user: ALICE, pid: 0});
+        assertEq(rewardToken.balanceOf(ALICE), 0, "Alice mismatch: claimed when disconnected");
+        vm.prank(ALICE);
+        bonusRewarder.claimEndedRewards({pid: 0, to: BOB});
+        assertEq(rewardToken.balanceOf(ALICE), 0, "Alice mismatch: tokens sent to wrong address");
+        assertEq(rewardToken.balanceOf(BOB), expectedA, "Bob mismatch: tokens sent to wrong address");
+        skip(phaseTime);
+        assertEq(bonusRewarder.pendingToken(0, ALICE), 0, "Alice mismatch: post claim");
+        harvest({user: ALICE, pid: 0});
+        assertEq(rewardToken.balanceOf(ALICE), 0, "Alice mismatch: total claimed");
+    }
+
+    function test_claimEndedRewards_revert_whenConnected() public {
+        deal(address(rewardToken), address(bonusRewarder), 10**18);
+        uint256 phaseTime = 1000;
+        test_setRewardPerSecond({_rewardPerSecond: 100});
+        _setupPools({amount: 1});
+        deposit({user: ALICE, pid: 0, amount: 1});
+        skip(phaseTime);
+        vm.expectRevert("Rewarder is connected");
+        vm.prank(ALICE);
+        bonusRewarder.claimEndedRewards({pid: 0, to: ALICE});
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                          USER INTERACTIONS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
