@@ -317,20 +317,22 @@ contract BonusRewarderTest is Test {
         uint256 expectedA;
         uint256 expectedB;
         uint256 expectedC;
+        uint256 phaseTime = 1000;
         // Alice and Bob deposit before Rewarder is set up
         deposit({user: ALICE, pid: 0, amount: 10});
         deposit({user: BOB, pid: 0, amount: 10});
         test_setRewardPerSecond({_rewardPerSecond: 100});
+        uint256 phaseTotalRewards = phaseTime * rewardPerSecond;
         _setupPools({amount: 1});
-        skip(1000);
+        skip(phaseTime);
         assertEq(bonusRewarder.pendingToken(0, ALICE), 0, "Alice didn't opt in: phase 0");
         assertEq(bonusRewarder.pendingToken(0, BOB), 0, "Bob didn't opt in: phase 0");
         assertEq(bonusRewarder.pendingToken(0, CAROL), 0, "Carol didn't opt in: phase 0");
         // 1000 seconds later, Carol is the only user who opted in (PHASE 1)
         deposit({user: CAROL, pid: 0, amount: 1});
         assertEq(bonusRewarder.pendingToken(0, CAROL), 0, "Carol just opted in: phase 1");
-        skip(1000);
-        expectedC = 1000 * rewardPerSecond;
+        skip(phaseTime);
+        expectedC = phaseTotalRewards;
         assertEq(bonusRewarder.pendingToken(0, ALICE), 0, "Alice didn't opt in: phase 1");
         assertEq(bonusRewarder.pendingToken(0, BOB), 0, "Bob didn't opt in: phase 1");
         assertEq(bonusRewarder.pendingToken(0, CAROL), expectedC, "Carol mismatch: phase 1");
@@ -338,11 +340,11 @@ contract BonusRewarderTest is Test {
         // New ratio is Alice : 9, Bob: 10, Carol : 1 (PHASE 2)
         withdraw({user: ALICE, pid: 0, amount: 1});
         harvest({user: BOB, pid: 0});
-        skip(1000);
-        expectedA = (1000 * rewardPerSecond * 9) / 20;
-        expectedB = (1000 * rewardPerSecond * 10) / 20;
+        skip(phaseTime);
+        expectedA = (phaseTotalRewards * 9) / 20;
+        expectedB = (phaseTotalRewards * 10) / 20;
         // Carol didn't interact with the pool, so pending rewards roll over
-        expectedC = expectedC + (1000 * rewardPerSecond * 1) / 20;
+        expectedC = expectedC + (phaseTotalRewards * 1) / 20;
         assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA, "Alice mismatch: phase 2");
         assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: phase 2");
         assertEq(bonusRewarder.pendingToken(0, CAROL), expectedC, "Carol mismatch: phase 2");
@@ -350,14 +352,72 @@ contract BonusRewarderTest is Test {
         // New ratio is Alice : 0, Bob: 10, Carol : 6 (PHASE 3)
         withdraw({user: ALICE, pid: 0, amount: 9});
         deposit({user: CAROL, pid: 0, amount: 5});
-        skip(1000);
+        skip(phaseTime);
         expectedA = 0;
         // Bob didn't interact with the pool, so pending rewards roll over
-        expectedB = expectedB + (1000 * rewardPerSecond * 10) / 16;
-        expectedC = (1000 * rewardPerSecond * 6) / 16;
+        expectedB = expectedB + (phaseTotalRewards * 10) / 16;
+        expectedC = (phaseTotalRewards * 6) / 16;
         assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA, "Alice mismatch: phase 3");
         assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: phase 3");
         assertEq(bonusRewarder.pendingToken(0, CAROL), expectedC, "Carol mismatch: phase 3");
+    }
+
+    function test_multiplePools() public {
+        deal(address(rewardToken), address(bonusRewarder), 10**18);
+        uint256 expectedA0 = 0;
+        uint256 expectedA1 = 0;
+        uint256 expectedB0 = 0;
+        uint256 expectedB1 = 0;
+        uint256 phaseTime = 1000;
+        // Alice and Bob deposit before Rewarder is set up
+        deposit({user: ALICE, pid: 0, amount: 10});
+        deposit({user: ALICE, pid: 1, amount: 10});
+        deposit({user: BOB, pid: 0, amount: 10});
+        deposit({user: BOB, pid: 1, amount: 10});
+        test_setRewardPerSecond({_rewardPerSecond: 100});
+        _setupPools({amount: 2});
+        // Pool alloc points: [1, 2]
+        uint256 expectedP0 = (phaseTime * rewardPerSecond * 1) / 3;
+        uint256 expectedP1 = (phaseTime * rewardPerSecond * 2) / 3;
+        // Alice opts in for the pool#0 (PHASE 0)
+        harvest({user: ALICE, pid: 0});
+        skip(phaseTime);
+        // Alice should receive all rewards for pool #0
+        expectedA0 = expectedP0;
+        // No one opted in for pool #1 rewards :(
+        assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA0, "Alice mismatch: phase 0, pool 0");
+        assertEq(bonusRewarder.pendingToken(1, ALICE), expectedA1, "Alice mismatch: phase 0, pool 1");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB0, "Bob mismatch: phase 0, pool 0");
+        assertEq(bonusRewarder.pendingToken(1, BOB), expectedB1, "Bob mismatch: phase 0, pool 1");
+        // Bob opts in for the pool#1 (PHASE 1)
+        harvest({user: BOB, pid: 1});
+        skip(phaseTime);
+        // Alice should receive all rewards for pool#0
+        // Alice didn't interact, so pending rewards roll over
+        expectedA0 = expectedA0 + expectedP0;
+        // Bob should receive all rewards for pool#1
+        expectedB1 = expectedP1;
+        assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA0, "Alice mismatch: phase 1, pool 0");
+        assertEq(bonusRewarder.pendingToken(1, ALICE), expectedA1, "Alice mismatch: phase 1, pool 1");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB0, "Bob mismatch: phase 1, pool 0");
+        assertEq(bonusRewarder.pendingToken(1, BOB), expectedB1, "Bob mismatch: phase 1, pool 1");
+        // Alice withdraws 5 from pool#0 and opts in for pool#1 (PHASE 2)
+        withdraw({user: ALICE, pid: 0, amount: 5});
+        harvest({user: ALICE, pid: 1});
+        // Bob opts in for pool#0 and withdraws 8 from pool#1
+        harvest({user: BOB, pid: 0});
+        withdraw({user: BOB, pid: 1, amount: 8});
+        skip(phaseTime);
+        // Pool#0 balances: Alice = 5, Bob = 10
+        expectedA0 = (expectedP0 * 5) / 15;
+        expectedB0 = (expectedP0 * 10) / 15;
+        // Pool#1 balances: Alice = 10, Bob = 2
+        expectedA1 = (expectedP1 * 10) / 12;
+        expectedB1 = (expectedP1 * 2) / 12;
+        assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA0, "Alice mismatch: phase 2, pool 0");
+        assertEq(bonusRewarder.pendingToken(1, ALICE), expectedA1, "Alice mismatch: phase 2, pool 1");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB0, "Bob mismatch: phase 2, pool 0");
+        assertEq(bonusRewarder.pendingToken(1, BOB), expectedB1, "Bob mismatch: phase 2, pool 1");
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
