@@ -337,6 +337,7 @@ contract BonusRewarderTest is Test {
         uint256 expectedA;
         uint256 expectedB;
         uint256 expectedC;
+        (uint256 totalA, uint256 totalB, uint256 totalC) = (0, 0, 0);
         uint256 phaseTime = 1000;
         // Alice and Bob deposit before Rewarder is set up
         deposit({user: ALICE, pid: 0, amount: 10});
@@ -371,7 +372,9 @@ contract BonusRewarderTest is Test {
         // Alice withdraws everything, Carol deposits 5 more
         // New ratio is Alice : 0, Bob: 10, Carol : 6 (PHASE 3)
         withdraw({user: ALICE, pid: 0, amount: 9});
+        totalA += expectedA;
         deposit({user: CAROL, pid: 0, amount: 5});
+        totalC += expectedC;
         skip(phaseTime);
         expectedA = 0;
         // Bob didn't interact with the pool, so pending rewards roll over
@@ -380,6 +383,13 @@ contract BonusRewarderTest is Test {
         assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA, "Alice mismatch: phase 3");
         assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: phase 3");
         assertEq(bonusRewarder.pendingToken(0, CAROL), expectedC, "Carol mismatch: phase 3");
+        // Harvest remaining rewards and check total claimed
+        harvest({user: ALICE, pid: 0});
+        harvest({user: BOB, pid: 0});
+        harvest({user: CAROL, pid: 0});
+        assertEq(rewardToken.balanceOf(ALICE), totalA + expectedA, "Alice mismatch: total claimed rewards");
+        assertEq(rewardToken.balanceOf(BOB), totalB + expectedB, "Alice mismatch: total claimed rewards");
+        assertEq(rewardToken.balanceOf(CAROL), totalC + expectedC, "Alice mismatch: total claimed rewards");
     }
 
     function test_multiplePools() public {
@@ -388,6 +398,7 @@ contract BonusRewarderTest is Test {
         uint256 expectedA1 = 0;
         uint256 expectedB0 = 0;
         uint256 expectedB1 = 0;
+        (uint256 totalA, uint256 totalB) = (0, 0);
         uint256 phaseTime = 1000;
         // Alice and Bob deposit before Rewarder is set up
         deposit({user: ALICE, pid: 0, amount: 10});
@@ -423,10 +434,12 @@ contract BonusRewarderTest is Test {
         assertEq(bonusRewarder.pendingToken(1, BOB), expectedB1, "Bob mismatch: phase 1, pool 1");
         // Alice withdraws 5 from pool#0 and opts in for pool#1 (PHASE 2)
         withdraw({user: ALICE, pid: 0, amount: 5});
+        totalA += expectedA0;
         harvest({user: ALICE, pid: 1});
         // Bob opts in for pool#0 and withdraws 8 from pool#1
         harvest({user: BOB, pid: 0});
         withdraw({user: BOB, pid: 1, amount: 8});
+        totalB += expectedB1;
         skip(phaseTime);
         // Pool#0 balances: Alice = 5, Bob = 10
         expectedA0 = (expectedP0 * 5) / 15;
@@ -438,6 +451,15 @@ contract BonusRewarderTest is Test {
         assertEq(bonusRewarder.pendingToken(1, ALICE), expectedA1, "Alice mismatch: phase 2, pool 1");
         assertEq(bonusRewarder.pendingToken(0, BOB), expectedB0, "Bob mismatch: phase 2, pool 0");
         assertEq(bonusRewarder.pendingToken(1, BOB), expectedB1, "Bob mismatch: phase 2, pool 1");
+        // Harvest remaining rewards and check total claimed
+        harvest({user: ALICE, pid: 0});
+        harvest({user: ALICE, pid: 1});
+        totalA += expectedA0 + expectedA1;
+        harvest({user: BOB, pid: 0});
+        harvest({user: BOB, pid: 1});
+        totalB += expectedB0 + expectedB1;
+        assertEq(rewardToken.balanceOf(ALICE), totalA, "Alice mismatch: total claimed rewards");
+        assertEq(rewardToken.balanceOf(BOB), totalB, "Alice mismatch: total claimed rewards");
     }
 
     function test_singlePool_rewardDeadline() public {
