@@ -595,6 +595,50 @@ contract BonusRewarderTest is Test {
         bonusRewarder.claimEndedRewards({pid: 0, to: ALICE});
     }
 
+    function test_rewardsRunOut() public {
+        uint256 phaseTime = 1000;
+        uint256 initialBalance = 10000;
+        (uint256 totalA, uint256 totalB) = (0, 0);
+        deal(address(rewardToken), address(bonusRewarder), initialBalance);
+        test_setRewardPerSecond({_rewardPerSecond: 100});
+        _setupPools({amount: 1});
+        deposit({user: ALICE, pid: 0, amount: 1});
+        deposit({user: BOB, pid: 0, amount: 1});
+        skip(phaseTime);
+        uint256 expectedA = (phaseTime * rewardPerSecond) / 2;
+        uint256 expectedB = (phaseTime * rewardPerSecond) / 2;
+        assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA, "Alice mismatch: phase passed");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: phase passed");
+        // Bob withdraws, Alice harvests
+        withdraw({user: BOB, pid: 0, amount: 1});
+        // Bob interacts first and should receive all bonus tokens available
+        expectedB -= initialBalance;
+        totalB += initialBalance;
+        // No tokens to give to Alice
+        harvest({user: ALICE, pid: 0});
+        assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA, "Alice mismatch: after run out");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: after run out");
+        assertEq(rewardToken.balanceOf(ALICE), 0, "Alice mismatch: claimed after run out");
+        assertEq(rewardToken.balanceOf(BOB), initialBalance, "Bob mismatch: claimed after run out");
+        assertEq(rewardToken.balanceOf(address(bonusRewarder)), 0, "Rewarder mismatch: claimed after run out");
+        skip(phaseTime);
+        // Alice is the only one in the pool, Bob still has unpaid rewards
+        expectedA += (phaseTime * rewardPerSecond);
+        assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA, "Alice mismatch: phase after run out");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: phase after run out");
+        // Refill rewards
+        deal(address(rewardToken), address(bonusRewarder), 10**18);
+        // Both actors should get their missed rewards
+        harvest({user: ALICE, pid: 0});
+        harvest({user: BOB, pid: 0});
+        totalA += expectedA;
+        totalB += expectedB;
+        assertEq(bonusRewarder.pendingToken(0, ALICE), 0, "Alice mismatch: claim after refill");
+        assertEq(bonusRewarder.pendingToken(0, BOB), 0, "Bob mismatch: claim after refill");
+        assertEq(rewardToken.balanceOf(ALICE), totalA, "Alice mismatch: total claimed");
+        assertEq(rewardToken.balanceOf(BOB), totalB, "Bob mismatch: total claimed");
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                          USER INTERACTIONS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
