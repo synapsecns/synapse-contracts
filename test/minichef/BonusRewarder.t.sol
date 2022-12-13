@@ -20,6 +20,7 @@ contract BonusRewarderTest is Test {
     MiniChefV2 internal miniChef;
     BonusRewarder internal bonusRewarder;
 
+    uint256 internal rewardDeadline;
     uint256 internal rewardPerSecond;
     uint256 internal poolsAdded;
     uint256 internal totalAllocPoint;
@@ -42,6 +43,7 @@ contract BonusRewarderTest is Test {
     event LogSetPool(uint256 indexed pid, uint256 allocPoint);
     event LogUpdatePool(uint256 indexed pid, uint64 lastRewardTime, uint256 lpSupply, uint256 accRewardsPerShare);
     event LogRewardPerSecond(uint256 rewardPerSecond);
+    event LogRewardDeadline(uint256 rewardDeadline);
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                                SETUP                                 ║*▕
@@ -62,6 +64,7 @@ contract BonusRewarderTest is Test {
         }
         vm.label(address(miniChef), "MiniChef");
 
+        rewardDeadline = type(uint256).max;
         bonusRewarder = new BonusRewarder({
             _rewardToken: rewardToken,
             _rewardPerSecond: 0,
@@ -84,6 +87,7 @@ contract BonusRewarderTest is Test {
         assertEq(bonusRewarder.miniChefV2(), address(miniChef), "!miniChefV2");
         assertEq(bonusRewarder.owner(), OWNER, "!owner");
         assertEq(bonusRewarder.poolLength(), 0, "!poolLength");
+        assertEq(bonusRewarder.rewardDeadline(), type(uint256).max, "!rewardDeadline");
         assertEq(bonusRewarder.rewardPerSecond(), 0, "!rewardPerSecond");
         assertEq(bonusRewarder.totalAllocPoint(), 0, "!totalAllocPoint");
     }
@@ -118,6 +122,13 @@ contract BonusRewarderTest is Test {
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(caller);
         bonusRewarder.reclaimTokens(address(0), 0, address(0));
+    }
+
+    function test_setRewardDeadline_onlyOwner(address caller) public {
+        vm.assume(caller != OWNER);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        bonusRewarder.setRewardDeadline(0);
     }
 
     function test_setRewardPerSecond_onlyOwner(address caller) public {
@@ -182,6 +193,15 @@ contract BonusRewarderTest is Test {
         vm.prank(OWNER);
         bonusRewarder.reclaimTokens(address(0), 1, payable(OWNER));
         assertEq(OWNER.balance, 1, "ETH not reclaimed");
+    }
+
+    function test_setRewardDeadline(uint256 _rewardDeadline) public {
+        vm.expectEmit(true, true, true, true, address(bonusRewarder));
+        emit LogRewardDeadline(_rewardDeadline);
+        vm.prank(OWNER);
+        bonusRewarder.setRewardDeadline(_rewardDeadline);
+        assertEq(bonusRewarder.rewardDeadline(), _rewardDeadline, "!rewardDeadline");
+        rewardDeadline = _rewardDeadline;
     }
 
     function test_setRewardPerSecond(uint32 _rewardPerSecond) public {

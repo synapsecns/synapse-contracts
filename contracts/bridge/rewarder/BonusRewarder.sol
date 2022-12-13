@@ -67,6 +67,8 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     uint256 public totalAllocPoint;
     /// @notice Amount of rewardToken emitted per second
     uint256 public rewardPerSecond;
+    /// @notice Timestamp when the bonus rewards will be stopped
+    uint256 public rewardDeadline;
     /// @dev Flag indicating that a lock-protected function is entered.
     uint256 internal unlocked;
 
@@ -79,6 +81,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     event LogSetPool(uint256 indexed pid, uint256 allocPoint);
     event LogUpdatePool(uint256 indexed pid, uint64 lastRewardTime, uint256 lpSupply, uint256 accRewardsPerShare);
     event LogRewardPerSecond(uint256 rewardPerSecond);
+    event LogRewardDeadline(uint256 rewardDeadline);
     event LogInit();
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -93,6 +96,8 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         rewardToken = _rewardToken;
         rewardPerSecond = _rewardPerSecond;
         miniChefV2 = _miniChefV2;
+        // Bonus rewards are not time limited by default
+        rewardDeadline = type(uint256).max;
         unlocked = 1;
     }
 
@@ -218,6 +223,11 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     function setRewardPerSecond(uint256 _rewardPerSecond) external onlyOwner {
         rewardPerSecond = _rewardPerSecond;
         emit LogRewardPerSecond(_rewardPerSecond);
+    }
+
+    function setRewardDeadline(uint256 _rewardDeadline) external onlyOwner {
+        rewardDeadline = _rewardDeadline;
+        emit LogRewardDeadline(_rewardDeadline);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
