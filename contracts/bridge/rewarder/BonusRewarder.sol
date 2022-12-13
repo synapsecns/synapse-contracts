@@ -154,7 +154,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         uint256 pending;
         // Calculate pending user bonus token rewards, if user triggered {onSynapseReward} before.
         // Otherwise, this is considered a user "deposit" into BonusRewarder.
-        if (user.amount > 0) {
+        if (user.amount > 0 || user.unpaidRewards > 0) {
             // First, we calculate total accumulated rewards for `user.amount` LP tokens.
             // Then, we subtract the amount of accumulated rewards at the last user interaction.
             // That gives us the amount of token rewards earned since last interaction.
