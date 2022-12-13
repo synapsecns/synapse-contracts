@@ -440,6 +440,103 @@ contract BonusRewarderTest is Test {
         assertEq(bonusRewarder.pendingToken(1, BOB), expectedB1, "Bob mismatch: phase 2, pool 1");
     }
 
+    function test_singlePool_rewardDeadline() public {
+        deal(address(rewardToken), address(bonusRewarder), 10**18);
+        uint256 rewardPeriod = 1000;
+        test_setRewardPerSecond({_rewardPerSecond: 100});
+        _setupPools({amount: 1});
+        // Alice and Bob deposit 1 token each
+        deposit({user: ALICE, pid: 0, amount: 1});
+        deposit({user: BOB, pid: 0, amount: 1});
+        test_setRewardDeadline(block.timestamp + rewardPeriod);
+        skip(2 * rewardPeriod);
+        // 2 "reward periods" have passed, but rewards are awarded only before the deadline
+        uint256 expectedA = (rewardPerSecond * rewardPeriod) / 2;
+        uint256 expectedB = (rewardPerSecond * rewardPeriod) / 2;
+        assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA, "Alice mismatch: post deadline");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: post deadline");
+        // Alice harvests the rewards
+        harvest({user: ALICE, pid: 0});
+        skip(rewardPeriod);
+        // A total of 2 "reward periods" have passed since the reward deadline
+        // No new pending rewards
+        assertEq(bonusRewarder.pendingToken(0, ALICE), 0, "Alice mismatch: post deadline");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: post deadline");
+        assertEq(rewardToken.balanceOf(ALICE), expectedA, "Alice mismatch: total claimed rewards");
+        assertEq(rewardToken.balanceOf(BOB), 0, "Bob mismatch: total claimed rewards");
+    }
+
+    function test_extendDeadline_applyRewardsSinceDeadline() public {
+        uint256 rewardPeriod = 1000;
+        test_singlePool_rewardDeadline();
+        // Rewards from last test
+        uint256 totalA = (rewardPerSecond * rewardPeriod) / 2;
+        uint256 totalB = 0;
+        // Extend the deadline: workflow 1
+        {
+            // extended deadline by one more period
+            test_setRewardDeadline(block.timestamp + rewardPeriod);
+        }
+        // (2 * rewardPeriod) passed since last deadline: rewards are applied retroactively
+        uint256 expectedA = (rewardPerSecond * (2 * rewardPeriod)) / 2;
+        // Bob hasn't claimed tokens in the first test
+        uint256 expectedB = totalA + (rewardPerSecond * (2 * rewardPeriod)) / 2;
+        assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA, "Alice mismatch: deadline extended");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: deadline extended");
+        // Bob harvests rewards
+        harvest({user: BOB, pid: 0});
+        totalB += expectedB;
+        // Skip 2 more periods: but rewards were active only during the first one
+        skip(2 * rewardPeriod);
+        expectedA += (rewardPerSecond * rewardPeriod) / 2;
+        expectedB = (rewardPerSecond * rewardPeriod) / 2;
+        assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA, "Alice mismatch: post new deadline");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: post new deadline");
+        // Alice harvests rewards
+        harvest({user: ALICE, pid: 0});
+        totalA += expectedA;
+        assertEq(rewardToken.balanceOf(ALICE), totalA, "Alice mismatch: total claimed rewards");
+        assertEq(rewardToken.balanceOf(BOB), totalB, "Bob mismatch: total claimed rewards");
+    }
+
+    function test_extendDeadline_denyRewardsSinceDeadline() public {
+        uint256 rewardPeriod = 1000;
+        test_singlePool_rewardDeadline();
+        // Rewards from last test
+        uint256 totalA = (rewardPerSecond * rewardPeriod) / 2;
+        uint256 totalB = 0;
+        uint256 expectedA = 0;
+        uint256 expectedB = (rewardPerSecond * rewardPeriod) / 2;
+        // Extend the deadline: workflow 2
+        {
+            vm.startPrank(OWNER);
+            bonusRewarder.updatePool(0);
+            bonusRewarder.setRewardPerSecond(0);
+            // extended deadline by one more period
+            bonusRewarder.setRewardDeadline(block.timestamp + rewardPeriod);
+            bonusRewarder.updatePool(0);
+            bonusRewarder.setRewardPerSecond(rewardPerSecond);
+            vm.stopPrank();
+        }
+        // pending rewards should not change
+        assertEq(bonusRewarder.pendingToken(0, ALICE), 0, "Alice mismatch: deadline extended");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: deadline extended");
+        // Bob harvests rewards
+        harvest({user: BOB, pid: 0});
+        totalB += expectedB;
+        // Skip 2 more periods: but rewards were active only during the first one
+        skip(2 * rewardPeriod);
+        expectedA += (rewardPerSecond * rewardPeriod) / 2;
+        expectedB = (rewardPerSecond * rewardPeriod) / 2;
+        assertEq(bonusRewarder.pendingToken(0, ALICE), expectedA, "Alice mismatch: post new deadline");
+        assertEq(bonusRewarder.pendingToken(0, BOB), expectedB, "Bob mismatch: post new deadline");
+        // Alice harvests rewards
+        harvest({user: ALICE, pid: 0});
+        totalA += expectedA;
+        assertEq(rewardToken.balanceOf(ALICE), totalA, "Alice mismatch: total claimed rewards");
+        assertEq(rewardToken.balanceOf(BOB), totalB, "Bob mismatch: total claimed rewards");
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                          USER INTERACTIONS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/

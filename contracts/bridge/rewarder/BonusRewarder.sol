@@ -225,6 +225,13 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         emit LogRewardPerSecond(_rewardPerSecond);
     }
 
+    /// @notice Sets the deadline timestamp, after which bonus rewards will not be emitted.
+    /// @dev Two possible workflows for extending the deadline, once it is reached:
+    /// 1. setRewardDeadline(newDeadline)
+    ///    This will also apply bonus rewards fot the time period between last rewardDeadline and block.timestamp
+    /// 2. massUpdatePools() -> setRewardPerSecond(0) ->
+    ///    setRewardDeadline(newDeadline) -> massUpdatePools() -> setRewardPerSecond(rate)
+    ///    This will NOT apply bonus rewards fot the time period between last rewardDeadline and block.timestamp
     function setRewardDeadline(uint256 _rewardDeadline) external onlyOwner {
         rewardDeadline = _rewardDeadline;
         emit LogRewardDeadline(_rewardDeadline);
@@ -248,12 +255,13 @@ contract BonusRewarder is IRewarder, BoringOwnable {
     /// @return pool Returns the pool that was updated.
     function updatePool(uint256 pid) public returns (BonusPoolInfo memory pool) {
         pool = poolInfo[pid];
-        if (block.timestamp > pool.lastRewardTime) {
+        uint256 rewardTime = _getRewardTime();
+        if (rewardTime > pool.lastRewardTime) {
             // Get total amount of pool LP tokens staked in BonusRewarder
             uint256 lpSupply = pool.totalLpSupply;
             if (lpSupply > 0) {
                 // How much time passed since last calculation
-                uint256 time = block.timestamp.sub(pool.lastRewardTime);
+                uint256 time = rewardTime.sub(pool.lastRewardTime);
                 // Calculate bonus token rewards for the pool for the last period
                 uint256 bonusTokenReward = time.mul(rewardPerSecond).mul(pool.allocPoint) / totalAllocPoint;
                 // Update total rewards for 1 LP token scaled up by ACC_TOKEN_PRECISION
@@ -261,7 +269,7 @@ contract BonusRewarder is IRewarder, BoringOwnable {
                     (bonusTokenReward.mul(ACC_TOKEN_PRECISION) / lpSupply).to128()
                 );
             }
-            pool.lastRewardTime = block.timestamp.to64();
+            pool.lastRewardTime = rewardTime.to64();
             poolInfo[pid] = pool;
             emit LogUpdatePool(pid, pool.lastRewardTime, lpSupply, pool.accRewardsPerShare);
         }
@@ -297,9 +305,10 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         uint256 accRewardsPerShare = pool.accRewardsPerShare;
         // Get total amount of pool LP tokens staked in BonusRewarder
         uint256 lpSupply = pool.totalLpSupply;
-        if (block.timestamp > pool.lastRewardTime && lpSupply != 0) {
+        uint256 rewardTime = _getRewardTime();
+        if (rewardTime > pool.lastRewardTime && lpSupply != 0) {
             // How much time passed since last calculation
-            uint256 time = block.timestamp.sub(pool.lastRewardTime);
+            uint256 time = rewardTime.sub(pool.lastRewardTime);
             // Calculate bonus token rewards for the pool for the last period
             uint256 bonusTokenReward = time.mul(rewardPerSecond).mul(pool.allocPoint) / totalAllocPoint;
             // Update total rewards for 1 LP token scaled up by ACC_TOKEN_PRECISION
@@ -312,5 +321,13 @@ contract BonusRewarder is IRewarder, BoringOwnable {
         pending = (user.amount.mul(accRewardsPerShare) / ACC_TOKEN_PRECISION).sub(user.rewardDebt).add(
             user.unpaidRewards
         );
+    }
+
+    /// @notice Returns the last applicable reward time, a minimum of:
+    /// current timestamp and reward deadline timestamp
+    function _getRewardTime() internal view returns (uint256 time) {
+        time = rewardDeadline;
+        // solhint-disable-next-line not-rely-on-time
+        if (block.timestamp < time) time = block.timestamp;
     }
 }
