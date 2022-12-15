@@ -9,7 +9,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get, execute, getOrNull, log, save } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  if ((includes([CHAIN_ID.OPTIMISM], await getChainId()))) {
+  if (includes([CHAIN_ID.OPTIMISM], await getChainId())) {
     if ((await getOrNull("PLS")) == null) {
       const receipt = await execute(
         "SynapseERC20Factory",
@@ -27,11 +27,9 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         // ).address,
       );
 
-      const newTokenEvent = receipt?.events?.find(
-        (e: any) => e["event"] == "SynapseERC20Created",
-      )
-      const tokenAddress = newTokenEvent["args"]["contractAddress"]
-      log(`deployed PLS token at ${tokenAddress}`)
+      const newTokenEvent = receipt?.events?.find((e: any) => e["event"] == "SynapseERC20Created");
+      const tokenAddress = newTokenEvent["args"]["contractAddress"];
+      log(`deployed PLS token at ${tokenAddress}`);
 
       await save("PLS", {
         abi: (await get("SynapseERC20")).abi, // Generic ERC20 ABI
@@ -69,5 +67,5 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   }
 };
 
-export default func
-func.tags = ["PLS"]
+export default func;
+func.tags = ["PLS"];
