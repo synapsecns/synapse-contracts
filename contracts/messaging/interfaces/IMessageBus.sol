@@ -6,7 +6,6 @@ interface IMessageBus {
     /**
      * @notice Sends a message to a receiving contract address on another chain.
      * Sender must make sure that the message is unique and not a duplicate message.
-     * Unspent gas fees would be transferred back to tx.origin.
      * @param _receiver The bytes32 address of the destination contract to be called
      * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
      * @param _message The arbitrary payload to pass to the destination chain receiver
@@ -20,24 +19,6 @@ interface IMessageBus {
     ) external payable;
 
     /**
-     * @notice Sends a message to a receiving contract address on another chain.
-     * Sender must make sure that the message is unique and not a duplicate message.
-     * Unspent gas fees will be refunded to specified address.
-     * @param _receiver The bytes32 address of the destination contract to be called
-     * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains
-     * @param _message The arbitrary payload to pass to the destination chain receiver
-     * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits
-     * @param _refundAddress Address that will receive unspent gas fees
-     */
-    function sendMessage(
-        bytes32 _receiver,
-        uint256 _dstChainId,
-        bytes calldata _message,
-        bytes calldata _options,
-        address payable _refundAddress
-    ) external payable;
-
-    /**
      * @notice Relayer executes messages through an authenticated method to the destination receiver based on the originating transaction on source chain
      * @param _srcChainId Originating chain ID - typically a standard EVM chain ID, but may refer to a Synapse-specific chain ID on nonEVM chains
      * @param _srcAddress Originating bytes address of the message sender on the srcChain
@@ -45,7 +26,7 @@ interface IMessageBus {
      * @param _gasLimit Gas limit to be passed alongside the message, depending on the fee paid on srcChain
      * @param _nonce Nonce from origin chain
      * @param _message Arbitrary message payload to pass to the destination chain receiver
-     * @param _messageId MessageId for uniqueness of messages (alongside nonce)
+     * @param _messageId MessageId for uniqueness of messages (alongisde nonce)
      */
     function executeMessage(
         uint256 _srcChainId,
@@ -61,9 +42,7 @@ interface IMessageBus {
      * @notice Returns srcGasToken fee to charge in wei for the cross-chain message based on the gas limit
      * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits. Contains data on gas limit to submit tx with.
      */
-    function estimateFee(uint256 _dstChainId, bytes calldata _options)
-        external
-        returns (uint256);
+    function estimateFee(uint256 _dstChainId, bytes calldata _options) external returns (uint256);
 
     /**
      * @notice Withdraws message fee in the form of native gas token.

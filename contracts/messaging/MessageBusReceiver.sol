@@ -3,11 +3,10 @@
 pragma solidity 0.8.13;
 
 import "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
-import "@openzeppelin/contracts-4.5.0/security/Pausable.sol";
 import "./interfaces/IAuthVerifier.sol";
 import "./interfaces/ISynMessagingReceiver.sol";
 
-contract MessageBusReceiver is Ownable, Pausable {
+contract MessageBusReceiver is Ownable {
     address public authVerifier;
 
     enum TxStatus {
@@ -17,7 +16,7 @@ contract MessageBusReceiver is Ownable, Pausable {
     }
 
     // Store all successfully executed messages
-    mapping(bytes32 => TxStatus) internal executedMessages;
+    mapping(bytes32 => TxStatus) executedMessages;
 
     // TODO: Rename to follow one standard convention -> Send -> Receive?
     event Executed(
@@ -33,11 +32,7 @@ contract MessageBusReceiver is Ownable, Pausable {
         authVerifier = _authVerifier;
     }
 
-    function getExecutedMessage(bytes32 _messageId)
-        external
-        view
-        returns (TxStatus)
-    {
+    function getExecutedMessage(bytes32 _messageId) external view returns (TxStatus) {
         return executedMessages[_messageId];
     }
 
@@ -58,15 +53,15 @@ contract MessageBusReceiver is Ownable, Pausable {
         uint256 _nonce,
         bytes calldata _message,
         bytes32 _messageId
-    ) external whenNotPaused {
-        // In order to guarantee that an individual message is only executed once, a messageId is passed
+    ) external {
+        // In order to guarentee that an individual message is only executed once, a messageId is passed
         // enforce that this message ID hasn't already been tried ever
-        require(
-            executedMessages[_messageId] == TxStatus.Null,
-            "Message already executed"
-        );
+        bytes32 messageId = _messageId;
+        require(executedMessages[messageId] == TxStatus.Null, "Message already executed");
         // Authenticate executeMessage, will revert if not authenticated
         IAuthVerifier(authVerifier).msgAuth(abi.encode(msg.sender));
+        // Message is now in-flight, adjust status
+        // executedMessages[messageId] = TxStatus.Pending;
 
         TxStatus status;
         try
@@ -81,31 +76,20 @@ contract MessageBusReceiver is Ownable, Pausable {
             status = TxStatus.Success;
         } catch (bytes memory reason) {
             // call hard reverted & failed
-            emit CallReverted(_getRevertMsg(reason));
+            emit CallReverted(getRevertMsg(reason));
             status = TxStatus.Fail;
         }
 
-        executedMessages[_messageId] = status;
-        emit Executed(
-            _messageId,
-            status,
-            _dstAddress,
-            uint64(_srcChainId),
-            uint64(_nonce)
-        );
+        executedMessages[messageId] = status;
+        emit Executed(messageId, status, _dstAddress, uint64(_srcChainId), uint64(_nonce));
     }
 
     /** HELPER VIEW FUNCTION */
     // https://ethereum.stackexchange.com/a/83577
     // https://github.com/Uniswap/v3-periphery/blob/v1.0.0/contracts/base/Multicall.sol
-    function _getRevertMsg(bytes memory _returnData)
-        internal
-        pure
-        returns (string memory)
-    {
+    function getRevertMsg(bytes memory _returnData) private pure returns (string memory) {
         // If the _res length is less than 68, then the transaction failed silently (without a revert message)
         if (_returnData.length < 68) return "Transaction reverted silently";
-        // solhint-disable-next-line
         assembly {
             // Slice the sighash.
             _returnData := add(_returnData, 0x04)
@@ -115,14 +99,11 @@ contract MessageBusReceiver is Ownable, Pausable {
 
     /** CONTRACT CONFIG */
 
-    function updateMessageStatus(bytes32 _messageId, TxStatus _status)
-        external
-        onlyOwner
-    {
+    function updateMessageStatus(bytes32 _messageId, TxStatus _status) public onlyOwner {
         executedMessages[_messageId] = _status;
     }
 
-    function updateAuthVerifier(address _authVerifier) external onlyOwner {
+    function updateAuthVerifier(address _authVerifier) public onlyOwner {
         require(_authVerifier != address(0), "Cannot set to 0");
         authVerifier = _authVerifier;
     }

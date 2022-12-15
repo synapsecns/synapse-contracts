@@ -16,11 +16,7 @@ contract AuthVerifier is Ownable {
      * @param _authData A bytes32 address encoded via abi.encode(address)
      * @return authenticated returns true if bytes data submitted and decoded to the address is correct. Reverts if check fails.
      */
-    function msgAuth(bytes calldata _authData)
-        external
-        view
-        returns (bool authenticated)
-    {
+    function msgAuth(bytes calldata _authData) external view returns (bool authenticated) {
         address caller = abi.decode(_authData, (address));
         require(caller == nodegroup, "Unauthenticated caller");
         return true;
@@ -30,7 +26,7 @@ contract AuthVerifier is Ownable {
      * @notice Permissioned method to support upgrades to the library
      * @param _nodegroup address which has authentication to execute messages
      */
-    function setNodeGroup(address _nodegroup) external onlyOwner {
+    function setNodeGroup(address _nodegroup) public onlyOwner {
         nodegroup = _nodegroup;
     }
 }
