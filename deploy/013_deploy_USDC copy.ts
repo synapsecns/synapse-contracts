@@ -1,6 +1,6 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { CHAIN_ID } from "../../utils/network";
+import { CHAIN_ID } from "../utils/network";
 import { includes } from "lodash";
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
@@ -8,8 +8,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get, execute, getOrNull, log, save } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  if (includes([CHAIN_ID.DFK, CHAIN_ID.KLATYN], await getChainId())) {
-    if ((await getOrNull("BTCb")) == null) {
+  if (includes([CHAIN_ID.KLATYN], await getChainId())) {
+    if ((await getOrNull("DFK_USDC")) == null) {
       const receipt = await execute(
         "SynapseERC20Factory",
         { from: deployer, log: true },
@@ -17,23 +17,23 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (
           await get("SynapseERC20")
         ).address,
-        "Bitcoin",
-        "BTC.b",
-        "8",
+        "USD Coin",
+        "USDC",
+        (await getChainId()) === CHAIN_ID.DFK ? "18" : "6",
         deployer
       );
 
       const newTokenEvent = receipt?.events?.find((e: any) => e["event"] == "SynapseERC20Created");
       const tokenAddress = newTokenEvent["args"]["contractAddress"];
-      log(`deployed BTCb token at ${tokenAddress}`);
+      log(`deployed USDC token at ${tokenAddress}`);
 
-      await save("BTCb", {
+      await save("DFK_USDC", {
         abi: (await get("SynapseERC20")).abi, // Generic ERC20 ABI
         address: tokenAddress,
       });
 
       await execute(
-        "BTCb",
+        "DFK_USDC",
         { from: deployer, log: true },
         "grantRole",
         "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6",
@@ -43,7 +43,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       );
 
       await execute(
-        "BTCb",
+        "DFK_USDC",
         { from: deployer, log: true },
         "grantRole",
         "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -53,7 +53,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       );
 
       await execute(
-        "BTCb",
+        "DFK_USDC",
         { from: deployer, log: true },
         "renounceRole",
         "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -64,4 +64,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 
 export default func;
-func.tags = ["DFK_BTCb"];
+func.tags = ["DFK_USDC"];

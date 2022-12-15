@@ -31,6 +31,15 @@ contract GasFeePricing is Ownable {
     // DstChainId = 53935
     // DFK Chain set 1 gwei = 1000000000
     // JEWEL / ONE = 20000000000000000000
+
+    // DstChainId = 8217
+    // Klaytn Gwei set to 250000000000
+    // KLAYTN / JEWEL = 1200000000000000000
+
+    // DstchainId = 53935
+    // DFK Chain set to 1 gwei
+    // JEWEL / KLAYTN = 900000000000000000
+
     function setCostPerChain(
         uint256 _dstChainId,
         uint256 _gasUnitPrice,

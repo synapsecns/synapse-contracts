@@ -25,6 +25,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       heroes: "0x5F753dcDf9b1AD9AabC1346614D1f4746fd6Ce5C",
       auction: "0x65DEA93f7b886c33A78c10343267DD39727778c2",
     },
+    [CHAIN_ID.KLATYN]: {
+      heroes: "0x268CC8248FFB72Cd5F3e73A9a20Fa2FF40EfbA61",
+      auction: "0xA2cef1763e59198025259d76Ce8F9E60d27B17B5",
+    },
   };
 
   // TESTNET
@@ -42,7 +46,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   }
 
   // MAINNET
-  if (includes([CHAIN_ID.DFK, CHAIN_ID.HARMONY], chainId)) {
+  if (includes([CHAIN_ID.DFK, CHAIN_ID.HARMONY, CHAIN_ID.KLATYN], chainId)) {
     const heroBridgeDeployResult = await deploy("HeroBridgeUpgradeable", {
       from: deployer,
       log: true,

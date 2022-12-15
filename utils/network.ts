@@ -9,6 +9,7 @@ export const CHAIN_ID = {
   FANTOM: "250",
   BOBA: "288",
   DFK_TESTNET: "335",
+  KLAYTN_TESTNET: "1001",
   METIS: "1088",
   MOONBEAM: "1284",
   MOONRIVER: "1285",

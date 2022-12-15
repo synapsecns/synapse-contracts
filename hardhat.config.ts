@@ -117,6 +117,10 @@ let config: HardhatUserConfig = {
       url: "https://cypress.chain.thebifrost.io/",
       gasPrice: 250 * 1000000000,
     },
+    klaytn_testnet: {
+      url: "https://api.baobab.klaytn.net:8651",
+      gasPrice: 250 * 1000000000,
+    },
     canto: {
       url: "https://canto.slingshot.finance",
     },
@@ -237,6 +241,7 @@ if (process.env.PRIVATE_KEYS) {
     "fuji",
     "goerli",
     "klatyn",
+    "klaytn_testnet",
     "canto",
     "dogechain",
   ];
