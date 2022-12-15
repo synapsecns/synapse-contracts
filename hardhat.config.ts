@@ -50,6 +50,9 @@ let config: HardhatUserConfig = {
       url: "https://polygon-mainnet.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55",
       gasPrice: 6 * 1000000000,
     },
+    dogechain: {
+      url: "https://rpc-us.dogechain.dog/",
+    },
     polygon: {
       url: "https://polygon-rpc.com",
       gasPrice: 400 * 1000000000,
@@ -219,6 +222,7 @@ if (process.env.PRIVATE_KEYS) {
     "fuji",
     "goerli",
     "klatyn",
+    "dogechain",
   ];
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {

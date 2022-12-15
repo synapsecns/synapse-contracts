@@ -8,8 +8,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get, execute, getOrNull, log, save } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  if (includes([CHAIN_ID.DFK, CHAIN_ID.KLATYN, CHAIN_ID.DOGECHAIN], await getChainId())) {
-    if ((await getOrNull("USDC")) == null) {
+  if (includes([CHAIN_ID.DOGECHAIN], await getChainId())) {
+    if ((await getOrNull("BUSD")) == null) {
       const receipt = await execute(
         "SynapseERC20Factory",
         { from: deployer, log: true },
@@ -17,23 +17,26 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (
           await get("SynapseERC20")
         ).address,
-        "USD Coin",
-        "USDC",
-        (await getChainId()) === CHAIN_ID.DFK ? "18" : "6",
+        "Binance USD",
+        "BUSD",
+        "18",
         deployer
+        // (
+        //   await get("DevMultisig")
+        // ).address,
       );
 
       const newTokenEvent = receipt?.events?.find((e: any) => e["event"] == "SynapseERC20Created");
       const tokenAddress = newTokenEvent["args"]["contractAddress"];
-      log(`deployed USDC token at ${tokenAddress}`);
+      log(`deployed BUSD token at ${tokenAddress}`);
 
-      await save("USDC", {
+      await save("BUSD", {
         abi: (await get("SynapseERC20")).abi, // Generic ERC20 ABI
         address: tokenAddress,
       });
 
       await execute(
-        "USDC",
+        "BUSD",
         { from: deployer, log: true },
         "grantRole",
         "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6",
@@ -43,7 +46,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       );
 
       await execute(
-        "USDC",
+        "BUSD",
         { from: deployer, log: true },
         "grantRole",
         "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -53,7 +56,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       );
 
       await execute(
-        "USDC",
+        "BUSD",
         { from: deployer, log: true },
         "renounceRole",
         "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -64,4 +67,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 
 export default func;
-func.tags = ["USDC"];
+func.tags = ["BUSD"];
