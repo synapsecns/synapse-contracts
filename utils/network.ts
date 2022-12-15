@@ -13,6 +13,7 @@ export const CHAIN_ID = {
   MOONBEAM: "1284",
   MOONRIVER: "1285",
   CANTO: "7700",
+  DOGECHAIN: "2000",
   KLATYN: "8217",
   HARDHAT: "31337",
   FUJI: "43113",
