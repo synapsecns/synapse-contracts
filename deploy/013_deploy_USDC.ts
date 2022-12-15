@@ -19,7 +19,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         ).address,
         "USD Coin",
         "USDC",
-        (await getChainId()) === CHAIN_ID.DFK ? "18" : "6"
+        (await getChainId()) === CHAIN_ID.DFK ? "18" : "6",
+        deployer
       );
 
       const newTokenEvent = receipt?.events?.find((e: any) => e["event"] == "SynapseERC20Created");
