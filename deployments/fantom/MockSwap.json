@@ -1,0 +1,108 @@
+{
+  "address": "0xFD7FD973010EBA29108049aAc9A8Ff297A1B7e58",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "calculateSwap",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "swap",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "payable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x1622e646df346f2f3e1311e3fda5873642de0c87fe7916526301de39187358c5",
+  "receipt": {
+    "to": null,
+    "from": "0xb104bCbFe8B143804d8cfE92e9f100a3270D1E55",
+    "contractAddress": "0xFD7FD973010EBA29108049aAc9A8Ff297A1B7e58",
+    "transactionIndex": 36,
+    "gasUsed": "118999",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0x0002b0a600000455ddf20b18f3dee93ea0977627244f3c786f80acc9d543fe53",
+    "transactionHash": "0x1622e646df346f2f3e1311e3fda5873642de0c87fe7916526301de39187358c5",
+    "logs": [],
+    "blockNumber": 52029806,
+    "cumulativeGasUsed": "3824392",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [],
+  "solcInputHash": "758096ecd3d06e06616ed8b113dfbf80",
+  "metadata": "{\"compiler\":{\"version\":\"0.6.12+commit.27d51765\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"calculateSwap\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"swap\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"payable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/bridge/wrappers/swap/MockSwap.sol\":\"MockSwap\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":10000},\"remappings\":[]},\"sources\":{\"contracts/bridge/wrappers/swap/MockSwap.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.6.12;\\n\\ncontract MockSwap {\\n    function calculateSwap(\\n        uint8,\\n        uint8,\\n        uint256\\n    ) external pure returns (uint256) {\\n        return 0;\\n    }\\n\\n    function swap(\\n        uint8,\\n        uint8,\\n        uint256,\\n        uint256,\\n        uint256\\n    ) external payable returns (uint256) {\\n        // Using payable saves a bit of gas here\\n        // We always revert, so this will not lead to locked ether\\n        revert(\\\"\\\");\\n    }\\n}\\n\",\"keccak256\":\"0xdf90f5b3819480aaf287c72cbb2ecb0506b1c4ec163e2ba1005adbb3fe65b319\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b50610131806100206000396000f3fe60806040526004361060265760003560e01c80639169558614602b578063a95b089f146076575b600080fd5b6064600480360360a0811015603f57600080fd5b5060ff81358116916020810135909116906040810135906060810135906080013560af565b60408051918252519081900360200190f35b348015608157600080fd5b50606460048036036060811015609657600080fd5b5060ff81358116916020810135909116906040013560f2565b604080517f08c379a00000000000000000000000000000000000000000000000000000000081526020600482015260006024820181905291519081900360640190fd5b6000939250505056fea26469706673582212203e9babea9ee5d1c0b25685288489501736e4c992e7346893236352828c95eaa564736f6c634300060c0033",
+  "deployedBytecode": "0x60806040526004361060265760003560e01c80639169558614602b578063a95b089f146076575b600080fd5b6064600480360360a0811015603f57600080fd5b5060ff81358116916020810135909116906040810135906060810135906080013560af565b60408051918252519081900360200190f35b348015608157600080fd5b50606460048036036060811015609657600080fd5b5060ff81358116916020810135909116906040013560f2565b604080517f08c379a00000000000000000000000000000000000000000000000000000000081526020600482015260006024820181905291519081900360640190fd5b6000939250505056fea26469706673582212203e9babea9ee5d1c0b25685288489501736e4c992e7346893236352828c95eaa564736f6c634300060c0033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  }
+}
