@@ -17,3 +17,6 @@ forge test --match-contract "$1.*TestOpt$" --fork-url $OPTIMISM_API --fork-block
 
 # Test contracts ending with exactly "TestMovr" require Moonriver RPC and block number: 2022-04-21
 forge test --match-contract "$1.*TestMovr$" --fork-url $MOVR_API --fork-block-number 1730000 -vvv || exit 1
+
+# Test contracts ending with exactly "TestCanto" require Canto RPC and block number: 2022-12-02
+forge test --match-contract "$1.*TestCanto$" --fork-url $CANTO_API --fork-block-number 1894000 -vvv || exit 1

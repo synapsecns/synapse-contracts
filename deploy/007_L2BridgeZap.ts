@@ -134,6 +134,22 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     });
   }
 
+  if ((await getChainId()) === CHAIN_ID.CANTO) {
+    await deploy("L2BridgeZap", {
+      from: deployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+      args: [
+        "0x0000000000000000000000000000000000000000",
+        (await get("CantoSwapWrapper")).address,
+        (await get("nUSD")).address,
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        (await get("SynapseBridge")).address,
+      ],
+    });
+  }
+
   if ((await getChainId()) === CHAIN_ID.MOONRIVER) {
     await deploy("L2BridgeZap", {
       contract: "MoonriverBridgeZap",
@@ -157,7 +173,23 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       log: true,
       skipIfAlreadyDeployed: true,
       args: [
-        (await get("WKLAY")).address,
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        (await get("SynapseBridge")).address,
+      ],
+    });
+  }
+
+  if ((await getChainId()) === CHAIN_ID.DOGECHAIN) {
+    await deploy("L2BridgeZap", {
+      from: deployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+      args: [
+        "0x0000000000000000000000000000000000000000",
         "0x0000000000000000000000000000000000000000",
         "0x0000000000000000000000000000000000000000",
         "0x0000000000000000000000000000000000000000",
