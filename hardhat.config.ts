@@ -117,6 +117,9 @@ let config: HardhatUserConfig = {
       url: "https://cypress.chain.thebifrost.io/",
       gasPrice: 250 * 1000000000,
     },
+    canto: {
+      url: "https://canto.slingshot.finance",
+    },
   },
   paths: {
     artifacts: "./build/artifacts",
@@ -153,6 +156,9 @@ let config: HardhatUserConfig = {
       },
       {
         version: "0.8.3",
+      },
+      {
+        version: "0.4.25",
       },
       {
         version: "0.4.24",
@@ -222,6 +228,7 @@ if (process.env.PRIVATE_KEYS) {
     "fuji",
     "goerli",
     "klatyn",
+    "canto",
     "dogechain",
   ];
   Object.keys(config.networks).forEach((network) => {
