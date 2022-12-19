@@ -15,6 +15,7 @@ contract BridgeZapTest is Utilities06 {
 
     uint256 internal constant ETH_CHAINID = 1;
     uint256 internal constant OPT_CHAINID = 10;
+    uint256 internal constant DEADLINE = 4815162342;
 
     SynapseBridge internal bridge;
     SwapQuoter internal quoter;
@@ -216,6 +217,168 @@ contract BridgeZapTest is Utilities06 {
 
     function test_sb_zapAndDeposit_nUSD() public {
         // TODO: add support for zapping into nUSD on Ethereum
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                         TESTS: BRIDGE & SWAP                         ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+    /// @notice Bridge & Swap tests are prefixed test_bs
+
+    function test_bs_depositAndSwap() public {
+        uint256 amount = 10**18;
+        zap.addDepositTokens(_castToArray(address(weth)));
+        SwapQuery memory emptyQuery;
+        // neth -> weth on dest chain
+        uint256 amountOut = ISwap(nEthPool).calculateSwap(0, 1, amount);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(neth), address(weth), amount);
+        destQuery.deadline = DEADLINE;
+        vm.expectEmit(true, true, true, true);
+        emit TokenDepositAndSwap({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(weth),
+            amount: amount,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: amountOut,
+            deadline: DEADLINE
+        });
+        vm.prank(USER);
+        // Bridge weth, swap neth -> weth on dest chain
+        zap.bridge({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function test_bs_depositETHAndSwap() public {
+        // Make sure user has no WETH
+        _unwrapUserWETH();
+        uint256 amount = 10**18;
+        // neth -> weth on dest chain
+        uint256 amountOut = ISwap(nEthPool).calculateSwap(0, 1, amount);
+        zap.addDepositTokens(_castToArray(address(weth)));
+        SwapQuery memory emptyQuery;
+        SwapQuery memory destQuery = quoter.getAmountOut(address(neth), address(weth), amount);
+        destQuery.deadline = DEADLINE;
+        vm.expectEmit(true, true, true, true);
+        emit TokenDepositAndSwap({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(weth),
+            amount: amount,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: amountOut,
+            deadline: DEADLINE
+        });
+        vm.prank(USER);
+        // Wrap ETH, bridge weth, swap neth -> weth on dest chain
+        zap.bridge{value: amount}({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function test_bs_redeemAndSwap() public {
+        uint256 amount = 10**18;
+        zap.addBurnTokens(_castToArray(address(neth)));
+        SwapQuery memory emptyQuery;
+        // neth -> weth on dest chain
+        uint256 amountOut = ISwap(nEthPool).calculateSwap(0, 1, amount);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(neth), address(weth), amount);
+        destQuery.deadline = DEADLINE;
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeemAndSwap({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(neth),
+            amount: amount,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: amountOut,
+            deadline: DEADLINE
+        });
+        vm.prank(USER);
+        // Bridge neth, swap neth -> weth on dest chain
+        zap.bridge({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(neth),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function test_bs_redeemAndSwap_nUSD() public {
+        uint256 amount = 10**18;
+        zap.addBurnNusd(address(nusd));
+        SwapQuery memory emptyQuery;
+        // nusd -> usdc on dest chain
+        uint256 amountOut = ISwap(nUsdPool).calculateSwap(0, 1, amount);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(nusd), address(usdc), amount);
+        destQuery.deadline = DEADLINE;
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeemAndSwap({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(nusd),
+            amount: amount,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: amountOut,
+            deadline: DEADLINE
+        });
+        vm.prank(USER);
+        // Bridge nusd, swap nusd -> usdc on dest chain
+        zap.bridge({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(nusd),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function test_bs_redeemAndRemove_nUSD() public {
+        uint256 amount = 10**18;
+        zap.addBurnNusd(address(nusd));
+        SwapQuery memory emptyQuery;
+        // nusd -> usdc on dest chain
+        uint256 amountOut = ISwap(nUsdPool).calculateSwap(0, 1, amount);
+        // TODO: include swap/addLiqudity/withdrawOneToken in query
+        SwapQuery memory destQuery = quoter.getAmountOut(address(nusd), address(usdc), amount);
+        destQuery.deadline = DEADLINE;
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeemAndRemove({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(nusd),
+            amount: amount,
+            swapTokenIndex: 1,
+            swapMinAmount: amountOut,
+            swapDeadline: DEADLINE
+        });
+        vm.prank(USER);
+        // Bridge nusd, withdraw nusd -> usdc on dest chain
+        zap.bridge({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(nusd),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: destQuery
+        });
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
