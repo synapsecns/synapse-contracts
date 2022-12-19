@@ -382,6 +382,161 @@ contract BridgeZapTest is Utilities06 {
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                     TESTS: SWAP & BRIDGE & SWAP                      ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+    /// @notice Swap & Bridge & Swap tests are prefixed test_sbs
+
+    function test_sbs_swapAndRedeemAndSwap() public {
+        uint256 amount = 10**18;
+        zap.addBurnTokens(_castToArray(address(neth)));
+        // weth -> neth on origin chain
+        uint256 amountOutOrigin = ISwap(nEthPool).calculateSwap(1, 0, amount);
+        SwapQuery memory originQuery = quoter.getAmountOut(address(weth), address(neth), amount);
+        originQuery.deadline = block.timestamp;
+        // Emulate bridge fees
+        uint256 amountInDest = (amountOutOrigin * 999) / 1000;
+        // neth -> weth on dest chain
+        uint256 amountOutDest = ISwap(nEthPool).calculateSwap(0, 1, amountInDest);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(neth), address(weth), amountInDest);
+        destQuery.deadline = DEADLINE;
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeemAndSwap({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(neth),
+            amount: amountOutOrigin,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: amountOutDest,
+            deadline: DEADLINE
+        });
+        vm.prank(USER);
+        // Swap weth -> neth, bridge neth, swap neth -> weth on dest chain
+        zap.bridge({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function test_sbs_swapETHAndRedeemAndSwap() public {
+        // Make sure user has no WETH
+        _unwrapUserWETH();
+        uint256 amount = 10**18;
+        zap.addBurnTokens(_castToArray(address(neth)));
+        // weth -> neth on origin chain
+        uint256 amountOutOrigin = ISwap(nEthPool).calculateSwap(1, 0, amount);
+        SwapQuery memory originQuery = quoter.getAmountOut(address(weth), address(neth), amount);
+        originQuery.deadline = block.timestamp;
+        // Emulate bridge fees
+        uint256 amountInDest = (amountOutOrigin * 999) / 1000;
+        // neth -> weth on dest chain
+        uint256 amountOutDest = ISwap(nEthPool).calculateSwap(0, 1, amountInDest);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(neth), address(weth), amountInDest);
+        destQuery.deadline = DEADLINE;
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeemAndSwap({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(neth),
+            amount: amountOutOrigin,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: amountOutDest,
+            deadline: DEADLINE
+        });
+        vm.prank(USER);
+        // Swap weth -> neth, bridge neth, swap neth -> weth on dest chain
+        zap.bridge{value: amount}({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function test_sbs_swapAndRedeemAndSwap_nUSD() public {
+        uint256 amount = 10**6;
+        zap.addBurnNusd(address(nusd));
+        // usdc -> nusd on origin chain
+        uint256 amountOutOrigin = ISwap(nUsdPool).calculateSwap(1, 0, amount);
+        SwapQuery memory originQuery = quoter.getAmountOut(address(usdc), address(nusd), amount);
+        originQuery.deadline = block.timestamp;
+        // Emulate bridge fees
+        uint256 amountInDest = (amountOutOrigin * 999) / 1000;
+        // nusd -> usdc on dest chain
+        uint256 amountOutDest = ISwap(nUsdPool).calculateSwap(0, 1, amountInDest);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(nusd), address(usdc), amountInDest);
+        destQuery.deadline = DEADLINE;
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeemAndSwap({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(nusd),
+            amount: amountOutOrigin,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: amountOutDest,
+            deadline: DEADLINE
+        });
+        vm.prank(USER);
+        // Swap usdc -> nusd, bridge nusd, swap nusd -> usdc on dest chain
+        zap.bridge({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(usdc),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function test_sbs_swapAndRedeemAndRemove_nUSD() public {
+        uint256 amount = 10**6;
+        zap.addBurnNusd(address(nusd));
+        // usdc -> nusd on origin chain
+        uint256 amountOutOrigin = ISwap(nUsdPool).calculateSwap(1, 0, amount);
+        SwapQuery memory originQuery = quoter.getAmountOut(address(usdc), address(nusd), amount);
+        originQuery.deadline = block.timestamp;
+        // Emulate bridge fees
+        uint256 amountInDest = (amountOutOrigin * 999) / 1000;
+        // nusd -> usdc on dest chain
+        uint256 amountOutDest = ISwap(nUsdPool).calculateSwap(0, 1, amountInDest);
+        // TODO: include swap/addLiqudity/withdrawOneToken in query
+        SwapQuery memory destQuery = quoter.getAmountOut(address(nusd), address(usdc), amountInDest);
+        destQuery.deadline = DEADLINE;
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeemAndRemove({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(nusd),
+            amount: amountOutOrigin,
+            swapTokenIndex: 1,
+            swapMinAmount: amountOutDest,
+            swapDeadline: DEADLINE
+        });
+        vm.prank(USER);
+        // Swap usdc -> nusd, bridge nusd, withdraw nusd -> usdc on dest chain
+        zap.bridge({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(usdc),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function test_sbs_zapAndDepositAndSwap() public {
+        // TODO: add support for zapping into nUSD on Ethereum
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                           INTERNAL HELPERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
