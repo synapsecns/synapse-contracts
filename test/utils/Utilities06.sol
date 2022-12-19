@@ -134,4 +134,42 @@ contract Utilities06 is Test {
         bridge.grantRole(bridge.NODEGROUP_ROLE(), NODE);
         vm.label(address(bridge), "BRIDGE");
     }
+
+    function calculateAddLiquidity(
+        ISwap pool,
+        uint8 indexFrom,
+        uint256 amount,
+        uint256 tokens
+    ) public returns (uint256 amountOut) {
+        try this.addLiquidityAndRevert(pool, indexFrom, amount, tokens) {
+            revert("This should've reverted");
+        } catch (bytes memory reason) {
+            bytes memory s = bytes(getRevertMsg(reason));
+            require(s.length == 32, "More than one word returned");
+            amountOut = abi.decode(s, (uint256));
+        }
+    }
+
+    function addLiquidityAndRevert(
+        ISwap pool,
+        uint8 indexFrom,
+        uint256 amount,
+        uint256 tokens
+    ) external {
+        uint256[] memory amounts = new uint256[](tokens);
+        amounts[indexFrom] = amount;
+        uint256 amountOut = pool.addLiquidity(amounts, 0, type(uint256).max);
+        revert(string(abi.encode(amountOut)));
+    }
+
+    function getRevertMsg(bytes memory _returnData) internal pure returns (string memory) {
+        // If the _res length is less than 68, then the transaction failed silently (without a revert message)
+        if (_returnData.length < 68) return "Transaction reverted silently";
+
+        assembly {
+            // Slice the sighash.
+            _returnData := add(_returnData, 0x04)
+        }
+        return abi.decode(_returnData, (string)); // All that remains is the revert string
+    }
 }

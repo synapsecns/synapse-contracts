@@ -8,6 +8,7 @@ import "../../../../contracts/bridge/wrappers/zap/SwapQuoter.sol";
 import "../../../../contracts/bridge/wrappers/zap/BridgeZap.sol";
 
 // solhint-disable func-name-mixedcase
+// solhint-disable not-rely-on-time
 contract BridgeZapTest is Utilities06 {
     address internal constant OWNER = address(1337);
     address internal constant USER = address(4242);
@@ -31,6 +32,13 @@ contract BridgeZapTest is Utilities06 {
     SynapseERC20 internal nusd;
     ERC20 internal usdc;
 
+    address internal nexusPool;
+    IERC20[] internal nexusTokens;
+    ERC20 internal nexusNusd;
+    ERC20 internal nexusDai;
+    ERC20 internal nexusUsdc;
+    ERC20 internal nexusUsdt;
+
     function setUp() public override {
         super.setUp();
 
@@ -38,6 +46,10 @@ contract BridgeZapTest is Utilities06 {
         neth = deploySynapseERC20("neth");
         nusd = deploySynapseERC20("nusd");
         usdc = deployERC20("usdc", 6);
+
+        nexusDai = deployERC20("ETH DAI", 18);
+        nexusUsdc = deployERC20("ETH USDC", 6);
+        nexusUsdt = deployERC20("ETH USDT", 6);
 
         {
             uint256[] memory amounts = new uint256[](2);
@@ -55,6 +67,16 @@ contract BridgeZapTest is Utilities06 {
             nUsdTokens.push(IERC20(address(usdc)));
             nUsdPool = deployPoolWithLiquidity(nUsdTokens, amounts);
         }
+        {
+            uint256[] memory amounts = new uint256[](3);
+            amounts[0] = 1000000;
+            amounts[1] = 1002000;
+            amounts[2] = 1003000;
+            nexusTokens.push(IERC20(address(nexusDai)));
+            nexusTokens.push(IERC20(address(nexusUsdc)));
+            nexusTokens.push(IERC20(address(nexusUsdt)));
+            nexusPool = deployPoolWithLiquidity(nexusTokens, amounts);
+        }
 
         bridge = deployBridge();
         zap = new BridgeZap(payable(weth), address(bridge));
@@ -62,11 +84,17 @@ contract BridgeZapTest is Utilities06 {
 
         quoter.addPool(nEthPool);
         quoter.addPool(nUsdPool);
+        quoter.addPool(nexusPool);
+        nexusNusd = ERC20(quoter.poolLpToken(nexusPool));
+
+        zap.setSwapQuoter(quoter);
 
         _dealAndApprove(address(weth));
         _dealAndApprove(address(neth));
         _dealAndApprove(address(nusd));
         _dealAndApprove(address(usdc));
+        _dealAndApprove(address(nexusUsdc));
+        deal(address(nexusUsdc), address(this), 10**20);
         deal(USER, 10**20);
     }
 
@@ -216,7 +244,26 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_sb_zapAndDeposit_nUSD() public {
-        // TODO: add support for zapping into nUSD on Ethereum
+        uint256 amount = 10**6;
+        zap.addDepositTokens(_castToArray(address(nexusNusd)));
+        SwapQuery memory emptyQuery;
+        // Try adding liquidity and revert at the last moment to get the exact quote
+        uint256 amountOut = calculateAddLiquidity(ISwap(nexusPool), 1, amount, nexusTokens.length);
+        // Deposit usdc to receive nusd on origin chain
+        SwapQuery memory originQuery = quoter.getAmountOut(address(nexusUsdc), address(nexusNusd), amount);
+        // TODO: quoter should return the exact quote
+        originQuery.minAmountOut = amountOut;
+        vm.expectEmit(true, true, true, true);
+        emit TokenDeposit(TO, OPT_CHAINID, address(nexusNusd), amountOut);
+        vm.prank(USER);
+        zap.bridge({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(nexusUsdc),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: emptyQuery
+        });
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -355,9 +402,8 @@ contract BridgeZapTest is Utilities06 {
         zap.addBurnNusd(address(nusd));
         SwapQuery memory emptyQuery;
         // nusd -> usdc on dest chain
-        uint256 amountOut = ISwap(nUsdPool).calculateSwap(0, 1, amount);
-        // TODO: include swap/addLiqudity/withdrawOneToken in query
-        SwapQuery memory destQuery = quoter.getAmountOut(address(nusd), address(usdc), amount);
+        uint256 amountOut = ISwap(nexusPool).calculateRemoveLiquidityOneToken(amount, 1);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(nexusNusd), address(nexusUsdc), amount);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeemAndRemove({
@@ -505,10 +551,9 @@ contract BridgeZapTest is Utilities06 {
         originQuery.deadline = block.timestamp;
         // Emulate bridge fees
         uint256 amountInDest = (amountOutOrigin * 999) / 1000;
-        // nusd -> usdc on dest chain
-        uint256 amountOutDest = ISwap(nUsdPool).calculateSwap(0, 1, amountInDest);
-        // TODO: include swap/addLiqudity/withdrawOneToken in query
-        SwapQuery memory destQuery = quoter.getAmountOut(address(nusd), address(usdc), amountInDest);
+        // withdraw nusd -> usdc on dest chain
+        uint256 amountOutDest = ISwap(nexusPool).calculateRemoveLiquidityOneToken(amountInDest, 1);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(nexusNusd), address(nexusUsdc), amountInDest);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeemAndRemove({
@@ -533,7 +578,41 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_sbs_zapAndDepositAndSwap() public {
-        // TODO: add support for zapping into nUSD on Ethereum
+        uint256 amount = 10**6;
+        zap.addDepositTokens(_castToArray(address(nexusNusd)));
+        // Try adding liquidity and revert at the last moment to get the exact quote
+        uint256 amountOutOrigin = calculateAddLiquidity(ISwap(nexusPool), 1, amount, nexusTokens.length);
+        // Deposit usdc to receive nusd on origin chain
+        SwapQuery memory originQuery = quoter.getAmountOut(address(nexusUsdc), address(nexusNusd), amount);
+        originQuery.deadline = block.timestamp;
+        // TODO: quoter should return the exact quote
+        originQuery.minAmountOut = amountOutOrigin;
+        // Emulate bridge fees
+        uint256 amountInDest = (amountOutOrigin * 999) / 1000;
+        // nusd -> usdc on dest chain
+        uint256 amountOutDest = ISwap(nUsdPool).calculateSwap(0, 1, amountInDest);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(nusd), address(usdc), amountInDest);
+        destQuery.deadline = DEADLINE;
+        vm.expectEmit(true, true, true, true);
+        emit TokenDepositAndSwap({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(nexusNusd),
+            amount: amountOutOrigin,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: amountOutDest,
+            deadline: DEADLINE
+        });
+        vm.prank(USER);
+        zap.bridge({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(nexusUsdc),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: destQuery
+        });
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
