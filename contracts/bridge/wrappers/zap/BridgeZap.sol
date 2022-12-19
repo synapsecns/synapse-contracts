@@ -76,6 +76,10 @@ contract BridgeZap is SynapseAdapter, Ownable {
         _removeToken(token);
     }
 
+    function setSwapQuoter(ISwapQuoter _swapQuoter) external onlyOwner {
+        swapQuoter = _swapQuoter;
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                            BRIDGE & SWAP                             ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/

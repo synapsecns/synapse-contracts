@@ -16,6 +16,7 @@ contract SwapQuoter is Ownable, ISwapQuoter {
 
     EnumerableSet.AddressSet internal _pools;
     mapping(address => address[]) internal _poolTokens;
+    mapping(address => address) public override poolLpToken;
 
     constructor(address _bridgeZap) public {
         bridgeZap = _bridgeZap;
@@ -44,6 +45,21 @@ contract SwapQuoter is Ownable, ISwapQuoter {
                     // End of pool reached
                     break;
                 }
+            }
+            try ISwap(pool).swapStorage() returns (
+                uint256,
+                uint256,
+                uint256,
+                uint256,
+                uint256,
+                uint256,
+                address lpToken
+            ) {
+                poolLpToken[pool] = lpToken;
+            } catch {
+                // solhint-disable-previous-line no-empty-blocks
+                // Don't do anything if swapStorage fails,
+                // this is probably a wrapper pool
             }
         }
     }
@@ -77,22 +93,21 @@ contract SwapQuoter is Ownable, ISwapQuoter {
         uint256 amount = poolsAmount();
         for (uint256 i = 0; i < amount; ++i) {
             address pool = _pools.at(i);
+            address lpToken = poolLpToken[pool];
             (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn, tokenOut);
             // Check if both tokens are present in the current pool
             if (indexIn != 0 && indexOut != 0) {
-                uint8 tokenIndexFrom = indexIn - 1;
-                uint8 tokenIndexTo = indexOut - 1;
-                // Try getting a quote for tokenIn -> tokenOut swap via the current pool
-                try ISwap(pool).calculateSwap(tokenIndexFrom, tokenIndexTo, amountIn) returns (uint256 amountOut) {
-                    // We want to return the best available quote
-                    if (amountOut > query.minAmountOut) {
-                        query.minAmountOut = amountOut;
-                        // Encode params for swapping via the current pool
-                        query.rawParams = abi.encode(SynapseParams(pool, tokenIndexFrom, tokenIndexTo));
-                    }
-                } catch {
-                    // Do nothing if calculateSwap() reverts
-                }
+                // Both tokens are in the pool
+                // swap is required
+                _checkSwapQuote(pool, indexIn, indexOut, amountIn, query);
+            } else if (tokenIn == lpToken && indexOut != 0) {
+                // tokenIn is lpToken, tokenOut is in the pool
+                // removeLiquidity is required
+                _checkRemoveLiquidityQuote(pool, indexOut, amountIn, query);
+            } else if (indexIn != 0 && tokenOut == lpToken) {
+                // tokenIn is in the pool, tokenOut is the lpToken
+                // addLiquidity is required
+                _checkAddLiquidityQuote(pool, indexIn, amountIn, query);
             }
         }
         // Fill the remaining fields if a path was found
@@ -118,6 +133,10 @@ contract SwapQuoter is Ownable, ISwapQuoter {
         tokens = _poolTokens[pool];
     }
 
+    function poolTokenAmount(address pool) external view override returns (uint256 amount) {
+        amount = _poolTokens[pool].length;
+    }
+
     function poolsAmount() public view returns (uint256) {
         return _pools.length();
     }
@@ -125,6 +144,88 @@ contract SwapQuoter is Ownable, ISwapQuoter {
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                            INTERNAL VIEWS                            ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    /**
+     * @notice Checks a swap quote for the given pool, and updates `query`,
+     * if output amount is better.
+     */
+    function _checkSwapQuote(
+        address pool,
+        uint8 indexIn,
+        uint8 indexOut,
+        uint256 amountIn,
+        SwapQuery memory query
+    ) internal view {
+        uint8 tokenIndexFrom = indexIn - 1;
+        uint8 tokenIndexTo = indexOut - 1;
+        // Try getting a quote for tokenIn -> tokenOut swap via the current pool
+        try ISwap(pool).calculateSwap(tokenIndexFrom, tokenIndexTo, amountIn) returns (uint256 amountOut) {
+            // We want to return the best available quote
+            if (amountOut > query.minAmountOut) {
+                query.minAmountOut = amountOut;
+                // Encode params for swapping via the current pool
+                query.rawParams = abi.encode(SynapseParams(Action.Swap, pool, tokenIndexFrom, tokenIndexTo));
+            }
+        } catch {
+            // solhint-disable-previous-line no-empty-blocks
+            // Do nothing if calculateSwap() reverts
+        }
+    }
+
+    function _checkAddLiquidityQuote(
+        address pool,
+        uint8 indexIn,
+        uint256 amountIn,
+        SwapQuery memory query
+    ) internal view {
+        uint8 tokenIndexFrom = indexIn - 1;
+        // tokenIn -> lpToken: this is addLiquidity()
+        uint256 tokens = _poolTokens[pool].length;
+        // Prepare array with deposit amounts
+        uint256[] memory amounts = new uint256[](tokens);
+        for (uint256 t = 0; t < tokens; ++t) {
+            if (t == tokenIndexFrom) amounts[t] = amountIn;
+        }
+        // TODO: use SwapCalculator to get the exact quote
+        try ISwap(pool).calculateTokenAmount(amounts, true) returns (uint256 amountOut) {
+            // We want to return the best available quote
+            if (amountOut > query.minAmountOut) {
+                query.minAmountOut = amountOut;
+                // Encode params for depositing to the current pool
+                query.rawParams = abi.encode(SynapseParams(Action.AddLiquidity, pool, tokenIndexFrom, type(uint8).max));
+            }
+        } catch {
+            // solhint-disable-previous-line no-empty-blocks
+            // Do nothing if calculateTokenAmount() reverts
+        }
+    }
+
+    /**
+     * @notice Checks a withdrawal quote for the given pool, and updates `query`,
+     * if output amount is better.
+     */
+    function _checkRemoveLiquidityQuote(
+        address pool,
+        uint8 indexOut,
+        uint256 amountIn,
+        SwapQuery memory query
+    ) internal view {
+        uint8 tokenIndexTo = indexOut - 1;
+        // lpToken -> tokenOut: this is removeLiquidityOneToken()
+        try ISwap(pool).calculateRemoveLiquidityOneToken(amountIn, tokenIndexTo) returns (uint256 amountOut) {
+            // We want to return the best available quote
+            if (amountOut > query.minAmountOut) {
+                query.minAmountOut = amountOut;
+                // Encode params for withdrawing from the current pool
+                query.rawParams = abi.encode(
+                    SynapseParams(Action.RemoveLiquidity, pool, type(uint8).max, tokenIndexTo)
+                );
+            }
+        } catch {
+            // solhint-disable-previous-line no-empty-blocks
+            // Do nothing if calculateRemoveLiquidityOneToken() reverts
+        }
+    }
 
     function _getTokenIndexes(
         address pool,

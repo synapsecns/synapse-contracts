@@ -16,6 +16,19 @@ interface ISwap {
 
     function getVirtualPrice() external view returns (uint256);
 
+    function swapStorage()
+        external
+        view
+        returns (
+            uint256 initialA,
+            uint256 futureA,
+            uint256 initialATime,
+            uint256 futureATime,
+            uint256 swapFee,
+            uint256 adminFee,
+            address lpToken
+        );
+
     // min return calculation functions
     function calculateSwap(
         uint8 tokenIndexFrom,

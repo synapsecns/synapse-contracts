@@ -9,7 +9,14 @@ struct SwapQuery {
     bytes rawParams;
 }
 
+enum Action {
+    Swap,
+    AddLiquidity,
+    RemoveLiquidity
+}
+
 struct SynapseParams {
+    Action action;
     address pool;
     uint8 tokenIndexFrom;
     uint8 tokenIndexTo;
