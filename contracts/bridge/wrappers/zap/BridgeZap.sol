@@ -119,7 +119,7 @@ contract BridgeZap is SynapseAdapter, Ownable {
                     minDy: destQuery.minAmountOut,
                     deadline: destQuery.deadline
                 });
-            } else if (info.tokenType == TokenType.Burn || chainId != MAINNET_CHAIN_ID) {
+            } else if (destParams.action == Action.Swap) {
                 // Case 2: token needs to be redeemed on origin chain.
                 // Token is not nUSD. Or token is nUSD, but is not being bridged to Ethereum Mainnet.
                 // We need to perform AndSwap() on destination chain.
@@ -134,6 +134,7 @@ contract BridgeZap is SynapseAdapter, Ownable {
                     deadline: destQuery.deadline
                 });
             } else {
+                require(destParams.action == Action.RemoveLiquidity, "Unsupported dest action");
                 // Case 3: token needs to be redeemed on origin chain.
                 // This is nUSD. It is being bridged back home to Ethereum Mainnet.
                 // We need to perform AndRemove() on destination chain.
