@@ -14,7 +14,6 @@ contract BridgeZap is SynapseAdapter, Ownable {
 
     enum TokenType {
         Burn,
-        BurnNusd,
         Deposit
     }
 
@@ -22,8 +21,6 @@ contract BridgeZap is SynapseAdapter, Ownable {
         TokenType tokenType;
         address bridgeToken;
     }
-
-    uint256 internal constant MAINNET_CHAIN_ID = 1;
 
     IWETH9 public immutable weth;
     ISynapseBridge public immutable synapseBridge;
@@ -38,10 +35,6 @@ contract BridgeZap is SynapseAdapter, Ownable {
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                              OWNER ONLY                              ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
-
-    function addBurnNusd(address token) external onlyOwner {
-        _addToken(token, TokenType.BurnNusd, token);
-    }
 
     function addBurnTokens(address[] calldata tokens) external onlyOwner {
         uint256 amount = tokens.length;

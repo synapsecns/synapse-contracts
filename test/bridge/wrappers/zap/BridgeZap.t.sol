@@ -158,7 +158,7 @@ contract BridgeZapTest is Utilities06 {
 
     function test_b_redeem_nusd() public {
         uint256 amount = 10**18;
-        zap.addBurnNusd(address(nusd));
+        zap.addBurnTokens(_castToArray(address(nusd)));
         SwapQuery memory emptyQuery;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeem(TO, ETH_CHAINID, address(nusd), amount);
@@ -201,7 +201,7 @@ contract BridgeZapTest is Utilities06 {
 
     function test_sb_swapAndRedeem_nUSD() public {
         uint256 amount = 10**6;
-        zap.addBurnNusd(address(nusd));
+        zap.addBurnTokens(_castToArray(address(nusd)));
         SwapQuery memory emptyQuery;
         // usdc -> nusd on origin chain
         uint256 amountOut = ISwap(nUsdPool).calculateSwap(1, 0, amount);
@@ -368,7 +368,7 @@ contract BridgeZapTest is Utilities06 {
 
     function test_bs_redeemAndSwap_nUSD() public {
         uint256 amount = 10**18;
-        zap.addBurnNusd(address(nusd));
+        zap.addBurnTokens(_castToArray(address(nusd)));
         SwapQuery memory emptyQuery;
         // nusd -> usdc on dest chain
         uint256 amountOut = ISwap(nUsdPool).calculateSwap(0, 1, amount);
@@ -399,7 +399,7 @@ contract BridgeZapTest is Utilities06 {
 
     function test_bs_redeemAndRemove_nUSD() public {
         uint256 amount = 10**18;
-        zap.addBurnNusd(address(nusd));
+        zap.addBurnTokens(_castToArray(address(nusd)));
         SwapQuery memory emptyQuery;
         // nusd -> usdc on dest chain
         uint256 amountOut = ISwap(nexusPool).calculateRemoveLiquidityOneToken(amount, 1);
@@ -508,7 +508,7 @@ contract BridgeZapTest is Utilities06 {
 
     function test_sbs_swapAndRedeemAndSwap_nUSD() public {
         uint256 amount = 10**6;
-        zap.addBurnNusd(address(nusd));
+        zap.addBurnTokens(_castToArray(address(nusd)));
         // usdc -> nusd on origin chain
         uint256 amountOutOrigin = ISwap(nUsdPool).calculateSwap(1, 0, amount);
         SwapQuery memory originQuery = quoter.getAmountOut(address(usdc), address(nusd), amount);
@@ -544,7 +544,7 @@ contract BridgeZapTest is Utilities06 {
 
     function test_sbs_swapAndRedeemAndRemove_nUSD() public {
         uint256 amount = 10**6;
-        zap.addBurnNusd(address(nusd));
+        zap.addBurnTokens(_castToArray(address(nusd)));
         // usdc -> nusd on origin chain
         uint256 amountOutOrigin = ISwap(nUsdPool).calculateSwap(1, 0, amount);
         SwapQuery memory originQuery = quoter.getAmountOut(address(usdc), address(nusd), amount);
