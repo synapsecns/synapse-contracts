@@ -70,6 +70,81 @@ contract BridgeZapTest is Utilities06 {
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                       TESTS: BRIDGE, NO SWAPS                        ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+    /// @notice Bridge tests (no swaps) are prefixed test_b
+
+    function test_b_deposit() public {
+        uint256 amount = 10**18;
+        zap.addDepositTokens(_castToArray(address(weth)));
+        SwapQuery memory emptyQuery;
+        vm.expectEmit(true, true, true, true);
+        emit TokenDeposit(TO, OPT_CHAINID, address(weth), amount);
+        vm.prank(USER);
+        zap.bridge({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: emptyQuery
+        });
+    }
+
+    function test_b_depositETH() public {
+        // Make sure user has no WETH
+        _unwrapUserWETH();
+        uint256 amount = 10**18;
+        zap.addDepositTokens(_castToArray(address(weth)));
+        SwapQuery memory emptyQuery;
+        vm.expectEmit(true, true, true, true);
+        emit TokenDeposit(TO, OPT_CHAINID, address(weth), amount);
+        vm.prank(USER);
+        zap.bridge{value: amount}({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: emptyQuery
+        });
+    }
+
+    function test_b_redeem() public {
+        uint256 amount = 10**18;
+        zap.addBurnTokens(_castToArray(address(neth)));
+        SwapQuery memory emptyQuery;
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeem(TO, OPT_CHAINID, address(neth), amount);
+        vm.prank(USER);
+        zap.bridge({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(neth),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: emptyQuery
+        });
+    }
+
+    function test_b_redeem_nusd() public {
+        uint256 amount = 10**18;
+        zap.addBurnNusd(address(nusd));
+        SwapQuery memory emptyQuery;
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeem(TO, ETH_CHAINID, address(nusd), amount);
+        vm.prank(USER);
+        zap.bridge({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(nusd),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: emptyQuery
+        });
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                           INTERNAL HELPERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
