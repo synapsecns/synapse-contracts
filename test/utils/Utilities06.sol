@@ -7,8 +7,10 @@ import {Swap} from "../../contracts/amm/Swap.sol";
 import {SwapDeployer} from "../../contracts/amm/SwapDeployer.sol";
 import {LPToken} from "../../contracts/amm/LPToken.sol";
 
+import {SynapseBridge} from "../../contracts/bridge/SynapseBridge.sol";
 import {SynapseERC20} from "../../contracts/bridge/SynapseERC20.sol";
 import {ISwap} from "../../contracts/bridge/interfaces/ISwap.sol";
+import {IWETH9} from "../../contracts/bridge/interfaces/IWETH9.sol";
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
@@ -19,9 +21,44 @@ contract ERC20Decimals is ERC20 {
 }
 
 contract Utilities06 is Test {
+    address internal constant NODE = 0x230A1AC45690B9Ae1176389434610B9526d2f21b;
+
     LPToken private _lpToken;
     Swap private _swap;
     SwapDeployer private _deployer;
+
+    // Bridge "OUT" Events. `IERC20` replaced with `address` to reduce amount of casts
+    event TokenDeposit(address indexed to, uint256 chainId, address token, uint256 amount);
+    event TokenRedeem(address indexed to, uint256 chainId, address token, uint256 amount);
+    event TokenDepositAndSwap(
+        address indexed to,
+        uint256 chainId,
+        address token,
+        uint256 amount,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline
+    );
+    event TokenRedeemAndSwap(
+        address indexed to,
+        uint256 chainId,
+        address token,
+        uint256 amount,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline
+    );
+    event TokenRedeemAndRemove(
+        address indexed to,
+        uint256 chainId,
+        address token,
+        uint256 amount,
+        uint8 swapTokenIndex,
+        uint256 swapMinAmount,
+        uint256 swapDeadline
+    );
 
     function setUp() public virtual {
         _lpToken = new LPToken();
@@ -77,5 +114,24 @@ contract Utilities06 is Test {
             tokens[i].approve(pool, type(uint256).max);
         }
         ISwap(pool).addLiquidity(amountsWithDecimals, 0, type(uint256).max);
+    }
+
+    function deployBridge() public returns (SynapseBridge bridge) {
+        bridge = new SynapseBridge();
+        setupBridge(bridge);
+    }
+
+    function deployBridge(address at) public returns (SynapseBridge bridge) {
+        // Deploy code at requested address
+        bytes memory code = vm.getCode("SynapseBridge.sol");
+        vm.etch(at, code);
+        bridge = SynapseBridge(payable(at));
+        setupBridge(bridge);
+    }
+
+    function setupBridge(SynapseBridge bridge) public {
+        bridge.initialize();
+        bridge.grantRole(bridge.NODEGROUP_ROLE(), NODE);
+        vm.label(address(bridge), "BRIDGE");
     }
 }

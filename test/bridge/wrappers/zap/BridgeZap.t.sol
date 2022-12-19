@@ -1,0 +1,99 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.12;
+pragma experimental ABIEncoderV2;
+
+import "../../../utils/Utilities06.sol";
+
+import "../../../../contracts/bridge/wrappers/zap/SwapQuoter.sol";
+import "../../../../contracts/bridge/wrappers/zap/BridgeZap.sol";
+
+// solhint-disable func-name-mixedcase
+contract BridgeZapTest is Utilities06 {
+    address internal constant OWNER = address(1337);
+    address internal constant USER = address(4242);
+    address internal constant TO = address(2424);
+
+    uint256 internal constant ETH_CHAINID = 1;
+    uint256 internal constant OPT_CHAINID = 10;
+
+    SynapseBridge internal bridge;
+    SwapQuoter internal quoter;
+    BridgeZap internal zap;
+
+    address internal nEthPool;
+    IERC20[] internal nEthTokens;
+    SynapseERC20 internal neth;
+    IWETH9 internal weth;
+
+    address internal nUsdPool;
+    IERC20[] internal nUsdTokens;
+    SynapseERC20 internal nusd;
+    ERC20 internal usdc;
+
+    function setUp() public override {
+        super.setUp();
+
+        weth = deployWETH();
+        neth = deploySynapseERC20("neth");
+        nusd = deploySynapseERC20("nusd");
+        usdc = deployERC20("usdc", 6);
+
+        {
+            uint256[] memory amounts = new uint256[](2);
+            amounts[0] = 1000;
+            amounts[1] = 1050;
+            nEthTokens.push(IERC20(address(neth)));
+            nEthTokens.push(IERC20(address(weth)));
+            nEthPool = deployPoolWithLiquidity(nEthTokens, amounts);
+        }
+        {
+            uint256[] memory amounts = new uint256[](2);
+            amounts[0] = 100000;
+            amounts[1] = 100050;
+            nUsdTokens.push(IERC20(address(nusd)));
+            nUsdTokens.push(IERC20(address(usdc)));
+            nUsdPool = deployPoolWithLiquidity(nUsdTokens, amounts);
+        }
+
+        bridge = deployBridge();
+        zap = new BridgeZap(payable(weth), address(bridge));
+        quoter = new SwapQuoter(address(zap));
+
+        quoter.addPool(nEthPool);
+        quoter.addPool(nUsdPool);
+
+        _dealAndApprove(address(weth));
+        _dealAndApprove(address(neth));
+        _dealAndApprove(address(nusd));
+        _dealAndApprove(address(usdc));
+        deal(USER, 10**20);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                           INTERNAL HELPERS                           ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _dealAndApprove(address token) internal {
+        if (token == address(weth)) {
+            deal(USER, 10**20);
+            vm.prank(USER);
+            weth.deposit{value: 10**20}();
+        } else {
+            // update total supply
+            deal(token, USER, 10**20, true);
+        }
+        vm.prank(USER);
+        IERC20(token).approve(address(zap), type(uint256).max);
+    }
+
+    function _unwrapUserWETH() internal {
+        uint256 balance = weth.balanceOf(USER);
+        vm.prank(USER);
+        weth.withdraw(balance);
+    }
+
+    function _castToArray(address token) internal pure returns (address[] memory tokens) {
+        tokens = new address[](1);
+        tokens[0] = token;
+    }
+}
