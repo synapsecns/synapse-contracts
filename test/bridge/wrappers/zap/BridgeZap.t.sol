@@ -145,6 +145,80 @@ contract BridgeZapTest is Utilities06 {
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                         TESTS: SWAP & BRIDGE                         ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+    /// @notice Swap & Bridge tests are prefixed test_sb
+
+    function test_sb_swapAndRedeem() public {
+        uint256 amount = 10**18;
+        zap.addBurnTokens(_castToArray(address(neth)));
+        SwapQuery memory emptyQuery;
+        // weth -> neth on origin chain
+        uint256 amountOut = ISwap(nEthPool).calculateSwap(1, 0, amount);
+        SwapQuery memory originQuery = quoter.getAmountOut(address(weth), address(neth), amount);
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeem(TO, ETH_CHAINID, address(neth), amountOut);
+        vm.prank(USER);
+        // Swap (weth -> neth), then bridge neth
+        zap.bridge({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: emptyQuery
+        });
+    }
+
+    function test_sb_swapAndRedeem_nUSD() public {
+        uint256 amount = 10**6;
+        zap.addBurnNusd(address(nusd));
+        SwapQuery memory emptyQuery;
+        // usdc -> nusd on origin chain
+        uint256 amountOut = ISwap(nUsdPool).calculateSwap(1, 0, amount);
+        SwapQuery memory originQuery = quoter.getAmountOut(address(usdc), address(nusd), amount);
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeem(TO, ETH_CHAINID, address(nusd), amountOut);
+        vm.prank(USER);
+        // Swap (usdc -> nusd), then bridge nusd
+        zap.bridge({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(usdc),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: emptyQuery
+        });
+    }
+
+    function test_sb_swapETHAndRedeem() public {
+        // Make sure user has no WETH
+        _unwrapUserWETH();
+        uint256 amount = 10**18;
+        zap.addBurnTokens(_castToArray(address(neth)));
+        SwapQuery memory emptyQuery;
+        // weth -> neth on origin chain
+        uint256 amountOut = ISwap(nEthPool).calculateSwap(1, 0, amount);
+        SwapQuery memory originQuery = quoter.getAmountOut(address(weth), address(neth), amount);
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeem(TO, ETH_CHAINID, address(neth), amountOut);
+        vm.prank(USER);
+        // Wrap ETH, swap (weth -> neth), then bridge neth
+        zap.bridge{value: amount}({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: emptyQuery
+        });
+    }
+
+    function test_sb_zapAndDeposit_nUSD() public {
+        // TODO: add support for zapping into nUSD on Ethereum
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                           INTERNAL HELPERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
