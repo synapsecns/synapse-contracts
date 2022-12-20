@@ -11,12 +11,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     return;
   }
 
-  // await deploy("WKlayUnwrapper", {
-  //   from: deployer,
-  //   log: true,
-  //   skipIfAlreadyDeployed: true,
-  //   args: [(await get("DevMultisig")).address,],
-  // });
+  await deploy("WKlayUnwrapper", {
+    from: deployer,
+    log: true,
+    skipIfAlreadyDeployed: true,
+    args: [(await get("DevMultisig")).address],
+  });
 
   await catchUnknownSigner(
     deploy("SynapseBridge", {
