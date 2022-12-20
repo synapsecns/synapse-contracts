@@ -8,12 +8,26 @@ import "../../interfaces/ISwapQuoter.sol";
 
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-contract SynapseAdapter is ISwapAdapter {
+abstract contract SynapseAdapter is ISwapAdapter {
     using SafeERC20 for IERC20;
 
     uint256 internal constant MAX_UINT = type(uint256).max;
 
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                               STORAGE                                ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
     ISwapQuoter public swapQuoter;
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[49] private __gap;
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                          EXTERNAL FUNCTIONS                          ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /**
      * @notice Performs a tokenIn -> tokenOut swap, according to the provided params.

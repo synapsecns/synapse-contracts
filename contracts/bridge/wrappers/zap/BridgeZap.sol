@@ -7,9 +7,9 @@ import "../../interfaces/ISynapseBridge.sol";
 
 import "./SynapseAdapter.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract BridgeZap is SynapseAdapter, Ownable {
+contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
     using SafeERC20 for IERC20;
 
     enum TokenType {
@@ -22,14 +22,32 @@ contract BridgeZap is SynapseAdapter, Ownable {
         address bridgeToken;
     }
 
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                        CONSTANTS & IMMUTABLES                        ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
     IWETH9 public immutable weth;
     ISynapseBridge public immutable synapseBridge;
 
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                               STORAGE                                ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
     mapping(address => TokenInfo) public tokenInfo;
+    // upgrade gap
+    uint256[49] private __gap;
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                      CONSTRUCTOR & INITIALIZER                       ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     constructor(address payable _weth, address _synapseBridge) public {
         weth = IWETH9(_weth);
         synapseBridge = ISynapseBridge(_synapseBridge);
+    }
+
+    function initialize() external initializer {
+        __Ownable_init();
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

@@ -87,6 +87,7 @@ contract BridgeZapTest is Utilities06 {
         quoter.addPool(nexusPool);
         nexusNusd = ERC20(quoter.poolLpToken(nexusPool));
 
+        zap.initialize();
         zap.setSwapQuoter(quoter);
 
         _dealAndApprove(address(weth));
