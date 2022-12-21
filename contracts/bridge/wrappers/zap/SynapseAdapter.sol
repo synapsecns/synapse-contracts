@@ -17,6 +17,7 @@ abstract contract SynapseAdapter is ISwapAdapter {
     ▏*║                               STORAGE                                ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    /// @notice Address of the local SwapQuoter contract
     ISwapQuoter public swapQuoter;
     /**
      * @dev This empty reserved space is put in place to allow future versions to add new
@@ -59,6 +60,7 @@ abstract contract SynapseAdapter is ISwapAdapter {
             // Remove liquidity to the pool
             amountOut = _removeLiquidity(pool, params, amountIn, tokenOut);
         }
+        // Transfer tokens out of the contract, if requested
         if (to != address(this)) {
             IERC20(tokenOut).safeTransfer(to, amountOut);
         }
@@ -68,9 +70,14 @@ abstract contract SynapseAdapter is ISwapAdapter {
     ▏*║                           INTERNAL HELPERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    /**
+     * @notice Sets the token allowance for the given spender to infinity.
+     */
     function _approveToken(IERC20 token, address spender) internal {
         uint256 allowance = token.allowance(address(this), spender);
+        // Set allowance to MAX_UINT if needed
         if (allowance != MAX_UINT) {
+            // if allowance is neither zero nor infinity, reset if first
             if (allowance != 0) {
                 token.safeApprove(spender, 0);
             }
@@ -78,6 +85,10 @@ abstract contract SynapseAdapter is ISwapAdapter {
         }
     }
 
+    /**
+     * @notice Performs a swap through the given pool.
+     * The pool token is already approved for spending.
+     */
     function _swap(
         ISwap pool,
         SynapseParams memory params,
@@ -96,6 +107,10 @@ abstract contract SynapseAdapter is ISwapAdapter {
         });
     }
 
+    /**
+     * @notice Adds liquidity in a form of a single token to the given pool.
+     * The pool token is already approved for spending.
+     */
     function _addLiquidity(
         ISwap pool,
         SynapseParams memory params,
@@ -113,6 +128,10 @@ abstract contract SynapseAdapter is ISwapAdapter {
         amountOut = pool.addLiquidity({amounts: amounts, minToMint: 0, deadline: MAX_UINT});
     }
 
+    /**
+     * @notice Removes liquidity in a form of a single token from the given pool.
+     * The pool LP token is already approved for spending.
+     */
     function _removeLiquidity(
         ISwap pool,
         SynapseParams memory params,

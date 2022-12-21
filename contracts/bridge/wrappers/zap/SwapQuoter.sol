@@ -9,13 +9,25 @@ import "../../libraries/BridgeStructs.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
+/**
+ * @notice Finds on-step trade paths between tokens using a set of
+ * liquidity pools, that conform to ISwap interface.
+ * Following set of methods is required for the pool to work (see ISwap.sol for details):
+ * - getToken(uint8) external view returns (address);
+ * - calculateSwap(uint8, uint8, uint256) external view returns (uint256);
+ * - swap(uin8, uint8, uint256, uint256, uint256) external returns (uint256);
+ */
 contract SwapQuoter is Ownable, ISwapQuoter {
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    /// @notice Address of BridgeZap contract
     address public immutable bridgeZap;
 
+    /// @dev Set of supported pools conforming to ISwap interface
     EnumerableSet.AddressSet internal _pools;
+    /// @dev Pool tokens for every supported ISwap pool
     mapping(address => address[]) internal _poolTokens;
+    /// @dev LP token for every supported ISwap pool (if exists)
     mapping(address => address) public override poolLpToken;
 
     constructor(address _bridgeZap) public {
@@ -26,6 +38,9 @@ contract SwapQuoter is Ownable, ISwapQuoter {
     ▏*║                              OWNER ONLY                              ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    /**
+     * @notice Adds a few pools to the list of pools used for finding a trade path.
+     */
     function addPools(address[] calldata pools) external onlyOwner {
         uint256 amount = pools.length;
         for (uint256 i = 0; i < amount; ++i) {
@@ -33,6 +48,10 @@ contract SwapQuoter is Ownable, ISwapQuoter {
         }
     }
 
+    /**
+     * @notice Adds a pool to the list of pools used for finding a trade path.
+     * Stores all the supported pool tokens, and the pool LP token, if it exists.
+     */
     function addPool(address pool) public onlyOwner {
         if (_pools.add(pool)) {
             address[] storage tokens = _poolTokens[pool];
@@ -64,6 +83,9 @@ contract SwapQuoter is Ownable, ISwapQuoter {
         }
     }
 
+    /**
+     * @notice Removes a pool from the list of pools used for finding a trade path.
+     */
     function removePool(address pool) external onlyOwner {
         _pools.remove(pool);
         // We don't remove _poolTokens records, as pool's set of tokens doesn't change over time.
@@ -74,6 +96,11 @@ contract SwapQuoter is Ownable, ISwapQuoter {
     ▏*║                                VIEWS                                 ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    /**
+     * @notice Finds the best pool for tokenIn -> tokenOut swap from the list of supported pools.
+     * Returns the `SwapQuery` struct, that can be used on BridgeZap.
+     * minAmountOut and deadline fields will need to be adjusted based on the swap settings.
+     */
     function getAmountOut(
         address tokenIn,
         address tokenOut,
@@ -121,6 +148,9 @@ contract SwapQuoter is Ownable, ISwapQuoter {
         }
     }
 
+    /**
+     * @notice Returns a list of all supported pools.
+     */
     function allPools() external view returns (address[] memory pools) {
         uint256 amount = poolsAmount();
         pools = new address[](amount);
@@ -129,14 +159,23 @@ contract SwapQuoter is Ownable, ISwapQuoter {
         }
     }
 
+    /**
+     * @notice Returns a list of pool tokens for the given pool.
+     */
     function poolTokens(address pool) external view returns (address[] memory tokens) {
         tokens = _poolTokens[pool];
     }
 
+    /**
+     * @notice Returns the amount of tokens the given pool supports.
+     */
     function poolTokenAmount(address pool) external view override returns (uint256 amount) {
         amount = _poolTokens[pool].length;
     }
 
+    /**
+     * @notice Returns the amount of supported pools.
+     */
     function poolsAmount() public view returns (uint256) {
         return _pools.length();
     }
@@ -172,6 +211,11 @@ contract SwapQuoter is Ownable, ISwapQuoter {
         }
     }
 
+    /**
+     * @notice Checks a quote for adding liquidity to the given pool, and updates `query`,
+     * if output amount is better.
+     * This is the equivalent of tokenIn -> LPToken swap.
+     */
     function _checkAddLiquidityQuote(
         address pool,
         uint8 indexIn,
@@ -203,6 +247,7 @@ contract SwapQuoter is Ownable, ISwapQuoter {
     /**
      * @notice Checks a withdrawal quote for the given pool, and updates `query`,
      * if output amount is better.
+     * This is the equivalent of LPToken -> tokenOut swap.
      */
     function _checkRemoveLiquidityQuote(
         address pool,
@@ -227,6 +272,10 @@ contract SwapQuoter is Ownable, ISwapQuoter {
         }
     }
 
+    /**
+     * @notice Returns indexes for the two given tokens plus 1.
+     * The default value of 0 means a token is not supported by the pool.
+     */
     function _getTokenIndexes(
         address pool,
         address tokenIn,
