@@ -277,9 +277,11 @@ contract BridgeZapTest is Utilities06 {
         uint256 amount = 10**18;
         zap.addDepositTokens(_castToArray(address(weth)));
         SwapQuery memory emptyQuery;
+        // Emulate bridge fees
+        uint256 amountInDest = (amount * 999) / 1000;
         // neth -> weth on dest chain
-        uint256 amountOut = ISwap(nEthPool).calculateSwap(0, 1, amount);
-        SwapQuery memory destQuery = quoter.getAmountOut(address(neth), address(weth), amount);
+        uint256 amountOut = ISwap(nEthPool).calculateSwap(0, 1, amountInDest);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(neth), address(weth), amountInDest);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenDepositAndSwap({
@@ -308,11 +310,13 @@ contract BridgeZapTest is Utilities06 {
         // Make sure user has no WETH
         _unwrapUserWETH();
         uint256 amount = 10**18;
-        // neth -> weth on dest chain
-        uint256 amountOut = ISwap(nEthPool).calculateSwap(0, 1, amount);
         zap.addDepositTokens(_castToArray(address(weth)));
         SwapQuery memory emptyQuery;
-        SwapQuery memory destQuery = quoter.getAmountOut(address(neth), address(weth), amount);
+        // Emulate bridge fees
+        uint256 amountInDest = (amount * 999) / 1000;
+        // neth -> weth on dest chain
+        uint256 amountOut = ISwap(nEthPool).calculateSwap(0, 1, amountInDest);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(neth), address(weth), amountInDest);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenDepositAndSwap({
@@ -341,9 +345,11 @@ contract BridgeZapTest is Utilities06 {
         uint256 amount = 10**18;
         zap.addBurnTokens(_castToArray(address(neth)));
         SwapQuery memory emptyQuery;
+        // Emulate bridge fees
+        uint256 amountInDest = (amount * 999) / 1000;
         // neth -> weth on dest chain
-        uint256 amountOut = ISwap(nEthPool).calculateSwap(0, 1, amount);
-        SwapQuery memory destQuery = quoter.getAmountOut(address(neth), address(weth), amount);
+        uint256 amountOut = ISwap(nEthPool).calculateSwap(0, 1, amountInDest);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(neth), address(weth), amountInDest);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeemAndSwap({
@@ -372,9 +378,11 @@ contract BridgeZapTest is Utilities06 {
         uint256 amount = 10**18;
         zap.addBurnTokens(_castToArray(address(nusd)));
         SwapQuery memory emptyQuery;
+        // Emulate bridge fees
+        uint256 amountInDest = (amount * 999) / 1000;
         // nusd -> usdc on dest chain
-        uint256 amountOut = ISwap(nUsdPool).calculateSwap(0, 1, amount);
-        SwapQuery memory destQuery = quoter.getAmountOut(address(nusd), address(usdc), amount);
+        uint256 amountOut = ISwap(nUsdPool).calculateSwap(0, 1, amountInDest);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(nusd), address(usdc), amountInDest);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeemAndSwap({
@@ -403,9 +411,11 @@ contract BridgeZapTest is Utilities06 {
         uint256 amount = 10**18;
         zap.addBurnTokens(_castToArray(address(nusd)));
         SwapQuery memory emptyQuery;
+        // Emulate bridge fees
+        uint256 amountInDest = (amount * 999) / 1000;
         // nusd -> usdc on dest chain
-        uint256 amountOut = ISwap(nexusPool).calculateRemoveLiquidityOneToken(amount, 1);
-        SwapQuery memory destQuery = quoter.getAmountOut(address(nexusNusd), address(nexusUsdc), amount);
+        uint256 amountOut = ISwap(nexusPool).calculateRemoveLiquidityOneToken(amountInDest, 1);
+        SwapQuery memory destQuery = quoter.getAmountOut(address(nexusNusd), address(nexusUsdc), amountInDest);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeemAndRemove({
