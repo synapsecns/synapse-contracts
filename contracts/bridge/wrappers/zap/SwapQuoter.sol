@@ -28,7 +28,7 @@ contract SwapQuoter is Ownable, ISwapQuoter {
     /// @dev Pool tokens for every supported ISwap pool
     mapping(address => address[]) internal _poolTokens;
     /// @dev LP token for every supported ISwap pool (if exists)
-    mapping(address => address) public override poolLpToken;
+    mapping(address => address) internal _poolLpToken;
 
     constructor(address _bridgeZap) public {
         bridgeZap = _bridgeZap;
@@ -74,7 +74,7 @@ contract SwapQuoter is Ownable, ISwapQuoter {
                 uint256,
                 address lpToken
             ) {
-                poolLpToken[pool] = lpToken;
+                _poolLpToken[pool] = lpToken;
             } catch {
                 // solhint-disable-previous-line no-empty-blocks
                 // Don't do anything if swapStorage fails,
@@ -120,7 +120,7 @@ contract SwapQuoter is Ownable, ISwapQuoter {
         uint256 amount = poolsAmount();
         for (uint256 i = 0; i < amount; ++i) {
             address pool = _pools.at(i);
-            address lpToken = poolLpToken[pool];
+            address lpToken = _poolLpToken[pool];
             (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn, tokenOut);
             // Check if both tokens are present in the current pool
             if (indexIn != 0 && indexOut != 0) {
@@ -167,10 +167,11 @@ contract SwapQuoter is Ownable, ISwapQuoter {
     }
 
     /**
-     * @notice Returns the amount of tokens the given pool supports.
+     * @notice Returns the amount of tokens the given pool supports and the pool's LP token.
      */
-    function poolTokenAmount(address pool) external view override returns (uint256 amount) {
-        amount = _poolTokens[pool].length;
+    function poolInfo(address pool) external view override returns (uint256 tokens, address lpToken) {
+        tokens = _poolTokens[pool].length;
+        lpToken = _poolLpToken[pool];
     }
 
     /**
