@@ -38,23 +38,23 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
 
     /**
      * @notice Indicates the type of the supported bridge token on the local chain.
-     * - TokenType.Burn: token is burnt in order to initiate a bridge tx (bridge.redeem)
+     * - TokenType.Redeem: token is burnt in order to initiate a bridge tx (bridge.redeem)
      * - TokenType.Deposit: token is locked in order to initiate a bridge tx (bridge.deposit)
      */
     enum TokenType {
-        Burn,
+        Redeem,
         Deposit
     }
 
     /**
-     * @notice Information about a supported bridge token.
+     * @notice Config for a supported bridge token.
      * @dev Some of the tokens require a wrapper token to make them conform SynapseERC20 interface.
      * In these cases, `bridgeToken` will feature a different address.
      * Otherwise, the token address is saved.
-     * @param tokenType     Method of bridging for the token: Burn or Deposit
+     * @param tokenType     Method of bridging for the token: Redeem or Deposit
      * @param bridgeToken   Bridge token address
      */
-    struct TokenInfo {
+    struct TokenConfig {
         TokenType tokenType;
         address bridgeToken;
     }
@@ -72,10 +72,10 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
     ▏*║                               STORAGE                                ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    /// @notice Information about each supported token.
+    /// @notice Config for each supported token.
     /// @dev If wrapper token is required for bridging, its address is stored in `.bridgeToken`
-    /// i.e. for GMX: tokenInfo[GMX].bridgeToken = GMXWrapper
-    mapping(address => TokenInfo) public tokenInfo;
+    /// i.e. for GMX: config[GMX].bridgeToken = GMXWrapper
+    mapping(address => TokenConfig) public config;
     // upgrade gap
     uint256[49] private __gap;
 
@@ -108,7 +108,7 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /**
-     * @notice Adds a few "burn" tokens to the BridgeZap config.
+     * @notice Adds a few "Redeem" tokens to the BridgeZap config.
      * These are bridgeable from this chain by being burnt, i.e. via using synapseBridge.redeem()
      * @dev Every added token is assumed to not require a wrapper token for bridging.
      * Use {addToken} if that is not the case.
@@ -116,7 +116,7 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
     function addBurnTokens(address[] calldata tokens) external onlyOwner {
         uint256 amount = tokens.length;
         for (uint256 i = 0; i < amount; ++i) {
-            _addToken(tokens[i], TokenType.Burn, tokens[i]);
+            _addToken(tokens[i], TokenType.Redeem, tokens[i]);
         }
     }
 
@@ -136,7 +136,7 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
     /**
      * @notice Adds a single bridgeable token to the BridgeZap config.
      * @param token         "End" token, supported by SynapseBridge. This is the token user is receiving/sending
-     * @param tokenType     Method of bridging used for the token: Burn or Deposit
+     * @param tokenType     Method of bridging used for the token: Redeem or Deposit
      * @param bridgeToken   Actual token used for bridging `token`. This is the token bridge is burning/locking.
      *                      Might differ from `token`, if `token` does not conform to bridge-supported interface.
      */
@@ -220,15 +220,15 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
         if (_swapRequested(originQuery)) {
             (token, amount) = _adapterSwap(token, amount, originQuery);
         }
-        TokenInfo memory info = tokenInfo[token];
-        require(info.bridgeToken != address(0), "Token not supported");
-        token = info.bridgeToken;
+        TokenConfig memory _config = config[token];
+        require(_config.bridgeToken != address(0), "Token not supported");
+        token = _config.bridgeToken;
         // `amount` worth of `token` needs to be bridged.
         // Check if swap on destination chain is required.
         if (_swapRequested(destQuery)) {
             // Decode params for swapping via a Synapse pool on the destination chain.
             SynapseParams memory destParams = abi.decode(destQuery.rawParams, (SynapseParams));
-            if (info.tokenType == TokenType.Deposit) {
+            if (_config.tokenType == TokenType.Deposit) {
                 // Case 1: token needs to be deposited on origin chain.
                 // We need to perform AndSwap() on destination chain.
                 synapseBridge.depositAndSwap({
@@ -269,11 +269,11 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
                 });
             }
         } else {
-            if (info.tokenType == TokenType.Deposit) {
+            if (_config.tokenType == TokenType.Deposit) {
                 // Case 1 (Deposit): token needs to be deposited on origin chain
                 synapseBridge.deposit(to, chainId, IERC20(token), amount);
             } else {
-                // Case 2 (Burn): token needs to be redeemed on origin chain
+                // Case 2 (Redeem): token needs to be redeemed on origin chain
                 synapseBridge.redeem(to, chainId, IERC20(token), amount);
             }
         }
@@ -353,7 +353,7 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
         TokenType tokenType,
         address bridgeToken
     ) internal {
-        tokenInfo[token] = TokenInfo(tokenType, bridgeToken);
+        config[token] = TokenConfig(tokenType, bridgeToken);
         _approveToken(IERC20(bridgeToken), address(synapseBridge));
     }
 
@@ -361,6 +361,6 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
      * @notice Removes a bridge token from the BridgeZap config.
      */
     function _removeToken(address token) internal {
-        delete tokenInfo[token];
+        delete config[token];
     }
 }
