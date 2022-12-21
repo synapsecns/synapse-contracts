@@ -121,11 +121,12 @@ contract Utilities06 is Test {
         setupBridge(bridge);
     }
 
-    function deployBridge(address at) public returns (SynapseBridge bridge) {
+    function deployBridge(address where) public returns (SynapseBridge bridge) {
         // Deploy code at requested address
-        bytes memory code = vm.getCode("SynapseBridge.sol");
-        vm.etch(at, code);
-        bridge = SynapseBridge(payable(at));
+        address _bridge = address(new SynapseBridge());
+        bytes memory code = codeAt(_bridge);
+        vm.etch(where, code);
+        bridge = SynapseBridge(payable(where));
         setupBridge(bridge);
     }
 
@@ -171,5 +172,22 @@ contract Utilities06 is Test {
             _returnData := add(_returnData, 0x04)
         }
         return abi.decode(_returnData, (string)); // All that remains is the revert string
+    }
+
+    // https://docs.soliditylang.org/en/v0.6.12/assembly.html#example
+    function codeAt(address _addr) public view returns (bytes memory o_code) {
+        assembly {
+            // retrieve the size of the code, this needs assembly
+            let size := extcodesize(_addr)
+            // allocate output byte array - this could also be done without assembly
+            // by using o_code = new bytes(size)
+            o_code := mload(0x40)
+            // new "memory end" including padding
+            mstore(0x40, add(o_code, and(add(add(size, 0x20), 0x1f), not(0x1f))))
+            // store length in memory
+            mstore(o_code, size)
+            // actually retrieve the code, this needs assembly
+            extcodecopy(_addr, add(o_code, 0x20), 0, size)
+        }
     }
 }
