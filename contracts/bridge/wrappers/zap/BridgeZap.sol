@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "../../interfaces/IWETH9.sol";
 import "../../interfaces/ISynapseBridge.sol";
-
+import "../../interfaces/ISwapQuoter.sol";
 import "./SynapseAdapter.sol";
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -33,7 +33,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
  * // If tokenIn is WETH, do bridgeZap.bridge{value: amount} to use native ETH instead of WETH.
  * Note: the transaction will be reverted, if `bridgeTokenO` is not set up in BridgeZap.
  */
-contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
+contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     using SafeERC20 for IERC20;
 
     /**
@@ -290,6 +290,26 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
                 synapseBridge.redeem(to, chainId, IERC20(token), amount);
             }
         }
+    }
+
+    /**
+     * @notice Finds the best pool for tokenIn -> tokenOut swap from the list of supported pools.
+     * Returns the `SwapQuery` struct, that can be used on BridgeZap.
+     * minAmountOut and deadline fields will need to be adjusted based on the swap settings.
+     */
+    function getAmountOut(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn
+    ) external view override returns (SwapQuery memory) {
+        return swapQuoter.getAmountOut(tokenIn, tokenOut, amountIn);
+    }
+
+    /**
+     * @notice Returns the amount of tokens the given pool supports and the pool's LP token.
+     */
+    function poolInfo(address pool) external view override returns (uint256, address) {
+        return swapQuoter.poolInfo(pool);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
