@@ -170,6 +170,18 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
     }
 
     /**
+     * @notice Sets a custom allowance for the given token.
+     * @dev To be used for the wrapper token setups.
+     */
+    function setAllowance(
+        IERC20 token,
+        address spender,
+        uint256 amount
+    ) external onlyOwner {
+        token.safeApprove(spender, amount);
+    }
+
+    /**
      * @notice Sets the Quoter implementation.
      * @dev Required for the underlying SynapseAdapter to work properly.
      */
@@ -355,7 +367,9 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
         address bridgeToken
     ) internal {
         config[token] = TokenConfig(tokenType, bridgeToken);
-        _approveToken(IERC20(bridgeToken), address(synapseBridge));
+        // Underlying token should always implement allowance(), approve()
+        if (token == bridgeToken) _approveToken(IERC20(token), address(synapseBridge));
+        // Use {setAllowance} for custom wrapper token setups
     }
 
     /**
