@@ -121,9 +121,7 @@ abstract contract SynapseAdapter is ISwapAdapter {
         require(swapQuoter.poolLpToken(address(pool)) == tokenOut, "!tokenOut");
         uint256 tokens = swapQuoter.poolTokenAmount(address(pool));
         uint256[] memory amounts = new uint256[](tokens);
-        for (uint256 t = 0; t < tokens; ++t) {
-            if (t == params.tokenIndexFrom) amounts[t] = amountIn;
-        }
+        amounts[params.tokenIndexFrom] = amountIn;
         // amountOut and deadline are not checked in SwapAdapter
         amountOut = pool.addLiquidity({amounts: amounts, minToMint: 0, deadline: MAX_UINT});
     }

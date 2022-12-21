@@ -227,9 +227,7 @@ contract SwapQuoter is Ownable, ISwapQuoter {
         uint256 tokens = _poolTokens[pool].length;
         // Prepare array with deposit amounts
         uint256[] memory amounts = new uint256[](tokens);
-        for (uint256 t = 0; t < tokens; ++t) {
-            if (t == tokenIndexFrom) amounts[t] = amountIn;
-        }
+        amounts[tokenIndexFrom] = amountIn;
         // TODO: use SwapCalculator to get the exact quote
         try ISwap(pool).calculateTokenAmount(amounts, true) returns (uint256 amountOut) {
             // We want to return the best available quote
