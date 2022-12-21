@@ -229,6 +229,7 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable {
             // Decode params for swapping via a Synapse pool on the destination chain.
             SynapseParams memory destParams = abi.decode(destQuery.rawParams, (SynapseParams));
             if (_config.tokenType == TokenType.Deposit) {
+                require(destParams.action == Action.Swap, "Unsupported dest action");
                 // Case 1: token needs to be deposited on origin chain.
                 // We need to perform AndSwap() on destination chain.
                 synapseBridge.depositAndSwap({
