@@ -52,7 +52,7 @@ contract BridgeZapJewelTest is Utilities06 {
         _dealAndApprove(address(jewel));
         _dealAndApprove(address(avaSynJewel));
         _dealAndApprove(address(dfkJewel));
-        deal(USER, 10**20);
+        // Don't deal ETH: unwrap WETH for ETH tests to make sure WETH is not being used
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -90,6 +90,8 @@ contract BridgeZapJewelTest is Utilities06 {
     }
 
     function test_bs_jewel_fromDFKToHarmony() public {
+        // Make sure user has no WJEWEL
+        _unwrapUserWETH();
         // depositETHAndSwap()
         uint256 amount = 10**18;
         zap.addDepositTokens(_castToArray(address(dfkJewel)));
@@ -188,6 +190,12 @@ contract BridgeZapJewelTest is Utilities06 {
         }
         vm.prank(USER);
         IERC20(token).approve(address(zap), type(uint256).max);
+    }
+
+    function _unwrapUserWETH() internal {
+        uint256 balance = dfkJewel.balanceOf(USER);
+        vm.prank(USER);
+        dfkJewel.withdraw(balance);
     }
 
     function _castToArray(address token) internal pure returns (address[] memory tokens) {

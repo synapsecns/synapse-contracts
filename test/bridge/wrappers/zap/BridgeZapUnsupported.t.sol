@@ -51,7 +51,7 @@ contract BridgeZapTest is Utilities06 {
 
         _dealAndApprove(address(weth));
         _dealAndApprove(address(neth));
-        deal(USER, 10**20);
+        // Don't deal ETH: unwrap WETH for ETH tests to make sure WETH is not being used
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
