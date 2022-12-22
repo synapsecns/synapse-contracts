@@ -250,7 +250,9 @@ contract BridgeZapTest is Utilities06 {
         zap.addDepositTokens(_castToArray(address(nexusNusd)));
         SwapQuery memory emptyQuery;
         // usdc -> nusd (addLiquidity) on origin chain
-        uint256 amountOut = quoter.calculateAddLiquidity(nexusPool, 1, amount);
+        uint256[] memory amounts = new uint256[](nexusTokens.length);
+        amounts[1] = amount; // USDC index is 1
+        uint256 amountOut = quoter.calculateAddLiquidity(nexusPool, amounts);
         // Deposit usdc to receive nusd on origin chain
         SwapQuery memory originQuery = quoter.getAmountOut(address(nexusUsdc), address(nexusNusd), amount);
         vm.expectEmit(true, true, true, true);
@@ -591,7 +593,9 @@ contract BridgeZapTest is Utilities06 {
         uint256 amount = 10**6;
         zap.addDepositTokens(_castToArray(address(nexusNusd)));
         // usdc -> nusd (addLiquidity) on origin chain
-        uint256 amountOutOrigin = quoter.calculateAddLiquidity(nexusPool, 1, amount);
+        uint256[] memory amounts = new uint256[](nexusTokens.length);
+        amounts[1] = amount; // USDC index is 1
+        uint256 amountOutOrigin = quoter.calculateAddLiquidity(nexusPool, amounts);
         // Deposit usdc to receive nusd on origin chain
         SwapQuery memory originQuery = quoter.getAmountOut(address(nexusUsdc), address(nexusNusd), amount);
         originQuery.deadline = block.timestamp;

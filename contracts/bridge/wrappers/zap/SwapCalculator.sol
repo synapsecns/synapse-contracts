@@ -60,30 +60,30 @@ abstract contract SwapCalculator {
      * Note: the function might revert instead of returning 0 for incorrect requests. Make sure
      * to take that into account (see {_calculateAdd}, which is using this).
      */
-    function calculateAddLiquidity(
-        address pool,
-        uint8 tokenIndexFrom,
-        uint256 amountIn
-    ) external view returns (uint256 amountOut) {
-        if (amountIn == 0) return 0;
+    function calculateAddLiquidity(address pool, uint256[] memory amounts) external view returns (uint256 amountOut) {
         uint256 numTokens = _poolTokens[pool].length;
-        ManageLiquidityInfo memory v = ManageLiquidityInfo(
-            0,
-            0,
-            ISwap(pool).getAPrecise(),
-            IERC20(_poolLpToken[pool]).totalSupply(),
-            new uint256[](numTokens),
-            _poolMultipliers[pool]
-        );
+        require(amounts.length == numTokens, "Amounts must match pooled tokens");
+        ManageLiquidityInfo memory v = ManageLiquidityInfo({
+            d0: 0,
+            d1: 0,
+            preciseA: ISwap(pool).getAPrecise(),
+            totalSupply: IERC20(_poolLpToken[pool]).totalSupply(),
+            balances: new uint256[](numTokens),
+            multipliers: _poolMultipliers[pool]
+        });
 
         uint256[] memory newBalances = new uint256[](numTokens);
         for (uint256 i = 0; i < numTokens; ++i) {
             v.balances[i] = ISwap(pool).getTokenBalance(uint8(i));
-            newBalances[i] = v.balances[i].add(i == tokenIndexFrom ? amountIn : 0);
+            newBalances[i] = v.balances[i].add(amounts[i]);
         }
 
         if (v.totalSupply != 0) {
             v.d0 = _getD(_xp(v.balances, v.multipliers), v.preciseA);
+        } else {
+            for (uint256 i = 0; i < numTokens; ++i) {
+                require(amounts[i] > 0, "Must supply all tokens in pool");
+            }
         }
 
         // invariant after change
@@ -176,9 +176,11 @@ abstract contract SwapCalculator {
         uint8 tokenIndexFrom,
         uint256 amountIn
     ) internal view returns (uint256 amountOut) {
+        uint256[] memory amounts = new uint256[](_poolTokens[pool].length);
+        amounts[tokenIndexFrom] = amountIn;
         // In order to keep the code clean, we do an external call to ourselves here
         // and return 0 should the execution be reverted.
-        try this.calculateAddLiquidity(pool, tokenIndexFrom, amountIn) returns (uint256 _amountOut) {
+        try this.calculateAddLiquidity(pool, amounts) returns (uint256 _amountOut) {
             amountOut = _amountOut;
         } catch {
             return 0;

@@ -143,6 +143,28 @@ contract SwapCalculatorTest is Utilities06 {
         assertEq(amountOut, balanceAfter - balanceBefore, "Incorrect reported amount");
     }
 
+    function test_calculateAdd_emptyPool(uint256 tokenFrom, uint256 amount) public {
+        tokenFrom = tokenFrom % nUsdTokens.length;
+        IERC20 tokenIn = nUsdTokens[tokenFrom];
+        amount = _adjustAmount(tokenIn, amount);
+        // Withdraw all tokens from the pool
+        ISwap(nUsdPool).removeLiquidity(
+            IERC20(nusd).balanceOf(address(this)),
+            new uint256[](nUsdTokens.length),
+            type(uint256).max
+        );
+        uint256 quoteOut = calc.calculateAdd(nUsdPool, uint8(tokenFrom), amount);
+        assertEq(quoteOut, 0, "Wrong quote for empty pool");
+        // Do the remaining checks
+        test_calculateAdd(tokenFrom, amount);
+    }
+
+    function test_calculateAddLiquidity_revert_wrongTokensAmount(uint8 amount) public {
+        vm.assume(amount != nUsdTokens.length);
+        vm.expectRevert("Amounts must match pooled tokens");
+        calc.calculateAddLiquidity(address(nUsdPool), new uint256[](amount));
+    }
+
     function _adjustAmount(IERC20 token, uint256 amount) internal view returns (uint256 amountIn) {
         amountIn = amount % token.balanceOf(address(this));
     }
