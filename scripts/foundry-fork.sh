@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-# Test contracts ending with exactly "Test" don't require any forking
-forge test --match-contract "$1.*Test$" -vvv || exit 1
-
+#TODO: fork tests should read env variables using cheatcodes
 # Test contracts ending with exactly "TestAvax" require Avalanche RPC and block number: 2022-04-25
 forge test --match-contract "$1.*TestAvax$" --fork-url $AVAX_API --fork-block-number 13897000 -vvv || exit 1
 
