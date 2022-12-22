@@ -7,27 +7,24 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get, execute, getOrNull, log, save } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  if (
-    (await getChainId()) === CHAIN_ID.KLATYN
-  ) {
+  if ((await getChainId()) === CHAIN_ID.KLATYN) {
     if ((await getOrNull("LINK")) == null) {
+      await deploy("LINK", {
+        contract: "SynapseERC677",
+        from: deployer,
+        log: true,
+        skipIfAlreadyDeployed: true,
+      });
 
-        await deploy("LINK", {
-            contract: "SynapseERC677",
-            from: deployer,
-            log: true,
-            skipIfAlreadyDeployed: true,
-        });
-        
-        await execute(
-            "LINK",
-            { from: deployer, log: true },
-            "initialize",
-            "ChainLink Token",
-            "LINK",
-            "18",
-            deployer
-          );
+      await execute(
+        "LINK",
+        { from: deployer, log: true },
+        "initialize",
+        "ChainLink Token",
+        "LINK",
+        "18",
+        deployer
+      );
 
       await execute(
         "LINK",
