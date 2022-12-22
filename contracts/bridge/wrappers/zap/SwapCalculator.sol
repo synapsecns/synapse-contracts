@@ -3,11 +3,12 @@
 pragma solidity 0.6.12;
 
 import "../../interfaces/ISwap.sol";
+import "../../interfaces/ISwapQuoter.sol";
 import "../../../amm/MathUtils.sol";
 
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
-abstract contract SwapCalculator {
+abstract contract SwapCalculator is ISwapQuoter {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     using SafeMath for uint256;
@@ -60,7 +61,12 @@ abstract contract SwapCalculator {
      * Note: the function might revert instead of returning 0 for incorrect requests. Make sure
      * to take that into account (see {_calculateAdd}, which is using this).
      */
-    function calculateAddLiquidity(address pool, uint256[] memory amounts) external view returns (uint256 amountOut) {
+    function calculateAddLiquidity(address pool, uint256[] memory amounts)
+        external
+        view
+        override
+        returns (uint256 amountOut)
+    {
         uint256 numTokens = _poolTokens[pool].length;
         require(amounts.length == numTokens, "Amounts must match pooled tokens");
         ManageLiquidityInfo memory v = ManageLiquidityInfo({
@@ -103,6 +109,44 @@ abstract contract SwapCalculator {
             v.d1 = _getD(_xp(newBalances, v.multipliers), v.preciseA);
             return v.d1.sub(v.d0).mul(v.totalSupply).div(v.d0);
         }
+    }
+
+    /**
+     * @notice Returns the exact quote for swapping between two given tokens.
+     * @dev Exposes ISwap.calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+     */
+    function calculateSwap(
+        address pool,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 dx
+    ) external view override returns (uint256 amountOut) {
+        amountOut = ISwap(pool).calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+    }
+
+    /**
+     * @notice Returns the exact quote for withdrawing pools tokens in a balanced way.
+     * @dev Exposes ISwap.calculateRemoveLiquidity(amount);
+     */
+    function calculateRemoveLiquidity(address pool, uint256 amount)
+        external
+        view
+        override
+        returns (uint256[] memory amountsOut)
+    {
+        amountsOut = ISwap(pool).calculateRemoveLiquidity(amount);
+    }
+
+    /**
+     * @notice Returns the exact quote for withdrawing a single pool token.
+     * @dev Exposes ISwap.calculateRemoveLiquidityOneToken(tokenAmount, tokenIndex);
+     */
+    function calculateWithdrawOneToken(
+        address pool,
+        uint256 tokenAmount,
+        uint8 tokenIndex
+    ) external view override returns (uint256 amountOut) {
+        amountOut = ISwap(pool).calculateRemoveLiquidityOneToken(tokenAmount, tokenIndex);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

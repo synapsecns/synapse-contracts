@@ -10,7 +10,15 @@ contract SwapCalculatorHarness is SwapCalculator {
         _addPool(pool);
     }
 
-    function calculateSwap(
+    function getAmountOut(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn
+    ) external view override returns (SwapQuery memory query) {}
+
+    function poolInfo(address pool) external view override returns (uint256 tokens, address lpToken) {}
+
+    function calculateSwapSafe(
         address pool,
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
@@ -19,7 +27,7 @@ contract SwapCalculatorHarness is SwapCalculator {
         return _calculateSwap(pool, tokenIndexFrom, tokenIndexTo, amountIn);
     }
 
-    function calculateRemove(
+    function calculateRemoveSafe(
         address pool,
         uint8 tokenIndexTo,
         uint256 amountIn
@@ -27,7 +35,7 @@ contract SwapCalculatorHarness is SwapCalculator {
         return _calculateRemove(pool, tokenIndexTo, amountIn);
     }
 
-    function calculateAdd(
+    function calculateAddSafe(
         address pool,
         uint8 tokenIndexFrom,
         uint256 amountIn
@@ -78,7 +86,7 @@ contract SwapCalculatorTest is Utilities06 {
         calc.addPool(nUsdPool);
     }
 
-    function test_calculateSwap(
+    function test_calculateSwapSafe(
         uint256 tokenFrom,
         uint256 tokenTo,
         uint256 amount
@@ -88,7 +96,14 @@ contract SwapCalculatorTest is Utilities06 {
         IERC20 tokenIn = nUsdTokens[tokenFrom];
         IERC20 tokenOut = nUsdTokens[tokenTo];
         amount = _adjustAmount(tokenIn, amount);
-        uint256 quoteOut = calc.calculateSwap(nUsdPool, uint8(tokenFrom), uint8(tokenTo), amount);
+        uint256 quoteOut = calc.calculateSwapSafe(nUsdPool, uint8(tokenFrom), uint8(tokenTo), amount);
+        uint256 quoteUnsafe = 0;
+        try calc.calculateSwap(nUsdPool, uint8(tokenFrom), uint8(tokenTo), amount) returns (uint256 _amountOut) {
+            quoteUnsafe = _amountOut;
+        } catch {
+            emit log_string("calculateSwap failed");
+        }
+        assertEq(quoteOut, quoteUnsafe, "Quotes don't match");
         uint256 balanceBefore = tokenOut.balanceOf(address(this));
         uint256 amountOut = 0;
         try ISwap(nUsdPool).swap(uint8(tokenFrom), uint8(tokenTo), amount, 0, type(uint256).max) returns (
@@ -108,7 +123,14 @@ contract SwapCalculatorTest is Utilities06 {
         IERC20 tokenIn = nusd;
         IERC20 tokenOut = nUsdTokens[tokenTo];
         amount = _adjustAmount(tokenIn, amount);
-        uint256 quoteOut = calc.calculateRemove(nUsdPool, uint8(tokenTo), amount);
+        uint256 quoteOut = calc.calculateRemoveSafe(nUsdPool, uint8(tokenTo), amount);
+        uint256 quoteUnsafe = 0;
+        try calc.calculateWithdrawOneToken(nUsdPool, amount, uint8(tokenTo)) returns (uint256 _amountOut) {
+            quoteUnsafe = _amountOut;
+        } catch {
+            emit log_string("calculateWithdrawOneToken failed");
+        }
+        assertEq(quoteOut, quoteUnsafe, "Quotes don't match");
         uint256 balanceBefore = tokenOut.balanceOf(address(this));
         uint256 amountOut = 0;
         try ISwap(nUsdPool).removeLiquidityOneToken(amount, uint8(tokenTo), 0, type(uint256).max) returns (
@@ -128,9 +150,16 @@ contract SwapCalculatorTest is Utilities06 {
         IERC20 tokenIn = nUsdTokens[tokenFrom];
         IERC20 tokenOut = nusd;
         amount = _adjustAmount(tokenIn, amount);
-        uint256 quoteOut = calc.calculateAdd(nUsdPool, uint8(tokenFrom), amount);
+        uint256 quoteOut = calc.calculateAddSafe(nUsdPool, uint8(tokenFrom), amount);
         uint256[] memory amounts = new uint256[](nUsdTokens.length);
         amounts[tokenFrom] = amount;
+        uint256 quoteUnsafe = 0;
+        try calc.calculateAddLiquidity(nUsdPool, amounts) returns (uint256 _amountOut) {
+            quoteUnsafe = _amountOut;
+        } catch {
+            emit log_string("calculateAddLiquidity failed");
+        }
+        assertEq(quoteOut, quoteUnsafe, "Quotes don't match");
         uint256 balanceBefore = tokenOut.balanceOf(address(this));
         uint256 amountOut = 0;
         try ISwap(nUsdPool).addLiquidity(amounts, 0, type(uint256).max) returns (uint256 _amountOut) {
@@ -153,10 +182,25 @@ contract SwapCalculatorTest is Utilities06 {
             new uint256[](nUsdTokens.length),
             type(uint256).max
         );
-        uint256 quoteOut = calc.calculateAdd(nUsdPool, uint8(tokenFrom), amount);
+        uint256 quoteOut = calc.calculateAddSafe(nUsdPool, uint8(tokenFrom), amount);
         assertEq(quoteOut, 0, "Wrong quote for empty pool");
         // Do the remaining checks
         test_calculateAdd(tokenFrom, amount);
+    }
+
+    function test_calculateRemoveLiquidity(uint256 amount) public {
+        IERC20 tokenIn = nusd;
+        amount = _adjustAmount(tokenIn, amount);
+        uint256[] memory amounts = calc.calculateRemoveLiquidity(address(nUsdPool), amount);
+        uint256[] memory balanceBefore = new uint256[](nUsdTokens.length);
+        for (uint256 i = 0; i < nUsdTokens.length; ++i) {
+            balanceBefore[i] = nUsdTokens[i].balanceOf(address(this));
+        }
+        ISwap(nUsdPool).removeLiquidity(amount, new uint256[](nUsdTokens.length), type(uint256).max);
+        for (uint256 i = 0; i < nUsdTokens.length; ++i) {
+            uint256 balanceAfter = nUsdTokens[i].balanceOf(address(this));
+            assertEq(balanceAfter - balanceBefore[i], amounts[i], "Incorrect removeLiquidity quote");
+        }
     }
 
     function test_calculateAddLiquidity_revert_wrongTokensAmount(uint8 amount) public {

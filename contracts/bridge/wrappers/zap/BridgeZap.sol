@@ -292,6 +292,10 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
         }
     }
 
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                          VIEWS: SWAP QUOTER                          ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
     /**
      * @notice Finds the best pool for tokenIn -> tokenOut swap from the list of supported pools.
      * Returns the `SwapQuery` struct, that can be used on BridgeZap.
@@ -310,6 +314,67 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
      */
     function poolInfo(address pool) external view override returns (uint256, address) {
         return swapQuoter.poolInfo(pool);
+    }
+
+    /**
+     * @notice Returns the exact quote for adding liquidity to a given pool
+     * in a form of a single token.
+     * @param pool      The pool to add tokens to
+     * @param amounts   An array of token amounts to deposit.
+     *                  The amount should be in each pooled token's native precision.
+     *                  If a token charges a fee on transfers, use the amount that gets transferred after the fee.
+     * @return LP token amount the user will receive
+     */
+    function calculateAddLiquidity(address pool, uint256[] memory amounts) external view override returns (uint256) {
+        return swapQuoter.calculateAddLiquidity(pool, amounts);
+    }
+
+    /**
+     * @notice Returns the exact quote for swapping between two given tokens.
+     * @param pool              The pool to use for the swap
+     * @param tokenIndexFrom    The token the user wants to sell
+     * @param tokenIndexTo      The token the user wants to buy
+     * @param dx                The amount of tokens the user wants to sell. If the token charges a fee on transfers,
+     *                          use the amount that gets transferred after the fee.
+     * @return amountOut        amount of tokens the user will receive
+     */
+    function calculateSwap(
+        address pool,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 dx
+    ) external view override returns (uint256 amountOut) {
+        amountOut = swapQuoter.calculateSwap(pool, tokenIndexFrom, tokenIndexTo, dx);
+    }
+
+    /**
+     * @notice Returns the exact quote for withdrawing pools tokens in a balanced way.
+     * @param pool          The pool to withdraw tokens from
+     * @param amount        The amount of LP tokens that would be burned on withdrawal
+     * @return amountsOut   Array of token balances that the user will receive
+     */
+    function calculateRemoveLiquidity(address pool, uint256 amount)
+        external
+        view
+        override
+        returns (uint256[] memory amountsOut)
+    {
+        amountsOut = swapQuoter.calculateRemoveLiquidity(pool, amount);
+    }
+
+    /**
+     * @notice Returns the exact quote for withdrawing a single pool token.
+     * @param pool          The pool to withdraw a token from
+     * @param tokenAmount   The amount of LP token to burn
+     * @param tokenIndex    Index of which token will be withdrawn
+     * @return amountOut    Calculated amount of underlying token available to withdraw
+     */
+    function calculateWithdrawOneToken(
+        address pool,
+        uint256 tokenAmount,
+        uint8 tokenIndex
+    ) external view override returns (uint256 amountOut) {
+        amountOut = swapQuoter.calculateWithdrawOneToken(pool, tokenAmount, tokenIndex);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

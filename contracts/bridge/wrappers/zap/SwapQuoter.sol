@@ -2,7 +2,6 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../../interfaces/ISwapQuoter.sol";
 import "../../libraries/BridgeStructs.sol";
 import "./SwapCalculator.sol";
 
@@ -16,7 +15,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * - calculateSwap(uint8, uint8, uint256) external view returns (uint256);
  * - swap(uin8, uint8, uint256, uint256, uint256) external returns (uint256);
  */
-contract SwapQuoter is SwapCalculator, Ownable, ISwapQuoter {
+contract SwapQuoter is SwapCalculator, Ownable {
     /// @notice Address of BridgeZap contract
     address public immutable bridgeZap;
 
