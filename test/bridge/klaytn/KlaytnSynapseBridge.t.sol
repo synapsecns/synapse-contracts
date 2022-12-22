@@ -44,7 +44,7 @@ interface IWKlayUnwrapper {
     function withdraw(uint256 amount) external;
 }
 
-contract KlaytnSynapseBridgeTest is Test {
+contract KlaytnSynapseBridgeTestFork is Test {
     // 2022-11-25
     uint256 public constant TEST_BLOCK_NUMBER = 107_500_000;
     uint256 public constant AMOUNT = 10**18;
