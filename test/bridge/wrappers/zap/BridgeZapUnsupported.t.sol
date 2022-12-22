@@ -19,6 +19,9 @@ contract BridgeZapTest is Utilities06 {
     SwapQuoter internal quoter;
     BridgeZap internal zap;
 
+    address internal nEthPool;
+    IERC20[] internal nEthTokens;
+
     IWETH9 internal weth;
     SynapseERC20 internal neth;
 
@@ -28,9 +31,23 @@ contract BridgeZapTest is Utilities06 {
         weth = deployWETH();
         neth = deploySynapseERC20("neth");
 
+        {
+            uint256[] memory amounts = new uint256[](2);
+            amounts[0] = 1000;
+            amounts[1] = 1050;
+            nEthTokens.push(IERC20(address(neth)));
+            nEthTokens.push(IERC20(address(weth)));
+            nEthPool = deployPoolWithLiquidity(nEthTokens, amounts);
+        }
+
         bridge = deployBridge();
         zap = new BridgeZap(payable(weth), address(bridge));
         quoter = new SwapQuoter(address(zap));
+
+        zap.initialize();
+
+        quoter.addPool(nEthPool);
+        zap.setSwapQuoter(quoter);
 
         _dealAndApprove(address(weth));
         _dealAndApprove(address(neth));
@@ -72,6 +89,8 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_b_revert_unsupportedETH() public {
+        // Make sure user has no WETH
+        _unwrapUserWETH();
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
         vm.expectRevert("Token not supported");
@@ -83,6 +102,182 @@ contract BridgeZapTest is Utilities06 {
             amount: amount,
             originQuery: emptyQuery,
             destQuery: emptyQuery
+        });
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║             TESTS: SWAP INTO UNSUPPORTED TOKEN ON ORIGIN             ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_sb_revert_fromTokenToUnsupported() public {
+        uint256 amount = 10**18;
+        SwapQuery memory emptyQuery;
+        SwapQuery memory originQuery = quoter.getAmountOut(address(weth), address(neth), amount);
+        vm.expectRevert("Token not supported");
+        vm.prank(USER);
+        zap.bridge({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: emptyQuery
+        });
+    }
+
+    function test_sb_revert_fromETHToUnsupported() public {
+        // Make sure user has no WETH
+        _unwrapUserWETH();
+        uint256 amount = 10**18;
+        SwapQuery memory emptyQuery;
+        SwapQuery memory originQuery = quoter.getAmountOut(address(weth), address(neth), amount);
+        vm.expectRevert("Token not supported");
+        vm.prank(USER);
+        zap.bridge{value: amount}({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: emptyQuery
+        });
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                TESTS: UNSUPPORTED SWAP ON DEST CHAIN                 ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_bs_revert_depositAndRemove() public {
+        // depositAndRemove() does not exist
+        uint256 amount = 10**18;
+        SwapQuery memory emptyQuery;
+        zap.addDepositTokens(_castToArray(address(weth)));
+        SwapQuery memory destQuery = SwapQuery({
+            swapAdapter: address(1),
+            tokenOut: address(0),
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(
+                SynapseParams({action: Action.RemoveLiquidity, pool: address(0), tokenIndexFrom: 0, tokenIndexTo: 0})
+            )
+        });
+        vm.expectRevert("Unsupported dest action");
+        vm.prank(USER);
+        zap.bridge({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function test_bs_revert_depositETHAndRemove() public {
+        // Make sure user has no WETH
+        _unwrapUserWETH();
+        // depositETHAndRemove() does not exist
+        uint256 amount = 10**18;
+        SwapQuery memory emptyQuery;
+        zap.addDepositTokens(_castToArray(address(weth)));
+        SwapQuery memory destQuery = SwapQuery({
+            swapAdapter: address(1),
+            tokenOut: address(0),
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(
+                SynapseParams({action: Action.RemoveLiquidity, pool: address(0), tokenIndexFrom: 0, tokenIndexTo: 0})
+            )
+        });
+        vm.expectRevert("Unsupported dest action");
+        vm.prank(USER);
+        zap.bridge{value: amount}({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function test_bs_revert_depositAndAdd() public {
+        // depositAndAdd() does not exist
+        uint256 amount = 10**18;
+        SwapQuery memory emptyQuery;
+        zap.addDepositTokens(_castToArray(address(weth)));
+        SwapQuery memory destQuery = SwapQuery({
+            swapAdapter: address(1),
+            tokenOut: address(0),
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(
+                SynapseParams({action: Action.AddLiquidity, pool: address(0), tokenIndexFrom: 0, tokenIndexTo: 0})
+            )
+        });
+        vm.expectRevert("Unsupported dest action");
+        vm.prank(USER);
+        zap.bridge({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function test_bs_revert_depositETHAndAdd() public {
+        // Make sure user has no WETH
+        _unwrapUserWETH();
+        // depositETHAndAdd() does not exist
+        uint256 amount = 10**18;
+        SwapQuery memory emptyQuery;
+        zap.addDepositTokens(_castToArray(address(weth)));
+        SwapQuery memory destQuery = SwapQuery({
+            swapAdapter: address(1),
+            tokenOut: address(0),
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(
+                SynapseParams({action: Action.AddLiquidity, pool: address(0), tokenIndexFrom: 0, tokenIndexTo: 0})
+            )
+        });
+        vm.expectRevert("Unsupported dest action");
+        vm.prank(USER);
+        zap.bridge{value: amount}({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(weth),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function test_bs_revert_redeemAndAdd() public {
+        // redeemAndAdd() does not exist
+        uint256 amount = 10**18;
+        SwapQuery memory emptyQuery;
+        zap.addBurnTokens(_castToArray(address(neth)));
+        SwapQuery memory destQuery = SwapQuery({
+            swapAdapter: address(1),
+            tokenOut: address(0),
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(
+                SynapseParams({action: Action.AddLiquidity, pool: address(0), tokenIndexFrom: 0, tokenIndexTo: 0})
+            )
+        });
+        vm.expectRevert("Unsupported dest action");
+        vm.prank(USER);
+        zap.bridge({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(neth),
+            amount: amount,
+            originQuery: emptyQuery,
+            destQuery: destQuery
         });
     }
 
@@ -107,5 +302,10 @@ contract BridgeZapTest is Utilities06 {
         uint256 balance = weth.balanceOf(USER);
         vm.prank(USER);
         weth.withdraw(balance);
+    }
+
+    function _castToArray(address token) internal pure returns (address[] memory tokens) {
+        tokens = new address[](1);
+        tokens[0] = token;
     }
 }
