@@ -8,7 +8,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get, execute, getOrNull, log, save } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  if (includes([CHAIN_ID.DFK, CHAIN_ID.KLATYN], await getChainId())) {
+  if (includes([CHAIN_ID.DFK, CHAIN_ID.KLATYN, CHAIN_ID.DOGECHAIN], await getChainId())) {
     if ((await getOrNull("USDC")) == null) {
       const receipt = await execute(
         "SynapseERC20Factory",
@@ -19,7 +19,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         ).address,
         "USD Coin",
         "USDC",
-        (await getChainId()) === CHAIN_ID.DFK ? "18" : "6"
+        (await getChainId()) === CHAIN_ID.DFK ? "18" : "6",
+        deployer
       );
 
       const newTokenEvent = receipt?.events?.find((e: any) => e["event"] == "SynapseERC20Created");
