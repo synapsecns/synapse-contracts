@@ -249,12 +249,10 @@ contract BridgeZapTest is Utilities06 {
         uint256 amount = 10**6;
         zap.addDepositTokens(_castToArray(address(nexusNusd)));
         SwapQuery memory emptyQuery;
-        // Try adding liquidity and revert at the last moment to get the exact quote
-        uint256 amountOut = calculateAddLiquidity(ISwap(nexusPool), 1, amount, nexusTokens.length);
+        // usdc -> nusd (addLiquidity) on origin chain
+        uint256 amountOut = quoter.calculateAddLiquidity(nexusPool, 1, amount);
         // Deposit usdc to receive nusd on origin chain
         SwapQuery memory originQuery = quoter.getAmountOut(address(nexusUsdc), address(nexusNusd), amount);
-        // TODO: quoter should return the exact quote
-        originQuery.minAmountOut = amountOut;
         vm.expectEmit(true, true, true, true);
         emit TokenDeposit(TO, OPT_CHAINID, address(nexusNusd), amountOut);
         vm.prank(USER);
@@ -592,13 +590,11 @@ contract BridgeZapTest is Utilities06 {
     function test_sbs_zapAndDepositAndSwap() public {
         uint256 amount = 10**6;
         zap.addDepositTokens(_castToArray(address(nexusNusd)));
-        // Try adding liquidity and revert at the last moment to get the exact quote
-        uint256 amountOutOrigin = calculateAddLiquidity(ISwap(nexusPool), 1, amount, nexusTokens.length);
+        // usdc -> nusd (addLiquidity) on origin chain
+        uint256 amountOutOrigin = quoter.calculateAddLiquidity(nexusPool, 1, amount);
         // Deposit usdc to receive nusd on origin chain
         SwapQuery memory originQuery = quoter.getAmountOut(address(nexusUsdc), address(nexusNusd), amount);
         originQuery.deadline = block.timestamp;
-        // TODO: quoter should return the exact quote
-        originQuery.minAmountOut = amountOutOrigin;
         // Emulate bridge fees
         uint256 amountInDest = (amountOutOrigin * 999) / 1000;
         // nusd -> usdc on dest chain

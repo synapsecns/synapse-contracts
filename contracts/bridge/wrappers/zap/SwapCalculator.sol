@@ -3,11 +3,34 @@
 pragma solidity 0.6.12;
 
 import "../../interfaces/ISwap.sol";
+import "../../../amm/MathUtils.sol";
 
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
 abstract contract SwapCalculator {
     using EnumerableSet for EnumerableSet.AddressSet;
+
+    using SafeMath for uint256;
+    using MathUtils for uint256;
+
+    // Struct storing variables used in calculations in the
+    // {add,remove}Liquidity functions to avoid stack too deep errors
+    struct ManageLiquidityInfo {
+        uint256 d0;
+        uint256 d1;
+        uint256 preciseA;
+        uint256 totalSupply;
+        uint256[] balances;
+        uint256[] multipliers;
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                              CONSTANTS                               ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    uint256 private constant POOL_PRECISION_DECIMALS = 18;
+    uint256 private constant A_PRECISION = 100;
+    uint256 private constant FEE_DENOMINATOR = 10**10;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                               STORAGE                                ║*▕
@@ -19,6 +42,68 @@ abstract contract SwapCalculator {
     mapping(address => address[]) internal _poolTokens;
     /// @dev LP token for every supported ISwap pool (if exists)
     mapping(address => address) internal _poolLpToken;
+    /// @dev Pool precision multipliers for every supported ISwap pool
+    mapping(address => uint256[]) internal _poolMultipliers;
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                            EXTERNAL VIEWS                            ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    /**
+     * @notice Returns the exact quote for adding liquidity to a given pool
+     * in a form of a single token.
+     * @dev Apparently, the StableSwap authors didn't consider such function worth implementing,
+     * as the only way to get a quote for adding liquidity would be calculateTokenAmount(),
+     * which gives an ESTIMATE: it doesn't take the trade fees into account.
+     * We do need the exact quotes for (DAI/USDC/USDT) -> nUSD swaps on Mainnet, hence we do this.
+     * The code is copied from SwapUtils.addLiquidity(), with all the state changes omitted.
+     * Note: the function might revert instead of returning 0 for incorrect requests. Make sure
+     * to take that into account (see {_calculateAdd}, which is using this).
+     */
+    function calculateAddLiquidity(
+        address pool,
+        uint8 tokenIndexFrom,
+        uint256 amountIn
+    ) external view returns (uint256 amountOut) {
+        if (amountIn == 0) return 0;
+        uint256 numTokens = _poolTokens[pool].length;
+        ManageLiquidityInfo memory v = ManageLiquidityInfo(
+            0,
+            0,
+            ISwap(pool).getAPrecise(),
+            IERC20(_poolLpToken[pool]).totalSupply(),
+            new uint256[](numTokens),
+            _poolMultipliers[pool]
+        );
+
+        uint256[] memory newBalances = new uint256[](numTokens);
+        for (uint256 i = 0; i < numTokens; ++i) {
+            v.balances[i] = ISwap(pool).getTokenBalance(uint8(i));
+            newBalances[i] = v.balances[i].add(i == tokenIndexFrom ? amountIn : 0);
+        }
+
+        if (v.totalSupply != 0) {
+            v.d0 = _getD(_xp(v.balances, v.multipliers), v.preciseA);
+        }
+
+        // invariant after change
+        v.d1 = _getD(_xp(newBalances, v.multipliers), v.preciseA);
+        require(v.d1 > v.d0, "D should increase");
+
+        if (v.totalSupply == 0) {
+            return v.d1;
+        } else {
+            (, , , , uint256 swapFee, , ) = ISwap(pool).swapStorage();
+            uint256 feePerToken = _feePerToken(swapFee, numTokens);
+            for (uint256 i = 0; i < numTokens; ++i) {
+                uint256 idealBalance = v.d1.mul(v.balances[i]).div(v.d0);
+                uint256 fees = feePerToken.mul(idealBalance.difference(newBalances[i])).div(FEE_DENOMINATOR);
+                newBalances[i] = newBalances[i].sub(fees);
+            }
+            v.d1 = _getD(_xp(newBalances, v.multipliers), v.preciseA);
+            return v.d1.sub(v.d0).mul(v.totalSupply).div(v.d0);
+        }
+    }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                           INTERNAL HELPERS                           ║*▕
@@ -31,7 +116,9 @@ abstract contract SwapCalculator {
             if (tokens.length != 0) return;
             for (uint8 i = 0; ; ++i) {
                 try ISwap(pool).getToken(i) returns (IERC20 token) {
+                    uint256 decimals = ERC20(address(token)).decimals();
                     _poolTokens[pool].push(address(token));
+                    _poolMultipliers[pool].push(10**POOL_PRECISION_DECIMALS.sub(decimals));
                 } catch {
                     // End of pool reached
                     break;
@@ -89,12 +176,9 @@ abstract contract SwapCalculator {
         uint8 tokenIndexFrom,
         uint256 amountIn
     ) internal view returns (uint256 amountOut) {
-        uint256 tokens = _poolTokens[pool].length;
-        // Prepare array with deposit amounts
-        uint256[] memory amounts = new uint256[](tokens);
-        amounts[tokenIndexFrom] = amountIn;
-        // TODO: use SwapCalculator to get the exact quote
-        try ISwap(pool).calculateTokenAmount(amounts, true) returns (uint256 _amountOut) {
+        // In order to keep the code clean, we do an external call to ourselves here
+        // and return 0 should the execution be reverted.
+        try this.calculateAddLiquidity(pool, tokenIndexFrom, amountIn) returns (uint256 _amountOut) {
             amountOut = _amountOut;
         } catch {
             return 0;
@@ -120,5 +204,70 @@ abstract contract SwapCalculator {
                 indexOut = t + 1;
             }
         }
+    }
+
+    /**
+     * @notice Get fee applied to each token when adding
+     * or removing assets weighted differently from the pool
+     */
+    function _feePerToken(uint256 swapFee, uint256 numTokens) internal pure returns (uint256) {
+        return swapFee.mul(numTokens).div(numTokens.sub(1).mul(4));
+    }
+
+    /**
+     * @notice Get pool balances adjusted, as if all tokens had 18 decimals
+     */
+    function _xp(uint256[] memory balances, uint256[] memory precisionMultipliers)
+        internal
+        pure
+        returns (uint256[] memory)
+    {
+        uint256 _numTokens = balances.length;
+        require(_numTokens == precisionMultipliers.length, "Balances must match multipliers");
+        uint256[] memory xp = new uint256[](_numTokens);
+        for (uint256 i = 0; i < _numTokens; i++) {
+            xp[i] = balances[i].mul(precisionMultipliers[i]);
+        }
+        return xp;
+    }
+
+    /**
+     * @notice Get D: pool invariant
+     */
+    function _getD(uint256[] memory xp, uint256 a) internal pure returns (uint256) {
+        uint256 _numTokens = xp.length;
+        uint256 s;
+        for (uint256 i = 0; i < _numTokens; i++) {
+            s = s.add(xp[i]);
+        }
+        if (s == 0) {
+            return 0;
+        }
+
+        uint256 prevD;
+        uint256 d = s;
+        uint256 nA = a.mul(_numTokens);
+
+        for (uint256 i = 0; i < 256; i++) {
+            uint256 dP = d;
+            for (uint256 j = 0; j < _numTokens; j++) {
+                dP = dP.mul(d).div(xp[j].mul(_numTokens));
+                // If we were to protect the division loss we would have to keep the denominator separate
+                // and divide at the end. However this leads to overflow with large numTokens or/and D.
+                // dP = dP * D * D * D * ... overflow!
+            }
+            prevD = d;
+            d = nA.mul(s).div(A_PRECISION).add(dP.mul(_numTokens)).mul(d).div(
+                nA.sub(A_PRECISION).mul(d).div(A_PRECISION).add(_numTokens.add(1).mul(dP))
+            );
+            if (d.within1(prevD)) {
+                return d;
+            }
+        }
+
+        // Convergence should occur in 4 loops or less. If this is reached, there may be something wrong
+        // with the pool. If this were to occur repeatedly, LPs should withdraw via `removeLiquidity()`
+        // function which does not rely on D.
+        revert("D does not converge");
     }
 }

@@ -8,6 +8,8 @@ interface ISwap {
     // pool data view functions
     function getA() external view returns (uint256);
 
+    function getAPrecise() external view returns (uint256);
+
     function getToken(uint8 index) external view returns (IERC20);
 
     function getTokenIndex(address tokenAddress) external view returns (uint8);
