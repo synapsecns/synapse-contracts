@@ -126,10 +126,10 @@ contract SwapQuoterTest is Utilities06 {
         // Check: poolsAmount()
         assertEq(quoter.poolsAmount(), 2, "!poolsAmount");
         // Check: allPools()
-        address[] memory pools = quoter.allPools();
+        Pool[] memory pools = quoter.allPools();
         assertEq(pools.length, 2, "!pools.length");
-        assertEq(pools[0], nEthPool, "!pools[0]");
-        assertEq(pools[1], nUsdPool, "!pools[1]");
+        assertEq(pools[0].pool, nEthPool, "!pools[0]");
+        assertEq(pools[1].pool, nUsdPool, "!pools[1]");
         // Check: poolTokens(nEthPool)
         {
             address[] memory tokens = quoter.poolTokens(nEthPool);

@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 import "../../../../contracts/bridge/wrappers/zap/SwapCalculator.sol";
 import "../../../utils/Utilities06.sol";
 
+// solhint-disable no-empty-blocks
 contract SwapCalculatorHarness is SwapCalculator {
     function addPool(address pool) external {
         _addPool(pool);
@@ -17,6 +18,12 @@ contract SwapCalculatorHarness is SwapCalculator {
     ) external view override returns (SwapQuery memory query) {}
 
     function poolInfo(address pool) external view override returns (uint256 tokens, address lpToken) {}
+
+    function allPools() external view override returns (Pool[] memory pools) {}
+
+    function poolTokens(address pool) external view override returns (address[] memory tokens) {}
+
+    function poolsAmount() external view override returns (uint256 tokens) {}
 
     function calculateSwapSafe(
         address pool,
