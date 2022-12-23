@@ -7,6 +7,7 @@ import "../../interfaces/ISynapseBridge.sol";
 import "../../interfaces/ISwapQuoter.sol";
 import "./SynapseAdapter.sol";
 
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /**
@@ -35,6 +36,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
  */
 contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     using SafeERC20 for IERC20;
+    using EnumerableSet for EnumerableSet.AddressSet;
 
     /**
      * @notice Indicates the type of the supported bridge token on the local chain.
@@ -76,8 +78,10 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     /// @dev If wrapper token is required for bridging, its address is stored in `.bridgeToken`
     /// i.e. for GMX: config[GMX].bridgeToken = GMXWrapper
     mapping(address => TokenConfig) public config;
-    // upgrade gap
-    uint256[49] private __gap;
+    /// @dev A list of all supported bridge tokens
+    EnumerableSet.AddressSet internal _bridgeTokens;
+    // upgrade gap (AddressSet takes two storage slots)
+    uint256[47] private __gap;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                      CONSTRUCTOR & INITIALIZER                       ║*▕
@@ -293,6 +297,56 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                         VIEWS: BRIDGE TOKENS                         ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    /**
+     * @notice Returns a list of all supported bridge tokens.
+     */
+    function bridgeTokens() external view returns (address[] memory tokens) {
+        uint256 amount = bridgeTokensAmount();
+        tokens = new address[](amount);
+        for (uint256 i = 0; i < amount; ++i) {
+            tokens[i] = _bridgeTokens.at(i);
+        }
+    }
+
+    /**
+     * @notice Returns the amount of the supported bridge tokens.
+     */
+    function bridgeTokensAmount() public view returns (uint256 amount) {
+        amount = _bridgeTokens.length();
+    }
+
+    /**
+     * @notice Returns a list of all supported pools.
+     */
+    function allPools() public view override returns (Pool[] memory pools) {
+        pools = swapQuoter.allPools();
+    }
+
+    /**
+     * @notice Returns the amount of tokens the given pool supports and the pool's LP token.
+     */
+    function poolInfo(address pool) public view override returns (uint256, address) {
+        return swapQuoter.poolInfo(pool);
+    }
+
+    /**
+     * @notice Returns a list of pool tokens for the given pool.
+     */
+    function poolTokens(address pool) public view override returns (address[] memory tokens) {
+        tokens = swapQuoter.poolTokens(pool);
+    }
+
+    /**
+     * @notice Returns the amount of supported pools.
+     */
+    function poolsAmount() public view override returns (uint256 amount) {
+        amount = swapQuoter.poolsAmount();
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                          VIEWS: SWAP QUOTER                          ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
@@ -307,13 +361,6 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
         uint256 amountIn
     ) external view override returns (SwapQuery memory) {
         return swapQuoter.getAmountOut(tokenIn, tokenOut, amountIn);
-    }
-
-    /**
-     * @notice Returns the amount of tokens the given pool supports and the pool's LP token.
-     */
-    function poolInfo(address pool) external view override returns (uint256, address) {
-        return swapQuoter.poolInfo(pool);
     }
 
     /**
@@ -451,16 +498,20 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
         TokenType tokenType,
         address bridgeToken
     ) internal {
-        config[token] = TokenConfig(tokenType, bridgeToken);
-        // Underlying token should always implement allowance(), approve()
-        if (token == bridgeToken) _approveToken(IERC20(token), address(synapseBridge));
-        // Use {setAllowance} for custom wrapper token setups
+        if (_bridgeTokens.add(token)) {
+            config[token] = TokenConfig(tokenType, bridgeToken);
+            // Underlying token should always implement allowance(), approve()
+            if (token == bridgeToken) _approveToken(IERC20(token), address(synapseBridge));
+            // Use {setAllowance} for custom wrapper token setups
+        }
     }
 
     /**
      * @notice Removes a bridge token from the BridgeZap config.
      */
     function _removeToken(address token) internal {
-        delete config[token];
+        if (_bridgeTokens.remove(token)) {
+            delete config[token];
+        }
     }
 }

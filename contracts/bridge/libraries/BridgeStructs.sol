@@ -21,3 +21,9 @@ struct SynapseParams {
     uint8 tokenIndexFrom;
     uint8 tokenIndexTo;
 }
+
+struct Pool {
+    address pool;
+    address lpToken;
+    address[] tokens;
+}

@@ -113,18 +113,19 @@ contract SwapQuoter is SwapCalculator, Ownable {
     /**
      * @notice Returns a list of all supported pools.
      */
-    function allPools() external view returns (address[] memory pools) {
+    function allPools() external view override returns (Pool[] memory pools) {
         uint256 amount = poolsAmount();
-        pools = new address[](amount);
+        pools = new Pool[](amount);
         for (uint256 i = 0; i < amount; ++i) {
-            pools[i] = _pools.at(i);
+            address pool = _pools.at(i);
+            pools[i] = Pool({pool: pool, lpToken: _poolLpToken[pool], tokens: _poolTokens[pool]});
         }
     }
 
     /**
      * @notice Returns a list of pool tokens for the given pool.
      */
-    function poolTokens(address pool) external view returns (address[] memory tokens) {
+    function poolTokens(address pool) external view override returns (address[] memory tokens) {
         tokens = _poolTokens[pool];
     }
 
@@ -139,7 +140,7 @@ contract SwapQuoter is SwapCalculator, Ownable {
     /**
      * @notice Returns the amount of supported pools.
      */
-    function poolsAmount() public view returns (uint256) {
+    function poolsAmount() public view override returns (uint256) {
         return _pools.length();
     }
 
