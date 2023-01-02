@@ -25,9 +25,15 @@ abstract contract SynapseAdapter is ISwapAdapter {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /**
-     * @notice Performs a tokenIn -> tokenOut swap, according to the provided params.
-     * tokenIn should have been already transferred to this contract.
-     * tokenOut will be sent to the requested address.
+     * @notice Performs a tokenIn -> tokenOut swap, according to the provided params,
+     * assuming tokenIn was already transferred to this contract.
+     * @dev Swap deadline and slippage is checked outside of this contract.
+     * @param to            Address to receive the swapped token
+     * @param tokenIn       Token to sell
+     * @param amountIn      Amount of tokens to sell
+     * @param tokenOut      Token to buy
+     * @param rawParams     Additional swap parameters
+     * @return amountOut    Amount of bought tokens
      */
     function swap(
         address to,

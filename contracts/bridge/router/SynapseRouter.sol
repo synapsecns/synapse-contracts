@@ -35,6 +35,9 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * Note: the transaction will be reverted, if `bridgeTokenO` is not set up in SynapseRouter.
  */
 contract SynapseRouter is SynapseAdapter, Ownable, ISwapQuoter {
+    // SynapseRouter is also the Adapter for the Synapse pools (this reduces the amount of token transfers).
+    // SynapseRouter address will be used as swapAdapter in SwapQueries returned by a local SwapQuoter.
+
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -433,6 +436,9 @@ contract SynapseRouter is SynapseAdapter, Ownable, ISwapQuoter {
             IERC20(token).safeTransfer(query.swapAdapter, amount);
         }
         tokenOut = query.tokenOut;
+        // If swapAdapter is this contract (which is the case for the supported Synapse pools),
+        // this will be an external call to address(this), which we are fine with.
+        // The external call is used because additional Adapters will be established in the future.
         amountOut = ISwapAdapter(query.swapAdapter).swap({
             to: address(this),
             tokenIn: token,
