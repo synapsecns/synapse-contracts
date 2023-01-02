@@ -117,7 +117,7 @@ contract SynapseRouter is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
      * @dev Every added token is assumed to not require a wrapper token for bridging.
      * Use {addToken} if that is not the case.
      */
-    function addBurnTokens(address[] calldata tokens) external onlyOwner {
+    function addRedeemTokens(address[] calldata tokens) external onlyOwner {
         uint256 amount = tokens.length;
         for (uint256 i = 0; i < amount; ++i) {
             _addToken(tokens[i], TokenType.Redeem, tokens[i]);

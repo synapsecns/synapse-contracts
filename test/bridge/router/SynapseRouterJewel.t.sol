@@ -61,7 +61,7 @@ contract SynapseRouterJewelTest is Utilities06 {
 
     function test_bs_jewel_fromAvaxToHarmony() public {
         uint256 amount = 10**18;
-        router.addBurnTokens(_castToArray(address(avaSynJewel)));
+        router.addRedeemTokens(_castToArray(address(avaSynJewel)));
         SwapQuery memory emptyQuery;
         // Emulate bridge fees
         uint256 amountInDest = (amount * 999) / 1000;
@@ -159,7 +159,7 @@ contract SynapseRouterJewelTest is Utilities06 {
 
     function test_sb_jewel_fromHarmony() public {
         uint256 amount = 10**18;
-        router.addBurnTokens(_castToArray(address(harSynJewel)));
+        router.addRedeemTokens(_castToArray(address(harSynJewel)));
         SwapQuery memory emptyQuery;
         SwapQuery memory originQuery = quoter.getAmountOut(address(jewel), address(harSynJewel), amount);
         vm.expectEmit(true, true, true, true);

@@ -259,7 +259,7 @@ contract SynapseRouterTest is Utilities06 {
         // redeemAndAdd() does not exist
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
-        router.addBurnTokens(_castToArray(address(neth)));
+        router.addRedeemTokens(_castToArray(address(neth)));
         SwapQuery memory destQuery = SwapQuery({
             swapAdapter: address(1),
             tokenOut: address(0),

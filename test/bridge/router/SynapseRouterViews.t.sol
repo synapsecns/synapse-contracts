@@ -68,8 +68,8 @@ contract SynapseRouterViewsTest is Utilities06 {
 
         router.initialize();
         router.setSwapQuoter(quoter);
-        router.addBurnTokens(_castToArray(address(neth)));
-        router.addBurnTokens(_castToArray(address(nusd)));
+        router.addRedeemTokens(_castToArray(address(neth)));
+        router.addRedeemTokens(_castToArray(address(nusd)));
         router.addDepositTokens(_castToArray(address(nexusNusd)));
     }
 
