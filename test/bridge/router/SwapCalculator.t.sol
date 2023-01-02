@@ -2,8 +2,8 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../../../../contracts/bridge/wrappers/zap/SwapCalculator.sol";
-import "../../../utils/Utilities06.sol";
+import "../../../contracts/bridge/router/SwapCalculator.sol";
+import "../../utils/Utilities06.sol";
 
 // solhint-disable no-empty-blocks
 contract SwapCalculatorHarness is SwapCalculator {

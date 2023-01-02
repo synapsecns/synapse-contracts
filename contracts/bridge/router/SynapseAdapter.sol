@@ -2,9 +2,9 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../../interfaces/ISwap.sol";
-import "../../interfaces/ISwapAdapter.sol";
-import "../../interfaces/ISwapQuoter.sol";
+import "../interfaces/ISwap.sol";
+import "../interfaces/ISwapAdapter.sol";
+import "../interfaces/ISwapQuoter.sol";
 
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 

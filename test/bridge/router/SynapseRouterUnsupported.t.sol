@@ -2,13 +2,13 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../../../utils/Utilities06.sol";
+import "../../utils/Utilities06.sol";
 
-import "../../../../contracts/bridge/wrappers/zap/SwapQuoter.sol";
-import "../../../../contracts/bridge/wrappers/zap/BridgeZap.sol";
+import "../../../contracts/bridge/router/SwapQuoter.sol";
+import "../../../contracts/bridge/router/SynapseRouter.sol";
 
 // solhint-disable func-name-mixedcase
-contract BridgeZapTest is Utilities06 {
+contract SynapseRouterTest is Utilities06 {
     address internal constant OWNER = address(1337);
     address internal constant USER = address(4242);
     address internal constant TO = address(2424);
@@ -17,7 +17,7 @@ contract BridgeZapTest is Utilities06 {
 
     SynapseBridge internal bridge;
     SwapQuoter internal quoter;
-    BridgeZap internal zap;
+    SynapseRouter internal router;
 
     address internal nEthPool;
     IERC20[] internal nEthTokens;
@@ -41,13 +41,13 @@ contract BridgeZapTest is Utilities06 {
         }
 
         bridge = deployBridge();
-        zap = new BridgeZap(payable(weth), address(bridge));
-        quoter = new SwapQuoter(address(zap));
+        router = new SynapseRouter(payable(weth), address(bridge));
+        quoter = new SwapQuoter(address(router));
 
-        zap.initialize();
+        router.initialize();
 
         quoter.addPool(nEthPool);
-        zap.setSwapQuoter(quoter);
+        router.setSwapQuoter(quoter);
 
         _dealAndApprove(address(weth));
         _dealAndApprove(address(neth));
@@ -63,7 +63,7 @@ contract BridgeZapTest is Utilities06 {
         SwapQuery memory emptyQuery;
         vm.expectRevert("Token not supported");
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(neth),
@@ -78,7 +78,7 @@ contract BridgeZapTest is Utilities06 {
         SwapQuery memory emptyQuery;
         vm.expectRevert("Token not supported");
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(weth),
@@ -95,7 +95,7 @@ contract BridgeZapTest is Utilities06 {
         SwapQuery memory emptyQuery;
         vm.expectRevert("Token not supported");
         vm.prank(USER);
-        zap.bridge{value: amount}({
+        router.bridge{value: amount}({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(weth),
@@ -115,7 +115,7 @@ contract BridgeZapTest is Utilities06 {
         SwapQuery memory originQuery = quoter.getAmountOut(address(weth), address(neth), amount);
         vm.expectRevert("Token not supported");
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(weth),
@@ -133,7 +133,7 @@ contract BridgeZapTest is Utilities06 {
         SwapQuery memory originQuery = quoter.getAmountOut(address(weth), address(neth), amount);
         vm.expectRevert("Token not supported");
         vm.prank(USER);
-        zap.bridge{value: amount}({
+        router.bridge{value: amount}({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(weth),
@@ -151,7 +151,7 @@ contract BridgeZapTest is Utilities06 {
         // depositAndRemove() does not exist
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
-        zap.addDepositTokens(_castToArray(address(weth)));
+        router.addDepositTokens(_castToArray(address(weth)));
         SwapQuery memory destQuery = SwapQuery({
             swapAdapter: address(1),
             tokenOut: address(0),
@@ -163,7 +163,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.expectRevert("Unsupported dest action");
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(weth),
@@ -179,7 +179,7 @@ contract BridgeZapTest is Utilities06 {
         // depositETHAndRemove() does not exist
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
-        zap.addDepositTokens(_castToArray(address(weth)));
+        router.addDepositTokens(_castToArray(address(weth)));
         SwapQuery memory destQuery = SwapQuery({
             swapAdapter: address(1),
             tokenOut: address(0),
@@ -191,7 +191,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.expectRevert("Unsupported dest action");
         vm.prank(USER);
-        zap.bridge{value: amount}({
+        router.bridge{value: amount}({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(weth),
@@ -205,7 +205,7 @@ contract BridgeZapTest is Utilities06 {
         // depositAndAdd() does not exist
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
-        zap.addDepositTokens(_castToArray(address(weth)));
+        router.addDepositTokens(_castToArray(address(weth)));
         SwapQuery memory destQuery = SwapQuery({
             swapAdapter: address(1),
             tokenOut: address(0),
@@ -217,7 +217,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.expectRevert("Unsupported dest action");
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(weth),
@@ -233,7 +233,7 @@ contract BridgeZapTest is Utilities06 {
         // depositETHAndAdd() does not exist
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
-        zap.addDepositTokens(_castToArray(address(weth)));
+        router.addDepositTokens(_castToArray(address(weth)));
         SwapQuery memory destQuery = SwapQuery({
             swapAdapter: address(1),
             tokenOut: address(0),
@@ -245,7 +245,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.expectRevert("Unsupported dest action");
         vm.prank(USER);
-        zap.bridge{value: amount}({
+        router.bridge{value: amount}({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(weth),
@@ -259,7 +259,7 @@ contract BridgeZapTest is Utilities06 {
         // redeemAndAdd() does not exist
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
-        zap.addBurnTokens(_castToArray(address(neth)));
+        router.addBurnTokens(_castToArray(address(neth)));
         SwapQuery memory destQuery = SwapQuery({
             swapAdapter: address(1),
             tokenOut: address(0),
@@ -271,7 +271,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.expectRevert("Unsupported dest action");
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(neth),
@@ -295,7 +295,7 @@ contract BridgeZapTest is Utilities06 {
             deal(token, USER, 10**20, true);
         }
         vm.prank(USER);
-        IERC20(token).approve(address(zap), type(uint256).max);
+        IERC20(token).approve(address(router), type(uint256).max);
     }
 
     function _unwrapUserWETH() internal {

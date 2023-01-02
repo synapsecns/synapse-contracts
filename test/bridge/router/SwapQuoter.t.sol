@@ -2,12 +2,12 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../../../../contracts/bridge/wrappers/zap/SwapQuoter.sol";
-import "../../../utils/Utilities06.sol";
+import "../../../contracts/bridge/router/SwapQuoter.sol";
+import "../../utils/Utilities06.sol";
 
 // solhint-disable func-name-mixedcase
 contract SwapQuoterTest is Utilities06 {
-    address internal constant ZAP_MOCK = address(123456);
+    address internal constant ROUTER_MOCK = address(123456);
     address internal constant OWNER = address(1337);
 
     SwapQuoter internal quoter;
@@ -27,7 +27,7 @@ contract SwapQuoterTest is Utilities06 {
     function setUp() public override {
         super.setUp();
 
-        quoter = new SwapQuoter(ZAP_MOCK);
+        quoter = new SwapQuoter(ROUTER_MOCK);
         // Deploy ETH tokens
         neth = deployERC20("nETH", 18);
         weth = deployERC20("WETH", 18);
@@ -159,7 +159,7 @@ contract SwapQuoterTest is Utilities06 {
                 if (i == j) {
                     _checkEqualTokensQuery(query, tokenIn, amountIn);
                 } else {
-                    assertEq(query.swapAdapter, ZAP_MOCK, "i != j: !swapAdapter");
+                    assertEq(query.swapAdapter, ROUTER_MOCK, "i != j: !swapAdapter");
                     assertEq(query.tokenOut, tokenOut, "i != j: !tokenOut");
                     assertEq(query.minAmountOut, pool.calculateSwap(i, j, amountIn), "i != j: !minAmountOut");
                     assertEq(query.deadline, type(uint256).max, "i != j: !deadline");

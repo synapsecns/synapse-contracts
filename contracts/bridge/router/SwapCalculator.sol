@@ -2,9 +2,9 @@
 
 pragma solidity 0.6.12;
 
-import "../../interfaces/ISwap.sol";
-import "../../interfaces/ISwapQuoter.sol";
-import "../../../amm/MathUtils.sol";
+import "../interfaces/ISwap.sol";
+import "../interfaces/ISwapQuoter.sol";
+import "../../amm/MathUtils.sol";
 
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 

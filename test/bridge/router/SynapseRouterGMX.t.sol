@@ -2,11 +2,11 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../../../utils/Utilities06.sol";
+import "../../utils/Utilities06.sol";
 
-import "../../../../contracts/bridge/wrappers/GMXWrapper.sol";
-import "../../../../contracts/bridge/wrappers/zap/SwapQuoter.sol";
-import "../../../../contracts/bridge/wrappers/zap/BridgeZap.sol";
+import "../../../contracts/bridge/wrappers/GMXWrapper.sol";
+import "../../../contracts/bridge/router/SwapQuoter.sol";
+import "../../../contracts/bridge/router/SynapseRouter.sol";
 
 contract GMX is ERC20 {
     address internal minter;
@@ -31,7 +31,7 @@ contract GMX is ERC20 {
 
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
-contract BridgeZapGMXTest is Utilities06 {
+contract SynapseRouterGMXTest is Utilities06 {
     address internal constant OWNER = address(1337);
     address internal constant USER = address(4242);
     address internal constant TO = address(2424);
@@ -40,7 +40,7 @@ contract BridgeZapGMXTest is Utilities06 {
 
     SynapseBridge internal bridge;
     SwapQuoter internal quoter;
-    BridgeZap internal zap;
+    SynapseRouter internal router;
 
     GMXWrapper internal gmxWrapper;
     GMX internal gmx;
@@ -59,11 +59,11 @@ contract BridgeZapGMXTest is Utilities06 {
         }
 
         // No WETH address is required for testing
-        zap = new BridgeZap(address(0), address(bridge));
-        quoter = new SwapQuoter(address(zap));
+        router = new SynapseRouter(address(0), address(bridge));
+        quoter = new SwapQuoter(address(router));
 
-        zap.initialize();
-        zap.setSwapQuoter(quoter);
+        router.initialize();
+        router.setSwapQuoter(quoter);
 
         // GMX Bridge Wrapper is set as minter for GMX
         gmx.setMinter(address(gmxWrapper));
@@ -78,13 +78,17 @@ contract BridgeZapGMXTest is Utilities06 {
 
     function test_b_gmx() public {
         uint256 amount = 10**18;
-        zap.addToken({token: address(gmx), tokenType: BridgeZap.TokenType.Redeem, bridgeToken: address(gmxWrapper)});
+        router.addToken({
+            token: address(gmx),
+            tokenType: SynapseRouter.TokenType.Redeem,
+            bridgeToken: address(gmxWrapper)
+        });
         // Even though it is a swapper token, no extra allowances are required here
         SwapQuery memory emptyQuery;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeem(TO, ARB_CHAINID, address(gmxWrapper), amount);
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: ARB_CHAINID,
             token: address(gmx),
@@ -102,7 +106,7 @@ contract BridgeZapGMXTest is Utilities06 {
         // update total supply
         deal(token, USER, 10**20, true);
         vm.prank(USER);
-        IERC20(token).approve(address(zap), type(uint256).max);
+        IERC20(token).approve(address(router), type(uint256).max);
     }
 
     function _castToArray(address token) internal pure returns (address[] memory tokens) {

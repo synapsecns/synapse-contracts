@@ -2,7 +2,7 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../../libraries/BridgeStructs.sol";
+import "../libraries/BridgeStructs.sol";
 import "./SwapCalculator.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -16,11 +16,11 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * - swap(uin8, uint8, uint256, uint256, uint256) external returns (uint256);
  */
 contract SwapQuoter is SwapCalculator, Ownable {
-    /// @notice Address of BridgeZap contract
-    address public immutable bridgeZap;
+    /// @notice Address of SynapseRouter contract
+    address public immutable synapseRouter;
 
-    constructor(address _bridgeZap) public {
-        bridgeZap = _bridgeZap;
+    constructor(address _synapseRouter) public {
+        synapseRouter = _synapseRouter;
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -60,7 +60,7 @@ contract SwapQuoter is SwapCalculator, Ownable {
 
     /**
      * @notice Finds the best pool for tokenIn -> tokenOut swap from the list of supported pools.
-     * Returns the `SwapQuery` struct, that can be used on BridgeZap.
+     * Returns the `SwapQuery` struct, that can be used on SynapseRouter.
      * minAmountOut and deadline fields will need to be adjusted based on the swap settings.
      */
     function getAmountOut(
@@ -101,8 +101,8 @@ contract SwapQuoter is SwapCalculator, Ownable {
         }
         // Fill the remaining fields if a path was found
         if (query.minAmountOut != 0) {
-            // Bridge Zap should be used for doing a swap through Synapse pools
-            query.swapAdapter = bridgeZap;
+            // Synapse Router should be used as "swap adapter" for doing a swap through Synapse pools
+            query.swapAdapter = synapseRouter;
             query.tokenOut = tokenOut;
             // Set default deadline to infinity. Not using the value of 0,
             // which would lead to every swap to revert by default.

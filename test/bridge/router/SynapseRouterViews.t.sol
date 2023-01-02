@@ -2,17 +2,17 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../../../utils/Utilities06.sol";
+import "../../utils/Utilities06.sol";
 
-import "../../../../contracts/bridge/wrappers/zap/SwapQuoter.sol";
-import "../../../../contracts/bridge/wrappers/zap/BridgeZap.sol";
+import "../../../contracts/bridge/router/SwapQuoter.sol";
+import "../../../contracts/bridge/router/SynapseRouter.sol";
 
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
-contract BridgeZapViewsTest is Utilities06 {
+contract SynapseRouterViewsTest is Utilities06 {
     SynapseBridge internal bridge;
     SwapQuoter internal quoter;
-    BridgeZap internal zap;
+    SynapseRouter internal router;
 
     address internal nEthPool;
     IERC20[] internal nEthTokens;
@@ -59,42 +59,42 @@ contract BridgeZapViewsTest is Utilities06 {
         nexusNusd = ERC20(_lpToken);
 
         bridge = deployBridge();
-        zap = new BridgeZap(payable(address(weth)), address(bridge));
-        quoter = new SwapQuoter(address(zap));
+        router = new SynapseRouter(payable(address(weth)), address(bridge));
+        quoter = new SwapQuoter(address(router));
 
         quoter.addPool(nEthPool);
         quoter.addPool(nUsdPool);
         quoter.addPool(nexusPool);
 
-        zap.initialize();
-        zap.setSwapQuoter(quoter);
-        zap.addBurnTokens(_castToArray(address(neth)));
-        zap.addBurnTokens(_castToArray(address(nusd)));
-        zap.addDepositTokens(_castToArray(address(nexusNusd)));
+        router.initialize();
+        router.setSwapQuoter(quoter);
+        router.addBurnTokens(_castToArray(address(neth)));
+        router.addBurnTokens(_castToArray(address(nusd)));
+        router.addDepositTokens(_castToArray(address(nexusNusd)));
     }
 
     function test_getters() public {
-        assertEq(address(zap.synapseBridge()), address(bridge), "!synapseBridge");
-        assertEq(address(zap.weth()), address(weth), "!weth");
-        assertEq(address(zap.swapQuoter()), address(quoter), "!swapQuoter");
+        assertEq(address(router.synapseBridge()), address(bridge), "!synapseBridge");
+        assertEq(address(router.weth()), address(weth), "!weth");
+        assertEq(address(router.swapQuoter()), address(quoter), "!swapQuoter");
     }
 
     function test_bridgeTokens() public {
-        address[] memory tokens = zap.bridgeTokens();
+        address[] memory tokens = router.bridgeTokens();
         assertEq(tokens.length, 3, "!bridgeTokens.length");
         assertEq(tokens[0], address(neth), "!bridgeTokens[0]");
         assertEq(tokens[1], address(nusd), "!bridgeTokens[1]");
         assertEq(tokens[2], address(nexusNusd), "!bridgeTokens[2]");
-        assertEq(zap.bridgeTokensAmount(), 3, "!bridgeTokensAmount");
+        assertEq(router.bridgeTokensAmount(), 3, "!bridgeTokensAmount");
     }
 
     function test_pools() public {
-        Pool[] memory pools = zap.allPools();
+        Pool[] memory pools = router.allPools();
         assertEq(pools.length, 3, "!allPools.length");
         _checkPool(pools[0], nEthPool, _getLpToken(nEthPool), nEthTokens);
         _checkPool(pools[1], nUsdPool, _getLpToken(nUsdPool), nUsdTokens);
         _checkPool(pools[2], nexusPool, address(nexusNusd), nexusTokens);
-        assertEq(zap.poolsAmount(), 3, "!poolsAmounts");
+        assertEq(router.poolsAmount(), 3, "!poolsAmounts");
     }
 
     function test_poolInfo() public {
@@ -108,9 +108,9 @@ contract BridgeZapViewsTest is Utilities06 {
         address lpToken,
         IERC20[] memory tokens
     ) internal {
-        (uint256 amount, address _lpToken) = zap.poolInfo(pool);
+        (uint256 amount, address _lpToken) = router.poolInfo(pool);
         assertEq(amount, tokens.length, "!poolInfo.amount");
-        address[] memory _tokens = zap.poolTokens(pool);
+        address[] memory _tokens = router.poolTokens(pool);
         _checkPool(Pool({pool: pool, lpToken: _lpToken, tokens: _tokens}), pool, lpToken, tokens);
     }
 

@@ -2,14 +2,14 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../../../utils/Utilities06.sol";
+import "../../utils/Utilities06.sol";
 
-import "../../../../contracts/bridge/wrappers/zap/SwapQuoter.sol";
-import "../../../../contracts/bridge/wrappers/zap/BridgeZap.sol";
+import "../../../contracts/bridge/router/SwapQuoter.sol";
+import "../../../contracts/bridge/router/SynapseRouter.sol";
 
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
-contract BridgeZapTest is Utilities06 {
+contract SynapseRouterTest is Utilities06 {
     address internal constant OWNER = address(1337);
     address internal constant USER = address(4242);
     address internal constant TO = address(2424);
@@ -20,7 +20,7 @@ contract BridgeZapTest is Utilities06 {
 
     SynapseBridge internal bridge;
     SwapQuoter internal quoter;
-    BridgeZap internal zap;
+    SynapseRouter internal router;
 
     address internal nEthPool;
     IERC20[] internal nEthTokens;
@@ -79,8 +79,8 @@ contract BridgeZapTest is Utilities06 {
         }
 
         bridge = deployBridge();
-        zap = new BridgeZap(payable(weth), address(bridge));
-        quoter = new SwapQuoter(address(zap));
+        router = new SynapseRouter(payable(weth), address(bridge));
+        quoter = new SwapQuoter(address(router));
 
         quoter.addPool(nEthPool);
         quoter.addPool(nUsdPool);
@@ -88,8 +88,8 @@ contract BridgeZapTest is Utilities06 {
         (, address nexusLpToken) = quoter.poolInfo(nexusPool);
         nexusNusd = ERC20(nexusLpToken);
 
-        zap.initialize();
-        zap.setSwapQuoter(quoter);
+        router.initialize();
+        router.setSwapQuoter(quoter);
 
         _dealAndApprove(address(weth));
         _dealAndApprove(address(neth));
@@ -106,15 +106,15 @@ contract BridgeZapTest is Utilities06 {
     /// @notice Bridge tests (no swaps) are prefixed test_b
 
     function test_b_deposit() public {
-        zap.addDepositTokens(_castToArray(address(weth)));
+        router.addDepositTokens(_castToArray(address(weth)));
         uint256 amount = 10**18;
-        // ==================== Begin BridgeZap workflow ====================
+        // ==================== Begin SynapseRouter workflow ====================
         // No swap on origin and dest chain
         SwapQuery memory emptyQuery;
         vm.expectEmit(true, true, true, true);
         emit TokenDeposit(TO, OPT_CHAINID, address(weth), amount);
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(weth),
@@ -125,17 +125,17 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_b_depositETH() public {
-        zap.addDepositTokens(_castToArray(address(weth)));
+        router.addDepositTokens(_castToArray(address(weth)));
         uint256 amount = 10**18;
         // Make sure user has no WETH
         _unwrapUserWETH();
-        // ==================== Begin BridgeZap workflow ====================
+        // ==================== Begin SynapseRouter workflow ====================
         // No swap on origin and dest chain
         SwapQuery memory emptyQuery;
         vm.expectEmit(true, true, true, true);
         emit TokenDeposit(TO, OPT_CHAINID, address(weth), amount);
         vm.prank(USER);
-        zap.bridge{value: amount}({
+        router.bridge{value: amount}({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(weth),
@@ -146,15 +146,15 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_b_redeem() public {
-        zap.addBurnTokens(_castToArray(address(neth)));
+        router.addBurnTokens(_castToArray(address(neth)));
         uint256 amount = 10**18;
-        // ==================== Begin BridgeZap workflow ====================
+        // ==================== Begin SynapseRouter workflow ====================
         // No swap on origin and dest chain
         SwapQuery memory emptyQuery;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeem(TO, OPT_CHAINID, address(neth), amount);
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(neth),
@@ -165,15 +165,15 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_b_redeem_nusd() public {
-        zap.addBurnTokens(_castToArray(address(nusd)));
+        router.addBurnTokens(_castToArray(address(nusd)));
         uint256 amount = 10**18;
-        // ==================== Begin BridgeZap workflow ====================
+        // ==================== Begin SynapseRouter workflow ====================
         // No swap on origin and dest chain
         SwapQuery memory emptyQuery;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeem(TO, ETH_CHAINID, address(nusd), amount);
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(nusd),
@@ -189,14 +189,14 @@ contract BridgeZapTest is Utilities06 {
     /// @notice Swap & Bridge tests are prefixed test_sb
 
     function test_sb_swapAndRedeem() public {
-        zap.addBurnTokens(_castToArray(address(neth)));
+        router.addBurnTokens(_castToArray(address(neth)));
         uint256 amount = 10**18;
         // ==================== Calculate expected value ====================
         // weth -> neth on origin chain
         uint256 expectedOriginOut = ISwap(nEthPool).calculateSwap(1, 0, amount);
-        // ==================== Begin BridgeZap workflow ====================
-        // Query BridgeZap on origin chain
-        SwapQuery memory originQuery = zap.getAmountOut(address(weth), address(neth), amount);
+        // ==================== Begin SynapseRouter workflow ====================
+        // Query SynapseRouter on origin chain
+        SwapQuery memory originQuery = router.getAmountOut(address(weth), address(neth), amount);
         originQuery.deadline = block.timestamp;
         // No swap on dest chain
         SwapQuery memory emptyQuery;
@@ -204,7 +204,7 @@ contract BridgeZapTest is Utilities06 {
         emit TokenRedeem(TO, ETH_CHAINID, address(neth), expectedOriginOut);
         vm.prank(USER);
         // Swap (weth -> neth), then bridge neth
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(weth),
@@ -215,14 +215,14 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_sb_swapAndRedeem_nUSD() public {
-        zap.addBurnTokens(_castToArray(address(nusd)));
+        router.addBurnTokens(_castToArray(address(nusd)));
         uint256 amount = 10**6;
         // ==================== Calculate expected value ====================
         // usdc -> nusd on origin chain
         uint256 expectedOriginOut = ISwap(nUsdPool).calculateSwap(1, 0, amount);
-        // ==================== Begin BridgeZap workflow ====================
-        // Query BridgeZap on origin chain
-        SwapQuery memory originQuery = zap.getAmountOut(address(usdc), address(nusd), amount);
+        // ==================== Begin SynapseRouter workflow ====================
+        // Query SynapseRouter on origin chain
+        SwapQuery memory originQuery = router.getAmountOut(address(usdc), address(nusd), amount);
         originQuery.deadline = block.timestamp;
         // No swap on dest chain
         SwapQuery memory emptyQuery;
@@ -230,7 +230,7 @@ contract BridgeZapTest is Utilities06 {
         emit TokenRedeem(TO, ETH_CHAINID, address(nusd), expectedOriginOut);
         vm.prank(USER);
         // Swap (usdc -> nusd), then bridge nusd
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(usdc),
@@ -241,16 +241,16 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_sb_swapETHAndRedeem() public {
-        zap.addBurnTokens(_castToArray(address(neth)));
+        router.addBurnTokens(_castToArray(address(neth)));
         uint256 amount = 10**18;
         // Make sure user has no WETH
         _unwrapUserWETH();
         // ==================== Calculate expected value ====================
         // weth -> neth on origin chain
         uint256 expectedOriginOut = ISwap(nEthPool).calculateSwap(1, 0, amount);
-        // ==================== Begin BridgeZap workflow ====================
-        // Query BridgeZap on origin chain
-        SwapQuery memory originQuery = zap.getAmountOut(address(weth), address(neth), amount);
+        // ==================== Begin SynapseRouter workflow ====================
+        // Query SynapseRouter on origin chain
+        SwapQuery memory originQuery = router.getAmountOut(address(weth), address(neth), amount);
         originQuery.deadline = block.timestamp;
         // No swap on dest chain
         SwapQuery memory emptyQuery;
@@ -258,7 +258,7 @@ contract BridgeZapTest is Utilities06 {
         emit TokenRedeem(TO, ETH_CHAINID, address(neth), expectedOriginOut);
         vm.prank(USER);
         // Wrap ETH, swap (weth -> neth), then bridge neth
-        zap.bridge{value: amount}({
+        router.bridge{value: amount}({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(weth),
@@ -269,23 +269,23 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_sb_zapAndDeposit_nUSD() public {
-        zap.addDepositTokens(_castToArray(address(nexusNusd)));
+        router.addDepositTokens(_castToArray(address(nexusNusd)));
         uint256 amount = 10**6;
         // ==================== Calculate expected value ====================
         // usdc -> nusd (addLiquidity) on origin chain
         uint256[] memory amounts = new uint256[](nexusTokens.length);
         amounts[1] = amount; // USDC index is 1
-        uint256 expectedOriginOut = zap.calculateAddLiquidity(nexusPool, amounts);
-        // ==================== Begin BridgeZap workflow ====================
-        // Query BridgeZap on origin chain
-        SwapQuery memory originQuery = zap.getAmountOut(address(nexusUsdc), address(nexusNusd), amount);
+        uint256 expectedOriginOut = router.calculateAddLiquidity(nexusPool, amounts);
+        // ==================== Begin SynapseRouter workflow ====================
+        // Query SynapseRouter on origin chain
+        SwapQuery memory originQuery = router.getAmountOut(address(nexusUsdc), address(nexusNusd), amount);
         originQuery.deadline = block.timestamp;
         // No swap on dest chain
         SwapQuery memory emptyQuery;
         vm.expectEmit(true, true, true, true);
         emit TokenDeposit(TO, OPT_CHAINID, address(nexusNusd), expectedOriginOut);
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(nexusUsdc),
@@ -301,20 +301,20 @@ contract BridgeZapTest is Utilities06 {
     /// @notice Bridge & Swap tests are prefixed test_bs
 
     function test_bs_depositAndSwap() public {
-        zap.addDepositTokens(_castToArray(address(weth)));
+        router.addDepositTokens(_castToArray(address(weth)));
         uint256 amount = 10**18;
         // ==================== Calculate expected value ====================
         // Calculate bridge fees
         uint256 expectedDestIn = (amount * 999) / 1000;
         // neth -> weth on dest chain
         uint256 expectedOriginOut = ISwap(nEthPool).calculateSwap(0, 1, expectedDestIn);
-        // ==================== Begin BridgeZap workflow ====================
+        // ==================== Begin SynapseRouter workflow ====================
         // No swap on origin chain
         SwapQuery memory emptyQuery;
         // Calculate bridge fees
         uint256 amountDestIn = (amount * 999) / 1000;
-        // Query BridgeZap on dest chain
-        SwapQuery memory destQuery = zap.getAmountOut(address(neth), address(weth), amountDestIn);
+        // Query SynapseRouter on dest chain
+        SwapQuery memory destQuery = router.getAmountOut(address(neth), address(weth), amountDestIn);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenDepositAndSwap({
@@ -329,7 +329,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.prank(USER);
         // Bridge weth, swap neth -> weth on dest chain
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(weth),
@@ -340,7 +340,7 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_bs_depositETHAndSwap() public {
-        zap.addDepositTokens(_castToArray(address(weth)));
+        router.addDepositTokens(_castToArray(address(weth)));
         uint256 amount = 10**18;
         // Make sure user has no WETH
         _unwrapUserWETH();
@@ -349,13 +349,13 @@ contract BridgeZapTest is Utilities06 {
         uint256 expectedDestIn = (amount * 999) / 1000;
         // neth -> weth on dest chain
         uint256 expectedOriginOut = ISwap(nEthPool).calculateSwap(0, 1, expectedDestIn);
-        // ==================== Begin BridgeZap workflow ====================
+        // ==================== Begin SynapseRouter workflow ====================
         // No swap on origin chain
         SwapQuery memory emptyQuery;
         // Calculate bridge fees
         uint256 amountDestIn = (amount * 999) / 1000;
-        // Query BridgeZap on dest chain
-        SwapQuery memory destQuery = zap.getAmountOut(address(neth), address(weth), amountDestIn);
+        // Query SynapseRouter on dest chain
+        SwapQuery memory destQuery = router.getAmountOut(address(neth), address(weth), amountDestIn);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenDepositAndSwap({
@@ -370,7 +370,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.prank(USER);
         // Wrap ETH, bridge weth, swap neth -> weth on dest chain
-        zap.bridge{value: amount}({
+        router.bridge{value: amount}({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(weth),
@@ -381,20 +381,20 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_bs_redeemAndSwap() public {
-        zap.addBurnTokens(_castToArray(address(neth)));
+        router.addBurnTokens(_castToArray(address(neth)));
         uint256 amount = 10**18;
         // ==================== Calculate expected value ====================
         // Calculate bridge fees
         uint256 expectedDestIn = (amount * 999) / 1000;
         // neth -> weth on dest chain
         uint256 expectedOriginOut = ISwap(nEthPool).calculateSwap(0, 1, expectedDestIn);
-        // ==================== Begin BridgeZap workflow ====================
+        // ==================== Begin SynapseRouter workflow ====================
         // No swap on origin chain
         SwapQuery memory emptyQuery;
         // Calculate bridge fees
         uint256 amountDestIn = (amount * 999) / 1000;
-        // Query BridgeZap on dest chain
-        SwapQuery memory destQuery = zap.getAmountOut(address(neth), address(weth), amountDestIn);
+        // Query SynapseRouter on dest chain
+        SwapQuery memory destQuery = router.getAmountOut(address(neth), address(weth), amountDestIn);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeemAndSwap({
@@ -409,7 +409,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.prank(USER);
         // Bridge neth, swap neth -> weth on dest chain
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(neth),
@@ -420,20 +420,20 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_bs_redeemAndSwap_nUSD() public {
-        zap.addBurnTokens(_castToArray(address(nusd)));
+        router.addBurnTokens(_castToArray(address(nusd)));
         uint256 amount = 10**18;
         // ==================== Calculate expected value ====================
         // Calculate bridge fees
         uint256 expectedDestIn = (amount * 999) / 1000;
         // nusd -> usdc on dest chain
         uint256 expectedOriginOut = ISwap(nUsdPool).calculateSwap(0, 1, expectedDestIn);
-        // ==================== Begin BridgeZap workflow ====================
+        // ==================== Begin SynapseRouter workflow ====================
         // No swap on origin chain
         SwapQuery memory emptyQuery;
         // Calculate bridge fees
         uint256 amountDestIn = (amount * 999) / 1000;
-        // Query BridgeZap on dest chain
-        SwapQuery memory destQuery = zap.getAmountOut(address(nusd), address(usdc), amountDestIn);
+        // Query SynapseRouter on dest chain
+        SwapQuery memory destQuery = router.getAmountOut(address(nusd), address(usdc), amountDestIn);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeemAndSwap({
@@ -448,7 +448,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.prank(USER);
         // Bridge nusd, swap nusd -> usdc on dest chain
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(nusd),
@@ -459,19 +459,19 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_bs_redeemAndRemove_nUSD() public {
-        zap.addBurnTokens(_castToArray(address(nusd)));
+        router.addBurnTokens(_castToArray(address(nusd)));
         uint256 amount = 10**18;
         // ==================== Calculate expected value ====================
         // Calculate bridge fees
         uint256 expectedDestIn = (amount * 999) / 1000;
         // nusd -> usdc on dest chain
         uint256 expectedOriginOut = ISwap(nexusPool).calculateRemoveLiquidityOneToken(expectedDestIn, 1);
-        // ==================== Begin BridgeZap workflow ====================
+        // ==================== Begin SynapseRouter workflow ====================
         // No swap on origin chain
         SwapQuery memory emptyQuery;
         uint256 amountDestIn = (amount * 999) / 1000;
-        // Query BridgeZap on dest chain
-        SwapQuery memory destQuery = zap.getAmountOut(address(nexusNusd), address(nexusUsdc), amountDestIn);
+        // Query SynapseRouter on dest chain
+        SwapQuery memory destQuery = router.getAmountOut(address(nexusNusd), address(nexusUsdc), amountDestIn);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeemAndRemove({
@@ -485,7 +485,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.prank(USER);
         // Bridge nusd, withdraw nusd -> usdc on dest chain
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(nusd),
@@ -501,7 +501,7 @@ contract BridgeZapTest is Utilities06 {
     /// @notice Swap & Bridge & Swap tests are prefixed test_sbs
 
     function test_sbs_swapAndRedeemAndSwap() public {
-        zap.addBurnTokens(_castToArray(address(neth)));
+        router.addBurnTokens(_castToArray(address(neth)));
         uint256 amount = 10**18;
         // ==================== Calculate expected value ====================
         // weth -> neth on origin chain
@@ -510,14 +510,14 @@ contract BridgeZapTest is Utilities06 {
         uint256 expectedDestIn = (expectedOriginOut * 999) / 1000;
         // neth -> weth on dest chain
         uint256 expectedDestOut = ISwap(nEthPool).calculateSwap(0, 1, expectedDestIn);
-        // ==================== Begin BridgeZap workflow ====================
-        // Query BridgeZap on origin chain
-        SwapQuery memory originQuery = zap.getAmountOut(address(weth), address(neth), amount);
+        // ==================== Begin SynapseRouter workflow ====================
+        // Query SynapseRouter on origin chain
+        SwapQuery memory originQuery = router.getAmountOut(address(weth), address(neth), amount);
         originQuery.deadline = block.timestamp;
         // Calculate bridge fees
         uint256 amountDestIn = (originQuery.minAmountOut * 999) / 1000;
-        // Query BridgeZap on dest chain
-        SwapQuery memory destQuery = zap.getAmountOut(address(neth), address(weth), amountDestIn);
+        // Query SynapseRouter on dest chain
+        SwapQuery memory destQuery = router.getAmountOut(address(neth), address(weth), amountDestIn);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeemAndSwap({
@@ -532,7 +532,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.prank(USER);
         // Swap weth -> neth, bridge neth, swap neth -> weth on dest chain
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(weth),
@@ -543,7 +543,7 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_sbs_swapETHAndRedeemAndSwap() public {
-        zap.addBurnTokens(_castToArray(address(neth)));
+        router.addBurnTokens(_castToArray(address(neth)));
         uint256 amount = 10**18;
         // Make sure user has no WETH
         _unwrapUserWETH();
@@ -554,14 +554,14 @@ contract BridgeZapTest is Utilities06 {
         uint256 expectedDestIn = (expectedOriginOut * 999) / 1000;
         // neth -> weth on dest chain
         uint256 expectedDestOut = ISwap(nEthPool).calculateSwap(0, 1, expectedDestIn);
-        // ==================== Begin BridgeZap workflow ====================
-        // Query BridgeZap on origin chain
-        SwapQuery memory originQuery = zap.getAmountOut(address(weth), address(neth), amount);
+        // ==================== Begin SynapseRouter workflow ====================
+        // Query SynapseRouter on origin chain
+        SwapQuery memory originQuery = router.getAmountOut(address(weth), address(neth), amount);
         originQuery.deadline = block.timestamp;
         // Calculate bridge fees
         uint256 amountDestIn = (originQuery.minAmountOut * 999) / 1000;
-        // Query BridgeZap on dest chain
-        SwapQuery memory destQuery = zap.getAmountOut(address(neth), address(weth), amountDestIn);
+        // Query SynapseRouter on dest chain
+        SwapQuery memory destQuery = router.getAmountOut(address(neth), address(weth), amountDestIn);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeemAndSwap({
@@ -576,7 +576,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.prank(USER);
         // Swap weth -> neth, bridge neth, swap neth -> weth on dest chain
-        zap.bridge{value: amount}({
+        router.bridge{value: amount}({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(weth),
@@ -587,7 +587,7 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_sbs_swapAndRedeemAndSwap_nUSD() public {
-        zap.addBurnTokens(_castToArray(address(nusd)));
+        router.addBurnTokens(_castToArray(address(nusd)));
         uint256 amount = 10**6;
         // ==================== Calculate expected value ====================
         // usdc -> nusd on origin chain
@@ -596,14 +596,14 @@ contract BridgeZapTest is Utilities06 {
         uint256 expectedDestIn = (expectedOriginOut * 999) / 1000;
         // nusd -> usdc on dest chain
         uint256 expectedDestOut = ISwap(nUsdPool).calculateSwap(0, 1, expectedDestIn);
-        // ==================== Begin BridgeZap workflow ====================
-        // Query BridgeZap on origin chain
-        SwapQuery memory originQuery = zap.getAmountOut(address(usdc), address(nusd), amount);
+        // ==================== Begin SynapseRouter workflow ====================
+        // Query SynapseRouter on origin chain
+        SwapQuery memory originQuery = router.getAmountOut(address(usdc), address(nusd), amount);
         originQuery.deadline = block.timestamp;
         // Calculate bridge fees
         uint256 amountDestIn = (originQuery.minAmountOut * 999) / 1000;
-        // Query BridgeZap on dest chain
-        SwapQuery memory destQuery = zap.getAmountOut(address(nusd), address(usdc), amountDestIn);
+        // Query SynapseRouter on dest chain
+        SwapQuery memory destQuery = router.getAmountOut(address(nusd), address(usdc), amountDestIn);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeemAndSwap({
@@ -618,7 +618,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.prank(USER);
         // Swap usdc -> nusd, bridge nusd, swap nusd -> usdc on dest chain
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(usdc),
@@ -629,7 +629,7 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_sbs_swapAndRedeemAndRemove_nUSD() public {
-        zap.addBurnTokens(_castToArray(address(nusd)));
+        router.addBurnTokens(_castToArray(address(nusd)));
         uint256 amount = 10**6;
         // ==================== Calculate expected value ====================
         // usdc -> nusd on origin chain
@@ -638,14 +638,14 @@ contract BridgeZapTest is Utilities06 {
         uint256 expectedDestIn = (expectedOriginOut * 999) / 1000;
         // withdraw nusd -> usdc on dest chain
         uint256 expectedDestOut = ISwap(nexusPool).calculateRemoveLiquidityOneToken(expectedDestIn, 1);
-        // ==================== Begin BridgeZap workflow ====================
-        // Query BridgeZap on origin chain
-        SwapQuery memory originQuery = zap.getAmountOut(address(usdc), address(nusd), amount);
+        // ==================== Begin SynapseRouter workflow ====================
+        // Query SynapseRouter on origin chain
+        SwapQuery memory originQuery = router.getAmountOut(address(usdc), address(nusd), amount);
         originQuery.deadline = block.timestamp;
         // Calculate bridge fees
         uint256 amountDestIn = (originQuery.minAmountOut * 999) / 1000;
-        // Query BridgeZap on dest chain
-        SwapQuery memory destQuery = zap.getAmountOut(address(nexusNusd), address(nexusUsdc), amountDestIn);
+        // Query SynapseRouter on dest chain
+        SwapQuery memory destQuery = router.getAmountOut(address(nexusNusd), address(nexusUsdc), amountDestIn);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenRedeemAndRemove({
@@ -659,7 +659,7 @@ contract BridgeZapTest is Utilities06 {
         });
         vm.prank(USER);
         // Swap usdc -> nusd, bridge nusd, withdraw nusd -> usdc on dest chain
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(usdc),
@@ -670,25 +670,25 @@ contract BridgeZapTest is Utilities06 {
     }
 
     function test_sbs_zapAndDepositAndSwap() public {
-        zap.addDepositTokens(_castToArray(address(nexusNusd)));
+        router.addDepositTokens(_castToArray(address(nexusNusd)));
         uint256 amount = 10**6;
         // ==================== Calculate expected value ====================
         // usdc -> nusd (addLiquidity) on origin chain
         uint256[] memory amounts = new uint256[](nexusTokens.length);
         amounts[1] = amount; // USDC index is 1
-        uint256 expectedOriginOut = zap.calculateAddLiquidity(nexusPool, amounts);
+        uint256 expectedOriginOut = router.calculateAddLiquidity(nexusPool, amounts);
         // Calculate bridge fees
         uint256 expectedDestIn = (expectedOriginOut * 999) / 1000;
         // nusd -> usdc on dest chain
         uint256 expectedDestOut = ISwap(nUsdPool).calculateSwap(0, 1, expectedDestIn);
-        // ==================== Begin BridgeZap workflow ====================
-        // Query BridgeZap on origin chain
-        SwapQuery memory originQuery = zap.getAmountOut(address(nexusUsdc), address(nexusNusd), amount);
+        // ==================== Begin SynapseRouter workflow ====================
+        // Query SynapseRouter on origin chain
+        SwapQuery memory originQuery = router.getAmountOut(address(nexusUsdc), address(nexusNusd), amount);
         originQuery.deadline = block.timestamp;
         // Calculate bridge fees
         uint256 amountDestIn = (originQuery.minAmountOut * 999) / 1000;
-        // Query BridgeZap on dest chain
-        SwapQuery memory destQuery = zap.getAmountOut(address(nusd), address(usdc), amountDestIn);
+        // Query SynapseRouter on dest chain
+        SwapQuery memory destQuery = router.getAmountOut(address(nusd), address(usdc), amountDestIn);
         destQuery.deadline = DEADLINE;
         vm.expectEmit(true, true, true, true);
         emit TokenDepositAndSwap({
@@ -702,7 +702,7 @@ contract BridgeZapTest is Utilities06 {
             deadline: DEADLINE
         });
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(nexusUsdc),
@@ -726,7 +726,7 @@ contract BridgeZapTest is Utilities06 {
             deal(token, USER, 10**20, true);
         }
         vm.prank(USER);
-        IERC20(token).approve(address(zap), type(uint256).max);
+        IERC20(token).approve(address(router), type(uint256).max);
     }
 
     function _unwrapUserWETH() internal {

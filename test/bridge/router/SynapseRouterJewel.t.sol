@@ -2,14 +2,14 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../../../utils/Utilities06.sol";
+import "../../utils/Utilities06.sol";
 
-import "../../../../contracts/bridge/wrappers/JewelBridgeSwap.sol";
-import "../../../../contracts/bridge/wrappers/zap/SwapQuoter.sol";
-import "../../../../contracts/bridge/wrappers/zap/BridgeZap.sol";
+import "../../../contracts/bridge/wrappers/JewelBridgeSwap.sol";
+import "../../../contracts/bridge/router/SwapQuoter.sol";
+import "../../../contracts/bridge/router/SynapseRouter.sol";
 
 // solhint-disable func-name-mixedcase
-contract BridgeZapJewelTest is Utilities06 {
+contract SynapseRouterJewelTest is Utilities06 {
     address internal constant USER = address(4242);
     address internal constant TO = address(2424);
     uint256 internal constant DEADLINE = 4815162342;
@@ -19,7 +19,7 @@ contract BridgeZapJewelTest is Utilities06 {
 
     SynapseBridge internal bridge;
     SwapQuoter internal quoter;
-    BridgeZap internal zap;
+    SynapseRouter internal router;
 
     IWETH9 internal dfkJewel;
     ERC20 internal jewel;
@@ -41,13 +41,13 @@ contract BridgeZapJewelTest is Utilities06 {
         harSynJewel.grantRole(harSynJewel.MINTER_ROLE(), address(jewelSwap));
 
         bridge = deployBridge();
-        zap = new BridgeZap(address(dfkJewel), address(bridge));
-        quoter = new SwapQuoter(address(zap));
+        router = new SynapseRouter(address(dfkJewel), address(bridge));
+        quoter = new SwapQuoter(address(router));
 
         quoter.addPool(address(jewelSwap));
 
-        zap.initialize();
-        zap.setSwapQuoter(quoter);
+        router.initialize();
+        router.setSwapQuoter(quoter);
 
         _dealAndApprove(address(jewel));
         _dealAndApprove(address(avaSynJewel));
@@ -61,7 +61,7 @@ contract BridgeZapJewelTest is Utilities06 {
 
     function test_bs_jewel_fromAvaxToHarmony() public {
         uint256 amount = 10**18;
-        zap.addBurnTokens(_castToArray(address(avaSynJewel)));
+        router.addBurnTokens(_castToArray(address(avaSynJewel)));
         SwapQuery memory emptyQuery;
         // Emulate bridge fees
         uint256 amountInDest = (amount * 999) / 1000;
@@ -79,7 +79,7 @@ contract BridgeZapJewelTest is Utilities06 {
             deadline: DEADLINE
         });
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: HAR_CHAINID,
             token: address(avaSynJewel),
@@ -94,7 +94,7 @@ contract BridgeZapJewelTest is Utilities06 {
         _unwrapUserWETH();
         // depositETHAndSwap()
         uint256 amount = 10**18;
-        zap.addDepositTokens(_castToArray(address(dfkJewel)));
+        router.addDepositTokens(_castToArray(address(dfkJewel)));
         SwapQuery memory emptyQuery;
         // Emulate bridge fees
         uint256 amountInDest = (amount * 999) / 1000;
@@ -112,7 +112,7 @@ contract BridgeZapJewelTest is Utilities06 {
             deadline: DEADLINE
         });
         vm.prank(USER);
-        zap.bridge{value: amount}({
+        router.bridge{value: amount}({
             to: TO,
             chainId: HAR_CHAINID,
             token: address(dfkJewel),
@@ -125,7 +125,7 @@ contract BridgeZapJewelTest is Utilities06 {
     function test_bs_jewel_fromDFKToHarmony_wrapped() public {
         // depositAndSwap() for DFK's WJEWEL
         uint256 amount = 10**18;
-        zap.addDepositTokens(_castToArray(address(dfkJewel)));
+        router.addDepositTokens(_castToArray(address(dfkJewel)));
         SwapQuery memory emptyQuery;
         // Emulate bridge fees
         uint256 amountInDest = (amount * 999) / 1000;
@@ -143,7 +143,7 @@ contract BridgeZapJewelTest is Utilities06 {
             deadline: DEADLINE
         });
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: HAR_CHAINID,
             token: address(dfkJewel),
@@ -159,13 +159,13 @@ contract BridgeZapJewelTest is Utilities06 {
 
     function test_sb_jewel_fromHarmony() public {
         uint256 amount = 10**18;
-        zap.addBurnTokens(_castToArray(address(harSynJewel)));
+        router.addBurnTokens(_castToArray(address(harSynJewel)));
         SwapQuery memory emptyQuery;
         SwapQuery memory originQuery = quoter.getAmountOut(address(jewel), address(harSynJewel), amount);
         vm.expectEmit(true, true, true, true);
         emit TokenRedeem(TO, DFK_CHAINID, address(harSynJewel), amount);
         vm.prank(USER);
-        zap.bridge({
+        router.bridge({
             to: TO,
             chainId: DFK_CHAINID,
             token: address(jewel),
@@ -189,7 +189,7 @@ contract BridgeZapJewelTest is Utilities06 {
             deal(token, USER, 10**20, true);
         }
         vm.prank(USER);
-        IERC20(token).approve(address(zap), type(uint256).max);
+        IERC20(token).approve(address(router), type(uint256).max);
     }
 
     function _unwrapUserWETH() internal {

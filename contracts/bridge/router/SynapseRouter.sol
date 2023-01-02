@@ -2,39 +2,39 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../../interfaces/IWETH9.sol";
-import "../../interfaces/ISynapseBridge.sol";
-import "../../interfaces/ISwapQuoter.sol";
+import "../interfaces/IWETH9.sol";
+import "../interfaces/ISynapseBridge.sol";
+import "../interfaces/ISwapQuoter.sol";
 import "./SynapseAdapter.sol";
 
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 /**
- * @notice BridgeZap contract that can be used together with SynapseBridge on any chain.
- * On every supported chain BridgeZap and SwapQuoter contracts need to be deployed.
+ * @notice SynapseRouter contract that can be used together with SynapseBridge on any chain.
+ * On every supported chain SynapseRouter and SwapQuoter contracts need to be deployed.
  * Chain pools, that are present in the global BridgeConfig should be added to SwapQuoter.
- * bridgeZap.setSwapQuoter(swapQuoter) should be executed to link these contracts.
- * BridgeZap should be using the same WETH contract that SynapseBridge is (or will be) using.
- * All supported bridge tokens should be added to BridgeZap contract.
+ * router.setSwapQuoter(swapQuoter) should be executed to link these contracts.
+ * SynapseRouter should be using the same WETH contract that SynapseBridge is (or will be) using.
+ * All supported bridge tokens should be added to SynapseRouter contract.
  *
- * @dev Bridging workflow with BridgeZap contract.
- * Suppose `bridgeZapO` and `bridgeZapD` are BridgeZap deployments on origin and destination chain respectively.
+ * @dev Bridging workflow with SynapseRouter contract.
+ * Suppose `routerO` and `routerD` are SynapseRouter deployments on origin and destination chain respectively.
  * Suppose user wants to send `tokenIn` on origin chain, and receive `tokenOut` on destination chain.
  * Suppose for this transaction `bridgeToken` needs to be used.
  * Bridge token address is `bridgeTokenO` and `bridgeTokenD` on origin and destination chain respectively.
  * There might or might not be a swap on origin and destination chains.
  * Following set of actions is required:
- * 1. originQuery = bridgeZapO.getAmountOut(tokenIn, bridgeTokenO, amountIn)
+ * 1. originQuery = routerO.getAmountOut(tokenIn, bridgeTokenO, amountIn)
  * 2. Adjust originQuery.minAmountOut and originQuery.deadline using user defined slippage and deadline
  * 3. fee = BridgeConfig.calculateSwapFee(bridgeTokenD, destChainId, originQuery.minAmountOut)
  * // ^ Needs special logic for Avalanche's GMX ^
  * 4. destQuery = brideZapD.getAmountOut(bridgeTokenD, tokenOut, originQuery.minAmountOut - fee)
- * 5. Do the bridging with bridgeZap.bridge(to, destChainId, tokenIn, amountIn, originQuery, destQuery)
- * // If tokenIn is WETH, do bridgeZap.bridge{value: amount} to use native ETH instead of WETH.
- * Note: the transaction will be reverted, if `bridgeTokenO` is not set up in BridgeZap.
+ * 5. Do the bridging with router.bridge(to, destChainId, tokenIn, amountIn, originQuery, destQuery)
+ * // If tokenIn is WETH, do router.bridge{value: amount} to use native ETH instead of WETH.
+ * Note: the transaction will be reverted, if `bridgeTokenO` is not set up in SynapseRouter.
  */
-contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
+contract SynapseRouter is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -88,7 +88,7 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /**
-     * @notice Creates a BridgeZap implementation, saves WETH and SynapseBridge address.
+     * @notice Creates a SynapseRouter implementation, saves WETH and SynapseBridge address.
      * @dev Redeploy an implementation with different values, if an update is required.
      * Upgrading the proxy implementation then will effectively "update the immutables".
      */
@@ -112,7 +112,7 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /**
-     * @notice Adds a few "Redeem" tokens to the BridgeZap config.
+     * @notice Adds a few "Redeem" tokens to the SynapseRouter config.
      * These are bridgeable from this chain by being burnt, i.e. via using synapseBridge.redeem()
      * @dev Every added token is assumed to not require a wrapper token for bridging.
      * Use {addToken} if that is not the case.
@@ -125,7 +125,7 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     }
 
     /**
-     * @notice Adds a few "deposit" tokens to the BridgeZap config.
+     * @notice Adds a few "deposit" tokens to the SynapseRouter config.
      * These are bridgeable from this chain by being locked in SynapseBridge, i.e. via using synapseBridge.deposit()
      * @dev Every added token is assumed to not require a wrapper token for bridging.
      * Use {addToken} if that is not the case.
@@ -138,7 +138,7 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     }
 
     /**
-     * @notice Adds a single bridgeable token to the BridgeZap config.
+     * @notice Adds a single bridgeable token to the SynapseRouter config.
      * @param token         "End" token, supported by SynapseBridge. This is the token user is receiving/sending
      * @param tokenType     Method of bridging used for the token: Redeem or Deposit
      * @param bridgeToken   Actual token used for bridging `token`. This is the token bridge is burning/locking.
@@ -153,8 +153,8 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     }
 
     /**
-     * @notice Removes a few tokens from the BridgeZap config.
-     * @dev After a token is removed, it won't be possible to bridge it using BridgeZap,
+     * @notice Removes a few tokens from the SynapseRouter config.
+     * @dev After a token is removed, it won't be possible to bridge it using SynapseRouter,
      * but using SynapseBridge directly is always an option (provided you know what you're doing).
      */
     function removeTokens(address[] calldata tokens) external onlyOwner {
@@ -165,8 +165,8 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     }
 
     /**
-     * @notice Removes a given token from the BridgeZap config.
-     * @dev After a token is removed, it won't be possible to bridge it using BridgeZap,
+     * @notice Removes a given token from the SynapseRouter config.
+     * @dev After a token is removed, it won't be possible to bridge it using SynapseRouter,
      * but using SynapseBridge directly is always an option (provided you know what you're doing).
      */
     function removeToken(address token) external onlyOwner {
@@ -201,9 +201,9 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
      * @notice Initiate a bridge transaction with an optional swap on both
      * origin and destination chains.
      * @dev Note that method is payable.
-     * 1. Using a msg.value == 0 forces BridgeZap to use `token`. This way WETH could be bridged.
-     * 2. Using a msg.value != 0 forces BridgeZap to use native gas. In this case following is required:
-     *    - `token` must be BridgeZap's WETH, otherwise tx will revert
+     * 1. Using a msg.value == 0 forces SynapseRouter to use `token`. This way WETH could be bridged.
+     * 2. Using a msg.value != 0 forces SynapseRouter to use native gas. In this case following is required:
+     *    - `token` must be SynapseRouter's WETH, otherwise tx will revert
      *    - `amount` must be equal to msg.value, otherwise tx will revert
      *
      * `token` is always a token user is sending. In case token requires a wrapper token to be bridge,
@@ -213,7 +213,7 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
      * should always use the underlying address. In other words, the concept of wrapper token is fully
      * abstracted away from the end user.
      *
-     * `originQuery` and `destQuery` are supposed to be fetched using BridgeZap.getAmountOut(tokenIn, tokenOut, amountIn)
+     * `originQuery` and `destQuery` are supposed to be fetched using SynapseRouter.getAmountOut(tokenIn, tokenOut, amountIn)
      *
      * @param to            Address to receive tokens on destination chain
      * @param chainId       Destination chain id
@@ -352,7 +352,7 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
 
     /**
      * @notice Finds the best pool for tokenIn -> tokenOut swap from the list of supported pools.
-     * Returns the `SwapQuery` struct, that can be used on BridgeZap.
+     * Returns the `SwapQuery` struct, that can be used on SynapseRouter.
      * minAmountOut and deadline fields will need to be adjusted based on the swap settings.
      */
     function getAmountOut(
@@ -491,7 +491,7 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /**
-     * @notice Adds a bridge token to the BridgeZap config.
+     * @notice Adds a bridge token to the SynapseRouter config.
      */
     function _addToken(
         address token,
@@ -507,7 +507,7 @@ contract BridgeZap is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     }
 
     /**
-     * @notice Removes a bridge token from the BridgeZap config.
+     * @notice Removes a bridge token from the SynapseRouter config.
      */
     function _removeToken(address token) internal {
         if (_bridgeTokens.remove(token)) {
