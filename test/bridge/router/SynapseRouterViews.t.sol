@@ -66,7 +66,6 @@ contract SynapseRouterViewsTest is Utilities06 {
         quoter.addPool(nUsdPool);
         quoter.addPool(nexusPool);
 
-        router.initialize();
         router.setSwapQuoter(quoter);
         router.addRedeemTokens(_castToArray(address(neth)));
         router.addRedeemTokens(_castToArray(address(nusd)));

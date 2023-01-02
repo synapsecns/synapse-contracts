@@ -8,7 +8,7 @@ import "../interfaces/ISwapQuoter.sol";
 import "./SynapseAdapter.sol";
 
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @notice SynapseRouter contract that can be used together with SynapseBridge on any chain.
@@ -34,7 +34,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
  * // If tokenIn is WETH, do router.bridge{value: amount} to use native ETH instead of WETH.
  * Note: the transaction will be reverted, if `bridgeTokenO` is not set up in SynapseRouter.
  */
-contract SynapseRouter is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
+contract SynapseRouter is SynapseAdapter, Ownable, ISwapQuoter {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -80,8 +80,6 @@ contract SynapseRouter is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     mapping(address => TokenConfig) public config;
     /// @dev A list of all supported bridge tokens
     EnumerableSet.AddressSet internal _bridgeTokens;
-    // upgrade gap (AddressSet takes two storage slots)
-    uint256[47] private __gap;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                      CONSTRUCTOR & INITIALIZER                       ║*▕
@@ -95,16 +93,6 @@ contract SynapseRouter is SynapseAdapter, OwnableUpgradeable, ISwapQuoter {
     constructor(address payable _weth, address _synapseBridge) public {
         weth = IWETH9(_weth);
         synapseBridge = ISynapseBridge(_synapseBridge);
-    }
-
-    /**
-     * @notice Initializes the proxy: msg.sender becomes the proxy's owner.
-     * @dev Initializing is required only once for the proxy setup.
-     * Following implementation upgrades don't require (and don't allow)
-     * initialize() to be called again.
-     */
-    function initialize() external initializer {
-        __Ownable_init();
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

@@ -88,7 +88,6 @@ contract SynapseRouterTest is Utilities06 {
         (, address nexusLpToken) = quoter.poolInfo(nexusPool);
         nexusNusd = ERC20(nexusLpToken);
 
-        router.initialize();
         router.setSwapQuoter(quoter);
 
         _dealAndApprove(address(weth));

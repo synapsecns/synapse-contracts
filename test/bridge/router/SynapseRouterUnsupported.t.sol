@@ -44,8 +44,6 @@ contract SynapseRouterTest is Utilities06 {
         router = new SynapseRouter(payable(weth), address(bridge));
         quoter = new SwapQuoter(address(router));
 
-        router.initialize();
-
         quoter.addPool(nEthPool);
         router.setSwapQuoter(quoter);
 

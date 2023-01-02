@@ -62,7 +62,6 @@ contract SynapseRouterGMXTest is Utilities06 {
         router = new SynapseRouter(address(0), address(bridge));
         quoter = new SwapQuoter(address(router));
 
-        router.initialize();
         router.setSwapQuoter(quoter);
 
         // GMX Bridge Wrapper is set as minter for GMX

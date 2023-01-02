@@ -46,7 +46,6 @@ contract SynapseRouterJewelTest is Utilities06 {
 
         quoter.addPool(address(jewelSwap));
 
-        router.initialize();
         router.setSwapQuoter(quoter);
 
         _dealAndApprove(address(jewel));
