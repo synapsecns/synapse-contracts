@@ -324,7 +324,7 @@ contract SynapseRouter is SynapseAdapter {
         // If swapAdapter is this contract (which is the case for the supported Synapse pools),
         // this will be an external call to address(this), which we are fine with.
         // The external call is used because additional Adapters will be established in the future.
-        amountOut = ISwapAdapter(query.swapAdapter).swap({
+        amountOut = ISwapAdapter(query.swapAdapter).adapterSwap({
             to: address(this),
             tokenIn: token,
             amountIn: amount,

@@ -45,14 +45,13 @@ abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
      * @param rawParams     Additional swap parameters
      * @return amountOut    Amount of bought tokens
      */
-    function swap(
+    function adapterSwap(
         address to,
         address tokenIn,
         uint256 amountIn,
         address tokenOut,
         bytes calldata rawParams
     ) external override returns (uint256 amountOut) {
-        require(msg.sender == address(this), "External calls not allowed");
         // Decode params for swapping via a Synapse pool
         SynapseParams memory params = abi.decode(rawParams, (SynapseParams));
         ISwap pool = ISwap(params.pool);

@@ -15,7 +15,7 @@ interface ISwapAdapter {
      * @param rawParams     Additional swap parameters
      * @return Amount of bought tokens
      */
-    function swap(
+    function adapterSwap(
         address to,
         address tokenIn,
         uint256 amountIn,
