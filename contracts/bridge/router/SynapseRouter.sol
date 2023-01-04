@@ -5,9 +5,8 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/IWETH9.sol";
 import "../interfaces/ISynapseBridge.sol";
 import "../interfaces/ISwapQuoter.sol";
+import "./LocalBridgeConfig.sol";
 import "./SynapseAdapter.sol";
-
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
 /**
  * @notice SynapseRouter contract that can be used together with SynapseBridge on any chain.
@@ -33,35 +32,11 @@ import "@openzeppelin/contracts/utils/EnumerableSet.sol";
  * // If tokenIn is WETH, do router.bridge{value: amount} to use native ETH instead of WETH.
  * Note: the transaction will be reverted, if `bridgeTokenO` is not set up in SynapseRouter.
  */
-contract SynapseRouter is SynapseAdapter {
+contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
     // SynapseRouter is also the Adapter for the Synapse pools (this reduces the amount of token transfers).
     // SynapseRouter address will be used as swapAdapter in SwapQueries returned by a local SwapQuoter.
 
     using SafeERC20 for IERC20;
-    using EnumerableSet for EnumerableSet.AddressSet;
-
-    /**
-     * @notice Indicates the type of the supported bridge token on the local chain.
-     * - TokenType.Redeem: token is burnt in order to initiate a bridge tx (bridge.redeem)
-     * - TokenType.Deposit: token is locked in order to initiate a bridge tx (bridge.deposit)
-     */
-    enum TokenType {
-        Redeem,
-        Deposit
-    }
-
-    /**
-     * @notice Config for a supported bridge token.
-     * @dev Some of the tokens require a wrapper token to make them conform SynapseERC20 interface.
-     * In these cases, `bridgeToken` will feature a different address.
-     * Otherwise, the token address is saved.
-     * @param tokenType     Method of bridging for the token: Redeem or Deposit
-     * @param bridgeToken   Bridge token address
-     */
-    struct TokenConfig {
-        TokenType tokenType;
-        address bridgeToken;
-    }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                        CONSTANTS & IMMUTABLES                        ║*▕
@@ -71,17 +46,6 @@ contract SynapseRouter is SynapseAdapter {
     IWETH9 public immutable weth;
     /// @notice Synapse:Bridge address
     ISynapseBridge public immutable synapseBridge;
-
-    /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                               STORAGE                                ║*▕
-    \*╚══════════════════════════════════════════════════════════════════════╝*/
-
-    /// @notice Config for each supported token.
-    /// @dev If wrapper token is required for bridging, its address is stored in `.bridgeToken`
-    /// i.e. for GMX: config[GMX].bridgeToken = GMXWrapper
-    mapping(address => TokenConfig) public config;
-    /// @dev A list of all supported bridge tokens
-    EnumerableSet.AddressSet internal _bridgeTokens;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                      CONSTRUCTOR & INITIALIZER                       ║*▕
@@ -103,68 +67,6 @@ contract SynapseRouter is SynapseAdapter {
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                              OWNER ONLY                              ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
-
-    /**
-     * @notice Adds a few "Redeem" tokens to the SynapseRouter config.
-     * These are bridgeable from this chain by being burnt, i.e. via using synapseBridge.redeem()
-     * @dev Every added token is assumed to not require a wrapper token for bridging.
-     * Use {addToken} if that is not the case.
-     */
-    function addRedeemTokens(address[] calldata tokens) external onlyOwner {
-        uint256 amount = tokens.length;
-        for (uint256 i = 0; i < amount; ++i) {
-            _addToken(tokens[i], TokenType.Redeem, tokens[i]);
-        }
-    }
-
-    /**
-     * @notice Adds a few "deposit" tokens to the SynapseRouter config.
-     * These are bridgeable from this chain by being locked in SynapseBridge, i.e. via using synapseBridge.deposit()
-     * @dev Every added token is assumed to not require a wrapper token for bridging.
-     * Use {addToken} if that is not the case.
-     */
-    function addDepositTokens(address[] calldata tokens) external onlyOwner {
-        uint256 amount = tokens.length;
-        for (uint256 i = 0; i < amount; ++i) {
-            _addToken(tokens[i], TokenType.Deposit, tokens[i]);
-        }
-    }
-
-    /**
-     * @notice Adds a single bridgeable token to the SynapseRouter config.
-     * @param token         "End" token, supported by SynapseBridge. This is the token user is receiving/sending
-     * @param tokenType     Method of bridging used for the token: Redeem or Deposit
-     * @param bridgeToken   Actual token used for bridging `token`. This is the token bridge is burning/locking.
-     *                      Might differ from `token`, if `token` does not conform to bridge-supported interface.
-     */
-    function addToken(
-        address token,
-        TokenType tokenType,
-        address bridgeToken
-    ) external onlyOwner {
-        _addToken(token, tokenType, bridgeToken);
-    }
-
-    /**
-     * @notice Removes a few tokens from the SynapseRouter config.
-     * @dev After a token is removed, it won't be possible to bridge it using SynapseRouter,
-     * but using SynapseBridge directly is always an option (provided you know what you're doing).
-     */
-    function removeTokens(address[] calldata tokens) external onlyOwner {
-        uint256 amount = tokens.length;
-        for (uint256 i = 0; i < amount; ++i) {
-            _removeToken(tokens[i]);
-        }
-    }
-
-    /**
-     * @notice Removes a given token from the SynapseRouter config.
-     * @dev After a token is removed, it won't be possible to bridge it using SynapseRouter,
-     * but using SynapseBridge directly is always an option (provided you know what you're doing).
-     */
-    function removeToken(address token) external onlyOwner {
-        _removeToken(token);
-    }
 
     /**
      * @notice Sets a custom allowance for the given token.
@@ -324,28 +226,6 @@ contract SynapseRouter is SynapseAdapter {
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                         VIEWS: BRIDGE TOKENS                         ║*▕
-    \*╚══════════════════════════════════════════════════════════════════════╝*/
-
-    /**
-     * @notice Returns a list of all supported bridge tokens.
-     */
-    function bridgeTokens() external view returns (address[] memory tokens) {
-        uint256 amount = bridgeTokensAmount();
-        tokens = new address[](amount);
-        for (uint256 i = 0; i < amount; ++i) {
-            tokens[i] = _bridgeTokens.at(i);
-        }
-    }
-
-    /**
-     * @notice Returns the amount of the supported bridge tokens.
-     */
-    function bridgeTokensAmount() public view returns (uint256 amount) {
-        amount = _bridgeTokens.length();
-    }
-
-    /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                            INTERNAL: SWAP                            ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
@@ -416,28 +296,23 @@ contract SynapseRouter is SynapseAdapter {
     ▏*║                 INTERNAL: ADD & REMOVE BRIDGE TOKENS                 ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    /**
-     * @notice Adds a bridge token to the SynapseRouter config.
-     */
+    /// @dev Adds a bridge token config and its fee structure, if it's not present.
+    /// If a token was added, approves it for spending by SynapseBridge.
     function _addToken(
         address token,
         TokenType tokenType,
-        address bridgeToken
-    ) internal {
-        if (_bridgeTokens.add(token)) {
-            config[token] = TokenConfig(tokenType, bridgeToken);
+        address bridgeToken,
+        uint256 bridgeFee,
+        uint256 minFee,
+        uint256 maxFee
+    ) internal override returns (bool wasAdded) {
+        // Add token and its fee structure
+        wasAdded = LocalBridgeConfig._addToken(token, tokenType, bridgeToken, bridgeFee, minFee, maxFee);
+        if (wasAdded) {
+            // Approve token only if it wasn't previously added
             // Underlying token should always implement allowance(), approve()
             if (token == bridgeToken) _approveToken(IERC20(token), address(synapseBridge));
             // Use {setAllowance} for custom wrapper token setups
-        }
-    }
-
-    /**
-     * @notice Removes a bridge token from the SynapseRouter config.
-     */
-    function _removeToken(address token) internal {
-        if (_bridgeTokens.remove(token)) {
-            delete config[token];
         }
     }
 
