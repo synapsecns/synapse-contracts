@@ -97,6 +97,9 @@ contract SynapseRouter is SynapseAdapter {
         synapseBridge = ISynapseBridge(_synapseBridge);
     }
 
+    /// @notice Receive function to enable unwrapping ETH into this contract
+    receive() external payable {}
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                              OWNER ONLY                              ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
@@ -281,6 +284,45 @@ contract SynapseRouter is SynapseAdapter {
         }
     }
 
+    /**
+     * @notice Perform a swap using the supplied parameters.
+     * @dev Note that method is payable.
+     * 1. Using a msg.value == 0 forces SynapseRouter to use `token`. This way WETH could be swapped.
+     * 2. Using a msg.value != 0 forces SynapseRouter to use native gas. In this case following is required:
+     *    - `token` must be SynapseRouter's WETH, otherwise tx will revert
+     *    - `amount` must be equal to msg.value, otherwise tx will revert
+     * Note there's an option to unwrap WETH, should it be the swapped token.
+     * @param to            Address to receive swapped tokens
+     * @param token         Token to swap
+     * @param amount        Amount of tokens to swap
+     * @param query         Query with the swap parameters (see BridgeStructs.sol)
+     * @param unwrapETH     Whether user wants to receive native ETH (ignored if tokenOut != WETH)
+     * @return amountOut    Amount of swapped tokens received by the user
+     */
+    function swap(
+        address to,
+        address token,
+        uint256 amount,
+        SwapQuery memory query,
+        bool unwrapETH
+    ) external payable returns (uint256 amountOut) {
+        require(to != address(0), "!recipient: zero address");
+        require(to != address(this), "!recipient: router address");
+        require(_swapRequested(query), "!swapAdapter");
+        // Pull initial token from the user to specified swap adapter
+        _pullToken(query.swapAdapter, token, amount);
+        // Check if the end token is WETH and unwrapping is requested
+        if (query.tokenOut == address(weth) && unwrapETH) {
+            // Perform a swap through the adapter, send swapped token (WETH) to the this contract
+            (, amountOut) = _adapterSwap(address(this), token, amount, query);
+            // Unwrap ETH and send to the recipient
+            _unwrapETH(to, amountOut);
+        } else {
+            // Perform a swap through the adapter, send swapped token to the recipient
+            (, amountOut) = _adapterSwap(to, token, amount, query);
+        }
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                         VIEWS: BRIDGE TOKENS                         ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
@@ -409,6 +451,16 @@ contract SynapseRouter is SynapseAdapter {
         // Transfer WETH to recipient, if requested
         if (recipient != address(this)) {
             IERC20(address(weth)).safeTransfer(recipient, amount);
+        }
+    }
+
+    function _unwrapETH(address recipient, uint256 amount) internal {
+        // Withdraw ETH to this contract
+        weth.withdraw(amount);
+        // Transfer ETH to recipient if requested
+        if (recipient != address(this)) {
+            (bool success, ) = recipient.call{value: amount}("");
+            require(success, "ETH transfer failed");
         }
     }
 }
