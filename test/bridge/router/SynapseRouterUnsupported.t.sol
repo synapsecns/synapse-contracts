@@ -149,7 +149,7 @@ contract SynapseRouterTest is Utilities06 {
         // depositAndRemove() does not exist
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
-        router.addDepositTokens(_castToArray(address(weth)));
+        _addDepositToken(address(weth));
         SwapQuery memory destQuery = SwapQuery({
             swapAdapter: address(1),
             tokenOut: address(0),
@@ -177,7 +177,7 @@ contract SynapseRouterTest is Utilities06 {
         // depositETHAndRemove() does not exist
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
-        router.addDepositTokens(_castToArray(address(weth)));
+        _addDepositToken(address(weth));
         SwapQuery memory destQuery = SwapQuery({
             swapAdapter: address(1),
             tokenOut: address(0),
@@ -203,7 +203,7 @@ contract SynapseRouterTest is Utilities06 {
         // depositAndAdd() does not exist
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
-        router.addDepositTokens(_castToArray(address(weth)));
+        _addDepositToken(address(weth));
         SwapQuery memory destQuery = SwapQuery({
             swapAdapter: address(1),
             tokenOut: address(0),
@@ -231,7 +231,7 @@ contract SynapseRouterTest is Utilities06 {
         // depositETHAndAdd() does not exist
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
-        router.addDepositTokens(_castToArray(address(weth)));
+        _addDepositToken(address(weth));
         SwapQuery memory destQuery = SwapQuery({
             swapAdapter: address(1),
             tokenOut: address(0),
@@ -257,7 +257,7 @@ contract SynapseRouterTest is Utilities06 {
         // redeemAndAdd() does not exist
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
-        router.addRedeemTokens(_castToArray(address(neth)));
+        _addRedeemToken(address(neth));
         SwapQuery memory destQuery = SwapQuery({
             swapAdapter: address(1),
             tokenOut: address(0),
@@ -302,8 +302,11 @@ contract SynapseRouterTest is Utilities06 {
         weth.withdraw(balance);
     }
 
-    function _castToArray(address token) internal pure returns (address[] memory tokens) {
-        tokens = new address[](1);
-        tokens[0] = token;
+    function _addDepositToken(address token) internal {
+        router.addToken(token, LocalBridgeConfig.TokenType.Deposit, token, 0, 0, 0);
+    }
+
+    function _addRedeemToken(address token) internal {
+        router.addToken(token, LocalBridgeConfig.TokenType.Redeem, token, 0, 0, 0);
     }
 }

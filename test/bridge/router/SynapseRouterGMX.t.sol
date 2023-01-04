@@ -79,8 +79,11 @@ contract SynapseRouterGMXTest is Utilities06 {
         uint256 amount = 10**18;
         router.addToken({
             token: address(gmx),
-            tokenType: SynapseRouter.TokenType.Redeem,
-            bridgeToken: address(gmxWrapper)
+            tokenType: LocalBridgeConfig.TokenType.Redeem,
+            bridgeToken: address(gmxWrapper),
+            bridgeFee: 0,
+            minFee: 0,
+            maxFee: 0
         });
         // Even though it is a swapper token, no extra allowances are required here
         SwapQuery memory emptyQuery;

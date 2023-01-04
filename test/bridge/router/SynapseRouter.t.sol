@@ -105,7 +105,7 @@ contract SynapseRouterTest is Utilities06 {
     /// @notice Bridge tests (no swaps) are prefixed test_b
 
     function test_b_deposit() public {
-        router.addDepositTokens(_castToArray(address(weth)));
+        _addDepositToken(address(weth));
         uint256 amount = 10**18;
         // ==================== Begin SynapseRouter workflow ====================
         // No swap on origin and dest chain
@@ -124,7 +124,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_b_depositETH() public {
-        router.addDepositTokens(_castToArray(address(weth)));
+        _addDepositToken(address(weth));
         uint256 amount = 10**18;
         // Make sure user has no WETH
         _unwrapUserWETH();
@@ -145,7 +145,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_b_redeem() public {
-        router.addRedeemTokens(_castToArray(address(neth)));
+        _addRedeemToken(address(neth));
         uint256 amount = 10**18;
         // ==================== Begin SynapseRouter workflow ====================
         // No swap on origin and dest chain
@@ -164,7 +164,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_b_redeem_nusd() public {
-        router.addRedeemTokens(_castToArray(address(nusd)));
+        _addRedeemToken(address(nusd));
         uint256 amount = 10**18;
         // ==================== Begin SynapseRouter workflow ====================
         // No swap on origin and dest chain
@@ -188,7 +188,7 @@ contract SynapseRouterTest is Utilities06 {
     /// @notice Swap & Bridge tests are prefixed test_sb
 
     function test_sb_swapAndRedeem() public {
-        router.addRedeemTokens(_castToArray(address(neth)));
+        _addRedeemToken(address(neth));
         uint256 amount = 10**18;
         // ==================== Calculate expected value ====================
         // weth -> neth on origin chain
@@ -214,7 +214,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_sb_swapAndRedeem_nUSD() public {
-        router.addRedeemTokens(_castToArray(address(nusd)));
+        _addRedeemToken(address(nusd));
         uint256 amount = 10**6;
         // ==================== Calculate expected value ====================
         // usdc -> nusd on origin chain
@@ -240,7 +240,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_sb_swapETHAndRedeem() public {
-        router.addRedeemTokens(_castToArray(address(neth)));
+        _addRedeemToken(address(neth));
         uint256 amount = 10**18;
         // Make sure user has no WETH
         _unwrapUserWETH();
@@ -268,7 +268,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_sb_zapAndDeposit_nUSD() public {
-        router.addDepositTokens(_castToArray(address(nexusNusd)));
+        _addDepositToken(address(nexusNusd));
         uint256 amount = 10**6;
         // ==================== Calculate expected value ====================
         // usdc -> nusd (addLiquidity) on origin chain
@@ -300,7 +300,7 @@ contract SynapseRouterTest is Utilities06 {
     /// @notice Bridge & Swap tests are prefixed test_bs
 
     function test_bs_depositAndSwap() public {
-        router.addDepositTokens(_castToArray(address(weth)));
+        _addDepositToken(address(weth));
         uint256 amount = 10**18;
         // ==================== Calculate expected value ====================
         // Calculate bridge fees
@@ -339,7 +339,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_bs_depositETHAndSwap() public {
-        router.addDepositTokens(_castToArray(address(weth)));
+        _addDepositToken(address(weth));
         uint256 amount = 10**18;
         // Make sure user has no WETH
         _unwrapUserWETH();
@@ -380,7 +380,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_bs_redeemAndSwap() public {
-        router.addRedeemTokens(_castToArray(address(neth)));
+        _addRedeemToken(address(neth));
         uint256 amount = 10**18;
         // ==================== Calculate expected value ====================
         // Calculate bridge fees
@@ -419,7 +419,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_bs_redeemAndSwap_nUSD() public {
-        router.addRedeemTokens(_castToArray(address(nusd)));
+        _addRedeemToken(address(nusd));
         uint256 amount = 10**18;
         // ==================== Calculate expected value ====================
         // Calculate bridge fees
@@ -458,7 +458,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_bs_redeemAndRemove_nUSD() public {
-        router.addRedeemTokens(_castToArray(address(nusd)));
+        _addRedeemToken(address(nusd));
         uint256 amount = 10**18;
         // ==================== Calculate expected value ====================
         // Calculate bridge fees
@@ -500,7 +500,7 @@ contract SynapseRouterTest is Utilities06 {
     /// @notice Swap & Bridge & Swap tests are prefixed test_sbs
 
     function test_sbs_swapAndRedeemAndSwap() public {
-        router.addRedeemTokens(_castToArray(address(neth)));
+        _addRedeemToken(address(neth));
         uint256 amount = 10**18;
         // ==================== Calculate expected value ====================
         // weth -> neth on origin chain
@@ -542,7 +542,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_sbs_swapETHAndRedeemAndSwap() public {
-        router.addRedeemTokens(_castToArray(address(neth)));
+        _addRedeemToken(address(neth));
         uint256 amount = 10**18;
         // Make sure user has no WETH
         _unwrapUserWETH();
@@ -586,7 +586,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_sbs_swapAndRedeemAndSwap_nUSD() public {
-        router.addRedeemTokens(_castToArray(address(nusd)));
+        _addRedeemToken(address(nusd));
         uint256 amount = 10**6;
         // ==================== Calculate expected value ====================
         // usdc -> nusd on origin chain
@@ -628,7 +628,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_sbs_swapAndRedeemAndRemove_nUSD() public {
-        router.addRedeemTokens(_castToArray(address(nusd)));
+        _addRedeemToken(address(nusd));
         uint256 amount = 10**6;
         // ==================== Calculate expected value ====================
         // usdc -> nusd on origin chain
@@ -669,7 +669,7 @@ contract SynapseRouterTest is Utilities06 {
     }
 
     function test_sbs_zapAndDepositAndSwap() public {
-        router.addDepositTokens(_castToArray(address(nexusNusd)));
+        _addDepositToken(address(nexusNusd));
         uint256 amount = 10**6;
         // ==================== Calculate expected value ====================
         // usdc -> nusd (addLiquidity) on origin chain
@@ -734,8 +734,11 @@ contract SynapseRouterTest is Utilities06 {
         weth.withdraw(balance);
     }
 
-    function _castToArray(address token) internal pure returns (address[] memory tokens) {
-        tokens = new address[](1);
-        tokens[0] = token;
+    function _addDepositToken(address token) internal {
+        router.addToken(token, LocalBridgeConfig.TokenType.Deposit, token, 0, 0, 0);
+    }
+
+    function _addRedeemToken(address token) internal {
+        router.addToken(token, LocalBridgeConfig.TokenType.Redeem, token, 0, 0, 0);
     }
 }

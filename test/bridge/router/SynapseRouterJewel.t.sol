@@ -60,7 +60,7 @@ contract SynapseRouterJewelTest is Utilities06 {
 
     function test_bs_jewel_fromAvaxToHarmony() public {
         uint256 amount = 10**18;
-        router.addRedeemTokens(_castToArray(address(avaSynJewel)));
+        _addRedeemToken(address(avaSynJewel));
         SwapQuery memory emptyQuery;
         // Emulate bridge fees
         uint256 amountInDest = (amount * 999) / 1000;
@@ -93,7 +93,7 @@ contract SynapseRouterJewelTest is Utilities06 {
         _unwrapUserWETH();
         // depositETHAndSwap()
         uint256 amount = 10**18;
-        router.addDepositTokens(_castToArray(address(dfkJewel)));
+        _addDepositToken(address(dfkJewel));
         SwapQuery memory emptyQuery;
         // Emulate bridge fees
         uint256 amountInDest = (amount * 999) / 1000;
@@ -124,7 +124,7 @@ contract SynapseRouterJewelTest is Utilities06 {
     function test_bs_jewel_fromDFKToHarmony_wrapped() public {
         // depositAndSwap() for DFK's WJEWEL
         uint256 amount = 10**18;
-        router.addDepositTokens(_castToArray(address(dfkJewel)));
+        _addDepositToken(address(dfkJewel));
         SwapQuery memory emptyQuery;
         // Emulate bridge fees
         uint256 amountInDest = (amount * 999) / 1000;
@@ -158,7 +158,7 @@ contract SynapseRouterJewelTest is Utilities06 {
 
     function test_sb_jewel_fromHarmony() public {
         uint256 amount = 10**18;
-        router.addRedeemTokens(_castToArray(address(harSynJewel)));
+        _addRedeemToken(address(harSynJewel));
         SwapQuery memory emptyQuery;
         SwapQuery memory originQuery = quoter.getAmountOut(address(jewel), address(harSynJewel), amount);
         vm.expectEmit(true, true, true, true);
@@ -197,8 +197,11 @@ contract SynapseRouterJewelTest is Utilities06 {
         dfkJewel.withdraw(balance);
     }
 
-    function _castToArray(address token) internal pure returns (address[] memory tokens) {
-        tokens = new address[](1);
-        tokens[0] = token;
+    function _addDepositToken(address token) internal {
+        router.addToken(token, LocalBridgeConfig.TokenType.Deposit, token, 0, 0, 0);
+    }
+
+    function _addRedeemToken(address token) internal {
+        router.addToken(token, LocalBridgeConfig.TokenType.Redeem, token, 0, 0, 0);
     }
 }
