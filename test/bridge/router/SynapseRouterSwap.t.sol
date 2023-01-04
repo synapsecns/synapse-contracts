@@ -71,6 +71,14 @@ contract SynapseRouterSwapTest is Utilities06 {
             unwrapETH: false,
             externalAdapter: false
         });
+        // WETH -> nETH token swap (with ignored unwrapETH setting)
+        _checkSwap({
+            tokenIn: address(weth),
+            tokenOut: address(neth),
+            nativeEthIn: false,
+            unwrapETH: true,
+            externalAdapter: false
+        });
         // nETH -> WETH token swap
         _checkSwap({
             tokenIn: address(neth),
@@ -88,6 +96,14 @@ contract SynapseRouterSwapTest is Utilities06 {
             tokenOut: address(neth),
             nativeEthIn: true,
             unwrapETH: false,
+            externalAdapter: false
+        });
+        // ETH -> nETH swap (with ignored unwrapETH setting)
+        _checkSwap({
+            tokenIn: address(weth),
+            tokenOut: address(neth),
+            nativeEthIn: true,
+            unwrapETH: true,
             externalAdapter: false
         });
     }
@@ -177,6 +193,14 @@ contract SynapseRouterSwapTest is Utilities06 {
             unwrapETH: false,
             externalAdapter: true
         });
+        // WETH -> nETH token swap (with ignored unwrapETH setting)
+        _checkSwap({
+            tokenIn: address(weth),
+            tokenOut: address(neth),
+            nativeEthIn: false,
+            unwrapETH: true,
+            externalAdapter: true
+        });
         // nETH -> WETH token swap
         _checkSwap({
             tokenIn: address(neth),
@@ -194,6 +218,14 @@ contract SynapseRouterSwapTest is Utilities06 {
             tokenOut: address(neth),
             nativeEthIn: true,
             unwrapETH: false,
+            externalAdapter: true
+        });
+        // ETH -> nETH swap (with ignored unwrapETH setting)
+        _checkSwap({
+            tokenIn: address(weth),
+            tokenOut: address(neth),
+            nativeEthIn: true,
+            unwrapETH: true,
             externalAdapter: true
         });
     }
@@ -282,6 +314,7 @@ contract SynapseRouterSwapTest is Utilities06 {
         bool externalAdapter
     ) internal {
         if (nativeEthIn) _unwrapUserWETH();
+        // Figure out if user should receive native ETH as a result
         bool nativeEthOut = unwrapETH && tokenOut == address(weth);
         SwapQuery memory query = _getQuery(tokenIn, tokenOut, externalAdapter);
         require(query.minAmountOut != 0, "Swap not found");
