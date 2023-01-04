@@ -212,16 +212,19 @@ contract SynapseRouter is SynapseAdapter {
         SwapQuery memory originQuery,
         SwapQuery memory destQuery
     ) external payable {
-        // Pull initial token from the user
-        _pullToken(token, amount);
-        // Perform a swap, if requested
         if (_swapRequested(originQuery)) {
-            (token, amount) = _adapterSwap(token, amount, originQuery);
+            // Pull initial token from the user to specified swap adapter
+            _pullToken(originQuery.swapAdapter, token, amount);
+            // Perform a swap using the swap adapter, transfer the swapped tokens to this contract
+            (token, amount) = _adapterSwap(address(this), token, amount, originQuery);
+        } else {
+            // Pull initial token from the user to this contract
+            _pullToken(address(this), token, amount);
         }
+        // Either way, this contract has `amount` worth of `token`
         TokenConfig memory _config = config[token];
         require(_config.bridgeToken != address(0), "Token not supported");
         token = _config.bridgeToken;
-        // `amount` worth of `token` needs to be bridged.
         // Check if swap on destination chain is required.
         if (_swapRequested(destQuery)) {
             // Decode params for swapping via a Synapse pool on the destination chain.
@@ -307,54 +310,56 @@ contract SynapseRouter is SynapseAdapter {
     /**
      * @notice Performs a swap from `token` using the provided query,
      * which includes the swap adapter, tokenOut and the swap execution parameters.
+     * Initial token is supposed to have been already transferred to the swap adapter.
+     * Swapped token is transferred to the specified recipient.
      */
     function _adapterSwap(
+        address recipient,
         address token,
         uint256 amount,
         SwapQuery memory query
     ) internal returns (address tokenOut, uint256 amountOut) {
-        // Adapters could be permisionless, so we're doing all the checks on this level
         // First, check the deadline for the swap
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp <= query.deadline, "Deadline not met");
-        if (query.swapAdapter != address(this)) {
-            IERC20(token).safeTransfer(query.swapAdapter, amount);
-        }
         tokenOut = query.tokenOut;
         // If swapAdapter is this contract (which is the case for the supported Synapse pools),
         // this will be an external call to address(this), which we are fine with.
         // The external call is used because additional Adapters will be established in the future.
         amountOut = ISwapAdapter(query.swapAdapter).adapterSwap({
-            to: address(this),
+            to: recipient,
             tokenIn: token,
             amountIn: amount,
             tokenOut: tokenOut,
             rawParams: query.rawParams
         });
-        // Where's the money Lebowski?
-        require(IERC20(tokenOut).balanceOf(address(this)) >= amountOut, "No tokens transferred");
-        // Finally, check that we received at least as much as wanted
+        // We can trust the supported adapters to return the exact swapped amount
+        // Finally, check that the recipient received at least as much as they wanted
         require(amountOut >= query.minAmountOut, "Swap didn't result in min tokens");
     }
 
     /**
-     * Pulls a requested token from the user.
-     * Or, if msg.value was provided and WETH was used as token, wraps the received ETH.
+     * Pulls a requested token from the user to the requested recipient.
+     * Or, if msg.value was provided and WETH was used as token, wraps the received ETH and sends to the recipient.
      */
-    function _pullToken(address token, uint256 amount) internal {
+    function _pullToken(
+        address recipient,
+        address token,
+        uint256 amount
+    ) internal {
         if (msg.value == 0) {
             // Token needs to be pulled only if msg.value is zero
             // This way user can specify WETH as the origin asset
-            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+            IERC20(token).safeTransferFrom(msg.sender, recipient, amount);
         } else {
             // Otherwise, we need to check that WETH was specified
             require(token == address(weth), "!weth");
             // And that amount matches msg.value
             require(msg.value == amount, "!msg.value");
-            // Deposit in order to have WETH in this contract
-            weth.deposit{value: amount}();
+            // Wrap ETH and send to recipient
+            _wrapETH(recipient, amount);
         }
-        // Either way this contract has `amount` worth of `token`
+        // Either way `recipient` has `amount` worth of `token`
     }
 
     /**
@@ -391,6 +396,19 @@ contract SynapseRouter is SynapseAdapter {
     function _removeToken(address token) internal {
         if (_bridgeTokens.remove(token)) {
             delete config[token];
+        }
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                         INTERNAL: WETH LOGIC                         ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _wrapETH(address recipient, uint256 amount) internal {
+        // Deposit in order to have WETH in this contract
+        weth.deposit{value: amount}();
+        // Transfer WETH to recipient, if requested
+        if (recipient != address(this)) {
+            IERC20(address(weth)).safeTransfer(recipient, amount);
         }
     }
 }
