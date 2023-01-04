@@ -59,6 +59,37 @@ contract SynapseRouterSwapTest is Utilities06 {
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                TESTS: INCORRECT SWAP PARAMS (REVERTS)                ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_swap_revert_recipientZero() public {
+        address tokenIn = address(weth);
+        address tokenOut = address(neth);
+        uint256 amount = 10**18;
+        SwapQuery memory query = router.getAmountOut(tokenIn, tokenOut, amount);
+        vm.expectRevert("!recipient: zero address");
+        router.swap({to: address(0), token: tokenIn, amount: amount, query: query, unwrapETH: false});
+    }
+
+    function test_swap_revert_recipientRouter() public {
+        address tokenIn = address(weth);
+        address tokenOut = address(neth);
+        uint256 amount = 10**18;
+        SwapQuery memory query = router.getAmountOut(tokenIn, tokenOut, amount);
+        vm.expectRevert("!recipient: router address");
+        router.swap({to: address(router), token: tokenIn, amount: amount, query: query, unwrapETH: false});
+    }
+
+    function test_swap_revert_noSwapRequested() public {
+        address tokenIn = address(weth);
+        address tokenOut = address(weth);
+        uint256 amount = 10**18;
+        SwapQuery memory query = router.getAmountOut(tokenIn, tokenOut, amount);
+        vm.expectRevert("!swapAdapter");
+        router.swap({to: TO, token: tokenIn, amount: amount, query: query, unwrapETH: false});
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                 TESTS: SWAP USING ROUTER AS ADAPTER                  ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
