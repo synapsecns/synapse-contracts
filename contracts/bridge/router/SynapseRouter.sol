@@ -62,7 +62,7 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
     }
 
     /// @notice Receive function to enable unwrapping ETH into this contract
-    receive() external payable {}
+    receive() external payable {} // solhint-disable-line no-empty-blocks
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                              OWNER ONLY                              ║*▕
@@ -223,6 +223,62 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
             // Perform a swap through the adapter, send swapped token to the recipient
             (, amountOut) = _adapterSwap(to, token, amount, query);
         }
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                         VIEWS: BRIDGE QUOTES                         ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    /**
+     * @notice Finds the best pool from the Synapse-supported pools for tokenIn -> bridgeToken swap,
+     * treating it as the "origin chain swap" in the Synapse Bridge transaction.
+     *
+     * @dev
+     * 1. Will revert if `bridgeToken` is not a supported bridge token. In case the bridged token
+     * requires a bridge wrapper token, use the underlying token address as `bridgeToken` in this method.
+     * 2. Will correctly form a SwapQuery if `tokenIn == bridgeToken`.
+     * 3. It is possible to form a SwapQuery off-chain using alternative SwapAdapter for the origin swap.
+     *
+     * @param tokenIn       Initial token that user wants to bridge/swap
+     * @param bridgeToken   Token that will be used for bridging on origin chain
+     * @param amountIn      Amount of tokens user wants to bridge/swap
+     * @return query    Struct to be used as `originQuery` in SynapseRouter.
+     *                  minAmountOut and deadline fields will need to be adjusted based on the user settings.
+     */
+    function getOriginAmountOut(
+        address tokenIn,
+        address bridgeToken,
+        uint256 amountIn
+    ) external view returns (SwapQuery memory query) {
+        require(config[bridgeToken].bridgeToken != address(0), "Token not supported");
+        query = this.getAmountOut(tokenIn, bridgeToken, amountIn);
+    }
+
+    /**
+     * @notice Finds the best pool from the Synapse-supported pools for bridgeToken -> tokenOut swap,
+     * treating it as the "destination chain swap" in the Synapse Bridge transaction.
+     *
+     * @dev
+     * 1. Will revert if `bridgeToken` is not a supported bridge token. In case the bridged token
+     * requires a bridge wrapper token, use the underlying token address as `bridgeToken` in this method.
+     * 2. Will correctly form a SwapQuery if `bridgeToken == tokenOut`.
+     * 3. It is NOT possible to form a SwapQuery off-chain using alternative SwapAdapter for the destination swap.
+     * For the time being, only swaps through the Synapse-supported pools are available on destination chain.
+     *
+     * @param bridgeToken   Token that will be used for bridging on destination chain
+     * @param tokenOut      Token user wants to receive on destination chain
+     * @param amountIn      Amount of tokens bridged from origin chain (before fees)
+     * @return query    Struct to be used as `destQuery` in SynapseRouter.
+     *                  minAmountOut and deadline fields will need to be adjusted based on the user settings.
+     */
+    function getDestinationAmountOut(
+        address bridgeToken,
+        address tokenOut,
+        uint256 amountIn
+    ) external view returns (SwapQuery memory query) {
+        // Apply bridge fee, this will revert if token is not supported
+        amountIn = _calculateBridgeAmountOut(bridgeToken, amountIn);
+        query = this.getAmountOut(bridgeToken, tokenOut, amountIn);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
