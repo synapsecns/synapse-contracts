@@ -1,0 +1,196 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.6.12;
+pragma experimental ABIEncoderV2;
+
+import "../../utils/Utilities06.sol";
+import "../../../contracts/bridge/router/LocalBridgeConfig.sol";
+
+// Harness for the abstract contract
+contract LocalBridgeConfigHarness is LocalBridgeConfig {
+    function calculateBridgeAmountOut(address token, uint256 amount) external view returns (uint256 amountOut) {
+        return _calculateBridgeAmountOut(token, amount);
+    }
+} // solhint-disable-line no-empty-blocks
+
+// solhint-disable func-name-mixedcase
+contract LocalBridgeConfigTest is Utilities06 {
+    address internal constant OWNER = address(123456);
+
+    LocalBridgeConfigHarness internal bridgeConfig;
+
+    function setUp() public override {
+        super.setUp();
+        bridgeConfig = new LocalBridgeConfigHarness();
+        bridgeConfig.transferOwnership(OWNER);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                          TESTS: ONLY OWNER                           ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_addToken_revert_onlyOwner(address caller) public {
+        vm.assume(caller != OWNER);
+        expectOnlyOwnerRevert();
+        vm.prank(caller);
+        bridgeConfig.addToken(address(0), LocalBridgeConfig.TokenType.Redeem, address(0), 0, 0, 0);
+    }
+
+    function test_setTokenConfig_revert_onlyOwner(address caller) public {
+        vm.assume(caller != OWNER);
+        expectOnlyOwnerRevert();
+        vm.prank(caller);
+        bridgeConfig.setTokenConfig(address(0), LocalBridgeConfig.TokenType.Redeem, address(0));
+    }
+
+    function test_setTokenFee_revert_onlyOwner(address caller) public {
+        vm.assume(caller != OWNER);
+        expectOnlyOwnerRevert();
+        vm.prank(caller);
+        bridgeConfig.setTokenFee(address(0), 0, 0, 0);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                           TESTS: ADD TOKEN                           ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_addToken(
+        address token,
+        uint8 tokenType_,
+        address bridgeToken,
+        uint40 bridgeFee,
+        uint104 minFee,
+        uint112 maxFee
+    ) public {
+        LocalBridgeConfig.TokenType tokenType = _castToTokenType(tokenType_);
+        // bridgeFee should be under 10**10
+        vm.assume(bridgeFee < 10**10);
+        // minFee should not be higher than maxFee
+        vm.assume(minFee <= maxFee);
+        vm.prank(OWNER);
+        assertTrue(bridgeConfig.addToken(token, tokenType, bridgeToken, bridgeFee, minFee, maxFee), "!added");
+        _checkConfig(token, tokenType, bridgeToken);
+        _checkFee(token, bridgeFee, minFee, maxFee);
+    }
+
+    function test_addToken_twice(
+        address token,
+        uint8 tokenType_,
+        address bridgeToken,
+        uint40 bridgeFee,
+        uint104 minFee,
+        uint112 maxFee
+    ) public {
+        LocalBridgeConfig.TokenType tokenType = _castToTokenType(tokenType_);
+        test_addToken(token, tokenType_, bridgeToken, bridgeFee, minFee, maxFee);
+        // Derive different values for every parameter
+        LocalBridgeConfig.TokenType _tokenType = _castToTokenType(tokenType_ ^ 1);
+        address _bridgeToken = bridgeToken == address(1) ? address(2) : address(1);
+        uint40 _bridgeFee = bridgeFee == 1 ? 2 : 1;
+        uint40 _minFee = minFee == 1 ? 2 : 1;
+        uint40 _maxFee = maxFee == 10 ? 20 : 10;
+        vm.prank(OWNER);
+        assertFalse(
+            bridgeConfig.addToken(token, _tokenType, _bridgeToken, _bridgeFee, _minFee, _maxFee),
+            "Added twice"
+        );
+        // Check that the old values were not changed
+        _checkConfig(token, tokenType, bridgeToken);
+        _checkFee(token, bridgeFee, minFee, maxFee);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                       TESTS: SET CONFIG / FEE                        ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_setTokenConfig(
+        address token,
+        uint8 tokenType_,
+        address bridgeToken
+    ) public {
+        test_addToken(token, tokenType_, bridgeToken, 0, 0, 0);
+        // Derive different values for every parameter
+        LocalBridgeConfig.TokenType _tokenType = _castToTokenType(tokenType_ ^ 1);
+        address _bridgeToken = bridgeToken == address(1) ? address(2) : address(1);
+        vm.prank(OWNER);
+        bridgeConfig.setTokenConfig(token, _tokenType, _bridgeToken);
+        // Check that new values were applied
+        _checkConfig(token, _tokenType, _bridgeToken);
+    }
+
+    function test_setTokenFee(
+        address token,
+        uint40 bridgeFee,
+        uint104 minFee,
+        uint112 maxFee
+    ) public {
+        test_addToken(token, 0, token, bridgeFee, minFee, maxFee);
+        // Derive different values for every parameter
+        uint40 _bridgeFee = bridgeFee == 1 ? 2 : 1;
+        uint40 _minFee = minFee == 1 ? 2 : 1;
+        uint40 _maxFee = maxFee == 10 ? 20 : 10;
+        vm.prank(OWNER);
+        bridgeConfig.setTokenFee(token, _bridgeFee, _minFee, _maxFee);
+        // Check that new values were applied
+        _checkFee(token, _bridgeFee, _minFee, _maxFee);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                        TESTS: FEE CALCULATION                        ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_bridgeFee(uint40 bridgeFee, uint256 amount) public {
+        bridgeFee = bridgeFee % 10**10;
+        // Values under 10**30 are fine for the testing
+        amount = amount % 10**30;
+        address token = address(1);
+        uint104 minFee = 10**3;
+        uint112 maxFee = 10**20;
+        test_addToken(token, 0, token, bridgeFee, minFee, maxFee);
+        uint256 expectedFee = (amount * bridgeFee) / 10**10;
+        uint256 fee = bridgeConfig.calculateBridgeFee(token, amount);
+        if (fee == expectedFee) {
+            assertTrue(fee >= minFee, "under minFee");
+            assertTrue(fee <= maxFee, "over maxFee");
+        } else if (fee < expectedFee) {
+            assertEq(fee, maxFee, "not a maxFee");
+        } else {
+            // fee > expectedFee
+            assertEq(fee, minFee, "not a minFee");
+        }
+
+        uint256 amountOut = bridgeConfig.calculateBridgeAmountOut(token, amount);
+        if (amountOut + fee == amount) {
+            assertTrue(amount >= fee, "amount under fee");
+        } else {
+            assertTrue(amount < fee, "amount not under fee");
+            assertEq(amountOut, 0, "bridgeAmountOut not zero");
+        }
+    }
+
+    function _checkConfig(
+        address token,
+        LocalBridgeConfig.TokenType tokenType,
+        address bridgeToken
+    ) internal {
+        (LocalBridgeConfig.TokenType _tokenType, address _bridgeToken) = bridgeConfig.config(token);
+        assertTrue(_tokenType == tokenType, "!tokenType");
+        assertEq(_bridgeToken, bridgeToken, "!bridgeToken");
+    }
+
+    function _checkFee(
+        address token,
+        uint40 bridgeFee,
+        uint104 minFee,
+        uint112 maxFee
+    ) internal {
+        (uint40 _bridgeFee, uint104 _minFee, uint112 _maxFee) = bridgeConfig.fee(token);
+        assertEq(_bridgeFee, uint256(bridgeFee), "!bridgeFee");
+        assertEq(_minFee, uint256(minFee), "!minFee");
+        assertEq(_maxFee, uint256(maxFee), "!maxFee");
+    }
+
+    function _castToTokenType(uint8 tokenType_) internal pure returns (LocalBridgeConfig.TokenType tokenType) {
+        // type(enum).max is not available in 0.6.12
+        tokenType = LocalBridgeConfig.TokenType(tokenType_ % 2);
+    }
+}
