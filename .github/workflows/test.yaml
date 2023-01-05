@@ -42,7 +42,7 @@ jobs:
   foundry-base:
     runs-on: ubuntu-latest
     env:
-      FOUNDRY_FUZZ_RUNS: 64
+      FOUNDRY_FUZZ_RUNS: 2000
 
     steps:
       - uses: actions/checkout@v3
