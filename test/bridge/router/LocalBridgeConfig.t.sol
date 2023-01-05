@@ -72,6 +72,22 @@ contract LocalBridgeConfigTest is Utilities06 {
         _checkFee(token, bridgeFee, minFee, maxFee);
     }
 
+    function test_addToken_revert_incorrectBridgeFee(uint256 bridgeFee) public {
+        vm.assume(bridgeFee >= 10**10);
+        address token = address(1);
+        vm.expectRevert("bridgeFee >= 100%");
+        vm.prank(OWNER);
+        bridgeConfig.addToken(token, LocalBridgeConfig.TokenType.Redeem, token, bridgeFee, 0, 0);
+    }
+
+    function test_addToken_revert_incorrectMinFee(uint104 minFee, uint112 maxFee) public {
+        vm.assume(minFee > maxFee);
+        address token = address(1);
+        vm.expectRevert("minFee > maxFee");
+        vm.prank(OWNER);
+        bridgeConfig.addToken(token, LocalBridgeConfig.TokenType.Redeem, token, 0, minFee, maxFee);
+    }
+
     function test_addToken_twice(
         address token,
         uint8 tokenType_,
@@ -98,6 +114,34 @@ contract LocalBridgeConfigTest is Utilities06 {
         _checkFee(token, bridgeFee, minFee, maxFee);
     }
 
+    function test_removeToken(address token) public {
+        test_addToken(token, 1, address(1), 1, 1, 1);
+        vm.prank(OWNER);
+        assertTrue(bridgeConfig.removeToken(token), "!removed");
+        _checkConfig(token, LocalBridgeConfig.TokenType(0), address(0));
+        _checkFee(token, 0, 0, 0);
+    }
+
+    function test_removeToken_twice(address token) public {
+        test_removeToken(token);
+        vm.prank(OWNER);
+        assertFalse(bridgeConfig.removeToken(token), "Removed twice");
+    }
+
+    function test_removeTokens() public {
+        test_addToken(address(1), 0, address(1), 1, 1, 1);
+        test_addToken(address(2), 1, address(2), 2, 2, 2);
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(1);
+        tokens[1] = address(2);
+        vm.prank(OWNER);
+        bridgeConfig.removeTokens(tokens);
+        _checkConfig(address(1), LocalBridgeConfig.TokenType(0), address(0));
+        _checkFee(address(1), 0, 0, 0);
+        _checkConfig(address(2), LocalBridgeConfig.TokenType(0), address(0));
+        _checkFee(address(2), 0, 0, 0);
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                       TESTS: SET CONFIG / FEE                        ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
@@ -117,6 +161,18 @@ contract LocalBridgeConfigTest is Utilities06 {
         _checkConfig(token, _tokenType, _bridgeToken);
     }
 
+    function test_setTokenConfig_revert_unknownToken(
+        address token,
+        uint8 tokenType_,
+        address bridgeToken
+    ) public {
+        // Add and remove a token to make it unknown
+        test_removeToken(token);
+        vm.expectRevert("Unknown token");
+        vm.prank(OWNER);
+        bridgeConfig.setTokenConfig(token, _castToTokenType(tokenType_), bridgeToken);
+    }
+
     function test_setTokenFee(
         address token,
         uint40 bridgeFee,
@@ -132,6 +188,37 @@ contract LocalBridgeConfigTest is Utilities06 {
         bridgeConfig.setTokenFee(token, _bridgeFee, _minFee, _maxFee);
         // Check that new values were applied
         _checkFee(token, _bridgeFee, _minFee, _maxFee);
+    }
+
+    function test_setTokenFee_revert_unknownToken(
+        address token,
+        uint40 bridgeFee,
+        uint104 minFee,
+        uint112 maxFee
+    ) public {
+        // Add and remove a token to make it unknown
+        test_removeToken(token);
+        vm.expectRevert("Unknown token");
+        vm.prank(OWNER);
+        bridgeConfig.setTokenFee(token, bridgeFee, minFee, maxFee);
+    }
+
+    function test_setTokenFee_revert_incorrectBridgeFee(uint256 bridgeFee) public {
+        vm.assume(bridgeFee >= 10**10);
+        address token = address(1);
+        test_addToken(token, 0, token, 0, 0, 0);
+        vm.expectRevert("bridgeFee >= 100%");
+        vm.prank(OWNER);
+        bridgeConfig.setTokenFee(token, bridgeFee, 0, 0);
+    }
+
+    function test_setTokenFee_revert_incorrectMinFee(uint104 minFee, uint112 maxFee) public {
+        vm.assume(minFee > maxFee);
+        address token = address(1);
+        test_addToken(token, 0, token, 0, 0, 0);
+        vm.expectRevert("minFee > maxFee");
+        vm.prank(OWNER);
+        bridgeConfig.setTokenFee(token, 0, minFee, maxFee);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -165,6 +252,16 @@ contract LocalBridgeConfigTest is Utilities06 {
             assertTrue(amount < fee, "amount not under fee");
             assertEq(amountOut, 0, "bridgeAmountOut not zero");
         }
+    }
+
+    function test_bridgeFee_revert_unknownToken() public {
+        address token = address(1);
+        // Add and remove a token to make it unknown
+        test_removeToken(token);
+        vm.expectRevert("Token not supported");
+        bridgeConfig.calculateBridgeFee(token, 0);
+        vm.expectRevert("Token not supported");
+        bridgeConfig.calculateBridgeAmountOut(token, 0);
     }
 
     function _checkConfig(

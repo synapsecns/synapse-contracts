@@ -8,7 +8,7 @@ import "../../../contracts/bridge/router/SwapQuoter.sol";
 import "../../../contracts/bridge/router/SynapseRouter.sol";
 
 // solhint-disable func-name-mixedcase
-contract SynapseRouterTest is Utilities06 {
+contract SynapseRouterUnsupportedTest is Utilities06 {
     address internal constant OWNER = address(1337);
     address internal constant USER = address(4242);
     address internal constant TO = address(2424);
@@ -50,6 +50,42 @@ contract SynapseRouterTest is Utilities06 {
         _dealAndApprove(address(weth));
         _dealAndApprove(address(neth));
         // Don't deal ETH: unwrap WETH for ETH tests to make sure WETH is not being used
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                      TESTS: UNAUTHORIZED ACCESS                      ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_setSwapQuoter_revert_notOwner(address caller) public {
+        address owner = address(1234);
+        router.transferOwnership(owner);
+        vm.assume(caller != owner);
+        expectOnlyOwnerRevert();
+        vm.prank(caller);
+        router.setSwapQuoter(SwapQuoter(address(0)));
+    }
+
+    function test_setAllowance_revert_notOwner(address caller) public {
+        address owner = address(1234);
+        router.transferOwnership(owner);
+        vm.assume(caller != owner);
+        expectOnlyOwnerRevert();
+        vm.prank(caller);
+        router.setAllowance(IERC20(address(0)), address(0), 0);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                 TESTS: QUOTES FOR UNSUPPORTED TOKENS                 ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_getOriginAmountOut_revert_unsupported() public {
+        vm.expectRevert("Token not supported");
+        router.getOriginAmountOut(address(1), address(1), 10**18);
+    }
+
+    function test_getDestinationAmountOut_revert_unsupported() public {
+        vm.expectRevert("Token not supported");
+        router.getDestinationAmountOut(address(1), address(1), 10**18);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
