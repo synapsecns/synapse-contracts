@@ -7,6 +7,12 @@ import "../../utils/Utilities06.sol";
 import "../../../contracts/bridge/router/SwapQuoter.sol";
 import "../../../contracts/bridge/router/SynapseRouter.sol";
 
+contract BtcMaxi {
+    receive() external payable {
+        revert("I don't hold ETH");
+    }
+}
+
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
 contract SynapseRouterSwapTest is Utilities06 {
@@ -87,6 +93,42 @@ contract SynapseRouterSwapTest is Utilities06 {
         SwapQuery memory query = router.getAmountOut(tokenIn, tokenOut, amount);
         vm.expectRevert("!swapAdapter");
         router.swap({to: TO, token: tokenIn, amount: amount, query: query, unwrapETH: false});
+    }
+
+    function test_swap_revert_wrongWethAddress() public {
+        address tokenIn = address(neth);
+        address tokenOut = address(weth);
+        uint256 amount = 10**18;
+        SwapQuery memory query = router.getAmountOut(tokenIn, tokenOut, amount);
+        _unwrapUserWETH();
+        vm.expectRevert("!weth");
+        vm.prank(USER);
+        router.swap{value: amount}(TO, tokenIn, amount, query, false);
+    }
+
+    function test_swap_revert_incorrectMsgValue() public {
+        address tokenIn = address(weth);
+        address tokenOut = address(neth);
+        uint256 amount = 10**18;
+        SwapQuery memory query = router.getAmountOut(tokenIn, tokenOut, amount);
+        _unwrapUserWETH();
+        vm.expectRevert("!msg.value");
+        vm.prank(USER);
+        router.swap{value: amount - 1}(TO, tokenIn, amount, query, false);
+    }
+
+    function test_swap_revert_recipientDeniesEth() public {
+        BtcMaxi ethDenier = new BtcMaxi();
+        address tokenIn = address(neth);
+        address tokenOut = address(weth);
+        uint256 amount = 10**18;
+        SwapQuery memory query = router.getAmountOut(tokenIn, tokenOut, amount);
+        vm.expectRevert("ETH transfer failed");
+        vm.prank(USER);
+        router.swap(address(ethDenier), tokenIn, amount, query, true);
+        // Same swap goes through if we don't unwrap WETH
+        vm.prank(USER);
+        router.swap(address(ethDenier), tokenIn, amount, query, false);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
