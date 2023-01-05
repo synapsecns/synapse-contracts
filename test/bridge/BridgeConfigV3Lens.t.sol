@@ -7,11 +7,34 @@ import "forge-std/Test.sol";
 import "../../contracts/bridge/utils/BridgeConfigV3Lens.sol";
 
 // solhint-disable func-name-mixedcase
-contract BridgeConfigV3LensTest is Test {
+contract BridgeConfigV3LensTestFork is Test {
+    // 2023-01-05 (Mainnet)
+    uint256 internal constant BLOCK_NUMBER = 16_342_000;
+    uint256 internal constant CHAIN_ID_AVA = 43114;
+
     BridgeConfigV3Lens internal lens;
 
     function setUp() public {
         lens = new BridgeConfigV3Lens();
+    }
+
+    function test_getAvalancheConfig() public {
+        string memory ethRPC = vm.envString("ALCHEMY_API");
+        vm.createSelectFork(ethRPC, BLOCK_NUMBER);
+        lens = new BridgeConfigV3Lens();
+        (BridgeConfigV3Lens.BridgeToken[] memory tokens, address[] memory pools) = lens.getChainConfig(CHAIN_ID_AVA);
+        console.log("========== TOKENS ==========");
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            console.log(tokens[i].id);
+            console.log(" real token: %s", tokens[i].token);
+            console.log("bridgeToken: %s", tokens[i].bridgeToken);
+            console.log("Fees: %s bps, min: %s", tokens[i].bridgeFee / 10**6, tokens[i].minFee);
+            console.log();
+        }
+        console.log("==========  POOLS ==========");
+        for (uint256 i = 0; i < pools.length; ++i) {
+            console.log(pools[i]);
+        }
     }
 
     function test_stringToAddress(address addr, bool toLower) public {
