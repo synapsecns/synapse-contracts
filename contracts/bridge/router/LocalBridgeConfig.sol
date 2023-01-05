@@ -190,9 +190,6 @@ abstract contract LocalBridgeConfig is Ownable {
         uint256 minFee,
         uint256 maxFee
     ) internal virtual returns (bool wasAdded) {
-        // Sanity checks for the provided fee values
-        require(bridgeFee < FEE_DENOMINATOR, "bridgeFee >= 100%");
-        require(minFee <= maxFee, "minFee > maxFee");
         wasAdded = _bridgeTokens.add(token);
         if (wasAdded) {
             // Need to save config only once
@@ -217,6 +214,9 @@ abstract contract LocalBridgeConfig is Ownable {
         uint256 minFee,
         uint256 maxFee
     ) internal {
+        // Sanity checks for the provided fee values
+        require(bridgeFee < FEE_DENOMINATOR, "bridgeFee >= 100%");
+        require(minFee <= maxFee, "minFee > maxFee");
         fee[token] = FeeStructure(uint40(bridgeFee), uint104(minFee), uint112(maxFee));
     }
 
