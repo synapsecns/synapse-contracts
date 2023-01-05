@@ -55,6 +55,11 @@ contract BridgeConfigV3Lens {
     bytes1 private constant F_LOWER = bytes1("f");
     bytes1 private constant F_UPPER = bytes1("F");
 
+    /// @dev Constants for a special case: Avalanche wrapper token for GMX
+    uint256 private constant CHAIN_ID_AVA = 43114;
+    address private constant GMX = 0x62edc0692BD897D2295872a9FFCac5425011c661;
+    address private constant GMX_WRAPPER = 0x20A9DC684B4d0407EF8C9A302BEAaA18ee15F656;
+
     /// @dev BridgeConfig deployment on Ethereum Mainnet
     BridgeConfigV3 internal constant BRIDGE_CONFIG = BridgeConfigV3(0x5217c83ca75559B1f8a8803824E5b7ac233A12a1);
     /// @dev Multicall3 deployment on Ethereum Mainnet (and everywhere else).
@@ -101,10 +106,8 @@ contract BridgeConfigV3Lens {
             require(data[i].success, "Multicall failed");
             BridgeConfigV3.Token memory token = abi.decode(data[i].returnData, (BridgeConfigV3.Token));
             if (bytes(token.tokenAddress).length == 0) continue;
-            address tokenAddress = stringToAddress(token.tokenAddress);
+            (address tokenAddress, address bridgeToken) = _decodeStringAddress(chainId, token.tokenAddress);
             if (tokenAddress == address(0)) continue;
-            address bridgeToken = tokenAddress;
-            // TODO: add special logic for Avalanche GMX
             tokens[tokensFound++] = BridgeToken({
                 id: ids[i],
                 token: tokenAddress,
@@ -123,6 +126,21 @@ contract BridgeConfigV3Lens {
             mstore(tokens, tokensFound)
         }
         require(tokens.length == tokensFound, "Assembly magic did't work");
+    }
+
+    function _decodeStringAddress(uint256 chainId, string memory str)
+        internal
+        pure
+        returns (address tokenAddress, address bridgeToken)
+    {
+        bridgeToken = stringToAddress(str);
+        if (chainId == CHAIN_ID_AVA && bridgeToken == GMX_WRAPPER) {
+            // Special case for GMX on Avalanche
+            tokenAddress = GMX;
+        } else {
+            // Literally every other token doesn't need a wrapper
+            tokenAddress = bridgeToken;
+        }
     }
 
     /// @dev Returns all liquidity pools for destination swap on a given chain.
