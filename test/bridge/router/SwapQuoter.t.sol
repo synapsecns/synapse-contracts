@@ -75,6 +75,10 @@ contract SwapQuoterTest is Utilities06 {
         assertEq(address(ISwap(nUsdPool).getToken(3)), address(usdt), "!usdt");
     }
 
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                           TESTS: ADD POOL                            ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
     function test_addPool() public {
         vm.prank(OWNER);
         quoter.addPool(nEthPool);
@@ -91,6 +95,46 @@ contract SwapQuoterTest is Utilities06 {
         quoter.addPools(pools);
         _checkAddedPools();
     }
+
+    function test_addPool_revert_onlyOwner(address caller) public {
+        vm.assume(caller != OWNER);
+        expectOnlyOwnerRevert();
+        vm.prank(caller);
+        quoter.addPool(address(0));
+    }
+
+    function test_addPools_revert_onlyOwner(address caller) public {
+        vm.assume(caller != OWNER);
+        expectOnlyOwnerRevert();
+        vm.prank(caller);
+        quoter.addPools(new address[](0));
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                          TESTS: REMOVE POOL                          ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_removePool() public {
+        test_addPool();
+        vm.prank(OWNER);
+        quoter.removePool(nEthPool);
+        // Usd quotes should remain intact
+        _checkQuotes(ISwap(nUsdPool), nUsdTokens);
+        // Eth quotes should disappear
+        _checkEmptyQuery(quoter.getAmountOut(address(neth), address(weth), 10**18));
+        _checkEmptyQuery(quoter.getAmountOut(address(weth), address(neth), 10**18));
+    }
+
+    function test_removePool_revert_onlyOwner(address caller) public {
+        vm.assume(caller != OWNER);
+        expectOnlyOwnerRevert();
+        vm.prank(caller);
+        quoter.removePool(address(0));
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                         TESTS: CHECK QUOTES                          ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function test_getAmountOut_nETH() public {
         test_addPools();
