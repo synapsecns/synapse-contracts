@@ -7,22 +7,40 @@ import "forge-std/Test.sol";
 import "../../contracts/bridge/utils/BridgeConfigV3Lens.sol";
 
 // solhint-disable func-name-mixedcase
-contract BridgeConfigV3LensTestFork is Test {
+contract BridgeConfigV3LensTestFork is BridgeConfigV3Lens, Test {
     // 2023-01-05 (Mainnet)
     uint256 internal constant BLOCK_NUMBER = 16_342_000;
-    uint256 internal constant CHAIN_ID_AVA = 43114;
-
-    BridgeConfigV3Lens internal lens;
-
-    function setUp() public {
-        lens = new BridgeConfigV3Lens();
-    }
 
     function test_getAvalancheConfig() public {
+        printChainConfig(43114);
+    }
+
+    function test_getEthereumConfig() public {
+        printChainConfig(1);
+    }
+
+    function test_stringToAddress(address addr, bool toLower) public {
+        string memory str = toString(addr, toLower);
+        address newAddr = stringToAddress(str);
+        assertEq(newAddr, addr, "Roundtrip test failed");
+    }
+
+    function test_addressToString() public {
+        address addr = 0x5217c83ca75559B1f8a8803824E5b7ac233A12a1;
+        emit log_named_address("address", addr);
+        emit log_named_string("toLower", toString(addr, true));
+        emit log_named_string("toUpper", toString(addr, false));
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                          PRINT CHAIN CONFIG                          ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function printChainConfig(uint256 chainId) public {
         string memory ethRPC = vm.envString("ALCHEMY_API");
-        vm.createSelectFork(ethRPC, BLOCK_NUMBER);
-        lens = new BridgeConfigV3Lens();
-        (BridgeConfigV3Lens.BridgeToken[] memory tokens, address[] memory pools) = lens.getChainConfig(CHAIN_ID_AVA);
+        vm.createSelectFork(ethRPC);
+        // vm.createSelectFork(ethRPC, BLOCK_NUMBER);
+        (BridgeConfigV3Lens.BridgeToken[] memory tokens, address[] memory pools) = getChainConfig(chainId);
         console.log("========== TOKENS ==========");
         for (uint256 i = 0; i < tokens.length; ++i) {
             console.log(tokens[i].id);
@@ -35,19 +53,6 @@ contract BridgeConfigV3LensTestFork is Test {
         for (uint256 i = 0; i < pools.length; ++i) {
             console.log(pools[i]);
         }
-    }
-
-    function test_stringToAddress(address addr, bool toLower) public {
-        string memory str = toString(addr, toLower);
-        address newAddr = lens.stringToAddress(str);
-        assertEq(newAddr, addr, "Roundtrip test failed");
-    }
-
-    function test_addressToString() public {
-        address addr = 0x5217c83ca75559B1f8a8803824E5b7ac233A12a1;
-        emit log_named_address("address", addr);
-        emit log_named_string("toLower", toString(addr, true));
-        emit log_named_string("toUpper", toString(addr, false));
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
