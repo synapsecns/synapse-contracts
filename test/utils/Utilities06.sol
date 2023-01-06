@@ -136,6 +136,10 @@ contract Utilities06 is Test {
         vm.label(address(bridge), "BRIDGE");
     }
 
+    function expectOnlyOwnerRevert() public {
+        vm.expectRevert("Ownable: caller is not the owner");
+    }
+
     function calculateAddLiquidity(
         ISwap pool,
         uint8 indexFrom,
