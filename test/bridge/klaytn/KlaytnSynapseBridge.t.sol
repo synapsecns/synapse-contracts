@@ -69,9 +69,9 @@ contract KlaytnSynapseBridgeTestFork is Test {
     event TokenWithdraw(address indexed to, IERC20 token, uint256 amount, uint256 fee, bytes32 indexed kappa);
 
     function setUp() public {
-        string memory cantoRPC = vm.envString("KLAY_API");
+        string memory klayRPC = vm.envString("KLAY_API");
         // Fork Klaytn for Bridge tests
-        vm.createSelectFork(cantoRPC, TEST_BLOCK_NUMBER);
+        vm.createSelectFork(klayRPC, TEST_BLOCK_NUMBER);
         utils = new Utilities();
         // Deploy 0.6.12 contracts, needs to be done via deployCode from 0.8.17 test
         unwrapper = IWKlayUnwrapper(deployCode("WKlayUnwrapper.sol", abi.encode(GOV)));

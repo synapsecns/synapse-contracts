@@ -13,8 +13,8 @@ contract SynapseRouterNethE2ETest is SynapseRouterE2E {
 
     function test_ethereumToOptimism_inETH_outNETH() public {
         // Prepare test parameters
-        Chain memory origin = chains[ETH_CHAINID];
-        Chain memory destination = chains[OPT_CHAINID];
+        ChainSetup memory origin = chains[ETH_CHAINID];
+        ChainSetup memory destination = chains[OPT_CHAINID];
         bool startFromETH = true; // ASSET IN: ETH
         IERC20 tokenIn = origin.weth; // TOKEN IN: WETH
         IERC20 tokenOut = destination.neth; // TOKEN OUT: NETH; ASSET OUT: NETH
@@ -39,8 +39,8 @@ contract SynapseRouterNethE2ETest is SynapseRouterE2E {
 
     function test_ethereumToOptimism_inETH_outETH() public {
         // Prepare test parameters
-        Chain memory origin = chains[ETH_CHAINID];
-        Chain memory destination = chains[OPT_CHAINID];
+        ChainSetup memory origin = chains[ETH_CHAINID];
+        ChainSetup memory destination = chains[OPT_CHAINID];
         bool startFromETH = true; // ASSET IN: ETH
         IERC20 tokenIn = origin.weth; // TOKEN IN: WETH
         IERC20 tokenOut = destination.weth; // TOKEN OUT: WETH; ASSET OUT: ETH
@@ -78,8 +78,8 @@ contract SynapseRouterNethE2ETest is SynapseRouterE2E {
 
     function test_ethereumToOptimism_inWETH_outNETH() public {
         // Prepare test parameters
-        Chain memory origin = chains[ETH_CHAINID];
-        Chain memory destination = chains[OPT_CHAINID];
+        ChainSetup memory origin = chains[ETH_CHAINID];
+        ChainSetup memory destination = chains[OPT_CHAINID];
         bool startFromETH = false;
         IERC20 tokenIn = origin.weth; // TOKEN IN: WETH
         IERC20 tokenOut = destination.neth; // TOKEN OUT: NETH; ASSET OUT: NETH
@@ -104,8 +104,8 @@ contract SynapseRouterNethE2ETest is SynapseRouterE2E {
 
     function test_ethereumToOptimism_inWETH_outETH() public {
         // Prepare test parameters
-        Chain memory origin = chains[ETH_CHAINID];
-        Chain memory destination = chains[OPT_CHAINID];
+        ChainSetup memory origin = chains[ETH_CHAINID];
+        ChainSetup memory destination = chains[OPT_CHAINID];
         bool startFromETH = false;
         IERC20 tokenIn = origin.weth; // TOKEN IN: WETH
         IERC20 tokenOut = destination.weth; // TOKEN OUT: WETH; ASSET OUT: ETH
@@ -143,8 +143,8 @@ contract SynapseRouterNethE2ETest is SynapseRouterE2E {
 
     function test_optimismToEthereum_inNETH_outETH() public {
         // Prepare test parameters
-        Chain memory origin = chains[OPT_CHAINID];
-        Chain memory destination = chains[ETH_CHAINID];
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ETH_CHAINID];
         bool startFromETH = false;
         IERC20 tokenIn = origin.neth; // TOKEN IN: NETH
         IERC20 tokenOut = destination.weth; // TOKEN OUT: WETH; ASSET OUT: ETH
@@ -169,8 +169,8 @@ contract SynapseRouterNethE2ETest is SynapseRouterE2E {
 
     function test_optimismToEthereum_inETH_outETH() public {
         // Prepare test parameters
-        Chain memory origin = chains[OPT_CHAINID];
-        Chain memory destination = chains[ETH_CHAINID];
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ETH_CHAINID];
         bool startFromETH = true; // ASSET IN: ETH
         IERC20 tokenIn = origin.weth; // TOKEN IN: WETH
         IERC20 tokenOut = destination.weth; // TOKEN OUT: WETH; ASSET OUT: ETH
@@ -195,8 +195,8 @@ contract SynapseRouterNethE2ETest is SynapseRouterE2E {
 
     function test_optimismToEthereum_inWETH_outETH() public {
         // Prepare test parameters
-        Chain memory origin = chains[OPT_CHAINID];
-        Chain memory destination = chains[ETH_CHAINID];
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ETH_CHAINID];
         bool startFromETH = false;
         IERC20 tokenIn = origin.weth; // TOKEN IN: WETH
         IERC20 tokenOut = destination.weth; // TOKEN OUT: WETH; ASSET OUT: ETH
@@ -225,8 +225,8 @@ contract SynapseRouterNethE2ETest is SynapseRouterE2E {
 
     function test_optimismToArbitrum_inNETH_outNETH() public {
         // Prepare test parameters
-        Chain memory origin = chains[OPT_CHAINID];
-        Chain memory destination = chains[ARB_CHAINID];
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ARB_CHAINID];
         bool startFromETH = false;
         IERC20 tokenIn = origin.neth; // TOKEN IN: NETH
         IERC20 tokenOut = destination.neth; // TOKEN OUT: NETH; ASSET OUT: NETH
@@ -251,8 +251,8 @@ contract SynapseRouterNethE2ETest is SynapseRouterE2E {
 
     function test_optimismToArbitrum_inNETH_outETH() public {
         // Prepare test parameters
-        Chain memory origin = chains[OPT_CHAINID];
-        Chain memory destination = chains[ARB_CHAINID];
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ARB_CHAINID];
         bool startFromETH = false;
         IERC20 tokenIn = origin.neth; // TOKEN IN: NETH
         IERC20 tokenOut = destination.weth; // TOKEN OUT: WETH; ASSET OUT: ETH
@@ -290,8 +290,8 @@ contract SynapseRouterNethE2ETest is SynapseRouterE2E {
 
     function test_optimismToArbitrum_inETH_outNETH() public {
         // Prepare test parameters
-        Chain memory origin = chains[OPT_CHAINID];
-        Chain memory destination = chains[ARB_CHAINID];
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ARB_CHAINID];
         bool startFromETH = true; // ASSET IN: ETH
         IERC20 tokenIn = origin.weth; // TOKEN IN: WETH
         IERC20 tokenOut = destination.neth; // TOKEN OUT: NETH; ASSET OUT: NETH
@@ -316,8 +316,8 @@ contract SynapseRouterNethE2ETest is SynapseRouterE2E {
 
     function test_optimismToArbitrum_inETH_outETH() public {
         // Prepare test parameters
-        Chain memory origin = chains[OPT_CHAINID];
-        Chain memory destination = chains[ARB_CHAINID];
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ARB_CHAINID];
         bool startFromETH = true; // ASSET IN: ETH
         IERC20 tokenIn = origin.weth; // TOKEN IN: WETH
         IERC20 tokenOut = destination.weth; // TOKEN OUT: WETH; ASSET OUT: ETH
@@ -355,8 +355,8 @@ contract SynapseRouterNethE2ETest is SynapseRouterE2E {
 
     function test_optimismToArbitrum_inWETH_outNETH() public {
         // Prepare test parameters
-        Chain memory origin = chains[OPT_CHAINID];
-        Chain memory destination = chains[ARB_CHAINID];
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ARB_CHAINID];
         bool startFromETH = false;
         IERC20 tokenIn = origin.weth; // TOKEN IN: WETH
         IERC20 tokenOut = destination.neth; // TOKEN OUT: NETH; ASSET OUT: NETH
@@ -381,8 +381,8 @@ contract SynapseRouterNethE2ETest is SynapseRouterE2E {
 
     function test_optimismToArbitrum_inWETH_outETH() public {
         // Prepare test parameters
-        Chain memory origin = chains[OPT_CHAINID];
-        Chain memory destination = chains[ARB_CHAINID];
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ARB_CHAINID];
         bool startFromETH = false;
         IERC20 tokenIn = origin.weth; // TOKEN IN: WETH
         IERC20 tokenOut = destination.weth; // TOKEN OUT: WETH; ASSET OUT: ETH
