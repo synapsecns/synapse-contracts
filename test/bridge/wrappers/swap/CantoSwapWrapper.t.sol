@@ -19,8 +19,11 @@ interface ISynapseTest is ISynapse {
 
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
-contract NewSwapWrapperTestCanto is Test {
+contract NewCantoSwapWrapperTestFork is Test {
     using SafeERC20 for IERC20;
+
+    // 2022-12-02
+    uint256 public constant TEST_BLOCK_NUMBER = 1_894_000;
 
     address internal constant NUSD = 0xD8836aF2e565D3Befce7D906Af63ee45a57E8f80;
     address internal constant NOTE = 0x4e71A2E537B7f9D9413D3991D37958c0b5e1e503;
@@ -36,6 +39,10 @@ contract NewSwapWrapperTestCanto is Test {
     CantoSwapWrapper internal swap;
 
     function setUp() public {
+        string memory cantoRPC = vm.envString("CANTO_API");
+        // Fork Canto for SwapWrapper tests
+        vm.createSelectFork(cantoRPC, TEST_BLOCK_NUMBER);
+
         vm.label(NUSD, "nUSD");
         vm.label(NOTE, "NOTE");
         vm.label(USDC, "USDC");
