@@ -32,21 +32,21 @@ contract LocalBridgeConfigTest is Utilities06 {
         vm.assume(caller != OWNER);
         expectOnlyOwnerRevert();
         vm.prank(caller);
-        bridgeConfig.addToken(address(0), LocalBridgeConfig.TokenType.Redeem, address(0), 0, 0, 0);
+        bridgeConfig.addToken(address(1), LocalBridgeConfig.TokenType.Redeem, address(1), 0, 0, 0);
     }
 
     function test_setTokenConfig_revert_onlyOwner(address caller) public {
         vm.assume(caller != OWNER);
         expectOnlyOwnerRevert();
         vm.prank(caller);
-        bridgeConfig.setTokenConfig(address(0), LocalBridgeConfig.TokenType.Redeem, address(0));
+        bridgeConfig.setTokenConfig(address(1), LocalBridgeConfig.TokenType.Redeem, address(1));
     }
 
     function test_setTokenFee_revert_onlyOwner(address caller) public {
         vm.assume(caller != OWNER);
         expectOnlyOwnerRevert();
         vm.prank(caller);
-        bridgeConfig.setTokenFee(address(0), 0, 0, 0);
+        bridgeConfig.setTokenFee(address(1), 0, 0, 0);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -62,6 +62,8 @@ contract LocalBridgeConfigTest is Utilities06 {
         uint112 maxFee
     ) public {
         LocalBridgeConfig.TokenType tokenType = _castToTokenType(tokenType_);
+        // token can not be zero
+        vm.assume(token != address(0) && bridgeToken != address(0));
         // bridgeFee should be under 10**10
         vm.assume(bridgeFee < 10**10);
         // minFee should not be higher than maxFee
