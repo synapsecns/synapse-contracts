@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 
+import "./BridgeStructs.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 /**
@@ -18,6 +19,15 @@ library UniversalToken {
             return account.balance;
         } else {
             return IERC20(token).balanceOf(account);
+        }
+    }
+
+    /// @notice Compares two tokens. ETH_ADDRESS and WETH are deemed equal.
+    function universalEquals(address token, PoolToken memory poolToken) internal pure returns (bool) {
+        if (token == ETH_ADDRESS) {
+            return poolToken.isWeth;
+        } else {
+            return token == poolToken.token;
         }
     }
 

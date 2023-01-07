@@ -22,8 +22,13 @@ struct SynapseParams {
     uint8 tokenIndexTo;
 }
 
+struct PoolToken {
+    bool isWeth;
+    address token;
+}
+
 struct Pool {
     address pool;
     address lpToken;
-    address[] tokens;
+    PoolToken[] tokens;
 }

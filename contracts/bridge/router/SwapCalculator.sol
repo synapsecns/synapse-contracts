@@ -4,6 +4,7 @@ pragma solidity 0.6.12;
 
 import "../interfaces/ISwap.sol";
 import "../interfaces/ISwapQuoter.sol";
+import "../libraries/UniversalToken.sol";
 import "../../amm/MathUtils.sol";
 
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
@@ -13,6 +14,8 @@ abstract contract SwapCalculator is ISwapQuoter {
 
     using SafeMath for uint256;
     using MathUtils for uint256;
+
+    using UniversalToken for address;
 
     // Struct storing variables used in calculations in the
     // {add,remove}Liquidity functions to avoid stack too deep errors
@@ -40,7 +43,7 @@ abstract contract SwapCalculator is ISwapQuoter {
     /// @dev Set of supported pools conforming to ISwap interface
     EnumerableSet.AddressSet internal _pools;
     /// @dev Pool tokens for every supported ISwap pool
-    mapping(address => address[]) internal _poolTokens;
+    mapping(address => PoolToken[]) internal _poolTokens;
     /// @dev LP token for every supported ISwap pool (if exists)
     mapping(address => address) internal _poolLpToken;
     /// @dev Pool precision multipliers for every supported ISwap pool
@@ -153,15 +156,16 @@ abstract contract SwapCalculator is ISwapQuoter {
     ▏*║                           INTERNAL HELPERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function _addPool(address pool) internal {
+    function _addPool(address pool, address weth) internal {
         if (_pools.add(pool)) {
-            address[] storage tokens = _poolTokens[pool];
+            PoolToken[] storage tokens = _poolTokens[pool];
             // Don't do anything if pool was added before
             if (tokens.length != 0) return;
             for (uint8 i = 0; ; ++i) {
                 try ISwap(pool).getToken(i) returns (IERC20 token) {
                     uint256 decimals = ERC20(address(token)).decimals();
-                    _poolTokens[pool].push(address(token));
+                    PoolToken memory _poolToken = PoolToken({isWeth: address(token) == weth, token: address(token)});
+                    _poolTokens[pool].push(_poolToken);
                     _poolMultipliers[pool].push(10**POOL_PRECISION_DECIMALS.sub(decimals));
                 } catch {
                     // End of pool reached
@@ -240,13 +244,13 @@ abstract contract SwapCalculator is ISwapQuoter {
         address tokenIn,
         address tokenOut
     ) internal view returns (uint8 indexIn, uint8 indexOut) {
-        address[] storage tokens = _poolTokens[pool];
+        PoolToken[] storage tokens = _poolTokens[pool];
         uint256 amount = tokens.length;
         for (uint8 t = 0; t < amount; ++t) {
-            address poolToken = tokens[t];
-            if (poolToken == tokenIn) {
+            PoolToken memory _poolToken = tokens[t];
+            if (tokenIn.universalEquals(_poolToken)) {
                 indexIn = t + 1;
-            } else if (poolToken == tokenOut) {
+            } else if (tokenOut.universalEquals(_poolToken)) {
                 indexOut = t + 1;
             }
         }
