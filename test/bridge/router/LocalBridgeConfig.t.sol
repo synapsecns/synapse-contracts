@@ -74,6 +74,15 @@ contract LocalBridgeConfigTest is Utilities06 {
         _checkFee(token, bridgeFee, minFee, maxFee);
     }
 
+    function test_addToken_revert_zeroToken(address token, uint8 tokenType_) public {
+        vm.expectRevert("Token can't be zero address");
+        vm.prank(OWNER);
+        bridgeConfig.addToken(token, _castToTokenType(tokenType_), address(0), 0, 0, 0);
+        vm.expectRevert("Token can't be zero address");
+        vm.prank(OWNER);
+        bridgeConfig.addToken(address(0), _castToTokenType(tokenType_), token, 0, 0, 0);
+    }
+
     function test_addToken_revert_incorrectBridgeFee(uint256 bridgeFee) public {
         vm.assume(bridgeFee >= 10**10);
         address token = address(1);
@@ -173,6 +182,13 @@ contract LocalBridgeConfigTest is Utilities06 {
         vm.expectRevert("Unknown token");
         vm.prank(OWNER);
         bridgeConfig.setTokenConfig(token, _castToTokenType(tokenType_), bridgeToken);
+    }
+
+    function test_setTokenConfig_revert_zeroToken(address token, uint8 tokenType_) public {
+        test_addToken(token, tokenType_, token, 0, 0, 0);
+        vm.expectRevert("Token can't be zero address");
+        vm.prank(OWNER);
+        bridgeConfig.setTokenConfig(token, _castToTokenType(tokenType_), address(0));
     }
 
     function test_setTokenFee(
