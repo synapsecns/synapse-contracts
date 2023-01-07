@@ -190,6 +190,7 @@ abstract contract LocalBridgeConfig is Ownable {
         uint256 minFee,
         uint256 maxFee
     ) internal virtual returns (bool wasAdded) {
+        require(token != address(0) && bridgeToken != address(0), "Token can't be zero address");
         wasAdded = _bridgeTokens.add(token);
         if (wasAdded) {
             // Need to save config only once
