@@ -77,15 +77,15 @@ abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
         require(tokenIn != tokenOut, "Swap tokens should differ");
         // Decode params for swapping via a Synapse pool
         SynapseParams memory params = abi.decode(rawParams, (SynapseParams));
-        // Swap pool should exist
-        require(params.pool != address(0), "!pool");
+        // Swap pool should exist, if action other than HandleEth was requested
+        require(params.pool != address(0) || params.action == Action.HandleEth, "!pool");
 
         // ============================== PHASE 1(?): WRAP RECEIVED ETH ============================
         // tokenIn was already transferred to this contract, check if we start from native ETH
         if (tokenIn == UniversalToken.ETH_ADDRESS) {
             // Determine WETH address: this is either tokenOut (if no swap is needed),
             // or a pool token with index `tokenIndexFrom` (if swap is needed).
-            tokenIn = _deriveWethAddress(tokenOut, params.pool, params.tokenIndexFrom);
+            tokenIn = _deriveWethAddress({token: tokenOut, params: params, isWethIn: true});
             // Wrap ETH into WETH and leave it in this contract
             _wrapETH(tokenIn, amountIn);
         } else {
@@ -100,7 +100,7 @@ abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
         if (tokenOut == UniversalToken.ETH_ADDRESS) {
             // Determine WETH address: this is either tokenIn (if no swap is needed),
             // or a pool token with index `tokenIndexTo` (if swap is needed).
-            tokenSwapTo = _deriveWethAddress(tokenIn, params.pool, params.tokenIndexTo);
+            tokenSwapTo = _deriveWethAddress({token: tokenIn, params: params, isWethIn: false});
         }
         // Either way, we need to perform tokenIn -> tokenSwapTo swap.
         // Then we need to send tokenOut to the recipient.
@@ -108,7 +108,10 @@ abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
 
         // ============================== PHASE 3(?): PERFORM A REQUESTED SWAP =====================
         // Determine if we need to perform a swap
-        if (tokenIn != tokenSwapTo) {
+        if (params.action == Action.HandleEth) {
+            // If no swap is required, amountOut doesn't change
+            amountOut = amountIn;
+        } else {
             // Approve token for spending if needed
             tokenIn.universalApproveInfinity(params.pool);
             if (params.action == Action.Swap) {
@@ -121,11 +124,6 @@ abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
                 // Remove liquidity to the pool
                 amountOut = _removeLiquidity(ISwap(params.pool), params, amountIn, tokenSwapTo);
             }
-            // After swap/add/remove this contract has `amountOut` worth of `tokenSwapTo`
-        } else {
-            // If no swap is required, amountOut doesn't change
-            amountOut = amountIn;
-            // This contract has `amountIn == amountOut` worth of `tokenIn == tokenSwapTo`
         }
         // Either way, this contract has `amountOut` worth of `tokenSwapTo`
 
@@ -240,7 +238,7 @@ abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
     /**
      * @notice Returns a list of pool tokens for the given pool.
      */
-    function poolTokens(address pool) public view override returns (address[] memory tokens) {
+    function poolTokens(address pool) public view override returns (PoolToken[] memory tokens) {
         tokens = swapQuoter.poolTokens(pool);
     }
 
@@ -324,16 +322,15 @@ abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
     /// @dev Derives WETH address from swap parameters.
     function _deriveWethAddress(
         address token,
-        address pool,
-        uint8 index
+        SynapseParams memory params,
+        bool isWethIn
     ) internal view returns (address weth) {
-        if (address(pool) == address(this)) {
-            // If this address was specified as "pool": we only need to wrap/unwrap ETH,
-            // meaning WETH address should be specified as the other token
+        if (params.action == Action.HandleEth) {
+            // If we only need to wrap/unwrap ETH, WETH address should be specified as the other token
             weth = token;
         } else {
             // Otherwise, we need to get WETH address from the liquidity pool
-            weth = address(ISwap(pool).getToken(index));
+            weth = address(ISwap(params.pool).getToken(isWethIn ? params.tokenIndexFrom : params.tokenIndexTo));
         }
     }
 

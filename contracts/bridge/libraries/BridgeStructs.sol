@@ -12,7 +12,8 @@ struct SwapQuery {
 enum Action {
     Swap,
     AddLiquidity,
-    RemoveLiquidity
+    RemoveLiquidity,
+    HandleEth
 }
 
 struct SynapseParams {

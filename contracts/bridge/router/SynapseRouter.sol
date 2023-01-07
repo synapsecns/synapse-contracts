@@ -108,7 +108,7 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
         SwapQuery memory originQuery,
         SwapQuery memory destQuery
     ) external payable {
-        if (_swapRequested(originQuery)) {
+        if (_hasAdapter(originQuery)) {
             // Perform a swap using the swap adapter, transfer the swapped tokens to this contract
             (token, amount) = _adapterSwap(address(this), token, amount, originQuery);
         } else {
@@ -119,10 +119,13 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
         TokenConfig memory _config = config[token];
         require(_config.bridgeToken != address(0), "Token not supported");
         token = _config.bridgeToken;
-        // Check if swap on destination chain is required.
-        if (_swapRequested(destQuery)) {
-            // Decode params for swapping via a Synapse pool on the destination chain.
-            SynapseParams memory destParams = abi.decode(destQuery.rawParams, (SynapseParams));
+        // Decode params for swapping via a Synapse pool on the destination chain, if they were requested.
+        SynapseParams memory destParams;
+        if (_hasAdapter(destQuery)) destParams = abi.decode(destQuery.rawParams, (SynapseParams));
+        // Check if Swap/RemoveLiquidity Action on destination chain is required.
+        // Swap adapter needs to be specified.
+        // HandleETH action is done automatically by SynapseBridge.
+        if (_hasAdapter(destQuery) && destParams.action != Action.HandleEth) {
             if (_config.tokenType == TokenType.Deposit) {
                 require(destParams.action == Action.Swap, "Unsupported dest action");
                 // Case 1: token needs to be deposited on origin chain.
@@ -197,9 +200,9 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
     ) external payable returns (uint256 amountOut) {
         require(to != address(0), "!recipient: zero address");
         require(to != address(this), "!recipient: router address");
-        require(_swapRequested(query), "!swapAdapter");
+        require(_hasAdapter(query), "!swapAdapter");
         // Perform a swap through the Adapter. Adapter will be the one handling ETH/WETH interactions.
-        (, amountOut) = _adapterSwap(address(this), token, amount, query);
+        (, amountOut) = _adapterSwap(to, token, amount, query);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -318,10 +321,10 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
     }
 
     /**
-     * @notice Checks whether the swap was requested in the query.
-     * Query is considered empty (and thus swap-less) if swap adapter address was not specified.
+     * @notice Checks whether the swap adapter was specified in the query.
+     * Query without a swap adapter specifies that no action needs to be taken.
      */
-    function _swapRequested(SwapQuery memory query) internal pure returns (bool) {
+    function _hasAdapter(SwapQuery memory query) internal pure returns (bool) {
         return query.swapAdapter != address(0);
     }
 
