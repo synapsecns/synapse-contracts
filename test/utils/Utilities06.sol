@@ -64,6 +64,17 @@ contract Utilities06 is Test {
         _lpToken = new LPToken();
         _swap = new Swap();
         _deployer = new SwapDeployer();
+        vm.label(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE, "ETH");
+    }
+
+    /// @notice Shortcut for concatenation of two strings.
+    function concat(string memory a, string memory b) public pure returns (string memory) {
+        return string(abi.encodePacked(a, b));
+    }
+
+    /// @notice Shortcut for string comparison.
+    function equals(string memory a, string memory b) public pure returns (bool) {
+        return keccak256(abi.encodePacked(a)) == keccak256(abi.encodePacked(b));
     }
 
     /**
@@ -84,8 +95,12 @@ contract Utilities06 is Test {
     }
 
     function deployWETH() public returns (IWETH9 token) {
+        token = deployWETH("WETH");
+    }
+
+    function deployWETH(string memory name) public returns (IWETH9 token) {
         address weth = deployCode("WETH9.sol");
-        vm.label(weth, "WETH");
+        vm.label(weth, name);
         token = IWETH9(payable(weth));
     }
 

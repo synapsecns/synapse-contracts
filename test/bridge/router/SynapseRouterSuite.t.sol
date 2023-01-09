@@ -15,6 +15,7 @@ contract ValidatorMock {
 
     bytes32 internal mockKappa = "MOCK KAPPA";
 
+    /// @notice Mocks Validator logic for executing a SynapseBridge transaction on destination chain.
     function completeBridgeTx(
         SynapseBridge bridge,
         address payable to,
@@ -25,43 +26,45 @@ contract ValidatorMock {
     ) external {
         uint256 fee = calculateBridgeFee(amount);
         bytes32 kappa = _rotateKappa();
-        if (query.swapAdapter == address(0)) {
+        // Decode params, if swap adapter was specified
+        SynapseParams memory params;
+        if (query.swapAdapter != address(0)) params = abi.decode(query.rawParams, (SynapseParams));
+        if (query.swapAdapter == address(0) || params.action == Action.HandleEth) {
+            // If no swapAdapter is present, or "Handle ETH" was specified: execute vanilla withdraw/mint
             if (tokenType == LocalBridgeConfig.TokenType.Deposit) {
                 bridge.withdraw(to, IERC20(token), amount, fee, kappa);
             } else {
                 bridge.mint(to, IERC20Mintable(token), amount, fee, kappa);
             }
         } else {
-            SynapseParams memory params = abi.decode(query.rawParams, (SynapseParams));
+            // Otherwise, we need to execute <...>And<...> bridge method
             if (tokenType == LocalBridgeConfig.TokenType.Deposit) {
-                if (params.action == Action.RemoveLiquidity) {
-                    bridge.withdrawAndRemove({
-                        to: to,
-                        token: IERC20(token),
-                        amount: amount,
-                        fee: fee,
-                        pool: ISwap(params.pool),
-                        swapTokenIndex: params.tokenIndexTo,
-                        swapMinAmount: query.minAmountOut,
-                        swapDeadline: query.deadline,
-                        kappa: kappa
-                    });
-                }
+                require(params.action == Action.RemoveLiquidity, "Unknown action");
+                bridge.withdrawAndRemove({
+                    to: to,
+                    token: IERC20(token),
+                    amount: amount,
+                    fee: fee,
+                    pool: ISwap(params.pool),
+                    swapTokenIndex: params.tokenIndexTo,
+                    swapMinAmount: query.minAmountOut,
+                    swapDeadline: query.deadline,
+                    kappa: kappa
+                });
             } else {
-                if (params.action == Action.Swap) {
-                    bridge.mintAndSwap({
-                        to: to,
-                        token: IERC20Mintable(token),
-                        amount: amount,
-                        fee: fee,
-                        pool: ISwap(params.pool),
-                        tokenIndexFrom: params.tokenIndexFrom,
-                        tokenIndexTo: params.tokenIndexTo,
-                        minDy: query.minAmountOut,
-                        deadline: query.deadline,
-                        kappa: kappa
-                    });
-                }
+                require(params.action == Action.Swap, "Unknown action");
+                bridge.mintAndSwap({
+                    to: to,
+                    token: IERC20Mintable(token),
+                    amount: amount,
+                    fee: fee,
+                    pool: ISwap(params.pool),
+                    tokenIndexFrom: params.tokenIndexFrom,
+                    tokenIndexTo: params.tokenIndexTo,
+                    minDy: query.minAmountOut,
+                    deadline: query.deadline,
+                    kappa: kappa
+                });
             }
         }
     }
@@ -80,7 +83,7 @@ contract ValidatorMock {
 
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
-abstract contract SynapseRouterE2E is Utilities06 {
+abstract contract SynapseRouterSuite is Utilities06 {
     address internal constant USER = address(4242);
     address internal constant TO = address(2424);
 
@@ -104,6 +107,7 @@ abstract contract SynapseRouterE2E is Utilities06 {
         SynapseBridge bridge;
         SynapseRouter router;
         SwapQuoter quoter;
+        IERC20 gas;
         address nEthPool;
         IERC20 neth;
         IERC20 weth;
@@ -126,36 +130,48 @@ abstract contract SynapseRouterE2E is Utilities06 {
         chains[OPT_CHAINID] = deployTestOptimism();
     }
 
-    function deployChain() public returns (ChainSetup memory chain) {
-        IWETH9 weth = deployWETH();
+    function deployChain(string memory chainName) public returns (ChainSetup memory chain) {
+        // Convenience shortcut
+        chain.gas = IERC20(UniversalToken.ETH_ADDRESS);
+        // Deploy WETH
+        IWETH9 weth = deployWETH(concat(chainName, " WETH"));
         chain.weth = IERC20(address(weth));
         deal(address(this), 10**24);
         weth.deposit{value: 10**24}();
+        // Deploy USD tokens (not all necessarily used later)
+        chain.dai = deployERC20(concat(chainName, " DAI"), 18);
+        chain.usdc = deployERC20(concat(chainName, " USDC"), 6);
+        chain.usdt = deployERC20(concat(chainName, " USDT"), 6);
 
         chain.bridge = deployBridge();
         chain.bridge.grantRole(chain.bridge.NODEGROUP_ROLE(), address(validator));
         chain.bridge.setWethAddress(payable(weth));
 
-        chain.router = new SynapseRouter(address(weth), address(chain.bridge));
-        chain.quoter = new SwapQuoter(address(chain.router));
+        chain.router = new SynapseRouter(address(chain.bridge));
+        chain.quoter = new SwapQuoter(address(chain.router), address(chain.weth));
         chain.router.setSwapQuoter(chain.quoter);
+
+        // Deploy Bridge tokens
+        if (!equals(chainName, "ETH")) {
+            chain.neth = deploySynapseERC20(chain, concat(chainName, " nETH"));
+            chain.nusd = deploySynapseERC20(chain, concat(chainName, " nUSD"));
+            _addRedeemToken(chain.router, address(chain.neth));
+            _addRedeemToken(chain.router, address(chain.nusd));
+            chain.bridgeTokenEth = address(chain.neth);
+            chain.bridgeTokenUsd = address(chain.nusd);
+        }
     }
 
     function deployTestEthereum() public returns (ChainSetup memory chain) {
-        chain = deployChain();
+        chain = deployChain("ETH");
         chain.chainId = ETH_CHAINID;
-        // no ETH pool on Mainnet
-        // Deploy USD tokens
-        chain.dai = deployERC20("ETH DAI", 18);
-        chain.usdc = deployERC20("ETH USDC", 6);
-        chain.usdt = deployERC20("ETH USDT", 6);
-        // Deploy nUSD pool and fetch nUSD address
+        // Deploy nUSD pool
         chain.nUsdPool = deployPool(chain, _castToArray(chain.dai, chain.usdc, chain.usdt), 1_000_000);
-        // Set up Swap Quoter
+        // Set up Swap Quoter and fetch nUSD address
         chain.quoter.addPool(chain.nUsdPool);
         (, address nexusLpToken) = chain.quoter.poolInfo(chain.nUsdPool);
         chain.nusd = IERC20(nexusLpToken);
-        // Setup bridge tokens
+        // Setup bridge tokens for Mainnet
         _addDepositToken(chain.router, address(chain.weth));
         _addDepositToken(chain.router, address(chain.nusd));
         chain.bridgeTokenEth = address(chain.weth);
@@ -166,48 +182,27 @@ abstract contract SynapseRouterE2E is Utilities06 {
     }
 
     function deployTestArbitrum() public returns (ChainSetup memory chain) {
-        chain = deployChain();
+        chain = deployChain("ARB");
         chain.chainId = ARB_CHAINID;
-        // Deploy ETH tokens
-        chain.neth = deploySynapseERC20(chain, "ARB nETH");
-        // Deploy nETH pool
+        // Deploy nETH pool: nETH + WETH
         chain.nEthPool = deployPool(chain, _castToArray(chain.neth, chain.weth), 1_000);
-        // Deploy USD tokens
-        chain.nusd = deploySynapseERC20(chain, "ARB nUSD");
-        chain.usdc = deployERC20("ARB USDC", 6);
-        chain.usdt = deployERC20("ARB USDT", 6);
-        // Deploy nUSD pool
+        // Deploy nUSD pool: nUSD + USDC + USDT
         chain.nUsdPool = deployPool(chain, _castToArray(chain.nusd, chain.usdc, chain.usdt), 100_000);
         // Set up Swap Quoter
         chain.quoter.addPool(chain.nEthPool);
         chain.quoter.addPool(chain.nUsdPool);
-        // Setup bridge tokens
-        _addRedeemToken(chain.router, address(chain.neth));
-        _addRedeemToken(chain.router, address(chain.nusd));
-        chain.bridgeTokenEth = address(chain.neth);
-        chain.bridgeTokenUsd = address(chain.nusd);
     }
 
     function deployTestOptimism() public returns (ChainSetup memory chain) {
-        chain = deployChain();
+        chain = deployChain("OPT");
         chain.chainId = OPT_CHAINID;
-        // Deploy ETH tokens
-        chain.neth = deploySynapseERC20(chain, "OPT nETH");
-        // Deploy nETH pool
+        // Deploy nETH pool: nETH + WETH
         chain.nEthPool = deployPool(chain, _castToArray(chain.neth, chain.weth), 2_000);
-        // Deploy USD tokens
-        chain.nusd = deploySynapseERC20(chain, "OPT nUSD");
-        chain.usdc = deployERC20("OPT USDC", 6);
-        // Deploy nUSD pool
+        // Deploy nUSD pool: nUSD + USDC
         chain.nUsdPool = deployPool(chain, _castToArray(chain.nusd, chain.usdc), 200_000);
         // Set up Swap Quoter
         chain.quoter.addPool(chain.nEthPool);
         chain.quoter.addPool(chain.nUsdPool);
-        // Setup bridge tokens
-        _addRedeemToken(chain.router, address(chain.neth));
-        _addRedeemToken(chain.router, address(chain.nusd));
-        chain.bridgeTokenEth = address(chain.neth);
-        chain.bridgeTokenUsd = address(chain.nusd);
     }
 
     function deploySynapseERC20(ChainSetup memory chain, string memory name) public returns (IERC20 token) {
@@ -240,12 +235,11 @@ abstract contract SynapseRouterE2E is Utilities06 {
     function initiateBridgeTx(
         ChainSetup memory origin,
         ChainSetup memory destination,
-        bool startFromETH,
         IERC20 tokenIn,
         IERC20 tokenOut,
         uint256 amountIn
     ) public {
-        prepareBridgeTx(origin, startFromETH, tokenIn, amountIn);
+        prepareBridgeTx(origin, tokenIn, amountIn);
         (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
             origin,
             destination,
@@ -254,6 +248,7 @@ abstract contract SynapseRouterE2E is Utilities06 {
             amountIn
         );
         vm.prank(USER);
+        bool startFromETH = address(tokenIn) == UniversalToken.ETH_ADDRESS;
         origin.router.bridge{value: startFromETH ? amountIn : 0}({
             to: TO,
             chainId: destination.chainId,
@@ -295,11 +290,10 @@ abstract contract SynapseRouterE2E is Utilities06 {
 
     function prepareBridgeTx(
         ChainSetup memory origin,
-        bool startFromETH,
         IERC20 tokenIn,
         uint256 amountIn
     ) public {
-        if (startFromETH) {
+        if (address(tokenIn) == UniversalToken.ETH_ADDRESS) {
             // Deal ETH to user
             deal(USER, amountIn);
         } else {
@@ -356,7 +350,13 @@ abstract contract SynapseRouterE2E is Utilities06 {
         destQuery.minAmountOut;
     }
 
-    function getChainBridgeToken(ChainSetup memory chain, bytes32 symbol) public pure returns (address bridgeToken) {
+    /// @dev Function is marked virtual to allow adding custom tokens in separate tests.
+    function getChainBridgeToken(ChainSetup memory chain, bytes32 symbol)
+        public
+        pure
+        virtual
+        returns (address bridgeToken)
+    {
         // In practice, one is expected to store the global bridge token addresses.
         // This method is just mocking the storage logic.
         if (symbol == SYMBOL_NETH) {
@@ -366,15 +366,17 @@ abstract contract SynapseRouterE2E is Utilities06 {
         }
     }
 
+    /// @dev Function is marked virtual to allow adding custom tokens in separate tests.
     function getCorrelatedBridgeToken(ChainSetup memory chain, IERC20 token)
         public
         pure
+        virtual
         returns (bytes32 symbol, address bridgeToken)
     {
         // In practice, one is expected to store the global bridge token addresses,
         // and a list of "correlated" tokens for every bridge token.
         // This method is just mocking the storage logic.
-        if (token == chain.neth || token == chain.weth) {
+        if (token == chain.neth || token == chain.weth || address(token) == UniversalToken.ETH_ADDRESS) {
             symbol = SYMBOL_NETH;
             bridgeToken = chain.bridgeTokenEth;
         } else if (token == chain.nusd || token == chain.dai || token == chain.usdc || token == chain.usdt) {
@@ -384,7 +386,7 @@ abstract contract SynapseRouterE2E is Utilities06 {
     }
 
     function getRecipientBalance(ChainSetup memory chain, address token) public view returns (uint256) {
-        if (token == address(chain.weth)) {
+        if (token == address(chain.weth) || token == UniversalToken.ETH_ADDRESS) {
             return TO.balance;
         } else {
             return IERC20(token).balanceOf(TO);
