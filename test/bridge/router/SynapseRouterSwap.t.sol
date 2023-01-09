@@ -48,14 +48,14 @@ contract SynapseRouterSwapTest is Utilities06 {
         }
 
         // Bridge address is not required for swap testing
-        router = new SynapseRouter(payable(weth), address(0));
-        quoter = new SwapQuoter(address(router));
+        router = new SynapseRouter(address(0));
+        quoter = new SwapQuoter(address(router), address(weth));
         quoter.addPool(nEthPool);
         router.setSwapQuoter(quoter);
 
         // Deploy "external" router/quoter
-        routerExt = new SynapseRouter(payable(weth), address(0));
-        quoterExt = new SwapQuoter(address(routerExt));
+        routerExt = new SynapseRouter(address(0));
+        quoterExt = new SwapQuoter(address(routerExt), address(weth));
         quoterExt.addPool(nEthPool);
         routerExt.setSwapQuoter(quoterExt);
 
@@ -74,7 +74,7 @@ contract SynapseRouterSwapTest is Utilities06 {
         uint256 amount = 10**18;
         SwapQuery memory query = router.getAmountOut(tokenIn, tokenOut, amount);
         vm.expectRevert("!recipient: zero address");
-        router.swap({to: address(0), token: tokenIn, amount: amount, query: query, unwrapETH: false});
+        router.swap(address(0), tokenIn, amount, query);
     }
 
     function test_swap_revert_recipientRouter() public {
@@ -83,7 +83,7 @@ contract SynapseRouterSwapTest is Utilities06 {
         uint256 amount = 10**18;
         SwapQuery memory query = router.getAmountOut(tokenIn, tokenOut, amount);
         vm.expectRevert("!recipient: router address");
-        router.swap({to: address(router), token: tokenIn, amount: amount, query: query, unwrapETH: false});
+        router.swap({to: address(router), token: tokenIn, amount: amount, query: query});
     }
 
     function test_swap_revert_noSwapRequested() public {
@@ -92,43 +92,46 @@ contract SynapseRouterSwapTest is Utilities06 {
         uint256 amount = 10**18;
         SwapQuery memory query = router.getAmountOut(tokenIn, tokenOut, amount);
         vm.expectRevert("!swapAdapter");
-        router.swap({to: TO, token: tokenIn, amount: amount, query: query, unwrapETH: false});
+        router.swap(TO, tokenIn, amount, query);
     }
 
-    function test_swap_revert_wrongWethAddress() public {
-        address tokenIn = address(neth);
-        address tokenOut = address(weth);
+    function test_swap_revert_wrongEthAddress() public {
+        // tokenIn should be ETH_ADDRESS instead
+        address tokenIn = address(weth);
+        address tokenOut = address(neth);
         uint256 amount = 10**18;
         SwapQuery memory query = router.getAmountOut(tokenIn, tokenOut, amount);
         _unwrapUserWETH();
-        vm.expectRevert("!weth");
+        vm.expectRevert(bytes("!eth"));
         vm.prank(USER);
-        router.swap{value: amount}(TO, tokenIn, amount, query, false);
+        router.swap{value: amount}(TO, tokenIn, amount, query);
     }
 
     function test_swap_revert_incorrectMsgValue() public {
-        address tokenIn = address(weth);
+        address tokenIn = UniversalToken.ETH_ADDRESS;
         address tokenOut = address(neth);
         uint256 amount = 10**18;
         SwapQuery memory query = router.getAmountOut(tokenIn, tokenOut, amount);
         _unwrapUserWETH();
         vm.expectRevert("!msg.value");
         vm.prank(USER);
-        router.swap{value: amount - 1}(TO, tokenIn, amount, query, false);
+        router.swap{value: amount - 1}(TO, tokenIn, amount, query);
     }
 
     function test_swap_revert_recipientDeniesEth() public {
         BtcMaxi ethDenier = new BtcMaxi();
         address tokenIn = address(neth);
-        address tokenOut = address(weth);
+        address tokenOut = UniversalToken.ETH_ADDRESS;
         uint256 amount = 10**18;
         SwapQuery memory query = router.getAmountOut(tokenIn, tokenOut, amount);
         vm.expectRevert("ETH transfer failed");
         vm.prank(USER);
-        router.swap(address(ethDenier), tokenIn, amount, query, true);
+        router.swap(address(ethDenier), tokenIn, amount, query);
         // Same swap goes through if we don't unwrap WETH
+        tokenOut = address(weth);
+        query = router.getAmountOut(tokenIn, tokenOut, amount);
         vm.prank(USER);
-        router.swap(address(ethDenier), tokenIn, amount, query, false);
+        router.swap(address(ethDenier), tokenIn, amount, query);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -137,59 +140,26 @@ contract SynapseRouterSwapTest is Utilities06 {
 
     function test_swap_router_basic() public {
         // WETH -> nETH token swap
-        _checkSwap({
-            tokenIn: address(weth),
-            tokenOut: address(neth),
-            nativeEthIn: false,
-            unwrapETH: false,
-            externalAdapter: false
-        });
-        // WETH -> nETH token swap (with ignored unwrapETH setting)
-        _checkSwap({
-            tokenIn: address(weth),
-            tokenOut: address(neth),
-            nativeEthIn: false,
-            unwrapETH: true,
-            externalAdapter: false
-        });
+        _checkSwap({tokenIn: address(weth), tokenOut: address(neth), externalAdapter: false});
         // nETH -> WETH token swap
-        _checkSwap({
-            tokenIn: address(neth),
-            tokenOut: address(weth),
-            nativeEthIn: false,
-            unwrapETH: false,
-            externalAdapter: false
-        });
+        _checkSwap({tokenIn: address(neth), tokenOut: address(weth), externalAdapter: false});
     }
 
     function test_swap_router_fromETH() public {
         // ETH -> nETH swap
-        _checkSwap({
-            tokenIn: address(weth),
-            tokenOut: address(neth),
-            nativeEthIn: true,
-            unwrapETH: false,
-            externalAdapter: false
-        });
-        // ETH -> nETH swap (with ignored unwrapETH setting)
-        _checkSwap({
-            tokenIn: address(weth),
-            tokenOut: address(neth),
-            nativeEthIn: true,
-            unwrapETH: true,
-            externalAdapter: false
-        });
+        _checkSwap({tokenIn: UniversalToken.ETH_ADDRESS, tokenOut: address(neth), externalAdapter: false});
     }
 
     function test_swap_router_toETH() public {
         // nETH -> ETH swap
-        _checkSwap({
-            tokenIn: address(neth),
-            tokenOut: address(weth),
-            nativeEthIn: false,
-            unwrapETH: true,
-            externalAdapter: false
-        });
+        _checkSwap({tokenIn: address(neth), tokenOut: UniversalToken.ETH_ADDRESS, externalAdapter: false});
+    }
+
+    function test_swap_router_handleETH() public {
+        address eth = UniversalToken.ETH_ADDRESS;
+        // Router can be used for un(wrapping) ETH
+        _checkSwap({tokenIn: address(weth), tokenOut: eth, externalAdapter: false});
+        _checkSwap({tokenIn: eth, tokenOut: address(weth), externalAdapter: false});
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -204,19 +174,19 @@ contract SynapseRouterSwapTest is Utilities06 {
         skip(1);
         vm.expectRevert("Deadline not met");
         vm.prank(USER);
-        router.swap(TO, tokenIn, AMOUNT, query, false);
+        router.swap(TO, tokenIn, AMOUNT, query);
     }
 
     function test_swap_router_revert_fromETH_deadlinePassed() public {
         _unwrapUserWETH();
-        address tokenIn = address(weth);
+        address tokenIn = UniversalToken.ETH_ADDRESS;
         address tokenOut = address(neth);
         bool externalAdapter = false;
         SwapQuery memory query = _getQuery(tokenIn, tokenOut, externalAdapter);
         skip(1);
         vm.expectRevert("Deadline not met");
         vm.prank(USER);
-        router.swap{value: AMOUNT}(TO, tokenIn, AMOUNT, query, false);
+        router.swap{value: AMOUNT}(TO, tokenIn, AMOUNT, query);
     }
 
     function test_swap_router_revert_basic_minAmountOutFailed() public {
@@ -227,30 +197,30 @@ contract SynapseRouterSwapTest is Utilities06 {
         query.minAmountOut++;
         vm.expectRevert("Swap didn't result in min tokens");
         vm.prank(USER);
-        router.swap(TO, tokenIn, AMOUNT, query, false);
+        router.swap(TO, tokenIn, AMOUNT, query);
     }
 
     function test_swap_router_revert_fromETH_minAmountOutFailed() public {
         _unwrapUserWETH();
-        address tokenIn = address(weth);
+        address tokenIn = UniversalToken.ETH_ADDRESS;
         address tokenOut = address(neth);
         bool externalAdapter = false;
         SwapQuery memory query = _getQuery(tokenIn, tokenOut, externalAdapter);
         query.minAmountOut++;
         vm.expectRevert("Swap didn't result in min tokens");
         vm.prank(USER);
-        router.swap{value: AMOUNT}(TO, tokenIn, AMOUNT, query, false);
+        router.swap{value: AMOUNT}(TO, tokenIn, AMOUNT, query);
     }
 
     function test_swap_router_revert_toETH_minAmountOutFailed() public {
         address tokenIn = address(neth);
-        address tokenOut = address(weth);
+        address tokenOut = UniversalToken.ETH_ADDRESS;
         bool externalAdapter = false;
         SwapQuery memory query = _getQuery(tokenIn, tokenOut, externalAdapter);
         query.minAmountOut++;
         vm.expectRevert("Swap didn't result in min tokens");
         vm.prank(USER);
-        router.swap(TO, tokenIn, AMOUNT, query, true);
+        router.swap(TO, tokenIn, AMOUNT, query);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -259,59 +229,26 @@ contract SynapseRouterSwapTest is Utilities06 {
 
     function test_swap_external_basic() public {
         // WETH -> nETH token swap through external adapter
-        _checkSwap({
-            tokenIn: address(weth),
-            tokenOut: address(neth),
-            nativeEthIn: false,
-            unwrapETH: false,
-            externalAdapter: true
-        });
-        // WETH -> nETH token swap (with ignored unwrapETH setting)
-        _checkSwap({
-            tokenIn: address(weth),
-            tokenOut: address(neth),
-            nativeEthIn: false,
-            unwrapETH: true,
-            externalAdapter: true
-        });
+        _checkSwap({tokenIn: address(weth), tokenOut: address(neth), externalAdapter: true});
         // nETH -> WETH token swap
-        _checkSwap({
-            tokenIn: address(neth),
-            tokenOut: address(weth),
-            nativeEthIn: false,
-            unwrapETH: false,
-            externalAdapter: true
-        });
+        _checkSwap({tokenIn: address(neth), tokenOut: address(weth), externalAdapter: true});
     }
 
     function test_swap_external_fromETH() public {
         // ETH -> nETH swap
-        _checkSwap({
-            tokenIn: address(weth),
-            tokenOut: address(neth),
-            nativeEthIn: true,
-            unwrapETH: false,
-            externalAdapter: true
-        });
-        // ETH -> nETH swap (with ignored unwrapETH setting)
-        _checkSwap({
-            tokenIn: address(weth),
-            tokenOut: address(neth),
-            nativeEthIn: true,
-            unwrapETH: true,
-            externalAdapter: true
-        });
+        _checkSwap({tokenIn: UniversalToken.ETH_ADDRESS, tokenOut: address(neth), externalAdapter: true});
     }
 
     function test_swap_external_toETH() public {
         // nETH -> ETH swap
-        _checkSwap({
-            tokenIn: address(neth),
-            tokenOut: address(weth),
-            nativeEthIn: false,
-            unwrapETH: true,
-            externalAdapter: true
-        });
+        _checkSwap({tokenIn: address(neth), tokenOut: UniversalToken.ETH_ADDRESS, externalAdapter: true});
+    }
+
+    function test_swap_external_handleETH() public {
+        address eth = UniversalToken.ETH_ADDRESS;
+        // External SynapseAdapter can be used for un(wrapping) ETH
+        _checkSwap({tokenIn: address(weth), tokenOut: eth, externalAdapter: true});
+        _checkSwap({tokenIn: eth, tokenOut: address(weth), externalAdapter: true});
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -326,19 +263,19 @@ contract SynapseRouterSwapTest is Utilities06 {
         skip(1);
         vm.expectRevert("Deadline not met");
         vm.prank(USER);
-        router.swap(TO, tokenIn, AMOUNT, query, false);
+        router.swap(TO, tokenIn, AMOUNT, query);
     }
 
     function test_swap_external_revert_fromETH_deadlinePassed() public {
         _unwrapUserWETH();
-        address tokenIn = address(weth);
+        address tokenIn = UniversalToken.ETH_ADDRESS;
         address tokenOut = address(neth);
         bool externalAdapter = true;
         SwapQuery memory query = _getQuery(tokenIn, tokenOut, externalAdapter);
         skip(1);
         vm.expectRevert("Deadline not met");
         vm.prank(USER);
-        router.swap{value: AMOUNT}(TO, tokenIn, AMOUNT, query, false);
+        router.swap{value: AMOUNT}(TO, tokenIn, AMOUNT, query);
     }
 
     function test_swap_external_revert_basic_minAmountOutFailed() public {
@@ -349,30 +286,30 @@ contract SynapseRouterSwapTest is Utilities06 {
         query.minAmountOut++;
         vm.expectRevert("Swap didn't result in min tokens");
         vm.prank(USER);
-        router.swap(TO, tokenIn, AMOUNT, query, false);
+        router.swap(TO, tokenIn, AMOUNT, query);
     }
 
     function test_swap_external_revert_fromETH_minAmountOutFailed() public {
         _unwrapUserWETH();
-        address tokenIn = address(weth);
+        address tokenIn = UniversalToken.ETH_ADDRESS;
         address tokenOut = address(neth);
         bool externalAdapter = true;
         SwapQuery memory query = _getQuery(tokenIn, tokenOut, externalAdapter);
         query.minAmountOut++;
         vm.expectRevert("Swap didn't result in min tokens");
         vm.prank(USER);
-        router.swap{value: AMOUNT}(TO, tokenIn, AMOUNT, query, false);
+        router.swap{value: AMOUNT}(TO, tokenIn, AMOUNT, query);
     }
 
     function test_swap_external_revert_toETH_minAmountOutFailed() public {
         address tokenIn = address(neth);
-        address tokenOut = address(weth);
+        address tokenOut = UniversalToken.ETH_ADDRESS;
         bool externalAdapter = true;
         SwapQuery memory query = _getQuery(tokenIn, tokenOut, externalAdapter);
         query.minAmountOut++;
         vm.expectRevert("Swap didn't result in min tokens");
         vm.prank(USER);
-        router.swap(TO, tokenIn, AMOUNT, query, true);
+        router.swap(TO, tokenIn, AMOUNT, query);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -382,13 +319,12 @@ contract SynapseRouterSwapTest is Utilities06 {
     function _checkSwap(
         address tokenIn,
         address tokenOut,
-        bool nativeEthIn,
-        bool unwrapETH,
         bool externalAdapter
     ) internal {
+        bool nativeEthIn = tokenIn == UniversalToken.ETH_ADDRESS;
         if (nativeEthIn) _unwrapUserWETH();
         // Figure out if user should receive native ETH as a result
-        bool nativeEthOut = unwrapETH && tokenOut == address(weth);
+        bool nativeEthOut = tokenOut == UniversalToken.ETH_ADDRESS;
         SwapQuery memory query = _getQuery(tokenIn, tokenOut, externalAdapter);
         require(query.minAmountOut != 0, "Swap not found");
         // Record balance before the swap
@@ -398,8 +334,7 @@ contract SynapseRouterSwapTest is Utilities06 {
             to: TO,
             token: tokenIn,
             amount: AMOUNT,
-            query: query,
-            unwrapETH: unwrapETH
+            query: query
         });
         uint256 balanceAfter = nativeEthOut ? TO.balance : IERC20(tokenOut).balanceOf(TO);
         assertEq(amountOut, balanceAfter - balanceBefore, "Failed to report amountOut");
