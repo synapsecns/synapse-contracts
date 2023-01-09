@@ -66,25 +66,4 @@ library UniversalToken {
             IERC20(token).safeTransfer(to, value);
         }
     }
-
-    /// @notice Transfers tokens from the given account to the given recipient.
-    /// if ETH address was given, only checks the `from`, `value` parameters.
-    /// The actual ETH transfer is supposed to happen in the external call to the recipient.
-    /// Reverts if transfer is not successful.
-
-    function universalTransferFrom(
-        address token,
-        address from,
-        address to,
-        uint256 value
-    ) internal {
-        if (token == ETH_ADDRESS) {
-            // ETH transferFrom should always come from msg.sender (as they supplied msg.value)
-            require(from == msg.sender, "!msg.sender for ETH transferFrom");
-            // Value must match msg.value exactly
-            require(value == msg.value, "!msg.value for ETH transferFrom");
-        } else {
-            IERC20(token).safeTransferFrom(from, to, value);
-        }
-    }
 }
