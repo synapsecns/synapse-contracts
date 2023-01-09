@@ -59,8 +59,8 @@ contract SynapseRouterViewsTest is Utilities06 {
         nexusNusd = ERC20(_lpToken);
 
         bridge = deployBridge();
-        router = new SynapseRouter(payable(address(weth)), address(bridge));
-        quoter = new SwapQuoter(address(router));
+        router = new SynapseRouter(address(bridge));
+        quoter = new SwapQuoter(address(router), address(weth));
 
         quoter.addPool(nEthPool);
         quoter.addPool(nUsdPool);
@@ -74,7 +74,6 @@ contract SynapseRouterViewsTest is Utilities06 {
 
     function test_getters() public {
         assertEq(address(router.synapseBridge()), address(bridge), "!synapseBridge");
-        assertEq(address(router.weth()), address(weth), "!weth");
         assertEq(address(router.swapQuoter()), address(quoter), "!swapQuoter");
     }
 
@@ -109,7 +108,7 @@ contract SynapseRouterViewsTest is Utilities06 {
     ) internal {
         (uint256 amount, address _lpToken) = router.poolInfo(pool);
         assertEq(amount, tokens.length, "!poolInfo.amount");
-        address[] memory _tokens = router.poolTokens(pool);
+        PoolToken[] memory _tokens = router.poolTokens(pool);
         _checkPool(Pool({pool: pool, lpToken: _lpToken, tokens: _tokens}), pool, lpToken, tokens);
     }
 
@@ -123,7 +122,9 @@ contract SynapseRouterViewsTest is Utilities06 {
         assertEq(_pool.lpToken, lpToken, "!lpToken");
         assertEq(_pool.tokens.length, tokens.length, "!tokens.length");
         for (uint256 i = 0; i < tokens.length; ++i) {
-            assertEq(_pool.tokens[i], address(tokens[i]), "!tokens");
+            IERC20 token = tokens[i];
+            assertEq(_pool.tokens[i].token, address(token), "!token");
+            assertEq(_pool.tokens[i].isWeth, token == weth, "!isWeth");
         }
     }
 
