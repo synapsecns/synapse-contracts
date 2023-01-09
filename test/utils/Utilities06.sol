@@ -12,11 +12,24 @@ import {SynapseERC20} from "../../contracts/bridge/SynapseERC20.sol";
 import {ISwap} from "../../contracts/bridge/interfaces/ISwap.sol";
 import {IWETH9} from "../../contracts/bridge/interfaces/IWETH9.sol";
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-contract ERC20Decimals is ERC20 {
+contract ERC20Mock is ERC20, Ownable {
     constructor(string memory name_, uint8 decimals_) public ERC20(name_, name_) {
         _setupDecimals(decimals_);
+    }
+
+    function mint(address to, uint256 amount) external onlyOwner {
+        _mint(to, amount);
+    }
+
+    function burn(uint256 amount) external {
+        _burn(msg.sender, amount);
+    }
+
+    function burnFrom(address from, uint256 amount) external onlyOwner {
+        _burn(from, amount);
     }
 }
 
@@ -120,7 +133,7 @@ contract Utilities06 is Test {
      * @notice Deploys and labels an ERC20 mock.
      */
     function deployERC20(string memory name, uint8 decimals) public returns (ERC20 token) {
-        token = new ERC20Decimals(name, decimals);
+        token = new ERC20Mock(name, decimals);
         vm.label(address(token), name);
     }
 

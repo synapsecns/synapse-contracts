@@ -280,7 +280,7 @@ abstract contract SynapseRouterSuite is Utilities06 {
         ChainSetup memory chain,
         IERC20[] memory tokens,
         uint256 seedAmount
-    ) internal returns (address pool) {
+    ) public virtual returns (address pool) {
         uint256[] memory amounts = new uint256[](tokens.length);
         pool = deployPool(tokens);
         for (uint256 i = 0; i < tokens.length; ++i) {
@@ -438,7 +438,7 @@ abstract contract SynapseRouterSuite is Utilities06 {
     }
 
     function getRecipientBalance(ChainSetup memory chain, address token) public view returns (uint256) {
-        if (token == address(chain.weth) || token == UniversalToken.ETH_ADDRESS) {
+        if (token == address(chain.wgas) || token == address(chain.gas)) {
             return TO.balance;
         } else {
             return IERC20(token).balanceOf(TO);
