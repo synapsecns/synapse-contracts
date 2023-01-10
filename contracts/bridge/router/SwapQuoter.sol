@@ -19,8 +19,12 @@ contract SwapQuoter is SwapCalculator, Ownable {
     /// @notice Address of SynapseRouter contract
     address public immutable synapseRouter;
 
-    constructor(address _synapseRouter) public {
+    /// @notice Address of WGAS token used by SynapseBridge on the local chain
+    address public immutable weth;
+
+    constructor(address _synapseRouter, address _weth) public {
         synapseRouter = _synapseRouter;
+        weth = _weth;
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -29,20 +33,23 @@ contract SwapQuoter is SwapCalculator, Ownable {
 
     /**
      * @notice Adds a few pools to the list of pools used for finding a trade path.
+     * @dev If any of the pools doesn't include WETH, one can use `weth = address(0)`.
      */
     function addPools(address[] calldata pools) external onlyOwner {
         uint256 amount = pools.length;
         for (uint256 i = 0; i < amount; ++i) {
-            _addPool(pools[i]);
+            _addPool(pools[i], weth);
         }
     }
 
     /**
      * @notice Adds a pool to the list of pools used for finding a trade path.
-     * Stores all the supported pool tokens, and the pool LP token, if it exists.
+     * Stores all the supported pool tokens, and marks them as WETH, if they match the provided WETH address.
+     * Also stores the pool LP token, if it exists.
+     * @dev If the pool doesn't include WETH, one can use `weth = address(0)`.
      */
     function addPool(address pool) external onlyOwner {
-        _addPool(pool);
+        _addPool(pool, weth);
     }
 
     /**
@@ -62,6 +69,7 @@ contract SwapQuoter is SwapCalculator, Ownable {
      * @notice Finds the best pool for tokenIn -> tokenOut swap from the list of supported pools.
      * Returns the `SwapQuery` struct, that can be used on SynapseRouter.
      * minAmountOut and deadline fields will need to be adjusted based on the swap settings.
+     * @dev If tokenIn or tokenOut is ETH_ADDRESS, only the pools having WETH as a pool token will be considered.
      */
     function getAmountOut(
         address tokenIn,
@@ -79,6 +87,7 @@ contract SwapQuoter is SwapCalculator, Ownable {
                     rawParams: bytes("")
                 });
         }
+        _checkHandleETH(tokenIn, tokenOut, amountIn, query);
         uint256 amount = poolsAmount();
         for (uint256 i = 0; i < amount; ++i) {
             address pool = _pools.at(i);
@@ -125,7 +134,7 @@ contract SwapQuoter is SwapCalculator, Ownable {
     /**
      * @notice Returns a list of pool tokens for the given pool.
      */
-    function poolTokens(address pool) external view override returns (address[] memory tokens) {
+    function poolTokens(address pool) external view override returns (PoolToken[] memory tokens) {
         tokens = _poolTokens[pool];
     }
 
@@ -209,6 +218,22 @@ contract SwapQuoter is SwapCalculator, Ownable {
             query.minAmountOut = amountOut;
             // Encode params for withdrawing from the current pool
             query.rawParams = abi.encode(SynapseParams(Action.RemoveLiquidity, pool, type(uint8).max, tokenIndexTo));
+        }
+    }
+
+    function _checkHandleETH(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        SwapQuery memory query
+    ) internal view {
+        if (
+            (tokenIn == UniversalToken.ETH_ADDRESS && tokenOut == weth) ||
+            (tokenIn == weth && tokenOut == UniversalToken.ETH_ADDRESS)
+        ) {
+            query.minAmountOut = amountIn;
+            // Params for handling ETH: there is no pool, use -1 as indexes
+            query.rawParams = abi.encode(SynapseParams(Action.HandleEth, address(0), type(uint8).max, type(uint8).max));
         }
     }
 }

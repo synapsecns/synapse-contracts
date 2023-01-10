@@ -8,6 +8,7 @@ import "../../../contracts/bridge/router/SwapQuoter.sol";
 import "../../../contracts/bridge/router/SynapseRouter.sol";
 
 // solhint-disable func-name-mixedcase
+// solhint-disable not-rely-on-time
 contract SynapseRouterUnsupportedTest is Utilities06 {
     address internal constant OWNER = address(1337);
     address internal constant USER = address(4242);
@@ -41,8 +42,8 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
         }
 
         bridge = deployBridge();
-        router = new SynapseRouter(payable(weth), address(bridge));
-        quoter = new SwapQuoter(address(router));
+        router = new SynapseRouter(address(bridge));
+        quoter = new SwapQuoter(address(router), address(weth));
 
         quoter.addPool(nEthPool);
         router.setSwapQuoter(quoter);
@@ -107,27 +108,31 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
         });
     }
 
-    function test_b_revert_unsupportedWETH() public {
-        uint256 amount = 10**18;
-        SwapQuery memory emptyQuery;
-        vm.expectRevert("Token not supported");
-        vm.prank(USER);
-        router.bridge({
-            to: TO,
-            chainId: ETH_CHAINID,
-            token: address(weth),
-            amount: amount,
-            originQuery: emptyQuery,
-            destQuery: emptyQuery
-        });
-    }
-
     function test_b_revert_unsupportedETH() public {
         // Make sure user has no WETH
         _unwrapUserWETH();
         uint256 amount = 10**18;
+        SwapQuery memory originQuery = quoter.getAmountOut(UniversalToken.ETH_ADDRESS, address(weth), amount);
         SwapQuery memory emptyQuery;
         vm.expectRevert("Token not supported");
+        vm.prank(USER);
+        // One should use ETH_ADDRESS if the specify non-zero msg.value
+        router.bridge{value: amount}({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: UniversalToken.ETH_ADDRESS,
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: emptyQuery
+        });
+    }
+
+    function test_b_revert_wrongEthAddress() public {
+        uint256 amount = 10**18;
+        deal(USER, amount);
+        _addDepositToken(address(weth));
+        SwapQuery memory emptyQuery;
+        vm.expectRevert(bytes("!eth"));
         vm.prank(USER);
         router.bridge{value: amount}({
             to: TO,
@@ -145,8 +150,8 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
 
     function test_sb_revert_fromTokenToUnsupported() public {
         uint256 amount = 10**18;
-        SwapQuery memory emptyQuery;
         SwapQuery memory originQuery = quoter.getAmountOut(address(weth), address(neth), amount);
+        SwapQuery memory emptyQuery;
         vm.expectRevert("Token not supported");
         vm.prank(USER);
         router.bridge({
@@ -164,9 +169,28 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
         _unwrapUserWETH();
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
-        SwapQuery memory originQuery = quoter.getAmountOut(address(weth), address(neth), amount);
+        SwapQuery memory originQuery = quoter.getAmountOut(UniversalToken.ETH_ADDRESS, address(neth), amount);
         vm.expectRevert("Token not supported");
         vm.prank(USER);
+        router.bridge{value: amount}({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: UniversalToken.ETH_ADDRESS,
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: emptyQuery
+        });
+    }
+
+    function test_sb_revert_wrongEthAddress() public {
+        uint256 amount = 10**18;
+        deal(USER, amount);
+        _addRedeemToken(address(neth));
+        SwapQuery memory originQuery = quoter.getAmountOut(address(weth), address(neth), amount);
+        SwapQuery memory emptyQuery;
+        vm.expectRevert(bytes("!eth"));
+        vm.prank(USER);
+        // One should use ETH_ADDRESS if the specify non-zero msg.value
         router.bridge{value: amount}({
             to: TO,
             chainId: ETH_CHAINID,
@@ -186,15 +210,7 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
         _addDepositToken(address(weth));
-        SwapQuery memory destQuery = SwapQuery({
-            swapAdapter: address(1),
-            tokenOut: address(0),
-            minAmountOut: 0,
-            deadline: type(uint256).max,
-            rawParams: abi.encode(
-                SynapseParams({action: Action.RemoveLiquidity, pool: address(0), tokenIndexFrom: 0, tokenIndexTo: 0})
-            )
-        });
+        SwapQuery memory destQuery = _mockQuery(Action.RemoveLiquidity);
         vm.expectRevert("Unsupported dest action");
         vm.prank(USER);
         router.bridge({
@@ -212,25 +228,17 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
         _unwrapUserWETH();
         // depositETHAndRemove() does not exist
         uint256 amount = 10**18;
-        SwapQuery memory emptyQuery;
         _addDepositToken(address(weth));
-        SwapQuery memory destQuery = SwapQuery({
-            swapAdapter: address(1),
-            tokenOut: address(0),
-            minAmountOut: 0,
-            deadline: type(uint256).max,
-            rawParams: abi.encode(
-                SynapseParams({action: Action.RemoveLiquidity, pool: address(0), tokenIndexFrom: 0, tokenIndexTo: 0})
-            )
-        });
+        SwapQuery memory originQuery = quoter.getAmountOut(UniversalToken.ETH_ADDRESS, address(weth), amount);
+        SwapQuery memory destQuery = _mockQuery(Action.RemoveLiquidity);
         vm.expectRevert("Unsupported dest action");
         vm.prank(USER);
         router.bridge{value: amount}({
             to: TO,
             chainId: ETH_CHAINID,
-            token: address(weth),
+            token: UniversalToken.ETH_ADDRESS,
             amount: amount,
-            originQuery: emptyQuery,
+            originQuery: originQuery,
             destQuery: destQuery
         });
     }
@@ -240,15 +248,7 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
         _addDepositToken(address(weth));
-        SwapQuery memory destQuery = SwapQuery({
-            swapAdapter: address(1),
-            tokenOut: address(0),
-            minAmountOut: 0,
-            deadline: type(uint256).max,
-            rawParams: abi.encode(
-                SynapseParams({action: Action.AddLiquidity, pool: address(0), tokenIndexFrom: 0, tokenIndexTo: 0})
-            )
-        });
+        SwapQuery memory destQuery = _mockQuery(Action.AddLiquidity);
         vm.expectRevert("Unsupported dest action");
         vm.prank(USER);
         router.bridge({
@@ -266,25 +266,17 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
         _unwrapUserWETH();
         // depositETHAndAdd() does not exist
         uint256 amount = 10**18;
-        SwapQuery memory emptyQuery;
         _addDepositToken(address(weth));
-        SwapQuery memory destQuery = SwapQuery({
-            swapAdapter: address(1),
-            tokenOut: address(0),
-            minAmountOut: 0,
-            deadline: type(uint256).max,
-            rawParams: abi.encode(
-                SynapseParams({action: Action.AddLiquidity, pool: address(0), tokenIndexFrom: 0, tokenIndexTo: 0})
-            )
-        });
+        SwapQuery memory originQuery = quoter.getAmountOut(UniversalToken.ETH_ADDRESS, address(weth), amount);
+        SwapQuery memory destQuery = _mockQuery(Action.AddLiquidity);
         vm.expectRevert("Unsupported dest action");
         vm.prank(USER);
         router.bridge{value: amount}({
             to: TO,
             chainId: ETH_CHAINID,
-            token: address(weth),
+            token: UniversalToken.ETH_ADDRESS,
             amount: amount,
-            originQuery: emptyQuery,
+            originQuery: originQuery,
             destQuery: destQuery
         });
     }
@@ -294,15 +286,7 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
         uint256 amount = 10**18;
         SwapQuery memory emptyQuery;
         _addRedeemToken(address(neth));
-        SwapQuery memory destQuery = SwapQuery({
-            swapAdapter: address(1),
-            tokenOut: address(0),
-            minAmountOut: 0,
-            deadline: type(uint256).max,
-            rawParams: abi.encode(
-                SynapseParams({action: Action.AddLiquidity, pool: address(0), tokenIndexFrom: 0, tokenIndexTo: 0})
-            )
-        });
+        SwapQuery memory destQuery = _mockQuery(Action.AddLiquidity);
         vm.expectRevert("Unsupported dest action");
         vm.prank(USER);
         router.bridge({
@@ -344,5 +328,15 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
 
     function _addRedeemToken(address token) internal {
         router.addToken(token, LocalBridgeConfig.TokenType.Redeem, token, 0, 0, 0);
+    }
+
+    function _mockQuery(Action action) internal pure returns (SwapQuery memory query) {
+        query = SwapQuery({
+            swapAdapter: address(1),
+            tokenOut: address(2),
+            minAmountOut: 3,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(SynapseParams({action: action, pool: address(4), tokenIndexFrom: 0, tokenIndexTo: 1}))
+        });
     }
 }
