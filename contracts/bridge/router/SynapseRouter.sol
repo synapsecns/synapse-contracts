@@ -2,13 +2,9 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../interfaces/IWETH9.sol";
 import "../interfaces/ISynapseBridge.sol";
-import "../interfaces/ISwapQuoter.sol";
+import "./LocalBridgeConfig.sol";
 import "./SynapseAdapter.sol";
-
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * @notice SynapseRouter contract that can be used together with SynapseBridge on any chain.
@@ -34,55 +30,18 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * // If tokenIn is WETH, do router.bridge{value: amount} to use native ETH instead of WETH.
  * Note: the transaction will be reverted, if `bridgeTokenO` is not set up in SynapseRouter.
  */
-contract SynapseRouter is SynapseAdapter, Ownable, ISwapQuoter {
+contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
     // SynapseRouter is also the Adapter for the Synapse pools (this reduces the amount of token transfers).
     // SynapseRouter address will be used as swapAdapter in SwapQueries returned by a local SwapQuoter.
 
     using SafeERC20 for IERC20;
-    using EnumerableSet for EnumerableSet.AddressSet;
-
-    /**
-     * @notice Indicates the type of the supported bridge token on the local chain.
-     * - TokenType.Redeem: token is burnt in order to initiate a bridge tx (bridge.redeem)
-     * - TokenType.Deposit: token is locked in order to initiate a bridge tx (bridge.deposit)
-     */
-    enum TokenType {
-        Redeem,
-        Deposit
-    }
-
-    /**
-     * @notice Config for a supported bridge token.
-     * @dev Some of the tokens require a wrapper token to make them conform SynapseERC20 interface.
-     * In these cases, `bridgeToken` will feature a different address.
-     * Otherwise, the token address is saved.
-     * @param tokenType     Method of bridging for the token: Redeem or Deposit
-     * @param bridgeToken   Bridge token address
-     */
-    struct TokenConfig {
-        TokenType tokenType;
-        address bridgeToken;
-    }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                        CONSTANTS & IMMUTABLES                        ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    /// @notice Address of wrapped gas token, that is used by SynapseBridge.
-    IWETH9 public immutable weth;
     /// @notice Synapse:Bridge address
     ISynapseBridge public immutable synapseBridge;
-
-    /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                               STORAGE                                ║*▕
-    \*╚══════════════════════════════════════════════════════════════════════╝*/
-
-    /// @notice Config for each supported token.
-    /// @dev If wrapper token is required for bridging, its address is stored in `.bridgeToken`
-    /// i.e. for GMX: config[GMX].bridgeToken = GMXWrapper
-    mapping(address => TokenConfig) public config;
-    /// @dev A list of all supported bridge tokens
-    EnumerableSet.AddressSet internal _bridgeTokens;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                      CONSTRUCTOR & INITIALIZER                       ║*▕
@@ -93,76 +52,13 @@ contract SynapseRouter is SynapseAdapter, Ownable, ISwapQuoter {
      * @dev Redeploy an implementation with different values, if an update is required.
      * Upgrading the proxy implementation then will effectively "update the immutables".
      */
-    constructor(address payable _weth, address _synapseBridge) public {
-        weth = IWETH9(_weth);
+    constructor(address _synapseBridge) public {
         synapseBridge = ISynapseBridge(_synapseBridge);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                              OWNER ONLY                              ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
-
-    /**
-     * @notice Adds a few "Redeem" tokens to the SynapseRouter config.
-     * These are bridgeable from this chain by being burnt, i.e. via using synapseBridge.redeem()
-     * @dev Every added token is assumed to not require a wrapper token for bridging.
-     * Use {addToken} if that is not the case.
-     */
-    function addRedeemTokens(address[] calldata tokens) external onlyOwner {
-        uint256 amount = tokens.length;
-        for (uint256 i = 0; i < amount; ++i) {
-            _addToken(tokens[i], TokenType.Redeem, tokens[i]);
-        }
-    }
-
-    /**
-     * @notice Adds a few "deposit" tokens to the SynapseRouter config.
-     * These are bridgeable from this chain by being locked in SynapseBridge, i.e. via using synapseBridge.deposit()
-     * @dev Every added token is assumed to not require a wrapper token for bridging.
-     * Use {addToken} if that is not the case.
-     */
-    function addDepositTokens(address[] calldata tokens) external onlyOwner {
-        uint256 amount = tokens.length;
-        for (uint256 i = 0; i < amount; ++i) {
-            _addToken(tokens[i], TokenType.Deposit, tokens[i]);
-        }
-    }
-
-    /**
-     * @notice Adds a single bridgeable token to the SynapseRouter config.
-     * @param token         "End" token, supported by SynapseBridge. This is the token user is receiving/sending
-     * @param tokenType     Method of bridging used for the token: Redeem or Deposit
-     * @param bridgeToken   Actual token used for bridging `token`. This is the token bridge is burning/locking.
-     *                      Might differ from `token`, if `token` does not conform to bridge-supported interface.
-     */
-    function addToken(
-        address token,
-        TokenType tokenType,
-        address bridgeToken
-    ) external onlyOwner {
-        _addToken(token, tokenType, bridgeToken);
-    }
-
-    /**
-     * @notice Removes a few tokens from the SynapseRouter config.
-     * @dev After a token is removed, it won't be possible to bridge it using SynapseRouter,
-     * but using SynapseBridge directly is always an option (provided you know what you're doing).
-     */
-    function removeTokens(address[] calldata tokens) external onlyOwner {
-        uint256 amount = tokens.length;
-        for (uint256 i = 0; i < amount; ++i) {
-            _removeToken(tokens[i]);
-        }
-    }
-
-    /**
-     * @notice Removes a given token from the SynapseRouter config.
-     * @dev After a token is removed, it won't be possible to bridge it using SynapseRouter,
-     * but using SynapseBridge directly is always an option (provided you know what you're doing).
-     */
-    function removeToken(address token) external onlyOwner {
-        _removeToken(token);
-    }
 
     /**
      * @notice Sets a custom allowance for the given token.
@@ -176,26 +72,17 @@ contract SynapseRouter is SynapseAdapter, Ownable, ISwapQuoter {
         token.safeApprove(spender, amount);
     }
 
-    /**
-     * @notice Sets the Quoter implementation.
-     * @dev Required for the underlying SynapseAdapter to work properly.
-     */
-    function setSwapQuoter(ISwapQuoter _swapQuoter) external onlyOwner {
-        swapQuoter = _swapQuoter;
-    }
-
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                            BRIDGE & SWAP                             ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /**
-     * @notice Initiate a bridge transaction with an optional swap on both
-     * origin and destination chains.
+     * @notice Initiate a bridge transaction with an optional swap on both origin and destination chains.
      * @dev Note that method is payable.
-     * 1. Using a msg.value == 0 forces SynapseRouter to use `token`. This way WETH could be bridged.
-     * 2. Using a msg.value != 0 forces SynapseRouter to use native gas. In this case following is required:
-     *    - `token` must be SynapseRouter's WETH, otherwise tx will revert
-     *    - `amount` must be equal to msg.value, otherwise tx will revert
+     * If token is ETH_ADDRESS, this method should be invoked with `msg.value = amountIn`.
+     * If token is ERC20, the tokens will be pulled from msg.sender (use `msg.value = 0`).
+     * Make sure to approve this contract for spending `token` beforehand.
+     * originQuery.tokenOut should never be ETH_ADDRESS, bridge only works with ERC20 tokens.
      *
      * `token` is always a token user is sending. In case token requires a wrapper token to be bridge,
      * use underlying address for `token` instead of the wrapper one.
@@ -221,20 +108,24 @@ contract SynapseRouter is SynapseAdapter, Ownable, ISwapQuoter {
         SwapQuery memory originQuery,
         SwapQuery memory destQuery
     ) external payable {
-        // Pull initial token from the user
-        _pullToken(token, amount);
-        // Perform a swap, if requested
-        if (_swapRequested(originQuery)) {
-            (token, amount) = _adapterSwap(token, amount, originQuery);
+        if (_hasAdapter(originQuery)) {
+            // Perform a swap using the swap adapter, transfer the swapped tokens to this contract
+            (token, amount) = _adapterSwap(address(this), token, amount, originQuery);
+        } else {
+            // Pull initial token from the user to this contract
+            _pullToken(address(this), token, amount);
         }
+        // Either way, this contract has `amount` worth of `token`
         TokenConfig memory _config = config[token];
         require(_config.bridgeToken != address(0), "Token not supported");
         token = _config.bridgeToken;
-        // `amount` worth of `token` needs to be bridged.
-        // Check if swap on destination chain is required.
-        if (_swapRequested(destQuery)) {
-            // Decode params for swapping via a Synapse pool on the destination chain.
-            SynapseParams memory destParams = abi.decode(destQuery.rawParams, (SynapseParams));
+        // Decode params for swapping via a Synapse pool on the destination chain, if they were requested.
+        SynapseParams memory destParams;
+        if (_hasAdapter(destQuery)) destParams = abi.decode(destQuery.rawParams, (SynapseParams));
+        // Check if Swap/RemoveLiquidity Action on destination chain is required.
+        // Swap adapter needs to be specified.
+        // HandleETH action is done automatically by SynapseBridge.
+        if (_hasAdapter(destQuery) && destParams.action != Action.HandleEth) {
             if (_config.tokenType == TokenType.Deposit) {
                 require(destParams.action == Action.Swap, "Unsupported dest action");
                 // Case 1: token needs to be deposited on origin chain.
@@ -287,225 +178,177 @@ contract SynapseRouter is SynapseAdapter, Ownable, ISwapQuoter {
         }
     }
 
-    /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                         VIEWS: BRIDGE TOKENS                         ║*▕
-    \*╚══════════════════════════════════════════════════════════════════════╝*/
-
     /**
-     * @notice Returns a list of all supported bridge tokens.
+     * @notice Perform a swap using the supplied parameters.
+     * @dev Note that method is payable.
+     * If token is ETH_ADDRESS, this method should be invoked with `msg.value = amountIn`.
+     * If token is ERC20, the tokens will be pulled from msg.sender (use `msg.value = 0`).
+     * Make sure to approve this contract for spending `token` beforehand.
+     * If query.tokenOut is ETH_ADDRESS, native ETH will be sent to the recipient (be aware of potential reentrancy).
+     * If query.tokenOut is ERC20, the tokens will be transferred to the recipient.
+     * @param to            Address to receive swapped tokens
+     * @param token         Token to swap
+     * @param amount        Amount of tokens to swap
+     * @param query         Query with the swap parameters (see BridgeStructs.sol)
+     * @return amountOut    Amount of swapped tokens received by the user
      */
-    function bridgeTokens() external view returns (address[] memory tokens) {
-        uint256 amount = bridgeTokensAmount();
-        tokens = new address[](amount);
-        for (uint256 i = 0; i < amount; ++i) {
-            tokens[i] = _bridgeTokens.at(i);
-        }
-    }
-
-    /**
-     * @notice Returns the amount of the supported bridge tokens.
-     */
-    function bridgeTokensAmount() public view returns (uint256 amount) {
-        amount = _bridgeTokens.length();
-    }
-
-    /**
-     * @notice Returns a list of all supported pools.
-     */
-    function allPools() public view override returns (Pool[] memory pools) {
-        pools = swapQuoter.allPools();
-    }
-
-    /**
-     * @notice Returns the amount of tokens the given pool supports and the pool's LP token.
-     */
-    function poolInfo(address pool) public view override returns (uint256, address) {
-        return swapQuoter.poolInfo(pool);
-    }
-
-    /**
-     * @notice Returns a list of pool tokens for the given pool.
-     */
-    function poolTokens(address pool) public view override returns (address[] memory tokens) {
-        tokens = swapQuoter.poolTokens(pool);
-    }
-
-    /**
-     * @notice Returns the amount of supported pools.
-     */
-    function poolsAmount() public view override returns (uint256 amount) {
-        amount = swapQuoter.poolsAmount();
+    function swap(
+        address to,
+        address token,
+        uint256 amount,
+        SwapQuery memory query
+    ) external payable returns (uint256 amountOut) {
+        require(to != address(0), "!recipient: zero address");
+        require(to != address(this), "!recipient: router address");
+        require(_hasAdapter(query), "!swapAdapter");
+        // Perform a swap through the Adapter. Adapter will be the one handling ETH/WETH interactions.
+        (, amountOut) = _adapterSwap(to, token, amount, query);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                          VIEWS: SWAP QUOTER                          ║*▕
+    ▏*║                         VIEWS: BRIDGE QUOTES                         ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /**
-     * @notice Finds the best pool for tokenIn -> tokenOut swap from the list of supported pools.
-     * Returns the `SwapQuery` struct, that can be used on SynapseRouter.
-     * minAmountOut and deadline fields will need to be adjusted based on the swap settings.
+     * @notice Finds the best pool from the Synapse-supported pools for tokenIn -> bridgeToken swap,
+     * treating it as the "origin chain swap" in the Synapse Bridge transaction.
+     *
+     * @dev
+     * 1. Will revert if `bridgeToken` is not a supported bridge token. In case the bridged token
+     * requires a bridge wrapper token, use the underlying token address as `bridgeToken` in this method.
+     * 2. Will correctly form a SwapQuery if `tokenIn == bridgeToken`.
+     * 3. It is possible to form a SwapQuery off-chain using alternative SwapAdapter for the origin swap.
+     *
+     * @param tokenIn       Initial token that user wants to bridge/swap
+     * @param bridgeToken   Token that will be used for bridging on origin chain
+     * @param amountIn      Amount of tokens user wants to bridge/swap
+     * @return query    Struct to be used as `originQuery` in SynapseRouter.
+     *                  minAmountOut and deadline fields will need to be adjusted based on the user settings.
      */
-    function getAmountOut(
+    function getOriginAmountOut(
         address tokenIn,
+        address bridgeToken,
+        uint256 amountIn
+    ) external view returns (SwapQuery memory query) {
+        require(config[bridgeToken].bridgeToken != address(0), "Token not supported");
+        query = this.getAmountOut(tokenIn, bridgeToken, amountIn);
+    }
+
+    /**
+     * @notice Finds the best pool from the Synapse-supported pools for bridgeToken -> tokenOut swap,
+     * treating it as the "destination chain swap" in the Synapse Bridge transaction.
+     *
+     * @dev
+     * 1. Will revert if `bridgeToken` is not a supported bridge token. In case the bridged token
+     * requires a bridge wrapper token, use the underlying token address as `bridgeToken` in this method.
+     * 2. Will correctly form a SwapQuery if `bridgeToken == tokenOut`.
+     * 3. It is NOT possible to form a SwapQuery off-chain using alternative SwapAdapter for the destination swap.
+     * For the time being, only swaps through the Synapse-supported pools are available on destination chain.
+     *
+     * @param bridgeToken   Token that will be used for bridging on destination chain
+     * @param tokenOut      Token user wants to receive on destination chain
+     * @param amountIn      Amount of tokens bridged from origin chain (before fees)
+     * @return query    Struct to be used as `destQuery` in SynapseRouter.
+     *                  minAmountOut and deadline fields will need to be adjusted based on the user settings.
+     */
+    function getDestinationAmountOut(
+        address bridgeToken,
         address tokenOut,
         uint256 amountIn
-    ) external view override returns (SwapQuery memory) {
-        return swapQuoter.getAmountOut(tokenIn, tokenOut, amountIn);
-    }
-
-    /**
-     * @notice Returns the exact quote for adding liquidity to a given pool
-     * in a form of a single token.
-     * @param pool      The pool to add tokens to
-     * @param amounts   An array of token amounts to deposit.
-     *                  The amount should be in each pooled token's native precision.
-     *                  If a token charges a fee on transfers, use the amount that gets transferred after the fee.
-     * @return LP token amount the user will receive
-     */
-    function calculateAddLiquidity(address pool, uint256[] memory amounts) external view override returns (uint256) {
-        return swapQuoter.calculateAddLiquidity(pool, amounts);
-    }
-
-    /**
-     * @notice Returns the exact quote for swapping between two given tokens.
-     * @param pool              The pool to use for the swap
-     * @param tokenIndexFrom    The token the user wants to sell
-     * @param tokenIndexTo      The token the user wants to buy
-     * @param dx                The amount of tokens the user wants to sell. If the token charges a fee on transfers,
-     *                          use the amount that gets transferred after the fee.
-     * @return amountOut        amount of tokens the user will receive
-     */
-    function calculateSwap(
-        address pool,
-        uint8 tokenIndexFrom,
-        uint8 tokenIndexTo,
-        uint256 dx
-    ) external view override returns (uint256 amountOut) {
-        amountOut = swapQuoter.calculateSwap(pool, tokenIndexFrom, tokenIndexTo, dx);
-    }
-
-    /**
-     * @notice Returns the exact quote for withdrawing pools tokens in a balanced way.
-     * @param pool          The pool to withdraw tokens from
-     * @param amount        The amount of LP tokens that would be burned on withdrawal
-     * @return amountsOut   Array of token balances that the user will receive
-     */
-    function calculateRemoveLiquidity(address pool, uint256 amount)
-        external
-        view
-        override
-        returns (uint256[] memory amountsOut)
-    {
-        amountsOut = swapQuoter.calculateRemoveLiquidity(pool, amount);
-    }
-
-    /**
-     * @notice Returns the exact quote for withdrawing a single pool token.
-     * @param pool          The pool to withdraw a token from
-     * @param tokenAmount   The amount of LP token to burn
-     * @param tokenIndex    Index of which token will be withdrawn
-     * @return amountOut    Calculated amount of underlying token available to withdraw
-     */
-    function calculateWithdrawOneToken(
-        address pool,
-        uint256 tokenAmount,
-        uint8 tokenIndex
-    ) external view override returns (uint256 amountOut) {
-        amountOut = swapQuoter.calculateWithdrawOneToken(pool, tokenAmount, tokenIndex);
+    ) external view returns (SwapQuery memory query) {
+        // Apply bridge fee, this will revert if token is not supported
+        amountIn = _calculateBridgeAmountOut(bridgeToken, amountIn);
+        query = this.getAmountOut(bridgeToken, tokenOut, amountIn);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                       INTERNAL: BRIDGE & SWAP                        ║*▕
+    ▏*║                            INTERNAL: SWAP                            ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /**
      * @notice Performs a swap from `token` using the provided query,
      * which includes the swap adapter, tokenOut and the swap execution parameters.
+     * Swapped token is transferred to the specified recipient.
      */
     function _adapterSwap(
+        address recipient,
         address token,
         uint256 amount,
         SwapQuery memory query
     ) internal returns (address tokenOut, uint256 amountOut) {
-        // Adapters could be permisionless, so we're doing all the checks on this level
         // First, check the deadline for the swap
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp <= query.deadline, "Deadline not met");
-        if (query.swapAdapter != address(this)) {
-            IERC20(token).safeTransfer(query.swapAdapter, amount);
-        }
+        // Pull initial token from the user to specified swap adapter
+        _pullToken(query.swapAdapter, token, amount);
         tokenOut = query.tokenOut;
         // If swapAdapter is this contract (which is the case for the supported Synapse pools),
         // this will be an external call to address(this), which we are fine with.
         // The external call is used because additional Adapters will be established in the future.
-        amountOut = ISwapAdapter(query.swapAdapter).swap({
-            to: address(this),
+        // We are forwarding `msg.value` and are expecting the Adapter to handle ETH/WETH interactions.
+        amountOut = ISwapAdapter(query.swapAdapter).adapterSwap{value: msg.value}({
+            to: recipient,
             tokenIn: token,
             amountIn: amount,
             tokenOut: tokenOut,
             rawParams: query.rawParams
         });
-        // Where's the money Lebowski?
-        require(IERC20(tokenOut).balanceOf(address(this)) >= amountOut, "No tokens transferred");
-        // Finally, check that we received at least as much as wanted
+        // We can trust the supported adapters to return the exact swapped amount
+        // Finally, check that the recipient received at least as much as they wanted
         require(amountOut >= query.minAmountOut, "Swap didn't result in min tokens");
     }
 
     /**
-     * Pulls a requested token from the user.
-     * Or, if msg.value was provided and WETH was used as token, wraps the received ETH.
+     * Pulls a requested token from the user to the requested recipient.
+     * Or, if msg.value was provided, check that ETH_ADDRESS was used and msg.value is correct.
      */
-    function _pullToken(address token, uint256 amount) internal {
+    function _pullToken(
+        address recipient,
+        address token,
+        uint256 amount
+    ) internal {
         if (msg.value == 0) {
             // Token needs to be pulled only if msg.value is zero
             // This way user can specify WETH as the origin asset
-            IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+            IERC20(token).safeTransferFrom(msg.sender, recipient, amount);
         } else {
-            // Otherwise, we need to check that WETH was specified
-            require(token == address(weth), "!weth");
+            // Otherwise, we need to check that ETH was specified
+            require(token == UniversalToken.ETH_ADDRESS, "!eth");
             // And that amount matches msg.value
             require(msg.value == amount, "!msg.value");
-            // Deposit in order to have WETH in this contract
-            weth.deposit{value: amount}();
+            // We will forward msg.value in the external call to the recipient
         }
-        // Either way this contract has `amount` worth of `token`
     }
 
     /**
-     * @notice Checks whether the swap was requested in the query.
-     * Query is considered empty (and thus swap-less) if swap adapter address was not specified.
+     * @notice Checks whether the swap adapter was specified in the query.
+     * Query without a swap adapter specifies that no action needs to be taken.
      */
-    function _swapRequested(SwapQuery memory query) internal pure returns (bool) {
+    function _hasAdapter(SwapQuery memory query) internal pure returns (bool) {
         return query.swapAdapter != address(0);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                    INTERNAL: ADD & REMOVE TOKENS                     ║*▕
+    ▏*║                 INTERNAL: ADD & REMOVE BRIDGE TOKENS                 ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    /**
-     * @notice Adds a bridge token to the SynapseRouter config.
-     */
+    /// @dev Adds a bridge token config and its fee structure, if it's not present.
+    /// If a token was added, approves it for spending by SynapseBridge.
     function _addToken(
         address token,
         TokenType tokenType,
-        address bridgeToken
-    ) internal {
-        if (_bridgeTokens.add(token)) {
-            config[token] = TokenConfig(tokenType, bridgeToken);
+        address bridgeToken,
+        uint256 bridgeFee,
+        uint256 minFee,
+        uint256 maxFee
+    ) internal override returns (bool wasAdded) {
+        // Add token and its fee structure
+        wasAdded = LocalBridgeConfig._addToken(token, tokenType, bridgeToken, bridgeFee, minFee, maxFee);
+        if (wasAdded) {
+            // Approve token only if it wasn't previously added
             // Underlying token should always implement allowance(), approve()
-            if (token == bridgeToken) _approveToken(IERC20(token), address(synapseBridge));
+            if (token == bridgeToken) token.universalApproveInfinity(address(synapseBridge));
             // Use {setAllowance} for custom wrapper token setups
-        }
-    }
-
-    /**
-     * @notice Removes a bridge token from the SynapseRouter config.
-     */
-    function _removeToken(address token) internal {
-        if (_bridgeTokens.remove(token)) {
-            delete config[token];
         }
     }
 }

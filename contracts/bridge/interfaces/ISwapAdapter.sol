@@ -5,21 +5,26 @@ import "../libraries/BridgeStructs.sol";
 
 interface ISwapAdapter {
     /**
-     * @notice Performs a tokenIn -> tokenOut swap, according to the provided params,
-     * assuming tokenIn was already transferred to this contract.
-     * @dev Swap deadline and slippage is checked outside of this contract.
+     * @notice Performs a tokenIn -> tokenOut swap, according to the provided params.
+     * If tokenIn is ETH_ADDRESS, this method should be invoked with `msg.value = amountIn`.
+     * If tokenIn is ERC20, the tokens should be already transferred to this contract (using `msg.value = 0`).
+     * If tokenOut is ETH_ADDRESS, native ETH will be sent to the recipient (be aware of potential reentrancy).
+     * If tokenOut is ERC20, the tokens will be transferred to the recipient.
+     * @dev Contracts implementing {ISwapAdapter} interface are required to enforce the above restrictions.
+     * On top of that, they must ensure that exactly `amountOut` worth of `tokenOut` is transferred to the recipient.
+     * Swap deadline and slippage is checked outside of this contract.
      * @param to            Address to receive the swapped token
-     * @param tokenIn       Token to sell
+     * @param tokenIn       Token to sell (use ETH_ADDRESS to start from native ETH)
      * @param amountIn      Amount of tokens to sell
-     * @param tokenOut      Token to buy
+     * @param tokenOut      Token to buy (use ETH_ADDRESS to end with native ETH)
      * @param rawParams     Additional swap parameters
-     * @return Amount of bought tokens
+     * @return amountOut    Amount of bought tokens
      */
-    function swap(
+    function adapterSwap(
         address to,
         address tokenIn,
         uint256 amountIn,
         address tokenOut,
         bytes calldata rawParams
-    ) external returns (uint256);
+    ) external payable returns (uint256);
 }

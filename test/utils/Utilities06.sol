@@ -64,6 +64,56 @@ contract Utilities06 is Test {
         _lpToken = new LPToken();
         _swap = new Swap();
         _deployer = new SwapDeployer();
+        vm.label(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE, "ETH");
+    }
+
+    /// @notice Shortcut for concatenation of two strings.
+    function concat(string memory a, string memory b) public pure returns (string memory) {
+        return string(abi.encodePacked(a, b));
+    }
+
+    /// @notice Shortcut for concatenation of three strings.
+    function concat(
+        string memory a,
+        string memory b,
+        string memory c
+    ) public pure returns (string memory) {
+        return string(abi.encodePacked(a, b, c));
+    }
+
+    function castToArray(IERC20 token0, IERC20 token1) public pure returns (IERC20[] memory tokens) {
+        tokens = new IERC20[](2);
+        tokens[0] = token0;
+        tokens[1] = token1;
+    }
+
+    function castToArray(
+        IERC20 token0,
+        IERC20 token1,
+        IERC20 token2
+    ) public pure returns (IERC20[] memory tokens) {
+        tokens = new IERC20[](3);
+        tokens[0] = token0;
+        tokens[1] = token1;
+        tokens[2] = token2;
+    }
+
+    function castToArray(
+        IERC20 token0,
+        IERC20 token1,
+        IERC20 token2,
+        IERC20 token3
+    ) public pure returns (IERC20[] memory tokens) {
+        tokens = new IERC20[](4);
+        tokens[0] = token0;
+        tokens[1] = token1;
+        tokens[2] = token2;
+        tokens[3] = token3;
+    }
+
+    /// @notice Shortcut for string comparison.
+    function equals(string memory a, string memory b) public pure returns (bool) {
+        return keccak256(abi.encodePacked(a)) == keccak256(abi.encodePacked(b));
     }
 
     /**
@@ -84,8 +134,12 @@ contract Utilities06 is Test {
     }
 
     function deployWETH() public returns (IWETH9 token) {
+        token = deployWETH("WETH");
+    }
+
+    function deployWETH(string memory name) public returns (IWETH9 token) {
         address weth = deployCode("WETH9.sol");
-        vm.label(weth, "WETH");
+        vm.label(weth, name);
         token = IWETH9(payable(weth));
     }
 

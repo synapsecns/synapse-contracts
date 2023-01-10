@@ -27,10 +27,10 @@ contract SwapQuoterTest is Utilities06 {
     function setUp() public override {
         super.setUp();
 
-        quoter = new SwapQuoter(ROUTER_MOCK);
         // Deploy ETH tokens
         neth = deployERC20("nETH", 18);
         weth = deployERC20("WETH", 18);
+        quoter = new SwapQuoter(ROUTER_MOCK, address(weth));
         // Deploy USD tokens
         nusd = deployERC20("nUSD", 18);
         dai = deployERC20("DAI", 18);
@@ -138,12 +138,28 @@ contract SwapQuoterTest is Utilities06 {
 
     function test_getAmountOut_nETH() public {
         test_addPools();
+        // Check quotes with ETH
+        nEthTokens[1] = IERC20(UniversalToken.ETH_ADDRESS);
+        _checkQuotes(ISwap(nEthPool), nEthTokens);
+        nEthTokens[1] = weth;
+        // Check quotes with WETH
         _checkQuotes(ISwap(nEthPool), nEthTokens);
     }
 
     function test_getAmountOut_nUSD() public {
         test_addPools();
         _checkQuotes(ISwap(nUsdPool), nUsdTokens);
+    }
+
+    function test_getAmountOut_handleETH() public {
+        test_addPools();
+        address tokenIn = UniversalToken.ETH_ADDRESS;
+        address tokenOut = address(weth);
+        uint256 amountIn = 10**18;
+        _checkHandleEthQuery(quoter.getAmountOut(tokenIn, tokenOut, amountIn), tokenOut, amountIn);
+        tokenIn = address(weth);
+        tokenOut = UniversalToken.ETH_ADDRESS;
+        _checkHandleEthQuery(quoter.getAmountOut(tokenIn, tokenOut, amountIn), tokenOut, amountIn);
     }
 
     function test_getAmountOut_noPath() public {
@@ -159,6 +175,17 @@ contract SwapQuoterTest is Utilities06 {
                 // Check tokenOut -> tokenIn: should not exist
                 _checkEmptyQuery(quoter.getAmountOut(tokenOut, tokenIn, amountOut));
             }
+        }
+        // Check ETH <-> nUSD pool (should be no path)
+        for (uint256 j = 0; j < nUsdTokens.length; ++j) {
+            address tokenIn = UniversalToken.ETH_ADDRESS;
+            uint256 amountIn = 10**18;
+            address tokenOut = address(nUsdTokens[j]);
+            uint256 amountOut = 10**uint256(ERC20(tokenOut).decimals());
+            // Check tokenIn -> tokenOut: should not exist
+            _checkEmptyQuery(quoter.getAmountOut(tokenIn, tokenOut, amountIn));
+            // Check tokenOut -> tokenIn: should not exist
+            _checkEmptyQuery(quoter.getAmountOut(tokenOut, tokenIn, amountOut));
         }
     }
 
@@ -176,19 +203,25 @@ contract SwapQuoterTest is Utilities06 {
         assertEq(pools[1].pool, nUsdPool, "!pools[1]");
         // Check: poolTokens(nEthPool)
         {
-            address[] memory tokens = quoter.poolTokens(nEthPool);
+            PoolToken[] memory tokens = quoter.poolTokens(nEthPool);
             assertEq(tokens.length, 2, "!poolTokens(neth).length");
-            assertEq(tokens[0], address(neth), "!poolTokens(neth)[0]");
-            assertEq(tokens[1], address(weth), "!poolTokens(neth)[1]");
+            assertEq(tokens[0].token, address(neth), "!poolTokens(neth)[0]");
+            assertEq(tokens[1].token, address(weth), "!poolTokens(neth)[1]");
+            assertFalse(tokens[0].isWeth, "!poolTokens(neth)[0].isWeth");
+            assertTrue(tokens[1].isWeth, "!poolTokens(neth)[1].isWeth");
         }
         // Check: poolTokens(nUsdPool)
         {
-            address[] memory tokens = quoter.poolTokens(nUsdPool);
+            PoolToken[] memory tokens = quoter.poolTokens(nUsdPool);
             assertEq(tokens.length, 4, "!poolTokens(nusd).length");
-            assertEq(tokens[0], address(nusd), "!poolTokens(nusd)[0]");
-            assertEq(tokens[1], address(dai), "!poolTokens(nusd)[1]");
-            assertEq(tokens[2], address(usdc), "!poolTokens(nusd)[2]");
-            assertEq(tokens[3], address(usdt), "!poolTokens(nusd)[3]");
+            assertEq(tokens[0].token, address(nusd), "!poolTokens(nusd)[0]");
+            assertEq(tokens[1].token, address(dai), "!poolTokens(nusd)[1]");
+            assertEq(tokens[2].token, address(usdc), "!poolTokens(nusd)[2]");
+            assertEq(tokens[3].token, address(usdt), "!poolTokens(nusd)[3]");
+            assertFalse(tokens[0].isWeth, "!poolTokens(nusd)[0].isWeth");
+            assertFalse(tokens[1].isWeth, "!poolTokens(nusd)[1].isWeth");
+            assertFalse(tokens[2].isWeth, "!poolTokens(nusd)[2].isWeth");
+            assertFalse(tokens[3].isWeth, "!poolTokens(nusd)[3].isWeth");
         }
     }
 
@@ -196,7 +229,7 @@ contract SwapQuoterTest is Utilities06 {
         uint256 amount = tokens.length;
         for (uint8 i = 0; i < amount; ++i) {
             address tokenIn = address(tokens[i]);
-            uint256 amountIn = 10**uint256(ERC20(tokenIn).decimals());
+            uint256 amountIn = tokenIn == UniversalToken.ETH_ADDRESS ? 10**18 : 10**uint256(ERC20(tokenIn).decimals());
             for (uint8 j = 0; j < amount; ++j) {
                 address tokenOut = address(tokens[j]);
                 SwapQuery memory query = quoter.getAmountOut(tokenIn, tokenOut, amountIn);
@@ -234,5 +267,21 @@ contract SwapQuoterTest is Utilities06 {
         assertEq(query.minAmountOut, amountIn, "equal: !minAmountOut");
         assertEq(query.deadline, 0, "equal: !deadline");
         assertEq(query.rawParams, new bytes(0), "equal: !rawParams");
+    }
+
+    function _checkHandleEthQuery(
+        SwapQuery memory query,
+        address tokenOut,
+        uint256 amountIn
+    ) internal {
+        assertEq(query.swapAdapter, ROUTER_MOCK, "handleETH: !swapAdapter");
+        assertEq(query.tokenOut, tokenOut, "handleETH: !tokenOut");
+        assertEq(query.minAmountOut, amountIn, "handleETH: !minAmountOut");
+        assertEq(query.deadline, type(uint256).max, "handleETH: !deadline");
+        SynapseParams memory params = abi.decode(query.rawParams, (SynapseParams));
+        assertEq(params.pool, address(0), "!handleETH: pool");
+        assertEq(uint256(params.action), uint256(Action.HandleEth), "!handleETH: action");
+        assertEq(uint256(params.tokenIndexFrom), type(uint8).max, "!handleETH: tokenIndexFrom");
+        assertEq(uint256(params.tokenIndexTo), type(uint8).max, "!handleETH: tokenIndexTo");
     }
 }
