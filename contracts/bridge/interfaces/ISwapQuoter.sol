@@ -17,7 +17,7 @@ interface ISwapQuoter {
 
     function poolInfo(address pool) external view returns (uint256 tokens, address lpToken);
 
-    function poolTokens(address pool) external view returns (address[] memory tokens);
+    function poolTokens(address pool) external view returns (PoolToken[] memory tokens);
 
     function calculateAddLiquidity(address pool, uint256[] memory amounts) external view returns (uint256 amountOut);
 

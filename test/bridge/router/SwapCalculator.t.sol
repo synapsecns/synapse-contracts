@@ -7,8 +7,8 @@ import "../../utils/Utilities06.sol";
 
 // solhint-disable no-empty-blocks
 contract SwapCalculatorHarness is SwapCalculator {
-    function addPool(address pool) external {
-        _addPool(pool);
+    function addPool(address pool, address weth) external {
+        _addPool(pool, weth);
     }
 
     function getAmountOut(
@@ -21,7 +21,7 @@ contract SwapCalculatorHarness is SwapCalculator {
 
     function allPools() external view override returns (Pool[] memory pools) {}
 
-    function poolTokens(address pool) external view override returns (address[] memory tokens) {}
+    function poolTokens(address pool) external view override returns (PoolToken[] memory tokens) {}
 
     function poolsAmount() external view override returns (uint256 tokens) {}
 
@@ -90,7 +90,7 @@ contract SwapCalculatorTest is Utilities06 {
         _dealAndApprove(address(usdt));
 
         calc = new SwapCalculatorHarness();
-        calc.addPool(nUsdPool);
+        calc.addPool(nUsdPool, address(0));
     }
 
     function test_calculateSwapSafe(
