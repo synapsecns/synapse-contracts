@@ -2,12 +2,10 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "forge-std/Script.sol";
-
-import "./utils/DeploymentLoader.sol";
+import "./utils/BaseScript.sol";
 import "../contracts/bridge/utils/BridgeConfigV3Lens.sol";
 
-contract SaveDeployParameters is BridgeConfigV3Lens, DeploymentLoader, Script {
+contract SaveDeployParameters is BridgeConfigV3Lens, BaseScript {
     using stdJson for string;
 
     // 2023-01-05 (Mainnet)

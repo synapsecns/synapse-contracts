@@ -2,15 +2,26 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "forge-std/Base.sol";
+import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 
-contract DeploymentLoader is CommonBase {
+contract BaseScript is Script {
     bytes1 private constant NEWLINE = bytes1("\n");
     bytes1 private constant ZERO = bytes1("0");
     bytes1 private constant NINE = bytes1("9");
 
     using stdJson for string;
+
+    uint256 internal broadcasterPK;
+
+    constructor() public {
+        setUp();
+    }
+
+    /// @notice Sets up the common vars for the deploy script
+    function setUp() public virtual {
+        broadcasterPK = vm.envUint("DEPLOYER_PRIVATE_KEY");
+    }
 
     /// @notice Loads all chains from the local deployments, alongside with their chainId.
     /// If chainId is not saved, the default zero value will be returned
@@ -33,14 +44,24 @@ contract DeploymentLoader is CommonBase {
         view
         returns (address deployment)
     {
-        string memory chainPath = _concat(_deploymentsPath(), chain, "/");
-        string memory contractPath = _concat(chainPath, contractName, ".json");
-        try vm.readFile(contractPath) returns (string memory json) {
+        try vm.readFile(_deploymentPath(chain, contractName)) returns (string memory json) {
             deployment = json.readAddress("address");
         } catch {
             // Doesn't exist
             deployment = address(0);
         }
+    }
+
+    function saveDeployment(
+        string memory chain,
+        string memory contractName,
+        address deployedAt
+    ) public {
+        console.log("%s deployed at %s", contractName, deployedAt);
+        string memory deployment = "deployment";
+        deployment = deployment.serialize("address", deployedAt);
+        // TODO: figure out if we want to save ABI as well
+        deployment.write(_deploymentPath(chain, contractName));
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -50,6 +71,12 @@ contract DeploymentLoader is CommonBase {
     /// @dev Returns the full path to the local deployment directory
     function _deploymentsPath() internal view returns (string memory) {
         return _concat(vm.projectRoot(), "/deployments/");
+    }
+
+    /// @dev Returns the full path to the contract deployment JSON
+    function _deploymentPath(string memory chain, string memory contractName) internal view returns (string memory) {
+        string memory chainPath = _concat(_deploymentsPath(), chain, "/");
+        return _concat(chainPath, contractName, ".json");
     }
 
     /// @dev Returns the chainId for the given chain
