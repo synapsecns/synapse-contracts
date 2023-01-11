@@ -2,6 +2,8 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
+/// @notice Multicall utility for view/pure functions. Inspired by Multicall3:
+/// https://github.com/mds1/multicall/blob/master/src/Multicall3.sol
 abstract contract MulticallView {
     struct Result {
         bool success;
@@ -15,6 +17,10 @@ abstract contract MulticallView {
         uint256 amount = data.length;
         callResults = new Result[](amount);
         for (uint256 i = 0; i < amount; ++i) {
+            // We perform a static call to ourselves here. This will record `success` as false,
+            // should the static call be reverted. The other calls will still be performed regardless.
+            // Note: `success` will be set to false, if data for state modifying call was supplied.
+            // No data will be modified, as this is a view function.
             (callResults[i].success, callResults[i].returnData) = address(this).staticcall(data[i]);
         }
     }
