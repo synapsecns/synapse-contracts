@@ -18,3 +18,7 @@ libs = ["node_modules"]
 verbosity = 4
 
 # See more config options https://github.com/gakonst/foundry/tree/master/config
+
+[rpc_endpoints]
+arbitrum = "${ARBITRUM_API}"
+avalanche = "${AVAX_API}"
