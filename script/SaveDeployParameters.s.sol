@@ -31,7 +31,7 @@ contract SaveDeployParameters is BridgeConfigV3Lens, BaseScript {
 
         string memory ethRPC = vm.envString("ALCHEMY_API");
         vm.createSelectFork(ethRPC, ETH_BLOCK_NUMBER);
-        (BridgeConfigV3Lens.BridgeToken[] memory tokens, address[] memory pools) = getChainConfig(chainId);
+        (LocalBridgeConfig.BridgeToken[] memory tokens, address[] memory pools) = getChainConfig(chainId);
         string[] memory ids = new string[](tokens.length);
 
         for (uint256 i = 0; i < tokens.length; ++i) {

@@ -42,6 +42,7 @@ contract DeployTestSynapseRouter is BaseScript {
         if (routerDeployment == address(0)) {
             router = new SynapseRouter(bridge);
             saveDeployment(chain, ROUTER, address(router));
+            LocalBridgeConfig.BridgeToken[] memory tokens = new LocalBridgeConfig.BridgeToken[](ids.length);
             for (uint256 i = 0; i < ids.length; ++i) {
                 bytes memory rawConfig = config.parseRaw(_concat("tokens.", ids[i]));
                 TokenConfig memory tokenConfig = abi.decode(rawConfig, (TokenConfig));
@@ -50,15 +51,17 @@ contract DeployTestSynapseRouter is BaseScript {
                 if (tokenConfig.token != tokenConfig.bridgeToken) {
                     console.log("Wrapper: %s", tokenConfig.bridgeToken);
                 }
-                router.addToken(
-                    tokenConfig.token,
-                    LocalBridgeConfig.TokenType(tokenConfig.tokenType),
-                    tokenConfig.bridgeToken,
-                    tokenConfig.bridgeFee,
-                    uint256(tokenConfig.minFee),
-                    uint256(tokenConfig.maxFee)
-                );
+                tokens[i] = LocalBridgeConfig.BridgeToken({
+                    id: ids[i],
+                    token: tokenConfig.token,
+                    tokenType: LocalBridgeConfig.TokenType(tokenConfig.tokenType),
+                    bridgeToken: tokenConfig.bridgeToken,
+                    bridgeFee: tokenConfig.bridgeFee,
+                    minFee: uint256(tokenConfig.minFee),
+                    maxFee: uint256(tokenConfig.maxFee)
+                });
             }
+            router.addTokens(tokens);
         } else {
             console.log("Skipping %s, deployed at %s", ROUTER, routerDeployment);
             router = SynapseRouter(payable(routerDeployment));

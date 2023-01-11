@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
@@ -42,6 +43,28 @@ abstract contract LocalBridgeConfig is Ownable {
         uint40 bridgeFee;
         uint104 minFee;
         uint112 maxFee;
+    }
+
+    /**
+     * @notice Struct defining a supported bridge token. This is not supposed to be stored on-chain,
+     * so this is not optimized in terms of storage words.
+     * @param id            ID for token used in BridgeConfigV3
+     * @param token         "End" token, supported by SynapseBridge. This is the token user is receiving/sending.
+     * @param tokenType     Method of bridging used for the token: Redeem or Deposit.
+     * @param bridgeToken   Actual token used for bridging `token`. This is the token bridge is burning/locking.
+     *                      Might differ from `token`, if `token` does not conform to bridge-supported interface.
+     * @param bridgeFee     Fee % for bridging a token to this chain, multiplied by `FEE_DENOMINATOR`
+     * @param minFee        Minimum fee for bridging a token to this chain, in token decimals
+     * @param maxFee        Maximum fee for bridging a token to this chain, in token decimals
+     */
+    struct BridgeToken {
+        string id;
+        address token;
+        LocalBridgeConfig.TokenType tokenType;
+        address bridgeToken;
+        uint256 bridgeFee;
+        uint256 minFee;
+        uint256 maxFee;
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -89,6 +112,15 @@ abstract contract LocalBridgeConfig is Ownable {
         uint256 maxFee
     ) external onlyOwner returns (bool wasAdded) {
         wasAdded = _addToken(token, tokenType, bridgeToken, bridgeFee, minFee, maxFee);
+    }
+
+    /// @notice Adds a bunch of bridge tokens and their fee structure to the local config, if it was not added before.
+    function addTokens(BridgeToken[] memory tokens) external onlyOwner {
+        uint256 amount = tokens.length;
+        for (uint256 i = 0; i < amount; ++i) {
+            BridgeToken memory token = tokens[i];
+            _addToken(token.token, token.tokenType, token.bridgeToken, token.bridgeFee, token.minFee, token.maxFee);
+        }
     }
 
     /**

@@ -26,28 +26,6 @@ interface IMulticall3 {
  * batch fetch information about the bridge tokens.
  */
 contract BridgeConfigV3Lens {
-    /**
-     * @notice Struct defining a supported bridge token. This is not supposed to be stored on-chain,
-     * so this is not optimized in terms of storage words.
-     * @param id            ID for token used in BridgeConfigV3
-     * @param token         "End" token, supported by SynapseBridge. This is the token user is receiving/sending.
-     * @param tokenType     Method of bridging used for the token: Redeem or Deposit.
-     * @param bridgeToken   Actual token used for bridging `token`. This is the token bridge is burning/locking.
-     *                      Might differ from `token`, if `token` does not conform to bridge-supported interface.
-     * @param bridgeFee     Fee % for bridging a token to this chain, multiplied by `FEE_DENOMINATOR`
-     * @param minFee        Minimum fee for bridging a token to this chain, in token decimals
-     * @param maxFee        Maximum fee for bridging a token to this chain, in token decimals
-     */
-    struct BridgeToken {
-        string id;
-        address token;
-        LocalBridgeConfig.TokenType tokenType;
-        address bridgeToken;
-        uint256 bridgeFee;
-        uint256 minFee;
-        uint256 maxFee;
-    }
-
     bytes1 private constant ZERO = bytes1("0");
     bytes1 private constant NINE = bytes1("9");
     bytes1 private constant A_LOWER = bytes1("a");
@@ -66,7 +44,10 @@ contract BridgeConfigV3Lens {
     IMulticall3 internal constant MULTI_CALL = IMulticall3(0xcA11bde05977b3631167028862bE2a173976CA11);
 
     /// @notice Returns a list of supported bridge tokens and their liquidity pools for a given chain.
-    function getChainConfig(uint256 chainId) public returns (BridgeToken[] memory tokens, address[] memory pools) {
+    function getChainConfig(uint256 chainId)
+        public
+        returns (LocalBridgeConfig.BridgeToken[] memory tokens, address[] memory pools)
+    {
         tokens = _getChainTokens(chainId);
         pools = _getChainPools(chainId, tokens);
     }
@@ -86,11 +67,11 @@ contract BridgeConfigV3Lens {
     }
 
     /// @dev Returns all bridge tokens supported for a given chain.
-    function _getChainTokens(uint256 chainId) internal returns (BridgeToken[] memory tokens) {
+    function _getChainTokens(uint256 chainId) internal returns (LocalBridgeConfig.BridgeToken[] memory tokens) {
         string[] memory ids = BRIDGE_CONFIG.getAllTokenIDs();
         uint256 amount = ids.length;
         // Allocate memory for all token IDs, even though some of them are not supported on given chain
-        tokens = new BridgeToken[](amount);
+        tokens = new LocalBridgeConfig.BridgeToken[](amount);
         // Form a multicall query
         IMulticall3.Call3[] memory calls = new IMulticall3.Call3[](amount);
         for (uint256 i = 0; i < amount; ++i) {
@@ -108,7 +89,7 @@ contract BridgeConfigV3Lens {
             if (bytes(token.tokenAddress).length == 0) continue;
             (address tokenAddress, address bridgeToken) = _decodeStringAddress(chainId, token.tokenAddress);
             if (tokenAddress == address(0)) continue;
-            tokens[tokensFound++] = BridgeToken({
+            tokens[tokensFound++] = LocalBridgeConfig.BridgeToken({
                 id: ids[i],
                 token: tokenAddress,
                 tokenType: token.isUnderlying
@@ -144,7 +125,10 @@ contract BridgeConfigV3Lens {
     }
 
     /// @dev Returns all liquidity pools for destination swap on a given chain.
-    function _getChainPools(uint256 chainId, BridgeToken[] memory tokens) internal returns (address[] memory pools) {
+    function _getChainPools(uint256 chainId, LocalBridgeConfig.BridgeToken[] memory tokens)
+        internal
+        returns (address[] memory pools)
+    {
         uint256 amount = tokens.length;
         // Allocate memory for all tokens, even though some of them don't require a liquidity pool
         pools = new address[](amount);
