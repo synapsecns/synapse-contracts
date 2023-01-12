@@ -359,6 +359,7 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
     /// @dev Adds a bridge token config and its fee structure, if it's not present.
     /// If a token was added, approves it for spending by SynapseBridge.
     function _addToken(
+        string memory symbol,
         address token,
         TokenType tokenType,
         address bridgeToken,
@@ -367,7 +368,7 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
         uint256 maxFee
     ) internal override returns (bool wasAdded) {
         // Add token and its fee structure
-        wasAdded = LocalBridgeConfig._addToken(token, tokenType, bridgeToken, bridgeFee, minFee, maxFee);
+        wasAdded = LocalBridgeConfig._addToken(symbol, token, tokenType, bridgeToken, bridgeFee, minFee, maxFee);
         if (wasAdded) {
             // Approve token only if it wasn't previously added
             // Underlying token should always implement allowance(), approve()

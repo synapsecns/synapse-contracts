@@ -101,10 +101,10 @@ abstract contract SynapseRouterSuite is Utilities06 {
     uint256 internal constant MIN_FEE = 10**15;
     uint256 internal constant MAX_FEE = 10**16;
 
-    bytes32 internal constant SYMBOL_NUSD = "nUSD";
-    bytes32 internal constant SYMBOL_NETH = "nETH";
-    bytes32 internal constant SYMBOL_GMX = "GMX";
-    bytes32 internal constant SYMBOL_JEWEL = "JEWEL";
+    string internal constant SYMBOL_NUSD = "nUSD";
+    string internal constant SYMBOL_NETH = "nETH";
+    string internal constant SYMBOL_GMX = "GMX";
+    string internal constant SYMBOL_JEWEL = "JEWEL";
 
     ValidatorMock internal validator;
 
@@ -191,8 +191,8 @@ abstract contract SynapseRouterSuite is Utilities06 {
         if (!equals(chain.name, "ETH")) {
             chain.neth = deploySynapseERC20(chain, concat(chain.name, " nETH"));
             chain.nusd = deploySynapseERC20(chain, concat(chain.name, " nUSD"));
-            _addRedeemToken(chain.router, address(chain.neth));
-            _addRedeemToken(chain.router, address(chain.nusd));
+            _addRedeemToken(chain.router, SYMBOL_NETH, address(chain.neth));
+            _addRedeemToken(chain.router, SYMBOL_NUSD, address(chain.nusd));
             chain.bridgeTokenEth = address(chain.neth);
             chain.bridgeTokenUsd = address(chain.nusd);
         }
@@ -206,10 +206,11 @@ abstract contract SynapseRouterSuite is Utilities06 {
         // Set up Swap Quoter and fetch nUSD address
         chain.quoter.addPool(chain.nUsdPool);
         (, address nexusLpToken) = chain.quoter.poolInfo(chain.nUsdPool);
+        vm.label(nexusLpToken, "ETH nUSD");
         chain.nusd = IERC20(nexusLpToken);
         // Setup bridge tokens for Mainnet
-        _addDepositToken(chain.router, address(chain.weth));
-        _addDepositToken(chain.router, address(chain.nusd));
+        _addDepositToken(chain.router, SYMBOL_NETH, address(chain.weth));
+        _addDepositToken(chain.router, SYMBOL_NUSD, address(chain.nusd));
         chain.bridgeTokenEth = address(chain.weth);
         chain.bridgeTokenUsd = address(chain.nusd);
         // Set correlated tokens
@@ -431,9 +432,9 @@ abstract contract SynapseRouterSuite is Utilities06 {
         uint256 amountIn
     ) public view returns (SwapQuery memory originQuery, SwapQuery memory destQuery) {
         // Find correlated bridge token on destination
-        (bytes32 symbol, address bridgeTokenDest) = getCorrelatedBridgeToken(destination, tokenOut);
+        (string memory symbol, address bridgeTokenDest) = getCorrelatedBridgeToken(destination, tokenOut);
         // Break execution if setup is not correct
-        require(symbol != bytes32(0), "No symbol found");
+        require(bytes(symbol).length != 0, "No symbol found");
         require(bridgeTokenDest != address(0), "No bridge token found");
         // Find bridge token address on origin
         address bridgeTokenOrigin = getChainBridgeToken(origin, symbol);
@@ -459,7 +460,7 @@ abstract contract SynapseRouterSuite is Utilities06 {
     }
 
     /// @dev Function is marked virtual to allow adding custom tokens in separate tests.
-    function getChainBridgeToken(ChainSetup memory chain, bytes32 symbol)
+    function getChainBridgeToken(ChainSetup memory chain, string memory symbol)
         public
         pure
         virtual
@@ -467,13 +468,13 @@ abstract contract SynapseRouterSuite is Utilities06 {
     {
         // In practice, one is expected to store the global bridge token addresses.
         // This method is just mocking the storage logic.
-        if (symbol == SYMBOL_NETH) {
+        if (equals(symbol, SYMBOL_NETH)) {
             bridgeToken = chain.bridgeTokenEth;
-        } else if (symbol == SYMBOL_NUSD) {
+        } else if (equals(symbol, SYMBOL_NUSD)) {
             bridgeToken = chain.bridgeTokenUsd;
-        } else if (symbol == SYMBOL_GMX) {
+        } else if (equals(symbol, SYMBOL_GMX)) {
             bridgeToken = chain.bridgeTokenGmx;
-        } else if (symbol == SYMBOL_JEWEL) {
+        } else if (equals(symbol, SYMBOL_JEWEL)) {
             bridgeToken = chain.bridgeTokenJewel;
         }
     }
@@ -482,7 +483,7 @@ abstract contract SynapseRouterSuite is Utilities06 {
         public
         pure
         virtual
-        returns (bytes32 symbol)
+        returns (string memory symbol)
     {
         // In practice, one is expected to store the global bridge token addresses.
         // This method is just mocking the storage logic.
@@ -512,7 +513,7 @@ abstract contract SynapseRouterSuite is Utilities06 {
         public
         view
         virtual
-        returns (bytes32 symbol, address bridgeToken)
+        returns (string memory symbol, address bridgeToken)
     {
         // In practice, one is expected to store the global bridge token addresses,
         // and a list of "correlated" tokens for every bridge token.
@@ -529,20 +530,29 @@ abstract contract SynapseRouterSuite is Utilities06 {
         }
     }
 
-    function _addDepositToken(SynapseRouter router, address token) internal {
-        _addToken(router, token, LocalBridgeConfig.TokenType.Deposit, token);
+    function _addDepositToken(
+        SynapseRouter router,
+        string memory symbol,
+        address token
+    ) internal {
+        _addToken(router, symbol, token, LocalBridgeConfig.TokenType.Deposit, token);
     }
 
-    function _addRedeemToken(SynapseRouter router, address token) internal {
-        _addToken(router, token, LocalBridgeConfig.TokenType.Redeem, token);
+    function _addRedeemToken(
+        SynapseRouter router,
+        string memory symbol,
+        address token
+    ) internal {
+        _addToken(router, symbol, token, LocalBridgeConfig.TokenType.Redeem, token);
     }
 
     function _addToken(
         SynapseRouter router,
+        string memory symbol,
         address token,
         LocalBridgeConfig.TokenType tokenType,
         address bridgeToken
     ) internal {
-        router.addToken(token, tokenType, bridgeToken, BRIDGE_FEE, MIN_FEE, MAX_FEE);
+        router.addToken(symbol, token, tokenType, bridgeToken, BRIDGE_FEE, MIN_FEE, MAX_FEE);
     }
 }

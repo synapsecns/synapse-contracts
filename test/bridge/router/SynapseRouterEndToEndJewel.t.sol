@@ -21,7 +21,7 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
         avaJewel = deploySynapseERC20(chain, "AVA JEWEL");
         // Add JEWEL to Router config
         chain.bridgeTokenJewel = address(avaJewel);
-        _addRedeemToken(chain.router, chain.bridgeTokenJewel);
+        _addRedeemToken(chain.router, SYMBOL_JEWEL, chain.bridgeTokenJewel);
         correlatedBridgeToken[chain.chainId][avaJewel] = chain.bridgeTokenJewel;
     }
 
@@ -29,7 +29,7 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
         chain = super.deployTestDFK();
         // Add JEWEL to Router config
         chain.bridgeTokenJewel = address(chain.wgas);
-        _addDepositToken(chain.router, chain.bridgeTokenJewel);
+        _addDepositToken(chain.router, SYMBOL_JEWEL, chain.bridgeTokenJewel);
         setCorrelatedBridgeToken(chain, castToArray(chain.gas, chain.wgas), chain.bridgeTokenJewel);
         // Setup initial WJEWEL locked in Bridge
         dealToken(chain, address(chain.bridge), chain.wgas, 10**24);
@@ -48,7 +48,7 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
         chain.quoter.addPool(address(harmonyJewelSwap));
         // Add JEWEL to Router config
         chain.bridgeTokenJewel = address(harJewel);
-        _addRedeemToken(chain.router, chain.bridgeTokenJewel);
+        _addRedeemToken(chain.router, SYMBOL_JEWEL, chain.bridgeTokenJewel);
         setCorrelatedBridgeToken(chain, castToArray(harJewel, harLegacyJewel), chain.bridgeTokenJewel);
         // Setup initial Legacy Jewel balance for JewelBridgeSwap
         dealToken(chain, address(harmonyJewelSwap), harLegacyJewel, 10**24);
