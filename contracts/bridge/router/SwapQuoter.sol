@@ -16,6 +16,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * - swap(uin8, uint8, uint256, uint256, uint256) external returns (uint256);
  */
 contract SwapQuoter is SwapCalculator, Ownable {
+    using ActionLib for uint256;
+
     /// @notice Address of SynapseRouter contract
     address public immutable synapseRouter;
 
@@ -72,40 +74,40 @@ contract SwapQuoter is SwapCalculator, Ownable {
      * @dev If tokenIn or tokenOut is ETH_ADDRESS, only the pools having WETH as a pool token will be considered.
      */
     function getAmountOut(
-        address tokenIn,
+        LimitedToken memory tokenIn,
         address tokenOut,
         uint256 amountIn
     ) external view override returns (SwapQuery memory query) {
-        if (tokenIn == tokenOut) {
+        if (tokenIn.token == tokenOut) {
             // Return struct indicating no swap is required
             return
                 SwapQuery({
                     swapAdapter: address(0),
-                    tokenOut: tokenIn,
+                    tokenOut: tokenIn.token,
                     minAmountOut: amountIn,
                     deadline: 0,
                     rawParams: bytes("")
                 });
         }
-        _checkHandleETH(tokenIn, tokenOut, amountIn, query);
+        _checkHandleETH(tokenIn.token, tokenOut, amountIn, query, tokenIn.actionMask);
         uint256 amount = poolsAmount();
         for (uint256 i = 0; i < amount; ++i) {
             address pool = _pools.at(i);
             address lpToken = _poolLpToken[pool];
-            (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn, tokenOut);
+            (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn.token, tokenOut);
             // Check if both tokens are present in the current pool
             if (indexIn != 0 && indexOut != 0) {
                 // Both tokens are in the pool
                 // swap is required
-                _checkSwapQuote(pool, indexIn, indexOut, amountIn, query);
-            } else if (tokenIn == lpToken && indexOut != 0) {
+                _checkSwapQuote(pool, indexIn, indexOut, amountIn, query, tokenIn.actionMask);
+            } else if (tokenIn.token == lpToken && indexOut != 0) {
                 // tokenIn is lpToken, tokenOut is in the pool
                 // removeLiquidity is required
-                _checkRemoveLiquidityQuote(pool, indexOut, amountIn, query);
+                _checkRemoveLiquidityQuote(pool, indexOut, amountIn, query, tokenIn.actionMask);
             } else if (indexIn != 0 && tokenOut == lpToken) {
                 // tokenIn is in the pool, tokenOut is the lpToken
                 // addLiquidity is required
-                _checkAddLiquidityQuote(pool, indexIn, amountIn, query);
+                _checkAddLiquidityQuote(pool, indexIn, amountIn, query, tokenIn.actionMask);
             }
         }
         // Fill the remaining fields if a path was found
@@ -166,8 +168,11 @@ contract SwapQuoter is SwapCalculator, Ownable {
         uint8 indexIn,
         uint8 indexOut,
         uint256 amountIn,
-        SwapQuery memory query
+        SwapQuery memory query,
+        uint256 actionMask
     ) internal view {
+        // Don't do anything if we haven't specified Swap as possible action
+        if (!actionMask.includes(Action.Swap)) return;
         uint8 tokenIndexFrom = indexIn - 1;
         uint8 tokenIndexTo = indexOut - 1;
         uint256 amountOut = _calculateSwap(pool, tokenIndexFrom, tokenIndexTo, amountIn);
@@ -188,8 +193,11 @@ contract SwapQuoter is SwapCalculator, Ownable {
         address pool,
         uint8 indexIn,
         uint256 amountIn,
-        SwapQuery memory query
+        SwapQuery memory query,
+        uint256 actionMask
     ) internal view {
+        // Don't do anything if we haven't specified AddLiquidity as possible action
+        if (!actionMask.includes(Action.AddLiquidity)) return;
         uint8 tokenIndexFrom = indexIn - 1;
         uint256 amountOut = _calculateAdd(pool, tokenIndexFrom, amountIn);
         // We want to return the best available quote
@@ -209,8 +217,11 @@ contract SwapQuoter is SwapCalculator, Ownable {
         address pool,
         uint8 indexOut,
         uint256 amountIn,
-        SwapQuery memory query
+        SwapQuery memory query,
+        uint256 actionMask
     ) internal view {
+        // Don't do anything if we haven't specified RemoveLiquidity as possible action
+        if (!actionMask.includes(Action.RemoveLiquidity)) return;
         uint8 tokenIndexTo = indexOut - 1;
         uint256 amountOut = _calculateRemove(pool, tokenIndexTo, amountIn);
         // We want to return the best available quote
@@ -225,8 +236,11 @@ contract SwapQuoter is SwapCalculator, Ownable {
         address tokenIn,
         address tokenOut,
         uint256 amountIn,
-        SwapQuery memory query
+        SwapQuery memory query,
+        uint256 actionMask
     ) internal view {
+        // Don't do anything if we haven't specified HandleEth as possible action
+        if (!actionMask.includes(Action.HandleEth)) return;
         if (
             (tokenIn == UniversalToken.ETH_ADDRESS && tokenOut == weth) ||
             (tokenIn == weth && tokenOut == UniversalToken.ETH_ADDRESS)
