@@ -8,20 +8,25 @@ import "./SwapCalculator.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
- * @notice Finds on-step trade paths between tokens using a set of
+ * @notice Finds one-step trade paths between tokens using a set of
  * liquidity pools, that conform to ISwap interface.
  * Following set of methods is required for the pool to work (see ISwap.sol for details):
  * - getToken(uint8) external view returns (address);
  * - calculateSwap(uint8, uint8, uint256) external view returns (uint256);
  * - swap(uin8, uint8, uint256, uint256, uint256) external returns (uint256);
+ * @dev SwapQuoter is supposed to work in conjunction with SynapseRouter.
+ * For the correct behavior bridge token "liquidity pools" (or their pool wrappers) need to be added to SwapQuoter.
+ * Adding any additional pools containing one of the bridge tokens could lead to incorrect bridge parameters.
+ * Adding a pool that doesn't contain a single bridge token would be fine though.
  */
 contract SwapQuoter is SwapCalculator, Ownable {
     using ActionLib for uint256;
 
-    /// @notice Address of SynapseRouter contract
+    /// @notice Address of SynapseRouter contract.
     address public immutable synapseRouter;
 
-    /// @notice Address of WGAS token used by SynapseBridge on the local chain
+    /// @notice Address of WETH token that is used by SynapseBridge.
+    /// If SynapseBridge has WETH_ADDRESS set to address(0), this should point to chain's canonical WETH.
     address public immutable weth;
 
     constructor(address _synapseRouter, address _weth) public {
@@ -35,7 +40,6 @@ contract SwapQuoter is SwapCalculator, Ownable {
 
     /**
      * @notice Adds a few pools to the list of pools used for finding a trade path.
-     * @dev If any of the pools doesn't include WETH, one can use `weth = address(0)`.
      */
     function addPools(address[] calldata pools) external onlyOwner {
         uint256 amount = pools.length;
@@ -46,9 +50,8 @@ contract SwapQuoter is SwapCalculator, Ownable {
 
     /**
      * @notice Adds a pool to the list of pools used for finding a trade path.
-     * Stores all the supported pool tokens, and marks them as WETH, if they match the provided WETH address.
+     * Stores all the supported pool tokens, and marks them as WETH, if they match the WETH address.
      * Also stores the pool LP token, if it exists.
-     * @dev If the pool doesn't include WETH, one can use `weth = address(0)`.
      */
     function addPool(address pool) external onlyOwner {
         _addPool(pool, weth);
@@ -68,18 +71,26 @@ contract SwapQuoter is SwapCalculator, Ownable {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /**
-     * @notice Finds the best pool for tokenIn -> tokenOut swap from the list of supported pools.
+     * @notice Finds the best pool for a single tokenIn -> tokenOut swap from the list of supported pools.
      * Returns the `SwapQuery` struct, that can be used on SynapseRouter.
      * minAmountOut and deadline fields will need to be adjusted based on the swap settings.
      * @dev If tokenIn or tokenOut is ETH_ADDRESS, only the pools having WETH as a pool token will be considered.
+     * @param tokenIn   Struct with following information:
+     *                  - actionMask    Bitmask representing what actions are available for doing tokenIn -> tokenOut
+     *                  - token         Token address to swap from
+     * @param tokenOut  Token address to swap to
+     * @param amountIn  Amount of tokens to swap from
+     * @return query    Empty struct, if no path is found with the requested `actionMask`.
+     *                  SynapseRouter-compatible struct, if a path between tokens is found.
      */
     function getAmountOut(
         LimitedToken memory tokenIn,
         address tokenOut,
         uint256 amountIn
     ) external view override returns (SwapQuery memory query) {
+        // If token addresses match, no action is required whatsoever.
         if (tokenIn.token == tokenOut) {
-            // Return struct indicating no swap is required
+            // Form a SynapseRouter-compatible struct indicating no action is required.
             return
                 SwapQuery({
                     swapAdapter: address(0),
@@ -89,30 +100,27 @@ contract SwapQuoter is SwapCalculator, Ownable {
                     rawParams: bytes("")
                 });
         }
+        // Check if ETH <> WETH (Action.HandleEth) could fulfill tokenIn -> tokenOut request.
         _checkHandleETH(tokenIn.token, tokenOut, amountIn, query, tokenIn.actionMask);
         uint256 amount = poolsAmount();
         for (uint256 i = 0; i < amount; ++i) {
             address pool = _pools.at(i);
             address lpToken = _poolLpToken[pool];
             (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn.token, tokenOut);
-            // Check if both tokens are present in the current pool
             if (indexIn != 0 && indexOut != 0) {
-                // Both tokens are in the pool
-                // swap is required
+                // tokenIn, tokenOut are pool tokens: Action.Swap is required
                 _checkSwapQuote(pool, indexIn, indexOut, amountIn, query, tokenIn.actionMask);
             } else if (tokenIn.token == lpToken && indexOut != 0) {
-                // tokenIn is lpToken, tokenOut is in the pool
-                // removeLiquidity is required
+                // tokenIn is pool's LP Token, tokenOut is pool token: Action.RemoveLiquidity is required
                 _checkRemoveLiquidityQuote(pool, indexOut, amountIn, query, tokenIn.actionMask);
             } else if (indexIn != 0 && tokenOut == lpToken) {
-                // tokenIn is in the pool, tokenOut is the lpToken
-                // addLiquidity is required
+                // tokenIn is pool token, tokenOut is pool's LP token: Action.AddLiquidity is required
                 _checkAddLiquidityQuote(pool, indexIn, amountIn, query, tokenIn.actionMask);
             }
         }
         // Fill the remaining fields if a path was found
         if (query.minAmountOut != 0) {
-            // Synapse Router should be used as "swap adapter" for doing a swap through Synapse pools
+            // SynapseRouter should be used as "Swap Adapter" for doing a swap through Synapse pools (or handling ETH)
             query.swapAdapter = synapseRouter;
             query.tokenOut = tokenOut;
             // Set default deadline to infinity. Not using the value of 0,
@@ -160,8 +168,8 @@ contract SwapQuoter is SwapCalculator, Ownable {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /**
-     * @notice Checks a swap quote for the given pool, and updates `query`,
-     * if output amount is better.
+     * @notice Checks a swap quote for the given pool, and updates `query` if output amount is better.
+     * @dev Won't do anything if Action.Swap is not included in `actionMask`.
      */
     function _checkSwapQuote(
         address pool,
@@ -179,15 +187,15 @@ contract SwapQuoter is SwapCalculator, Ownable {
         // We want to return the best available quote
         if (amountOut > query.minAmountOut) {
             query.minAmountOut = amountOut;
-            // Encode params for swapping via the current pool
+            // Encode params for swapping via the current pool: specify indexFrom and indexTo
             query.rawParams = abi.encode(SynapseParams(Action.Swap, pool, tokenIndexFrom, tokenIndexTo));
         }
     }
 
     /**
-     * @notice Checks a quote for adding liquidity to the given pool, and updates `query`,
-     * if output amount is better.
+     * @notice Checks a quote for adding liquidity to the given pool, and updates `query` if output amount is better.
      * This is the equivalent of tokenIn -> LPToken swap.
+     * @dev Won't do anything if Action.AddLiquidity is not included in `actionMask`.
      */
     function _checkAddLiquidityQuote(
         address pool,
@@ -203,15 +211,15 @@ contract SwapQuoter is SwapCalculator, Ownable {
         // We want to return the best available quote
         if (amountOut > query.minAmountOut) {
             query.minAmountOut = amountOut;
-            // Encode params for depositing to the current pool
+            // Encode params for depositing to the current pool: specify indexFrom, indexTo = -1
             query.rawParams = abi.encode(SynapseParams(Action.AddLiquidity, pool, tokenIndexFrom, type(uint8).max));
         }
     }
 
     /**
-     * @notice Checks a withdrawal quote for the given pool, and updates `query`,
-     * if output amount is better.
+     * @notice Checks a withdrawal quote for the given pool, and updates `query` if output amount is better.
      * This is the equivalent of LPToken -> tokenOut swap.
+     * @dev Won't do anything if Action.RemoveLiquidity is not included in `actionMask`.
      */
     function _checkRemoveLiquidityQuote(
         address pool,
@@ -227,11 +235,16 @@ contract SwapQuoter is SwapCalculator, Ownable {
         // We want to return the best available quote
         if (amountOut > query.minAmountOut) {
             query.minAmountOut = amountOut;
-            // Encode params for withdrawing from the current pool
+            // Encode params for withdrawing from the current pool: indexFrom = -1, specify indexTo
             query.rawParams = abi.encode(SynapseParams(Action.RemoveLiquidity, pool, type(uint8).max, tokenIndexTo));
         }
     }
 
+    /**
+     * @notice Checks if a "handle ETH" operation is possible between two given tokens.
+     * That would be either unwrapping WETh into native ETH, or wrapping ETH into WETH.
+     * @dev Won't do anything if Action.HandleEth is not included in `actionMask`.
+     */
     function _checkHandleETH(
         address tokenIn,
         address tokenOut,
