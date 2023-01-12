@@ -231,7 +231,9 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
         uint256 amountIn
     ) external view returns (SwapQuery memory query) {
         require(config[bridgeToken].bridgeToken != address(0), "Token not supported");
-        query = this.getAmountOut(tokenIn, bridgeToken, amountIn);
+        // Every possible action is supported for origin swap
+        LimitedToken memory _tokenIn = LimitedToken(ActionLib.allActions(), tokenIn);
+        query = swapQuoter.getAmountOut(_tokenIn, bridgeToken, amountIn);
     }
 
     /**
@@ -258,7 +260,11 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
     ) external view returns (SwapQuery memory query) {
         // Apply bridge fee, this will revert if token is not supported
         amountIn = _calculateBridgeAmountOut(bridgeToken, amountIn);
-        query = this.getAmountOut(bridgeToken, tokenOut, amountIn);
+        // bridgeToken is confirmed to be a supported bridge token at this point
+        TokenType bridgeTokenType = config[bridgeToken].tokenType;
+        // See what kind of "Actions" are available for the given bridge token:
+        LimitedToken memory _tokenIn = LimitedToken(_bridgeTokenActions(bridgeTokenType), bridgeToken);
+        query = swapQuoter.getAmountOut(_tokenIn, tokenOut, amountIn);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -326,6 +332,24 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
      */
     function _hasAdapter(SwapQuery memory query) internal pure returns (bool) {
         return query.swapAdapter != address(0);
+    }
+
+    function _bridgeTokenActions(TokenType tokenType) internal pure returns (uint256 actionMask) {
+        if (tokenType == TokenType.Redeem) {
+            // For tokens that are minted on destination chain
+            // possible bridge functions are mint() and mintAndSwap(). Thus:
+            // Swap: available via mintAndSwap()
+            // (Add/Remove)Liquidity is unavailable
+            // HandleETH is unavailable, as WETH could only be withdrawn by SynapseBridge
+            actionMask = ActionLib.mask(Action.Swap);
+        } else {
+            // For tokens that are withdrawn on destination chain
+            // possible bridge functions are withdraw() and withdrawAndRemove().
+            // Swap/AddLiquidity: not available
+            // RemoveLiquidity: available via withdrawAndRemove()
+            // HandleETH: available via withdraw(). SwapQuoter will check if the bridge token is WETH or not.
+            actionMask = ActionLib.mask(Action.RemoveLiquidity, Action.HandleEth);
+        }
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
