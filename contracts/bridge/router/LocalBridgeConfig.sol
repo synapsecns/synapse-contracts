@@ -57,7 +57,7 @@ abstract contract LocalBridgeConfig is Ownable {
      * @param minFee        Minimum fee for bridging a token to this chain, in token decimals
      * @param maxFee        Maximum fee for bridging a token to this chain, in token decimals
      */
-    struct BridgeToken {
+    struct BridgeTokenConfig {
         string id;
         address token;
         LocalBridgeConfig.TokenType tokenType;
@@ -120,11 +120,19 @@ abstract contract LocalBridgeConfig is Ownable {
     }
 
     /// @notice Adds a bunch of bridge tokens and their fee structure to the local config, if it was not added before.
-    function addTokens(BridgeToken[] memory tokens) external onlyOwner {
+    function addTokens(BridgeTokenConfig[] memory tokens) external onlyOwner {
         uint256 amount = tokens.length;
         for (uint256 i = 0; i < amount; ++i) {
-            BridgeToken memory token = tokens[i];
-            _addToken(token.token, token.tokenType, token.bridgeToken, token.bridgeFee, token.minFee, token.maxFee);
+            BridgeTokenConfig memory token = tokens[i];
+            _addToken(
+                token.id,
+                token.token,
+                token.tokenType,
+                token.bridgeToken,
+                token.bridgeFee,
+                token.minFee,
+                token.maxFee
+            );
         }
     }
 

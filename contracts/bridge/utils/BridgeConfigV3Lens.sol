@@ -46,7 +46,7 @@ contract BridgeConfigV3Lens {
     /// @notice Returns a list of supported bridge tokens and their liquidity pools for a given chain.
     function getChainConfig(uint256 chainId)
         public
-        returns (LocalBridgeConfig.BridgeToken[] memory tokens, address[] memory pools)
+        returns (LocalBridgeConfig.BridgeTokenConfig[] memory tokens, address[] memory pools)
     {
         tokens = _getChainTokens(chainId);
         pools = _getChainPools(chainId, tokens);
@@ -67,11 +67,11 @@ contract BridgeConfigV3Lens {
     }
 
     /// @dev Returns all bridge tokens supported for a given chain.
-    function _getChainTokens(uint256 chainId) internal returns (LocalBridgeConfig.BridgeToken[] memory tokens) {
+    function _getChainTokens(uint256 chainId) internal returns (LocalBridgeConfig.BridgeTokenConfig[] memory tokens) {
         string[] memory ids = BRIDGE_CONFIG.getAllTokenIDs();
         uint256 amount = ids.length;
         // Allocate memory for all token IDs, even though some of them are not supported on given chain
-        tokens = new LocalBridgeConfig.BridgeToken[](amount);
+        tokens = new LocalBridgeConfig.BridgeTokenConfig[](amount);
         // Form a multicall query
         IMulticall3.Call3[] memory calls = new IMulticall3.Call3[](amount);
         for (uint256 i = 0; i < amount; ++i) {
@@ -89,7 +89,7 @@ contract BridgeConfigV3Lens {
             if (bytes(token.tokenAddress).length == 0) continue;
             (address tokenAddress, address bridgeToken) = _decodeStringAddress(chainId, token.tokenAddress);
             if (tokenAddress == address(0)) continue;
-            tokens[tokensFound++] = LocalBridgeConfig.BridgeToken({
+            tokens[tokensFound++] = LocalBridgeConfig.BridgeTokenConfig({
                 id: ids[i],
                 token: tokenAddress,
                 tokenType: token.isUnderlying
@@ -125,7 +125,7 @@ contract BridgeConfigV3Lens {
     }
 
     /// @dev Returns all liquidity pools for destination swap on a given chain.
-    function _getChainPools(uint256 chainId, LocalBridgeConfig.BridgeToken[] memory tokens)
+    function _getChainPools(uint256 chainId, LocalBridgeConfig.BridgeTokenConfig[] memory tokens)
         internal
         returns (address[] memory pools)
     {

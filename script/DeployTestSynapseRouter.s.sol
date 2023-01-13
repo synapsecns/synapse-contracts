@@ -42,7 +42,7 @@ contract DeployTestSynapseRouter is BaseScript {
         if (routerDeployment == address(0)) {
             router = new SynapseRouter(bridge);
             saveDeployment(chain, ROUTER, address(router));
-            LocalBridgeConfig.BridgeToken[] memory tokens = new LocalBridgeConfig.BridgeToken[](ids.length);
+            LocalBridgeConfig.BridgeTokenConfig[] memory tokens = new LocalBridgeConfig.BridgeTokenConfig[](ids.length);
             for (uint256 i = 0; i < ids.length; ++i) {
                 bytes memory rawConfig = config.parseRaw(_concat("tokens.", ids[i]));
                 TokenConfig memory tokenConfig = abi.decode(rawConfig, (TokenConfig));
@@ -51,7 +51,7 @@ contract DeployTestSynapseRouter is BaseScript {
                 if (tokenConfig.token != tokenConfig.bridgeToken) {
                     console.log("Wrapper: %s", tokenConfig.bridgeToken);
                 }
-                tokens[i] = LocalBridgeConfig.BridgeToken({
+                tokens[i] = LocalBridgeConfig.BridgeTokenConfig({
                     id: ids[i],
                     token: tokenConfig.token,
                     tokenType: LocalBridgeConfig.TokenType(tokenConfig.tokenType),

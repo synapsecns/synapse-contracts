@@ -40,7 +40,7 @@ contract BridgeConfigV3LensTestFork is BridgeConfigV3Lens, Test {
         string memory ethRPC = vm.envString("ALCHEMY_API");
         vm.createSelectFork(ethRPC);
         // vm.createSelectFork(ethRPC, BLOCK_NUMBER);
-        (LocalBridgeConfig.BridgeToken[] memory tokens, address[] memory pools) = getChainConfig(chainId);
+        (LocalBridgeConfig.BridgeTokenConfig[] memory tokens, address[] memory pools) = getChainConfig(chainId);
         console.log("========== TOKENS ==========");
         for (uint256 i = 0; i < tokens.length; ++i) {
             console.log(tokens[i].id);
