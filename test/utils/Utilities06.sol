@@ -140,9 +140,9 @@ contract Utilities06 is Test {
     /**
      * @notice Deploys and labels a SynapseERC20 token.
      */
-    function deploySynapseERC20(string memory name) public returns (SynapseERC20 token) {
+    function deploySynapseERC20(string memory name, uint8 decimals) public returns (SynapseERC20 token) {
         token = new SynapseERC20();
-        token.initialize(name, name, 18, address(this));
+        token.initialize(name, name, decimals, address(this));
         vm.label(address(token), name);
     }
 

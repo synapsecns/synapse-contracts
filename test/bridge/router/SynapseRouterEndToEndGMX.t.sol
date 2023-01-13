@@ -24,6 +24,10 @@ contract GMX is ERC20 {
     function setMinter(address _minter) external {
         minter = _minter;
     }
+
+    function setupDecimals(uint8 decimals_) external {
+        _setupDecimals(decimals_);
+    }
 }
 
 // solhint-disable func-name-mixedcase
@@ -59,6 +63,7 @@ contract SynapseRouterEndToEndGMXTest is SynapseRouterSuite {
         {
             // Deploy contract to copy the "mock" bytecode to GMX address
             vm.etch(address(avaGMX), codeAt(address(new GMX())));
+            avaGMX.setupDecimals(18);
         }
         // GMX Bridge Wrapper is set as minter for GMX
         avaGMX.setMinter(address(avaGmxWrapper));

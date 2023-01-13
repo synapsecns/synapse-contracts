@@ -25,7 +25,7 @@ contract ValidatorMock {
         SwapQuery memory query
     ) external {
         require(token != address(0), "Unknown token");
-        uint256 fee = calculateBridgeFee(amount);
+        uint256 fee = calculateBridgeFee(token, amount);
         bytes32 kappa = _rotateKappa();
         // Decode params, if swap adapter was specified
         SynapseParams memory params;
@@ -70,10 +70,18 @@ contract ValidatorMock {
         }
     }
 
-    function calculateBridgeFee(uint256 amount) public pure returns (uint256 fee) {
+    function calculateBridgeFee(address token, uint256 amount) public view returns (uint256 fee) {
         fee = (amount * BRIDGE_FEE) / 10**10;
         if (fee < MIN_FEE) fee = MIN_FEE;
         if (fee > MAX_FEE) fee = MAX_FEE;
+        // Scale down fee according to token decimals
+        uint256 decimals;
+        try ERC20(token).decimals() returns (uint8 _decimals) {
+            decimals = _decimals;
+        } catch {
+            decimals = 18;
+        }
+        fee = (fee * 10**decimals) / 10**18;
     }
 
     function _rotateKappa() internal returns (bytes32 oldKappa) {
@@ -281,7 +289,15 @@ abstract contract SynapseRouterSuite is Utilities06 {
     }
 
     function deploySynapseERC20(ChainSetup memory chain, string memory name) public returns (IERC20 token) {
-        SynapseERC20 _token = deploySynapseERC20(name);
+        token = deploySynapseERC20(chain, name, 18);
+    }
+
+    function deploySynapseERC20(
+        ChainSetup memory chain,
+        string memory name,
+        uint8 decimals
+    ) public returns (IERC20 token) {
+        SynapseERC20 _token = deploySynapseERC20(name, decimals);
         _token.grantRole(_token.MINTER_ROLE(), address(chain.bridge));
         token = IERC20(address(_token));
     }
@@ -478,6 +494,16 @@ abstract contract SynapseRouterSuite is Utilities06 {
         LocalBridgeConfig.TokenType tokenType,
         address bridgeToken
     ) internal {
-        router.addToken(symbol, token, tokenType, bridgeToken, BRIDGE_FEE, MIN_FEE, MAX_FEE);
+        // Set appropriate mock fees for tokens with lower decimals
+        uint256 feeDenominator = 10**18 / 10**uint256(ERC20(token).decimals());
+        router.addToken(
+            symbol,
+            token,
+            tokenType,
+            bridgeToken,
+            BRIDGE_FEE / feeDenominator,
+            MIN_FEE / feeDenominator,
+            MAX_FEE / feeDenominator
+        );
     }
 }
