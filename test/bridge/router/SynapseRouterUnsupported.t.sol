@@ -79,14 +79,29 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
     ▏*║                 TESTS: QUOTES FOR UNSUPPORTED TOKENS                 ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function test_getOriginAmountOut_revert_unsupported() public {
-        vm.expectRevert("Token not supported");
-        router.getOriginAmountOut(address(1), address(1), 10**18);
+    function test_getOriginAmountOut_unsupportedSymbol() public {
+        string[] memory symbols = new string[](1);
+        symbols[0] = "a";
+        SwapQuery[] memory queries = router.getOriginAmountOut(address(1), symbols, 10**18);
+        assertEq(queries.length, 1, "!length");
+        assertEq(queries[0].swapAdapter, address(0), "!swapAdapter");
+        assertEq(queries[0].tokenOut, address(0), "!tokenOut");
+        assertEq(queries[0].minAmountOut, 0, "!minAmountOut");
+        assertEq(queries[0].deadline, 0, "!deadline");
+        assertEq(queries[0].rawParams, bytes(""), "!rawParams");
     }
 
     function test_getDestinationAmountOut_revert_unsupported() public {
-        vm.expectRevert("Token not supported");
-        router.getDestinationAmountOut(address(1), address(1), 10**18);
+        DestRequest[] memory requests = new DestRequest[](1);
+        requests[0].symbol = "a";
+        requests[0].amountIn = 10**18;
+        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, address(1));
+        assertEq(queries.length, 1, "!length");
+        assertEq(queries[0].swapAdapter, address(0), "!swapAdapter");
+        assertEq(queries[0].tokenOut, address(0), "!tokenOut");
+        assertEq(queries[0].minAmountOut, 0, "!minAmountOut");
+        assertEq(queries[0].deadline, 0, "!deadline");
+        assertEq(queries[0].rawParams, bytes(""), "!rawParams");
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

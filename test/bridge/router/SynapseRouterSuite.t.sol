@@ -431,27 +431,43 @@ abstract contract SynapseRouterSuite is Utilities06 {
         IERC20 tokenOut,
         uint256 amountIn
     ) public view returns (SwapQuery memory originQuery, SwapQuery memory destQuery) {
-        // Find correlated bridge token on destination
-        (string memory symbol, address bridgeTokenDest) = getCorrelatedBridgeToken(destination, tokenOut);
+        // Step 0: find connected bridge tokens on destination
+        BridgeToken[] memory tokens = destination.router.getConnectedBridgeTokens(address(tokenOut));
         // Break execution if setup is not correct
-        require(bytes(symbol).length != 0, "No symbol found");
-        require(bridgeTokenDest != address(0), "No bridge token found");
-        // Find bridge token address on origin
-        address bridgeTokenOrigin = getChainBridgeToken(origin, symbol);
+        require(tokens.length != 0, "No symbols found");
+        string[] memory symbols = new string[](tokens.length);
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            // Break execution if incorrect values are returned
+            require(bytes(tokens[i].symbol).length != 0, "Empty symbol returned");
+            require(tokens[i].token != address(0), "Empty token returned");
+            symbols[i] = tokens[i].symbol;
+        }
         // Step 1: perform a call to origin SynapseRouter
-        originQuery = origin.router.getOriginAmountOut(address(tokenIn), bridgeTokenOrigin, amountIn);
+        SwapQuery[] memory originQueries = origin.router.getOriginAmountOut(address(tokenIn), symbols, amountIn);
+        // Step 2: form a list of Destination Requests
+        // In practice, there is no need to pass the requests with amountIn = 0, but we will do it for code simplicity
+        DestRequest[] memory requests = new DestRequest[](tokens.length);
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            requests[i].symbol = symbols[i];
+            requests[i].amountIn = originQueries[i].minAmountOut;
+        }
+        // Step 3: perform a call to destination SynapseRouter
+        SwapQuery[] memory destQueries = destination.router.getDestinationAmountOut(requests, address(tokenOut));
+        // Step 4: find the best query (in practice, we could return them all)
+        uint256 maxAmountOut = 0;
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            if (destQueries[i].minAmountOut > maxAmountOut) {
+                originQuery = originQueries[i];
+                destQuery = destQueries[i];
+            }
+        }
         // Break execution if origin quote is zero
         require(originQuery.minAmountOut != 0, "No path found on origin");
         // In practice deadline should be set based on the user settings. For testing we use current time.
         originQuery.deadline = block.timestamp;
         // In practice minAmountOut should be set based on user-defined slippage. For testing we use the exact quote.
         originQuery.minAmountOut;
-        // Step 2: perform a call to destination SynapseRouter. Use quote from origin query as "amount in".
-        destQuery = destination.router.getDestinationAmountOut(
-            bridgeTokenDest,
-            address(tokenOut),
-            originQuery.minAmountOut
-        );
+        // Break execution if destination quote is zero
         require(destQuery.minAmountOut != 0, "No path found on destination");
         // In practice deadline should be set based on the user settings. For testing we use current time + delay.
         destQuery.deadline = block.timestamp + DELAY;

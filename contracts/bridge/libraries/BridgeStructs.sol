@@ -17,6 +17,18 @@ struct SwapQuery {
     bytes rawParams;
 }
 
+/// @notice Struct representing parameters for swapping via SynapseAdapter.
+/// @param action           Action that SynapseAdapter needs to perform.
+/// @param pool             Liquidity pool that will be used for Swap/AddLiquidity/RemoveLiquidity actions.
+/// @param tokenIndexFrom   Token index to swap from. Used for swap/addLiquidity actions.
+/// @param tokenIndexTo     Token index to swap to. Used for swap/removeLiquidity actions.
+struct SynapseParams {
+    Action action;
+    address pool;
+    uint8 tokenIndexFrom;
+    uint8 tokenIndexTo;
+}
+
 /// @notice All possible actions that SynapseAdapter could perform.
 enum Action {
     Swap, // swap between two pools tokens
@@ -33,16 +45,12 @@ struct LimitedToken {
     address token;
 }
 
-/// @notice Struct representing parameters for swapping via SynapseAdapter.
-/// @param action           Action that SynapseAdapter needs to perform.
-/// @param pool             Liquidity pool that will be used for Swap/AddLiquidity/RemoveLiquidity actions.
-/// @param tokenIndexFrom   Token index to swap from. Used for swap/addLiquidity actions.
-/// @param tokenIndexTo     Token index to swap to. Used for swap/removeLiquidity actions.
-struct SynapseParams {
-    Action action;
-    address pool;
-    uint8 tokenIndexFrom;
-    uint8 tokenIndexTo;
+/// @notice Struct representing a bridge token. Used as the return value in view functions.
+/// @param symbol   Bridge token symbol: unique token ID consistent among all chains
+/// @param token    Bridge token address
+struct BridgeToken {
+    string symbol;
+    address token;
 }
 
 /// @notice Struct representing how pool tokens are stored by `SwapQuoter`.
@@ -51,6 +59,15 @@ struct SynapseParams {
 struct PoolToken {
     bool isWeth;
     address token;
+}
+
+/// @notice Struct representing a request for a swap quote from a bridge token.
+/// @dev tokenOut is passed externally
+/// @param symbol   Bridge token symbol: unique token ID consistent among all chains
+/// @param amountIn Amount of bridge token to start with, before the bridge fee is applied
+struct DestRequest {
+    string symbol;
+    uint256 amountIn;
 }
 
 /// @notice Struct representing a liquidity pool. Used as the return value in view functions.
