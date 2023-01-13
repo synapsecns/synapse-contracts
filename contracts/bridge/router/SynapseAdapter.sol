@@ -11,7 +11,7 @@ import "../libraries/UniversalToken.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
+abstract contract SynapseAdapter is Ownable, ISwapAdapter {
     using SafeERC20 for IERC20;
     using UniversalToken for address;
 
@@ -152,8 +152,10 @@ abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
         address tokenIn,
         address tokenOut,
         uint256 amountIn
-    ) external view override returns (SwapQuery memory) {
-        return swapQuoter.getAmountOut(tokenIn, tokenOut, amountIn);
+    ) external view returns (SwapQuery memory) {
+        // All actions are allowed by default
+        LimitedToken memory _tokenIn = LimitedToken(ActionLib.allActions(), tokenIn);
+        return swapQuoter.getAmountOut(_tokenIn, tokenOut, amountIn);
     }
 
     /**
@@ -165,7 +167,7 @@ abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
      *                  If a token charges a fee on transfers, use the amount that gets transferred after the fee.
      * @return LP token amount the user will receive
      */
-    function calculateAddLiquidity(address pool, uint256[] memory amounts) external view override returns (uint256) {
+    function calculateAddLiquidity(address pool, uint256[] memory amounts) external view returns (uint256) {
         return swapQuoter.calculateAddLiquidity(pool, amounts);
     }
 
@@ -183,7 +185,7 @@ abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
         uint256 dx
-    ) external view override returns (uint256 amountOut) {
+    ) external view returns (uint256 amountOut) {
         amountOut = swapQuoter.calculateSwap(pool, tokenIndexFrom, tokenIndexTo, dx);
     }
 
@@ -196,7 +198,6 @@ abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
     function calculateRemoveLiquidity(address pool, uint256 amount)
         external
         view
-        override
         returns (uint256[] memory amountsOut)
     {
         amountsOut = swapQuoter.calculateRemoveLiquidity(pool, amount);
@@ -213,7 +214,7 @@ abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
         address pool,
         uint256 tokenAmount,
         uint8 tokenIndex
-    ) external view override returns (uint256 amountOut) {
+    ) external view returns (uint256 amountOut) {
         amountOut = swapQuoter.calculateWithdrawOneToken(pool, tokenAmount, tokenIndex);
     }
 
@@ -224,28 +225,28 @@ abstract contract SynapseAdapter is Ownable, ISwapAdapter, ISwapQuoter {
     /**
      * @notice Returns a list of all supported pools.
      */
-    function allPools() public view override returns (Pool[] memory pools) {
+    function allPools() public view returns (Pool[] memory pools) {
         pools = swapQuoter.allPools();
     }
 
     /**
      * @notice Returns the amount of tokens the given pool supports and the pool's LP token.
      */
-    function poolInfo(address pool) public view override returns (uint256, address) {
+    function poolInfo(address pool) public view returns (uint256, address) {
         return swapQuoter.poolInfo(pool);
     }
 
     /**
      * @notice Returns a list of pool tokens for the given pool.
      */
-    function poolTokens(address pool) public view override returns (PoolToken[] memory tokens) {
+    function poolTokens(address pool) public view returns (PoolToken[] memory tokens) {
         tokens = swapQuoter.poolTokens(pool);
     }
 
     /**
      * @notice Returns the amount of supported pools.
      */
-    function poolsAmount() public view override returns (uint256 amount) {
+    function poolsAmount() public view returns (uint256 amount) {
         amount = swapQuoter.poolsAmount();
     }
 

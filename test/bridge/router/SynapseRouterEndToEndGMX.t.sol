@@ -48,8 +48,7 @@ contract SynapseRouterEndToEndGMXTest is SynapseRouterSuite {
         arbGMX = new GMX();
         vm.label(address(arbGMX), "ARB GMX");
         chain.bridgeTokenGmx = address(arbGMX);
-        _addDepositToken(chain.router, chain.bridgeTokenGmx);
-        correlatedBridgeToken[chain.chainId][arbGMX] = chain.bridgeTokenGmx;
+        _addDepositToken(chain.router, SYMBOL_GMX, chain.bridgeTokenGmx);
         // Setup initial GMX locked in Bridge
         dealToken(chain, address(chain.bridge), arbGMX, 10**24);
     }
@@ -67,8 +66,13 @@ contract SynapseRouterEndToEndGMXTest is SynapseRouterSuite {
         vm.label(address(avaGMX), "AVA GMX");
         // For the end user the bridge token is actual GMX
         chain.bridgeTokenGmx = address(avaGMX);
-        _addToken(chain.router, chain.bridgeTokenGmx, LocalBridgeConfig.TokenType.Redeem, address(avaGmxWrapper));
-        correlatedBridgeToken[chain.chainId][avaGMX] = chain.bridgeTokenGmx;
+        _addToken(
+            chain.router,
+            SYMBOL_GMX,
+            chain.bridgeTokenGmx,
+            LocalBridgeConfig.TokenType.Redeem,
+            address(avaGmxWrapper)
+        );
     }
 
     function deployChainBridge(ChainSetup memory chain) public virtual override {

@@ -5,8 +5,13 @@ pragma experimental ABIEncoderV2;
 import "../libraries/BridgeStructs.sol";
 
 interface ISwapQuoter {
+    function findConnectedTokens(LimitedToken[] memory tokensIn, address tokenOut)
+        external
+        view
+        returns (uint256 amountFound, bool[] memory isConnected);
+
     function getAmountOut(
-        address tokenIn,
+        LimitedToken memory tokenIn,
         address tokenOut,
         uint256 amountIn
     ) external view returns (SwapQuery memory query);

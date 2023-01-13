@@ -32,7 +32,7 @@ contract LocalBridgeConfigTest is Utilities06 {
         vm.assume(caller != OWNER);
         expectOnlyOwnerRevert();
         vm.prank(caller);
-        bridgeConfig.addToken(address(1), LocalBridgeConfig.TokenType.Redeem, address(1), 0, 0, 0);
+        bridgeConfig.addToken("a", address(1), LocalBridgeConfig.TokenType.Redeem, address(1), 0, 0, 0);
     }
 
     function test_setTokenConfig_revert_onlyOwner(address caller) public {
@@ -54,6 +54,7 @@ contract LocalBridgeConfigTest is Utilities06 {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function test_addToken(
+        string memory symbol,
         address token,
         uint8 tokenType_,
         address bridgeToken,
@@ -68,8 +69,10 @@ contract LocalBridgeConfigTest is Utilities06 {
         vm.assume(bridgeFee < 10**10);
         // minFee should not be higher than maxFee
         vm.assume(minFee <= maxFee);
+        vm.assume(bytes(symbol).length != 0);
         vm.prank(OWNER);
-        assertTrue(bridgeConfig.addToken(token, tokenType, bridgeToken, bridgeFee, minFee, maxFee), "!added");
+        assertTrue(bridgeConfig.addToken(symbol, token, tokenType, bridgeToken, bridgeFee, minFee, maxFee), "!added");
+        _checkSymbol(symbol, token);
         _checkConfig(token, tokenType, bridgeToken);
         _checkFee(token, bridgeFee, minFee, maxFee);
     }
@@ -77,10 +80,10 @@ contract LocalBridgeConfigTest is Utilities06 {
     function test_addToken_revert_zeroToken(address token, uint8 tokenType_) public {
         vm.expectRevert("Token can't be zero address");
         vm.prank(OWNER);
-        bridgeConfig.addToken(token, _castToTokenType(tokenType_), address(0), 0, 0, 0);
+        bridgeConfig.addToken("a", token, _castToTokenType(tokenType_), address(0), 0, 0, 0);
         vm.expectRevert("Token can't be zero address");
         vm.prank(OWNER);
-        bridgeConfig.addToken(address(0), _castToTokenType(tokenType_), token, 0, 0, 0);
+        bridgeConfig.addToken("a", address(0), _castToTokenType(tokenType_), token, 0, 0, 0);
     }
 
     function test_addToken_revert_incorrectBridgeFee(uint256 bridgeFee) public {
@@ -88,7 +91,7 @@ contract LocalBridgeConfigTest is Utilities06 {
         address token = address(1);
         vm.expectRevert("bridgeFee >= 100%");
         vm.prank(OWNER);
-        bridgeConfig.addToken(token, LocalBridgeConfig.TokenType.Redeem, token, bridgeFee, 0, 0);
+        bridgeConfig.addToken("a", token, LocalBridgeConfig.TokenType.Redeem, token, bridgeFee, 0, 0);
     }
 
     function test_addToken_revert_incorrectMinFee(uint104 minFee, uint112 maxFee) public {
@@ -96,10 +99,26 @@ contract LocalBridgeConfigTest is Utilities06 {
         address token = address(1);
         vm.expectRevert("minFee > maxFee");
         vm.prank(OWNER);
-        bridgeConfig.addToken(token, LocalBridgeConfig.TokenType.Redeem, token, 0, minFee, maxFee);
+        bridgeConfig.addToken("a", token, LocalBridgeConfig.TokenType.Redeem, token, 0, minFee, maxFee);
+    }
+
+    function test_addToken_revert_emptySymbol() public {
+        vm.expectRevert("Empty symbol");
+        vm.prank(OWNER);
+        bridgeConfig.addToken("", address(1), LocalBridgeConfig.TokenType.Redeem, address(1), 0, 0, 0);
+    }
+
+    function test_addToken_revert_symbolTaken(string memory symbol) public {
+        vm.assume(bytes(symbol).length != 0);
+        vm.prank(OWNER);
+        bridgeConfig.addToken(symbol, address(1), LocalBridgeConfig.TokenType.Redeem, address(1), 0, 0, 0);
+        vm.expectRevert("Symbol already in use");
+        vm.prank(OWNER);
+        bridgeConfig.addToken(symbol, address(2), LocalBridgeConfig.TokenType.Redeem, address(2), 0, 0, 0);
     }
 
     function test_addToken_twice(
+        string memory symbol,
         address token,
         uint8 tokenType_,
         address bridgeToken,
@@ -108,7 +127,7 @@ contract LocalBridgeConfigTest is Utilities06 {
         uint112 maxFee
     ) public {
         LocalBridgeConfig.TokenType tokenType = _castToTokenType(tokenType_);
-        test_addToken(token, tokenType_, bridgeToken, bridgeFee, minFee, maxFee);
+        test_addToken(symbol, token, tokenType_, bridgeToken, bridgeFee, minFee, maxFee);
         // Derive different values for every parameter
         LocalBridgeConfig.TokenType _tokenType = _castToTokenType(tokenType_ ^ 1);
         address _bridgeToken = bridgeToken == address(1) ? address(2) : address(1);
@@ -117,7 +136,7 @@ contract LocalBridgeConfigTest is Utilities06 {
         uint40 _maxFee = maxFee == 10 ? 20 : 10;
         vm.prank(OWNER);
         assertFalse(
-            bridgeConfig.addToken(token, _tokenType, _bridgeToken, _bridgeFee, _minFee, _maxFee),
+            bridgeConfig.addToken(symbol, token, _tokenType, _bridgeToken, _bridgeFee, _minFee, _maxFee),
             "Added twice"
         );
         // Check that the old values were not changed
@@ -125,30 +144,33 @@ contract LocalBridgeConfigTest is Utilities06 {
         _checkFee(token, bridgeFee, minFee, maxFee);
     }
 
-    function test_removeToken(address token) public {
-        test_addToken(token, 1, address(1), 1, 1, 1);
+    function test_removeToken(string memory symbol, address token) public {
+        test_addToken(symbol, token, 1, address(1), 1, 1, 1);
         vm.prank(OWNER);
         assertTrue(bridgeConfig.removeToken(token), "!removed");
+        _checkSymbolRemoved(symbol, token);
         _checkConfig(token, LocalBridgeConfig.TokenType(0), address(0));
         _checkFee(token, 0, 0, 0);
     }
 
     function test_removeToken_twice(address token) public {
-        test_removeToken(token);
+        test_removeToken("a", token);
         vm.prank(OWNER);
         assertFalse(bridgeConfig.removeToken(token), "Removed twice");
     }
 
     function test_removeTokens() public {
-        test_addToken(address(1), 0, address(1), 1, 1, 1);
-        test_addToken(address(2), 1, address(2), 2, 2, 2);
+        test_addToken("a", address(1), 0, address(1), 1, 1, 1);
+        test_addToken("b", address(2), 1, address(2), 2, 2, 2);
         address[] memory tokens = new address[](2);
         tokens[0] = address(1);
         tokens[1] = address(2);
         vm.prank(OWNER);
         bridgeConfig.removeTokens(tokens);
+        _checkSymbolRemoved("a", address(1));
         _checkConfig(address(1), LocalBridgeConfig.TokenType(0), address(0));
         _checkFee(address(1), 0, 0, 0);
+        _checkSymbolRemoved("b", address(2));
         _checkConfig(address(2), LocalBridgeConfig.TokenType(0), address(0));
         _checkFee(address(2), 0, 0, 0);
     }
@@ -162,7 +184,7 @@ contract LocalBridgeConfigTest is Utilities06 {
         uint8 tokenType_,
         address bridgeToken
     ) public {
-        test_addToken(token, tokenType_, bridgeToken, 0, 0, 0);
+        test_addToken("a", token, tokenType_, bridgeToken, 0, 0, 0);
         // Derive different values for every parameter
         LocalBridgeConfig.TokenType _tokenType = _castToTokenType(tokenType_ ^ 1);
         address _bridgeToken = bridgeToken == address(1) ? address(2) : address(1);
@@ -178,14 +200,14 @@ contract LocalBridgeConfigTest is Utilities06 {
         address bridgeToken
     ) public {
         // Add and remove a token to make it unknown
-        test_removeToken(token);
+        test_removeToken("a", token);
         vm.expectRevert("Unknown token");
         vm.prank(OWNER);
         bridgeConfig.setTokenConfig(token, _castToTokenType(tokenType_), bridgeToken);
     }
 
     function test_setTokenConfig_revert_zeroToken(address token, uint8 tokenType_) public {
-        test_addToken(token, tokenType_, token, 0, 0, 0);
+        test_addToken("a", token, tokenType_, token, 0, 0, 0);
         vm.expectRevert("Token can't be zero address");
         vm.prank(OWNER);
         bridgeConfig.setTokenConfig(token, _castToTokenType(tokenType_), address(0));
@@ -197,7 +219,7 @@ contract LocalBridgeConfigTest is Utilities06 {
         uint104 minFee,
         uint112 maxFee
     ) public {
-        test_addToken(token, 0, token, bridgeFee, minFee, maxFee);
+        test_addToken("a", token, 0, token, bridgeFee, minFee, maxFee);
         // Derive different values for every parameter
         uint40 _bridgeFee = bridgeFee == 1 ? 2 : 1;
         uint40 _minFee = minFee == 1 ? 2 : 1;
@@ -215,7 +237,7 @@ contract LocalBridgeConfigTest is Utilities06 {
         uint112 maxFee
     ) public {
         // Add and remove a token to make it unknown
-        test_removeToken(token);
+        test_removeToken("a", token);
         vm.expectRevert("Unknown token");
         vm.prank(OWNER);
         bridgeConfig.setTokenFee(token, bridgeFee, minFee, maxFee);
@@ -224,7 +246,7 @@ contract LocalBridgeConfigTest is Utilities06 {
     function test_setTokenFee_revert_incorrectBridgeFee(uint256 bridgeFee) public {
         vm.assume(bridgeFee >= 10**10);
         address token = address(1);
-        test_addToken(token, 0, token, 0, 0, 0);
+        test_addToken("a", token, 0, token, 0, 0, 0);
         vm.expectRevert("bridgeFee >= 100%");
         vm.prank(OWNER);
         bridgeConfig.setTokenFee(token, bridgeFee, 0, 0);
@@ -233,7 +255,7 @@ contract LocalBridgeConfigTest is Utilities06 {
     function test_setTokenFee_revert_incorrectMinFee(uint104 minFee, uint112 maxFee) public {
         vm.assume(minFee > maxFee);
         address token = address(1);
-        test_addToken(token, 0, token, 0, 0, 0);
+        test_addToken("a", token, 0, token, 0, 0, 0);
         vm.expectRevert("minFee > maxFee");
         vm.prank(OWNER);
         bridgeConfig.setTokenFee(token, 0, minFee, maxFee);
@@ -250,7 +272,7 @@ contract LocalBridgeConfigTest is Utilities06 {
         address token = address(1);
         uint104 minFee = 10**3;
         uint112 maxFee = 10**20;
-        test_addToken(token, 0, token, bridgeFee, minFee, maxFee);
+        test_addToken("a", token, 0, token, bridgeFee, minFee, maxFee);
         uint256 expectedFee = (amount * bridgeFee) / 10**10;
         uint256 fee = bridgeConfig.calculateBridgeFee(token, amount);
         if (fee == expectedFee) {
@@ -275,11 +297,21 @@ contract LocalBridgeConfigTest is Utilities06 {
     function test_bridgeFee_revert_unknownToken() public {
         address token = address(1);
         // Add and remove a token to make it unknown
-        test_removeToken(token);
+        test_removeToken("a", token);
         vm.expectRevert("Token not supported");
         bridgeConfig.calculateBridgeFee(token, 0);
         vm.expectRevert("Token not supported");
         bridgeConfig.calculateBridgeAmountOut(token, 0);
+    }
+
+    function _checkSymbol(string memory symbol, address token) internal {
+        assertEq(bridgeConfig.tokenToSymbol(token), symbol, "!symbol");
+        assertEq(bridgeConfig.symbolToToken(symbol), token, "!token");
+    }
+
+    function _checkSymbolRemoved(string memory symbol, address token) internal {
+        assertEq(bridgeConfig.tokenToSymbol(token), "", "!symbol");
+        assertEq(bridgeConfig.symbolToToken(symbol), address(0), "!token");
     }
 
     function _checkConfig(

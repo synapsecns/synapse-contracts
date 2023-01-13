@@ -210,55 +210,103 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /**
-     * @notice Finds the best pool from the Synapse-supported pools for tokenIn -> bridgeToken swap,
-     * treating it as the "origin chain swap" in the Synapse Bridge transaction.
-     *
-     * @dev
-     * 1. Will revert if `bridgeToken` is not a supported bridge token. In case the bridged token
-     * requires a bridge wrapper token, use the underlying token address as `bridgeToken` in this method.
-     * 2. Will correctly form a SwapQuery if `tokenIn == bridgeToken`.
-     * 3. It is possible to form a SwapQuery off-chain using alternative SwapAdapter for the origin swap.
-     *
+     * @notice Finds the best path between `tokenIn` and every supported bridge token from the given list,
+     * treating the swap as "origin swap", without putting any restrictions on the swap.
+     * @dev Will NOT revert if any of the tokens are not supported, instead will return an empty query for that symbol.
+     * Check (query.minAmountOut != 0): this is true only if the swap is possible and bridge token is supported.
+     * The returned queries with minAmountOut != 0 could be used as `originQuery` with SynapseRouter.
+     * Note: it is possible to form a SwapQuery off-chain using alternative SwapAdapter for the origin swap.
      * @param tokenIn       Initial token that user wants to bridge/swap
-     * @param bridgeToken   Token that will be used for bridging on origin chain
+     * @param tokenSymbols  List of symbols representing bridge tokens
      * @param amountIn      Amount of tokens user wants to bridge/swap
-     * @return query    Struct to be used as `originQuery` in SynapseRouter.
-     *                  minAmountOut and deadline fields will need to be adjusted based on the user settings.
+     * @return originQueries    List of structs that could be used as `originQuery` in SynapseRouter.
+     *                          minAmountOut and deadline fields will need to be adjusted based on the user settings.
      */
     function getOriginAmountOut(
         address tokenIn,
-        address bridgeToken,
+        string[] memory tokenSymbols,
         uint256 amountIn
-    ) external view returns (SwapQuery memory query) {
-        require(config[bridgeToken].bridgeToken != address(0), "Token not supported");
-        query = this.getAmountOut(tokenIn, bridgeToken, amountIn);
+    ) external view returns (SwapQuery[] memory originQueries) {
+        uint256 length = tokenSymbols.length;
+        originQueries = new SwapQuery[](length);
+        for (uint256 i = 0; i < length; ++i) {
+            // Check if token with given symbol is supported on this chain
+            address bridgeToken = symbolToToken[tokenSymbols[i]];
+            // Skip not supported tokens
+            if (bridgeToken == address(0)) continue;
+            // Every possible action is supported for origin swap
+            LimitedToken memory _tokenIn = LimitedToken(ActionLib.allActions(), tokenIn);
+            originQueries[i] = swapQuoter.getAmountOut(_tokenIn, bridgeToken, amountIn);
+        }
     }
 
     /**
-     * @notice Finds the best pool from the Synapse-supported pools for bridgeToken -> tokenOut swap,
-     * treating it as the "destination chain swap" in the Synapse Bridge transaction.
-     *
-     * @dev
-     * 1. Will revert if `bridgeToken` is not a supported bridge token. In case the bridged token
-     * requires a bridge wrapper token, use the underlying token address as `bridgeToken` in this method.
-     * 2. Will correctly form a SwapQuery if `bridgeToken == tokenOut`.
-     * 3. It is NOT possible to form a SwapQuery off-chain using alternative SwapAdapter for the destination swap.
+     * @notice Finds the best path between every supported bridge token from the given list and `tokenOut`,
+     * treating the swap as "destination swap", limiting possible actions to those available for every bridge token.
+     * @dev Will NOT revert if any of the tokens are not supported, instead will return an empty query for that symbol.
+     * Note: it is NOT possible to form a SwapQuery off-chain using alternative SwapAdapter for the destination swap.
      * For the time being, only swaps through the Synapse-supported pools are available on destination chain.
-     *
-     * @param bridgeToken   Token that will be used for bridging on destination chain
-     * @param tokenOut      Token user wants to receive on destination chain
-     * @param amountIn      Amount of tokens bridged from origin chain (before fees)
-     * @return query    Struct to be used as `destQuery` in SynapseRouter.
-     *                  minAmountOut and deadline fields will need to be adjusted based on the user settings.
+     * @param requests  List of structs with following information:
+     *                  - symbol: unique token ID consistent among all chains
+     *                  - amountIn: amount of bridge token to start with, before the bridge fee is applied
+     * @param tokenOut  Token user wants to receive on destination chain
+     * @return destQueries  List of structs that could be used as `destQuery` in SynapseRouter.
+     *                      minAmountOut and deadline fields will need to be adjusted based on the user settings.
      */
-    function getDestinationAmountOut(
-        address bridgeToken,
-        address tokenOut,
-        uint256 amountIn
-    ) external view returns (SwapQuery memory query) {
-        // Apply bridge fee, this will revert if token is not supported
-        amountIn = _calculateBridgeAmountOut(bridgeToken, amountIn);
-        query = this.getAmountOut(bridgeToken, tokenOut, amountIn);
+    function getDestinationAmountOut(DestRequest[] memory requests, address tokenOut)
+        external
+        view
+        returns (SwapQuery[] memory destQueries)
+    {
+        uint256 length = requests.length;
+        destQueries = new SwapQuery[](length);
+        for (uint256 i = 0; i < length; ++i) {
+            address token = symbolToToken[requests[i].symbol];
+            // Skip if token is not supported
+            if (token == address(0)) continue;
+            // token is confirmed to be a supported bridge token at this point
+            uint256 amountIn = _calculateBridgeAmountOut(token, requests[i].amountIn);
+            // Skip if fee is greater than amountIn
+            if (amountIn == 0) continue;
+            TokenType bridgeTokenType = config[token].tokenType;
+            // See what kind of "Actions" are available for the given bridge token:
+            LimitedToken memory tokenIn = LimitedToken(_bridgeTokenActions(bridgeTokenType), token);
+            destQueries[i] = swapQuoter.getAmountOut(tokenIn, tokenOut, amountIn);
+        }
+    }
+
+    /**
+     * @notice Gets the list of all bridge tokens (and their symbols), such that destination swap
+     * from a bridge token to `tokenOut` is possible.
+     * @param tokenOut  Token address to swap to on destination chain
+     * @return tokens   List of structs with following information:
+     *                  - symbol: unique token ID consistent among all chains
+     *                  - token: bridge token address
+     */
+    function getConnectedBridgeTokens(address tokenOut) external view returns (BridgeToken[] memory tokens) {
+        uint256 amount = bridgeTokensAmount();
+        // Try connecting every supported bridge token to tokenOut
+        LimitedToken[] memory allTokens = new LimitedToken[](amount);
+        for (uint256 i = 0; i < amount; ++i) {
+            address token = _bridgeTokens.at(i);
+            // Make sure only "supported actions" for destination swap are included
+            allTokens[i].actionMask = _bridgeTokenActions(config[token].tokenType);
+            allTokens[i].token = token;
+        }
+        (uint256 amountFound, bool[] memory isConnected) = swapQuoter.findConnectedTokens(allTokens, tokenOut);
+        tokens = new BridgeToken[](amountFound);
+        // This will now track amount of found connected tokens so far during the next for loop
+        amountFound = 0;
+        for (uint256 i = 0; i < amount; ++i) {
+            if (isConnected[i]) {
+                // Record the connected token
+                address token = allTokens[i].token;
+                tokens[amountFound].symbol = tokenToSymbol[token];
+                tokens[amountFound].token = token;
+                // Increase the counter
+                ++amountFound;
+            }
+        }
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -328,6 +376,24 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
         return query.swapAdapter != address(0);
     }
 
+    function _bridgeTokenActions(TokenType tokenType) internal pure returns (uint256 actionMask) {
+        if (tokenType == TokenType.Redeem) {
+            // For tokens that are minted on destination chain
+            // possible bridge functions are mint() and mintAndSwap(). Thus:
+            // Swap: available via mintAndSwap()
+            // (Add/Remove)Liquidity is unavailable
+            // HandleETH is unavailable, as WETH could only be withdrawn by SynapseBridge
+            actionMask = ActionLib.mask(Action.Swap);
+        } else {
+            // For tokens that are withdrawn on destination chain
+            // possible bridge functions are withdraw() and withdrawAndRemove().
+            // Swap/AddLiquidity: not available
+            // RemoveLiquidity: available via withdrawAndRemove()
+            // HandleETH: available via withdraw(). SwapQuoter will check if the bridge token is WETH or not.
+            actionMask = ActionLib.mask(Action.RemoveLiquidity, Action.HandleEth);
+        }
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                 INTERNAL: ADD & REMOVE BRIDGE TOKENS                 ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
@@ -335,6 +401,7 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
     /// @dev Adds a bridge token config and its fee structure, if it's not present.
     /// If a token was added, approves it for spending by SynapseBridge.
     function _addToken(
+        string memory symbol,
         address token,
         TokenType tokenType,
         address bridgeToken,
@@ -343,7 +410,7 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
         uint256 maxFee
     ) internal override returns (bool wasAdded) {
         // Add token and its fee structure
-        wasAdded = LocalBridgeConfig._addToken(token, tokenType, bridgeToken, bridgeFee, minFee, maxFee);
+        wasAdded = LocalBridgeConfig._addToken(symbol, token, tokenType, bridgeToken, bridgeFee, minFee, maxFee);
         if (wasAdded) {
             // Approve token only if it wasn't previously added
             // Underlying token should always implement allowance(), approve()

@@ -67,9 +67,9 @@ contract SynapseRouterViewsTest is Utilities06 {
         quoter.addPool(nexusPool);
 
         router.setSwapQuoter(quoter);
-        _addRedeemToken(address(neth));
-        _addRedeemToken(address(nusd));
-        _addDepositToken(address(nexusNusd));
+        _addRedeemToken("nETH", address(neth));
+        _addRedeemToken("nUSD", address(nusd));
+        _addDepositToken("Nexus nUSD", address(nexusNusd));
     }
 
     function test_getters() public {
@@ -133,11 +133,11 @@ contract SynapseRouterViewsTest is Utilities06 {
         return _lpToken;
     }
 
-    function _addDepositToken(address token) internal {
-        router.addToken(token, LocalBridgeConfig.TokenType.Deposit, token, 0, 0, 0);
+    function _addDepositToken(string memory symbol, address token) internal {
+        router.addToken(symbol, token, LocalBridgeConfig.TokenType.Deposit, token, 0, 0, 0);
     }
 
-    function _addRedeemToken(address token) internal {
-        router.addToken(token, LocalBridgeConfig.TokenType.Redeem, token, 0, 0, 0);
+    function _addRedeemToken(string memory symbol, address token) internal {
+        router.addToken(symbol, token, LocalBridgeConfig.TokenType.Redeem, token, 0, 0, 0);
     }
 }

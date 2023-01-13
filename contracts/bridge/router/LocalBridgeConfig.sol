@@ -85,6 +85,10 @@ abstract contract LocalBridgeConfig is Ownable {
     /// @notice Fee structure for each supported token.
     /// @dev If wrapper token is required for bridging, its underlying is used as key here
     mapping(address => FeeStructure) public fee;
+    /// @notice Maps bridge token address into bridge token symbol
+    mapping(address => string) public tokenToSymbol;
+    /// @notice Maps bridge token symbol into bridge token address
+    mapping(string => address) public symbolToToken;
     /// @dev A list of all supported bridge tokens
     EnumerableSet.AddressSet internal _bridgeTokens;
 
@@ -104,6 +108,7 @@ abstract contract LocalBridgeConfig is Ownable {
      * @return wasAdded     True, if token was added to the config
      */
     function addToken(
+        string memory symbol,
         address token,
         TokenType tokenType,
         address bridgeToken,
@@ -111,7 +116,7 @@ abstract contract LocalBridgeConfig is Ownable {
         uint256 minFee,
         uint256 maxFee
     ) external onlyOwner returns (bool wasAdded) {
-        wasAdded = _addToken(token, tokenType, bridgeToken, bridgeFee, minFee, maxFee);
+        wasAdded = _addToken(symbol, token, tokenType, bridgeToken, bridgeFee, minFee, maxFee);
     }
 
     /// @notice Adds a bunch of bridge tokens and their fee structure to the local config, if it was not added before.
@@ -215,6 +220,7 @@ abstract contract LocalBridgeConfig is Ownable {
     /// @dev Adds a bridge token config, if it's not present and updates its fee structure.
     /// Child contract could implement additional logic upon adding a token.
     function _addToken(
+        string memory _symbol,
         address token,
         TokenType tokenType,
         address bridgeToken,
@@ -224,10 +230,20 @@ abstract contract LocalBridgeConfig is Ownable {
     ) internal virtual returns (bool wasAdded) {
         wasAdded = _bridgeTokens.add(token);
         if (wasAdded) {
-            // Need to save config only once
+            // Need to save config only once. Need to use "end user" address for symbol mappings.
+            _setTokenSymbol(_symbol, token);
             _setTokenConfig(token, tokenType, bridgeToken);
             _setTokenFee(token, bridgeFee, minFee, maxFee);
         }
+    }
+
+    /// @dev Sets the symbol for the bridge token
+    function _setTokenSymbol(string memory symbol, address token) internal {
+        // tokenToSymbol[token] is guaranteed to be empty, as token was just added
+        require(bytes(symbol).length != 0, "Empty symbol");
+        require(symbolToToken[symbol] == address(0), "Symbol already in use");
+        symbolToToken[symbol] = token;
+        tokenToSymbol[token] = symbol;
     }
 
     /// @dev Updates the token config for an already known bridge token.
@@ -259,6 +275,9 @@ abstract contract LocalBridgeConfig is Ownable {
     function _removeToken(address token) internal virtual returns (bool wasRemoved) {
         wasRemoved = _bridgeTokens.remove(token);
         if (wasRemoved) {
+            string memory symbol = tokenToSymbol[token];
+            delete tokenToSymbol[token];
+            delete symbolToToken[symbol];
             delete config[token];
             delete fee[token];
         }

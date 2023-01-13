@@ -11,8 +11,15 @@ contract SwapCalculatorHarness is SwapCalculator {
         _addPool(pool, weth);
     }
 
+    function findConnectedTokens(LimitedToken[] memory tokensIn, address tokenOut)
+        external
+        view
+        override
+        returns (uint256 amountFound, bool[] memory isConnected)
+    {}
+
     function getAmountOut(
-        address tokenIn,
+        LimitedToken memory tokenIn,
         address tokenOut,
         uint256 amountIn
     ) external view override returns (SwapQuery memory query) {}
