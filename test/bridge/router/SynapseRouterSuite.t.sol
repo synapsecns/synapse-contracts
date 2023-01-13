@@ -124,10 +124,6 @@ abstract contract SynapseRouterSuite is Utilities06 {
         IERC20 dai;
         IERC20 usdc;
         IERC20 usdt;
-        address bridgeTokenEth;
-        address bridgeTokenUsd;
-        address bridgeTokenGmx;
-        address bridgeTokenJewel;
     }
 
     mapping(uint256 => ChainSetup) internal chains;
@@ -192,8 +188,6 @@ abstract contract SynapseRouterSuite is Utilities06 {
             chain.nusd = deploySynapseERC20(chain, concat(chain.name, " nUSD"));
             _addRedeemToken(chain.router, SYMBOL_NETH, address(chain.neth));
             _addRedeemToken(chain.router, SYMBOL_NUSD, address(chain.nusd));
-            chain.bridgeTokenEth = address(chain.neth);
-            chain.bridgeTokenUsd = address(chain.nusd);
         }
     }
 
@@ -210,8 +204,6 @@ abstract contract SynapseRouterSuite is Utilities06 {
         // Setup bridge tokens for Mainnet
         _addDepositToken(chain.router, SYMBOL_NETH, address(chain.weth));
         _addDepositToken(chain.router, SYMBOL_NUSD, address(chain.nusd));
-        chain.bridgeTokenEth = address(chain.weth);
-        chain.bridgeTokenUsd = address(chain.nusd);
         // Setup initial WETH, nUSD Bridge deposits
         dealToken(chain, address(chain.bridge), chain.weth, 10**20);
         chain.nusd.transfer(address(chain.bridge), chain.nusd.balanceOf(address(this)));
@@ -443,45 +435,6 @@ abstract contract SynapseRouterSuite is Utilities06 {
         destQuery.deadline = block.timestamp + DELAY;
         // In practice minAmountOut should be set based on user-defined slippage. For testing we use the exact quote.
         destQuery.minAmountOut;
-    }
-
-    /// @dev Function is marked virtual to allow adding custom tokens in separate tests.
-    function getChainBridgeToken(ChainSetup memory chain, string memory symbol)
-        public
-        pure
-        virtual
-        returns (address bridgeToken)
-    {
-        // In practice, one is expected to store the global bridge token addresses.
-        // This method is just mocking the storage logic.
-        if (equals(symbol, SYMBOL_NETH)) {
-            bridgeToken = chain.bridgeTokenEth;
-        } else if (equals(symbol, SYMBOL_NUSD)) {
-            bridgeToken = chain.bridgeTokenUsd;
-        } else if (equals(symbol, SYMBOL_GMX)) {
-            bridgeToken = chain.bridgeTokenGmx;
-        } else if (equals(symbol, SYMBOL_JEWEL)) {
-            bridgeToken = chain.bridgeTokenJewel;
-        }
-    }
-
-    function getBridgeTokenSymbol(ChainSetup memory chain, address bridgeToken)
-        public
-        pure
-        virtual
-        returns (string memory symbol)
-    {
-        // In practice, one is expected to store the global bridge token addresses.
-        // This method is just mocking the storage logic.
-        if (bridgeToken == chain.bridgeTokenEth) {
-            symbol = SYMBOL_NETH;
-        } else if (bridgeToken == chain.bridgeTokenUsd) {
-            symbol = SYMBOL_NUSD;
-        } else if (bridgeToken == chain.bridgeTokenGmx) {
-            symbol = SYMBOL_GMX;
-        } else if (bridgeToken == chain.bridgeTokenJewel) {
-            symbol = SYMBOL_JEWEL;
-        }
     }
 
     function getRecipientBalance(ChainSetup memory chain, address token) public view returns (uint256) {
