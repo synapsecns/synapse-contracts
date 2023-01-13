@@ -106,6 +106,10 @@ abstract contract SynapseRouterSuite is Utilities06 {
     string internal constant SYMBOL_GMX = "GMX";
     string internal constant SYMBOL_JEWEL = "JEWEL";
 
+    string internal constant SYMBOL_DAI = "DAI";
+    string internal constant SYMBOL_USDC = "USDC";
+    string internal constant SYMBOL_USDT = "USDT";
+
     ValidatorMock internal validator;
 
     struct ChainSetup {
@@ -204,9 +208,15 @@ abstract contract SynapseRouterSuite is Utilities06 {
         // Setup bridge tokens for Mainnet
         _addDepositToken(chain.router, SYMBOL_NETH, address(chain.weth));
         _addDepositToken(chain.router, SYMBOL_NUSD, address(chain.nusd));
-        // Setup initial WETH, nUSD Bridge deposits
-        dealToken(chain, address(chain.bridge), chain.weth, 10**20);
+        _addDepositToken(chain.router, SYMBOL_DAI, address(chain.dai));
+        _addDepositToken(chain.router, SYMBOL_USDC, address(chain.usdc));
+        _addDepositToken(chain.router, SYMBOL_USDT, address(chain.usdt));
+        // Setup initial WETH, nUSD, DAI, USDC, USDT Bridge deposits
+        dealToken(chain, address(chain.bridge), chain.weth, 10**24);
         chain.nusd.transfer(address(chain.bridge), chain.nusd.balanceOf(address(this)));
+        dealToken(chain, address(chain.bridge), chain.dai, 10**24);
+        dealToken(chain, address(chain.bridge), chain.usdc, 10**12);
+        dealToken(chain, address(chain.bridge), chain.usdt, 10**12);
     }
 
     function deployTestArbitrum() public virtual returns (ChainSetup memory chain) {
