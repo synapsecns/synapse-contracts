@@ -20,15 +20,13 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
         chain = super.deployTestAvalanche();
         avaJewel = deploySynapseERC20(chain, "AVA JEWEL");
         // Add JEWEL to Router config
-        chain.bridgeTokenJewel = address(avaJewel);
-        _addRedeemToken(chain.router, SYMBOL_JEWEL, chain.bridgeTokenJewel);
+        _addRedeemToken(chain.router, SYMBOL_JEWEL, address(avaJewel));
     }
 
     function deployTestDFK() public virtual override returns (ChainSetup memory chain) {
         chain = super.deployTestDFK();
         // Add JEWEL to Router config
-        chain.bridgeTokenJewel = address(chain.wgas);
-        _addDepositToken(chain.router, SYMBOL_JEWEL, chain.bridgeTokenJewel);
+        _addDepositToken(chain.router, SYMBOL_JEWEL, address(chain.wgas));
         // Setup initial WJEWEL locked in Bridge
         dealToken(chain, address(chain.bridge), chain.wgas, 10**24);
     }
@@ -45,8 +43,7 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
         }
         chain.quoter.addPool(address(harmonyJewelSwap));
         // Add JEWEL to Router config
-        chain.bridgeTokenJewel = address(harJewel);
-        _addRedeemToken(chain.router, SYMBOL_JEWEL, chain.bridgeTokenJewel);
+        _addRedeemToken(chain.router, SYMBOL_JEWEL, address(harJewel));
         // Setup initial Legacy Jewel balance for JewelBridgeSwap
         dealToken(chain, address(harmonyJewelSwap), harLegacyJewel, 10**24);
     }
