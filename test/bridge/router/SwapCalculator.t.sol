@@ -12,7 +12,7 @@ contract SwapCalculatorHarness is SwapCalculator {
     }
 
     function getAmountOut(
-        address tokenIn,
+        LimitedToken memory tokenIn,
         address tokenOut,
         uint256 amountIn
     ) external view override returns (SwapQuery memory query) {}

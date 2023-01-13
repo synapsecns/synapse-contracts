@@ -6,7 +6,7 @@ import "../libraries/BridgeStructs.sol";
 
 interface ISwapQuoter {
     function getAmountOut(
-        address tokenIn,
+        LimitedToken memory tokenIn,
         address tokenOut,
         uint256 amountIn
     ) external view returns (SwapQuery memory query);

@@ -119,10 +119,13 @@ contract SwapQuoterTest is Utilities06 {
         vm.prank(OWNER);
         quoter.removePool(nEthPool);
         // Usd quotes should remain intact
-        _checkQuotes(ISwap(nUsdPool), nUsdTokens);
+        uint256 allActions = type(uint256).max;
+        _testSwap(nUsdPool, nUsdTokens, allActions);
         // Eth quotes should disappear
-        _checkEmptyQuery(quoter.getAmountOut(address(neth), address(weth), 10**18));
-        _checkEmptyQuery(quoter.getAmountOut(address(weth), address(neth), 10**18));
+        _checkEmptyQuery(address(neth), address(weth), 10**18, allActions);
+        _checkEmptyQuery(address(neth), UniversalToken.ETH_ADDRESS, 10**18, allActions);
+        _checkEmptyQuery(address(weth), address(neth), 10**18, allActions);
+        _checkEmptyQuery(UniversalToken.ETH_ADDRESS, address(neth), 10**18, allActions);
     }
 
     function test_removePool_revert_onlyOwner(address caller) public {
@@ -136,56 +139,101 @@ contract SwapQuoterTest is Utilities06 {
     ▏*║                         TESTS: CHECK QUOTES                          ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function test_getAmountOut_nETH() public {
+    function test_getAmountOut_swap(uint256 actionMask) public {
         test_addPools();
-        // Check quotes with ETH
+        // Check swap quotes with ETH
         nEthTokens[1] = IERC20(UniversalToken.ETH_ADDRESS);
-        _checkQuotes(ISwap(nEthPool), nEthTokens);
+        _testSwap(nEthPool, nEthTokens, actionMask);
+        // Check swap quotes with WETH
         nEthTokens[1] = weth;
-        // Check quotes with WETH
-        _checkQuotes(ISwap(nEthPool), nEthTokens);
+        _testSwap(nEthPool, nEthTokens, actionMask);
+        // Check swap quotes for USD tokens
+        _testSwap(nUsdPool, nUsdTokens, actionMask);
     }
 
-    function test_getAmountOut_nUSD() public {
-        test_addPools();
-        _checkQuotes(ISwap(nUsdPool), nUsdTokens);
+    function test_getAmountOut_handleETH_noPools(uint256 actionMask) public {
+        // Should be able to find the path without any pools
+        _testHandleEth(UniversalToken.ETH_ADDRESS, address(weth), actionMask);
+        _testHandleEth(address(weth), UniversalToken.ETH_ADDRESS, actionMask);
     }
 
-    function test_getAmountOut_handleETH() public {
+    function test_getAmountOut_handleETH_withPools(uint256 actionMask) public {
         test_addPools();
-        address tokenIn = UniversalToken.ETH_ADDRESS;
-        address tokenOut = address(weth);
-        uint256 amountIn = 10**18;
-        _checkHandleEthQuery(quoter.getAmountOut(tokenIn, tokenOut, amountIn), tokenOut, amountIn);
-        tokenIn = address(weth);
-        tokenOut = UniversalToken.ETH_ADDRESS;
-        _checkHandleEthQuery(quoter.getAmountOut(tokenIn, tokenOut, amountIn), tokenOut, amountIn);
+        test_getAmountOut_handleETH_noPools(actionMask);
     }
 
-    function test_getAmountOut_noPath() public {
+    function test_getAmountOut_noPath(uint256 actionMask) public {
         test_addPools();
-        for (uint256 i = 0; i < nEthTokens.length; ++i) {
-            address tokenIn = address(nEthTokens[i]);
-            uint256 amountIn = 10**uint256(ERC20(tokenIn).decimals());
-            for (uint256 j = 0; j < nUsdTokens.length; ++j) {
-                address tokenOut = address(nUsdTokens[j]);
-                uint256 amountOut = 10**uint256(ERC20(tokenOut).decimals());
-                // Check tokenIn -> tokenOut: should not exist
-                _checkEmptyQuery(quoter.getAmountOut(tokenIn, tokenOut, amountIn));
-                // Check tokenOut -> tokenIn: should not exist
-                _checkEmptyQuery(quoter.getAmountOut(tokenOut, tokenIn, amountOut));
+        // Check "no path" with ETH
+        nEthTokens[1] = IERC20(UniversalToken.ETH_ADDRESS);
+        _testNoPath(nEthTokens, nUsdTokens, actionMask);
+        // Check "no path" with WETH
+        nEthTokens[1] = weth;
+        _testNoPath(nEthTokens, nUsdTokens, actionMask);
+    }
+
+    function _testSwap(
+        address pool,
+        IERC20[] memory tokens,
+        uint256 actionMask
+    ) internal {
+        for (uint8 i = 0; i < tokens.length; ++i) {
+            address tokenIn = address(tokens[i]);
+            uint256 amountIn = _getAmountIn(tokenIn);
+            for (uint8 j = 0; j < tokens.length; ++j) {
+                address tokenOut = address(tokens[j]);
+                if (i == j) {
+                    // tokenIn -> tokenIn is always available regardless of actionMask
+                    _checkSameTokenQuery(tokenIn, tokenOut, amountIn, actionMask);
+                } else if (_includes(actionMask, Action.Swap)) {
+                    // Swap is included in the actionMask
+                    uint256 expectedAmountOut = ISwap(pool).calculateSwap(i, j, amountIn);
+                    SynapseParams memory expectedParams = SynapseParams(Action.Swap, pool, i, j);
+                    _checkActionQuery(tokenIn, tokenOut, amountIn, actionMask, expectedAmountOut, expectedParams);
+                } else {
+                    // Swap is excluded from the actionMask
+                    _checkEmptyQuery(tokenIn, tokenOut, amountIn, actionMask);
+                }
             }
         }
-        // Check ETH <-> nUSD pool (should be no path)
-        for (uint256 j = 0; j < nUsdTokens.length; ++j) {
-            address tokenIn = UniversalToken.ETH_ADDRESS;
-            uint256 amountIn = 10**18;
-            address tokenOut = address(nUsdTokens[j]);
-            uint256 amountOut = 10**uint256(ERC20(tokenOut).decimals());
-            // Check tokenIn -> tokenOut: should not exist
-            _checkEmptyQuery(quoter.getAmountOut(tokenIn, tokenOut, amountIn));
-            // Check tokenOut -> tokenIn: should not exist
-            _checkEmptyQuery(quoter.getAmountOut(tokenOut, tokenIn, amountOut));
+    }
+
+    function _testHandleEth(
+        address tokenIn,
+        address tokenOut,
+        uint256 actionMask
+    ) internal {
+        uint256 amountIn = _getAmountIn(tokenIn);
+        if (_includes(actionMask, Action.HandleEth)) {
+            // HandleEth is included in the actionMask
+            uint256 expectedAmountOut = amountIn;
+            SynapseParams memory expectedParams = SynapseParams(
+                Action.HandleEth,
+                address(0),
+                type(uint8).max,
+                type(uint8).max
+            );
+            _checkActionQuery(tokenIn, tokenOut, amountIn, actionMask, expectedAmountOut, expectedParams);
+        } else {
+            // HandleEth is excluded from the actionMask
+            _checkEmptyQuery(tokenIn, tokenOut, amountIn, actionMask);
+        }
+    }
+
+    function _testNoPath(
+        IERC20[] memory tokensA,
+        IERC20[] memory tokensB,
+        uint256 actionMask
+    ) internal {
+        for (uint256 i = 0; i < tokensA.length; ++i) {
+            address tokenA = address(tokensA[i]);
+            uint256 amountInA = _getAmountIn(tokenA);
+            for (uint256 j = 0; j < tokensB.length; ++j) {
+                address tokenB = address(tokensB[i]);
+                uint256 amountInB = _getAmountIn(tokenB);
+                _checkEmptyQuery(tokenA, tokenB, amountInA, actionMask);
+                _checkEmptyQuery(tokenB, tokenA, amountInB, actionMask);
+            }
         }
     }
 
@@ -225,63 +273,76 @@ contract SwapQuoterTest is Utilities06 {
         }
     }
 
-    function _checkQuotes(ISwap pool, IERC20[] memory tokens) internal {
-        uint256 amount = tokens.length;
-        for (uint8 i = 0; i < amount; ++i) {
-            address tokenIn = address(tokens[i]);
-            uint256 amountIn = tokenIn == UniversalToken.ETH_ADDRESS ? 10**18 : 10**uint256(ERC20(tokenIn).decimals());
-            for (uint8 j = 0; j < amount; ++j) {
-                address tokenOut = address(tokens[j]);
-                SwapQuery memory query = quoter.getAmountOut(tokenIn, tokenOut, amountIn);
-                if (i == j) {
-                    _checkEqualTokensQuery(query, tokenIn, amountIn);
-                } else {
-                    assertEq(query.swapAdapter, ROUTER_MOCK, "i != j: !swapAdapter");
-                    assertEq(query.tokenOut, tokenOut, "i != j: !tokenOut");
-                    assertEq(query.minAmountOut, pool.calculateSwap(i, j, amountIn), "i != j: !minAmountOut");
-                    assertEq(query.deadline, type(uint256).max, "i != j: !deadline");
-                    SynapseParams memory params = abi.decode(query.rawParams, (SynapseParams));
-                    assertEq(params.pool, address(pool), "i != j: params.pool");
-                    assertEq(params.tokenIndexFrom, uint256(i), "i != j: params.tokenIndexFrom");
-                    assertEq(params.tokenIndexTo, uint256(j), "i != j: params.tokenIndexTo");
-                }
-            }
-        }
-    }
-
-    function _checkEmptyQuery(SwapQuery memory query) internal {
-        assertEq(query.swapAdapter, address(0), "empty: !swapAdapter");
-        assertEq(query.tokenOut, address(0), "empty: !tokenOut");
-        assertEq(query.minAmountOut, 0, "empty: !minAmountOut");
-        assertEq(query.deadline, 0, "empty: !deadline");
+    function _checkEmptyQuery(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 actionMask
+    ) internal {
+        SwapQuery memory query = quoter.getAmountOut(LimitedToken(actionMask, tokenIn), tokenOut, amountIn);
+        SwapQuery memory emptyQuery;
+        _compareQueries(query, emptyQuery);
         assertEq(query.rawParams, new bytes(0), "empty: !rawParams");
     }
 
-    function _checkEqualTokensQuery(
-        SwapQuery memory query,
+    function _checkSameTokenQuery(
         address tokenIn,
-        uint256 amountIn
+        address tokenOut,
+        uint256 amountIn,
+        uint256 actionMask
     ) internal {
-        assertEq(query.swapAdapter, address(0), "equal: !swapAdapter");
-        assertEq(query.tokenOut, tokenIn, "equal: !tokenOut");
-        assertEq(query.minAmountOut, amountIn, "equal: !minAmountOut");
-        assertEq(query.deadline, 0, "equal: !deadline");
-        assertEq(query.rawParams, new bytes(0), "equal: !rawParams");
+        SwapQuery memory query = quoter.getAmountOut(LimitedToken(actionMask, tokenIn), tokenOut, amountIn);
+        SwapQuery memory sameTokenQuery;
+        (sameTokenQuery.tokenOut, sameTokenQuery.minAmountOut) = (tokenIn, amountIn);
+        _compareQueries(query, sameTokenQuery);
+        assertEq(query.rawParams, new bytes(0), "sameToken: !rawParams");
     }
 
-    function _checkHandleEthQuery(
-        SwapQuery memory query,
+    function _checkActionQuery(
+        address tokenIn,
         address tokenOut,
-        uint256 amountIn
+        uint256 amountIn,
+        uint256 actionMask,
+        uint256 expectedAmountOut,
+        SynapseParams memory expectedParams
     ) internal {
-        assertEq(query.swapAdapter, ROUTER_MOCK, "handleETH: !swapAdapter");
-        assertEq(query.tokenOut, tokenOut, "handleETH: !tokenOut");
-        assertEq(query.minAmountOut, amountIn, "handleETH: !minAmountOut");
-        assertEq(query.deadline, type(uint256).max, "handleETH: !deadline");
+        SwapQuery memory query = quoter.getAmountOut(LimitedToken(actionMask, tokenIn), tokenOut, amountIn);
+        _compareQueries(query, _expectedQuery(tokenOut, expectedAmountOut));
         SynapseParams memory params = abi.decode(query.rawParams, (SynapseParams));
-        assertEq(params.pool, address(0), "!handleETH: pool");
-        assertEq(uint256(params.action), uint256(Action.HandleEth), "!handleETH: action");
-        assertEq(uint256(params.tokenIndexFrom), type(uint8).max, "!handleETH: tokenIndexFrom");
-        assertEq(uint256(params.tokenIndexTo), type(uint8).max, "!handleETH: tokenIndexTo");
+        _compareParams(params, expectedParams);
+    }
+
+    function _compareQueries(SwapQuery memory a, SwapQuery memory b) internal {
+        assertEq(a.swapAdapter, b.swapAdapter, "!swapAdapter");
+        assertEq(a.tokenOut, b.tokenOut, "!tokenOut");
+        assertEq(a.minAmountOut, b.minAmountOut, "!minAmountOut");
+        assertEq(a.deadline, b.deadline, "!deadline");
+    }
+
+    function _compareParams(SynapseParams memory a, SynapseParams memory b) internal {
+        assertEq(a.pool, b.pool, "!pool");
+        assertEq(uint256(a.action), uint256(b.action), "!action");
+        assertEq(uint256(a.tokenIndexFrom), uint256(b.tokenIndexFrom), "!tokenIndexFrom");
+        assertEq(uint256(a.tokenIndexTo), uint256(b.tokenIndexTo), "!tokenIndexTo");
+    }
+
+    function _getAmountIn(address token) internal view returns (uint256) {
+        if (token == UniversalToken.ETH_ADDRESS) return 10**18;
+        return 10**uint256(ERC20(token).decimals());
+    }
+
+    function _includes(uint256 actionMask, Action action) internal pure returns (bool) {
+        return actionMask & (1 << uint256(action)) != 0;
+    }
+
+    function _expectedQuery(address tokenOut, uint256 amountOut) internal pure returns (SwapQuery memory) {
+        return
+            SwapQuery({
+                swapAdapter: ROUTER_MOCK,
+                tokenOut: tokenOut,
+                minAmountOut: amountOut,
+                deadline: type(uint256).max,
+                rawParams: bytes("") // these are checked separately
+            });
     }
 }
