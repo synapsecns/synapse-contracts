@@ -131,7 +131,6 @@ abstract contract SynapseRouterSuite is Utilities06 {
     }
 
     mapping(uint256 => ChainSetup) internal chains;
-    mapping(uint256 => mapping(IERC20 => address)) internal correlatedBridgeToken;
 
     function setUp() public virtual override {
         super.setUp();
@@ -213,13 +212,6 @@ abstract contract SynapseRouterSuite is Utilities06 {
         _addDepositToken(chain.router, SYMBOL_NUSD, address(chain.nusd));
         chain.bridgeTokenEth = address(chain.weth);
         chain.bridgeTokenUsd = address(chain.nusd);
-        // Set correlated tokens
-        setCorrelatedBridgeToken(chain, castToArray(chain.gas, chain.weth), chain.bridgeTokenEth);
-        setCorrelatedBridgeToken(
-            chain,
-            castToArray(chain.nusd, chain.dai, chain.usdc, chain.usdt),
-            chain.bridgeTokenUsd
-        );
         // Setup initial WETH, nUSD Bridge deposits
         dealToken(chain, address(chain.bridge), chain.weth, 10**20);
         chain.nusd.transfer(address(chain.bridge), chain.nusd.balanceOf(address(this)));
@@ -233,9 +225,6 @@ abstract contract SynapseRouterSuite is Utilities06 {
         chain.nEthPool = deployPool(chain, castToArray(chain.neth, chain.weth), 1_000);
         // Deploy nUSD pool: nUSD + USDC + USDT
         chain.nUsdPool = deployPool(chain, castToArray(chain.nusd, chain.usdc, chain.usdt), 100_000);
-        // Set correlated tokens
-        setCorrelatedBridgeToken(chain, castToArray(chain.neth, chain.weth, chain.gas), chain.bridgeTokenEth);
-        setCorrelatedBridgeToken(chain, castToArray(chain.nusd, chain.usdc, chain.usdt), chain.bridgeTokenUsd);
         // Set up Swap Quoter
         chain.quoter.addPool(chain.nEthPool);
         chain.quoter.addPool(chain.nUsdPool);
@@ -249,9 +238,6 @@ abstract contract SynapseRouterSuite is Utilities06 {
         chain.nEthPool = deployPool(chain, castToArray(chain.neth, chain.weth), 2_000);
         // Deploy nUSD pool: nUSD + USDC
         chain.nUsdPool = deployPool(chain, castToArray(chain.nusd, chain.usdc), 200_000);
-        // Set correlated tokens
-        setCorrelatedBridgeToken(chain, castToArray(chain.neth, chain.weth, chain.gas), chain.bridgeTokenEth);
-        setCorrelatedBridgeToken(chain, castToArray(chain.nusd, chain.usdc), chain.bridgeTokenUsd);
         // Set up Swap Quoter
         chain.quoter.addPool(chain.nEthPool);
         chain.quoter.addPool(chain.nUsdPool);
@@ -266,13 +252,6 @@ abstract contract SynapseRouterSuite is Utilities06 {
         chain.nEthPool = deployPool(chain, castToArray(chain.neth, chain.weth), 3_000);
         // Deploy nUSD pool: nUSD + DAI + USDC + USDT
         chain.nUsdPool = deployPool(chain, castToArray(chain.nusd, chain.dai, chain.usdc, chain.usdt), 300_000);
-        // Set correlated tokens
-        setCorrelatedBridgeToken(chain, castToArray(chain.neth, chain.weth), chain.bridgeTokenEth);
-        setCorrelatedBridgeToken(
-            chain,
-            castToArray(chain.nusd, chain.dai, chain.usdc, chain.usdt),
-            chain.bridgeTokenUsd
-        );
         // Set up Swap Quoter
         chain.quoter.addPool(chain.nEthPool);
         chain.quoter.addPool(chain.nUsdPool);
@@ -283,8 +262,6 @@ abstract contract SynapseRouterSuite is Utilities06 {
         deployChainBridge(chain);
         deployChainRouter(chain);
         // no pools on DFK
-        correlatedBridgeToken[chain.chainId][chain.neth] = chain.bridgeTokenEth;
-        correlatedBridgeToken[chain.chainId][chain.nusd] = chain.bridgeTokenUsd;
     }
 
     function deployTestHarmony() public virtual returns (ChainSetup memory chain) {
@@ -296,13 +273,6 @@ abstract contract SynapseRouterSuite is Utilities06 {
         chain.nEthPool = deployPool(chain, castToArray(chain.neth, chain.weth), 500);
         // Deploy nUSD pool: nUSD + DAI + USDC + USDT
         chain.nUsdPool = deployPool(chain, castToArray(chain.nusd, chain.dai, chain.usdc, chain.usdt), 50_000);
-        // Set correlated tokens
-        setCorrelatedBridgeToken(chain, castToArray(chain.neth, chain.weth), chain.bridgeTokenEth);
-        setCorrelatedBridgeToken(
-            chain,
-            castToArray(chain.nusd, chain.dai, chain.usdc, chain.usdt),
-            chain.bridgeTokenUsd
-        );
         // Set up Swap Quoter
         chain.quoter.addPool(chain.nEthPool);
         chain.quoter.addPool(chain.nUsdPool);
@@ -512,30 +482,6 @@ abstract contract SynapseRouterSuite is Utilities06 {
         } else if (bridgeToken == chain.bridgeTokenJewel) {
             symbol = SYMBOL_JEWEL;
         }
-    }
-
-    function setCorrelatedBridgeToken(
-        ChainSetup memory chain,
-        IERC20[] memory tokens,
-        address bridgeToken
-    ) public {
-        for (uint256 i = 0; i < tokens.length; ++i) {
-            correlatedBridgeToken[chain.chainId][tokens[i]] = bridgeToken;
-        }
-    }
-
-    /// @dev Function is marked virtual to allow adding custom tokens in separate tests.
-    function getCorrelatedBridgeToken(ChainSetup memory chain, IERC20 token)
-        public
-        view
-        virtual
-        returns (string memory symbol, address bridgeToken)
-    {
-        // In practice, one is expected to store the global bridge token addresses,
-        // and a list of "correlated" tokens for every bridge token.
-        // This method is just mocking the storage logic.
-        bridgeToken = correlatedBridgeToken[chain.chainId][token];
-        symbol = getBridgeTokenSymbol(chain, bridgeToken);
     }
 
     function getRecipientBalance(ChainSetup memory chain, address token) public view returns (uint256) {
