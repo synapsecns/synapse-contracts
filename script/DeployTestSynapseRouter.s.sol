@@ -22,7 +22,13 @@ contract DeployTestSynapseRouter is BaseScript {
     string public constant ROUTER = "SynapseRouter";
     string public constant QUOTER = "SwapQuoter";
 
-    function deploy(string memory chain) public {
+    function run() external {
+        // Use current chainId by default
+        deploy(_chainId());
+    }
+
+    function deploy(uint256 chainId) public {
+        string memory chain = loadChainName(chainId);
         string memory config = vm.readFile(_concat("./script/router_", chain, ".json"));
         address bridge = config.readAddress("bridge");
         address wgas = config.readAddress("wgas");
@@ -87,13 +93,5 @@ contract DeployTestSynapseRouter is BaseScript {
         }
 
         vm.stopBroadcast();
-    }
-
-    function deployAvax() external {
-        deploy("avalanche");
-    }
-
-    function deployArb() external {
-        deploy("arbitrum");
     }
 }

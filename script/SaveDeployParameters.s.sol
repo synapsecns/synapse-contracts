@@ -12,13 +12,12 @@ contract SaveDeployParameters is BridgeConfigV3Lens, BaseScript {
     uint256 internal constant ETH_BLOCK_NUMBER = 16_342_000;
 
     function run() external {
-        saveChainConfig("avalanche");
-        saveChainConfig("arbitrum");
+        // Use current chainId by default
+        saveChainConfig(_chainId());
     }
 
-    function saveChainConfig(string memory chain) public {
-        uint256 chainId = _loadChainId(chain);
-        require(chainId != 0, "Chain not found");
+    function saveChainConfig(uint256 chainId) public {
+        string memory chain = loadChainName(chainId);
         address bridge = loadDeploymentAddress(chain, "SynapseBridge");
         require(bridge != address(0), "Bridge not found");
         address wgas = loadDeploymentAddress(chain, "WGAS");
