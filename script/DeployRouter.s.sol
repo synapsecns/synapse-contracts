@@ -6,7 +6,7 @@ import "./utils/BaseScript.sol";
 import "../contracts/bridge/router/SynapseRouter.sol";
 import "../contracts/bridge/router/SwapQuoter.sol";
 
-contract DeployTestSynapseRouter is BaseScript {
+contract DeployRouterScript is BaseScript {
     using stdJson for string;
 
     // Alphabetical order to get the JSON parsing working
@@ -29,7 +29,7 @@ contract DeployTestSynapseRouter is BaseScript {
 
     function deploy(uint256 chainId) public {
         string memory chain = loadChainName(chainId);
-        string memory config = vm.readFile(_concat("./script/router_", chain, ".json"));
+        string memory config = vm.readFile(_deployConfigPath(chain, ROUTER));
         address bridge = config.readAddress("bridge");
         address wgas = config.readAddress("wgas");
         address[] memory pools = config.readAddressArray("pools");

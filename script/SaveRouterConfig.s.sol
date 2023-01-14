@@ -5,11 +5,13 @@ pragma experimental ABIEncoderV2;
 import "./utils/BaseScript.sol";
 import "../contracts/bridge/utils/BridgeConfigV3Lens.sol";
 
-contract SaveDeployParameters is BridgeConfigV3Lens, BaseScript {
+contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
     using stdJson for string;
 
     // 2023-01-05 (Mainnet)
     uint256 internal constant ETH_BLOCK_NUMBER = 16_342_000;
+
+    string public constant ROUTER = "SynapseRouter";
 
     function run() external {
         // Use current chainId by default
@@ -49,6 +51,6 @@ contract SaveDeployParameters is BridgeConfigV3Lens, BaseScript {
         fullConfig.serialize("tokens", tokensConfig);
         fullConfig = fullConfig.serialize("pools", pools);
 
-        vm.writeJson(fullConfig, _concat("./script/router_", chain, ".json"));
+        saveDeployConfig(chain, ROUTER, fullConfig);
     }
 }

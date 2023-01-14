@@ -69,12 +69,21 @@ contract BaseScript is Script {
         }
     }
 
+    function saveDeployConfig(
+        string memory chain,
+        string memory contractName,
+        string memory config
+    ) public {
+        console.log("Saved: config for [%s] on [%s]", contractName, chain);
+        vm.writeJson(config, _deployConfigPath(chain, contractName));
+    }
+
     function saveDeployment(
         string memory chain,
         string memory contractName,
         address deployedAt
     ) public {
-        console.log("%s deployed at %s", contractName, deployedAt);
+        console.log("Deployed: [%s] on [%s] at %s", contractName, chain, deployedAt);
         string memory deployment = "deployment";
         deployment = deployment.serialize("address", deployedAt);
         // TODO: figure out if we want to save ABI as well
@@ -84,6 +93,17 @@ contract BaseScript is Script {
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                           INTERNAL HELPERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    /// @dev Returns the full path to the local deploy configs directory
+    function _deployConfigsPath() internal view returns (string memory) {
+        return _concat(vm.projectRoot(), "/script/configs/");
+    }
+
+    /// @dev Returns the full path to the contract deploy config JSON
+    function _deployConfigPath(string memory chain, string memory contractName) internal view returns (string memory) {
+        string memory chainPath = _concat(_deployConfigsPath(), chain, "/");
+        return _concat(chainPath, contractName, ".dc.json");
+    }
 
     /// @dev Returns the full path to the local deployment directory
     function _deploymentsPath() internal view returns (string memory) {
@@ -106,10 +126,11 @@ contract BaseScript is Script {
 
     /// @dev Returns the chainId for the given chain
     /// Will return 0, if chainId is not saved in the deployments
-    function _loadChainId(string memory chain) internal view returns (uint256 chainId) {
+    function _loadChainId(string memory chain) internal returns (uint256 chainId) {
         string memory path = _concat(_deploymentsPath(), chain, "/.chainId");
         try vm.readLine(path) returns (string memory str) {
             chainId = _strToInt(str);
+            vm.closeFile(path);
         } catch {
             // Return 0 if .chainId doesn't exist
             chainId = 0;
