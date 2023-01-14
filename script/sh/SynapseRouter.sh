@@ -29,7 +29,7 @@ fi
 # First, fetch the deploy config from Ethereum's BridgeConfig
 echo "Launching script to save deploy config"
 # Break execution, if script failed
-bash -x -c "forge script --silent -f $1 script/router/SaveRouterConfig.s.sol || exit 1"
+bash -x -c "forge script --silent -f $1 script/router/SaveRouterConfig.s.sol" || exit 1
 
 # Then, launch the deploy script
 echo "Launching script to deploy SynapseRouter"
