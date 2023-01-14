@@ -22,3 +22,7 @@ verbosity = 4
 [rpc_endpoints]
 arbitrum = "${ARBITRUM_API}"
 avalanche = "${AVAX_API}"
+
+[etherscan]
+arbitrum = { key = "${ETHERSCAN_ARBITRUM_KEY}" }
+avalanche = { key = "${ETHERSCAN_AVALANCHE_KEY}" }
