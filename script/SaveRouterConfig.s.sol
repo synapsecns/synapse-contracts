@@ -20,6 +20,10 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
 
     function saveChainConfig(uint256 chainId) public {
         string memory chain = loadChainName(chainId);
+        if (deployConfigExists(chain, ROUTER)) {
+            console.log("Skipping: deploy config for [%s] on [%s] already exists", ROUTER, chain);
+            return;
+        }
         address bridge = loadDeployment(chain, "SynapseBridge");
         address wgas = loadDeployment(chain, "WGAS");
 
