@@ -23,6 +23,23 @@ contract BaseScript is Script {
         broadcasterPK = vm.envUint("DEPLOYER_PRIVATE_KEY");
     }
 
+    /// @notice Loads chain name with matching chainId from the local deployments.
+    /// @dev Will revert if current chainid is not saved.
+    function loadChainName(uint256 chainId) public returns (string memory chain) {
+        require(chainId != 0, "Incorrect chainId");
+        (bytes[] memory chains, uint256[] memory chainIds) = loadChains();
+        for (uint256 i = 0; i < chainIds.length; ++i) {
+            if (chainIds[i] == chainId) {
+                require(bytes(chain).length == 0, "Multiple matching chains found");
+                chain = string(chains[i]);
+                // To make sure there's only one matching chain we don't return chain right away,
+                // instead we check every chain in "./deployments"
+            }
+        }
+        // Check that we found anything
+        require(bytes(chain).length != 0, "No matching chains found");
+    }
+
     /// @notice Loads all chains from the local deployments, alongside with their chainId.
     /// If chainId is not saved, the default zero value will be returned
     function loadChains() public returns (bytes[] memory chains, uint256[] memory chainIds) {
@@ -77,6 +94,14 @@ contract BaseScript is Script {
     function _deploymentPath(string memory chain, string memory contractName) internal view returns (string memory) {
         string memory chainPath = _concat(_deploymentsPath(), chain, "/");
         return _concat(chainPath, contractName, ".json");
+    }
+
+    /// @dev Wrapper for block.chainid, which is not directly accessible in 0.6.12
+    function _chainId() internal pure returns (uint256 chainId) {
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            chainId := chainid()
+        }
     }
 
     /// @dev Returns the chainId for the given chain
