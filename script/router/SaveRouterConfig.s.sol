@@ -2,8 +2,8 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "./utils/BaseScript.sol";
-import "../contracts/bridge/utils/BridgeConfigV3Lens.sol";
+import "../utils/BaseScript.sol";
+import "../../contracts/bridge/utils/BridgeConfigV3Lens.sol";
 
 contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
     using stdJson for string;
