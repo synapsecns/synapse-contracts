@@ -20,10 +20,8 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
 
     function saveChainConfig(uint256 chainId) public {
         string memory chain = loadChainName(chainId);
-        address bridge = loadDeploymentAddress(chain, "SynapseBridge");
-        require(bridge != address(0), "Bridge not found");
-        address wgas = loadDeploymentAddress(chain, "WGAS");
-        require(wgas != address(0), "WGAS not found");
+        address bridge = loadDeployment(chain, "SynapseBridge");
+        address wgas = loadDeployment(chain, "WGAS");
 
         string memory fullConfig = "full";
         string memory tokensConfig = "";

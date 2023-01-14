@@ -55,8 +55,20 @@ contract BaseScript is Script {
         }
     }
 
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                          DEPLOYMENT ADDRESS                          ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
     /// @notice Returns the deployment for a contract on a given chain, if it exists.
-    function loadDeploymentAddress(string memory chain, string memory contractName)
+    /// Reverts if it doesn't exist.
+    function loadDeployment(string memory chain, string memory contractName) public view returns (address deployment) {
+        deployment = tryLoadDeployment(chain, contractName);
+        require(deployment != address(0), _concat(contractName, " doesn't exist on ", chain));
+    }
+
+    /// @notice Returns the deployment for a contract on a given chain, if it exists.
+    /// Returns address(0), if it doesn't exist.
+    function tryLoadDeployment(string memory chain, string memory contractName)
         public
         view
         returns (address deployment)
@@ -69,15 +81,7 @@ contract BaseScript is Script {
         }
     }
 
-    function saveDeployConfig(
-        string memory chain,
-        string memory contractName,
-        string memory config
-    ) public {
-        console.log("Saved: config for [%s] on [%s]", contractName, chain);
-        vm.writeJson(config, _deployConfigPath(chain, contractName));
-    }
-
+    /// @notice Saves the deployment JSON for a deployed contract.
     function saveDeployment(
         string memory chain,
         string memory contractName,
@@ -88,6 +92,39 @@ contract BaseScript is Script {
         deployment = deployment.serialize("address", deployedAt);
         // TODO: figure out if we want to save ABI as well
         deployment.write(_deploymentPath(chain, contractName));
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                            DEPLOY CONFIG                             ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    /// @notice Checks if deploy config exists for a given contract on a given chain.
+    function deployConfigExists(string memory chain, string memory contractName) public returns (bool) {
+        try vm.fsMetadata(_deployConfigPath(chain, contractName)) {
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    /// @notice Loads deploy config for a given contract on a given chain.
+    /// Will revert if config doesn't exist.
+    function loadDeployConfig(string memory chain, string memory contractName)
+        public
+        view
+        returns (string memory json)
+    {
+        json = vm.readFile(_deployConfigPath(chain, contractName));
+    }
+
+    /// @notice Saves deploy config for a given contract on a given chain.
+    function saveDeployConfig(
+        string memory chain,
+        string memory contractName,
+        string memory config
+    ) public {
+        console.log("Saved: config for [%s] on [%s]", contractName, chain);
+        vm.writeJson(config, _deployConfigPath(chain, contractName));
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

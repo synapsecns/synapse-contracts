@@ -29,7 +29,7 @@ contract DeployRouterScript is BaseScript {
 
     function deploy(uint256 chainId) public {
         string memory chain = loadChainName(chainId);
-        string memory config = vm.readFile(_deployConfigPath(chain, ROUTER));
+        string memory config = loadDeployConfig(chain, ROUTER);
         address bridge = config.readAddress("bridge");
         address wgas = config.readAddress("wgas");
         address[] memory pools = config.readAddressArray("pools");
@@ -44,7 +44,7 @@ contract DeployRouterScript is BaseScript {
 
         vm.startBroadcast(broadcasterPK);
         SynapseRouter router;
-        address routerDeployment = loadDeploymentAddress(chain, ROUTER);
+        address routerDeployment = tryLoadDeployment(chain, ROUTER);
         if (routerDeployment == address(0)) {
             router = new SynapseRouter(bridge);
             saveDeployment(chain, ROUTER, address(router));
@@ -74,7 +74,7 @@ contract DeployRouterScript is BaseScript {
         }
 
         SwapQuoter quoter;
-        address quoterDeployment = loadDeploymentAddress(chain, QUOTER);
+        address quoterDeployment = tryLoadDeployment(chain, QUOTER);
         if (quoterDeployment == address(0)) {
             quoter = new SwapQuoter(address(router), address(wgas));
             saveDeployment(chain, QUOTER, address(quoter));
