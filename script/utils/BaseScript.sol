@@ -5,7 +5,11 @@ pragma experimental ABIEncoderV2;
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 
+import "@openzeppelin/contracts/utils/Address.sol";
+
 contract BaseScript is Script {
+    using Address for address;
+
     bytes1 private constant NEWLINE = bytes1("\n");
     bytes1 private constant ZERO = bytes1("0");
     bytes1 private constant NINE = bytes1("9");
@@ -75,6 +79,8 @@ contract BaseScript is Script {
     {
         try vm.readFile(_deploymentPath(chain, contractName)) returns (string memory json) {
             deployment = json.readAddress("address");
+            // Check if there's actual bytecode at the deployment address
+            if (!deployment.isContract()) deployment = address(0);
         } catch {
             // Doesn't exist
             deployment = address(0);
