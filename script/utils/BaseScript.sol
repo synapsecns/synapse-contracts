@@ -60,7 +60,7 @@ contract BaseScript is Script {
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                          DEPLOYMENT ADDRESS                          ║*▕
+    ▏*║                              DEPLOYMENT                              ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /// @notice Returns the deployment for a contract on a given chain, if it exists.
@@ -95,9 +95,23 @@ contract BaseScript is Script {
     ) public {
         console.log("Deployed: [%s] on [%s] at %s", contractName, chain, deployedAt);
         string memory deployment = "deployment";
+        // First, write only the deployment address
         deployment = deployment.serialize("address", deployedAt);
-        // TODO: figure out if we want to save ABI as well
         deployment.write(_deploymentPath(chain, contractName));
+        // Then, initiate the jq command to add "abi" as the next key
+        // This makes sure that "address" value is printed first later
+        string[] memory inputs = new string[](6);
+        inputs[0] = "jq";
+        // Read the full artifact file into $artifact variable
+        inputs[1] = "--argfile";
+        inputs[2] = "artifact";
+        inputs[3] = _artifactPath(contractName);
+        // Set value for ".abi" key to artifact's ABI
+        inputs[4] = ".abi = $artifact.abi";
+        inputs[5] = _deploymentPath(chain, contractName);
+        bytes memory full = vm.ffi(inputs);
+        // Finally, print the updated deployment JSON
+        string(full).write(_deploymentPath(chain, contractName));
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -136,6 +150,16 @@ contract BaseScript is Script {
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                           INTERNAL HELPERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    /// @dev Returns the full path to the local deploy configs directory
+    function _artifactsPath() internal view returns (string memory) {
+        return _concat(vm.projectRoot(), "/artifacts/");
+    }
+
+    function _artifactPath(string memory contractName) internal view returns (string memory) {
+        string memory contractPath = _concat(_artifactsPath(), contractName, ".sol/");
+        return _concat(contractPath, contractName, ".json");
+    }
 
     /// @dev Returns the full path to the local deploy configs directory
     function _deployConfigsPath() internal view returns (string memory) {
