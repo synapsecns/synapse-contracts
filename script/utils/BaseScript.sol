@@ -78,9 +78,8 @@ contract BaseScript is Script {
         returns (address deployment)
     {
         try vm.readFile(_deploymentPath(chain, contractName)) returns (string memory json) {
+            // We assume that if a deployment file exists, the contract is indeed deployed
             deployment = json.readAddress("address");
-            // Check if there's actual bytecode at the deployment address
-            if (!deployment.isContract()) deployment = address(0);
         } catch {
             // Doesn't exist
             deployment = address(0);

@@ -12,6 +12,7 @@ case "$2" in
   ;;
 "")
   echo "Deploy tx WILL NOT be broadcasted on-chain."
+  deployArgs="--sig 'runDry()'"
   ;;
 *)
   echo "Unknown paratemer: $2"

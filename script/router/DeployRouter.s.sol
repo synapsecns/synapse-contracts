@@ -23,11 +23,16 @@ contract DeployRouterScript is BaseScript {
     string public constant QUOTER = "SwapQuoter";
 
     function run() external {
-        // Use current chainId by default
-        deploy(_chainId());
+        // Use current chainId, do the broadcast
+        deploy(_chainId(), true);
     }
 
-    function deploy(uint256 chainId) public {
+    function runDry() external {
+        // Use current chainId, don't broadcast anything
+        deploy(_chainId(), false);
+    }
+
+    function deploy(uint256 chainId, bool broadcast) public {
         string memory chain = loadChainName(chainId);
         string memory config = loadDeployConfig(chain, ROUTER);
         address bridge = config.readAddress("bridge");
@@ -42,12 +47,12 @@ contract DeployRouterScript is BaseScript {
         }
         console.log("Tokens: %s", ids.length);
 
-        vm.startBroadcast(broadcasterPK);
+        if (broadcast) vm.startBroadcast(broadcasterPK);
         SynapseRouter router;
         address routerDeployment = tryLoadDeployment(chain, ROUTER);
         if (routerDeployment == address(0)) {
             router = new SynapseRouter(bridge);
-            saveDeployment(chain, ROUTER, address(router));
+            if (broadcast) saveDeployment(chain, ROUTER, address(router));
             LocalBridgeConfig.BridgeTokenConfig[] memory tokens = new LocalBridgeConfig.BridgeTokenConfig[](ids.length);
             for (uint256 i = 0; i < ids.length; ++i) {
                 bytes memory rawConfig = config.parseRaw(_concat("tokens.", ids[i]));
@@ -77,7 +82,7 @@ contract DeployRouterScript is BaseScript {
         address quoterDeployment = tryLoadDeployment(chain, QUOTER);
         if (quoterDeployment == address(0)) {
             quoter = new SwapQuoter(address(router), address(wgas));
-            saveDeployment(chain, QUOTER, address(quoter));
+            if (broadcast) saveDeployment(chain, QUOTER, address(quoter));
             quoter.addPools(pools);
             console.log("Pools added");
         } else {
@@ -92,6 +97,6 @@ contract DeployRouterScript is BaseScript {
             console.log("%s already set up", QUOTER);
         }
 
-        vm.stopBroadcast();
+        if (broadcast) vm.stopBroadcast();
     }
 }
