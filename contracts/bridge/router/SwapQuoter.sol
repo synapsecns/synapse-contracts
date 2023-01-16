@@ -106,13 +106,24 @@ contract SwapQuoter is SwapCalculator, Ownable {
      * Returns the `SwapQuery` struct, that can be used on SynapseRouter.
      * minAmountOut and deadline fields will need to be adjusted based on the swap settings.
      * @dev If tokenIn or tokenOut is ETH_ADDRESS, only the pools having WETH as a pool token will be considered.
+     * Three potential outcomes are available:
+     * 1. `tokenIn` and `tokenOut` represent the same token address (identical tokens).
+     * 2. `tokenIn` and `tokenOut` represent different addresses. No trade path from `tokenIn` to `tokenOut` is found.
+     * 3. `tokenIn` and `tokenOut` represent different addresses. Trade path from `tokenIn` to `tokenOut` is found.
+     * The exact composition of the returned struct for every case is documented in the return parameter documentation.
      * @param tokenIn   Struct with following information:
      *                  - actionMask    Bitmask representing what actions are available for doing tokenIn -> tokenOut
      *                  - token         Token address to swap from
      * @param tokenOut  Token address to swap to
      * @param amountIn  Amount of tokens to swap from
-     * @return query    Empty struct, if no path is found with the requested `actionMask`.
-     *                  SynapseRouter-compatible struct, if a path between tokens is found.
+     * @return query    Struct representing trade path between tokenIn and tokenOut:
+     *                  - swapAdapter: adapter address that would handle the swap. Address(0) if no path is found,
+     *                  or tokens are identical.
+     *                  - tokenOut: always equals to the provided `tokenOut`, even if no path if found.
+     *                  - minAmountOut: amount of `tokenOut`, if swap was completed now. 0, if no path is found.
+     *                  - deadline: 2**256-1 if path was found, or tokens are identical. 0, if no path is found.
+     *                  - rawParams: ABI-encoded SynapseParams struct indicating the swap parameters. Empty string,
+     *                  if no path is found, or tokens are identical.
      */
     function getAmountOut(
         LimitedToken memory tokenIn,
@@ -135,6 +146,8 @@ contract SwapQuoter is SwapCalculator, Ownable {
     /**
      * @dev Finds the best pool for a single tokenIn -> tokenOut swap from the list of supported pools.
      * Or, if `performQuoteCall` is set to False, checks if the above swap is possible via any of the supported pools.
+     * Only populates the `minAmountOut` and `rawParams` fields, unless no trade path is found between the tokens.
+     * Other fields are supposed to be populated in the caller function.
      */
     function _getAmountOut(
         LimitedToken memory tokenIn,
@@ -151,7 +164,7 @@ contract SwapQuoter is SwapCalculator, Ownable {
             return query;
         }
         uint256 actionMask = tokenIn.actionMask;
-        // Check if ETH <> WETH (Action.HandleEth) could fulfill tokenIn -> tokenOut request.
+        // Check if ETH <> WETH (Action.HandleEth) could fulfill tokenInglobal-bridge-zap -> tokenOut request.
         _checkHandleETH(tokenIn.token, tokenOut, amountIn, query, actionMask, performQuoteCall);
         uint256 amount = poolsAmount();
         // Struct to get around stack-too-deep error
