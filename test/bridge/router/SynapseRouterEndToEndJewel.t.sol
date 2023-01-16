@@ -18,23 +18,19 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
 
     function deployTestAvalanche() public virtual override returns (ChainSetup memory chain) {
         chain = super.deployTestAvalanche();
-        avaJewel = deploySynapseERC20(chain, "AVA JEWEL");
-        // Add JEWEL to Router config
-        _addRedeemToken(chain.router, SYMBOL_JEWEL, address(avaJewel));
+        avaJewel = deploySynapseERC20(chain, SYMBOL_JEWEL, 18);
     }
 
     function deployTestDFK() public virtual override returns (ChainSetup memory chain) {
         chain = super.deployTestDFK();
         // Add JEWEL to Router config
-        _addDepositToken(chain.router, SYMBOL_JEWEL, address(chain.wgas));
-        // Setup initial WJEWEL locked in Bridge
-        dealToken(chain, address(chain.bridge), chain.wgas, 10**24);
+        _addDepositToken(chain, SYMBOL_JEWEL, address(chain.wgas));
     }
 
     function deployTestHarmony() public virtual override returns (ChainSetup memory chain) {
         chain = super.deployTestHarmony();
-        harJewel = deploySynapseERC20(chain, "HAR JEWEL");
-        harLegacyJewel = deployERC20("HAR LEGACY JEWEL", 18);
+        harJewel = deploySynapseERC20(chain, SYMBOL_JEWEL, 18);
+        harLegacyJewel = deployERC20(chain, "LEGACY JEWEL", 18);
         harmonyJewelSwap = new JewelBridgeSwap(harLegacyJewel, harJewel);
         // JewelSwap should have a minter role
         {
@@ -42,10 +38,8 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             _harJewel.grantRole(_harJewel.MINTER_ROLE(), address(harmonyJewelSwap));
         }
         chain.quoter.addPool(address(harmonyJewelSwap));
-        // Add JEWEL to Router config
-        _addRedeemToken(chain.router, SYMBOL_JEWEL, address(harJewel));
         // Setup initial Legacy Jewel balance for JewelBridgeSwap
-        dealToken(chain, address(harmonyJewelSwap), harLegacyJewel, 10**24);
+        mintInitialTestTokens(chain, address(harmonyJewelSwap), address(harLegacyJewel), 10**24);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

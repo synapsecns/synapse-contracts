@@ -93,6 +93,8 @@ contract ValidatorMock {
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
 abstract contract SynapseRouterSuite is Utilities06 {
+    using SafeERC20 for IERC20;
+
     address internal constant USER = address(4242);
     address internal constant TO = address(2424);
 
@@ -162,21 +164,17 @@ abstract contract SynapseRouterSuite is Utilities06 {
         // Convenience shortcut
         chain.gas = IERC20(UniversalToken.ETH_ADDRESS);
         // Deploy WGAS
-        IWETH9 wgas = deployWETH(concat(chain.name, " W", gasName));
-        chain.wgas = IERC20(address(wgas));
-        deal(address(this), 10**24);
-        wgas.deposit{value: 10**24}();
-
+        deployWETH(chain, gasName);
         // Deploy WETH
         if (equals(gasName, "ETH")) {
             chain.weth = chain.wgas;
         } else {
-            chain.weth = deployERC20(concat(chain.name, " WETH"), 18);
+            chain.weth = deployERC20(chain, "WETH", 18);
         }
         // Deploy USD tokens (not all necessarily used later)
-        chain.dai = deployERC20(concat(chain.name, " DAI"), 18);
-        chain.usdc = deployERC20(concat(chain.name, " USDC"), 6);
-        chain.usdt = deployERC20(concat(chain.name, " USDT"), 6);
+        chain.dai = deployERC20(chain, "DAI", 18);
+        chain.usdc = deployERC20(chain, "USDC", 6);
+        chain.usdt = deployERC20(chain, "USDT", 6);
     }
 
     function deployChainBridge(ChainSetup memory chain) public virtual {
@@ -196,10 +194,8 @@ abstract contract SynapseRouterSuite is Utilities06 {
 
         // Deploy Bridge tokens
         if (!equals(chain.name, "ETH")) {
-            chain.neth = deploySynapseERC20(chain, concat(chain.name, " nETH"));
-            chain.nusd = deploySynapseERC20(chain, concat(chain.name, " nUSD"));
-            _addRedeemToken(chain.router, SYMBOL_NETH, address(chain.neth));
-            _addRedeemToken(chain.router, SYMBOL_NUSD, address(chain.nusd));
+            chain.neth = deploySynapseERC20(chain, SYMBOL_NETH, 18);
+            chain.nusd = deploySynapseERC20(chain, SYMBOL_NUSD, 18);
         }
     }
 
@@ -214,17 +210,11 @@ abstract contract SynapseRouterSuite is Utilities06 {
         vm.label(nexusLpToken, "ETH nUSD");
         chain.nusd = IERC20(nexusLpToken);
         // Setup bridge tokens for Mainnet
-        _addDepositToken(chain.router, SYMBOL_NETH, address(chain.weth));
-        _addDepositToken(chain.router, SYMBOL_NUSD, address(chain.nusd));
-        _addDepositToken(chain.router, SYMBOL_DAI, address(chain.dai));
-        _addDepositToken(chain.router, SYMBOL_USDC, address(chain.usdc));
-        _addDepositToken(chain.router, SYMBOL_USDT, address(chain.usdt));
-        // Setup initial WETH, nUSD, DAI, USDC, USDT Bridge deposits
-        dealToken(chain, address(chain.bridge), chain.weth, 10**24);
-        chain.nusd.transfer(address(chain.bridge), chain.nusd.balanceOf(address(this)));
-        dealToken(chain, address(chain.bridge), chain.dai, 10**24);
-        dealToken(chain, address(chain.bridge), chain.usdc, 10**12);
-        dealToken(chain, address(chain.bridge), chain.usdt, 10**12);
+        _addDepositToken(chain, SYMBOL_NETH, address(chain.weth));
+        _addDepositToken(chain, SYMBOL_NUSD, address(chain.nusd));
+        _addDepositToken(chain, SYMBOL_DAI, address(chain.dai));
+        _addDepositToken(chain, SYMBOL_USDC, address(chain.usdc));
+        _addDepositToken(chain, SYMBOL_USDT, address(chain.usdt));
     }
 
     function deployTestArbitrum() public virtual returns (ChainSetup memory chain) {
@@ -288,22 +278,8 @@ abstract contract SynapseRouterSuite is Utilities06 {
         chain.quoter.addPool(chain.nUsdPool);
     }
 
-    function deploySynapseERC20(ChainSetup memory chain, string memory name) public returns (IERC20 token) {
-        token = deploySynapseERC20(chain, name, 18);
-    }
-
-    function deploySynapseERC20(
-        ChainSetup memory chain,
-        string memory name,
-        uint8 decimals
-    ) public returns (IERC20 token) {
-        SynapseERC20 _token = deploySynapseERC20(name, decimals);
-        _token.grantRole(_token.MINTER_ROLE(), address(chain.bridge));
-        token = IERC20(address(_token));
-    }
-
     function deployPool(
-        ChainSetup memory chain,
+        ChainSetup memory,
         IERC20[] memory tokens,
         uint256 seedAmount
     ) public virtual returns (address pool) {
@@ -313,7 +289,7 @@ abstract contract SynapseRouterSuite is Utilities06 {
             uint256 decimals = ERC20(address(tokens[i])).decimals();
             // Make the initial pool slightly imbalanced
             amounts[i] = (seedAmount * 10**decimals * (1000 + i)) / 1000;
-            dealToken(chain, address(this), tokens[i], amounts[i]);
+            // Test contract should have enough tokes for testing purposes
             tokens[i].approve(pool, amounts[i]);
         }
         ISwap(pool).addLiquidity(amounts, 0, type(uint256).max);
@@ -388,28 +364,43 @@ abstract contract SynapseRouterSuite is Utilities06 {
             // Deal ETH to user
             deal(USER, amountIn);
         } else {
-            dealToken(origin, USER, tokenIn, amountIn);
+            tokenIn.safeTransfer(USER, amountIn);
             // Approve token spending
             vm.prank(USER);
             tokenIn.approve(address(origin.router), amountIn);
         }
     }
 
-    function dealToken(
+    /// @dev Mints the initial balance of the test tokens. Should not be used with Mainnet nUSD.
+    function mintInitialTestTokens(
         ChainSetup memory chain,
         address to,
-        IERC20 token,
+        address token,
         uint256 amount
     ) public {
-        if (token == chain.wgas) {
-            // Deal ETH to user and wrap it into WETH
-            deal(to, amount);
-            vm.prank(to);
-            IWETH9(payable(address(token))).deposit{value: amount}();
+        if (token == address(chain.wgas)) {
+            deal(address(this), amount);
+            IWETH9(payable(token)).deposit{value: amount}();
         } else {
-            // Deal token to user and update total supply
-            deal(address(token), to, amount, true);
+            require(!equals(chain.name, "ETH") || token != address(chain.nusd), "Can't mint Nexus nUSD");
+            // solhint-disable-next-line no-empty-blocks
+            try SynapseERC20(token).mint(address(this), amount) {
+                // Mint successful
+            } catch {
+                // Deal tokens using cheat codes and update the total supply
+                deal(token, address(this), amount, true);
+            }
         }
+        if (to != address(this)) {
+            IERC20(token).safeTransfer(to, amount);
+        }
+    }
+
+    function setupBridgeDeposit(ChainSetup memory chain, IERC20 token) public {
+        // Use half of the test contract balance
+        uint256 amount = token.balanceOf(address(this)) / 2;
+        require(amount != 0, "Failed to setup initial deposit");
+        token.safeTransfer(address(chain.bridge), amount);
     }
 
     function performQuoteCalls(
@@ -471,20 +462,68 @@ abstract contract SynapseRouterSuite is Utilities06 {
         }
     }
 
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                           DEPLOY OVERRIDES                           ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    /**
+     * @notice Deploys and labels an ERC20 mock. Mints the tokens for tests to this address.
+     */
+    function deployERC20(
+        ChainSetup memory chain,
+        string memory symbol,
+        uint8 decimals
+    ) public returns (ERC20 token) {
+        token = deployERC20(concat(chain.name, " ", symbol), decimals);
+        mintInitialTestTokens(chain, address(this), address(token), 10**uint256(decimals + 9));
+    }
+
+    /**
+     * @notice Deploys and labels a SynapseERC20 token.
+     * Mints the tokens for tests to this address.
+     * Adds token as Redeem bridge token.
+     */
+    function deploySynapseERC20(
+        ChainSetup memory chain,
+        string memory symbol,
+        uint8 decimals
+    ) public returns (IERC20 token) {
+        SynapseERC20 _token = deploySynapseERC20(concat(chain.name, " ", symbol), decimals);
+        _token.grantRole(_token.MINTER_ROLE(), address(chain.bridge));
+        _token.grantRole(_token.MINTER_ROLE(), address(this));
+        token = IERC20(address(_token));
+        mintInitialTestTokens(chain, address(this), address(token), 10**uint256(decimals + 9));
+        _addRedeemToken(chain, symbol, address(token));
+    }
+
+    /**
+     * @notice Deploys and labels a WETH implementation. Mints the tokens for tests to this address.
+     */
+    function deployWETH(ChainSetup memory chain, string memory gasName) public returns (IWETH9 token) {
+        token = deployWETH(concat(chain.name, " W", gasName));
+        chain.wgas = IERC20(address(token));
+        mintInitialTestTokens(chain, address(this), address(token), 10**uint256(18 + 9));
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                           INTERNAL HELPERS                           ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
     function _addDepositToken(
-        SynapseRouter router,
+        ChainSetup memory chain,
         string memory symbol,
         address token
     ) internal {
-        _addToken(router, symbol, token, LocalBridgeConfig.TokenType.Deposit, token);
+        _addToken(chain.router, symbol, token, LocalBridgeConfig.TokenType.Deposit, token);
+        setupBridgeDeposit(chain, IERC20(token));
     }
 
     function _addRedeemToken(
-        SynapseRouter router,
+        ChainSetup memory chain,
         string memory symbol,
         address token
     ) internal {
-        _addToken(router, symbol, token, LocalBridgeConfig.TokenType.Redeem, token);
+        _addToken(chain.router, symbol, token, LocalBridgeConfig.TokenType.Redeem, token);
     }
 
     function _addToken(

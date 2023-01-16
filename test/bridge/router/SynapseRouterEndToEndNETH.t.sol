@@ -22,13 +22,13 @@ contract SynapseRouterEndToEndNETHTest is SynapseRouterSuite {
             return super.deployPool(chain, tokens, seedAmount);
         }
         LendingPoolMock lendingPool = new LendingPoolMock();
-        IERC20 aWETH = deployERC20("AVA aWETH", 18);
+        IERC20 aWETH = deployERC20(chain, "aWETH", 18);
+        mintInitialTestTokens(chain, address(lendingPool), address(chain.weth), aWETH.totalSupply());
         Ownable(address(aWETH)).transferOwnership(address(lendingPool));
         lendingPool.addToken(address(aWETH), address(chain.weth));
         tokens[1] = aWETH;
         // Deploy nETH + aWETH pool
         address aavePool = super.deployPool(chain, tokens, seedAmount);
-        dealToken(chain, address(lendingPool), chain.weth, aWETH.balanceOf(aavePool));
         tokens[1] = chain.weth;
         // Deploy Aave Swap Wrapper and use it as the pool for SwapQuoter
         AaveSwapWrapper _pool = new AaveSwapWrapper(Swap(aavePool), tokens, address(lendingPool), address(this));

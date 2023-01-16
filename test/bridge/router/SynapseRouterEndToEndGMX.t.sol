@@ -8,7 +8,9 @@ import "../../../contracts/bridge/wrappers/GMXWrapper.sol";
 contract GMX is ERC20 {
     address internal minter;
 
-    constructor() public ERC20("GMX", "GMX") {}
+    constructor(uint256 amount) public ERC20("GMX", "GMX") {
+        _mint(msg.sender, amount);
+    }
 
     function mint(address to, uint256 amount) external {
         require(msg.sender == minter, "!minter");
@@ -19,6 +21,10 @@ contract GMX is ERC20 {
         // it is what it is
         require(msg.sender == minter, "!minter");
         _burn(from, amount);
+    }
+
+    function mintInitialSupply(uint256 amount) external {
+        _mint(msg.sender, amount);
     }
 
     function setMinter(address _minter) external {
@@ -49,11 +55,9 @@ contract SynapseRouterEndToEndGMXTest is SynapseRouterSuite {
 
     function deployTestArbitrum() public virtual override returns (ChainSetup memory chain) {
         chain = super.deployTestArbitrum();
-        arbGMX = new GMX();
+        arbGMX = new GMX(10**24);
         vm.label(address(arbGMX), "ARB GMX");
-        _addDepositToken(chain.router, SYMBOL_GMX, address(arbGMX));
-        // Setup initial GMX locked in Bridge
-        dealToken(chain, address(chain.bridge), arbGMX, 10**24);
+        _addDepositToken(chain, SYMBOL_GMX, address(arbGMX));
     }
 
     function deployTestAvalanche() public virtual override returns (ChainSetup memory chain) {
@@ -62,8 +66,9 @@ contract SynapseRouterEndToEndGMXTest is SynapseRouterSuite {
         avaGMX = GMX(avaGmxWrapper.gmx());
         {
             // Deploy contract to copy the "mock" bytecode to GMX address
-            vm.etch(address(avaGMX), codeAt(address(new GMX())));
+            vm.etch(address(avaGMX), codeAt(address(new GMX(10**24))));
             avaGMX.setupDecimals(18);
+            avaGMX.mintInitialSupply(10**24);
         }
         // GMX Bridge Wrapper is set as minter for GMX
         avaGMX.setMinter(address(avaGmxWrapper));
