@@ -120,11 +120,12 @@ contract SwapQuoter is SwapCalculator, Ownable {
         uint256 amountIn
     ) external view override returns (SwapQuery memory query) {
         query = _getAmountOut(tokenIn, tokenOut, amountIn, true);
-        // Fill the remaining fields if a path was found and it requires a SynapseAdapter action
-        if (query.minAmountOut != 0 && query.tokenOut == address(0)) {
+        // tokenOut filed should always be populated, even if a path wasn't found
+        query.tokenOut = tokenOut;
+        // Fill the remaining fields if a path was found
+        if (query.minAmountOut != 0) {
             // SynapseRouter should be used as "Swap Adapter" for doing a swap through Synapse pools (or handling ETH)
-            query.swapAdapter = synapseRouter;
-            query.tokenOut = tokenOut;
+            if (query.rawParams.length != 0) query.swapAdapter = synapseRouter;
             // Set default deadline to infinity. Not using the value of 0,
             // which would lead to every swap to revert by default.
             query.deadline = type(uint256).max;
@@ -145,14 +146,9 @@ contract SwapQuoter is SwapCalculator, Ownable {
         if (tokenIn.token == tokenOut) {
             // Form a SynapseRouter-compatible struct indicating no action is required.
             // Set amountOut to PATH_FOUND if we are only interested in whether the swap is possible
-            return
-                SwapQuery({
-                    swapAdapter: address(0),
-                    tokenOut: tokenIn.token,
-                    minAmountOut: performQuoteCall ? amountIn : PATH_FOUND,
-                    deadline: 0,
-                    rawParams: bytes("")
-                });
+            query.minAmountOut = performQuoteCall ? amountIn : PATH_FOUND;
+            // query.rawParams is "", indicating that no further action is required
+            return query;
         }
         uint256 actionMask = tokenIn.actionMask;
         // Check if ETH <> WETH (Action.HandleEth) could fulfill tokenIn -> tokenOut request.
