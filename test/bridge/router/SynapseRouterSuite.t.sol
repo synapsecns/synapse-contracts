@@ -120,6 +120,8 @@ abstract contract SynapseRouterSuite is Utilities06 {
     string internal constant SYMBOL_USDC = "USDC";
     string internal constant SYMBOL_USDT = "USDT";
 
+    string[] internal allSymbols;
+
     ValidatorMock internal validator;
 
     struct ChainSetup {
@@ -151,6 +153,13 @@ abstract contract SynapseRouterSuite is Utilities06 {
         chains[AVA_CHAINID] = deployTestAvalanche();
         chains[DFK_CHAINID] = deployTestDFK();
         chains[HAR_CHAINID] = deployTestHarmony();
+        allSymbols.push(SYMBOL_NUSD);
+        allSymbols.push(SYMBOL_NETH);
+        allSymbols.push(SYMBOL_GMX);
+        allSymbols.push(SYMBOL_JEWEL);
+        allSymbols.push(SYMBOL_DAI);
+        allSymbols.push(SYMBOL_USDC);
+        allSymbols.push(SYMBOL_USDT);
     }
 
     function deployChainBasics(
@@ -305,15 +314,14 @@ abstract contract SynapseRouterSuite is Utilities06 {
         IERC20 tokenIn,
         IERC20 tokenOut,
         uint256 amountIn
-    ) public {
+    ) public returns (SwapQuery memory originQuery, SwapQuery memory destQuery) {
         prepareBridgeTx(origin, tokenIn, amountIn);
-        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
-            origin,
-            destination,
-            tokenIn,
-            tokenOut,
-            amountIn
-        );
+        (originQuery, destQuery) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
+        SwapQuery memory _originQuery;
+        SwapQuery memory _destQuery;
+        (_originQuery, _destQuery) = findBestQuotes(origin, destination, tokenIn, tokenOut, amountIn);
+        checkEqualQueries(originQuery, _originQuery, "originQuery");
+        checkEqualQueries(destQuery, _destQuery, "destQuery");
         vm.prank(USER);
         bool startFromETH = address(tokenIn) == UniversalToken.ETH_ADDRESS;
         origin.router.bridge{value: startFromETH ? amountIn : 0}({
@@ -452,6 +460,77 @@ abstract contract SynapseRouterSuite is Utilities06 {
         destQuery.deadline = block.timestamp + DELAY;
         // In practice minAmountOut should be set based on user-defined slippage. For testing we use the exact quote.
         destQuery.minAmountOut;
+    }
+
+    /// @dev Finds the best quote for cross-chain swap using the straightforward logic.
+    /// Every symbol is checked as potential candidate for an intermediary bridge token, the best quote is returned.
+    function findBestQuotes(
+        ChainSetup memory origin,
+        ChainSetup memory destination,
+        IERC20 tokenIn,
+        IERC20 tokenOut,
+        uint256 amountIn
+    ) public view returns (SwapQuery memory originQuery, SwapQuery memory destQuery) {
+        // Check every possible bridge token symbol
+        for (uint256 i = 0; i < allSymbols.length; ++i) {
+            string memory symbol = allSymbols[i];
+            // Get bridge token address on origin and destination chains
+            address bridgeTokenOrigin = origin.router.symbolToToken(symbol);
+            address bridgeTokenDest = destination.router.symbolToToken(symbol);
+            if (bridgeTokenOrigin == address(0) || bridgeTokenDest == address(0)) continue;
+            // Find path between tokenIn and bridge token on origin chain: all swap Actions are available
+            SwapQuery memory _originQuery = origin.quoter.getAmountOut(
+                LimitedToken(ActionLib.allActions(), address(tokenIn)),
+                bridgeTokenOrigin,
+                amountIn
+            );
+            // Check that non-zero amount would be bridged to destination chain
+            if (_originQuery.minAmountOut == 0) continue;
+            uint256 fee = destination.router.calculateBridgeFee(bridgeTokenDest, _originQuery.minAmountOut);
+            if (fee >= _originQuery.minAmountOut) continue;
+            // Figure out what kind of actions are available for swap on desttination chain
+            (LocalBridgeConfig.TokenType tokenType, ) = destination.router.config(bridgeTokenDest);
+            uint256 destActionMask = tokenType == LocalBridgeConfig.TokenType.Redeem
+                ? ActionLib.mask(Action.Swap)
+                : ActionLib.mask(Action.RemoveLiquidity, Action.HandleEth);
+            // Find path between bridge token and tokenOut on dest chain. Use amount after bridge fee.
+            SwapQuery memory _destQuery = destination.quoter.getAmountOut(
+                LimitedToken(destActionMask, address(bridgeTokenDest)),
+                address(tokenOut),
+                _originQuery.minAmountOut - fee
+            );
+            if (_destQuery.minAmountOut > destQuery.minAmountOut) {
+                originQuery = _originQuery;
+                destQuery = _destQuery;
+            }
+        }
+        require(destQuery.minAmountOut != 0, "No path exists");
+        originQuery.deadline = block.timestamp;
+        destQuery.deadline = block.timestamp + DELAY;
+    }
+
+    function checkEqualQueries(
+        SwapQuery memory a,
+        SwapQuery memory b,
+        string memory name
+    ) public {
+        assertEq(a.swapAdapter, b.swapAdapter, concat(name, ": !swapAdapter"));
+        assertEq(a.tokenOut, b.tokenOut, concat(name, ": !tokenOut"));
+        assertEq(a.minAmountOut, b.minAmountOut, concat(name, ": !minAmountOut"));
+        assertEq(a.deadline, b.deadline, concat(name, ": !deadline"));
+        assertEq(a.rawParams.length, b.rawParams.length, concat(name, ": !rawParams"));
+        if (a.rawParams.length != 0 && b.rawParams.length != 0) {
+            SynapseParams memory paramsA = abi.decode(a.rawParams, (SynapseParams));
+            SynapseParams memory paramsB = abi.decode(b.rawParams, (SynapseParams));
+            assertEq(uint256(paramsA.action), uint256(paramsB.action), concat(name, ": !action"));
+            assertEq(paramsA.pool, paramsB.pool, concat(name, ": !pool"));
+            assertEq(
+                uint256(paramsA.tokenIndexFrom),
+                uint256(paramsB.tokenIndexFrom),
+                concat(name, ": !tokenIndexFrom")
+            );
+            assertEq(uint256(paramsA.tokenIndexTo), uint256(paramsB.tokenIndexTo), concat(name, ": !tokenIndexTo"));
+        }
     }
 
     function getRecipientBalance(ChainSetup memory chain, address token) public view returns (uint256) {
