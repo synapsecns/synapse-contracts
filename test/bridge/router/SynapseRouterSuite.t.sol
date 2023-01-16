@@ -441,9 +441,8 @@ abstract contract SynapseRouterSuite is Utilities06 {
         // Step 3: perform a call to destination SynapseRouter
         SwapQuery[] memory destQueries = destination.router.getDestinationAmountOut(requests, address(tokenOut));
         // Step 4: find the best query (in practice, we could return them all)
-        uint256 maxAmountOut = 0;
         for (uint256 i = 0; i < tokens.length; ++i) {
-            if (destQueries[i].minAmountOut > maxAmountOut) {
+            if (destQueries[i].minAmountOut > destQuery.minAmountOut) {
                 originQuery = originQueries[i];
                 destQuery = destQueries[i];
             }
