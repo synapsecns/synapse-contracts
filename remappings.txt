@@ -1,2 +1,4 @@
 ds-test/=lib/forge-std/lib/ds-test/src/
 forge-std=lib/forge-std/src
+create3-factory=lib/create3-factory/src
+solmate=lib/create3-factory/lib/solmate/src
