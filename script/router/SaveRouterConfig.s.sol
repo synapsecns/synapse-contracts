@@ -2,27 +2,30 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "./utils/BaseScript.sol";
-import "../contracts/bridge/utils/BridgeConfigV3Lens.sol";
+import "../utils/BaseScript.sol";
+import "../../contracts/bridge/utils/BridgeConfigV3Lens.sol";
 
-contract SaveDeployParameters is BridgeConfigV3Lens, BaseScript {
+contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
     using stdJson for string;
 
     // 2023-01-05 (Mainnet)
     uint256 internal constant ETH_BLOCK_NUMBER = 16_342_000;
 
+    string public constant ROUTER = "SynapseRouter";
+
     function run() external {
-        saveChainConfig("avalanche");
-        saveChainConfig("arbitrum");
+        // Use current chainId by default
+        saveChainConfig(_chainId());
     }
 
-    function saveChainConfig(string memory chain) public {
-        uint256 chainId = _loadChainId(chain);
-        require(chainId != 0, "Chain not found");
-        address bridge = loadDeploymentAddress(chain, "SynapseBridge");
-        require(bridge != address(0), "Bridge not found");
-        address wgas = loadDeploymentAddress(chain, "WGAS");
-        require(wgas != address(0), "WGAS not found");
+    function saveChainConfig(uint256 chainId) public {
+        string memory chain = loadChainName(chainId);
+        if (deployConfigExists(chain, ROUTER)) {
+            console.log("Skipping: deploy config for [%s] on [%s] already exists", ROUTER, chain);
+            return;
+        }
+        address bridge = loadDeployment(chain, "SynapseBridge");
+        address wgas = loadDeployment(chain, "WGAS");
 
         string memory fullConfig = "full";
         string memory tokensConfig = "";
@@ -50,6 +53,6 @@ contract SaveDeployParameters is BridgeConfigV3Lens, BaseScript {
         fullConfig.serialize("tokens", tokensConfig);
         fullConfig = fullConfig.serialize("pools", pools);
 
-        vm.writeJson(fullConfig, _concat("./script/router_", chain, ".json"));
+        saveDeployConfig(chain, ROUTER, fullConfig);
     }
 }
