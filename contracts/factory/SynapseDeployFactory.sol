@@ -15,12 +15,14 @@ import {CREATE3} from "solmate/utils/CREATE3.sol";
 contract SynapseDeployFactory is ISynapseDeployFactory {
     using Address for address;
 
+    /// @inheritdoc ISynapseDeployFactory
     function deploy(bytes32 salt, bytes memory creationCode) external payable override returns (address deployed) {
         // Use salt that is unique for every deployer
         salt = _deployerSalt(msg.sender, salt);
         return CREATE3.deploy(salt, creationCode, msg.value);
     }
 
+    /// @inheritdoc ISynapseDeployFactory
     function deployClone(
         bytes32 salt,
         address master,
@@ -41,12 +43,14 @@ contract SynapseDeployFactory is ISynapseDeployFactory {
     ▏*║                        PREDICT ADDRESS VIEWS                         ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    /// @inheritdoc ISynapseDeployFactory
     function predictAddress(address deployer, bytes32 salt) external view override returns (address deployed) {
         // Use salt that is unique for every deployer
         salt = _deployerSalt(deployer, salt);
         return CREATE3.getDeployed(salt);
     }
 
+    /// @inheritdoc ISynapseDeployFactory
     function predictCloneAddress(
         address deployer,
         bytes32 salt,
@@ -61,6 +65,7 @@ contract SynapseDeployFactory is ISynapseDeployFactory {
     ▏*║                           INTERNAL HELPERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    /// @dev Returns a unique salt for every (deployer, salt) tuple.
     function _deployerSalt(address deployer, bytes32 salt) internal pure returns (bytes32 deployerSalt) {
         // hash salt with the deployer address to give each deployer its own namespace
         return keccak256(abi.encodePacked(deployer, salt));
