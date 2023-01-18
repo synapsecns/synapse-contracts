@@ -59,8 +59,9 @@ contract SynapseRouterViewsTest is Utilities06 {
         nexusNusd = ERC20(_lpToken);
 
         bridge = deployBridge();
-        router = new SynapseRouter(address(bridge));
-        quoter = new SwapQuoter(address(router), address(weth));
+        // We're using this contract as owner for testing suite deployments
+        router = new SynapseRouter(address(bridge), address(this));
+        quoter = new SwapQuoter(address(router), address(weth), address(this));
 
         quoter.addPool(nEthPool);
         quoter.addPool(nUsdPool);
