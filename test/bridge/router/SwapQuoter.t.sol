@@ -281,6 +281,7 @@ contract SwapQuoterTest is Utilities06 {
     ) internal {
         SwapQuery memory query = quoter.getAmountOut(LimitedToken(actionMask, tokenIn), tokenOut, amountIn);
         SwapQuery memory emptyQuery;
+        emptyQuery.tokenOut = tokenOut;
         _compareQueries(query, emptyQuery);
         assertEq(query.rawParams, new bytes(0), "empty: !rawParams");
     }
@@ -293,7 +294,9 @@ contract SwapQuoterTest is Utilities06 {
     ) internal {
         SwapQuery memory query = quoter.getAmountOut(LimitedToken(actionMask, tokenIn), tokenOut, amountIn);
         SwapQuery memory sameTokenQuery;
-        (sameTokenQuery.tokenOut, sameTokenQuery.minAmountOut) = (tokenIn, amountIn);
+        sameTokenQuery.tokenOut = tokenIn;
+        sameTokenQuery.minAmountOut = amountIn;
+        sameTokenQuery.deadline = type(uint256).max;
         _compareQueries(query, sameTokenQuery);
         assertEq(query.rawParams, new bytes(0), "sameToken: !rawParams");
     }
