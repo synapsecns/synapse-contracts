@@ -31,9 +31,14 @@ contract SwapQuoter is SwapCalculator, Ownable {
 
     uint256 private constant PATH_FOUND = 1;
 
-    constructor(address _synapseRouter, address _weth) public {
+    constructor(
+        address _synapseRouter,
+        address _weth,
+        address owner_
+    ) public {
         synapseRouter = _synapseRouter;
         weth = _weth;
+        transferOwnership(owner_);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
