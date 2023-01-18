@@ -36,7 +36,7 @@ contract SynapseRouterSwapTest is Utilities06 {
         super.setUp();
 
         weth = deployWETH();
-        neth = deploySynapseERC20("neth");
+        neth = deploySynapseERC20("neth", 18);
 
         {
             uint256[] memory amounts = new uint256[](2);

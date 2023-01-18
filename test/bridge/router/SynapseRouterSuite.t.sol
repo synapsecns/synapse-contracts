@@ -25,7 +25,7 @@ contract ValidatorMock {
         SwapQuery memory query
     ) external {
         require(token != address(0), "Unknown token");
-        uint256 fee = calculateBridgeFee(amount);
+        uint256 fee = calculateBridgeFee(token, amount);
         bytes32 kappa = _rotateKappa();
         // Decode params, if swap adapter was specified
         SynapseParams memory params;
@@ -70,10 +70,18 @@ contract ValidatorMock {
         }
     }
 
-    function calculateBridgeFee(uint256 amount) public pure returns (uint256 fee) {
+    function calculateBridgeFee(address token, uint256 amount) public view returns (uint256 fee) {
         fee = (amount * BRIDGE_FEE) / 10**10;
         if (fee < MIN_FEE) fee = MIN_FEE;
         if (fee > MAX_FEE) fee = MAX_FEE;
+        // Scale down fee according to token decimals
+        uint256 decimals;
+        try ERC20(token).decimals() returns (uint8 _decimals) {
+            decimals = _decimals;
+        } catch {
+            decimals = 18;
+        }
+        fee = (fee * 10**decimals) / 10**18;
     }
 
     function _rotateKappa() internal returns (bytes32 oldKappa) {
@@ -85,6 +93,8 @@ contract ValidatorMock {
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
 abstract contract SynapseRouterSuite is Utilities06 {
+    using SafeERC20 for IERC20;
+
     address internal constant USER = address(4242);
     address internal constant TO = address(2424);
 
@@ -105,6 +115,12 @@ abstract contract SynapseRouterSuite is Utilities06 {
     string internal constant SYMBOL_NETH = "nETH";
     string internal constant SYMBOL_GMX = "GMX";
     string internal constant SYMBOL_JEWEL = "JEWEL";
+
+    string internal constant SYMBOL_DAI = "DAI";
+    string internal constant SYMBOL_USDC = "USDC";
+    string internal constant SYMBOL_USDT = "USDT";
+
+    string[] internal allSymbols;
 
     ValidatorMock internal validator;
 
@@ -137,6 +153,13 @@ abstract contract SynapseRouterSuite is Utilities06 {
         chains[AVA_CHAINID] = deployTestAvalanche();
         chains[DFK_CHAINID] = deployTestDFK();
         chains[HAR_CHAINID] = deployTestHarmony();
+        allSymbols.push(SYMBOL_NUSD);
+        allSymbols.push(SYMBOL_NETH);
+        allSymbols.push(SYMBOL_GMX);
+        allSymbols.push(SYMBOL_JEWEL);
+        allSymbols.push(SYMBOL_DAI);
+        allSymbols.push(SYMBOL_USDC);
+        allSymbols.push(SYMBOL_USDT);
     }
 
     function deployChainBasics(
@@ -150,21 +173,17 @@ abstract contract SynapseRouterSuite is Utilities06 {
         // Convenience shortcut
         chain.gas = IERC20(UniversalToken.ETH_ADDRESS);
         // Deploy WGAS
-        IWETH9 wgas = deployWETH(concat(chain.name, " W", gasName));
-        chain.wgas = IERC20(address(wgas));
-        deal(address(this), 10**24);
-        wgas.deposit{value: 10**24}();
-
+        deployWETH(chain, gasName);
         // Deploy WETH
         if (equals(gasName, "ETH")) {
             chain.weth = chain.wgas;
         } else {
-            chain.weth = deployERC20(concat(chain.name, " WETH"), 18);
+            chain.weth = deployERC20(chain, "WETH", 18);
         }
         // Deploy USD tokens (not all necessarily used later)
-        chain.dai = deployERC20(concat(chain.name, " DAI"), 18);
-        chain.usdc = deployERC20(concat(chain.name, " USDC"), 6);
-        chain.usdt = deployERC20(concat(chain.name, " USDT"), 6);
+        chain.dai = deployERC20(chain, "DAI", 18);
+        chain.usdc = deployERC20(chain, "USDC", 6);
+        chain.usdt = deployERC20(chain, "USDT", 6);
     }
 
     function deployChainBridge(ChainSetup memory chain) public virtual {
@@ -184,10 +203,8 @@ abstract contract SynapseRouterSuite is Utilities06 {
 
         // Deploy Bridge tokens
         if (!equals(chain.name, "ETH")) {
-            chain.neth = deploySynapseERC20(chain, concat(chain.name, " nETH"));
-            chain.nusd = deploySynapseERC20(chain, concat(chain.name, " nUSD"));
-            _addRedeemToken(chain.router, SYMBOL_NETH, address(chain.neth));
-            _addRedeemToken(chain.router, SYMBOL_NUSD, address(chain.nusd));
+            chain.neth = deploySynapseERC20(chain, SYMBOL_NETH, 18);
+            chain.nusd = deploySynapseERC20(chain, SYMBOL_NUSD, 18);
         }
     }
 
@@ -202,11 +219,11 @@ abstract contract SynapseRouterSuite is Utilities06 {
         vm.label(nexusLpToken, "ETH nUSD");
         chain.nusd = IERC20(nexusLpToken);
         // Setup bridge tokens for Mainnet
-        _addDepositToken(chain.router, SYMBOL_NETH, address(chain.weth));
-        _addDepositToken(chain.router, SYMBOL_NUSD, address(chain.nusd));
-        // Setup initial WETH, nUSD Bridge deposits
-        dealToken(chain, address(chain.bridge), chain.weth, 10**20);
-        chain.nusd.transfer(address(chain.bridge), chain.nusd.balanceOf(address(this)));
+        _addDepositToken(chain, SYMBOL_NETH, address(chain.weth));
+        _addDepositToken(chain, SYMBOL_NUSD, address(chain.nusd));
+        _addDepositToken(chain, SYMBOL_DAI, address(chain.dai));
+        _addDepositToken(chain, SYMBOL_USDC, address(chain.usdc));
+        _addDepositToken(chain, SYMBOL_USDT, address(chain.usdt));
     }
 
     function deployTestArbitrum() public virtual returns (ChainSetup memory chain) {
@@ -270,24 +287,18 @@ abstract contract SynapseRouterSuite is Utilities06 {
         chain.quoter.addPool(chain.nUsdPool);
     }
 
-    function deploySynapseERC20(ChainSetup memory chain, string memory name) public returns (IERC20 token) {
-        SynapseERC20 _token = deploySynapseERC20(name);
-        _token.grantRole(_token.MINTER_ROLE(), address(chain.bridge));
-        token = IERC20(address(_token));
-    }
-
     function deployPool(
-        ChainSetup memory chain,
+        ChainSetup memory,
         IERC20[] memory tokens,
         uint256 seedAmount
-    ) internal returns (address pool) {
+    ) public virtual returns (address pool) {
         uint256[] memory amounts = new uint256[](tokens.length);
         pool = deployPool(tokens);
         for (uint256 i = 0; i < tokens.length; ++i) {
             uint256 decimals = ERC20(address(tokens[i])).decimals();
             // Make the initial pool slightly imbalanced
             amounts[i] = (seedAmount * 10**decimals * (1000 + i)) / 1000;
-            dealToken(chain, address(this), tokens[i], amounts[i]);
+            // Test contract should have enough tokes for testing purposes
             tokens[i].approve(pool, amounts[i]);
         }
         ISwap(pool).addLiquidity(amounts, 0, type(uint256).max);
@@ -303,15 +314,14 @@ abstract contract SynapseRouterSuite is Utilities06 {
         IERC20 tokenIn,
         IERC20 tokenOut,
         uint256 amountIn
-    ) public {
+    ) public returns (SwapQuery memory originQuery, SwapQuery memory destQuery) {
         prepareBridgeTx(origin, tokenIn, amountIn);
-        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
-            origin,
-            destination,
-            tokenIn,
-            tokenOut,
-            amountIn
-        );
+        (originQuery, destQuery) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
+        SwapQuery memory _originQuery;
+        SwapQuery memory _destQuery;
+        (_originQuery, _destQuery) = findBestQuotes(origin, destination, tokenIn, tokenOut, amountIn);
+        checkEqualQueries(originQuery, _originQuery, "originQuery");
+        checkEqualQueries(destQuery, _destQuery, "destQuery");
         vm.prank(USER);
         bool startFromETH = address(tokenIn) == UniversalToken.ETH_ADDRESS;
         origin.router.bridge{value: startFromETH ? amountIn : 0}({
@@ -362,28 +372,43 @@ abstract contract SynapseRouterSuite is Utilities06 {
             // Deal ETH to user
             deal(USER, amountIn);
         } else {
-            dealToken(origin, USER, tokenIn, amountIn);
+            tokenIn.safeTransfer(USER, amountIn);
             // Approve token spending
             vm.prank(USER);
             tokenIn.approve(address(origin.router), amountIn);
         }
     }
 
-    function dealToken(
+    /// @dev Mints the initial balance of the test tokens. Should not be used with Mainnet nUSD.
+    function mintInitialTestTokens(
         ChainSetup memory chain,
         address to,
-        IERC20 token,
+        address token,
         uint256 amount
     ) public {
-        if (token == chain.wgas) {
-            // Deal ETH to user and wrap it into WETH
-            deal(to, amount);
-            vm.prank(to);
-            IWETH9(payable(address(token))).deposit{value: amount}();
+        if (token == address(chain.wgas)) {
+            deal(address(this), amount);
+            IWETH9(payable(token)).deposit{value: amount}();
         } else {
-            // Deal token to user and update total supply
-            deal(address(token), to, amount, true);
+            require(!equals(chain.name, "ETH") || token != address(chain.nusd), "Can't mint Nexus nUSD");
+            // solhint-disable-next-line no-empty-blocks
+            try SynapseERC20(token).mint(address(this), amount) {
+                // Mint successful
+            } catch {
+                // Deal tokens using cheat codes and update the total supply
+                deal(token, address(this), amount, true);
+            }
         }
+        if (to != address(this)) {
+            IERC20(token).safeTransfer(to, amount);
+        }
+    }
+
+    function setupBridgeDeposit(ChainSetup memory chain, IERC20 token) public {
+        // Use half of the test contract balance
+        uint256 amount = token.balanceOf(address(this)) / 2;
+        require(amount != 0, "Failed to setup initial deposit");
+        token.safeTransfer(address(chain.bridge), amount);
     }
 
     function performQuoteCalls(
@@ -416,9 +441,8 @@ abstract contract SynapseRouterSuite is Utilities06 {
         // Step 3: perform a call to destination SynapseRouter
         SwapQuery[] memory destQueries = destination.router.getDestinationAmountOut(requests, address(tokenOut));
         // Step 4: find the best query (in practice, we could return them all)
-        uint256 maxAmountOut = 0;
         for (uint256 i = 0; i < tokens.length; ++i) {
-            if (destQueries[i].minAmountOut > maxAmountOut) {
+            if (destQueries[i].minAmountOut > destQuery.minAmountOut) {
                 originQuery = originQueries[i];
                 destQuery = destQueries[i];
             }
@@ -437,28 +461,147 @@ abstract contract SynapseRouterSuite is Utilities06 {
         destQuery.minAmountOut;
     }
 
+    /// @dev Finds the best quote for cross-chain swap using the straightforward logic.
+    /// Every symbol is checked as potential candidate for an intermediary bridge token, the best quote is returned.
+    function findBestQuotes(
+        ChainSetup memory origin,
+        ChainSetup memory destination,
+        IERC20 tokenIn,
+        IERC20 tokenOut,
+        uint256 amountIn
+    ) public view returns (SwapQuery memory originQuery, SwapQuery memory destQuery) {
+        // Check every possible bridge token symbol
+        for (uint256 i = 0; i < allSymbols.length; ++i) {
+            string memory symbol = allSymbols[i];
+            // Get bridge token address on origin and destination chains
+            address bridgeTokenOrigin = origin.router.symbolToToken(symbol);
+            address bridgeTokenDest = destination.router.symbolToToken(symbol);
+            if (bridgeTokenOrigin == address(0) || bridgeTokenDest == address(0)) continue;
+            // Find path between tokenIn and bridge token on origin chain: all swap Actions are available
+            SwapQuery memory _originQuery = origin.quoter.getAmountOut(
+                LimitedToken(ActionLib.allActions(), address(tokenIn)),
+                bridgeTokenOrigin,
+                amountIn
+            );
+            // Check that non-zero amount would be bridged to destination chain
+            if (_originQuery.minAmountOut == 0) continue;
+            uint256 fee = destination.router.calculateBridgeFee(bridgeTokenDest, _originQuery.minAmountOut);
+            if (fee >= _originQuery.minAmountOut) continue;
+            // Figure out what kind of actions are available for swap on desttination chain
+            (LocalBridgeConfig.TokenType tokenType, ) = destination.router.config(bridgeTokenDest);
+            uint256 destActionMask = tokenType == LocalBridgeConfig.TokenType.Redeem
+                ? ActionLib.mask(Action.Swap)
+                : ActionLib.mask(Action.RemoveLiquidity, Action.HandleEth);
+            // Find path between bridge token and tokenOut on dest chain. Use amount after bridge fee.
+            SwapQuery memory _destQuery = destination.quoter.getAmountOut(
+                LimitedToken(destActionMask, address(bridgeTokenDest)),
+                address(tokenOut),
+                _originQuery.minAmountOut - fee
+            );
+            if (_destQuery.minAmountOut > destQuery.minAmountOut) {
+                originQuery = _originQuery;
+                destQuery = _destQuery;
+            }
+        }
+        require(destQuery.minAmountOut != 0, "No path exists");
+        originQuery.deadline = block.timestamp;
+        destQuery.deadline = block.timestamp + DELAY;
+    }
+
+    function checkEqualQueries(
+        SwapQuery memory a,
+        SwapQuery memory b,
+        string memory name
+    ) public {
+        assertEq(a.swapAdapter, b.swapAdapter, concat(name, ": !swapAdapter"));
+        assertEq(a.tokenOut, b.tokenOut, concat(name, ": !tokenOut"));
+        assertEq(a.minAmountOut, b.minAmountOut, concat(name, ": !minAmountOut"));
+        assertEq(a.deadline, b.deadline, concat(name, ": !deadline"));
+        assertEq(a.rawParams.length, b.rawParams.length, concat(name, ": !rawParams"));
+        if (a.rawParams.length != 0 && b.rawParams.length != 0) {
+            SynapseParams memory paramsA = abi.decode(a.rawParams, (SynapseParams));
+            SynapseParams memory paramsB = abi.decode(b.rawParams, (SynapseParams));
+            assertEq(uint256(paramsA.action), uint256(paramsB.action), concat(name, ": !action"));
+            assertEq(paramsA.pool, paramsB.pool, concat(name, ": !pool"));
+            assertEq(
+                uint256(paramsA.tokenIndexFrom),
+                uint256(paramsB.tokenIndexFrom),
+                concat(name, ": !tokenIndexFrom")
+            );
+            assertEq(uint256(paramsA.tokenIndexTo), uint256(paramsB.tokenIndexTo), concat(name, ": !tokenIndexTo"));
+        }
+    }
+
     function getRecipientBalance(ChainSetup memory chain, address token) public view returns (uint256) {
-        if (token == address(chain.weth) || token == UniversalToken.ETH_ADDRESS) {
+        if (token == address(chain.wgas) || token == address(chain.gas)) {
             return TO.balance;
         } else {
             return IERC20(token).balanceOf(TO);
         }
     }
 
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                           DEPLOY OVERRIDES                           ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    /**
+     * @notice Deploys and labels an ERC20 mock. Mints the tokens for tests to this address.
+     */
+    function deployERC20(
+        ChainSetup memory chain,
+        string memory symbol,
+        uint8 decimals
+    ) public returns (ERC20 token) {
+        token = deployERC20(concat(chain.name, " ", symbol), decimals);
+        mintInitialTestTokens(chain, address(this), address(token), 10**uint256(decimals + 9));
+    }
+
+    /**
+     * @notice Deploys and labels a SynapseERC20 token.
+     * Mints the tokens for tests to this address.
+     * Adds token as Redeem bridge token.
+     */
+    function deploySynapseERC20(
+        ChainSetup memory chain,
+        string memory symbol,
+        uint8 decimals
+    ) public returns (IERC20 token) {
+        SynapseERC20 _token = deploySynapseERC20(concat(chain.name, " ", symbol), decimals);
+        _token.grantRole(_token.MINTER_ROLE(), address(chain.bridge));
+        _token.grantRole(_token.MINTER_ROLE(), address(this));
+        token = IERC20(address(_token));
+        mintInitialTestTokens(chain, address(this), address(token), 10**uint256(decimals + 9));
+        _addRedeemToken(chain, symbol, address(token));
+    }
+
+    /**
+     * @notice Deploys and labels a WETH implementation. Mints the tokens for tests to this address.
+     */
+    function deployWETH(ChainSetup memory chain, string memory gasName) public returns (IWETH9 token) {
+        token = deployWETH(concat(chain.name, " W", gasName));
+        chain.wgas = IERC20(address(token));
+        mintInitialTestTokens(chain, address(this), address(token), 10**uint256(18 + 9));
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                           INTERNAL HELPERS                           ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
     function _addDepositToken(
-        SynapseRouter router,
+        ChainSetup memory chain,
         string memory symbol,
         address token
     ) internal {
-        _addToken(router, symbol, token, LocalBridgeConfig.TokenType.Deposit, token);
+        _addToken(chain.router, symbol, token, LocalBridgeConfig.TokenType.Deposit, token);
+        setupBridgeDeposit(chain, IERC20(token));
     }
 
     function _addRedeemToken(
-        SynapseRouter router,
+        ChainSetup memory chain,
         string memory symbol,
         address token
     ) internal {
-        _addToken(router, symbol, token, LocalBridgeConfig.TokenType.Redeem, token);
+        _addToken(chain.router, symbol, token, LocalBridgeConfig.TokenType.Redeem, token);
     }
 
     function _addToken(
@@ -468,6 +611,16 @@ abstract contract SynapseRouterSuite is Utilities06 {
         LocalBridgeConfig.TokenType tokenType,
         address bridgeToken
     ) internal {
-        router.addToken(symbol, token, tokenType, bridgeToken, BRIDGE_FEE, MIN_FEE, MAX_FEE);
+        // Set appropriate mock fees for tokens with lower decimals
+        uint256 feeDenominator = 10**18 / 10**uint256(ERC20(token).decimals());
+        router.addToken(
+            symbol,
+            token,
+            tokenType,
+            bridgeToken,
+            BRIDGE_FEE / feeDenominator,
+            MIN_FEE / feeDenominator,
+            MAX_FEE / feeDenominator
+        );
     }
 }
