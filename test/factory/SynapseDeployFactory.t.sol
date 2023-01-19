@@ -19,6 +19,12 @@ interface ISynapseERC20 {
     ) external;
 }
 
+contract ImplementationMock {
+    function initialize() external pure {
+        revert("Gm. This is a revert.");
+    }
+}
+
 // solhint-disable func-name-mixedcase
 contract SynapseDeployFactoryTest is Test {
     SynapseDeployFactory internal factory;
@@ -140,5 +146,12 @@ contract SynapseDeployFactoryTest is Test {
         vm.prank(adminOwner);
         admin.upgrade(proxy, newImpl);
         assertEq(admin.getProxyImplementation(proxy), newImpl, "Wrong new implementation");
+    }
+
+    function test_deployClone_revert() public {
+        address master = address(new ImplementationMock());
+        bytes memory initData = abi.encodePacked(ImplementationMock.initialize.selector);
+        vm.expectRevert("Gm. This is a revert.");
+        factory.deployClone(bytes32(0), master, initData);
     }
 }
