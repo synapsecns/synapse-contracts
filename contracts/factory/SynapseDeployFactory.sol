@@ -5,7 +5,7 @@ import {ISynapseDeployFactory} from "./interfaces/ISynapseDeployFactory.sol";
 
 import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 import {Clones} from "@openzeppelin/contracts-4.5.0/proxy/Clones.sol";
-import {CREATE3} from "solmate/utils/CREATE3.sol";
+import {CREATE3} from "../../lib/solmate/src/utils/CREATE3.sol";
 
 /// @title Factory for deploying contracts to deterministic addresses via CREATE3
 /// @author zefram.eth
