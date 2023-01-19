@@ -11,19 +11,9 @@ import "hardhat-spdx-license-identifier";
 import "hardhat-interface-generator";
 import "@primitivefi/hardhat-dodoc";
 import "hardhat-deploy-ethers";
-import "hardhat-preprocessor";
-import fs from "fs";
 
 import { HardhatUserConfig } from "hardhat/config";
 import dotenv from "dotenv";
-
-function getRemappings() {
-  return fs
-    .readFileSync("remappings.txt", "utf8")
-    .split("\n")
-    .filter(Boolean) // remove empty lines
-    .map((line) => line.trim().split("="));
-}
 
 dotenv.config();
 
@@ -222,21 +212,6 @@ let config: HardhatUserConfig = {
   spdxLicenseIdentifier: {
     overwrite: false,
     runOnCompile: true,
-  },
-  preprocess: {
-    eachLine: (hre) => ({
-      transform: (line: string) => {
-        if (line.match(/^\s*import /i)) {
-          for (const [from, to] of getRemappings()) {
-            if (line.includes(from)) {
-              line = line.replace(from, to);
-              break;
-            }
-          }
-        }
-        return line;
-      },
-    }),
   },
 };
 
