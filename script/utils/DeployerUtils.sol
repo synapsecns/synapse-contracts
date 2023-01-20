@@ -68,7 +68,10 @@ contract DeployerUtils is ScriptUtils, Script {
     /// @notice Saves deploy config for a given contract on a given chain.
     function saveDeployConfig(string memory contractName, string memory config) public {
         console.log("Saved: config for [%s] on [%s]", contractName, chain);
-        vm.writeJson(config, _deployConfigPath(contractName));
+        string memory path = _deployConfigPath(contractName);
+        vm.writeJson(config, path);
+        // Sort keys in config JSON for consistency
+        sortJSON(path);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -132,6 +135,19 @@ contract DeployerUtils is ScriptUtils, Script {
     /// @dev Returns the bytecode for a contract.
     function loadBytecode(string memory contractName) public view returns (bytes memory bytecode) {
         return loadArtifact(contractName).readBytes("bytecode.object");
+    }
+
+    /// @dev Reads JSON from given path, sorts its keys and overwrites the file.
+    function sortJSON(string memory path) public {
+        string[] memory inputs = new string[](4);
+        inputs[0] = "jq";
+        // sort keys of objects on output
+        inputs[1] = "-S";
+        // The simplest filter is ., which copies jq's input to its output unmodified
+        inputs[2] = ".";
+        inputs[3] = path;
+        bytes memory sorted = vm.ffi(inputs);
+        string(sorted).write(path);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
