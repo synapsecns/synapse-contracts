@@ -1,9 +1,11 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../utils/BaseScript.sol";
-import "../../contracts/bridge/utils/BridgeConfigV3Lens.sol";
+import "forge-std/Script.sol";
+import {BaseScript} from "../utils/BaseScript.sol";
+
+import {BridgeConfigV3Lens, LocalBridgeConfig} from "../../contracts/bridge/utils/BridgeConfigV3Lens.sol";
 
 contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
     using stdJson for string;
@@ -13,19 +15,18 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
 
     string public constant ROUTER = "SynapseRouter";
 
-    function run() external {
-        // Use current chainId by default
-        saveChainConfig(_chainId());
+    constructor() public {
+        // Load chain name that block.chainid refers to
+        loadChain();
     }
 
-    function saveChainConfig(uint256 chainId) public {
-        string memory chain = loadChainName(chainId);
-        if (deployConfigExists(chain, ROUTER)) {
+    function execute(bool) public override {
+        if (deployConfigExists(ROUTER)) {
             console.log("Skipping: deploy config for [%s] on [%s] already exists", ROUTER, chain);
             return;
         }
-        address bridge = loadDeployment(chain, "SynapseBridge");
-        address wgas = loadDeployment(chain, "WGAS");
+        address bridge = loadDeployment("SynapseBridge");
+        address wgas = loadDeployment("WGAS");
 
         string memory fullConfig = "full";
         string memory tokensConfig = "";
@@ -34,7 +35,7 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
 
         string memory ethRPC = vm.envString("ALCHEMY_API");
         vm.createSelectFork(ethRPC, ETH_BLOCK_NUMBER);
-        (LocalBridgeConfig.BridgeTokenConfig[] memory tokens, address[] memory pools) = getChainConfig(chainId);
+        (LocalBridgeConfig.BridgeTokenConfig[] memory tokens, address[] memory pools) = getChainConfig(_chainId());
         string[] memory ids = new string[](tokens.length);
 
         for (uint256 i = 0; i < tokens.length; ++i) {
@@ -53,6 +54,6 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
         fullConfig.serialize("tokens", tokensConfig);
         fullConfig = fullConfig.serialize("pools", pools);
 
-        saveDeployConfig(chain, ROUTER, fullConfig);
+        saveDeployConfig(ROUTER, fullConfig);
     }
 }

@@ -2,9 +2,11 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../utils/BaseScript.sol";
-import "../../contracts/bridge/router/SynapseRouter.sol";
-import "../../contracts/bridge/router/SwapQuoter.sol";
+import "forge-std/Script.sol";
+import {BaseScript} from "../utils/BaseScript.sol";
+
+import {LocalBridgeConfig, SynapseRouter} from "../../contracts/bridge/router/SynapseRouter.sol";
+import {SwapQuoter} from "../../contracts/bridge/router/SwapQuoter.sol";
 
 contract DeployRouterScript is BaseScript {
     using stdJson for string;
@@ -22,19 +24,15 @@ contract DeployRouterScript is BaseScript {
     string public constant ROUTER = "SynapseRouter";
     string public constant QUOTER = "SwapQuoter";
 
-    function run() external {
-        // Use current chainId, do the broadcast
-        deploy(_chainId(), true);
+    constructor() public {
+        // Load deployer private key
+        setupDeployerPK();
+        // Load chain name that block.chainid refers to
+        loadChain();
     }
 
-    function runDry() external {
-        // Use current chainId, don't broadcast anything
-        deploy(_chainId(), false);
-    }
-
-    function deploy(uint256 chainId, bool broadcast) public {
-        string memory chain = loadChainName(chainId);
-        string memory config = loadDeployConfig(chain, ROUTER);
+    function execute(bool _isBroadcasted) public override {
+        string memory config = loadDeployConfig(ROUTER);
         address bridge = config.readAddress("bridge");
         address wgas = config.readAddress("wgas");
         address[] memory pools = config.readAddressArray("pools");
@@ -47,12 +45,12 @@ contract DeployRouterScript is BaseScript {
         }
         console.log("Tokens: %s", ids.length);
 
-        if (broadcast) vm.startBroadcast(broadcasterPK);
+        startBroadcast(_isBroadcasted);
         SynapseRouter router;
-        address routerDeployment = tryLoadDeployment(chain, ROUTER);
+        address routerDeployment = tryLoadDeployment(ROUTER);
         if (routerDeployment == address(0)) {
             router = new SynapseRouter(bridge);
-            if (broadcast) saveDeployment(chain, ROUTER, address(router));
+            saveDeployment(ROUTER, address(router));
             LocalBridgeConfig.BridgeTokenConfig[] memory tokens = new LocalBridgeConfig.BridgeTokenConfig[](ids.length);
             for (uint256 i = 0; i < ids.length; ++i) {
                 bytes memory rawConfig = config.parseRaw(_concat("tokens.", ids[i]));
@@ -79,10 +77,10 @@ contract DeployRouterScript is BaseScript {
         }
 
         SwapQuoter quoter;
-        address quoterDeployment = tryLoadDeployment(chain, QUOTER);
+        address quoterDeployment = tryLoadDeployment(QUOTER);
         if (quoterDeployment == address(0)) {
             quoter = new SwapQuoter(address(router), address(wgas));
-            if (broadcast) saveDeployment(chain, QUOTER, address(quoter));
+            saveDeployment(QUOTER, address(quoter));
             quoter.addPools(pools);
             console.log("Pools added");
         } else {
@@ -97,6 +95,6 @@ contract DeployRouterScript is BaseScript {
             console.log("%s already set up", QUOTER);
         }
 
-        if (broadcast) vm.stopBroadcast();
+        stopBroadcast();
     }
 }
