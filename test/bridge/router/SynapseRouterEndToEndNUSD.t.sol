@@ -3,57 +3,21 @@ pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "./SynapseRouterSuite.t.sol";
-import {JewelBridgeSwap} from "../../../contracts/bridge/wrappers/JewelBridgeSwap.sol";
 
 // solhint-disable func-name-mixedcase
-contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
-    IERC20 internal avaJewel;
-    IERC20 internal harJewel;
-    IERC20 internal harLegacyJewel;
-    JewelBridgeSwap internal harmonyJewelSwap;
-
+contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
     /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                      OVERRIDES FOR JEWEL SETUP                       ║*▕
+    ▏*║                           TESTS: ETH -> L2                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function deployTestAvalanche() public virtual override returns (ChainSetup memory chain) {
-        chain = super.deployTestAvalanche();
-        avaJewel = deploySynapseERC20(chain, SYMBOL_JEWEL, 18);
-    }
-
-    function deployTestDFK() public virtual override returns (ChainSetup memory chain) {
-        chain = super.deployTestDFK();
-        // Add JEWEL to Router config
-        _addDepositToken(chain, SYMBOL_JEWEL, address(chain.wgas));
-    }
-
-    function deployTestHarmony() public virtual override returns (ChainSetup memory chain) {
-        chain = super.deployTestHarmony();
-        harJewel = deploySynapseERC20(chain, SYMBOL_JEWEL, 18);
-        harLegacyJewel = deployERC20(chain, "LEGACY JEWEL", 18);
-        harmonyJewelSwap = new JewelBridgeSwap(harLegacyJewel, harJewel);
-        // JewelSwap should have a minter role
-        {
-            SynapseERC20 _harJewel = SynapseERC20(address(harJewel));
-            _harJewel.grantRole(_harJewel.MINTER_ROLE(), address(harmonyJewelSwap));
-        }
-        chain.quoter.addPool(address(harmonyJewelSwap));
-        // Setup initial Legacy Jewel balance for JewelBridgeSwap
-        mintInitialTestTokens(chain, address(harmonyJewelSwap), address(harLegacyJewel), 10**24);
-    }
-
-    /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                    TESTS: JEWEL (FROM AVALANCHE)                     ║*▕
-    \*╚══════════════════════════════════════════════════════════════════════╝*/
-
-    function test_avalancheToDfk_inJEWEL_outJEWEL() public {
-        // Prepare test parameters: Avalanche JEWEL -> DFK JEWEL (gas)
-        ChainSetup memory origin = chains[AVA_CHAINID];
-        ChainSetup memory destination = chains[DFK_CHAINID];
-        IERC20 tokenIn = avaJewel;
-        IERC20 tokenOut = destination.gas;
+    function test_ethereumToOptimism_inNUSD_outNUSD() public {
+        // Prepare test parameters: Ethereum nUSD -> Optimism nUSD
+        ChainSetup memory origin = chains[ETH_CHAINID];
+        ChainSetup memory destination = chains[OPT_CHAINID];
+        IERC20 tokenIn = origin.nusd;
+        IERC20 tokenOut = destination.nusd;
         uint256 amountIn = 10**18;
-        address bridgeTokenDest = address(destination.wgas);
+        address bridgeTokenDest = address(destination.nusd);
         (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
             origin,
             destination,
@@ -63,154 +27,21 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
         );
         // Expect Bridge event to be emitted
         vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, DFK_CHAINID, address(avaJewel), amountIn);
+        emit TokenDeposit(TO, OPT_CHAINID, address(origin.nusd), originQuery.minAmountOut);
         // User interacts with the SynapseRouter on origin chain
         initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
 
-    function test_avalancheToHarmony_inJEWEL_outSynJEWEL() public {
-        // Prepare test parameters: Avalanche JEWEL -> Harmony synJEWEL
-        ChainSetup memory origin = chains[AVA_CHAINID];
-        ChainSetup memory destination = chains[HAR_CHAINID];
-        IERC20 tokenIn = avaJewel;
-        IERC20 tokenOut = harJewel;
+    function test_ethereumToOptimism_inNUSD_outUSDC() public {
+        // Prepare test parameters: Ethereum nUSD -> Optimism USDC
+        ChainSetup memory origin = chains[ETH_CHAINID];
+        ChainSetup memory destination = chains[OPT_CHAINID];
+        IERC20 tokenIn = origin.nusd;
+        IERC20 tokenOut = destination.usdc;
         uint256 amountIn = 10**18;
-        address bridgeTokenDest = address(harJewel);
-        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
-            origin,
-            destination,
-            tokenIn,
-            tokenOut,
-            amountIn
-        );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, HAR_CHAINID, address(avaJewel), amountIn);
-        // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
-        // Validator completes the transaction on destination chain
-        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
-    }
-
-    function test_avalancheToHarmony_inJEWEL_outJEWEL() public {
-        // Prepare test parameters: Avalanche JEWEL -> Harmony JEWEL
-        ChainSetup memory origin = chains[AVA_CHAINID];
-        ChainSetup memory destination = chains[HAR_CHAINID];
-        IERC20 tokenIn = avaJewel;
-        IERC20 tokenOut = harLegacyJewel;
-        uint256 amountIn = 10**18;
-        address bridgeTokenDest = address(harJewel);
-        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
-            origin,
-            destination,
-            tokenIn,
-            tokenOut,
-            amountIn
-        );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeemAndSwap({
-            to: TO,
-            chainId: HAR_CHAINID,
-            token: address(avaJewel),
-            amount: amountIn,
-            tokenIndexFrom: 1, // this is the only swap pool with a reversed token order
-            tokenIndexTo: 0,
-            minDy: destQuery.minAmountOut,
-            deadline: destQuery.deadline
-        });
-        // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
-        // Validator completes the transaction on destination chain
-        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
-    }
-
-    /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                       TESTS: JEWEL (FROM DFK)                        ║*▕
-    \*╚══════════════════════════════════════════════════════════════════════╝*/
-
-    function test_dfkToAvalanche_inJEWEL_outJEWEL() public {
-        // Prepare test parameters: DFK JEWEL (gas) -> Avalanche JEWEL
-        ChainSetup memory origin = chains[DFK_CHAINID];
-        ChainSetup memory destination = chains[AVA_CHAINID];
-        IERC20 tokenIn = origin.gas;
-        IERC20 tokenOut = avaJewel;
-        uint256 amountIn = 10**18;
-        address bridgeTokenDest = address(avaJewel);
-        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
-            origin,
-            destination,
-            tokenIn,
-            tokenOut,
-            amountIn
-        );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDeposit(TO, AVA_CHAINID, address(origin.wgas), amountIn);
-        // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
-        // Validator completes the transaction on destination chain
-        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
-    }
-
-    function test_dfkToAvalanche_inWJEWEL_outJEWEL() public {
-        // Prepare test parameters: DFK WJEWEL (wgas) -> Avalanche JEWEL
-        ChainSetup memory origin = chains[DFK_CHAINID];
-        ChainSetup memory destination = chains[AVA_CHAINID];
-        IERC20 tokenIn = origin.wgas;
-        IERC20 tokenOut = avaJewel;
-        uint256 amountIn = 10**18;
-        address bridgeTokenDest = address(avaJewel);
-        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
-            origin,
-            destination,
-            tokenIn,
-            tokenOut,
-            amountIn
-        );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDeposit(TO, AVA_CHAINID, address(origin.wgas), amountIn);
-        // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
-        // Validator completes the transaction on destination chain
-        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
-    }
-
-    function test_dfkToHarmony_inJEWEL_outSynJEWEL() public {
-        // Prepare test parameters: DFK JEWEL (gas) -> Harmony synJEWEL
-        ChainSetup memory origin = chains[DFK_CHAINID];
-        ChainSetup memory destination = chains[HAR_CHAINID];
-        IERC20 tokenIn = origin.gas;
-        IERC20 tokenOut = harJewel;
-        uint256 amountIn = 10**18;
-        address bridgeTokenDest = address(harJewel);
-        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
-            origin,
-            destination,
-            tokenIn,
-            tokenOut,
-            amountIn
-        );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDeposit(TO, HAR_CHAINID, address(origin.wgas), amountIn);
-        // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
-        // Validator completes the transaction on destination chain
-        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
-    }
-
-    function test_dfkToHarmony_inJEWEL_outJEWEL() public {
-        // Prepare test parameters: DFK JEWEL (gas) -> Harmony JEWEL
-        ChainSetup memory origin = chains[DFK_CHAINID];
-        ChainSetup memory destination = chains[HAR_CHAINID];
-        IERC20 tokenIn = origin.gas;
-        IERC20 tokenOut = harLegacyJewel;
-        uint256 amountIn = 10**18;
-        address bridgeTokenDest = address(harJewel);
+        address bridgeTokenDest = address(destination.nusd);
         (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
             origin,
             destination,
@@ -222,11 +53,68 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
         vm.expectEmit(true, true, true, true);
         emit TokenDepositAndSwap({
             to: TO,
-            chainId: HAR_CHAINID,
-            token: address(origin.wgas),
-            amount: amountIn,
-            tokenIndexFrom: 1, // this is the only swap pool with a reversed token order
-            tokenIndexTo: 0,
+            chainId: OPT_CHAINID,
+            token: address(origin.nusd),
+            amount: originQuery.minAmountOut,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: destQuery.minAmountOut,
+            deadline: destQuery.deadline
+        });
+        // User interacts with the SynapseRouter on origin chain
+        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        // Validator completes the transaction on destination chain
+        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
+    }
+
+    function test_ethereumToOptimism_inUSDC_outNUSD() public {
+        // Prepare test parameters: Ethereum USDC -> Optimism nUSD
+        ChainSetup memory origin = chains[ETH_CHAINID];
+        ChainSetup memory destination = chains[OPT_CHAINID];
+        IERC20 tokenIn = origin.usdc;
+        IERC20 tokenOut = destination.nusd;
+        uint256 amountIn = 10**6;
+        address bridgeTokenDest = address(destination.nusd);
+        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
+            origin,
+            destination,
+            tokenIn,
+            tokenOut,
+            amountIn
+        );
+        // Expect Bridge event to be emitted
+        vm.expectEmit(true, true, true, true);
+        emit TokenDeposit(TO, OPT_CHAINID, address(origin.nusd), originQuery.minAmountOut);
+        // User interacts with the SynapseRouter on origin chain
+        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        // Validator completes the transaction on destination chain
+        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
+    }
+
+    function test_ethereumToOptimism_inUSDC_outUSDC() public {
+        // Prepare test parameters: Ethereum USDC -> Optimism USDC
+        ChainSetup memory origin = chains[ETH_CHAINID];
+        ChainSetup memory destination = chains[OPT_CHAINID];
+        IERC20 tokenIn = origin.usdc;
+        IERC20 tokenOut = destination.usdc;
+        uint256 amountIn = 10**6;
+        address bridgeTokenDest = address(destination.nusd);
+        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
+            origin,
+            destination,
+            tokenIn,
+            tokenOut,
+            amountIn
+        );
+        // Expect Bridge event to be emitted
+        vm.expectEmit(true, true, true, true);
+        emit TokenDepositAndSwap({
+            to: TO,
+            chainId: OPT_CHAINID,
+            token: address(origin.nusd),
+            amount: originQuery.minAmountOut,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
             minDy: destQuery.minAmountOut,
             deadline: destQuery.deadline
         });
@@ -237,17 +125,17 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                     TESTS: JEWEL (FROM HARMONY)                      ║*▕
+    ▏*║                        TESTS: L2 -> ETHEREUM                         ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function test_harmonyToAvalanche_inSynJEWEL_outJEWEL() public {
-        // Prepare test parameters: Harmony synJEWEL -> Avalanche JEWEL
-        ChainSetup memory origin = chains[HAR_CHAINID];
-        ChainSetup memory destination = chains[AVA_CHAINID];
-        IERC20 tokenIn = harJewel;
-        IERC20 tokenOut = avaJewel;
+    function test_optimismToEthereum_inNUSD_outNUSD() public {
+        // Prepare test parameters: Optimism nUSD -> Ethereum nUSD
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ETH_CHAINID];
+        IERC20 tokenIn = origin.nusd;
+        IERC20 tokenOut = destination.nusd;
         uint256 amountIn = 10**18;
-        address bridgeTokenDest = address(avaJewel);
+        address bridgeTokenDest = address(destination.nusd);
         (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
             origin,
             destination,
@@ -257,21 +145,21 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
         );
         // Expect Bridge event to be emitted
         vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, AVA_CHAINID, address(harJewel), amountIn);
+        emit TokenRedeem(TO, ETH_CHAINID, address(origin.nusd), originQuery.minAmountOut);
         // User interacts with the SynapseRouter on origin chain
         initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
 
-    function test_harmonyToAvalanche_inJEWEL_outJEWEL() public {
-        // Prepare test parameters: Harmony JEWEL -> Avalanche JEWEL
-        ChainSetup memory origin = chains[HAR_CHAINID];
-        ChainSetup memory destination = chains[AVA_CHAINID];
-        IERC20 tokenIn = harLegacyJewel;
-        IERC20 tokenOut = avaJewel;
+    function test_optimismToEthereum_inNUSD_outUSDC() public {
+        // Prepare test parameters: Optimism nUSD -> Ethereum nUSD
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ETH_CHAINID];
+        IERC20 tokenIn = origin.nusd;
+        IERC20 tokenOut = destination.usdc;
         uint256 amountIn = 10**18;
-        address bridgeTokenDest = address(avaJewel);
+        address bridgeTokenDest = address(destination.nusd);
         (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
             origin,
             destination,
@@ -281,21 +169,29 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
         );
         // Expect Bridge event to be emitted
         vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, AVA_CHAINID, address(harJewel), amountIn);
+        emit TokenRedeemAndRemove({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(origin.nusd),
+            amount: originQuery.minAmountOut,
+            swapTokenIndex: 1,
+            swapMinAmount: destQuery.minAmountOut,
+            swapDeadline: destQuery.deadline
+        });
         // User interacts with the SynapseRouter on origin chain
         initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
 
-    function test_harmonyToDFK_inSynJEWEL_outJEWEL() public {
-        // Prepare test parameters: Harmony synJEWEL -> DFK JEWEL (gas)
-        ChainSetup memory origin = chains[HAR_CHAINID];
-        ChainSetup memory destination = chains[DFK_CHAINID];
-        IERC20 tokenIn = harJewel;
-        IERC20 tokenOut = destination.gas;
-        uint256 amountIn = 10**18;
-        address bridgeTokenDest = address(destination.wgas);
+    function test_optimismToEthereum_inUSDC_outNUSD() public {
+        // Prepare test parameters: Optimism USDC -> Ethereum nUSD
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ETH_CHAINID];
+        IERC20 tokenIn = origin.usdc;
+        IERC20 tokenOut = destination.nusd;
+        uint256 amountIn = 10**6;
+        address bridgeTokenDest = address(destination.nusd);
         (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
             origin,
             destination,
@@ -305,21 +201,21 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
         );
         // Expect Bridge event to be emitted
         vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, DFK_CHAINID, address(harJewel), amountIn);
+        emit TokenRedeem(TO, ETH_CHAINID, address(origin.nusd), originQuery.minAmountOut);
         // User interacts with the SynapseRouter on origin chain
         initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
 
-    function test_harmonyToDFK_inJEWEL_outJEWEL() public {
-        // Prepare test parameters: Harmony JEWEL -> DFK JEWEL (gas)
-        ChainSetup memory origin = chains[HAR_CHAINID];
-        ChainSetup memory destination = chains[DFK_CHAINID];
-        IERC20 tokenIn = harLegacyJewel;
-        IERC20 tokenOut = destination.gas;
-        uint256 amountIn = 10**18;
-        address bridgeTokenDest = address(destination.wgas);
+    function test_optimismToEthereum_inUSDC_outUSDC() public {
+        // Prepare test parameters: Optimism USDC -> Ethereum nUSD
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ETH_CHAINID];
+        IERC20 tokenIn = origin.usdc;
+        IERC20 tokenOut = destination.usdc;
+        uint256 amountIn = 10**6;
+        address bridgeTokenDest = address(destination.nusd);
         (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
             origin,
             destination,
@@ -329,7 +225,133 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
         );
         // Expect Bridge event to be emitted
         vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, DFK_CHAINID, address(harJewel), amountIn);
+        emit TokenRedeemAndRemove({
+            to: TO,
+            chainId: ETH_CHAINID,
+            token: address(origin.nusd),
+            amount: originQuery.minAmountOut,
+            swapTokenIndex: 1,
+            swapMinAmount: destQuery.minAmountOut,
+            swapDeadline: destQuery.deadline
+        });
+        // User interacts with the SynapseRouter on origin chain
+        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        // Validator completes the transaction on destination chain
+        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                           TESTS: L2 <> L2                            ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_optimismToArbitrum_inNUSD_outNUSD() public {
+        // Prepare test parameters: Optimism nUSD -> Arbitrum nUSD
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ARB_CHAINID];
+        IERC20 tokenIn = origin.nusd;
+        IERC20 tokenOut = destination.nusd;
+        uint256 amountIn = 10**18;
+        address bridgeTokenDest = address(destination.nusd);
+        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
+            origin,
+            destination,
+            tokenIn,
+            tokenOut,
+            amountIn
+        );
+        // Expect Bridge event to be emitted
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeem(TO, ARB_CHAINID, address(origin.nusd), originQuery.minAmountOut);
+        // User interacts with the SynapseRouter on origin chain
+        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        // Validator completes the transaction on destination chain
+        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
+    }
+
+    function test_optimismToArbitrum_inNUSD_outUSDC() public {
+        // Prepare test parameters: Optimism nUSD -> Arbitrum USDC
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ARB_CHAINID];
+        IERC20 tokenIn = origin.nusd;
+        IERC20 tokenOut = destination.usdc;
+        uint256 amountIn = 10**18;
+        address bridgeTokenDest = address(destination.nusd);
+        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
+            origin,
+            destination,
+            tokenIn,
+            tokenOut,
+            amountIn
+        );
+        // Expect Bridge event to be emitted
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeemAndSwap({
+            to: TO,
+            chainId: ARB_CHAINID,
+            token: address(origin.nusd),
+            amount: originQuery.minAmountOut,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: destQuery.minAmountOut,
+            deadline: destQuery.deadline
+        });
+        // User interacts with the SynapseRouter on origin chain
+        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        // Validator completes the transaction on destination chain
+        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
+    }
+
+    function test_optimismToArbitrum_inUSDC_outNUSD() public {
+        // Prepare test parameters: Optimism USDC -> Arbitrum nUSD
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ARB_CHAINID];
+        IERC20 tokenIn = origin.usdc;
+        IERC20 tokenOut = destination.nusd;
+        uint256 amountIn = 10**6;
+        address bridgeTokenDest = address(destination.nusd);
+        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
+            origin,
+            destination,
+            tokenIn,
+            tokenOut,
+            amountIn
+        );
+        // Expect Bridge event to be emitted
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeem(TO, ARB_CHAINID, address(origin.nusd), originQuery.minAmountOut);
+        // User interacts with the SynapseRouter on origin chain
+        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        // Validator completes the transaction on destination chain
+        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
+    }
+
+    function test_optimismToArbitrum_inUSDC_outUSDC() public {
+        // Prepare test parameters: Optimism USDC -> Arbitrum USDC
+        ChainSetup memory origin = chains[OPT_CHAINID];
+        ChainSetup memory destination = chains[ARB_CHAINID];
+        IERC20 tokenIn = origin.usdc;
+        IERC20 tokenOut = destination.usdc;
+        uint256 amountIn = 10**6;
+        address bridgeTokenDest = address(destination.nusd);
+        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
+            origin,
+            destination,
+            tokenIn,
+            tokenOut,
+            amountIn
+        );
+        // Expect Bridge event to be emitted
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeemAndSwap({
+            to: TO,
+            chainId: ARB_CHAINID,
+            token: address(origin.nusd),
+            amount: originQuery.minAmountOut,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: destQuery.minAmountOut,
+            deadline: destQuery.deadline
+        });
         // User interacts with the SynapseRouter on origin chain
         initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain

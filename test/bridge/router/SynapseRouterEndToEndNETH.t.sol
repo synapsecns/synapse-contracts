@@ -3,10 +3,38 @@ pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "./SynapseRouterSuite.t.sol";
+import {LendingPoolMock} from "./mocks/AaveMock.t.sol";
+import {AaveSwapWrapper} from "./mocks/AaveMock.t.sol";
 
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
 contract SynapseRouterEndToEndNETHTest is SynapseRouterSuite {
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                         OVERRIDES: AAVE POOL                         ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function deployPool(
+        ChainSetup memory chain,
+        IERC20[] memory tokens,
+        uint256 seedAmount
+    ) public virtual override returns (address pool) {
+        if (!equals(chain.name, "AVA") || tokens[0] != chain.neth) {
+            return super.deployPool(chain, tokens, seedAmount);
+        }
+        LendingPoolMock lendingPool = new LendingPoolMock();
+        IERC20 aWETH = deployERC20(chain, "aWETH", 18);
+        mintInitialTestTokens(chain, address(lendingPool), address(chain.weth), aWETH.totalSupply());
+        Ownable(address(aWETH)).transferOwnership(address(lendingPool));
+        lendingPool.addToken(address(aWETH), address(chain.weth));
+        tokens[1] = aWETH;
+        // Deploy nETH + aWETH pool
+        address aavePool = super.deployPool(chain, tokens, seedAmount);
+        tokens[1] = chain.weth;
+        // Deploy Aave Swap Wrapper and use it as the pool for SwapQuoter
+        AaveSwapWrapper _pool = new AaveSwapWrapper(Swap(aavePool), tokens, address(lendingPool), address(this));
+        pool = address(_pool);
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                     TESTS: ETH -> L2 (FROM ETH)                      ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
@@ -613,6 +641,115 @@ contract SynapseRouterEndToEndNETHTest is SynapseRouterSuite {
             to: TO,
             chainId: ARB_CHAINID,
             token: address(origin.neth),
+            amount: originQuery.minAmountOut,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: destQuery.minAmountOut,
+            deadline: destQuery.deadline
+        });
+        // User interacts with the SynapseRouter on origin chain
+        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        // Validator completes the transaction on destination chain
+        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                      TESTS: AVALANCHE AAVE WETH                      ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function test_avalancheToEthereum_inNETH_outETH() public {
+        // Prepare test parameters: Avalanche nETH -> Ethereum ETH
+        ChainSetup memory origin = chains[AVA_CHAINID];
+        ChainSetup memory destination = chains[ETH_CHAINID];
+        IERC20 tokenIn = origin.neth;
+        IERC20 tokenOut = destination.gas;
+        uint256 amountIn = 10**18;
+        address bridgeTokenDest = address(destination.weth);
+        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
+            origin,
+            destination,
+            tokenIn,
+            tokenOut,
+            amountIn
+        );
+        // Expect Bridge event to be emitted
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeem(TO, ETH_CHAINID, address(origin.neth), originQuery.minAmountOut);
+        // User interacts with the SynapseRouter on origin chain
+        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        // Validator completes the transaction on destination chain
+        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
+    }
+
+    function test_avalancheToEthereum_inWETH_outETH() public {
+        // Prepare test parameters: Avalanche WETH -> Ethereum ETH
+        ChainSetup memory origin = chains[AVA_CHAINID];
+        ChainSetup memory destination = chains[ETH_CHAINID];
+        IERC20 tokenIn = origin.weth;
+        IERC20 tokenOut = destination.gas;
+        uint256 amountIn = 10**18;
+        address bridgeTokenDest = address(destination.weth);
+        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
+            origin,
+            destination,
+            tokenIn,
+            tokenOut,
+            amountIn
+        );
+        // Expect Bridge event to be emitted
+        vm.expectEmit(true, true, true, true);
+        emit TokenRedeem(TO, ETH_CHAINID, address(origin.neth), originQuery.minAmountOut);
+        // User interacts with the SynapseRouter on origin chain
+        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        // Validator completes the transaction on destination chain
+        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
+    }
+
+    function test_ethereumToAvalanche_inETH_outNETH() public {
+        // Prepare test parameters: Ethereum ETH -> Avalanche nETH
+        ChainSetup memory origin = chains[ETH_CHAINID];
+        ChainSetup memory destination = chains[AVA_CHAINID];
+        IERC20 tokenIn = origin.gas;
+        IERC20 tokenOut = destination.neth;
+        uint256 amountIn = 10**18;
+        address bridgeTokenDest = address(destination.neth);
+        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
+            origin,
+            destination,
+            tokenIn,
+            tokenOut,
+            amountIn
+        );
+        // Expect Bridge event to be emitted
+        vm.expectEmit(true, true, true, true);
+        emit TokenDeposit(TO, AVA_CHAINID, address(origin.weth), originQuery.minAmountOut);
+        // User interacts with the SynapseRouter on origin chain
+        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        // Validator completes the transaction on destination chain
+        checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
+    }
+
+    function test_ethereumToAvalanche_inETH_outWETH() public {
+        // Prepare test parameters: Ethereum ETH -> Avalanche WETH
+        ChainSetup memory origin = chains[ETH_CHAINID];
+        ChainSetup memory destination = chains[AVA_CHAINID];
+        IERC20 tokenIn = origin.gas;
+        IERC20 tokenOut = destination.weth;
+        uint256 amountIn = 10**18;
+        address bridgeTokenDest = address(destination.neth);
+        (SwapQuery memory originQuery, SwapQuery memory destQuery) = performQuoteCalls(
+            origin,
+            destination,
+            tokenIn,
+            tokenOut,
+            amountIn
+        );
+        // Expect Bridge event to be emitted
+        vm.expectEmit(true, true, true, true);
+        emit TokenDepositAndSwap({
+            to: TO,
+            chainId: AVA_CHAINID,
+            token: address(origin.weth),
             amount: originQuery.minAmountOut,
             tokenIndexFrom: 0,
             tokenIndexTo: 1,

@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 import "../interfaces/ISynapseBridge.sol";
 import "./LocalBridgeConfig.sol";
 import "./SynapseAdapter.sol";
+import "../utils/MulticallView.sol";
 
 /**
  * @notice SynapseRouter contract that can be used together with SynapseBridge on any chain.
@@ -30,7 +31,7 @@ import "./SynapseAdapter.sol";
  * // If tokenIn is WETH, do router.bridge{value: amount} to use native ETH instead of WETH.
  * Note: the transaction will be reverted, if `bridgeTokenO` is not set up in SynapseRouter.
  */
-contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
+contract SynapseRouter is LocalBridgeConfig, SynapseAdapter, MulticallView {
     // SynapseRouter is also the Adapter for the Synapse pools (this reduces the amount of token transfers).
     // SynapseRouter address will be used as swapAdapter in SwapQueries returned by a local SwapQuoter.
 
@@ -52,8 +53,9 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter {
      * @dev Redeploy an implementation with different values, if an update is required.
      * Upgrading the proxy implementation then will effectively "update the immutables".
      */
-    constructor(address _synapseBridge) public {
+    constructor(address _synapseBridge, address owner_) public {
         synapseBridge = ISynapseBridge(_synapseBridge);
+        transferOwnership(owner_);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

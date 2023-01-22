@@ -36,7 +36,7 @@ contract SynapseRouterSwapTest is Utilities06 {
         super.setUp();
 
         weth = deployWETH();
-        neth = deploySynapseERC20("neth");
+        neth = deploySynapseERC20("neth", 18);
 
         {
             uint256[] memory amounts = new uint256[](2);
@@ -48,14 +48,16 @@ contract SynapseRouterSwapTest is Utilities06 {
         }
 
         // Bridge address is not required for swap testing
-        router = new SynapseRouter(address(0));
-        quoter = new SwapQuoter(address(router), address(weth));
+        // We're using this contract as owner for testing suite deployments
+        router = new SynapseRouter(address(0), address(this));
+        quoter = new SwapQuoter(address(router), address(weth), address(this));
         quoter.addPool(nEthPool);
         router.setSwapQuoter(quoter);
 
         // Deploy "external" router/quoter
-        routerExt = new SynapseRouter(address(0));
-        quoterExt = new SwapQuoter(address(routerExt), address(weth));
+        // We're using this contract as owner for testing suite deployments
+        routerExt = new SynapseRouter(address(0), address(this));
+        quoterExt = new SwapQuoter(address(routerExt), address(weth), address(this));
         quoterExt.addPool(nEthPool);
         routerExt.setSwapQuoter(quoterExt);
 

@@ -30,7 +30,7 @@ contract SwapQuoterTest is Utilities06 {
         // Deploy ETH tokens
         neth = deployERC20("nETH", 18);
         weth = deployERC20("WETH", 18);
-        quoter = new SwapQuoter(ROUTER_MOCK, address(weth));
+        quoter = new SwapQuoter(ROUTER_MOCK, address(weth), OWNER);
         // Deploy USD tokens
         nusd = deployERC20("nUSD", 18);
         dai = deployERC20("DAI", 18);
@@ -59,8 +59,6 @@ contract SwapQuoterTest is Utilities06 {
             nUsdPool = deployPoolWithLiquidity(nUsdTokens, amounts);
             vm.label(nUsdPool, "nUSD Pool");
         }
-
-        quoter.transferOwnership(OWNER);
     }
 
     function test_setUp() public {
@@ -281,6 +279,7 @@ contract SwapQuoterTest is Utilities06 {
     ) internal {
         SwapQuery memory query = quoter.getAmountOut(LimitedToken(actionMask, tokenIn), tokenOut, amountIn);
         SwapQuery memory emptyQuery;
+        emptyQuery.tokenOut = tokenOut;
         _compareQueries(query, emptyQuery);
         assertEq(query.rawParams, new bytes(0), "empty: !rawParams");
     }
@@ -293,7 +292,9 @@ contract SwapQuoterTest is Utilities06 {
     ) internal {
         SwapQuery memory query = quoter.getAmountOut(LimitedToken(actionMask, tokenIn), tokenOut, amountIn);
         SwapQuery memory sameTokenQuery;
-        (sameTokenQuery.tokenOut, sameTokenQuery.minAmountOut) = (tokenIn, amountIn);
+        sameTokenQuery.tokenOut = tokenIn;
+        sameTokenQuery.minAmountOut = amountIn;
+        sameTokenQuery.deadline = type(uint256).max;
         _compareQueries(query, sameTokenQuery);
         assertEq(query.rawParams, new bytes(0), "sameToken: !rawParams");
     }

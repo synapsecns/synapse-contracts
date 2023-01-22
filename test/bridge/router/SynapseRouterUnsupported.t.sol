@@ -30,7 +30,7 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
         super.setUp();
 
         weth = deployWETH();
-        neth = deploySynapseERC20("neth");
+        neth = deploySynapseERC20("neth", 18);
 
         {
             uint256[] memory amounts = new uint256[](2);
@@ -42,8 +42,9 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
         }
 
         bridge = deployBridge();
-        router = new SynapseRouter(address(bridge));
-        quoter = new SwapQuoter(address(router), address(weth));
+        // We're using this contract as owner for testing suite deployments
+        router = new SynapseRouter(address(bridge), address(this));
+        quoter = new SwapQuoter(address(router), address(weth), address(this));
 
         quoter.addPool(nEthPool);
         router.setSwapQuoter(quoter);
