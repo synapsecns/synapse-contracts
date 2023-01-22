@@ -68,7 +68,7 @@ contract DeployRouterScript is BaseScript {
 
     /// @dev Deploys SynapseRouter. Function is virtual to allow different deploy workflows.
     function _deployRouter(address bridge) internal virtual returns (SynapseRouter router) {
-        router = new SynapseRouter(bridge);
+        router = new SynapseRouter(bridge, broadcasterAddress);
         saveDeployment(ROUTER, address(router));
     }
 
@@ -120,7 +120,7 @@ contract DeployRouterScript is BaseScript {
 
     /// @dev Deploys SwapQuoter. Function is virtual to allow different deploy workflows.
     function _deployQuoter(SynapseRouter router, address wgas) internal virtual returns (SwapQuoter quoter) {
-        quoter = new SwapQuoter(address(router), address(wgas));
+        quoter = new SwapQuoter(address(router), address(wgas), broadcasterAddress);
         saveDeployment(QUOTER, address(quoter));
     }
 
