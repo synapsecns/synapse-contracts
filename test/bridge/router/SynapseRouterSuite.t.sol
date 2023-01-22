@@ -193,8 +193,9 @@ abstract contract SynapseRouterSuite is Utilities06 {
     }
 
     function deployChainRouter(ChainSetup memory chain) public virtual {
-        chain.router = new SynapseRouter(address(chain.bridge));
-        chain.quoter = new SwapQuoter(address(chain.router), address(chain.wgas));
+        // We're using this contract as owner for testing suite deployments
+        chain.router = new SynapseRouter(address(chain.bridge), address(this));
+        chain.quoter = new SwapQuoter(address(chain.router), address(chain.wgas), address(this));
         chain.router.setSwapQuoter(chain.quoter);
 
         vm.label(address(chain.bridge), concat(chain.name, " Bridge"));

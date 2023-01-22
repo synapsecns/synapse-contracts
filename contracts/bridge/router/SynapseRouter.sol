@@ -53,8 +53,9 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter, MulticallView {
      * @dev Redeploy an implementation with different values, if an update is required.
      * Upgrading the proxy implementation then will effectively "update the immutables".
      */
-    constructor(address _synapseBridge) public {
+    constructor(address _synapseBridge, address owner_) public {
         synapseBridge = ISynapseBridge(_synapseBridge);
+        transferOwnership(owner_);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

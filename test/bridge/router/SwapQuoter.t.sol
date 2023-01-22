@@ -30,7 +30,7 @@ contract SwapQuoterTest is Utilities06 {
         // Deploy ETH tokens
         neth = deployERC20("nETH", 18);
         weth = deployERC20("WETH", 18);
-        quoter = new SwapQuoter(ROUTER_MOCK, address(weth));
+        quoter = new SwapQuoter(ROUTER_MOCK, address(weth), OWNER);
         // Deploy USD tokens
         nusd = deployERC20("nUSD", 18);
         dai = deployERC20("DAI", 18);
@@ -59,8 +59,6 @@ contract SwapQuoterTest is Utilities06 {
             nUsdPool = deployPoolWithLiquidity(nUsdTokens, amounts);
             vm.label(nUsdPool, "nUSD Pool");
         }
-
-        quoter.transferOwnership(OWNER);
     }
 
     function test_setUp() public {
