@@ -33,9 +33,11 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
         fullConfig.serialize("bridge", bridge);
         fullConfig.serialize("wgas", wgas);
 
+        // Save current chainId before switching to Mainnet
+        uint256 chainId = _chainId();
         string memory ethRPC = vm.envString("ALCHEMY_API");
         vm.createSelectFork(ethRPC, ETH_BLOCK_NUMBER);
-        (LocalBridgeConfig.BridgeTokenConfig[] memory tokens, address[] memory pools) = getChainConfig(_chainId());
+        (LocalBridgeConfig.BridgeTokenConfig[] memory tokens, address[] memory pools) = getChainConfig(chainId);
         string[] memory ids = new string[](tokens.length);
 
         for (uint256 i = 0; i < tokens.length; ++i) {
