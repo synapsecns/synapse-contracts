@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# This script check factory deployer nonces on all chains specified in "./script/configs/production-networks.txt".
+
 if [ -z "$1" ]; then
   echo "Error: Please provide a deployer address as an argument."
   exit 1
