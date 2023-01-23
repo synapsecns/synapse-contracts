@@ -39,6 +39,7 @@ contract DeployerUtils is ScriptUtils, Script {
     function setupPK(string memory pkEnvKey) public {
         broadcasterPK = vm.envUint(pkEnvKey);
         broadcasterAddress = vm.addr(broadcasterPK);
+        console.log("Deployer address: %s", broadcasterAddress);
     }
 
     function setupChain(string memory _chain) public {
