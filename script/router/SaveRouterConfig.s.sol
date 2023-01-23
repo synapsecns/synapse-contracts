@@ -44,6 +44,7 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
             ids[i] = tokens[i].id;
             string memory token = tokens[i].id;
             token.serialize("token", tokens[i].token);
+            token.serialize("decimals", tokens[i].decimals);
             token.serialize("tokenType", uint256(tokens[i].tokenType));
             token.serialize("bridgeToken", tokens[i].bridgeToken);
             token.serialize("bridgeFee", tokens[i].bridgeFee);
