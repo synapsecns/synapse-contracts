@@ -2,6 +2,7 @@
 pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
+import {ISynapseDeployFactory} from "../../contracts/factory/interfaces/ISynapseDeployFactory.sol";
 import {ScriptUtils} from "./ScriptUtils.sol";
 
 import "forge-std/Script.sol";
@@ -17,6 +18,8 @@ contract DeployerUtils is ScriptUtils, Script {
     /// @dev Private key and address for deploying contracts
     uint256 internal broadcasterPK;
     address internal broadcasterAddress;
+    /// @dev Synapse Factory for deployments
+    ISynapseDeployFactory internal factory;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                                SETUP                                 ║*▕
@@ -45,6 +48,104 @@ contract DeployerUtils is ScriptUtils, Script {
     function setupChain(string memory _chain) public {
         require(bytes(_chain).length != 0, "Empty chain name");
         chain = _chain;
+    }
+
+    function setupFactory() public {
+        // TODO: deploy actual Factory on the same address everywhere and use it instead
+        // address _factory = vm.env("SYNAPSE_FACTORY_ADDRESS");
+        // For now this is just for the anvil deployment / runDry tests
+        address _factory = deployCode("SynapseDeployFactory.sol");
+        setupFactory(ISynapseDeployFactory(_factory));
+    }
+
+    function setupFactory(ISynapseDeployFactory _factory) public {
+        console.log("Using deploy factory: %s", address(_factory));
+        factory = _factory;
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                               DEPLOYS                                ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    /**
+     * @notice Deploys a contract using the Synapse Deploy Factory
+     * and saves it in the current chain deployments.
+     * @dev Contract code will be fetched from artifact of `contractName`
+     * @param contractName      Name for getting bytecode from the artifacts directory, and saving the deployment
+     * @param salt              Salt for determining the deployed contract address
+     * @param constructorArgs   ABI-encoded constructor args for the deployment
+     * @return deployment       Address of the deployed contract
+     */
+    function deploy(
+        string memory contractName,
+        bytes32 salt,
+        bytes memory constructorArgs
+    ) public returns (address deployment) {
+        deployment = deploy(contractName, contractName, salt, constructorArgs);
+    }
+
+    /**
+     * @notice Deploys a contract using the Synapse Deploy Factory
+     * and saves it in the current chain deployments.
+     * @dev Contract code will be fetched from artifact of `contractName`
+     * @param contractName      Name for getting bytecode from the artifacts directory
+     * @param deploymentName    Name for saving the deployment
+     * @param salt              Salt for determining the deployed contract address
+     * @param constructorArgs   ABI-encoded constructor args for the deployment
+     * @return deployment       Address of the deployed contract
+     */
+    function deploy(
+        string memory contractName,
+        string memory deploymentName,
+        bytes32 salt,
+        bytes memory constructorArgs
+    ) public returns (address deployment) {
+        bytes memory contractCode = loadBytecode(contractName);
+        deployment = deploy(deploymentName, salt, contractCode, constructorArgs);
+    }
+
+    /**
+     * @notice Deploys a contract using the Synapse Deploy Factory
+     * and saves it in the current chain deployments.
+     * @param deploymentName    Name for saving the deployment
+     * @param salt              Salt for determining the deployed contract address
+     * @param contractCode      Contract bytecode for the deployment
+     * @param constructorArgs   ABI-encoded constructor args for the deployment
+     * @return deployment       Address of the deployed contract
+     */
+    function deploy(
+        string memory deploymentName,
+        bytes32 salt,
+        bytes memory contractCode,
+        bytes memory constructorArgs
+    ) public returns (address deployment) {
+        // Deploy contract with given constructor args
+        deployment = factory.deploy(salt, abi.encodePacked(contractCode, constructorArgs));
+        // Save it in the deployments
+        saveDeployment(deploymentName, deployment);
+    }
+
+    /**
+     * @notice Deploys a minimal proxy using the Synapse Deploy Factory
+     * and saves it in the current chain deployments.
+     * @dev Will revert, if `masterName` is not deployed onto the current chain.
+     * @param deploymentName    Name that will be used for saving the deployment
+     * @param salt              Salt for determining the deployed contract address
+     * @param masterName        Name of the master implementation contract
+     * @param initData          Data for the initializer call
+     */
+    function deployClone(
+        string memory deploymentName,
+        bytes32 salt,
+        string memory masterName,
+        bytes memory initData
+    ) public returns (address deployment) {
+        // Load address of master implementation on the current chain
+        address master = loadDeployment(masterName);
+        // Deploy a minimal proxy and call the initializer
+        deployment = factory.deployClone(salt, master, initData);
+        // Save it in the deployments
+        saveDeployment(deploymentName, deployment);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
