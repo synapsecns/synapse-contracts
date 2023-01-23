@@ -63,6 +63,25 @@ contract DeployerUtils is ScriptUtils, Script {
         factory = _factory;
     }
 
+    function loadDeploySalt(
+        string memory deploymentName,
+        string memory envKey,
+        bytes32 defaultSalt
+    ) public returns (bytes32 salt) {
+        salt = vm.envOr(envKey, defaultSalt);
+        logPredictedAddress(deploymentName, salt);
+    }
+
+    function loadCloneSalt(
+        string memory deploymentName,
+        string memory masterName,
+        string memory envKey,
+        bytes32 defaultSalt
+    ) public returns (bytes32 salt) {
+        salt = vm.envOr(envKey, defaultSalt);
+        logPredictedCloneAddress(deploymentName, salt, masterName);
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                               DEPLOYS                                ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
@@ -126,6 +145,16 @@ contract DeployerUtils is ScriptUtils, Script {
     }
 
     /**
+     * @notice Logs the predicted address for a contract deployment using Synapse Deploy Factory.
+     * @param deploymentName    Name that will be used for saving the deployment
+     * @param salt              Salt for determining the deployed contract address
+     */
+    function logPredictedAddress(string memory deploymentName, bytes32 salt) public view {
+        address predicted = factory.predictAddress(broadcasterAddress, salt);
+        console.log("Predicted address for %s: %s", deploymentName, predicted);
+    }
+
+    /**
      * @notice Deploys a minimal proxy using the Synapse Deploy Factory
      * and saves it in the current chain deployments.
      * @dev Will revert, if `masterName` is not deployed onto the current chain.
@@ -146,6 +175,22 @@ contract DeployerUtils is ScriptUtils, Script {
         deployment = factory.deployClone(salt, master, initData);
         // Save it in the deployments
         saveDeployment(deploymentName, deployment);
+    }
+
+    /**
+     * @notice Logs the predicted address for a minimal proxy deployment using Synapse Deploy Factory.
+     * @param deploymentName    Name that will be used for saving the deployment
+     * @param salt              Salt for determining the deployed contract address
+     * @param masterName        Name of the master implementation contract
+     */
+    function logPredictedCloneAddress(
+        string memory deploymentName,
+        bytes32 salt,
+        string memory masterName
+    ) public view {
+        address master = loadDeployment(masterName);
+        address predicted = factory.predictCloneAddress(broadcasterAddress, salt, master);
+        console.log("Predicted address for %s: %s", deploymentName, predicted);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
