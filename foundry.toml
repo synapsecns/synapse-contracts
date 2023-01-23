@@ -21,7 +21,24 @@ verbosity = 4
 
 [rpc_endpoints]
 arbitrum = "${ARBITRUM_API}"
+arbitrum = "${ARBITRUM_API}"
+aurora = "${AURORA_API}"
 avalanche = "${AVAX_API}"
+boba = "${BOBA_API}"
+bsc = "${BSC_API}"
+canto = "${CANTO_API}"
+cronos = "${CRONOS_API}"
+dfk = "${DFK_API}"
+dogechain = "${DOGECHAIN_API}"
+fantom = "${FTM_API}"
+harmony = "${HARMONY_API}"
+klatyn = "${KLAY_API}"
+mainnet = "${ALCHEMY_API}"
+metis = "${METIS_API}"
+moonbeam = "${MOONBEAM_API}"
+moonriver = "${MOVR_API}"
+optimism = "${OPTIMISM_API}"
+polygon = "${POLYGON_API}"
 
 [etherscan]
 arbitrum = { key = "${ETHERSCAN_ARBITRUM_KEY}" }
