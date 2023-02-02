@@ -22,8 +22,8 @@ contract DeployFactoryRouterScript is DeployRouterScript {
     function _deployRouter(address bridge) internal virtual override returns (SynapseRouter router) {
         // abi encode constructor arguments: (bridge, owner)
         bytes memory constructorArgs = abi.encode(bridge, broadcasterAddress);
-        // Deploy SynapseRouter and save it to the deployments
-        address deployment = deploy(ROUTER, routerSalt, constructorArgs);
+        // Deploy SynapseRouter and save it to the deployments. No initializer call is required.
+        address deployment = deploy(ROUTER, routerSalt, constructorArgs, bytes(""));
         router = SynapseRouter(payable(deployment));
     }
 
@@ -31,8 +31,8 @@ contract DeployFactoryRouterScript is DeployRouterScript {
     function _deployQuoter(SynapseRouter router, address wgas) internal virtual override returns (SwapQuoter quoter) {
         // abi encode constructor arguments: (router, wgas, owner)
         bytes memory constructorArgs = abi.encode(router, wgas, broadcasterAddress);
-        // Deploy SwapQuoter and save it to the deployments
-        address deployment = deploy(QUOTER, quoterSalt, constructorArgs);
+        // Deploy SwapQuoter and save it to the deployments. No initializer call is required.
+        address deployment = deploy(QUOTER, quoterSalt, constructorArgs, bytes(""));
         quoter = SwapQuoter(deployment);
     }
 }

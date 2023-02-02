@@ -2,13 +2,14 @@
 pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
+import {FactoryDeployer} from "../../contracts/factory/FactoryDeployer.sol";
 import {ISynapseDeployFactory} from "../../contracts/factory/interfaces/ISynapseDeployFactory.sol";
 import {ScriptUtils} from "./ScriptUtils.sol";
 
 import "forge-std/Script.sol";
 import "forge-std/StdJson.sol";
 
-contract DeployerUtils is ScriptUtils, Script {
+contract DeployerUtils is FactoryDeployer, ScriptUtils, Script {
     using stdJson for string;
 
     /// @dev Name of the chain we are deploying onto
@@ -18,8 +19,6 @@ contract DeployerUtils is ScriptUtils, Script {
     /// @dev Private key and address for deploying contracts
     uint256 internal broadcasterPK;
     address internal broadcasterAddress;
-    /// @dev Synapse Factory for deployments
-    ISynapseDeployFactory internal factory;
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                                SETUP                                 ║*▕
@@ -55,12 +54,8 @@ contract DeployerUtils is ScriptUtils, Script {
         // address _factory = vm.env("SYNAPSE_FACTORY_ADDRESS");
         // For now this is just for the anvil deployment / runDry tests
         address _factory = deployCode("SynapseDeployFactory.sol");
-        setupFactory(ISynapseDeployFactory(_factory));
-    }
-
-    function setupFactory(ISynapseDeployFactory _factory) public {
         console.log("Using deploy factory: %s", address(_factory));
-        factory = _factory;
+        setupFactory(ISynapseDeployFactory(_factory));
     }
 
     function loadDeploySalt(
@@ -70,16 +65,6 @@ contract DeployerUtils is ScriptUtils, Script {
     ) public returns (bytes32 salt) {
         salt = vm.envOr(envKey, defaultSalt);
         logPredictedAddress(deploymentName, salt);
-    }
-
-    function loadCloneSalt(
-        string memory deploymentName,
-        string memory masterName,
-        string memory envKey,
-        bytes32 defaultSalt
-    ) public returns (bytes32 salt) {
-        salt = vm.envOr(envKey, defaultSalt);
-        logPredictedCloneAddress(deploymentName, salt, masterName);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -93,14 +78,16 @@ contract DeployerUtils is ScriptUtils, Script {
      * @param contractName      Name for getting bytecode from the artifacts directory, and saving the deployment
      * @param salt              Salt for determining the deployed contract address
      * @param constructorArgs   ABI-encoded constructor args for the deployment
+     * @param initData          Calldata for initializer call (ignored if empty)
      * @return deployment       Address of the deployed contract
      */
     function deploy(
         string memory contractName,
         bytes32 salt,
-        bytes memory constructorArgs
+        bytes memory constructorArgs,
+        bytes memory initData
     ) public returns (address deployment) {
-        deployment = deploy(contractName, contractName, salt, constructorArgs);
+        deployment = deploy(contractName, contractName, salt, constructorArgs, initData);
     }
 
     /**
@@ -111,16 +98,18 @@ contract DeployerUtils is ScriptUtils, Script {
      * @param deploymentName    Name for saving the deployment
      * @param salt              Salt for determining the deployed contract address
      * @param constructorArgs   ABI-encoded constructor args for the deployment
+     * @param initData          Calldata for initializer call (ignored if empty)
      * @return deployment       Address of the deployed contract
      */
     function deploy(
         string memory contractName,
         string memory deploymentName,
         bytes32 salt,
-        bytes memory constructorArgs
+        bytes memory constructorArgs,
+        bytes memory initData
     ) public returns (address deployment) {
         bytes memory contractCode = loadBytecode(contractName);
-        deployment = deploy(deploymentName, salt, contractCode, constructorArgs);
+        deployment = deploy(deploymentName, salt, contractCode, constructorArgs, initData);
     }
 
     /**
@@ -130,16 +119,18 @@ contract DeployerUtils is ScriptUtils, Script {
      * @param salt              Salt for determining the deployed contract address
      * @param contractCode      Contract bytecode for the deployment
      * @param constructorArgs   ABI-encoded constructor args for the deployment
+     * @param initData          Calldata for initializer call (ignored if empty)
      * @return deployment       Address of the deployed contract
      */
     function deploy(
         string memory deploymentName,
         bytes32 salt,
         bytes memory contractCode,
-        bytes memory constructorArgs
+        bytes memory constructorArgs,
+        bytes memory initData
     ) public returns (address deployment) {
         // Deploy contract with given constructor args
-        deployment = factory.deploy(salt, abi.encodePacked(contractCode, constructorArgs));
+        deployment = deployContract(salt, abi.encodePacked(contractCode, constructorArgs), initData);
         // Save it in the deployments
         saveDeployment(deploymentName, deployment);
     }
@@ -172,25 +163,9 @@ contract DeployerUtils is ScriptUtils, Script {
         // Load address of master implementation on the current chain
         address master = loadDeployment(masterName);
         // Deploy a minimal proxy and call the initializer
-        deployment = factory.deployClone(salt, master, initData);
+        deployment = deployCloneContract(salt, master, initData);
         // Save it in the deployments
         saveDeployment(deploymentName, deployment);
-    }
-
-    /**
-     * @notice Logs the predicted address for a minimal proxy deployment using Synapse Deploy Factory.
-     * @param deploymentName    Name that will be used for saving the deployment
-     * @param salt              Salt for determining the deployed contract address
-     * @param masterName        Name of the master implementation contract
-     */
-    function logPredictedCloneAddress(
-        string memory deploymentName,
-        bytes32 salt,
-        string memory masterName
-    ) public view {
-        address master = loadDeployment(masterName);
-        address predicted = factory.predictCloneAddress(broadcasterAddress, salt, master);
-        console.log("Predicted address for %s: %s", deploymentName, predicted);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
