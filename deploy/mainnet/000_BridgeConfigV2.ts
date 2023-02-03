@@ -52,7 +52,30 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       );
     }
   }
+
+  if ((await getChainId()) === CHAIN_ID.GOERLI) {
+    const deployResult = await deploy("BridgeConfigV3", {
+      from: deployer,
+      log: true,
+      skipIfAlreadyDeployed: true,
+      // gasPrice: "1000000000",
+      gasLimit: "10000000",
+    });
+  
+    if (deployResult.newlyDeployed) {
+      await execute(
+        "BridgeConfigV3",
+        { from: deployer, log: true },
+        "grantRole",
+        "0x4370dcf3e42e4d5b773a451bb8390ee8e7308f47681d1414cff87c2ad0512c85",
+        deployer
+      );
+  }
+}
+  
 };
+
+
 
 export default func;
 func.tags = ["BridgeConfigV3"];

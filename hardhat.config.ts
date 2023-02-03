@@ -102,7 +102,7 @@ let config: HardhatUserConfig = {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
     },
     goerli: {
-      url: "https://rpc.goerli.mudit.blog/",
+      url: "https://rpc.ankr.com/eth_goerli",
     },
     optimism: {
       url: "https://mainnet.optimism.io",
