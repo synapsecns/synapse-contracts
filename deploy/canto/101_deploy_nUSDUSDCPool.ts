@@ -32,7 +32,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     const receipt = await execute(
       "SwapDeployer",
-      { from: deployer, log: true, gasLimit: 10000000, },
+      { from: deployer, log: true, gasLimit: 10000000 },
       "deploy",
       (
         await get("SwapFlashLoan")
@@ -75,7 +75,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       );
       await execute(
         "nUSDUSDCPool",
-        { from: deployer, log: true,  gasLimit: 10000000, },
+        { from: deployer, log: true, gasLimit: 10000000 },
         "transferOwnership",
         (
           await get("DevMultisig")
