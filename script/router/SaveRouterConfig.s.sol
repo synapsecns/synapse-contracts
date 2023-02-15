@@ -10,9 +10,6 @@ import {BridgeConfigV3Lens, LocalBridgeConfig} from "../../contracts/bridge/util
 contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
     using stdJson for string;
 
-    // 2023-01-05 (Mainnet)
-    uint256 internal constant ETH_BLOCK_NUMBER = 16_342_000;
-
     uint256 internal constant METIS_CHAINID = 1088;
 
     string public constant ROUTER = "SynapseRouter";
@@ -40,7 +37,7 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
         // Save current chainId before switching to Mainnet
         uint256 chainId = _chainId();
         string memory ethRPC = vm.envString("ALCHEMY_API");
-        vm.createSelectFork(ethRPC, ETH_BLOCK_NUMBER);
+        vm.createSelectFork(ethRPC);
         (LocalBridgeConfig.BridgeTokenConfig[] memory tokens, address[] memory pools) = getChainConfig(chainId);
         string[] memory ids = new string[](tokens.length);
 
