@@ -50,6 +50,7 @@ abstract contract LocalBridgeConfig is Ownable {
      * so this is not optimized in terms of storage words.
      * @param id            ID for token used in BridgeConfigV3
      * @param token         "End" token, supported by SynapseBridge. This is the token user is receiving/sending.
+     * @param decimals      Amount ot decimals used for `token`
      * @param tokenType     Method of bridging used for the token: Redeem or Deposit.
      * @param bridgeToken   Actual token used for bridging `token`. This is the token bridge is burning/locking.
      *                      Might differ from `token`, if `token` does not conform to bridge-supported interface.
@@ -60,6 +61,7 @@ abstract contract LocalBridgeConfig is Ownable {
     struct BridgeTokenConfig {
         string id;
         address token;
+        uint256 decimals;
         LocalBridgeConfig.TokenType tokenType;
         address bridgeToken;
         uint256 bridgeFee;

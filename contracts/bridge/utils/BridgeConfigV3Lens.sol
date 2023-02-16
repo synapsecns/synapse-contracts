@@ -92,6 +92,7 @@ contract BridgeConfigV3Lens {
             tokens[tokensFound++] = LocalBridgeConfig.BridgeTokenConfig({
                 id: ids[i],
                 token: tokenAddress,
+                decimals: token.tokenDecimals,
                 tokenType: token.isUnderlying
                     ? LocalBridgeConfig.TokenType.Deposit
                     : LocalBridgeConfig.TokenType.Redeem,

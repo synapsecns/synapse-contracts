@@ -13,6 +13,8 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
     // 2023-01-05 (Mainnet)
     uint256 internal constant ETH_BLOCK_NUMBER = 16_342_000;
 
+    uint256 internal constant METIS_CHAINID = 1088;
+
     string public constant ROUTER = "SynapseRouter";
 
     constructor() public {
@@ -26,7 +28,9 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
             return;
         }
         address bridge = loadDeployment("SynapseBridge");
-        address wgas = loadDeployment("WGAS");
+        // Apparently, METIS predeploy at 0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000
+        // could be used as ERC20 token representing METIS, rendering the concept of WGAS useless on that chain.
+        address wgas = _chainId() == METIS_CHAINID ? address(0) : loadDeployment("WGAS");
 
         string memory fullConfig = "full";
         string memory tokensConfig = "";
@@ -44,6 +48,7 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
             ids[i] = tokens[i].id;
             string memory token = tokens[i].id;
             token.serialize("token", tokens[i].token);
+            token.serialize("decimals", tokens[i].decimals);
             token.serialize("tokenType", uint256(tokens[i].tokenType));
             token.serialize("bridgeToken", tokens[i].bridgeToken);
             token.serialize("bridgeFee", tokens[i].bridgeFee);

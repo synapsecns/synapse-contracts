@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import "forge-std/Test.sol";
 
 import {SynapseDeployFactory} from "../../contracts/factory/SynapseDeployFactory.sol";
+import {FactoryDeployer} from "../../contracts/factory/FactoryDeployer.sol";
 
 import "@openzeppelin/contracts-4.5.0/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts-4.5.0/access/AccessControl.sol";
@@ -26,8 +27,7 @@ contract ImplementationMock {
 }
 
 // solhint-disable func-name-mixedcase
-contract SynapseDeployFactoryTest is Test {
-    SynapseDeployFactory internal factory;
+contract SynapseDeployFactoryTest is FactoryDeployer, Test {
     address internal synapseERC20;
 
     struct SynapseERC20Params {
@@ -54,7 +54,7 @@ contract SynapseDeployFactoryTest is Test {
         bytes memory args = abi.encode(name, symbol);
         // Simulate a deploy call from the deployer
         vm.prank(deployer);
-        address deployment = factory.deploy(salt, abi.encodePacked(type(ERC20).creationCode, args));
+        address deployment = deployContract(salt, abi.encodePacked(type(ERC20).creationCode, args), bytes(""));
         // Check deployment address and correctness of constructor args
         assertEq(deployment, predicted, "Predicted address wrong");
         ERC20 token = ERC20(deployment);
@@ -70,7 +70,7 @@ contract SynapseDeployFactoryTest is Test {
         vm.assume(deployer != address(0));
         // We're deploying SynapseERC20 to a predetermined address
         // And calling initialize(name, symbol, decimals, owner)
-        address predicted = factory.predictCloneAddress(deployer, salt, synapseERC20);
+        address predicted = factory.predictAddress(deployer, salt);
         bytes memory initData = abi.encodeWithSignature(
             "initialize(string,string,uint8,address)",
             params.name,
@@ -80,7 +80,7 @@ contract SynapseDeployFactoryTest is Test {
         );
         // Simulate a deploy call from the deployer
         vm.prank(deployer);
-        address deployment = factory.deployClone(salt, synapseERC20, initData);
+        address deployment = deployCloneContract(salt, synapseERC20, initData);
         // Check deployment address and correctness of initializer args
         assertEq(deployment, predicted, "Predicted address wrong");
         ERC20 token = ERC20(deployment);
@@ -106,9 +106,10 @@ contract SynapseDeployFactoryTest is Test {
         bytes memory adminArgs = abi.encode(adminOwner);
         // Simulate a deploy call from the deployer
         vm.prank(deployer);
-        address deploymentAdmin = factory.deploy(
+        address deploymentAdmin = deployContract(
             adminSalt,
-            abi.encodePacked(vm.getCode("FactoryProxyAdmin.sol"), adminArgs)
+            abi.encodePacked(vm.getCode("FactoryProxyAdmin.sol"), adminArgs),
+            bytes("")
         );
         // Check deployment address and correctness of constructor args
         assertEq(deploymentAdmin, predictedAdmin, "Predicted admin address wrong");
@@ -126,9 +127,10 @@ contract SynapseDeployFactoryTest is Test {
         // Simulate a deploy call from the deployer
         vm.prank(deployer);
         // address deploymentProxy = address(new TransparentUpgradeableProxy(synapseERC20, deploymentAdmin, initData));
-        address deploymentProxy = factory.deploy(
+        address deploymentProxy = deployContract(
             proxySalt,
-            abi.encodePacked(type(TransparentUpgradeableProxy).creationCode, proxyArgs)
+            abi.encodePacked(type(TransparentUpgradeableProxy).creationCode, proxyArgs),
+            bytes("")
         );
         // Check deployment address and correctness of initializer args
         assertEq(deploymentProxy, predictedProxy, "Predicted proxy address wrong");
@@ -152,6 +154,6 @@ contract SynapseDeployFactoryTest is Test {
         address master = address(new ImplementationMock());
         bytes memory initData = abi.encodePacked(ImplementationMock.initialize.selector);
         vm.expectRevert("Gm. This is a revert.");
-        factory.deployClone(bytes32(0), master, initData);
+        deployCloneContract(bytes32(0), master, initData);
     }
 }

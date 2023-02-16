@@ -22,8 +22,8 @@ interface ISynapseTest is ISynapse {
 contract NewCantoSwapWrapperTestFork is Test {
     using SafeERC20 for IERC20;
 
-    // 2022-12-02
-    uint256 public constant TEST_BLOCK_NUMBER = 1_894_000;
+    // 2023-02-02
+    uint256 public constant TEST_BLOCK_NUMBER = 2_780_000;
 
     address internal constant NUSD = 0xD8836aF2e565D3Befce7D906Af63ee45a57E8f80;
     address internal constant NOTE = 0x4e71A2E537B7f9D9413D3991D37958c0b5e1e503;
