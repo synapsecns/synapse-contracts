@@ -41,14 +41,7 @@ contract DeployRouterScript is BaseScript {
         _checkConfig(config);
         startBroadcast(_isBroadcasted);
         SynapseRouter router = _deploySetupRouter(config);
-        SwapQuoter quoter = _deploySetupQuoter(config, router);
-        // Check if Swap Quoter is setup correctly
-        if (router.swapQuoter() != quoter) {
-            router.setSwapQuoter(quoter);
-            console.log("%s set to %s", QUOTER, address(quoter));
-        } else {
-            console.log("%s already set up", QUOTER);
-        }
+        _deploySetupQuoter(config, router);
         stopBroadcast();
     }
 
@@ -114,6 +107,8 @@ contract DeployRouterScript is BaseScript {
 
     /// @dev Configures SynapseRouter by adding all chain's bridge tokens.
     function _setupRouter(string memory config, SynapseRouter router) internal {
+        // Check if broadcaster is the owner of SynapseRouter contract
+        address owner = router.owner();
         // Scan existing deployment to check how many tokens to we need to add
         uint256 missing = _scanTokens(config, router);
         string[] memory ids = config.readStringArray("ids");
@@ -145,18 +140,26 @@ contract DeployRouterScript is BaseScript {
             if (_isOutdatedFee(tokenConfig, router)) {
                 _printAction("Fixing", tokenConfig, ids[i]);
                 _printFees(tokenConfig, ids[i]);
-                router.setTokenFee(
-                    tokenConfig.token,
-                    tokenConfig.bridgeFee,
-                    uint256(tokenConfig.minFee),
-                    uint256(tokenConfig.maxFee)
-                );
+                if (owner == broadcasterAddress) {
+                    router.setTokenFee(
+                        tokenConfig.token,
+                        tokenConfig.bridgeFee,
+                        uint256(tokenConfig.minFee),
+                        uint256(tokenConfig.maxFee)
+                    );
+                } else {
+                    _printSkipped("adjust fee", ROUTER, owner);
+                }
                 continue;
             }
             // Token exists and fee structure is up to date
             _printAction("Exists", tokenConfig, ids[i]);
         }
-        router.addTokens(tokens);
+        if (owner == broadcasterAddress) {
+            router.addTokens(tokens);
+        } else {
+            _printSkipped("add tokens", ROUTER, owner);
+        }
     }
 
     function _scanTokens(string memory config, SynapseRouter router) internal view returns (uint256 missing) {
@@ -198,7 +201,7 @@ contract DeployRouterScript is BaseScript {
         address quoterDeployment = tryLoadDeployment(QUOTER);
         if (quoterDeployment == address(0)) {
             quoter = _deployQuoter(router, wgas);
-            _setupQuoter(config, quoter);
+            _setupQuoter(config, router, quoter);
         } else {
             console.log("Skipping %s, deployed at %s", QUOTER, quoterDeployment);
             quoter = SwapQuoter(quoterDeployment);
@@ -212,10 +215,26 @@ contract DeployRouterScript is BaseScript {
     }
 
     /// @dev Configures SwapQuoter by adding all chain's liquidity pools.
-    function _setupQuoter(string memory config, SwapQuoter quoter) internal {
+    function _setupQuoter(
+        string memory config,
+        SynapseRouter router,
+        SwapQuoter quoter
+    ) internal {
         address[] memory pools = config.readAddressArray("pools");
         quoter.addPools(pools);
         console.log("Pools added");
+        // Check if Swap Quoter is setup correctly
+        if (router.swapQuoter() != quoter) {
+            address owner = router.owner();
+            if (owner == broadcasterAddress) {
+                router.setSwapQuoter(quoter);
+                console.log("%s set to %s", QUOTER, address(quoter));
+            } else {
+                _printSkipped("set SwapQuoter", ROUTER, owner);
+            }
+        } else {
+            console.log("%s already set up", QUOTER);
+        }
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -251,5 +270,13 @@ contract DeployRouterScript is BaseScript {
             uint256(tokenConfig.maxFee) / 10**tokenConfig.decimals,
             id
         );
+    }
+
+    function _printSkipped(
+        string memory action,
+        string memory contractName,
+        address owner
+    ) internal view {
+        console.log("Skipped [%s]: broadcaster is not the owner of %s. Use %s", action, contractName, owner);
     }
 }
