@@ -29,6 +29,10 @@ contract DeployRouterScript is BaseScript {
     string public constant ROUTER = "SynapseRouter";
     string public constant QUOTER = "SwapQuoter";
 
+    // Deployed contracts
+    SynapseRouter internal router;
+    SwapQuoter internal quoter;
+
     constructor() public {
         // Load deployer private key
         setupDeployerPK();
@@ -40,8 +44,8 @@ contract DeployRouterScript is BaseScript {
         string memory config = loadDeployConfig(ROUTER);
         _checkConfig(config);
         startBroadcast(_isBroadcasted);
-        SynapseRouter router = _deploySetupRouter(config);
-        _deploySetupQuoter(config, router);
+        _deploySetupRouter(config);
+        _deploySetupQuoter(config);
         stopBroadcast();
     }
 
@@ -83,34 +87,34 @@ contract DeployRouterScript is BaseScript {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /// @dev Deploys and configures SynapseRouter.
-    function _deploySetupRouter(string memory config) internal returns (SynapseRouter router) {
+    function _deploySetupRouter(string memory config) internal {
         console.log("=============== ROUTER ===============");
         // Read deploy params from the config
         address bridge = config.readAddress("bridge");
         // Check if the deployment already exists
         address routerDeployment = tryLoadDeployment(ROUTER);
         if (routerDeployment == address(0)) {
-            router = _deployRouter(bridge);
+            _deployRouter(bridge);
         } else {
             console.log("Skipping %s, deployed at %s", ROUTER, routerDeployment);
             router = SynapseRouter(payable(routerDeployment));
         }
         // Make sure that Router token config matches the provided config
-        _setupRouter(config, router);
+        _setupRouter(config);
     }
 
     /// @dev Deploys SynapseRouter. Function is virtual to allow different deploy workflows.
-    function _deployRouter(address bridge) internal virtual returns (SynapseRouter router) {
+    function _deployRouter(address bridge) internal virtual {
         router = new SynapseRouter(bridge, broadcasterAddress);
         saveDeployment(ROUTER, address(router));
     }
 
     /// @dev Configures SynapseRouter by adding all chain's bridge tokens.
-    function _setupRouter(string memory config, SynapseRouter router) internal {
+    function _setupRouter(string memory config) internal {
         // Check if broadcaster is the owner of SynapseRouter contract
         address owner = router.owner();
         // Scan existing deployment to check how many tokens to we need to add
-        uint256 missing = _scanTokens(config, router);
+        uint256 missing = _scanTokens(config);
         string[] memory ids = config.readStringArray("ids");
         LocalBridgeConfig.BridgeTokenConfig[] memory tokens = new LocalBridgeConfig.BridgeTokenConfig[](missing);
         // `missing` will now track the amount of found "missing tokens"
@@ -137,7 +141,7 @@ contract DeployRouterScript is BaseScript {
                 continue;
             }
             // Check if existing token fee structure is outdated
-            if (_isOutdatedFee(tokenConfig, router)) {
+            if (_isOutdatedFee(tokenConfig)) {
                 _printAction("Fixing", tokenConfig, ids[i]);
                 _printFees(tokenConfig, ids[i]);
                 if (owner == broadcasterAddress) {
@@ -162,7 +166,7 @@ contract DeployRouterScript is BaseScript {
         }
     }
 
-    function _scanTokens(string memory config, SynapseRouter router) internal view returns (uint256 missing) {
+    function _scanTokens(string memory config) internal view returns (uint256 missing) {
         string[] memory ids = config.readStringArray("ids");
         for (uint256 i = 0; i < ids.length; ++i) {
             bytes memory rawConfig = config.parseRaw(_concat("tokens.", ids[i]));
@@ -180,7 +184,7 @@ contract DeployRouterScript is BaseScript {
         }
     }
 
-    function _isOutdatedFee(TokenConfig memory tokenConfig, SynapseRouter router) internal view returns (bool) {
+    function _isOutdatedFee(TokenConfig memory tokenConfig) internal view returns (bool) {
         (uint40 bridgeFee, uint104 minFee, uint112 maxFee) = router.fee(tokenConfig.token);
         return
             bridgeFee != tokenConfig.bridgeFee ||
@@ -193,15 +197,15 @@ contract DeployRouterScript is BaseScript {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /// @dev Deploys and configures SwapQuoter.
-    function _deploySetupQuoter(string memory config, SynapseRouter router) internal returns (SwapQuoter quoter) {
+    function _deploySetupQuoter(string memory config) internal {
         console.log("=============== QUOTER ===============");
         // Read deploy params from the config
         address wgas = config.readAddress("wgas");
         // Check if deployment already exists
         address quoterDeployment = tryLoadDeployment(QUOTER);
         if (quoterDeployment == address(0)) {
-            quoter = _deployQuoter(router, wgas);
-            _setupQuoter(config, router, quoter);
+            _deployQuoter(wgas);
+            _setupQuoter(config);
         } else {
             console.log("Skipping %s, deployed at %s", QUOTER, quoterDeployment);
             quoter = SwapQuoter(quoterDeployment);
@@ -209,17 +213,13 @@ contract DeployRouterScript is BaseScript {
     }
 
     /// @dev Deploys SwapQuoter. Function is virtual to allow different deploy workflows.
-    function _deployQuoter(SynapseRouter router, address wgas) internal virtual returns (SwapQuoter quoter) {
+    function _deployQuoter(address wgas) internal virtual {
         quoter = new SwapQuoter(address(router), address(wgas), broadcasterAddress);
         saveDeployment(QUOTER, address(quoter));
     }
 
     /// @dev Configures SwapQuoter by adding all chain's liquidity pools.
-    function _setupQuoter(
-        string memory config,
-        SynapseRouter router,
-        SwapQuoter quoter
-    ) internal {
+    function _setupQuoter(string memory config) internal {
         address[] memory pools = config.readAddressArray("pools");
         quoter.addPools(pools);
         console.log("Pools added");

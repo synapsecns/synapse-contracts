@@ -19,7 +19,7 @@ contract DeployFactoryRouterScript is DeployRouterScript {
     }
 
     /// @dev Deploys SynapseRouter. Function is virtual to allow different deploy workflows.
-    function _deployRouter(address bridge) internal virtual override returns (SynapseRouter router) {
+    function _deployRouter(address bridge) internal virtual override {
         // abi encode constructor arguments: (bridge, owner)
         bytes memory constructorArgs = abi.encode(bridge, broadcasterAddress);
         // Deploy SynapseRouter and save it to the deployments. No initializer call is required.
@@ -28,7 +28,7 @@ contract DeployFactoryRouterScript is DeployRouterScript {
     }
 
     /// @dev Deploys SwapQuoter. Function is virtual to allow different deploy workflows.
-    function _deployQuoter(SynapseRouter router, address wgas) internal virtual override returns (SwapQuoter quoter) {
+    function _deployQuoter(address wgas) internal virtual override {
         // abi encode constructor arguments: (router, wgas, owner)
         bytes memory constructorArgs = abi.encode(router, wgas, broadcasterAddress);
         // Deploy SwapQuoter and save it to the deployments. No initializer call is required.
