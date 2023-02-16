@@ -98,11 +98,12 @@ contract DeployRouterScript is BaseScript {
         address routerDeployment = tryLoadDeployment(ROUTER);
         if (routerDeployment == address(0)) {
             router = _deployRouter(bridge);
-            _setupRouter(config, router);
         } else {
             console.log("Skipping %s, deployed at %s", ROUTER, routerDeployment);
             router = SynapseRouter(payable(routerDeployment));
         }
+        // Make sure that Router token config matches the provided config
+        _setupRouter(config, router);
     }
 
     /// @dev Deploys SynapseRouter. Function is virtual to allow different deploy workflows.
@@ -113,28 +114,75 @@ contract DeployRouterScript is BaseScript {
 
     /// @dev Configures SynapseRouter by adding all chain's bridge tokens.
     function _setupRouter(string memory config, SynapseRouter router) internal {
+        // Scan existing deployment to check how many tokens to we need to add
+        uint256 missing = _scanTokens(config, router);
         string[] memory ids = config.readStringArray("ids");
-        LocalBridgeConfig.BridgeTokenConfig[] memory tokens = new LocalBridgeConfig.BridgeTokenConfig[](ids.length);
+        LocalBridgeConfig.BridgeTokenConfig[] memory tokens = new LocalBridgeConfig.BridgeTokenConfig[](missing);
+        // `missing` will now track the amount of found "missing tokens"
+        missing = 0;
         for (uint256 i = 0; i < ids.length; ++i) {
             bytes memory rawConfig = config.parseRaw(_concat("tokens.", ids[i]));
             TokenConfig memory tokenConfig = abi.decode(rawConfig, (TokenConfig));
-            console.log("Adding %s: %s", ids[i], tokenConfig.tokenType == 0 ? "Redeem" : "Deposit");
-            console.log("Address: %s", tokenConfig.token);
-            if (tokenConfig.token != tokenConfig.bridgeToken) {
-                console.log("Wrapper: %s", tokenConfig.bridgeToken);
+            (, address bridgeToken) = router.config(tokenConfig.token);
+            // Check if token is missing from Router config
+            if (bridgeToken == address(0)) {
+                _printAction("Adding", tokenConfig, ids[i]);
+                _printAddress(tokenConfig);
+                _printFees(tokenConfig, ids[i]);
+                tokens[missing++] = LocalBridgeConfig.BridgeTokenConfig({
+                    id: ids[i],
+                    token: tokenConfig.token,
+                    decimals: tokenConfig.decimals,
+                    tokenType: LocalBridgeConfig.TokenType(tokenConfig.tokenType),
+                    bridgeToken: tokenConfig.bridgeToken,
+                    bridgeFee: tokenConfig.bridgeFee,
+                    minFee: uint256(tokenConfig.minFee),
+                    maxFee: uint256(tokenConfig.maxFee)
+                });
+                continue;
             }
-            tokens[i] = LocalBridgeConfig.BridgeTokenConfig({
-                id: ids[i],
-                token: tokenConfig.token,
-                decimals: tokenConfig.decimals,
-                tokenType: LocalBridgeConfig.TokenType(tokenConfig.tokenType),
-                bridgeToken: tokenConfig.bridgeToken,
-                bridgeFee: tokenConfig.bridgeFee,
-                minFee: uint256(tokenConfig.minFee),
-                maxFee: uint256(tokenConfig.maxFee)
-            });
+            // Check if existing token fee structure is outdated
+            if (_isOutdatedFee(tokenConfig, router)) {
+                _printAction("Fixing", tokenConfig, ids[i]);
+                _printFees(tokenConfig, ids[i]);
+                router.setTokenFee(
+                    tokenConfig.token,
+                    tokenConfig.bridgeFee,
+                    uint256(tokenConfig.minFee),
+                    uint256(tokenConfig.maxFee)
+                );
+                continue;
+            }
+            // Token exists and fee structure is up to date
+            _printAction("Exists", tokenConfig, ids[i]);
         }
         router.addTokens(tokens);
+    }
+
+    function _scanTokens(string memory config, SynapseRouter router) internal view returns (uint256 missing) {
+        string[] memory ids = config.readStringArray("ids");
+        for (uint256 i = 0; i < ids.length; ++i) {
+            bytes memory rawConfig = config.parseRaw(_concat("tokens.", ids[i]));
+            TokenConfig memory tokenConfig = abi.decode(rawConfig, (TokenConfig));
+            (LocalBridgeConfig.TokenType tokenType, address bridgeToken) = router.config(tokenConfig.token);
+            if (bridgeToken == address(0)) {
+                // Token is not added to SynapseRouter config
+                ++missing;
+                continue;
+            }
+            // tokenType and bridgeToken values need to be consistent throughout time
+            // Unless their change is absolutely necessary
+            require(bridgeToken == tokenConfig.bridgeToken, "Incorrect bridgeToken");
+            require(uint8(tokenType) == tokenConfig.tokenType, "Incorrect tokenType");
+        }
+    }
+
+    function _isOutdatedFee(TokenConfig memory tokenConfig, SynapseRouter router) internal view returns (bool) {
+        (uint40 bridgeFee, uint104 minFee, uint112 maxFee) = router.fee(tokenConfig.token);
+        return
+            bridgeFee != tokenConfig.bridgeFee ||
+            minFee != uint256(tokenConfig.minFee) ||
+            maxFee != uint256(tokenConfig.maxFee);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -168,5 +216,40 @@ contract DeployRouterScript is BaseScript {
         address[] memory pools = config.readAddressArray("pools");
         quoter.addPools(pools);
         console.log("Pools added");
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                               LOGGING                                ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function _printAction(
+        string memory action,
+        TokenConfig memory tokenConfig,
+        string memory id
+    ) internal view {
+        console.log("%s: %s (%s)", action, id, tokenConfig.tokenType == 0 ? "Redeem" : "Deposit");
+    }
+
+    function _printAddress(TokenConfig memory tokenConfig) internal view {
+        console.log("   Address: %s", tokenConfig.token);
+        if (tokenConfig.token != tokenConfig.bridgeToken) {
+            console.log("   Wrapper: %s", tokenConfig.bridgeToken);
+        }
+    }
+
+    function _printFees(TokenConfig memory tokenConfig, string memory id) internal view {
+        console.log("   Fee: %s (%s bps)", tokenConfig.bridgeFee, tokenConfig.bridgeFee / 10**6);
+        console.log(
+            "   Min: %s (%s %s)",
+            uint256(tokenConfig.minFee),
+            uint256(tokenConfig.minFee) / 10**tokenConfig.decimals,
+            id
+        );
+        console.log(
+            "   Max: %s (%s %s)",
+            uint256(tokenConfig.maxFee),
+            uint256(tokenConfig.maxFee) / 10**tokenConfig.decimals,
+            id
+        );
     }
 }
