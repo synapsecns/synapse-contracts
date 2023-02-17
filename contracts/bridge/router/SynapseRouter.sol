@@ -9,27 +9,57 @@ import "../utils/MulticallView.sol";
 
 /**
  * @notice SynapseRouter contract that can be used together with SynapseBridge on any chain.
- * On every supported chain SynapseRouter and SwapQuoter contracts need to be deployed.
- * Chain pools, that are present in the global BridgeConfig should be added to SwapQuoter.
- * router.setSwapQuoter(swapQuoter) should be executed to link these contracts.
- * SynapseRouter should be using the same WETH contract that SynapseBridge is (or will be) using.
- * All supported bridge tokens should be added to SynapseRouter contract.
+ * On every supported chain:
+ * - SynapseRouter and SwapQuoter contracts need to be deployed.
+ * - Chain pools that are present in the global BridgeConfig should be added to SwapQuoter.
+ * - All supported bridge tokens should be added to SynapseRouter contract.
+ * - router.setSwapQuoter(swapQuoter) should be executed to link these contracts.
  *
  * @dev Bridging workflow with SynapseRouter contract.
- * Suppose `routerO` and `routerD` are SynapseRouter deployments on origin and destination chain respectively.
- * Suppose user wants to send `tokenIn` on origin chain, and receive `tokenOut` on destination chain.
- * Suppose for this transaction `bridgeToken` needs to be used.
- * Bridge token address is `bridgeTokenO` and `bridgeTokenD` on origin and destination chain respectively.
- * There might or might not be a swap on origin and destination chains.
- * Following set of actions is required:
- * 1. originQuery = routerO.getAmountOut(tokenIn, bridgeTokenO, amountIn)
- * 2. Adjust originQuery.minAmountOut and originQuery.deadline using user defined slippage and deadline
- * 3. fee = BridgeConfig.calculateSwapFee(bridgeTokenD, destChainId, originQuery.minAmountOut)
- * // ^ Needs special logic for Avalanche's GMX ^
- * 4. destQuery = brideZapD.getAmountOut(bridgeTokenD, tokenOut, originQuery.minAmountOut - fee)
- * 5. Do the bridging with router.bridge(to, destChainId, tokenIn, amountIn, originQuery, destQuery)
- * // If tokenIn is WETH, do router.bridge{value: amount} to use native ETH instead of WETH.
- * Note: the transaction will be reverted, if `bridgeTokenO` is not set up in SynapseRouter.
+ * Initial assumptions:
+ * - `routerOrigin` and `routerDest` are SynapseRouter deployments on origin and destination chain respectively.
+ * - User wants to send `tokenIn` on origin chain, and receive `tokenOut` on destination chain.
+ * - The amount of `tokenIn` tokens user wishes to send is `amountIn`.
+ * - User wants to receives tokens to `userDest` address on destination chain.
+ * - User has no idea what bridge tokens are supported on origin and destination chains.
+ *
+ * Under the hood, the cross-chain swap from `tokenIn` to `tokenOut` is:
+ * 1. [*] `tokenIn` gets swapped to `bridgeToken` on origin chain. `bridgeToken` is a token supported by Synapse:Bridge.
+ * 2. `bridgeToken` gets bridged from origin to destination chain
+ * 3. [**] `bridgeToken` gets swapped to `tokenOut` on destination chain.
+ * 4. `tokenOut` is transferred to the user on destination chain.
+ * [*] : "origin swap" is skipped, if `tokenIn == bridgeToken` on origin chain.
+ * [**]: "destination swap" is skipped, if `tokenOut == bridgeToken` on destination chain.
+ *
+ * Following set of actions is required (be aware, provided code is a pseudo code):
+ * 1. Determine the set of bridge tokens that could fulfill "receive tokenOut on destination chain":
+ *      // This will return a list of (string symbol, address token) tuples.
+ *      bridgeTokens = routerDest.getConnectedBridgeTokens(tokenOut);
+ * 2. Get the list of symbols for these tokens
+ *      symbols = bridgeTokens.map(token => token.symbol);
+ * 3. Get the list of structs with instructions for possible "origin swap":
+ *      // This will return queries for all possible (tokenIn -> symbols[i]) swaps
+ *      originQueries = routerOrigin.getOriginAmountOut(tokenIn, symbols, amountIn);
+ * 4. Form the list of requests for the "destination swap" quotes:
+ *      // Use symbols[i] and originQueries[i].minAmountOut to form a "request":
+ *      requests = zipWith(symbols, originQueries, (symbol, query) => { return [symbol, query.minAmountOut] });
+ * 5. Get the list of structs with instructions for possible "destination swap":
+ *      // This will return quotes for all (symbols[i] => tokenOut) swaps
+ *      // This will also take into account the bridge fee for getting a token to destination chain
+ *      destQueries = routerDest.getDestinationAmountOut(requests, tokenOut);
+ * 6. Pick any pair of (originQuery, destQuery):
+ *      // For instance pick the one with the best destQuery.minAmountOut
+ *      maxIndex = destQueries.indexOf(destQueries.maxBy, (query) => { return query.minAmountOut });
+ *      originQuery = originQueries[maxIndex];
+ *      // destQuery.minAmountOut is the full quote for tokenIn => tokenOut cross-chain swap
+ *      destQuery = destQueries[maxIndex];
+ * 7. Apply slippage, and set deadlines as per user settings:
+ *      originQuery = applyUserSettings(originQuery);
+ *      destQuery = applyUserSettings(destQuery);
+ * 8. Call SynapseRouter using the obtained structs:
+ *      // Check if user wants to send native ETH
+ *      amountETH = (tokenIn == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE) ? amountIn : 0;
+ *      routerOrigin.bridge{value: amountETH}(userDest, chainIdDest, tokenIn, amountIn, originQuery, destQuery);
  */
 contract SynapseRouter is LocalBridgeConfig, SynapseAdapter, MulticallView {
     // SynapseRouter is also the Adapter for the Synapse pools (this reduces the amount of token transfers).
@@ -49,9 +79,7 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter, MulticallView {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     /**
-     * @notice Creates a SynapseRouter implementation, saves WETH and SynapseBridge address.
-     * @dev Redeploy an implementation with different values, if an update is required.
-     * Upgrading the proxy implementation then will effectively "update the immutables".
+     * @notice Deploys a Synapse Router implementation, saves local Synapse:Bridge address and transfers ownership.
      */
     constructor(address _synapseBridge, address owner_) public {
         synapseBridge = ISynapseBridge(_synapseBridge);
@@ -93,7 +121,12 @@ contract SynapseRouter is LocalBridgeConfig, SynapseAdapter, MulticallView {
      * should always use the underlying address. In other words, the concept of wrapper token is fully
      * abstracted away from the end user.
      *
-     * `originQuery` and `destQuery` are supposed to be fetched using SynapseRouter.getAmountOut(tokenIn, tokenOut, amountIn)
+     * `originQuery` is supposed to be fetched using SynapseRouter.getOriginAmountOut().
+     * Alternatively one could use an external adapter for more complex swaps on the origin chain.
+     *
+     * `destQuery` is supposed to be fetched using SynapseRouter.getDestinationAmountOut().
+     * Complex swaps on destination chain are not supported for the time being.
+     * Check contract description above for more details.
      *
      * @param to            Address to receive tokens on destination chain
      * @param chainId       Destination chain id

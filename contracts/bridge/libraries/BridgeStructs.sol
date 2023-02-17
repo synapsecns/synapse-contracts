@@ -3,7 +3,7 @@ pragma solidity 0.6.12;
 
 /// @notice Struct representing a request for SynapseRouter.
 /// @dev tokenIn is supplied separately.
-/// @param swapAdapter      Adapter address that will perform the swap.
+/// @param swapAdapter      Adapter address that will perform the swap. Address(0) specifies a "no swap" query.
 /// @param tokenOut         Token address to swap to.
 /// @param minAmountOut     Minimum amount of tokens to receive after the swap, or tx will be reverted.
 /// @param deadline         Latest timestamp for when the transaction needs to be executed, or tx will be reverted.
