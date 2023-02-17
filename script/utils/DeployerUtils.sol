@@ -71,6 +71,21 @@ contract DeployerUtils is FactoryDeployer, ScriptUtils, Script {
     ▏*║                               DEPLOYS                                ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
+    function deployBytecode(string memory contractName, bytes memory constructorArgs)
+        public
+        returns (address deployment)
+    {
+        console.log("Deploying manually: %s", contractName);
+        console.logBytes(constructorArgs);
+        bytes memory bytecode = abi.encodePacked(loadGeneratedBytecode(contractName), constructorArgs);
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            deployment := create(0, add(bytecode, 0x20), mload(bytecode))
+        }
+        require(deployment != address(0), "Deployment failed");
+        saveDeployment(contractName, deployment, constructorArgs);
+    }
+
     /**
      * @notice Deploys a contract using the Synapse Deploy Factory
      * and saves it in the current chain deployments.
@@ -221,14 +236,25 @@ contract DeployerUtils is FactoryDeployer, ScriptUtils, Script {
 
     /// @notice Saves the deployment JSON for a deployed contract.
     function saveDeployment(string memory contractName, address deployedAt) public {
+        saveDeployment(contractName, deployedAt, "");
+    }
+
+    /// @notice Saves the deployment JSON for a deployed contract.
+    function saveDeployment(
+        string memory contractName,
+        address deployedAt,
+        bytes memory constructorArgs
+    ) public {
         console.log("Deployed: [%s] on [%s] at %s", contractName, chain, deployedAt);
         // Do nothing if script isn't broadcasted
         if (!isBroadcasted) return;
         // Otherwise, save the deployment JSON
         string memory deployment = "deployment";
-        // First, write only the deployment address
+        // First, write only the deployment address and constructor args (should they be present)
+        if (constructorArgs.length != 0) deployment.serialize("constructorArgs", constructorArgs);
         deployment = deployment.serialize("address", deployedAt);
         deployment.write(_deploymentPath(contractName));
+        sortJSON(_deploymentPath(contractName));
         // Then, initiate the jq command to add "abi" as the next key
         // This makes sure that "address" value is printed first later
         string[] memory inputs = new string[](6);
@@ -257,6 +283,12 @@ contract DeployerUtils is FactoryDeployer, ScriptUtils, Script {
     /// @dev Returns the bytecode for a contract.
     function loadBytecode(string memory contractName) public view returns (bytes memory bytecode) {
         return loadArtifact(contractName).readBytes(".bytecode.object");
+    }
+
+    /// @dev Returns "manually generated" bytecode for a contract.
+    function loadGeneratedBytecode(string memory contractName) public view returns (bytes memory bytecode) {
+        string memory path = _concat("script/bytecode/", contractName, ".json");
+        return vm.readFile(path).readBytes(".bytecode");
     }
 
     /// @dev Reads JSON from given path, sorts its keys and overwrites the file.

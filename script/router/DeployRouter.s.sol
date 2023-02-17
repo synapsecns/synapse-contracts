@@ -105,8 +105,8 @@ contract DeployRouterScript is BaseScript {
 
     /// @dev Deploys SynapseRouter. Function is virtual to allow different deploy workflows.
     function _deployRouter(address bridge) internal virtual {
-        router = new SynapseRouter(bridge, broadcasterAddress);
-        saveDeployment(ROUTER, address(router));
+        bytes memory constructorArgs = abi.encode(bridge, broadcasterAddress);
+        router = SynapseRouter(payable(deployBytecode(ROUTER, constructorArgs)));
     }
 
     /// @dev Configures SynapseRouter by adding all chain's bridge tokens.
@@ -214,8 +214,8 @@ contract DeployRouterScript is BaseScript {
 
     /// @dev Deploys SwapQuoter. Function is virtual to allow different deploy workflows.
     function _deployQuoter(address wgas) internal virtual {
-        quoter = new SwapQuoter(address(router), address(wgas), broadcasterAddress);
-        saveDeployment(QUOTER, address(quoter));
+        bytes memory constructorArgs = abi.encode(address(router), address(wgas), broadcasterAddress);
+        quoter = SwapQuoter(deployBytecode(QUOTER, constructorArgs));
     }
 
     /// @dev Configures SwapQuoter by adding all chain's liquidity pools.
