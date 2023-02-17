@@ -1,4 +1,7 @@
-arbitrum
-avalanche
-fantom
-optimism
+aurora
+boba
+bsc
+canto
+cronos
+dfk
+dogechain

@@ -28,7 +28,7 @@ bsc = "${rpc_bsc}"
 canto = "${rpc_canto}"
 cronos = "${rpc_cronos}"
 dfk = "${rpc_dfk}"
-dogechain = "$$rpc_dogechain}"
+dogechain = "${rpc_dogechain}"
 fantom = "${rpc_fantom}"
 harmony = "${rpc_harmony}"
 klatyn = "${rpc_klatyn}"
@@ -41,14 +41,14 @@ polygon = "${rpc_polygon}"
 
 [etherscan]
 arbitrum = { key = "${etherscan_arbitrum_key}" }
-aurora = { key = "${etherscan_aurora_key}" }
+aurora = { key = "${etherscan_aurora_key}", url = "https://explorer.mainnet.aurora.dev/api" }
 avalanche = { key = "${etherscan_avalanche_key}" }
-boba = { key = "${etherscan_boba_key}" }
+boba = { key = "${etherscan_boba_key}", url = "https://api.bobascan.com/api" }
 bsc = { key = "${etherscan_bsc_key}" }
-canto = { key = "${etherscan_canto_key}" }
+canto = { key = "${etherscan_canto_key}", url = "https://evm.explorer.canto.io/api" }
 cronos = { key = "${etherscan_cronos_key}" }
-dfk = { key = "${etherscan_dfk_key}" }
-dogechain = { key = "${etherscan_dogechain_key}" }
+# dfk = { key = "${etherscan_dfk_key}" }
+dogechain = { key = "${etherscan_dogechain_key}", url = "https://explorer.dogechain.dog/api" }
 fantom = { key = "${etherscan_fantom_key}" }
 harmony = { key = "${etherscan_harmony_key}" }
 klatyn = { key = "${etherscan_klatyn_key}" }
