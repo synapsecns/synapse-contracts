@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# This script will deploy and configure SynapseRouter and its auxilary contracts
+# This script will deploy SynapseRouter and its auxilary contracts
 # on all chains specified in "./script/configs/production-networks.txt".
 # Deployment address on every chain will depend on the deployer address initial nonce.
 # Existing deployments will be reused rather than overwritten.

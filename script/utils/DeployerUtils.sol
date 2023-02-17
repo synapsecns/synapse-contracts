@@ -58,6 +58,11 @@ contract DeployerUtils is FactoryDeployer, ScriptUtils, Script {
         setupFactory(ISynapseDeployFactory(_factory));
     }
 
+    function loadAddress(string memory pkEnvKey) public view returns (address) {
+        uint256 privKey = vm.envUint(pkEnvKey);
+        return vm.addr(privKey);
+    }
+
     function loadDeploySalt(
         string memory deploymentName,
         string memory envKey,
