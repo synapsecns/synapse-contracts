@@ -18,6 +18,6 @@ for chain in ${arr[@]}; do
     if [ ! -d "$dirName" ]; then
       mkdir -p "$dirName"
     fi
-    bash -x -c "forge script --silent -f $chain script/router/SaveRouterConfig.s.sol"
+    bash -x -c "forge script -f $chain script/router/SaveRouterConfig.s.sol"
   fi
 done
