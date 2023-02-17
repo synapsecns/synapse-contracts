@@ -52,6 +52,8 @@ artifacts
 build
 tenderly.yaml
 
+broadcast
+
 .env
 doc/
 .openzeppelin
