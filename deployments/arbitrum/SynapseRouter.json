@@ -1,11 +1,17 @@
 {
-  "address": "0x59aA81DF6C4d400A68f99d850f69c8A6494eB0E8",
+  "address": "0x25f8fA4917180FF308883e37Ea27CEaEB68c1f19",
+  "constructorArgs": "0x0000000000000000000000006f4e8eba4d337f874ab57478acc2cb5bacdc19c9000000000000000000000000b73acb429ba868984c0236bdf940d4fe1e643f27",
   "abi": [
     {
       "inputs": [
         {
           "internalType": "address",
           "name": "_synapseBridge",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "owner_",
           "type": "address"
         }
       ],
@@ -132,6 +138,11 @@
               "internalType": "address",
               "name": "token",
               "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "decimals",
+              "type": "uint256"
             },
             {
               "internalType": "enum LocalBridgeConfig.TokenType",
@@ -717,6 +728,37 @@
           ],
           "internalType": "struct SwapQuery[]",
           "name": "originQueries",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes[]",
+          "name": "data",
+          "type": "bytes[]"
+        }
+      ],
+      "name": "multicallView",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "bool",
+              "name": "success",
+              "type": "bool"
+            },
+            {
+              "internalType": "bytes",
+              "name": "returnData",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct MulticallView.Result[]",
+          "name": "callResults",
           "type": "tuple[]"
         }
       ],
