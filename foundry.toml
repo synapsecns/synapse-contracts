@@ -20,9 +20,41 @@ verbosity = 4
 # See more config options https://github.com/gakonst/foundry/tree/master/config
 
 [rpc_endpoints]
-arbitrum = "${ARBITRUM_API}"
-avalanche = "${AVAX_API}"
+arbitrum = "${rpc_arbitrum}"
+aurora = "${rpc_aurora}"
+avalanche = "${rpc_avalanche}"
+boba = "${rpc_boba}"
+bsc = "${rpc_bsc}"
+canto = "${rpc_canto}"
+cronos = "${rpc_cronos}"
+dfk = "${rpc_dfk}"
+dogechain = "$$rpc_dogechain}"
+fantom = "${rpc_fantom}"
+harmony = "${rpc_harmony}"
+klatyn = "${rpc_klatyn}"
+mainnet = "${rpc_mainnet}"
+metis = "${rpc_metis}"
+moonbeam = "${rpc_moonbeam}"
+moonriver = "${rpc_moonriver}"
+optimism = "${rpc_optimism}"
+polygon = "${rpc_polygon}"
 
 [etherscan]
-arbitrum = { key = "${ETHERSCAN_ARBITRUM_KEY}" }
-avalanche = { key = "${ETHERSCAN_AVALANCHE_KEY}" }
+arbitrum = { key = "${etherscan_arbitrum_key}" }
+aurora = { key = "${etherscan_aurora_key}" }
+avalanche = { key = "${etherscan_avalanche_key}" }
+boba = { key = "${etherscan_boba_key}" }
+bsc = { key = "${etherscan_bsc_key}" }
+canto = { key = "${etherscan_canto_key}" }
+cronos = { key = "${etherscan_cronos_key}" }
+dfk = { key = "${etherscan_dfk_key}" }
+dogechain = { key = "${etherscan_dogechain_key}" }
+fantom = { key = "${etherscan_fantom_key}" }
+harmony = { key = "${etherscan_harmony_key}" }
+klatyn = { key = "${etherscan_klatyn_key}" }
+mainnet = { key = "${etherscan_mainnet_key}" }
+metis = { key = "${etherscan_metis_key}" }
+moonbeam = { key = "${etherscan_moonbeam_key}" }
+moonriver = { key = "${etherscan_moonriver_key}" }
+optimism = { key = "${etherscan_optimism_key}" }
+polygon = { key = "${etherscan_polygon_key}" }
