@@ -212,7 +212,7 @@ contract DeployerUtils is FactoryDeployer, ScriptUtils, Script {
     function tryLoadDeployment(string memory contractName) public view returns (address deployment) {
         try vm.readFile(_deploymentPath(contractName)) returns (string memory json) {
             // We assume that if a deployment file exists, the contract is indeed deployed
-            deployment = json.readAddress("address");
+            deployment = json.readAddress(".address");
         } catch {
             // Doesn't exist
             deployment = address(0);
@@ -256,7 +256,7 @@ contract DeployerUtils is FactoryDeployer, ScriptUtils, Script {
 
     /// @dev Returns the bytecode for a contract.
     function loadBytecode(string memory contractName) public view returns (bytes memory bytecode) {
-        return loadArtifact(contractName).readBytes("bytecode.object");
+        return loadArtifact(contractName).readBytes(".bytecode.object");
     }
 
     /// @dev Reads JSON from given path, sorts its keys and overwrites the file.

@@ -55,18 +55,18 @@ contract DeployRouterScript is BaseScript {
 
     function _checkConfig(string memory config) internal view {
         // Check Bridge
-        address bridge = config.readAddress("bridge");
+        address bridge = config.readAddress(".bridge");
         console.log("Checking Bridge: %s", bridge);
         require(bridge.isContract(), "Incorrect config: bridge");
         // Check WGAS
-        address wgas = config.readAddress("wgas");
+        address wgas = config.readAddress(".wgas");
         console.log("Checking   WGAS: %s", wgas);
         require(wgas == address(0) || wgas.isContract(), "Incorrect config: wgas");
         console.log("=============== TOKENS ===============");
         // Check tokens
-        string[] memory ids = config.readStringArray("ids");
+        string[] memory ids = config.readStringArray(".ids");
         for (uint256 i = 0; i < ids.length; ++i) {
-            bytes memory rawConfig = config.parseRaw(_concat("tokens.", ids[i]));
+            bytes memory rawConfig = config.parseRaw(_concat(".tokens.", ids[i]));
             TokenConfig memory tokenConfig = abi.decode(rawConfig, (TokenConfig));
             ERC20 token = ERC20(tokenConfig.token);
             console.log("Checking token: %s", address(token));
@@ -75,7 +75,7 @@ contract DeployRouterScript is BaseScript {
         }
         console.log("===============  POOLS ===============");
         // Check pools
-        address[] memory pools = config.readAddressArray("pools");
+        address[] memory pools = config.readAddressArray(".pools");
         for (uint256 i = 0; i < pools.length; ++i) {
             console.log("Checking pool: %s", pools[i]);
             require(pools[i].isContract(), "Incorrect config: pool");
@@ -90,7 +90,7 @@ contract DeployRouterScript is BaseScript {
     function _deploySetupRouter(string memory config) internal {
         console.log("=============== ROUTER ===============");
         // Read deploy params from the config
-        address bridge = config.readAddress("bridge");
+        address bridge = config.readAddress(".bridge");
         // Check if the deployment already exists
         address routerDeployment = tryLoadDeployment(ROUTER);
         if (routerDeployment == address(0)) {
@@ -115,12 +115,12 @@ contract DeployRouterScript is BaseScript {
         address owner = router.owner();
         // Scan existing deployment to check how many tokens to we need to add
         uint256 missing = _scanTokens(config);
-        string[] memory ids = config.readStringArray("ids");
+        string[] memory ids = config.readStringArray(".ids");
         LocalBridgeConfig.BridgeTokenConfig[] memory tokens = new LocalBridgeConfig.BridgeTokenConfig[](missing);
         // `missing` will now track the amount of found "missing tokens"
         missing = 0;
         for (uint256 i = 0; i < ids.length; ++i) {
-            bytes memory rawConfig = config.parseRaw(_concat("tokens.", ids[i]));
+            bytes memory rawConfig = config.parseRaw(_concat(".tokens.", ids[i]));
             TokenConfig memory tokenConfig = abi.decode(rawConfig, (TokenConfig));
             (, address bridgeToken) = router.config(tokenConfig.token);
             // Check if token is missing from Router config
@@ -167,9 +167,9 @@ contract DeployRouterScript is BaseScript {
     }
 
     function _scanTokens(string memory config) internal view returns (uint256 missing) {
-        string[] memory ids = config.readStringArray("ids");
+        string[] memory ids = config.readStringArray(".ids");
         for (uint256 i = 0; i < ids.length; ++i) {
-            bytes memory rawConfig = config.parseRaw(_concat("tokens.", ids[i]));
+            bytes memory rawConfig = config.parseRaw(_concat(".tokens.", ids[i]));
             TokenConfig memory tokenConfig = abi.decode(rawConfig, (TokenConfig));
             (LocalBridgeConfig.TokenType tokenType, address bridgeToken) = router.config(tokenConfig.token);
             if (bridgeToken == address(0)) {
@@ -200,7 +200,7 @@ contract DeployRouterScript is BaseScript {
     function _deploySetupQuoter(string memory config) internal {
         console.log("=============== QUOTER ===============");
         // Read deploy params from the config
-        address wgas = config.readAddress("wgas");
+        address wgas = config.readAddress(".wgas");
         // Check if deployment already exists
         address quoterDeployment = tryLoadDeployment(QUOTER);
         if (quoterDeployment == address(0)) {
@@ -220,7 +220,7 @@ contract DeployRouterScript is BaseScript {
 
     /// @dev Configures SwapQuoter by adding all chain's liquidity pools.
     function _setupQuoter(string memory config) internal {
-        address[] memory pools = config.readAddressArray("pools");
+        address[] memory pools = config.readAddressArray(".pools");
         quoter.addPools(pools);
         console.log("Pools added");
         // Check if Swap Quoter is setup correctly
