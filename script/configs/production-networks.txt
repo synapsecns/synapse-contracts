@@ -1,2 +1,4 @@
 arbitrum
 avalanche
+fantom
+optimism

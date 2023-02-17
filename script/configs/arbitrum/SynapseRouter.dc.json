@@ -1,0 +1,162 @@
+{
+  "bridge": "0x6F4e8eBa4D337f874Ab57478AcC2Cb5BACdc19c9",
+  "ids": [
+    "nUSD",
+    "SYN",
+    "nETH",
+    "wsOHM",
+    "gOHM",
+    "GMX",
+    "UST",
+    "NEWO",
+    "SDT",
+    "VSTA",
+    "H2O",
+    "L2DAO",
+    "agEUR",
+    "PLS",
+    "UNIDX"
+  ],
+  "pools": [
+    "0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40",
+    "0xa067668661C84476aFcDc6fA5D758C4c01C34352"
+  ],
+  "tokens": {
+    "GMX": {
+      "bridgeFee": 5000000,
+      "bridgeToken": "0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x000000000000000000000000000000000000000000000000058d15e176280000",
+      "token": "0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a",
+      "tokenType": 1
+    },
+    "H2O": {
+      "bridgeFee": 10000000,
+      "bridgeToken": "0xD1c6f989e9552DB523aBAE2378227fBb059a3976",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x00000000000000000000000000000000000000000000000053444835ec580000",
+      "token": "0xD1c6f989e9552DB523aBAE2378227fBb059a3976",
+      "tokenType": 0
+    },
+    "L2DAO": {
+      "bridgeFee": 10000000,
+      "bridgeToken": "0x2CaB3abfC1670D1a452dF502e216a66883cDf079",
+      "decimals": 18,
+      "maxFee": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "minFee": "0x0000000000000000000000000000000000000000000000878678326eac900000",
+      "token": "0x2CaB3abfC1670D1a452dF502e216a66883cDf079",
+      "tokenType": 1
+    },
+    "NEWO": {
+      "bridgeFee": 5000000,
+      "bridgeToken": "0x0877154a755B24D499B8e2bD7ecD54d3c92BA433",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x000000000000000000000000000000000000000000000009c2007651b2500000",
+      "token": "0x0877154a755B24D499B8e2bD7ecD54d3c92BA433",
+      "tokenType": 0
+    },
+    "PLS": {
+      "bridgeFee": 10000000,
+      "bridgeToken": "0x51318B7D00db7ACc4026C88c3952B66278B6A67F",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x000000000000000000000000000000000000000000000000c249fdd327780000",
+      "token": "0x51318B7D00db7ACc4026C88c3952B66278B6A67F",
+      "tokenType": 1
+    },
+    "SDT": {
+      "bridgeFee": 6000000,
+      "bridgeToken": "0x087d18A77465c34CDFd3a081a2504b7E86CE4EF8",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x0000000000000000000000000000000000000000000000015af1d78b58c40000",
+      "token": "0x087d18A77465c34CDFd3a081a2504b7E86CE4EF8",
+      "tokenType": 0
+    },
+    "SYN": {
+      "bridgeFee": 5000000,
+      "bridgeToken": "0x080F6AEd32Fc474DD5717105Dba5ea57268F46eb",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x000000000000000000000000000000000000000000000000a688906bd8b00000",
+      "token": "0x080F6AEd32Fc474DD5717105Dba5ea57268F46eb",
+      "tokenType": 0
+    },
+    "UNIDX": {
+      "bridgeFee": 4000000,
+      "bridgeToken": "0x5429706887FCb58a595677B73E9B0441C25d993D",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x00000000000000000000000000000000000000000000000006f05b59d3b20000",
+      "token": "0x5429706887FCb58a595677B73E9B0441C25d993D",
+      "tokenType": 0
+    },
+    "UST": {
+      "bridgeFee": 6000000,
+      "bridgeToken": "0x13780E6d5696DD91454F6d3BbC2616687fEa43d0",
+      "decimals": 6,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
+      "token": "0x13780E6d5696DD91454F6d3BbC2616687fEa43d0",
+      "tokenType": 0
+    },
+    "VSTA": {
+      "bridgeFee": 6000000,
+      "bridgeToken": "0xa684cd057951541187f288294a1e1C2646aA2d24",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x000000000000000000000000000000000000000000000000d02ab486cedc0000",
+      "token": "0xa684cd057951541187f288294a1e1C2646aA2d24",
+      "tokenType": 1
+    },
+    "agEUR": {
+      "bridgeFee": 10000000,
+      "bridgeToken": "0x16BFc5fe024980124bEf51d1D792dC539d1B5Bf0",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x0000000000000000000000000000000000000000000000006124fee993bc0000",
+      "token": "0x16BFc5fe024980124bEf51d1D792dC539d1B5Bf0",
+      "tokenType": 0
+    },
+    "gOHM": {
+      "bridgeFee": 5000000,
+      "bridgeToken": "0x8D9bA570D6cb60C7e3e0F31343Efe75AB8E65FB1",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x0000000000000000000000000000000000000000000000000011c37937e08000",
+      "token": "0x8D9bA570D6cb60C7e3e0F31343Efe75AB8E65FB1",
+      "tokenType": 0
+    },
+    "nETH": {
+      "bridgeFee": 4000000,
+      "bridgeToken": "0x3ea9B0ab55F34Fb188824Ee288CeaEfC63cf908e",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x00000000000000000000000000000000000000000000000000038d7ea4c68000",
+      "token": "0x3ea9B0ab55F34Fb188824Ee288CeaEfC63cf908e",
+      "tokenType": 0
+    },
+    "nUSD": {
+      "bridgeFee": 4000000,
+      "bridgeToken": "0x2913E812Cf0dcCA30FB28E6Cac3d2DCFF4497688",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x0000000000000000000000000000000000000000000000001bc16d674ec80000",
+      "token": "0x2913E812Cf0dcCA30FB28E6Cac3d2DCFF4497688",
+      "tokenType": 0
+    },
+    "wsOHM": {
+      "bridgeFee": 10000000,
+      "bridgeToken": "0x30bD4e574a15994B35EF9C7a5bc29002F1224821",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x00000000000000000000000000000000000000000000000000005af3107a4000",
+      "token": "0x30bD4e574a15994B35EF9C7a5bc29002F1224821",
+      "tokenType": 0
+    }
+  },
+  "wgas": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+}
