@@ -16,9 +16,6 @@ interface ISynapseTest is ISynapse {
 contract LegacyCantoSwapWrapperTestFork is Test {
     using SafeERC20 for IERC20;
 
-    // 2023-02-02
-    uint256 public constant TEST_BLOCK_NUMBER = 2_780_000;
-
     address internal constant NUSD = 0xD8836aF2e565D3Befce7D906Af63ee45a57E8f80;
     address internal constant NOTE = 0x4e71A2E537B7f9D9413D3991D37958c0b5e1e503;
     address internal constant USDC = 0x80b5a32E4F032B2a058b4F29EC95EEfEEB87aDcd;
@@ -35,7 +32,7 @@ contract LegacyCantoSwapWrapperTestFork is Test {
     function setUp() public {
         string memory cantoRPC = vm.envString("CANTO_API");
         // Fork Canto for SwapWrapper tests
-        vm.createSelectFork(cantoRPC, TEST_BLOCK_NUMBER);
+        vm.createSelectFork(cantoRPC);
 
         swap = new LegacyCantoSwapWrapper();
         for (uint8 i = 0; i < COINS; ++i) {
