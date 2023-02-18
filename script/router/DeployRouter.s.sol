@@ -80,7 +80,7 @@ contract DeployRouterScript is DeployScript {
         address[] memory pools = config.readAddressArray(".pools");
         for (uint256 i = 0; i < pools.length; ++i) {
             console.log("Checking pool: %s", pools[i]);
-            require(pools[i].isContract(), "Incorrect config: pool");
+            require(pools[i] == address(0) || pools[i].isContract(), "Incorrect config: pool");
         }
     }
 
