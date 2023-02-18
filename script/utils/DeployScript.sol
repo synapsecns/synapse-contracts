@@ -53,6 +53,23 @@ abstract contract DeployScript is FactoryDeployer, SynapseScript {
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
+    ▏*║                                 MISC                                 ║*▕
+    \*╚══════════════════════════════════════════════════════════════════════╝*/
+
+    function skipToNonce(uint256 nonce) public {
+        uint256 curNonce = vm.getNonce(broadcasterAddress);
+        require(curNonce <= nonce, "Nonce misaligned");
+        while (curNonce < nonce) {
+            console.log("Skipping nonce: %s", curNonce);
+            payable(broadcasterAddress).transfer(0);
+            ++curNonce;
+        }
+        // Sanity check
+        require(vm.getNonce(broadcasterAddress) == nonce, "Failed to align the nonce");
+        console.log("Deployer nonce is %s", nonce);
+    }
+
+    /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                               DEPLOYS                                ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 

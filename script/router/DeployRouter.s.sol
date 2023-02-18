@@ -105,6 +105,8 @@ contract DeployRouterScript is DeployScript {
 
     /// @dev Deploys SynapseRouter. Function is virtual to allow different deploy workflows.
     function _deployRouter(address bridge) internal virtual {
+        // Align nonce for Router deployment
+        skipToNonce(vm.envUint("ROUTER_NONCE"));
         bytes memory constructorArgs = abi.encode(bridge, owner);
         router = SynapseRouter(payable(deployBytecode(ROUTER, constructorArgs)));
     }
