@@ -222,14 +222,14 @@ contract DeployerUtils is FactoryDeployer, ScriptUtils, Script {
 
     /// @notice Returns the deployment for a contract on a given chain, if it exists.
     /// Reverts if it doesn't exist.
-    function loadDeployment(string memory contractName) public view returns (address deployment) {
+    function loadDeployment(string memory contractName) public returns (address deployment) {
         deployment = tryLoadDeployment(contractName);
         require(deployment != address(0), _concat(contractName, " doesn't exist on ", chain));
     }
 
     /// @notice Returns the deployment for a contract on a given chain, if it exists.
     /// Returns address(0), if it doesn't exist.
-    function tryLoadDeployment(string memory contractName) public view returns (address deployment) {
+    function tryLoadDeployment(string memory contractName) public returns (address deployment) {
         try vm.readFile(_deploymentPath(contractName)) returns (string memory json) {
             // We assume that if a deployment file exists, the contract is indeed deployed
             deployment = json.readAddress(".address");
@@ -286,12 +286,12 @@ contract DeployerUtils is FactoryDeployer, ScriptUtils, Script {
     }
 
     /// @dev Returns the bytecode for a contract.
-    function loadBytecode(string memory contractName) public view returns (bytes memory bytecode) {
+    function loadBytecode(string memory contractName) public returns (bytes memory bytecode) {
         return loadArtifact(contractName).readBytes(".bytecode.object");
     }
 
     /// @dev Returns "manually generated" bytecode for a contract.
-    function loadGeneratedBytecode(string memory contractName) public view returns (bytes memory bytecode) {
+    function loadGeneratedBytecode(string memory contractName) public returns (bytes memory bytecode) {
         string memory path = _concat("script/bytecode/", contractName, ".json");
         return vm.readFile(path).readBytes(".bytecode");
     }

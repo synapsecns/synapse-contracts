@@ -55,7 +55,7 @@ contract SetupRouterScript is BaseScript {
     ▏*║                           INTERNAL: CONFIG                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function _checkConfig(string memory config) internal view {
+    function _checkConfig(string memory config) internal {
         // Check Bridge
         address bridge = config.readAddress(".bridge");
         console.log("Checking Bridge: %s", bridge);
@@ -148,7 +148,7 @@ contract SetupRouterScript is BaseScript {
         }
     }
 
-    function _scanTokens(string memory config) internal view returns (uint256 missing) {
+    function _scanTokens(string memory config) internal returns (uint256 missing) {
         string[] memory ids = config.readStringArray(".ids");
         for (uint256 i = 0; i < ids.length; ++i) {
             bytes memory rawConfig = config.parseRaw(_concat(".tokens.", ids[i]));

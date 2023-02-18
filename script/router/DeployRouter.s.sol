@@ -55,7 +55,7 @@ contract DeployRouterScript is BaseScript {
     ▏*║                           INTERNAL: CONFIG                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function _checkConfig(string memory config) internal view {
+    function _checkConfig(string memory config) internal {
         // Check Bridge
         address bridge = config.readAddress(".bridge");
         console.log("Checking Bridge: %s", bridge);
