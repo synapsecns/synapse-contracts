@@ -11,6 +11,10 @@ import {SwapQuoter} from "../../contracts/bridge/router/SwapQuoter.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
+interface IBridge {
+    function WETH_ADDRESS() external view returns (address);
+}
+
 contract DeployRouterScript is DeployScript {
     using Address for address;
     using stdJson for string;
@@ -63,7 +67,16 @@ contract DeployRouterScript is DeployScript {
         // Check WGAS
         address wgas = config.readAddress(".wgas");
         console.log("Checking   WGAS: %s", wgas);
-        require(wgas == address(0) || wgas.isContract(), "Incorrect config: wgas");
+        address bridgeETH = IBridge(bridge).WETH_ADDRESS();
+        if (wgas != bridgeETH) {
+            require(bridgeETH == address(0), "WGAS doesn't match Bridge");
+            if (wgas == address(0)) {
+                console.log("CHECK THIS! WGAS not set on %s", chain);
+            } else {
+                require(wgas.isContract(), "WGAS is not a contract");
+                console.log("WGAS name: %s", ERC20(wgas).name());
+            }
+        }
         console.log("=============== TOKENS ===============");
         // Check tokens
         string[] memory ids = config.readStringArray(".ids");
