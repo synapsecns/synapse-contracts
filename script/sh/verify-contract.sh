@@ -57,6 +57,8 @@ else
 fi
 echo -e "${YELLOW}Verifying $2 on $1: $address${NC}"
 forge verify-contract --chain $chain_id --verifier-url $url $args --watch $address $2 $key
-if [ $? -e 0 ]; then
-  echo -e "${Green}Verified $2 on $1${NC}"
+if [ $? -ne 0 ]; then
+  echo -e "${RED}Failed to verify $2 on $1${NC}"
+else
+  echo -e "${GREEN}Verified $2 on $1${NC}"
 fi

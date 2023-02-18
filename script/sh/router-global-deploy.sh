@@ -18,6 +18,10 @@ function deploy() {
   echo -e "${YELLOW}Will be deploying SynapseRouter on ${#arr[@]} $1 chains: ${arr[@]}${NC}"
   for chain in ${arr[@]}; do
     ./script/sh/router-deploy.sh $chain $1 $2
+    if [ $? -ne 0 ]; then
+      echo -e "${RED}Deployment on $chain failed${NC}"
+      exit 1
+    fi
   done
 }
 
