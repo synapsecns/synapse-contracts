@@ -41,19 +41,19 @@ polygon = "${rpc_polygon}"
 
 [etherscan]
 arbitrum = { key = "${etherscan_arbitrum_key}" }
-aurora = { key = "${etherscan_aurora_key}", url = "https://explorer.mainnet.aurora.dev/api" }
+# aurora = { key = "${etherscan_aurora_key}", url = "https://explorer.mainnet.aurora.dev/api" }
 avalanche = { key = "${etherscan_avalanche_key}" }
 boba = { key = "${etherscan_boba_key}", url = "https://api.bobascan.com/api" }
 bsc = { key = "${etherscan_bsc_key}" }
-canto = { key = "${etherscan_canto_key}", url = "https://evm.explorer.canto.io/api" }
+# canto = { key = "${etherscan_canto_key}", url = "https://evm.explorer.canto.io/api" }
 cronos = { key = "${etherscan_cronos_key}" }
 # dfk = { key = "${etherscan_dfk_key}" }
-dogechain = { key = "${etherscan_dogechain_key}", url = "https://explorer.dogechain.dog/api" }
+# dogechain = { key = "${etherscan_dogechain_key}", url = "https://explorer.dogechain.dog/api" }
 fantom = { key = "${etherscan_fantom_key}" }
-harmony = { key = "${etherscan_harmony_key}" }
-klatyn = { key = "${etherscan_klatyn_key}" }
+# harmony = { key = "${etherscan_harmony_key}" }
+# klatyn = { key = "${etherscan_klatyn_key}" }
 mainnet = { key = "${etherscan_mainnet_key}" }
-metis = { key = "${etherscan_metis_key}" }
+# metis = { key = "${etherscan_metis_key}" }
 moonbeam = { key = "${etherscan_moonbeam_key}" }
 moonriver = { key = "${etherscan_moonriver_key}" }
 optimism = { key = "${etherscan_optimism_key}" }
