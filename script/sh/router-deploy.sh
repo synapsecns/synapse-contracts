@@ -52,7 +52,7 @@ esac
 
 # Special logic for some of the chains
 case $1 in
-"boba")
+"boba" | "klatyn")
   # Skip simulation if this is the deployment
   if [ "$3" == "true" ]; then
     forgeArgs=$forgeArgs" --skip-simulation"
