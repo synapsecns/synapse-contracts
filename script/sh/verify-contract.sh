@@ -1,50 +1,62 @@
 #!/usr/bin/env bash
-# This script verifies a deployed contract on all producation chains
+# This script verifies a deployed contract on a given chain
+# Usage: ./script/sh/verify-contract.sh <chainName> <contractName>
 
-source .env
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+NC='\033[0m' # No Color
 
 if [ -z "$1" ]; then
-  echo "Error: Please provide a contract name as an argument."
+  echo -e "${RED}Error: Please provide a chain name as the first argument.${NC}"
   exit 1
 fi
-readarray -t arr <script/configs/production-networks.txt
+if [ -z "$2" ]; then
+  echo -e "${RED}Error: Please provide a contract name as teh second argument.${NC}"
+  exit 1
+fi
 
-echo "Will be veryfying contract on ${#arr[@]} chains"
-
-for chain in ${arr[@]}; do
-  chain_id=$(cat "deployments/$chain/.chainId")
-  if [ -z "$chain_id" ]; then
-    echo "Skipping $chain: no .chainId found"
-    continue
-  fi
-  url="etherscan_"$chain"_url"
-  url="${!url}"
-  if [ -z "$url" ]; then
-    echo "Skipping $chain: no URL provided"
-    continue
-  fi
-  key="etherscan_"$chain"_key"
-  key="${!key}"
-  if [ -z "$key" ]; then
-    echo "Skipping $chain: no KEY provided"
-    continue
-  fi
-  deploymentFN="deployments/$chain/$1.json"
-  if [ ! -e "$deploymentFN" ]; then
-    echo "Skipping $chain: no deployment found at $deploymentFN"
-    continue
-  fi
-  address=$(jq .address $deploymentFN)
-  if [ $address == "null" ]; then
-    echo "Skipping $chain: no address found"
-    continue
-  fi
-  address=$(echo "$address" | tr -d '"')
-  args=$(jq .constructorArgs $deploymentFN)
-  if [ $args == "null" ]; then
-    echo "Skipping $chain: no constructor args found"
-    continue
-  fi
+source .env
+chain_id=$(cat "deployments/$1/.chainId")
+if [ -z "$chain_id" ]; then
+  echo -e "${RED}Skipping $1: no .chainId found${NC}"
+  exit
+fi
+url="etherscan_"$1"_url"
+url="${!url}"
+if [ -z "$url" ]; then
+  echo -e "${RED}Skipping $1: no verifier URL provided${NC}"
+  exit
+fi
+key="etherscan_"$1"_key"
+key="${!key}"
+if [ -z "$key" ]; then
+  echo -e "${RED}Skipping $1: no verifier KEY provided${NC}"
+  exit
+fi
+deploymentFN="deployments/$1/$2.json"
+if [ ! -e "$deploymentFN" ]; then
+  echo -e "${RED}Skipping $1: no deployment found at $deploymentFN${NC}"
+  exit
+fi
+address=$(jq .address $deploymentFN)
+if [ $address == "null" ]; then
+  echo -e "${RED}Skipping $1: no address found${NC}"
+  exit
+fi
+# Remove double quotes
+address=$(echo "$address" | tr -d '"')
+args=$(jq .constructorArgs $deploymentFN)
+if [ $args == "null" ]; then
+  echo -e "${YELLOW}No constructor args found for $2${NC}"
+  args=""
+else
+  # Remove double quotes
   args=$(echo "$args" | tr -d '"')
-  forge verify-contract --chain $chain_id --verifier-url $url --constructor-args $args --watch $address $1 $key
-done
+  args="--constructor-args $args"
+fi
+echo -e "${YELLOW}Verifying $2 on $1: $address${NC}"
+forge verify-contract --chain $chain_id --verifier-url $url $args --watch $address $2 $key
+if [ $? -e 0 ]; then
+  echo -e "${Green}Verified $2 on $1${NC}"
+fi
