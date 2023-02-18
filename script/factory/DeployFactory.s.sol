@@ -2,11 +2,11 @@
 pragma solidity 0.8.17;
 
 import "forge-std/Script.sol";
-import {BaseScript} from "../utils/BaseScript.sol";
+import {DeployScript} from "../utils/DeployScript.sol";
 
 import {SynapseDeployFactory} from "../../contracts/factory/SynapseDeployFactory.sol";
 
-contract DeployFactoryScript is BaseScript {
+contract DeployFactoryScript is DeployScript {
     string public constant FACTORY = "SynapseDeployFactory";
     // @notice Expected nonce for FACTORY_DEPLOYER on chains where Factory is not yet deployed
     uint256 public factoryDeployerNonce;

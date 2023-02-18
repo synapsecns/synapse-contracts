@@ -3,7 +3,7 @@ pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "forge-std/Script.sol";
-import {BaseScript} from "../utils/BaseScript.sol";
+import {DeployScript} from "../utils/DeployScript.sol";
 
 import {LocalBridgeConfig, SynapseRouter} from "../../contracts/bridge/router/SynapseRouter.sol";
 import {SwapQuoter} from "../../contracts/bridge/router/SwapQuoter.sol";
@@ -11,7 +11,7 @@ import {SwapQuoter} from "../../contracts/bridge/router/SwapQuoter.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-contract SetupRouterScript is BaseScript {
+contract SetupRouterScript is DeployScript {
     using Address for address;
     using stdJson for string;
 

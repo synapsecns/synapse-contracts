@@ -3,11 +3,11 @@ pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "forge-std/Script.sol";
-import {BaseScript} from "../utils/BaseScript.sol";
+import {SynapseScript} from "../utils/SynapseScript.sol";
 
 import {BridgeConfigV3Lens, LocalBridgeConfig} from "../../contracts/bridge/utils/BridgeConfigV3Lens.sol";
 
-contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
+contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
     using stdJson for string;
 
     uint256 internal constant METIS_CHAINID = 1088;
@@ -19,7 +19,7 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
         loadChain();
     }
 
-    function execute(bool) public override {
+    function run() external {
         if (deployConfigExists(ROUTER)) {
             console.log("Skipping: deploy config for [%s] on [%s] already exists", ROUTER, chain);
             return;

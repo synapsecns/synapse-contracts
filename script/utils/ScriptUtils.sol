@@ -6,6 +6,16 @@ abstract contract ScriptUtils {
     bytes1 internal constant ZERO = bytes1("0");
     bytes1 internal constant NINE = bytes1("9");
 
+    /// @dev Wrapper for block.chainid, which is not directly accessible in 0.6.12
+    function _chainId() internal view returns (uint256 chainId) {
+        // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
+        this;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            chainId := chainid()
+        }
+    }
+
     /// @dev Shortcut for concatenation of two strings.
     function _concat(string memory a, string memory b) internal pure returns (string memory) {
         return string(abi.encodePacked(a, b));
