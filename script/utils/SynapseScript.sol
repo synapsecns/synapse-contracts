@@ -38,6 +38,7 @@ contract SynapseScript is ScriptUtils, Script {
         broadcasterPK = vm.envUint(pkEnvKey);
         broadcasterAddress = vm.addr(broadcasterPK);
         console.log("Deployer address: %s", broadcasterAddress);
+        console.log("Deployer balance: %s", _fromWei(broadcasterAddress.balance));
     }
 
     function setupChain(string memory _chain) public {

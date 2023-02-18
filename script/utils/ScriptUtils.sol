@@ -85,4 +85,24 @@ abstract contract ScriptUtils {
             val = val * 10 + uint8(b) - uint8(ZERO);
         }
     }
+
+    function _intToStr(uint256 val) internal pure returns (string memory str) {
+        bytes memory bStr;
+        do {
+            uint8 digit = uint8(val % 10);
+            bytes1 char = bytes1(uint8(ZERO) + digit);
+            bStr = abi.encodePacked(char, bStr);
+            val = val / 10;
+        } while (val != 0);
+        return string(bStr);
+    }
+
+    function _fromWei(uint256 amount) internal pure returns (string memory s) {
+        string memory a = _intToStr(amount / 10**18);
+        string memory b = _intToStr(amount % 10**18);
+        while (bytes(b).length < 18) {
+            b = string(abi.encodePacked("0", b));
+        }
+        return _concat(a, ".", b);
+    }
 }
