@@ -25,7 +25,6 @@ forgeArgs="-f $1 --slow"
 # Second argument is whether the chain supports EIP-1559
 case $2 in
 "eip-1559") ;;
-
 "legacy" | "")
   forgeArgs=$forgeArgs" --legacy"
   ;;
@@ -60,23 +59,21 @@ case $1 in
   ;;
 esac
 
+# Create directory for fresh deployments
+mkdir -p ".deployments/$1"
 bash -x -c "forge script $forgeArgs script/router/DeployRouter.s.sol"
 # Check if deployment went fine
 if [ $? -ne 0 ]; then
   echo -e "${RED}There was an error during deployment on $1${NC}"
-  # Trim deployments if tx was broadcasted
-  if [ "$3" == "true" ]; then
-    echo -e "${YELLOW}Trimming deployments: SynapseRouter${NC}"
-    forge script -f $1 script/utils/TrimDeployment.s.sol --sig "trim(string)" SynapseRouter
-    echo -e "${YELLOW}Trimming deployments: SwapQuoter${NC}"
-    forge script -f $1 script/utils/TrimDeployment.s.sol --sig "trim(string)" SwapQuoter
-  fi
   exit 1
 else
   echo -e "${GREEN}Deployed successfully on $1${NC}"
 fi
-# Verify deployed contracts if tx was broadcasted
+# Check deployments and verify contracts if tx was broadcasted
 if [ "$3" == "true" ]; then
+  echo -e "${YELLOW}Checking deployments for $1${NC}"
+  ./script/sh/save-deployment.sh $1 SynapseRouter
+  ./script/sh/save-deployment.sh $1 SwapQuoter
   echo -e "${YELLOW}Verifying deployed contracts on $1${NC}"
   ./script/sh/verify-contract.sh $1 SynapseRouter
   ./script/sh/verify-contract.sh $1 SwapQuoter

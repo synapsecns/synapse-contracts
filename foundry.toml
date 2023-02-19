@@ -6,7 +6,7 @@ src = "contracts"
 out = "artifacts"
 libs = ["node_modules"]
 ffi = true
-fs_permissions = [{ access = "read", path = "./artifacts"}, { access = "read-write", path = "./deployments"}, {access = "read-write", path = "./script"}]
+fs_permissions = [{ access = "read", path = "./artifacts"}, { access = "read-write", path = "./deployments"}, { access = "read-write", path = "./.deployments"}, {access = "read-write", path = "./script"}]
 
 ## set only when the `hardhat` profile is selected
 [profile.hardhat]

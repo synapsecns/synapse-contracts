@@ -58,3 +58,6 @@ broadcast
 doc/
 .openzeppelin
  report.*.json
+
+# Optimistically saved unverified deployments
+.deployments

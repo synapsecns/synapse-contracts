@@ -12,6 +12,11 @@ import {stdJson} from "forge-std/StdJson.sol";
 contract SynapseScript is ScriptUtils, Script {
     using stdJson for string;
 
+    string internal constant ARTIFACTS = "artifacts/";
+    string internal constant FRESH_DEPLOYMENTS = ".deployments/";
+    string internal constant DEPLOYMENTS = "deployments/";
+    string internal constant DEPLOY_CONFIGS = "script/configs/";
+
     /// @dev Name of the chain we are deploying onto
     string internal chain;
     /// @dev Whether the script will be broadcasted or not
@@ -79,7 +84,7 @@ contract SynapseScript is ScriptUtils, Script {
     function loadChains() public returns (bytes[] memory chains, uint256[] memory chainIds) {
         string[] memory inputs = new string[](2);
         inputs[0] = "ls";
-        inputs[1] = _deploymentsPath();
+        inputs[1] = DEPLOYMENTS;
         bytes memory res = vm.ffi(inputs);
         chains = _splitString(abi.encodePacked(res, NEWLINE));
         uint256 amount = chains.length;
@@ -91,7 +96,7 @@ contract SynapseScript is ScriptUtils, Script {
 
     /// @notice Loads the chainId for the given chain from the local deployments
     function loadChainId(string memory _chain) public returns (uint256 chainId) {
-        string memory path = _concat(_deploymentsPath(), _chain, "/.chainId");
+        string memory path = _concat(DEPLOYMENTS, _chain, "/.chainId");
         try vm.readLine(path) returns (string memory str) {
             chainId = _strToInt(str);
             vm.closeFile(path);
@@ -189,32 +194,23 @@ contract SynapseScript is ScriptUtils, Script {
     ▏*║                           INTERNAL HELPERS                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    /// @dev Returns the full path to the local deploy configs directory.
-    function _artifactsPath() internal view returns (string memory path) {
-        return _concat(vm.projectRoot(), "/artifacts/");
+    function _artifactPath(string memory contractName) internal pure returns (string memory path) {
+        return _concat(ARTIFACTS, contractName, ".sol/", contractName, ".json");
     }
 
-    function _artifactPath(string memory contractName) internal view returns (string memory path) {
-        return _concat(_artifactsPath(), contractName, ".sol/", contractName, ".json");
-    }
-
-    /// @dev Returns the full path to the local deployment directory.
-    function _deploymentsPath() internal view returns (string memory path) {
-        return _concat(vm.projectRoot(), "/deployments/");
+    /// @dev Returns the full path to the FRESH contract deployment JSON, which is
+    /// optimistically saved by the deploy script regardless of whether the deployment went fine.
+    function _freshDeploymentPath(string memory contractName) internal view returns (string memory path) {
+        return _concat(FRESH_DEPLOYMENTS, chain, "/", contractName, ".json");
     }
 
     /// @dev Returns the full path to the contract deployment JSON.
     function _deploymentPath(string memory contractName) internal view returns (string memory path) {
-        return _concat(_deploymentsPath(), chain, "/", contractName, ".json");
-    }
-
-    /// @dev Returns the full path to the local deploy configs directory.
-    function _deployConfigsPath() internal view returns (string memory path) {
-        return _concat(vm.projectRoot(), "/script/configs/");
+        return _concat(DEPLOYMENTS, chain, "/", contractName, ".json");
     }
 
     /// @dev Returns the full path to the contract deploy config JSON.
     function _deployConfigPath(string memory contractName) internal view returns (string memory path) {
-        return _concat(_deployConfigsPath(), chain, "/", contractName, ".dc.json");
+        return _concat(DEPLOY_CONFIGS, chain, "/", contractName, ".dc.json");
     }
 }
