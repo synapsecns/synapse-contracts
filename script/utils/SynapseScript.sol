@@ -2,8 +2,6 @@
 pragma solidity >=0.6.12;
 pragma experimental ABIEncoderV2;
 
-import {FactoryDeployer} from "../../contracts/factory/FactoryDeployer.sol";
-import {ISynapseDeployFactory} from "../../contracts/factory/interfaces/ISynapseDeployFactory.sol";
 import {ScriptUtils} from "./ScriptUtils.sol";
 
 import {console, Script} from "forge-std/Script.sol";
