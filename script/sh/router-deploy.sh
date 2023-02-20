@@ -61,6 +61,19 @@ esac
 
 # Create directory for fresh deployments
 mkdir -p ".deployments/$1"
+# Temp fix until Foundry bytecode matches solc bytecode EXACTLY
+# Compile SwapQuoter, SynapseRouter: bytecode from these artifacts will be used for the deploy
+./script/sh/bytecode.sh SwapQuoter
+if [ $? -ne 0 ]; then
+  echo -e "${RED}There was an error during SwapQuoter compilation${NC}"
+  exit 1
+fi
+./script/sh/bytecode.sh SynapseRouter
+if [ $? -ne 0 ]; then
+  echo -e "${RED}There was an error during SynapseRouter compilation${NC}"
+  exit 1
+fi
+# Finally, launch the deploy script
 bash -x -c "forge script $forgeArgs script/router/DeployRouter.s.sol"
 # Check if deployment went fine
 if [ $? -ne 0 ]; then
