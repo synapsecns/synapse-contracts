@@ -81,7 +81,7 @@ jobs:
       AVAX_API: https://api.avax.network/ext/bc/C/rpc
       MOVR_API: https://moonriver.api.onfinality.io/public
       OPTIMISM_API: ${{ secrets.OPTIMISM_API }}
-      KLAY_API: https://cypress.fandom.finance/archive
+      KLAY_API: https://public-node-api.klaytnapi.com/v1/cypress
       CANTO_API: https://canto.slingshot.finance
       FOUNDRY_FUZZ_RUNS: 64
 
