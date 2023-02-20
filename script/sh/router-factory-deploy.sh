@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# This script will deploy and configure SynapseRouter and its auxilary contracts
+# This script will deploy SynapseRouter and its auxilary contracts
 # on all chains specified in "./script/configs/production-networks.txt".
 # Synapse Deploy Factory will be used, meaning the deployment address on every chain
 # will depend on the deployer address, and the provided salts for every deployment.
@@ -37,5 +37,5 @@ done
 # Deploy on all chains one by one
 for chain in ${arr[@]}; do
   echo "Deploying on $chain"
-  bash -x -c "forge script --silent -f $chain script/router/DeployFactoryRouter.s.sol $deployArgs"
+  bash -x -c "forge script -f $chain script/router/DeployFactoryRouter.s.sol $deployArgs"
 done

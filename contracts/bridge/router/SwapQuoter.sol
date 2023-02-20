@@ -169,7 +169,7 @@ contract SwapQuoter is SwapCalculator, Ownable {
             return query;
         }
         uint256 actionMask = tokenIn.actionMask;
-        // Check if ETH <> WETH (Action.HandleEth) could fulfill tokenInglobal-bridge-zap -> tokenOut request.
+        // Check if ETH <> WETH (Action.HandleEth) could fulfill tokenIn -> tokenOut request.
         _checkHandleETH(tokenIn.token, tokenOut, amountIn, query, actionMask, performQuoteCall);
         uint256 amount = poolsAmount();
         // Struct to get around stack-too-deep error

@@ -3,11 +3,11 @@ pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "forge-std/Script.sol";
-import {BaseScript} from "../utils/BaseScript.sol";
+import {SynapseScript} from "../utils/SynapseScript.sol";
 
 import {BridgeConfigV3Lens, LocalBridgeConfig} from "../../contracts/bridge/utils/BridgeConfigV3Lens.sol";
 
-contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
+contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
     using stdJson for string;
 
     uint256 internal constant METIS_CHAINID = 1088;
@@ -19,7 +19,7 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
         loadChain();
     }
 
-    function execute(bool) public override {
+    function run() external {
         if (deployConfigExists(ROUTER)) {
             console.log("Skipping: deploy config for [%s] on [%s] already exists", ROUTER, chain);
             return;
@@ -50,12 +50,19 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, BaseScript {
             token.serialize("bridgeToken", tokens[i].bridgeToken);
             token.serialize("bridgeFee", tokens[i].bridgeFee);
             token.serialize("minFee", bytes32(tokens[i].minFee));
+            // Set caps for minFee/maxFee
+            if (tokens[i].minFee > type(uint104).max) tokens[i].minFee = type(uint104).max;
+            if (tokens[i].maxFee > type(uint112).max) tokens[i].maxFee = type(uint112).max;
             // Save JSON for a token
             token = token.serialize("maxFee", bytes32(tokens[i].maxFee));
             tokensConfig = string("tokens").serialize(tokens[i].id, token);
         }
         fullConfig.serialize("ids", ids);
         fullConfig.serialize("tokens", tokensConfig);
+        if (pools.length == 0) {
+            // Temp fix until foundry can read empty arrays from JSON files
+            pools = new address[](1);
+        }
         fullConfig = fullConfig.serialize("pools", pools);
 
         saveDeployConfig(ROUTER, fullConfig);
