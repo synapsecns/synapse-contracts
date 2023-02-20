@@ -41,7 +41,7 @@
       "bridgeFee": 10000000,
       "bridgeToken": "0xBAac2B4491727D78D2b78815144570b9f2Fe8899",
       "decimals": 18,
-      "maxFee": "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "maxFee": "0x000000000000000000000000000000000000ffffffffffffffffffffffffffff",
       "minFee": "0x00000000000000000000000000000000000000000000010f0cf064dd59200000",
       "token": "0xBAac2B4491727D78D2b78815144570b9f2Fe8899",
       "tokenType": 1

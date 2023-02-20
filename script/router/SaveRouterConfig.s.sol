@@ -50,6 +50,9 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
             token.serialize("bridgeToken", tokens[i].bridgeToken);
             token.serialize("bridgeFee", tokens[i].bridgeFee);
             token.serialize("minFee", bytes32(tokens[i].minFee));
+            // Set caps for minFee/maxFee
+            if (tokens[i].minFee > type(uint104).max) tokens[i].minFee = type(uint104).max;
+            if (tokens[i].maxFee > type(uint112).max) tokens[i].maxFee = type(uint112).max;
             // Save JSON for a token
             token = token.serialize("maxFee", bytes32(tokens[i].maxFee));
             tokensConfig = string("tokens").serialize(tokens[i].id, token);
