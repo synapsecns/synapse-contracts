@@ -11,6 +11,10 @@ import {SwapQuoter} from "../../contracts/bridge/router/SwapQuoter.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
+interface IBridge {
+    function WETH_ADDRESS() external view returns (address);
+}
+
 contract SetupRouterScript is DeployScript {
     using Address for address;
     using stdJson for string;
@@ -63,7 +67,16 @@ contract SetupRouterScript is DeployScript {
         // Check WGAS
         address wgas = config.readAddress(".wgas");
         console.log("Checking   WGAS: %s", wgas);
-        require(wgas == address(0) || wgas.isContract(), "Incorrect config: wgas");
+        address bridgeETH = IBridge(bridge).WETH_ADDRESS();
+        if (wgas != bridgeETH) {
+            require(bridgeETH == address(0), "WGAS doesn't match Bridge");
+            if (wgas == address(0)) {
+                console.log("CHECK THIS! WGAS not set on %s", chain);
+            } else {
+                require(wgas.isContract(), "WGAS is not a contract");
+                console.log("WGAS name: %s", ERC20(wgas).name());
+            }
+        }
         console.log("=============== TOKENS ===============");
         // Check tokens
         string[] memory ids = config.readStringArray(".ids");
@@ -80,7 +93,7 @@ contract SetupRouterScript is DeployScript {
         address[] memory pools = config.readAddressArray(".pools");
         for (uint256 i = 0; i < pools.length; ++i) {
             console.log("Checking pool: %s", pools[i]);
-            require(pools[i].isContract(), "Incorrect config: pool");
+            require(pools[i] == address(0) || pools[i].isContract(), "Incorrect config: pool");
         }
     }
 
@@ -140,8 +153,12 @@ contract SetupRouterScript is DeployScript {
         }
         if (owner == broadcasterAddress) {
             router.addTokens(tokens);
-            router.setSwapQuoter(quoter);
-            console.log("%s set to %s", QUOTER, address(quoter));
+            if (router.swapQuoter() != quoter) {
+                router.setSwapQuoter(quoter);
+                console.log("%s set to %s", QUOTER, address(quoter));
+            } else {
+                console.log("%s already set up in %s", QUOTER, ROUTER);
+            }
         } else {
             _printSkipped("add tokens", ROUTER, owner);
             _printSkipped("set SwapQuoter", ROUTER, owner);
@@ -181,19 +198,11 @@ contract SetupRouterScript is DeployScript {
     /// @dev Configures SwapQuoter by adding all chain's liquidity pools.
     function _setupQuoter(string memory config) internal {
         address[] memory pools = config.readAddressArray(".pools");
-        quoter.addPools(pools);
-        console.log("Pools added");
-        // Check if Swap Quoter is setup correctly
-        if (router.swapQuoter() != quoter) {
-            address owner = router.owner();
-            if (owner == broadcasterAddress) {
-                router.setSwapQuoter(quoter);
-                console.log("%s set to %s", QUOTER, address(quoter));
-            } else {
-                _printSkipped("set SwapQuoter", ROUTER, owner);
-            }
+        if (pools.length == 1 && pools[0] == address(0)) {
+            console.log("No pools on %s", chain);
         } else {
-            console.log("%s already set up", QUOTER);
+            quoter.addPools(pools);
+            console.log("Pools added");
         }
     }
 
