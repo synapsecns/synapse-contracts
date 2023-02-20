@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # This script will deploy SynapseRouter and its auxilary contracts on all chains specified in
-# - "./script/configs/networks-eip-1559"
-# - "./script/configs/networks-legacy"
+# - "./script/networks-eip-1559"
+# - "./script/networks-legacy"
 # Deployment address on every chain will depend on the deployer address initial nonce.
 # Existing deployments will be reused rather than overwritten.
 # Usage: ./script/sh/router-global-deploy.sh [-b]
@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 function deploy() {
   # deploy eip-1559|legacy true|false
   # Read the list of chains to deploy to
-  readarray -t arr <script/configs/networks-$1
+  readarray -t arr <script/networks-$1
   echo -e "${YELLOW}Will be deploying SynapseRouter on ${#arr[@]} $1 chains: ${arr[@]}${NC}"
   for chain in ${arr[@]}; do
     ./script/sh/router-deploy.sh $chain $1 $2

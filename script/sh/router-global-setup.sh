@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # This script will configure SynapseRouter and its auxilary contracts on all chains specified in
-# - "./script/configs/networks-eip-1559"
-# - "./script/configs/networks-legacy"
+# - "./script/networks-eip-1559"
+# - "./script/networks-legacy"
 # If the existing deployments were previousy configured, only the neccesary updates will be performed.
 
 # Usage: ./script/sh/router-global-setup.sh [-b]
@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 function configure() {
   # configure eip-1559|legacy true|false
   # Read the list of chains to deploy to
-  readarray -t arr <script/configs/networks-$1
+  readarray -t arr <script/networks-$1
   echo -e "${YELLOW}Will be configuring SynapseRouter on ${#arr[@]} $1 chains: ${arr[@]}${NC}"
   for chain in ${arr[@]}; do
     ./script/sh/router-setup.sh $chain $1 $2

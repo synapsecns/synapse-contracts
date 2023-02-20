@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # This script will save the deploy configuration for SynapseRouter and its auxilary contracts
 # on all chains specified in
-# - "./script/configs/networks-eip-1559"
-# - "./script/configs/networks-legacy"
+# - "./script/networks-eip-1559"
+# - "./script/networks-legacy"
 # Existing deploy configurations will not be overwritten unless expicitly instructed.
 
 # Usage: ./script/sh/router-global-config.sh [--overwrite]
@@ -19,13 +19,13 @@ if [ $? -ne 0 ]; then
 fi
 
 # Handle eip-1559 chains
-readarray -t arr <"script/configs/networks-eip-1559"
+readarray -t arr <"script/networks-eip-1559"
 echo -e "${YELLOW}Saving config for ${#arr[@]} chains: ${arr[@]}${NC}"
 for chain in ${arr[@]}; do
   ./script/sh/router-config.sh $chain $1
 done
 # Handle legacy chains
-readarray -t arr <"script/configs/networks-legacy"
+readarray -t arr <"script/networks-legacy"
 echo -e "${YELLOW}Saving config for ${#arr[@]} chains: ${arr[@]}${NC}"
 for chain in ${arr[@]}; do
   ./script/sh/router-config.sh $chain $1
