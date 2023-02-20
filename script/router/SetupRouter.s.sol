@@ -6,7 +6,7 @@ import "forge-std/Script.sol";
 import {DeployScript} from "../utils/DeployScript.sol";
 
 import {LocalBridgeConfig, SynapseRouter} from "../../contracts/bridge/router/SynapseRouter.sol";
-import {SwapQuoter} from "../../contracts/bridge/router/SwapQuoter.sol";
+import {SwapQuoter, Pool} from "../../contracts/bridge/router/SwapQuoter.sol";
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
@@ -152,7 +152,11 @@ contract SetupRouterScript is DeployScript {
             _printAction("Exists", tokenConfig, ids[i]);
         }
         if (owner == broadcasterAddress) {
-            router.addTokens(tokens);
+            if (tokens.length != 0) {
+                router.addTokens(tokens);
+            } else {
+                console.log("No tokens to update");
+            }
             if (router.swapQuoter() != quoter) {
                 router.setSwapQuoter(quoter);
                 console.log("%s set to %s", QUOTER, address(quoter));
@@ -201,8 +205,32 @@ contract SetupRouterScript is DeployScript {
         if (pools.length == 1 && pools[0] == address(0)) {
             console.log("No pools on %s", chain);
         } else {
-            quoter.addPools(pools);
-            console.log("Pools added");
+            Pool[] memory curPools = quoter.allPools();
+            bool[] memory poolExists = new bool[](pools.length);
+            uint256 newPoolsAmount = 0;
+            for (uint256 i = 0; i < pools.length; ++i) {
+                for (uint256 j = 0; j < curPools.length; ++j) {
+                    if (pools[i] == curPools[j].pool) {
+                        poolExists[i] = true;
+                        break;
+                    }
+                }
+                if (!poolExists[i]) ++newPoolsAmount;
+            }
+            if (newPoolsAmount != 0) {
+                address[] memory newPools = new address[](newPoolsAmount);
+                // Will now track the amount of found new pools
+                newPoolsAmount = 0;
+                for (uint256 i = 0; i < pools.length; ++i) {
+                    if (!poolExists[i]) {
+                        newPools[newPoolsAmount++] = pools[i];
+                    }
+                }
+                quoter.addPools(newPools);
+                console.log("%s pools added", newPoolsAmount);
+            } else {
+                console.log("No pools to add");
+            }
         }
     }
 
