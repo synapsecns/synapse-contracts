@@ -34,9 +34,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       TOKEN_DECIMALS = [18, 18, 6, 6];
     }
 
-    if (
-      (await getChainId()) === CHAIN_ID.AVALANCHE
-    ) {
+    if ((await getChainId()) === CHAIN_ID.AVALANCHE) {
       TOKEN_ADDRESSES = [
         (await get("nUSD")).address,
         (await get("USDC")).address,
@@ -49,11 +47,11 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     if ((await getChainId()) === CHAIN_ID.BSC) {
       TOKEN_ADDRESSES = [
         (await get("nUSD")).address,
-        (await get("BUSD")).address,
         (await get("USDC")).address,
         (await get("USDT")).address,
       ];
-      TOKEN_DECIMALS = [18, 18, 18, 18];
+      INITIAL_A = 600;
+      TOKEN_DECIMALS = [18, 18, 18];
     }
 
     if ((await getChainId()) === CHAIN_ID.AURORA) {
