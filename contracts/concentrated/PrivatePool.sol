@@ -97,9 +97,29 @@ contract PrivatePool {
     ) external onlyToken(tokenIndexFrom) onlyToken(tokenIndexTo) returns (uint256) {
         require(tokenIndexFrom != tokenIndexTo, "invalid token swap");
 
-        // convert to an amount in wad and calculate swap amount out wad
+        // get current token balances in pool
+        uint256 xWad = amountWad(IERC20(token0).balanceOf(address(this)), true);
+        uint256 yWad = amountWad(IERC20(token1).balanceOf(address(this)), false);
+
+        // convert to an amount in wad
         uint256 amountInWad = amountWad(dx, tokenIndexFrom == 0);
-        uint256 amountOutWad = tokenIndexTo == 1 ? Math.mulDiv(amountInWad, A, wad) : Math.mulDiv(amountInWad, wad, A); // in wad
+
+        // calculate swap amount out wad
+        // @dev obeys a * x + y = D
+        uint256 amountOutWad;
+        if (tokenIndexFrom == 0) {
+            // token0 in for token1 out
+            // TODO: require() for balance after > 0 checks
+            xWad += amountInWad;
+            uint256 yWadAfter = D - Math.mulDiv(A, xWad, wad);
+            amountOutWad = yWad - yWadAfter;
+        } else {
+            // token1 in for token0 out
+            // TODO: require() for balance after > 0 checks
+            yWad += amountInWad;
+            uint256 xWadAfter = Math.mulDiv(D - yWad, wad, A);
+            amountOutWad = xWad - xWadAfter;
+        }
 
         // convert amount out to decimals
         uint256 dy = amountDecimals(amountOutWad, tokenIndexTo == 0);
@@ -122,13 +142,13 @@ contract PrivatePool {
     ) external onlyOwner returns (uint256) {
         require(amounts.length == 2, "invalid amounts");
 
-        // convert amounts to wad for calcs
-        uint256 amount0Wad = amountWad(amounts[0], true);
-        uint256 amount1Wad = amountWad(amounts[1], false);
-
         // get current token balances in pool
         uint256 xWad = amountWad(IERC20(token0).balanceOf(address(this)), true);
         uint256 yWad = amountWad(IERC20(token1).balanceOf(address(this)), false);
+
+        // convert amounts to wad for calcs
+        uint256 amount0Wad = amountWad(amounts[0], true);
+        uint256 amount1Wad = amountWad(amounts[1], false);
 
         // balances after transfer
         xWad += amount0Wad;
