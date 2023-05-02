@@ -8,6 +8,7 @@ import {Math} from "@openzeppelin/contracts-4.8.0/utils/math/Math.sol";
 
 /// @title Private pool for concentrated liquidity
 /// @notice Allows LP to offer fixed price quote in private pool to bridgers for tighter prices
+/// @dev Obeys constant sum a * x + y = D curve, where a is fixed price and D is liquidity
 /// @dev Functions use same signatures as Swap.sol for easier integration
 contract PrivatePool {
     using SafeERC20 for IERC20;
@@ -27,7 +28,8 @@ contract PrivatePool {
     uint256 internal immutable token0Decimals;
     uint256 internal immutable token1Decimals;
 
-    uint256 public price; // amount of token1 per amount of token0 in wad
+    uint256 public A; // fixed price param: amount of token1 per amount of token0 in wad
+    uint256 public D; // liquidity param
 
     modifier onlyOwner() {
         require(msg.sender == owner, "!owner");
@@ -77,12 +79,12 @@ contract PrivatePool {
     }
 
     /// @notice Updates the quote price LP is willing to offer tokens at
-    /// @param _price The new price LP is willing to buy and sell at
+    /// @param _A The new fixed price LP is willing to buy and sell at
     // TODO: time lock for changing?
-    // TODO: consider add or remove liquidity requirement so pool balanced st if take all of one token, take all of the other
-    function quote(uint256 _price) external onlyOwner {
-        require(_price >= PRICE_MIN && price <= PRICE_MAX, "price out of range");
-        price = _price;
+    function quote(uint256 _A) external onlyOwner {
+        require(_A >= PRICE_MIN && A <= PRICE_MAX, "A out of range");
+        require(_A != A, "same A");
+        A = _A;
     }
 
     /// @notice Swaps token from for an amount of token to
@@ -97,9 +99,7 @@ contract PrivatePool {
 
         // convert to an amount in wad and calculate swap amount out wad
         uint256 amountInWad = amountWad(dx, tokenIndexFrom == 0);
-        uint256 amountOutWad = tokenIndexTo == 1
-            ? Math.mulDiv(amountInWad, price, wad)
-            : Math.mulDiv(amountInWad, wad, price); // in wad
+        uint256 amountOutWad = tokenIndexTo == 1 ? Math.mulDiv(amountInWad, A, wad) : Math.mulDiv(amountInWad, wad, A); // in wad
 
         // convert amount out to decimals
         uint256 dy = amountDecimals(amountOutWad, tokenIndexTo == 0);
@@ -114,12 +114,40 @@ contract PrivatePool {
         return dy;
     }
 
+    /// @notice Adds liquidity to pool
     function addLiquidity(
         uint256[] calldata amounts,
         uint256 minToMint,
         uint256 deadline
-    ) external onlyOwner returns (uint256) {}
+    ) external onlyOwner returns (uint256) {
+        require(amounts.length == 2, "invalid amounts");
 
+        // convert amounts to wad for calcs
+        uint256 amount0Wad = amountWad(amounts[0], true);
+        uint256 amount1Wad = amountWad(amounts[1], false);
+
+        // get current token balances in pool
+        uint256 xWad = amountWad(IERC20(token0).balanceOf(address(this)), true);
+        uint256 yWad = amountWad(IERC20(token1).balanceOf(address(this)), false);
+
+        // balances after transfer
+        xWad += amount0Wad;
+        yWad += amount1Wad;
+
+        // calc new D value
+        uint256 _D = Math.mulDiv(xWad, A, wad) + yWad;
+        uint256 d = _D - D;
+        D = _D;
+
+        // transfer amounts in decimals in
+        IERC20(token0).safeTransferFrom(msg.sender, address(this), amounts[0]);
+        IERC20(token1).safeTransferFrom(msg.sender, address(this), amounts[1]);
+
+        // return fraction of pool added liquidity represents
+        return d;
+    }
+
+    /// @notice Removes liquidity from pool
     function removeLiquidity(
         uint256 amount,
         uint256[] calldata minAmounts,

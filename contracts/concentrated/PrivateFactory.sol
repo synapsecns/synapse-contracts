@@ -16,20 +16,20 @@ contract PrivateFactory is Ownable {
         // TOD: require();
         _;
     }
-    
+
     event Deploy(address indexed lp, address token0, address token1);
-    
+
     constructor(address _registry) {
         registry = _registry;
     }
-    
+
     function orderTokens(address tokenA, address tokenB) public returns (address token0_, address token1_) {
         // TODO: token0 (base) should be set as synX and token1 should be set as X
         token0_ = tokenA;
         token1_ = tokenB;
     }
-    
-    function deploy(address tokenA, address tokenB) onlySupportedToken(tokenA) onlySupportedToken(tokenB) external {
+
+    function deploy(address tokenA, address tokenB) external onlySupportedToken(tokenA) onlySupportedToken(tokenB) {
         require(tokenA != tokenB, "same token for base and quote");
         require(pool[msg.sender][tokenA][tokenB] == address(0), "pool already exists");
 
