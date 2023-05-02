@@ -109,14 +109,21 @@ contract PrivatePool {
         uint256 amountOutWad;
         if (tokenIndexFrom == 0) {
             // token0 in for token1 out
-            // TODO: require() for balance after > 0 checks
             xWad += amountInWad;
-            uint256 yWadAfter = D - Math.mulDiv(A, xWad, wad);
+
+            // check amount out won't exceed pool balance
+            uint256 prod = Math.mulDiv(A, xWad, wad);
+            require(D >= prod, "dy > pool balance");
+
+            uint256 yWadAfter = D - prod;
             amountOutWad = yWad - yWadAfter;
         } else {
             // token1 in for token0 out
-            // TODO: require() for balance after > 0 checks
             yWad += amountInWad;
+
+            // check amount out won't exceed pool balance
+            require(D >= yWad, "dy > pool balance");
+
             uint256 xWadAfter = Math.mulDiv(D - yWad, wad, A);
             amountOutWad = xWad - xWadAfter;
         }
