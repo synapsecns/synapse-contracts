@@ -213,6 +213,8 @@ contract PrivatePool {
     }
 
     /// @notice D liquidity param given pool token balances
+    /// @param xWad Balance of x tokens in wad
+    /// @param yWad Balance of y tokens in wad
     function D(uint256 xWad, uint256 yWad) public view returns (uint256) {
         return Math.mulDiv(xWad, P, wad) + yWad;
     }
