@@ -4,13 +4,12 @@ pragma solidity 0.8.17;
 import {IERC20} from "@openzeppelin/contracts-4.8.0/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts-4.8.0/token/ERC20/utils/SafeERC20.sol";
-import {Ownable} from "@openzeppelin/contracts-4.8.0/access/Ownable.sol";
 import {Math} from "@openzeppelin/contracts-4.8.0/utils/math/Math.sol";
 
 /// @title Private pool for concentrated liquidity
 /// @notice Allows LP to offer fixed price quote in private pool to bridgers for tighter prices
 /// @dev Functions use same signatures as Swap.sol for easier integration
-contract PrivatePool is Ownable {
+contract PrivatePool {
     using SafeERC20 for IERC20;
 
     uint256 internal constant wad = 1e18;
@@ -19,6 +18,9 @@ contract PrivatePool is Ownable {
     uint256 public constant PRICE_MIN = wad - PRICE_BOUND; // 1 - 10bps in wad
     uint256 public constant PRICE_MAX = wad + PRICE_BOUND; // 1 + 10bps in wad
 
+    address public immutable factory;
+    address public immutable owner;
+    
     address public immutable token0; // base token
     address public immutable token1; // quote token
     
@@ -26,28 +28,34 @@ contract PrivatePool is Ownable {
     uint256 internal immutable token1Decimals;
     
     uint256 public price; // amount of token1 per amount of token0 in wad
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "!owner");
+        _;
+    }
     
-    modifier onlyToken(uint256 index) {
+    modifier onlyToken(uint8 index) {
         require(index <= 1, "invalid token index");
         _;
     }
         
-    constructor(address _token0, address _token1) {
+    constructor(address _owner, address _token0, address _token1) {
         // TODO: check valid tokens at factory level
+        factory = msg.sender;
+        owner = _owner;
         token0 = _token0;
         token1 = _token1;
         
-        token0Decimals = uint256(IERC20Metadata(_token0).decimals());
-        token1Decimals = uint256(IERC20Metadata(_token1).decimals());
+        // limit to tokens with decimals <= 18
+        uint256 _token0Decimals = uint256(IERC20Metadata(_token0).decimals());
+        require(_token0Decimals <= 18, "token0 decimals > 18");
+        token0Decimals = _token0Decimals;
+
+        uint256 _token1Decimals = uint256(IERC20Metadata(_token1).decimals());
+        require(_token1Decimals <= 18, "token1 decimals > 18");
+        token1Decimals = _token1Decimals;
     }
-    
-    /// @notice Updates the quote price LP is willing to offer tokens at
-    /// @param _price The new price LP is willing to buy and sell at
-    function quote(uint256 _price) external onlyOwner {
-        require(_price >= PRICE_MIN && price <= PRICE_MAX, "price out of range");
-        price = _price;
-    }
-    
+
     /// @notice Amount of token in wad
     /// @param dx Amount of token in token decimals
     /// @param isToken0 Whether token is token0
@@ -64,7 +72,16 @@ contract PrivatePool is Ownable {
         return Math.mulDiv(amount, factor, wad);
     }
     
-    // TODO: token decimals assumed to be same?
+    /// @notice Updates the quote price LP is willing to offer tokens at
+    /// @param _price The new price LP is willing to buy and sell at
+    // TODO: time lock for changing?
+    // TODO: consider add or remove liquidity requirement so pool balanced st if take all of one token, take all of the other
+    function quote(uint256 _price) external onlyOwner {
+        require(_price >= PRICE_MIN && price <= PRICE_MAX, "price out of range");
+        price = _price;
+    }
+
+    /// @notice Swaps token from for an amount of token to
     function swap(
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
@@ -74,11 +91,11 @@ contract PrivatePool is Ownable {
     ) external onlyToken(tokenIndexFrom) onlyToken(tokenIndexTo) returns (uint256) {
         require(tokenIndexFrom != tokenIndexTo, "invalid token swap");
         
-        // convert to an amount in wad 
+        // convert to an amount in wad and calculate swap amount out wad
         uint256 amountInWad = amountWad(dx, tokenIndexFrom == 0);
         uint256 amountOutWad = tokenIndexTo == 1 ? Math.mulDiv(amountInWad, price, wad) : Math.mulDiv(amountInWad, wad, price); // in wad
         
-        // convert to an amount in decimals
+        // convert amount out to decimals
         uint256 dy = amountDecimals(amountOutWad, tokenIndexTo == 0);
         require(dy >= minDy, "dy < minDy");
         
