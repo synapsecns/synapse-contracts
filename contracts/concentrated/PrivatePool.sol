@@ -101,6 +101,12 @@ contract PrivatePool {
     }
 
     /// @notice Swaps token from for an amount of token to
+    /// @param tokenIndexFrom The index of the token in
+    /// @param tokenIndexTo The index of the token out
+    /// @param dx The amount of token in in token decimals
+    /// @param minDy The minimum amount of token out in token decimals
+    /// @param deadline The deadline before which swap must be executed
+    // TODO: add fees and possibly spread
     function swap(
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
@@ -158,6 +164,9 @@ contract PrivatePool {
     }
 
     /// @notice Adds liquidity to pool
+    /// @param amounts The token amounts to add in token decimals
+    /// @param minToMint The minimum amount of liquidity to be minted
+    /// @param deadline The deadline before which liquidity must be added
     function addLiquidity(
         uint256[] calldata amounts,
         uint256 minToMint,
@@ -165,7 +174,7 @@ contract PrivatePool {
     ) external onlyOwner returns (uint256) {
         require(amounts.length == 2, "invalid amounts");
 
-        // sync D balance before add liquidity calcs
+        // sync D balance before liquidity calcs
         _sync();
 
         // get current token balances in pool
@@ -194,9 +203,43 @@ contract PrivatePool {
     }
 
     /// @notice Removes liquidity from pool
+    /// @param amount The amount of liquidity to remove
+    /// @param minAmounts The minimum amounts of token to receive in token decimals
+    /// @param deadline The deadline before which liquidity must be removed
     function removeLiquidity(
         uint256 amount,
         uint256[] calldata minAmounts,
         uint256 deadline
-    ) external onlyOwner returns (uint256[] memory) {}
+    ) external onlyOwner returns (uint256[] memory amountsOut_) {
+        require(minAmounts.length == 2, "invalid min amounts");
+
+        // sync D balance before liquidity calcs
+        _sync();
+
+        // amount of liquidity to remove must be less than D
+        require(amount <= D, "amount > D");
+
+        // get current token balances in pool
+        uint256 xWad = amountWad(IERC20(token0).balanceOf(address(this)), true);
+        uint256 yWad = amountWad(IERC20(token1).balanceOf(address(this)), false);
+
+        // token amounts to remove are x * amount / D and y * amount / D
+        uint256 dx = amountDecimals(Math.mulDiv(xWad, amount, D), true);
+        uint256 dy = amountDecimals(Math.mulDiv(yWad, amount, D), false);
+
+        // check exceeds min amounts
+        require(dx >= minAmounts[0], "dx < min");
+        require(dy >= minAmounts[1], "dy < min");
+
+        // set new D value
+        D -= amount;
+
+        // transfer amounts out
+        IERC20(token0).safeTransfer(msg.sender, dx);
+        IERC20(token1).safeTransfer(msg.sender, dy);
+
+        // return amounts transferred out
+        amountsOut_[0] = dx;
+        amountsOut_[1] = dy;
+    }
 }
