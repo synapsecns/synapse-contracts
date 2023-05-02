@@ -78,12 +78,26 @@ contract PrivatePool {
         return Math.mulDiv(amount, factor, wad);
     }
 
+    // TODO: internal update D based on balances in the pool
+    // TODO: will prevent manipulation of swap calcs via transfer of tokens in
+
     /// @notice Updates the quote price LP is willing to offer tokens at
     /// @param _A The new fixed price LP is willing to buy and sell at
     // TODO: time lock for changing?
     function quote(uint256 _A) external onlyOwner {
         require(_A >= PRICE_MIN && A <= PRICE_MAX, "A out of range");
         require(_A != A, "same A");
+
+        // adjust D based on new price
+        // @dev D' = D + (a' - a) * x
+        uint256 xWad = amountWad(IERC20(token0).balanceOf(address(this)), true);
+        uint256 prodAfter = Math.mulDiv(_A, xWad, wad);
+        uint256 prodBefore = Math.mulDiv(A, xWad, wad);
+
+        uint256 _D = D + prodAfter;
+        require(_D >= prodBefore, "invalid D for A");
+
+        D = _D - prodBefore;
         A = _A;
     }
 
@@ -170,7 +184,7 @@ contract PrivatePool {
         IERC20(token0).safeTransferFrom(msg.sender, address(this), amounts[0]);
         IERC20(token1).safeTransferFrom(msg.sender, address(this), amounts[1]);
 
-        // return fraction of pool added liquidity represents
+        // return amount of added liquidity
         return d;
     }
 
