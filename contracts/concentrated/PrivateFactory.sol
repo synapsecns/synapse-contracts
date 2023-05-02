@@ -35,10 +35,11 @@ contract PrivateFactory is Ownable {
 
         (address token0, address token1) = orderTokens(tokenA, tokenB);
 
-        address p = address(new PrivatePool(msg.sender, token0, token1));
+        bytes32 salt = keccak256(abi.encode(msg.sender, token0, token1));
+        address p = address(new PrivatePool{salt: salt}(msg.sender, token0, token1));
         pool[msg.sender][token0][token1] = p;
         pool[msg.sender][token1][token0] = p;
-        
+
         emit Deploy(msg.sender, token0, token1);
     }
 }

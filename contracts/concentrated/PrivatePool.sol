@@ -14,38 +14,42 @@ contract PrivatePool {
 
     uint256 internal constant wad = 1e18;
     uint256 internal constant PRICE_BOUND = 0.001e18; // 10 bps in wad
-    
+
     uint256 public constant PRICE_MIN = wad - PRICE_BOUND; // 1 - 10bps in wad
     uint256 public constant PRICE_MAX = wad + PRICE_BOUND; // 1 + 10bps in wad
 
     address public immutable factory;
     address public immutable owner;
-    
+
     address public immutable token0; // base token
     address public immutable token1; // quote token
-    
+
     uint256 internal immutable token0Decimals;
     uint256 internal immutable token1Decimals;
-    
+
     uint256 public price; // amount of token1 per amount of token0 in wad
 
     modifier onlyOwner() {
         require(msg.sender == owner, "!owner");
         _;
     }
-    
+
     modifier onlyToken(uint8 index) {
         require(index <= 1, "invalid token index");
         _;
     }
-        
-    constructor(address _owner, address _token0, address _token1) {
+
+    constructor(
+        address _owner,
+        address _token0,
+        address _token1
+    ) {
         // TODO: check valid tokens at factory level
         factory = msg.sender;
         owner = _owner;
         token0 = _token0;
         token1 = _token1;
-        
+
         // limit to tokens with decimals <= 18
         uint256 _token0Decimals = uint256(IERC20Metadata(_token0).decimals());
         require(_token0Decimals <= 18, "token0 decimals > 18");
@@ -63,7 +67,7 @@ contract PrivatePool {
         uint256 factor = isToken0 ? 10**(token0Decimals) : 10**(token1Decimals);
         return Math.mulDiv(dx, wad, factor);
     }
-    
+
     /// @notice Amount of token in token decimals
     /// @param amount Amount of token in wad
     /// @param isToken0 Whether token is token0
@@ -71,7 +75,7 @@ contract PrivatePool {
         uint256 factor = isToken0 ? 10**(token0Decimals) : 10**(token1Decimals);
         return Math.mulDiv(amount, factor, wad);
     }
-    
+
     /// @notice Updates the quote price LP is willing to offer tokens at
     /// @param _price The new price LP is willing to buy and sell at
     // TODO: time lock for changing?
@@ -90,30 +94,32 @@ contract PrivatePool {
         uint256 deadline // TODO: deadline
     ) external onlyToken(tokenIndexFrom) onlyToken(tokenIndexTo) returns (uint256) {
         require(tokenIndexFrom != tokenIndexTo, "invalid token swap");
-        
+
         // convert to an amount in wad and calculate swap amount out wad
         uint256 amountInWad = amountWad(dx, tokenIndexFrom == 0);
-        uint256 amountOutWad = tokenIndexTo == 1 ? Math.mulDiv(amountInWad, price, wad) : Math.mulDiv(amountInWad, wad, price); // in wad
-        
+        uint256 amountOutWad = tokenIndexTo == 1
+            ? Math.mulDiv(amountInWad, price, wad)
+            : Math.mulDiv(amountInWad, wad, price); // in wad
+
         // convert amount out to decimals
         uint256 dy = amountDecimals(amountOutWad, tokenIndexTo == 0);
         require(dy >= minDy, "dy < minDy");
-        
+
         // transfer dx in and send dy out
         address tokenIn = tokenIndexFrom == 0 ? token0 : token1;
         address tokenOut = tokenIndexTo == 0 ? token0 : token1;
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), dx);
         IERC20(tokenOut).safeTransfer(msg.sender, dy);
-        
+
         return dy;
     }
-    
+
     function addLiquidity(
         uint256[] calldata amounts,
         uint256 minToMint,
         uint256 deadline
     ) external onlyOwner returns (uint256) {}
-    
+
     function removeLiquidity(
         uint256 amount,
         uint256[] calldata minAmounts,
