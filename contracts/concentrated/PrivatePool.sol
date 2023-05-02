@@ -98,7 +98,7 @@ contract PrivatePool {
         yWad += amount1Wad;
 
         // calc diff with new D value
-        uint256 d = Math.mulDiv(xWad, P, wad) + yWad - _D;
+        uint256 d = D(xWad, yWad) - _D;
 
         // transfer amounts in decimals in
         IERC20(token0).safeTransferFrom(msg.sender, address(this), amounts[0]);
