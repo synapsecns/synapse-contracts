@@ -78,8 +78,13 @@ contract PrivatePool {
         return Math.mulDiv(amount, factor, wad);
     }
 
-    // TODO: internal update D based on balances in the pool
-    // TODO: will prevent manipulation of swap calcs via transfer of tokens in
+    /// @notice Updates D liquidity param to be in sync with pool balances
+    /// @dev Prevents manipulation of calcs via token transfer in
+    function _sync() internal {
+        uint256 xWad = amountWad(IERC20(token0).balanceOf(address(this)), true);
+        uint256 yWad = amountWad(IERC20(token1).balanceOf(address(this)), false);
+        D = Math.mulDiv(xWad, A, wad) + yWad;
+    }
 
     /// @notice Updates the quote price LP is willing to offer tokens at
     /// @param _A The new fixed price LP is willing to buy and sell at
@@ -88,17 +93,11 @@ contract PrivatePool {
         require(_A >= PRICE_MIN && A <= PRICE_MAX, "A out of range");
         require(_A != A, "same A");
 
-        // adjust D based on new price
-        // @dev D' = D + (a' - a) * x
-        uint256 xWad = amountWad(IERC20(token0).balanceOf(address(this)), true);
-        uint256 prodAfter = Math.mulDiv(_A, xWad, wad);
-        uint256 prodBefore = Math.mulDiv(A, xWad, wad);
-
-        uint256 _D = D + prodAfter;
-        require(_D >= prodBefore, "invalid D for A");
-
-        D = _D - prodBefore;
+        // set new A price param
         A = _A;
+
+        // sync D balance after set new A
+        _sync();
     }
 
     /// @notice Swaps token from for an amount of token to
@@ -110,6 +109,9 @@ contract PrivatePool {
         uint256 deadline // TODO: deadline
     ) external onlyToken(tokenIndexFrom) onlyToken(tokenIndexTo) returns (uint256) {
         require(tokenIndexFrom != tokenIndexTo, "invalid token swap");
+
+        // sync D balance before swap calcs
+        _sync();
 
         // get current token balances in pool
         uint256 xWad = amountWad(IERC20(token0).balanceOf(address(this)), true);
@@ -162,6 +164,9 @@ contract PrivatePool {
         uint256 deadline
     ) external onlyOwner returns (uint256) {
         require(amounts.length == 2, "invalid amounts");
+
+        // sync D balance before add liquidity calcs
+        _sync();
 
         // get current token balances in pool
         uint256 xWad = amountWad(IERC20(token0).balanceOf(address(this)), true);
