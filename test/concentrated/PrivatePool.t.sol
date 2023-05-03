@@ -34,18 +34,27 @@ contract PrivatePoolTest is Test {
         synToken = new MockAccessToken("synX", "synX", 6);
 
         synToken.grantRole(MINTER_ROLE, BRIDGE);
-        token.mint(address(this), 1e12);
-        synToken.mint(address(this), 1e12);
+
+        token.mint(OWNER, 1e12);
+        synToken.mint(OWNER, 1e12);
 
         pool = new MockPrivatePool(OWNER, address(synToken), address(token));
+
+        vm.prank(OWNER);
+        token.approve(address(pool), type(uint256).max);
+
+        vm.prank(OWNER);
+        synToken.approve(address(pool), type(uint256).max);
     }
 
     function testSetup() public {
         assertEq(token.symbol(), "X");
         assertEq(synToken.symbol(), "synX");
         assertEq(synToken.hasRole(MINTER_ROLE, BRIDGE), true);
-        assertEq(token.balanceOf(address(this)), 1e12);
-        assertEq(synToken.balanceOf(address(this)), 1e12);
+        assertEq(token.balanceOf(OWNER), 1e12);
+        assertEq(synToken.balanceOf(OWNER), 1e12);
+        assertEq(token.allowance(OWNER, address(pool)), type(uint256).max);
+        assertEq(synToken.allowance(OWNER, address(pool)), type(uint256).max);
     }
 
     function testConstructor() public {
@@ -143,6 +152,93 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(fee);
     }
 
+    function testAddLiquidityTransfersFunds() public {
+        // set up
+        uint256 minToMint = 0;
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // add liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 100e6;
+        amounts[1] = 100.05e6;
+
+        vm.prank(OWNER);
+        pool.addLiquidity(amounts, minToMint, deadline);
+
+        assertEq(synToken.balanceOf(address(pool)), amounts[0]);
+        assertEq(token.balanceOf(address(pool)), amounts[1]);
+    }
+
+    function testAddLiquidityChangesD() public {
+        // set up
+        uint256 minToMint = 0;
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // transfer in tokens prior
+        uint256 amount = 100e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amount);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amount);
+
+        uint256 d = 200.05e18;
+        assertEq(pool.D(), d);
+
+        // add liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 100e6;
+        amounts[1] = 100.05e6;
+
+        vm.prank(OWNER);
+        pool.addLiquidity(amounts, minToMint, deadline);
+
+        d += 200.1e18; // in wad
+        assertEq(pool.D(), d);
+    }
+
+    function testAddLiquidityEmitsAddLiquidityEvent() public {
+        // set up
+        uint256 minToMint = 0;
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // transfer in tokens prior
+        uint256 amount = 100e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amount);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amount);
+
+        uint256 d = 200.05e18;
+        assertEq(pool.D(), d);
+
+        // add liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 100e6;
+        amounts[1] = 100.05e6;
+        d += 200.1e18; // in wad
+
+        uint256[] memory fees = new uint256[](2);
+        fees[0] = 0;
+        fees[1] = 0;
+
+        vm.expectEmit(true, false, false, true);
+        emit AddLiquidity(OWNER, amounts, fees, d, d);
+
+        vm.prank(OWNER);
+        pool.addLiquidity(amounts, minToMint, deadline);
+    }
+
+    // TODO: addLiquidity, removeLiquidity, swap, testCalculateSwap
+
     function testGetTokenWhenIndex0() public {
         address token0 = address(pool.getToken(0));
         assertEq(pool.token0(), token0);
@@ -164,7 +260,10 @@ contract PrivatePoolTest is Test {
         pool.quote(price);
 
         uint256 amount = 100e6;
+        vm.prank(OWNER);
         token.transfer(address(pool), amount);
+
+        vm.prank(OWNER);
         synToken.transfer(address(pool), amount);
 
         uint256 d = 200.05e18;
