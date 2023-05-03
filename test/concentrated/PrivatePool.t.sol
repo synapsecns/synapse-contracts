@@ -107,4 +107,33 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.quote(price);
     }
+
+    function testSetSwapFeeUpdatesFee() public {
+        uint256 fee = 0.0001e18; // 1bps in wad
+        vm.prank(OWNER);
+        pool.setSwapFee(fee);
+        assertEq(pool.fee(), fee);
+    }
+
+    function testSetSwapFeeEmitsNewSwapFeeEvent() public {
+        uint256 fee = 0.0001e18; // 1bps in wad
+        vm.expectEmit(false, false, false, true);
+        emit NewSwapFee(fee);
+
+        vm.prank(OWNER);
+        pool.setSwapFee(fee);
+    }
+
+    function testSetSwapFeeWhenNotOwner() public {
+        uint256 fee = 0.0001e18; // 1bps in wad
+        vm.expectRevert("!owner");
+        pool.setSwapFee(fee);
+    }
+
+    function testSetSwapFeeWhenFeeGtMax() public {
+        uint256 fee = pool.FEE_MAX() + 1;
+        vm.expectRevert("fee > max");
+        vm.prank(OWNER);
+        pool.setSwapFee(fee);
+    }
 }
