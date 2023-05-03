@@ -15,7 +15,7 @@ contract PrivateFactory is IPrivateFactory, Ownable {
     address public immutable bridge;
     mapping(address => mapping(address => mapping(address => address))) public pool;
 
-    event Deploy(address indexed lp, address token0, address token1);
+    event Deploy(address indexed lp, address token0, address token1, address poolAddress);
 
     constructor(address _bridge) {
         bridge = _bridge;
@@ -39,7 +39,7 @@ contract PrivateFactory is IPrivateFactory, Ownable {
     /// @notice Deploys private pool for tokenA, tokenB pair owned by msg sender
     /// @param tokenA The address of token A
     /// @param tokenB The address of token B
-    function deploy(address tokenA, address tokenB) external {
+    function deploy(address tokenA, address tokenB) external returns (address) {
         require(tokenA != tokenB, "same token for base and quote");
         require(pool[msg.sender][tokenA][tokenB] == address(0), "pool already exists");
 
@@ -50,6 +50,8 @@ contract PrivateFactory is IPrivateFactory, Ownable {
         pool[msg.sender][token0][token1] = p;
         pool[msg.sender][token1][token0] = p;
 
-        emit Deploy(msg.sender, token0, token1);
+        emit Deploy(msg.sender, token0, token1, p);
+
+        return p;
     }
 }

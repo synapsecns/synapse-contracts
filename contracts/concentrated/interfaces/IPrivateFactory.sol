@@ -6,5 +6,5 @@ pragma solidity 0.8.17;
 interface IPrivateFactory {
     function orderTokens(address tokenA, address tokenB) external view returns (address, address);
 
-    function deploy(address tokenA, address tokenB) external;
+    function deploy(address tokenA, address tokenB) external returns (address);
 }
