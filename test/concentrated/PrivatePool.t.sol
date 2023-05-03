@@ -6,13 +6,14 @@ import "forge-std/Test.sol";
 import "../../contracts/concentrated/PrivatePool.sol";
 import "../mocks/MockToken.sol";
 import "../mocks/MockAccessToken.sol";
+import "../mocks/MockPrivatePool.sol";
 
 contract PrivatePoolTest is Test {
     bytes32 internal constant MINTER_ROLE = keccak256("MINTER_ROLE");
     address public constant BRIDGE = address(0xB);
     address public constant OWNER = address(0xABCD);
 
-    PrivatePool public pool;
+    MockPrivatePool public pool;
     MockToken public token;
     MockAccessToken public synToken;
 
@@ -31,15 +32,20 @@ contract PrivatePoolTest is Test {
     function setUp() public {
         token = new MockToken("X", "X", 6);
         synToken = new MockAccessToken("synX", "synX", 6);
-        synToken.grantRole(MINTER_ROLE, BRIDGE);
 
-        pool = new PrivatePool(OWNER, address(synToken), address(token));
+        synToken.grantRole(MINTER_ROLE, BRIDGE);
+        token.mint(address(this), 1e12);
+        synToken.mint(address(this), 1e12);
+
+        pool = new MockPrivatePool(OWNER, address(synToken), address(token));
     }
 
     function testSetup() public {
         assertEq(token.symbol(), "X");
         assertEq(synToken.symbol(), "synX");
         assertEq(synToken.hasRole(MINTER_ROLE, BRIDGE), true);
+        assertEq(token.balanceOf(address(this)), 1e12);
+        assertEq(synToken.balanceOf(address(this)), 1e12);
     }
 
     function testConstructor() public {
@@ -135,5 +141,69 @@ contract PrivatePoolTest is Test {
         vm.expectRevert("fee > max");
         vm.prank(OWNER);
         pool.setSwapFee(fee);
+    }
+
+    function testGetTokenWhenIndex0() public {
+        address token0 = address(pool.getToken(0));
+        assertEq(pool.token0(), token0);
+    }
+
+    function testGetTokenWhenIndex1() public {
+        address token1 = address(pool.getToken(1));
+        assertEq(pool.token1(), token1);
+    }
+
+    function testGetTokenWhenNotIndex() public {
+        vm.expectRevert("invalid token index");
+        pool.getToken(2);
+    }
+
+    function testD() public {
+        uint256 price = 1.0005e18; // 1 wad
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        uint256 amount = 100e6;
+        token.transfer(address(pool), amount);
+        synToken.transfer(address(pool), amount);
+
+        uint256 d = 200.05e18;
+        assertEq(pool.D(), d);
+    }
+
+    function testAmountWadWhenToken0() public {
+        MockToken t = new MockToken("Y", "Y", 8);
+        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token));
+
+        uint256 dx = 100e8;
+        uint256 amountWad = 100e18;
+        assertEq(p.amountWad(dx, true), amountWad);
+    }
+
+    function testAmountWadWhenToken1() public {
+        MockToken t = new MockToken("Y", "Y", 8);
+        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token));
+
+        uint256 dx = 100e6;
+        uint256 amountWad = 100e18;
+        assertEq(p.amountWad(dx, false), amountWad);
+    }
+
+    function testAmountDecimalsWhenToken0() public {
+        MockToken t = new MockToken("Y", "Y", 8);
+        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token));
+
+        uint256 dx = 100e8;
+        uint256 amount = 100e18;
+        assertEq(p.amountDecimals(amount, true), dx);
+    }
+
+    function testAmountDecimalsWhenToken1() public {
+        MockToken t = new MockToken("Y", "Y", 8);
+        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token));
+
+        uint256 dx = 100e6;
+        uint256 amount = 100e18;
+        assertEq(p.amountDecimals(amount, false), dx);
     }
 }
