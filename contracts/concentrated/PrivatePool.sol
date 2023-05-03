@@ -40,6 +40,17 @@ contract PrivatePool {
         _;
     }
 
+    event Quote(uint256 price);
+    event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
+    event AddLiquidity(
+        address indexed provider,
+        uint256[] tokenAmounts,
+        uint256[] fees,
+        uint256 invariant,
+        uint256 lpTokenSupply
+    );
+    event RemoveLiquidity(address indexed provider, uint256[] tokenAmounts, uint256 lpTokenSupply);
+
     constructor(
         address _owner,
         address _token0,
@@ -62,7 +73,6 @@ contract PrivatePool {
 
     /// @notice Updates the quote price LP is willing to offer tokens at
     /// @param _P The new fixed price LP is willing to buy and sell at
-    // TODO: time lock for changing?
     function quote(uint256 _P) external onlyOwner {
         require(_P >= PRICE_MIN && _P <= PRICE_MAX, "price out of range");
         require(_P != P, "same price");
@@ -104,6 +114,13 @@ contract PrivatePool {
         IERC20(token0).safeTransferFrom(msg.sender, address(this), amounts[0]);
         IERC20(token1).safeTransferFrom(msg.sender, address(this), amounts[1]);
 
+        // TODO: fix
+        uint256[] memory fees = new uint256[](2);
+        fees[0] = 0;
+        fees[1] = 0;
+
+        emit AddLiquidity(msg.sender, amounts, fees, d + _D, d + _D);
+
         // return amount of added liquidity
         return d;
     }
@@ -144,6 +161,8 @@ contract PrivatePool {
         // return amounts transferred out
         amountsOut_[0] = dx;
         amountsOut_[1] = dy;
+
+        emit RemoveLiquidity(msg.sender, amountsOut_, _D - amount);
     }
 
     /// @notice Swaps token from for an amount of token to
@@ -159,9 +178,40 @@ contract PrivatePool {
         uint256 dx,
         uint256 minDy,
         uint256 deadline // TODO: deadline
-    ) external onlyToken(tokenIndexFrom) onlyToken(tokenIndexTo) returns (uint256) {
+    ) external returns (uint256 dy_) {
         require(tokenIndexFrom != tokenIndexTo, "invalid token swap");
 
+        // calculate amount out from swap
+        // @dev reverts for invalid token indices
+        dy_ = calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+        require(dy_ >= minDy, "dy < minDy");
+
+        // transfer dx in and send dy out
+        address tokenIn = tokenIndexFrom == 0 ? token0 : token1;
+        address tokenOut = tokenIndexTo == 0 ? token0 : token1;
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), dx);
+        IERC20(tokenOut).safeTransfer(msg.sender, dy_);
+
+        emit TokenSwap(msg.sender, dx, dy_, tokenIndexFrom, tokenIndexTo);
+    }
+
+    /// @notice D liquidity param given pool token balances
+    /// @param xWad Balance of x tokens in wad
+    /// @param yWad Balance of y tokens in wad
+    function D(uint256 xWad, uint256 yWad) public view returns (uint256) {
+        return Math.mulDiv(xWad, P, wad) + yWad;
+    }
+
+    /// @notice Calculates amount of tokens received on swap
+    /// @dev Reverts if either token index is invalid
+    /// @param tokenIndexFrom The index of the token in
+    /// @param tokenIndexTo The index of the token out
+    /// @param dx The amount of token in in token decimals
+    function calculateSwap(
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 dx
+    ) public view onlyToken(tokenIndexFrom) onlyToken(tokenIndexTo) returns (uint256 dy_) {
         // get current token balances in pool
         uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
         uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
@@ -200,23 +250,15 @@ contract PrivatePool {
         }
 
         // convert amount out to decimals
-        uint256 dy = _amountDecimals(amountOutWad, tokenIndexTo == 0);
-        require(dy >= minDy, "dy < minDy");
-
-        // transfer dx in and send dy out
-        address tokenIn = tokenIndexFrom == 0 ? token0 : token1;
-        address tokenOut = tokenIndexTo == 0 ? token0 : token1;
-        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), dx);
-        IERC20(tokenOut).safeTransfer(msg.sender, dy);
-
-        return dy;
+        dy_ = _amountDecimals(amountOutWad, tokenIndexTo == 0);
     }
 
-    /// @notice D liquidity param given pool token balances
-    /// @param xWad Balance of x tokens in wad
-    /// @param yWad Balance of y tokens in wad
-    function D(uint256 xWad, uint256 yWad) public view returns (uint256) {
-        return Math.mulDiv(xWad, P, wad) + yWad;
+    /// @notice Address of the pooled token at given index
+    /// @dev Reverts for invalid token index
+    /// @param index The index of the token
+    function getToken(uint8 index) external view onlyToken(index) returns (IERC20) {
+        address token = index == 0 ? token0 : token1;
+        return IERC20(token);
     }
 
     /// @notice Amount of token in wad
