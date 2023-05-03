@@ -21,6 +21,9 @@ contract PrivateFactory is IPrivateFactory, Ownable {
         bridge = _bridge;
     }
 
+    /// @notice Orders token addresses such that synthetic bridge token set as token0 (base) and underlying as token1 (quote)
+    /// @param tokenA The address of token A
+    /// @param tokenB The address of token B
     function orderTokens(address tokenA, address tokenB) public view returns (address token0_, address token1_) {
         // token0 (base) should be set as synX and token1 should be set as X
         // check synapse bridge has minter role on token to determine which is synX
@@ -33,6 +36,9 @@ contract PrivateFactory is IPrivateFactory, Ownable {
         }
     }
 
+    /// @notice Deploys private pool for tokenA, tokenB pair owned by msg sender
+    /// @param tokenA The address of token A
+    /// @param tokenB The address of token B
     function deploy(address tokenA, address tokenB) external {
         require(tokenA != tokenB, "same token for base and quote");
         require(pool[msg.sender][tokenA][tokenB] == address(0), "pool already exists");
