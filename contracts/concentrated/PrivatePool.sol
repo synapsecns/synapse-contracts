@@ -18,6 +18,7 @@ contract PrivatePool {
 
     uint256 public constant PRICE_MIN = wad - PRICE_BOUND; // 1 - 10bps in wad
     uint256 public constant PRICE_MAX = wad + PRICE_BOUND; // 1 + 10bps in wad
+    uint256 public constant FEE_MAX = 0.001e18; // 10 bps in wad
 
     address public immutable factory;
     address public immutable owner;
@@ -29,6 +30,7 @@ contract PrivatePool {
     uint256 internal immutable token1Decimals;
 
     uint256 public P; // fixed price param: amount of token1 per amount of token0 in wad
+    uint256 public fee; // fee charged on swap; acts as LP's bid/ask spread
 
     modifier onlyOwner() {
         require(msg.sender == owner, "!owner");
@@ -40,7 +42,13 @@ contract PrivatePool {
         _;
     }
 
+    modifier deadlineCheck(uint256 deadline) {
+        require(block.timestamp <= deadline, "block.timestamp > deadline");
+        _;
+    }
+
     event Quote(uint256 price);
+    event NewSwapFee(uint256 newSwapFee);
     event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
     event AddLiquidity(
         address indexed provider,
@@ -79,6 +87,17 @@ contract PrivatePool {
 
         // set new P price param
         P = _P;
+
+        emit Quote(_P);
+    }
+
+    /// @notice Updates the fee applied on swaps
+    /// @dev Effectively acts as bid/ask spread for LP
+    /// @param _fee The new swap fee
+    function setSwapFee(uint256 _fee) external onlyOwner {
+        require(_fee <= FEE_MAX, "fee > max");
+        fee = _fee;
+        emit NewSwapFee(_fee);
     }
 
     /// @notice Adds liquidity to pool
@@ -89,7 +108,7 @@ contract PrivatePool {
         uint256[] calldata amounts,
         uint256 minToMint,
         uint256 deadline
-    ) external onlyOwner returns (uint256 minted_) {
+    ) external onlyOwner deadlineCheck(deadline) returns (uint256 minted_) {
         require(amounts.length == 2, "invalid amounts");
 
         // get current token balances in pool
@@ -115,7 +134,6 @@ contract PrivatePool {
         IERC20(token0).safeTransferFrom(msg.sender, address(this), amounts[0]);
         IERC20(token1).safeTransferFrom(msg.sender, address(this), amounts[1]);
 
-        // TODO: fix
         uint256[] memory fees = new uint256[](2);
         fees[0] = 0;
         fees[1] = 0;
@@ -131,7 +149,7 @@ contract PrivatePool {
         uint256 amount,
         uint256[] calldata minAmounts,
         uint256 deadline
-    ) external onlyOwner returns (uint256[] memory amountsOut_) {
+    ) external onlyOwner deadlineCheck(deadline) returns (uint256[] memory amountsOut_) {
         require(minAmounts.length == 2, "invalid min amounts");
 
         // get current token balances in pool
@@ -169,14 +187,13 @@ contract PrivatePool {
     /// @param dx The amount of token in in token decimals
     /// @param minDy The minimum amount of token out in token decimals
     /// @param deadline The deadline before which swap must be executed
-    // TODO: add fees and possibly spread
     function swap(
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
         uint256 dx,
         uint256 minDy,
-        uint256 deadline // TODO: deadline
-    ) external returns (uint256 dy_) {
+        uint256 deadline
+    ) external deadlineCheck(deadline) returns (uint256 dy_) {
         require(tokenIndexFrom != tokenIndexTo, "invalid token swap");
 
         // calculate amount out from swap
@@ -239,6 +256,9 @@ contract PrivatePool {
             uint256 xWadAfter = Math.mulDiv(_d - yWad, wad, P);
             amountOutWad = xWad - xWadAfter;
         }
+
+        // apply swap fee on amount out
+        amountOutWad -= Math.mulDiv(amountOutWad, fee, wad);
 
         // convert amount out to decimals
         dy_ = _amountDecimals(amountOutWad, tokenIndexTo == 0);
