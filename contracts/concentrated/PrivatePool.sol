@@ -89,7 +89,7 @@ contract PrivatePool {
         uint256[] calldata amounts,
         uint256 minToMint,
         uint256 deadline
-    ) external onlyOwner returns (uint256) {
+    ) external onlyOwner returns (uint256 minted_) {
         require(amounts.length == 2, "invalid amounts");
 
         // get current token balances in pool
@@ -97,7 +97,7 @@ contract PrivatePool {
         uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
 
         // get D balance before add liquidity
-        uint256 _D = D(xWad, yWad);
+        uint256 _d = _D(xWad, yWad);
 
         // convert amounts to wad for calcs
         uint256 amount0Wad = _amountWad(amounts[0], true);
@@ -108,7 +108,8 @@ contract PrivatePool {
         yWad += amount1Wad;
 
         // calc diff with new D value
-        uint256 d = D(xWad, yWad) - _D;
+        minted_ = _D(xWad, yWad) - _d;
+        _d += minted_;
 
         // transfer amounts in decimals in
         IERC20(token0).safeTransferFrom(msg.sender, address(this), amounts[0]);
@@ -119,10 +120,7 @@ contract PrivatePool {
         fees[0] = 0;
         fees[1] = 0;
 
-        emit AddLiquidity(msg.sender, amounts, fees, d + _D, d + _D);
-
-        // return amount of added liquidity
-        return d;
+        emit AddLiquidity(msg.sender, amounts, fees, _d, _d);
     }
 
     /// @notice Removes liquidity from pool
@@ -141,14 +139,14 @@ contract PrivatePool {
         uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
 
         // get D balance before add liquidity
-        uint256 _D = D(xWad, yWad);
+        uint256 _d = _D(xWad, yWad);
 
         // amount of liquidity to remove must be less than D
-        require(amount <= _D, "amount > D");
+        require(amount <= _d, "amount > D");
 
         // token amounts to remove are x * amount / D and y * amount / D
-        uint256 dx = _amountDecimals(Math.mulDiv(xWad, amount, _D), true);
-        uint256 dy = _amountDecimals(Math.mulDiv(yWad, amount, _D), false);
+        uint256 dx = _amountDecimals(Math.mulDiv(xWad, amount, _d), true);
+        uint256 dy = _amountDecimals(Math.mulDiv(yWad, amount, _d), false);
 
         // check exceeds min amounts
         require(dx >= minAmounts[0], "dx < min");
@@ -162,7 +160,7 @@ contract PrivatePool {
         amountsOut_[0] = dx;
         amountsOut_[1] = dy;
 
-        emit RemoveLiquidity(msg.sender, amountsOut_, _D - amount);
+        emit RemoveLiquidity(msg.sender, amountsOut_, _d - amount);
     }
 
     /// @notice Swaps token from for an amount of token to
@@ -195,13 +193,6 @@ contract PrivatePool {
         emit TokenSwap(msg.sender, dx, dy_, tokenIndexFrom, tokenIndexTo);
     }
 
-    /// @notice D liquidity param given pool token balances
-    /// @param xWad Balance of x tokens in wad
-    /// @param yWad Balance of y tokens in wad
-    function D(uint256 xWad, uint256 yWad) public view returns (uint256) {
-        return Math.mulDiv(xWad, P, wad) + yWad;
-    }
-
     /// @notice Calculates amount of tokens received on swap
     /// @dev Reverts if either token index is invalid
     /// @param tokenIndexFrom The index of the token in
@@ -224,28 +215,28 @@ contract PrivatePool {
         uint256 amountOutWad;
         if (tokenIndexFrom == 0) {
             // get D balance before swap
-            uint256 _D = D(xWad, yWad);
+            uint256 _d = _D(xWad, yWad);
 
             // token0 in for token1 out
             xWad += amountInWad;
 
             // check amount out won't exceed pool balance
             uint256 prod = Math.mulDiv(P, xWad, wad);
-            require(_D >= prod, "dy > pool balance");
+            require(_d >= prod, "dy > pool balance");
 
-            uint256 yWadAfter = _D - prod;
+            uint256 yWadAfter = _d - prod;
             amountOutWad = yWad - yWadAfter;
         } else {
             // get D balance before swap
-            uint256 _D = D(xWad, yWad);
+            uint256 _d = _D(xWad, yWad);
 
             // token1 in for token0 out
             yWad += amountInWad;
 
             // check amount out won't exceed pool balance
-            require(_D >= yWad, "dy > pool balance");
+            require(_d >= yWad, "dy > pool balance");
 
-            uint256 xWadAfter = Math.mulDiv(_D - yWad, wad, P);
+            uint256 xWadAfter = Math.mulDiv(_d - yWad, wad, P);
             amountOutWad = xWad - xWadAfter;
         }
 
@@ -259,6 +250,20 @@ contract PrivatePool {
     function getToken(uint8 index) external view onlyToken(index) returns (IERC20) {
         address token = index == 0 ? token0 : token1;
         return IERC20(token);
+    }
+
+    /// @notice D liquidity for current pool balance state
+    function D() external view returns (uint256) {
+        uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
+        uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
+        return _D(xWad, yWad);
+    }
+
+    /// @notice D liquidity param given pool token balances
+    /// @param xWad Balance of x tokens in wad
+    /// @param yWad Balance of y tokens in wad
+    function _D(uint256 xWad, uint256 yWad) internal view returns (uint256) {
+        return Math.mulDiv(xWad, P, wad) + yWad;
     }
 
     /// @notice Amount of token in wad
