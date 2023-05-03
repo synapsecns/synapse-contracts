@@ -6,11 +6,13 @@ import {IERC20Metadata} from "@openzeppelin/contracts-4.8.0/token/ERC20/extensio
 import {SafeERC20} from "@openzeppelin/contracts-4.8.0/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts-4.8.0/utils/math/Math.sol";
 
+import {IPrivatePool} from "./interfaces/IPrivatePool.sol";
+
 /// @title Private pool for concentrated liquidity
 /// @notice Allows LP to offer fixed price quote in private pool to bridgers for tighter prices
 /// @dev Obeys constant sum P * x + y = D curve, where P is fixed price and D is liquidity
 /// @dev Functions use same signatures as Swap.sol for easier integration
-contract PrivatePool {
+contract PrivatePool is IPrivatePool {
     using SafeERC20 for IERC20;
 
     uint256 internal constant wad = 1e18;
