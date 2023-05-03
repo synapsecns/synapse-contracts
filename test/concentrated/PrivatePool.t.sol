@@ -60,4 +60,51 @@ contract PrivatePoolTest is Test {
         vm.expectRevert("token1 decimals > 18");
         new PrivatePool(OWNER, address(token), t);
     }
+
+    function testQuoteUpdatesPrice() public {
+        uint256 price = 1e18; // 1 wad
+        vm.prank(OWNER);
+        pool.quote(price);
+        assertEq(pool.P(), price);
+    }
+
+    function testQuoteEmitsQuoteEvent() public {
+        uint256 price = 1e18; // 1 wad
+        vm.expectEmit(false, false, false, true);
+        emit Quote(price);
+
+        vm.prank(OWNER);
+        pool.quote(price);
+    }
+
+    function testQuoteWhenNotOwner() public {
+        uint256 price = 1e18; // 1 wad
+        vm.expectRevert("!owner");
+        pool.quote(price);
+    }
+
+    function testQuoteWhenPriceSame() public {
+        uint256 price = 1e18; // 1 wad
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // try again
+        vm.expectRevert("same price");
+        vm.prank(OWNER);
+        pool.quote(price);
+    }
+
+    function testQuoteWhenPriceGtMax() public {
+        uint256 price = pool.PRICE_MAX() + 1;
+        vm.expectRevert("price out of range");
+        vm.prank(OWNER);
+        pool.quote(price);
+    }
+
+    function testQuoteWhenPriceLtMax() public {
+        uint256 price = pool.PRICE_MIN() - 1;
+        vm.expectRevert("price out of range");
+        vm.prank(OWNER);
+        pool.quote(price);
+    }
 }
