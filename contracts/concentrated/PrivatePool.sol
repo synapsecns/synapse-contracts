@@ -198,8 +198,6 @@ contract PrivatePool is IPrivatePool {
         uint256 minDy,
         uint256 deadline
     ) external deadlineCheck(deadline) returns (uint256 dy_) {
-        require(tokenIndexFrom != tokenIndexTo, "invalid token swap");
-
         // calculate amount out from swap
         // @dev reverts for invalid token indices
         dy_ = calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
@@ -224,6 +222,8 @@ contract PrivatePool is IPrivatePool {
         uint8 tokenIndexTo,
         uint256 dx
     ) public view onlyToken(tokenIndexFrom) onlyToken(tokenIndexTo) returns (uint256 dy_) {
+        require(tokenIndexFrom != tokenIndexTo, "invalid token swap");
+
         // get current token balances in pool
         uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
         uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);

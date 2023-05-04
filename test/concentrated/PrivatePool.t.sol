@@ -769,6 +769,37 @@ contract PrivatePoolTest is Test {
         pool.calculateSwap(1, 2, dx);
     }
 
+    function testCalculateSwapWhenFromEqualsTo() public {
+        // set up
+        uint256[] memory minAmounts = new uint256[](2);
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        uint256 fee = 0.00005e18;
+        vm.prank(OWNER);
+        pool.setSwapFee(fee);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        uint256 dx = 50e6;
+        vm.expectRevert("invalid token swap");
+        pool.calculateSwap(1, 1, dx);
+    }
+
     function testCalculateSwapWhenFrom0To1AndDyGtBalance() public {
         // set up
         uint256[] memory minAmounts = new uint256[](2);
