@@ -202,6 +202,34 @@ contract PrivatePoolTest is Test {
         assertEq(pool.D(), d);
     }
 
+    function testAddLiquidityReturnsMinted() public {
+        // set up
+        uint256 minToMint = 0;
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // transfer in tokens prior
+        uint256 amount = 100e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amount);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amount);
+
+        uint256 d = 200.05e18;
+        assertEq(pool.D(), d);
+
+        // add liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 100e6;
+        amounts[1] = 100.05e6;
+        uint256 minted = 200.1e18; // in wad
+
+        vm.prank(OWNER);
+        assertEq(pool.addLiquidity(amounts, minToMint, deadline), minted);
+    }
+
     function testAddLiquidityEmitsAddLiquidityEvent() public {
         // set up
         uint256 minToMint = 0;
@@ -237,7 +265,52 @@ contract PrivatePoolTest is Test {
         pool.addLiquidity(amounts, minToMint, deadline);
     }
 
-    // TODO: addLiquidity, removeLiquidity, swap, testCalculateSwap
+    function testAddLiquidityWhenNotOwner() public {
+        // set up
+        uint256 minToMint = 0;
+        uint256 deadline = block.timestamp + 3600;
+
+        // add liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 100e6;
+        amounts[1] = 100.05e6;
+
+        vm.expectRevert("!owner");
+        pool.addLiquidity(amounts, minToMint, deadline);
+    }
+
+    function testAddLiquidityWhenAmountsLenNot2() public {
+        // set up
+        uint256 minToMint = 0;
+        uint256 deadline = block.timestamp + 3600;
+
+        // add liquidity
+        uint256[] memory amounts = new uint256[](3);
+        amounts[0] = 100e6;
+        amounts[1] = 100.05e6;
+        amounts[2] = 100.10e6;
+
+        vm.expectRevert("invalid amounts");
+        vm.prank(OWNER);
+        pool.addLiquidity(amounts, minToMint, deadline);
+    }
+
+    function testAddLiquidityWhenPastDeadline() public {
+        // set up
+        uint256 minToMint = 0;
+        uint256 deadline = block.timestamp - 1;
+
+        // add liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 100e6;
+        amounts[1] = 100.05e6;
+
+        vm.expectRevert("block.timestamp > deadline");
+        vm.prank(OWNER);
+        pool.addLiquidity(amounts, minToMint, deadline);
+    }
+
+    // TODO: removeLiquidity, swap, testCalculateSwap
 
     function testGetTokenWhenIndex0() public {
         address token0 = address(pool.getToken(0));
