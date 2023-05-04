@@ -130,6 +130,7 @@ contract PrivatePool is IPrivatePool {
 
         // calc diff with new D value
         minted_ = _D(xWad, yWad) - _d;
+        require(minted_ >= minToMint, "minted < min"); // TODO: test
         _d += minted_;
 
         // transfer amounts in decimals in
@@ -177,6 +178,7 @@ contract PrivatePool is IPrivatePool {
         IERC20(token1).safeTransfer(msg.sender, dy);
 
         // return amounts transferred out
+        amountsOut_ = new uint256[](2);
         amountsOut_[0] = dx;
         amountsOut_[1] = dy;
 
