@@ -130,7 +130,7 @@ contract PrivatePool is IPrivatePool {
 
         // calc diff with new D value
         minted_ = _D(xWad, yWad) - _d;
-        require(minted_ >= minToMint, "minted < min"); // TODO: test
+        require(minted_ >= minToMint, "minted < min");
         _d += minted_;
 
         // transfer amounts in decimals in

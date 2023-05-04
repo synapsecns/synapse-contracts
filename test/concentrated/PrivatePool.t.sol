@@ -645,7 +645,193 @@ contract PrivatePoolTest is Test {
         pool.removeLiquidity(amount, minAmounts, deadline);
     }
 
-    // TODO: swap, testCalculateSwap
+    function testCalculateSwapWhenFrom0To1() public {
+        // set up
+        uint256[] memory minAmounts = new uint256[](2);
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        uint256 fee = 0.00005e18;
+        vm.prank(OWNER);
+        pool.setSwapFee(fee);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        uint256 dx = 50e6;
+        uint256 dy = 50022498; // int(P * X * (1 - fee))
+        assertEq(pool.calculateSwap(0, 1, dx), dy);
+    }
+
+    function testCalculateSwapWhenFrom1To0() public {
+        // set up
+        uint256[] memory minAmounts = new uint256[](2);
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        uint256 fee = 0.00005e18;
+        vm.prank(OWNER);
+        pool.setSwapFee(fee);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        uint256 dx = 50e6;
+        uint256 dy = 49972513; // int((Y / P) * (1 - fee))
+        assertEq(pool.calculateSwap(1, 0, dx), dy);
+    }
+
+    function testCalculateSwapWhenFromNotTokenIndex() public {
+        // set up
+        uint256[] memory minAmounts = new uint256[](2);
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        uint256 fee = 0.00005e18;
+        vm.prank(OWNER);
+        pool.setSwapFee(fee);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        uint256 dx = 50e6;
+        vm.expectRevert("invalid token index");
+        pool.calculateSwap(2, 0, dx);
+    }
+
+    function testCalculateSwapWhenToNotTokenIndex() public {
+        // set up
+        uint256[] memory minAmounts = new uint256[](2);
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        uint256 fee = 0.00005e18;
+        vm.prank(OWNER);
+        pool.setSwapFee(fee);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        uint256 dx = 50e6;
+        vm.expectRevert("invalid token index");
+        pool.calculateSwap(1, 2, dx);
+    }
+
+    function testCalculateSwapWhenFrom0To1AndDyGtBalance() public {
+        // set up
+        uint256[] memory minAmounts = new uint256[](2);
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        uint256 fee = 0.00005e18;
+        vm.prank(OWNER);
+        pool.setSwapFee(fee);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        uint256 dx = 100e6 + 1;
+        vm.expectRevert("dy > pool balance");
+        pool.calculateSwap(0, 1, dx);
+    }
+
+    function testCalculateSwapWhenFrom1To0AndDyGtBalance() public {
+        // set up
+        uint256[] memory minAmounts = new uint256[](2);
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        uint256 fee = 0.00005e18;
+        vm.prank(OWNER);
+        pool.setSwapFee(fee);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        uint256 dx = 100.05e6 + 1;
+        vm.expectRevert("dy > pool balance");
+        pool.calculateSwap(1, 0, dx);
+    }
+
+    // TODO: swap
 
     function testGetTokenWhenIndex0() public {
         address token0 = address(pool.getToken(0));
