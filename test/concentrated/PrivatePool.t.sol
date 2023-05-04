@@ -310,6 +310,35 @@ contract PrivatePoolTest is Test {
         pool.addLiquidity(amounts, minToMint, deadline);
     }
 
+    function testAddLiquidityWhenMintedLtMin() public {
+        // set up
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // transfer in tokens prior
+        uint256 amount = 100e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amount);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amount);
+
+        uint256 d = 200.05e18;
+        assertEq(pool.D(), d);
+
+        // add liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 100e6;
+        amounts[1] = 100.05e6;
+        uint256 minted = 200.1e18; // in wad
+
+        uint256 minToMint = minted + 1;
+        vm.expectRevert("minted < min");
+        vm.prank(OWNER);
+        pool.addLiquidity(amounts, minToMint, deadline);
+    }
+
     function testRemoveLiquidityTransfersFunds() public {
         // set up
         uint256[] memory minAmounts = new uint256[](2);
@@ -447,7 +476,176 @@ contract PrivatePoolTest is Test {
         pool.removeLiquidity(amount, minAmounts, deadline);
     }
 
-    // TODO: removeLiquidity, swap, testCalculateSwap
+    function testRemoveLiquidityWhenNotOwner() public {
+        // set up
+        uint256[] memory minAmounts = new uint256[](2);
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        uint256 amount = d / 4;
+        vm.expectRevert("!owner");
+        pool.removeLiquidity(amount, minAmounts, deadline);
+    }
+
+    function testRemoveLiquidityWhenMinAmountsNotLen2() public {
+        // set up
+        uint256[] memory minAmounts = new uint256[](3);
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        uint256 amount = d / 4;
+        vm.expectRevert("invalid min amounts");
+        vm.prank(OWNER);
+        pool.removeLiquidity(amount, minAmounts, deadline);
+    }
+
+    function testRemoveLiquidityWhenAmountGtD() public {
+        // set up
+        uint256[] memory minAmounts = new uint256[](2);
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        uint256 amount = d + 1;
+        vm.expectRevert("amount > D");
+        vm.prank(OWNER);
+        pool.removeLiquidity(amount, minAmounts, deadline);
+    }
+
+    function testRemoveLiquidityWhenPastDeadline() public {
+        // set up
+        uint256[] memory minAmounts = new uint256[](2);
+        uint256 deadline = block.timestamp - 1;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        uint256 amount = d + 1;
+        vm.expectRevert("block.timestamp > deadline");
+        vm.prank(OWNER);
+        pool.removeLiquidity(amount, minAmounts, deadline);
+    }
+
+    function testRemoveLiquidityWhenDxLtMinAmount() public {
+        // set up
+        uint256[] memory minAmounts = new uint256[](2);
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        uint256 amount = d / 4;
+        minAmounts[0] = amountSynToken / 4 + 1;
+        vm.expectRevert("dx < min");
+        vm.prank(OWNER);
+        pool.removeLiquidity(amount, minAmounts, deadline);
+    }
+
+    function testRemoveLiquidityWhenDyLtMinAmount() public {
+        // set up
+        uint256[] memory minAmounts = new uint256[](2);
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        uint256 amount = d / 4;
+        minAmounts[1] = amountToken / 4 + 1;
+        vm.expectRevert("dy < min");
+        vm.prank(OWNER);
+        pool.removeLiquidity(amount, minAmounts, deadline);
+    }
+
+    // TODO: swap, testCalculateSwap
 
     function testGetTokenWhenIndex0() public {
         address token0 = address(pool.getToken(0));
