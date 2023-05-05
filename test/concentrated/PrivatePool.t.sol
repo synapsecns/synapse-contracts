@@ -6,6 +6,7 @@ import "forge-std/Test.sol";
 import "../../contracts/concentrated/PrivatePool.sol";
 import "../mocks/MockToken.sol";
 import "../mocks/MockAccessToken.sol";
+import "../mocks/MockTokenWithFee.sol";
 import "../mocks/MockPrivatePool.sol";
 
 contract PrivatePoolTest is Test {
@@ -1060,6 +1061,57 @@ contract PrivatePoolTest is Test {
         vm.expectEmit(true, false, false, true);
         emit TokenSwap(sender, dx, dy, 1, 0);
         pool.swap(1, 0, dx, minDy, deadline);
+    }
+
+    function testSwapWhenTokenInHasFees() public {
+        // set up
+        MockTokenWithFee t = new MockTokenWithFee("USDT", "USDT", 6, 0.001e18);
+        MockAccessToken synT = new MockAccessToken("synUSDT", "synUSDT", 6);
+        MockPrivatePool p = new MockPrivatePool(OWNER, address(synT), address(t));
+
+        t.mint(OWNER, 1e12);
+        synT.mint(OWNER, 1e12);
+
+        vm.prank(OWNER);
+        t.approve(address(p), type(uint256).max);
+
+        vm.prank(OWNER);
+        synT.approve(address(p), type(uint256).max);
+
+        // more set up
+        vm.prank(OWNER);
+        p.quote(1.0005e18);
+
+        vm.prank(OWNER);
+        p.setSwapFee(0.00005e18);
+
+        // transfer in tokens prior
+        uint256 amountSynT = 100e6;
+        uint256 amountT = 100.15015e6;
+        vm.prank(OWNER);
+        t.transfer(address(p), amountT);
+        vm.prank(OWNER);
+        synT.transfer(address(p), amountSynT);
+
+        assertEq(t.balanceOf(OWNER), 1e12 - amountT);
+        assertEq(synT.balanceOf(OWNER), 1e12 - amountSynT);
+        assertEq(t.balanceOf(address(this)), amountT - 100.05e6); // owner of t
+
+        uint256 d = 200.10e18;
+        assertEq(p.D(), d);
+
+        // transfer funds from owner to this account
+        uint256 bal = 100e6;
+        address sender = address(this);
+        vm.prank(OWNER);
+        synT.transfer(sender, bal);
+        vm.prank(OWNER);
+        t.transfer(sender, bal);
+
+        uint256 dx = 50e6;
+        uint256 dy = 49922541; // int((Y *(1-transferFee) / P) * (1 - fee))
+        t.approve(address(p), type(uint256).max);
+        assertEq(p.swap(1, 0, dx, 0, block.timestamp + 3600), dy);
     }
 
     function testSwapWhenPastDeadline() public {
