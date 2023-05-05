@@ -49,6 +49,11 @@ contract PrivatePool is IPrivatePool {
         _;
     }
 
+    modifier hasQuote() {
+        require(P > 0, "invalid quote");
+        _;
+    }
+
     event Quote(uint256 price);
     event NewSwapFee(uint256 newSwapFee);
     event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
@@ -72,11 +77,11 @@ contract PrivatePool is IPrivatePool {
         token1 = _token1;
 
         // limit to tokens with decimals <= 18
-        uint256 _token0Decimals = uint256(IERC20Metadata(_token0).decimals());
+        uint256 _token0Decimals = IERC20Metadata(_token0).decimals();
         require(_token0Decimals <= 18, "token0 decimals > 18");
         token0Decimals = _token0Decimals;
 
-        uint256 _token1Decimals = uint256(IERC20Metadata(_token1).decimals());
+        uint256 _token1Decimals = IERC20Metadata(_token1).decimals();
         require(_token1Decimals <= 18, "token1 decimals > 18");
         token1Decimals = _token1Decimals;
     }
@@ -110,7 +115,7 @@ contract PrivatePool is IPrivatePool {
         uint256[] calldata amounts,
         uint256 minToMint,
         uint256 deadline
-    ) external onlyOwner deadlineCheck(deadline) returns (uint256 minted_) {
+    ) external onlyOwner deadlineCheck(deadline) hasQuote returns (uint256 minted_) {
         require(amounts.length == 2, "invalid amounts");
 
         // get current token balances in pool
@@ -197,7 +202,7 @@ contract PrivatePool is IPrivatePool {
         uint256 dx,
         uint256 minDy,
         uint256 deadline
-    ) external deadlineCheck(deadline) returns (uint256 dy_) {
+    ) external deadlineCheck(deadline) hasQuote returns (uint256 dy_) {
         // calculate amount out from swap
         // @dev reverts for invalid token indices
         dy_ = calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
