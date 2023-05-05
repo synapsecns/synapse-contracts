@@ -143,9 +143,6 @@ contract PrivatePool is IPrivatePool {
         IERC20(token1).safeTransferFrom(msg.sender, address(this), amounts[1]);
 
         uint256[] memory fees = new uint256[](2);
-        fees[0] = 0;
-        fees[1] = 0;
-
         emit AddLiquidity(msg.sender, amounts, fees, _d, _d);
     }
 
