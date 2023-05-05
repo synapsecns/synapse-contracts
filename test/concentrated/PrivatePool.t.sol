@@ -28,7 +28,13 @@ contract PrivatePoolTest is Test {
         uint256 invariant,
         uint256 lpTokenSupply
     );
-    event RemoveLiquidity(address indexed provider, uint256[] tokenAmounts, uint256 lpTokenSupply);
+    event RemoveLiquidity(
+        address indexed provider,
+        uint256[] tokenAmounts,
+        uint256[] fees,
+        uint256 invariant,
+        uint256 lpTokenSupply
+    );
 
     function setUp() public {
         token = new MockToken("X", "X", 6);
@@ -366,7 +372,7 @@ contract PrivatePoolTest is Test {
 
     function testRemoveLiquidityTransfersFunds() public {
         // set up
-        uint256[] memory minAmounts = new uint256[](2);
+        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -389,9 +395,12 @@ contract PrivatePoolTest is Test {
         assertEq(pool.D(), d);
 
         // remove 25% of the liquidity
-        uint256 amount = d / 4;
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amountSynToken / 4;
+        amounts[1] = amountToken / 4;
+
         vm.prank(OWNER);
-        pool.removeLiquidity(amount, minAmounts, deadline);
+        pool.removeLiquidity(amounts, minToBurn, deadline);
 
         // check pool balances decreased by d / 4
         assertEq(token.balanceOf(address(pool)), amountToken - amountToken / 4);
@@ -404,7 +413,7 @@ contract PrivatePoolTest is Test {
 
     function testRemoveLiquidityChangesD() public {
         // set up
-        uint256[] memory minAmounts = new uint256[](2);
+        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -425,18 +434,21 @@ contract PrivatePoolTest is Test {
         assertEq(pool.D(), d);
 
         // remove 25% of the liquidity
-        uint256 amount = d / 4;
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amountSynToken / 4;
+        amounts[1] = amountToken / 4;
+
         vm.prank(OWNER);
-        pool.removeLiquidity(amount, minAmounts, deadline);
+        pool.removeLiquidity(amounts, minToBurn, deadline);
 
         // check D updated
-        d -= amount; // in wad
+        d -= d / 4; // in wad
         assertEq(pool.D(), d);
     }
 
-    function testRemoveLiquidityReturnsAmountsOut() public {
+    function testRemoveLiquidityReturnsBurned() public {
         // set up
-        uint256[] memory minAmounts = new uint256[](2);
+        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -457,18 +469,18 @@ contract PrivatePoolTest is Test {
         assertEq(pool.D(), d);
 
         // remove 25% of the liquidity
-        uint256 amount = d / 4;
-        uint256[] memory amountsOut = new uint256[](2);
-        amountsOut[0] = amountSynToken / 4;
-        amountsOut[1] = amountToken / 4;
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amountSynToken / 4;
+        amounts[1] = amountToken / 4;
+        uint256 burned = d / 4;
 
         vm.prank(OWNER);
-        assertEq(pool.removeLiquidity(amount, minAmounts, deadline), amountsOut);
+        assertEq(pool.removeLiquidity(amounts, minToBurn, deadline), burned);
     }
 
     function testRemoveLiquidityEmitsRemoveLiquidityEvent() public {
         // set up
-        uint256[] memory minAmounts = new uint256[](2);
+        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -489,21 +501,22 @@ contract PrivatePoolTest is Test {
         assertEq(pool.D(), d);
 
         // remove 25% of the liquidity
-        uint256 amount = d / 4;
-        uint256[] memory amountsOut = new uint256[](2);
-        amountsOut[0] = amountSynToken / 4;
-        amountsOut[1] = amountToken / 4;
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amountSynToken / 4;
+        amounts[1] = amountToken / 4;
+
+        uint256[] memory fees = new uint256[](2);
 
         vm.expectEmit(true, false, false, true);
-        emit RemoveLiquidity(OWNER, amountsOut, d - d / 4);
+        emit RemoveLiquidity(OWNER, amounts, fees, d - d / 4, d - d / 4);
 
         vm.prank(OWNER);
-        pool.removeLiquidity(amount, minAmounts, deadline);
+        pool.removeLiquidity(amounts, minToBurn, deadline);
     }
 
     function testRemoveLiquidityWhenNotOwner() public {
         // set up
-        uint256[] memory minAmounts = new uint256[](2);
+        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -523,14 +536,18 @@ contract PrivatePoolTest is Test {
         uint256 d = 200.10e18;
         assertEq(pool.D(), d);
 
-        uint256 amount = d / 4;
+        // remove 25% of the liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amountSynToken / 4;
+        amounts[1] = amountToken / 4;
+
         vm.expectRevert("!owner");
-        pool.removeLiquidity(amount, minAmounts, deadline);
+        pool.removeLiquidity(amounts, minToBurn, deadline);
     }
 
-    function testRemoveLiquidityWhenMinAmountsNotLen2() public {
+    function testRemoveLiquidityWhenAmountsNotLen2() public {
         // set up
-        uint256[] memory minAmounts = new uint256[](3);
+        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -550,15 +567,19 @@ contract PrivatePoolTest is Test {
         uint256 d = 200.10e18;
         assertEq(pool.D(), d);
 
-        uint256 amount = d / 4;
-        vm.expectRevert("invalid min amounts");
+        // remove 25% of the liquidity
+        uint256[] memory amounts = new uint256[](3);
+        amounts[0] = amountSynToken / 4;
+        amounts[1] = amountToken / 4;
+
+        vm.expectRevert("invalid amounts");
         vm.prank(OWNER);
-        pool.removeLiquidity(amount, minAmounts, deadline);
+        pool.removeLiquidity(amounts, minToBurn, deadline);
     }
 
-    function testRemoveLiquidityWhenAmountGtD() public {
+    function testRemoveLiquidityWhenAmount0GtBalance() public {
         // set up
-        uint256[] memory minAmounts = new uint256[](2);
+        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -578,15 +599,51 @@ contract PrivatePoolTest is Test {
         uint256 d = 200.10e18;
         assertEq(pool.D(), d);
 
-        uint256 amount = d + 1;
-        vm.expectRevert("amount > D");
+        // remove 25% of the liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amountSynToken + 1;
+        amounts[1] = amountToken / 4;
+
+        vm.expectRevert("dx > max");
         vm.prank(OWNER);
-        pool.removeLiquidity(amount, minAmounts, deadline);
+        pool.removeLiquidity(amounts, minToBurn, deadline);
+    }
+
+    function testRemoveLiquidityWhenAmount1GtBalance() public {
+        // set up
+        uint256 minToBurn = 0;
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        // remove 25% of the liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amountSynToken / 4;
+        amounts[1] = amountToken + 1;
+
+        vm.expectRevert("dy > max");
+        vm.prank(OWNER);
+        pool.removeLiquidity(amounts, minToBurn, deadline);
     }
 
     function testRemoveLiquidityWhenPastDeadline() public {
         // set up
-        uint256[] memory minAmounts = new uint256[](2);
+        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp - 1;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -606,15 +663,18 @@ contract PrivatePoolTest is Test {
         uint256 d = 200.10e18;
         assertEq(pool.D(), d);
 
-        uint256 amount = d + 1;
+        // remove 25% of the liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amountSynToken / 4;
+        amounts[1] = amountToken + 1;
+
         vm.expectRevert("block.timestamp > deadline");
         vm.prank(OWNER);
-        pool.removeLiquidity(amount, minAmounts, deadline);
+        pool.removeLiquidity(amounts, minToBurn, deadline);
     }
 
-    function testRemoveLiquidityWhenDxLtMinAmount() public {
+    function testRemoveLiquidityWhenBurnedLtMinToBurn() public {
         // set up
-        uint256[] memory minAmounts = new uint256[](2);
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -634,16 +694,19 @@ contract PrivatePoolTest is Test {
         uint256 d = 200.10e18;
         assertEq(pool.D(), d);
 
-        uint256 amount = d / 4;
-        minAmounts[0] = amountSynToken / 4 + 1;
-        vm.expectRevert("dx < min");
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amountSynToken / 4;
+        amounts[1] = amountToken / 4;
+
+        uint256 minToBurn = d / 4 + 1;
+        vm.expectRevert("burned < min");
         vm.prank(OWNER);
-        pool.removeLiquidity(amount, minAmounts, deadline);
+        pool.removeLiquidity(amounts, minToBurn, deadline);
     }
 
-    function testRemoveLiquidityWhenDyLtMinAmount() public {
+    function testRemoveLiquidityWhenOnlyAmount0() public {
         // set up
-        uint256[] memory minAmounts = new uint256[](2);
+        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -663,11 +726,50 @@ contract PrivatePoolTest is Test {
         uint256 d = 200.10e18;
         assertEq(pool.D(), d);
 
-        uint256 amount = d / 4;
-        minAmounts[1] = amountToken / 4 + 1;
-        vm.expectRevert("dy < min");
+        // remove 25% of the liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amountSynToken / 4;
+        amounts[1] = 0;
+
         vm.prank(OWNER);
-        pool.removeLiquidity(amount, minAmounts, deadline);
+        pool.removeLiquidity(amounts, minToBurn, deadline);
+
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken + amountSynToken / 4);
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+    }
+
+    function testRemoveLiquidityWhenOnlyAmount1() public {
+        // set up
+        uint256 minToBurn = 0;
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+
+        uint256 d = 200.10e18;
+        assertEq(pool.D(), d);
+
+        // remove 25% of the liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 0;
+        amounts[1] = amountToken / 4;
+
+        vm.prank(OWNER);
+        pool.removeLiquidity(amounts, minToBurn, deadline);
+
+        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
+        assertEq(token.balanceOf(OWNER), 1e12 - amountToken + amountToken / 4);
     }
 
     function testCalculateSwapWhenFrom0To1() public {
