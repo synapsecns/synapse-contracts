@@ -39,8 +39,11 @@ contract MockTokenWithFee is ERC20, Ownable {
         address to,
         uint256 amount
     ) internal virtual override {
+        if (from == address(0) || to == address(0)) return;
+
         // mimics USDT: https://etherscan.io/token/0xdac17f958d2ee523a2206206994597c13d831ec7?a=0xcffad3200574698b78f32232aa9d63eabd290703#code
         uint256 feeAmount = Math.mulDiv(amount, fee, wad);
-        _transfer(to, owner(), feeAmount);
+        _burn(to, feeAmount);
+        _mint(owner(), feeAmount);
     }
 }
