@@ -199,10 +199,20 @@ contract PrivatePool is IPrivatePool {
         uint256 dx,
         uint256 minDy,
         uint256 deadline
-    ) external deadlineCheck(deadline) hasQuote returns (uint256 dy_) {
+    )
+        external
+        onlyToken(tokenIndexFrom)
+        onlyToken(tokenIndexTo)
+        deadlineCheck(deadline)
+        hasQuote
+        returns (uint256 dy_)
+    {
+        require(tokenIndexFrom != tokenIndexTo, "invalid token swap");
+
         // calculate amount out from swap
         // @dev reverts for invalid token indices
         dy_ = calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+        require(dy_ > 0, "dy > pool balance");
         require(dy_ >= minDy, "dy < minDy");
 
         // transfer dx in and send dy out
@@ -215,7 +225,7 @@ contract PrivatePool is IPrivatePool {
     }
 
     /// @notice Calculates amount of tokens received on swap
-    /// @dev Reverts if either token index is invalid
+    /// @dev Returns zero if pool balances exceeded on swap
     /// @param tokenIndexFrom The index of the token in
     /// @param tokenIndexTo The index of the token out
     /// @param dx The amount of token in in token decimals
@@ -223,9 +233,7 @@ contract PrivatePool is IPrivatePool {
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
         uint256 dx
-    ) public view onlyToken(tokenIndexFrom) onlyToken(tokenIndexTo) returns (uint256 dy_) {
-        require(tokenIndexFrom != tokenIndexTo, "invalid token swap");
-
+    ) public view returns (uint256 dy_) {
         // get current token balances in pool
         uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
         uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
@@ -245,7 +253,7 @@ contract PrivatePool is IPrivatePool {
 
             // check amount out won't exceed pool balance
             uint256 prod = Math.mulDiv(P, xWad, wad);
-            require(_d >= prod, "dy > pool balance");
+            if (_d < prod) return 0;
 
             uint256 yWadAfter = _d - prod;
             amountOutWad = yWad - yWadAfter;
@@ -257,7 +265,7 @@ contract PrivatePool is IPrivatePool {
             yWad += amountInWad;
 
             // check amount out won't exceed pool balance
-            require(_d >= yWad, "dy > pool balance");
+            if (_d < yWad) return 0;
 
             uint256 xWadAfter = Math.mulDiv(_d - yWad, wad, P);
             amountOutWad = xWad - xWadAfter;

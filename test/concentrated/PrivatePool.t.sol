@@ -727,93 +727,6 @@ contract PrivatePoolTest is Test {
         assertEq(pool.calculateSwap(1, 0, dx), dy);
     }
 
-    function testCalculateSwapWhenFromNotTokenIndex() public {
-        // set up
-        uint256 price = 1.0005e18;
-        vm.prank(OWNER);
-        pool.quote(price);
-
-        uint256 fee = 0.00005e18;
-        vm.prank(OWNER);
-        pool.setSwapFee(fee);
-
-        // transfer in tokens prior
-        uint256 amountSynToken = 100e6;
-        uint256 amountToken = 100.05e6;
-        vm.prank(OWNER);
-        token.transfer(address(pool), amountToken);
-        vm.prank(OWNER);
-        synToken.transfer(address(pool), amountSynToken);
-
-        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
-        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
-
-        uint256 d = 200.10e18;
-        assertEq(pool.D(), d);
-
-        uint256 dx = 50e6;
-        vm.expectRevert("invalid token index");
-        pool.calculateSwap(2, 0, dx);
-    }
-
-    function testCalculateSwapWhenToNotTokenIndex() public {
-        // set up
-        uint256 price = 1.0005e18;
-        vm.prank(OWNER);
-        pool.quote(price);
-
-        uint256 fee = 0.00005e18;
-        vm.prank(OWNER);
-        pool.setSwapFee(fee);
-
-        // transfer in tokens prior
-        uint256 amountSynToken = 100e6;
-        uint256 amountToken = 100.05e6;
-        vm.prank(OWNER);
-        token.transfer(address(pool), amountToken);
-        vm.prank(OWNER);
-        synToken.transfer(address(pool), amountSynToken);
-
-        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
-        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
-
-        uint256 d = 200.10e18;
-        assertEq(pool.D(), d);
-
-        uint256 dx = 50e6;
-        vm.expectRevert("invalid token index");
-        pool.calculateSwap(1, 2, dx);
-    }
-
-    function testCalculateSwapWhenFromEqualsTo() public {
-        // set up
-        uint256 price = 1.0005e18;
-        vm.prank(OWNER);
-        pool.quote(price);
-
-        uint256 fee = 0.00005e18;
-        vm.prank(OWNER);
-        pool.setSwapFee(fee);
-
-        // transfer in tokens prior
-        uint256 amountSynToken = 100e6;
-        uint256 amountToken = 100.05e6;
-        vm.prank(OWNER);
-        token.transfer(address(pool), amountToken);
-        vm.prank(OWNER);
-        synToken.transfer(address(pool), amountSynToken);
-
-        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
-        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
-
-        uint256 d = 200.10e18;
-        assertEq(pool.D(), d);
-
-        uint256 dx = 50e6;
-        vm.expectRevert("invalid token swap");
-        pool.calculateSwap(1, 1, dx);
-    }
-
     function testCalculateSwapWhenFrom0To1AndDyGtBalance() public {
         // set up
         uint256 price = 1.0005e18;
@@ -839,8 +752,8 @@ contract PrivatePoolTest is Test {
         assertEq(pool.D(), d);
 
         uint256 dx = 100e6 + 1;
-        vm.expectRevert("dy > pool balance");
-        pool.calculateSwap(0, 1, dx);
+        uint256 dy = 0;
+        assertEq(pool.calculateSwap(0, 1, dx), dy);
     }
 
     function testCalculateSwapWhenFrom1To0AndDyGtBalance() public {
@@ -868,8 +781,8 @@ contract PrivatePoolTest is Test {
         assertEq(pool.D(), d);
 
         uint256 dx = 100.05e6 + 1;
-        vm.expectRevert("dy > pool balance");
-        pool.calculateSwap(1, 0, dx);
+        uint256 dy = 0;
+        assertEq(pool.calculateSwap(1, 0, dx), dy);
     }
 
     function testSwapTransfersFundsWhenFrom0To1() public {
