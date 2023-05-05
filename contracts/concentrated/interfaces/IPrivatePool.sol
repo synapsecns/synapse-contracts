@@ -40,14 +40,14 @@ interface IPrivatePool {
     ) external returns (uint256 minted_);
 
     /// @notice Removes liquidity from pool
-    /// @param amount The amount of liquidity to remove
-    /// @param minAmounts The minimum amounts of token to receive in token decimals
+    /// @param amounts The token amounts to remove in token decimals
+    /// @param minToBurn The minimum amount of liquidity to be burned
     /// @param deadline The deadline before which liquidity must be removed
     function removeLiquidity(
-        uint256 amount,
-        uint256[] calldata minAmounts,
+        uint256[] calldata amounts,
+        uint256 minToBurn,
         uint256 deadline
-    ) external returns (uint256[] memory amountsOut_);
+    ) external returns (uint256 burned_);
 
     /// @notice Swaps token from for an amount of token to
     /// @param tokenIndexFrom The index of the token in
