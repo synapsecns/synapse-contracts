@@ -65,6 +65,13 @@ contract PrivatePool is IPrivatePool {
         uint256 lpTokenSupply
     );
     event RemoveLiquidity(address indexed provider, uint256[] tokenAmounts, uint256 lpTokenSupply);
+    event RemoveLiquidityOne(
+        address indexed provider,
+        uint256 lpTokenAmount,
+        uint256 lpTokenSupply,
+        uint256 boughtId,
+        uint256 tokensBought
+    );
 
     constructor(
         address _owner,
@@ -161,7 +168,7 @@ contract PrivatePool is IPrivatePool {
         uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
         uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
 
-        // get D balance before add liquidity
+        // get D balance before remove liquidity
         uint256 _d = _D(xWad, yWad);
 
         // amount of liquidity to remove must be less than D
@@ -185,6 +192,42 @@ contract PrivatePool is IPrivatePool {
         amountsOut_[1] = dy;
 
         emit RemoveLiquidity(msg.sender, amountsOut_, _d - amount);
+    }
+
+    /// @notice Removes liquidity from pool all in one token.
+    /// @param tokenAmount The amount of liquidity to remove
+    /// @param tokenIndex The index of the token to remove
+    /// @param minAmount The minimum amount of token removed in token decimals
+    /// @param deadline The deadline before which liquidity must be removed
+    function removeLiquidityOneToken(
+        uint256 tokenAmount,
+        uint8 tokenIndex,
+        uint256 minAmount,
+        uint256 deadline
+    ) external onlyOwner onlyToken(tokenIndex) deadlineCheck(deadline) returns (uint256 dy_) {
+        // get current token balances in pool
+        uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
+        uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
+
+        // get D balance before remove liquidity
+        uint256 _d = _D(xWad, yWad);
+
+        // amount of liquidity to remove must be less than D
+        require(tokenAmount <= _d, "amount > D");
+
+        // token amounts to remove are either x * amount / D or y * amount / D
+        dy_ = tokenIndex == 0
+            ? _amountDecimals(Math.mulDiv(xWad, tokenAmount, _d), true)
+            : _amountDecimals(Math.mulDiv(yWad, tokenAmount, _d), false);
+
+        // check exceeds min amounts
+        require(dy_ >= minAmount, "dy < min");
+
+        // transfer amounts out
+        address tokenOut = tokenIndex == 0 ? token0 : token1;
+        IERC20(tokenOut).safeTransfer(msg.sender, dy_);
+
+        emit RemoveLiquidityOne(msg.sender, tokenAmount, _d - tokenAmount, tokenIndex, dy_);
     }
 
     /// @notice Swaps token from for an amount of token to
