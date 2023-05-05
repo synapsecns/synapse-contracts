@@ -209,23 +209,27 @@ contract PrivatePool is IPrivatePool {
     {
         require(tokenIndexFrom != tokenIndexTo, "invalid token swap");
 
+        // transfer in tokens and update dx (in case of transfer fees)
+        address tokenIn = tokenIndexFrom == 0 ? token0 : token1;
+        uint256 bal = IERC20(tokenIn).balanceOf(address(this));
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), dx);
+        dx = IERC20(tokenIn).balanceOf(address(this)) - bal;
+
         // calculate amount out from swap
         // @dev reverts for invalid token indices
         dy_ = calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
         require(dy_ > 0, "dy > pool balance");
         require(dy_ >= minDy, "dy < minDy");
 
-        // transfer dx in and send dy out
-        address tokenIn = tokenIndexFrom == 0 ? token0 : token1;
+        // transfer dy out
         address tokenOut = tokenIndexTo == 0 ? token0 : token1;
-        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), dx);
         IERC20(tokenOut).safeTransfer(msg.sender, dy_);
 
         emit TokenSwap(msg.sender, dx, dy_, tokenIndexFrom, tokenIndexTo);
     }
 
     /// @notice Calculates amount of tokens received on swap
-    /// @dev Returns zero if pool balances exceeded on swap
+    /// @dev Returns zero if pool balances exceeded on swap or invalid inputs
     /// @param tokenIndexFrom The index of the token in
     /// @param tokenIndexTo The index of the token out
     /// @param dx The amount of token in in token decimals
@@ -234,6 +238,8 @@ contract PrivatePool is IPrivatePool {
         uint8 tokenIndexTo,
         uint256 dx
     ) public view returns (uint256 dy_) {
+        if (tokenIndexFrom > 1 || tokenIndexTo > 1 || tokenIndexFrom == tokenIndexTo) return 0;
+
         // get current token balances in pool
         uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
         uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
