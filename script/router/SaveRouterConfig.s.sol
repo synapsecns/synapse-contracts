@@ -14,6 +14,9 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
 
     string public constant ROUTER = "SynapseRouter";
 
+    mapping(string => bool) public isIgnoredId;
+    string[] public ids;
+
     constructor() public {
         // Load chain name that block.chainid refers to
         loadChain();
@@ -39,10 +42,15 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
         string memory ethRPC = vm.envString("ALCHEMY_API");
         vm.createSelectFork(ethRPC);
         (LocalBridgeConfig.BridgeTokenConfig[] memory tokens, address[] memory pools) = getChainConfig(chainId);
-        string[] memory ids = new string[](tokens.length);
+
+        _loadIgnoredIds();
 
         for (uint256 i = 0; i < tokens.length; ++i) {
-            ids[i] = tokens[i].id;
+            if (isIgnoredId[tokens[i].id]) {
+                console.log("Skipping: %s", tokens[i].id);
+                continue;
+            }
+            ids.push(tokens[i].id);
             string memory token = tokens[i].id;
             token.serialize("token", tokens[i].token);
             token.serialize("decimals", tokens[i].decimals);
@@ -66,5 +74,13 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
         fullConfig = fullConfig.serialize("pools", pools);
 
         saveDeployConfig(ROUTER, fullConfig);
+    }
+
+    function _loadIgnoredIds() internal {
+        string memory ignored = loadGlobalConfig("SynapseRouter.ignored");
+        string[] memory _ids = ignored.readStringArray(".ids");
+        for (uint256 i = 0; i < _ids.length; ++i) {
+            isIgnoredId[_ids[i]] = true;
+        }
     }
 }
