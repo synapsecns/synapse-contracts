@@ -123,6 +123,11 @@ contract SynapseScript is ScriptUtils, Script {
         return vm.readFile(_deployConfigPath(contractName));
     }
 
+    /// @notice Loads a global config (not chain specific).
+    function loadGlobalConfig(string memory globalName) public view returns (string memory json) {
+        return vm.readFile(_globalConfigPath(globalName));
+    }
+
     /// @notice Saves deploy config for a given contract on a given chain.
     function saveDeployConfig(string memory contractName, string memory config) public {
         console.log("Saved: config for [%s] on [%s]", contractName, chain);
@@ -210,5 +215,10 @@ contract SynapseScript is ScriptUtils, Script {
     /// @dev Returns the full path to the contract deploy config JSON.
     function _deployConfigPath(string memory contractName) internal view returns (string memory path) {
         return _concat(DEPLOY_CONFIGS, chain, "/", contractName, ".dc.json");
+    }
+
+    /// @dev Returns the full path to the global config JSON.
+    function _globalConfigPath(string memory globalName) internal pure returns (string memory path) {
+        return _concat(DEPLOY_CONFIGS, globalName, ".json");
     }
 }
