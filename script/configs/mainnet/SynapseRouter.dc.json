@@ -22,7 +22,8 @@
     "DAI",
     "agEUR",
     "LINK",
-    "UNIDX"
+    "UNIDX",
+    "PEPE"
   ],
   "pools": [
     "0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8"
@@ -80,6 +81,15 @@
       "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
       "minFee": "0x00000000000000000000000000000000000000000000002086ac351052600000",
       "token": "0x98585dFc8d9e7D48F0b1aE47ce33332CF4237D96",
+      "tokenType": 1
+    },
+    "PEPE": {
+      "bridgeFee": 6000000,
+      "bridgeToken": "0x6982508145454Ce325dDbE47a25d4ec3d2311933",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000ffffffffffffffffffffffffffff",
+      "minFee": "0x00000000000000000000000000000000000000000009ed194db19b238c000000",
+      "token": "0x6982508145454Ce325dDbE47a25d4ec3d2311933",
       "tokenType": 1
     },
     "SDT": {

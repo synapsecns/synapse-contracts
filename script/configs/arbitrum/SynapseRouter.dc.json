@@ -15,7 +15,8 @@
     "L2DAO",
     "agEUR",
     "PLS",
-    "UNIDX"
+    "UNIDX",
+    "PEPE"
   ],
   "pools": [
     "0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40",
@@ -56,6 +57,15 @@
       "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
       "minFee": "0x000000000000000000000000000000000000000000000009c2007651b2500000",
       "token": "0x0877154a755B24D499B8e2bD7ecD54d3c92BA433",
+      "tokenType": 0
+    },
+    "PEPE": {
+      "bridgeFee": 6000000,
+      "bridgeToken": "0xA54B8e178A49F8e5405A4d44Bb31F496e5564A05",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000ffffffffffffffffffffffffffff",
+      "minFee": "0x00000000000000000000000000000000000000000000a968163f0a57b4000000",
+      "token": "0xA54B8e178A49F8e5405A4d44Bb31F496e5564A05",
       "tokenType": 0
     },
     "PLS": {
