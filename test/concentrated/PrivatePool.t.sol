@@ -161,7 +161,6 @@ contract PrivatePoolTest is Test {
 
     function testAddLiquidityTransfersFunds() public {
         // set up
-        uint256 minToMint = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -173,7 +172,7 @@ contract PrivatePoolTest is Test {
         amounts[1] = 100.05e6;
 
         vm.prank(OWNER);
-        pool.addLiquidity(amounts, minToMint, deadline);
+        pool.addLiquidity(amounts, deadline);
 
         assertEq(synToken.balanceOf(address(pool)), amounts[0]);
         assertEq(token.balanceOf(address(pool)), amounts[1]);
@@ -181,7 +180,6 @@ contract PrivatePoolTest is Test {
 
     function testAddLiquidityChangesD() public {
         // set up
-        uint256 minToMint = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -203,7 +201,7 @@ contract PrivatePoolTest is Test {
         amounts[1] = 100.05e6;
 
         vm.prank(OWNER);
-        pool.addLiquidity(amounts, minToMint, deadline);
+        pool.addLiquidity(amounts, deadline);
 
         d += 200.1e18; // in wad
         assertEq(pool.D(), d);
@@ -211,7 +209,6 @@ contract PrivatePoolTest is Test {
 
     function testAddLiquidityReturnsMinted() public {
         // set up
-        uint256 minToMint = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -234,12 +231,11 @@ contract PrivatePoolTest is Test {
         uint256 minted = 200.1e18; // in wad
 
         vm.prank(OWNER);
-        assertEq(pool.addLiquidity(amounts, minToMint, deadline), minted);
+        assertEq(pool.addLiquidity(amounts, deadline), minted);
     }
 
     function testAddLiquidityEmitsAddLiquidityEvent() public {
         // set up
-        uint256 minToMint = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -269,12 +265,11 @@ contract PrivatePoolTest is Test {
         emit AddLiquidity(OWNER, amounts, fees, d, d);
 
         vm.prank(OWNER);
-        pool.addLiquidity(amounts, minToMint, deadline);
+        pool.addLiquidity(amounts, deadline);
     }
 
     function testAddLiquidityWhenNotOwner() public {
         // set up
-        uint256 minToMint = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -286,12 +281,11 @@ contract PrivatePoolTest is Test {
         amounts[1] = 100.05e6;
 
         vm.expectRevert("!owner");
-        pool.addLiquidity(amounts, minToMint, deadline);
+        pool.addLiquidity(amounts, deadline);
     }
 
     function testAddLiquidityWhenAmountsLenNot2() public {
         // set up
-        uint256 minToMint = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -305,12 +299,11 @@ contract PrivatePoolTest is Test {
 
         vm.expectRevert("invalid amounts");
         vm.prank(OWNER);
-        pool.addLiquidity(amounts, minToMint, deadline);
+        pool.addLiquidity(amounts, deadline);
     }
 
     function testAddLiquidityWhenPastDeadline() public {
         // set up
-        uint256 minToMint = 0;
         uint256 deadline = block.timestamp - 1;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -323,12 +316,11 @@ contract PrivatePoolTest is Test {
 
         vm.expectRevert("block.timestamp > deadline");
         vm.prank(OWNER);
-        pool.addLiquidity(amounts, minToMint, deadline);
+        pool.addLiquidity(amounts, deadline);
     }
 
     function testAddLiquidityWhenNotHasQuote() public {
         // set up
-        uint256 minToMint = 0;
         uint256 deadline = block.timestamp + 3600;
 
         // add liquidity
@@ -338,41 +330,11 @@ contract PrivatePoolTest is Test {
 
         vm.expectRevert("invalid quote");
         vm.prank(OWNER);
-        pool.addLiquidity(amounts, minToMint, deadline);
-    }
-
-    function testAddLiquidityWhenMintedLtMin() public {
-        // set up
-        uint256 deadline = block.timestamp + 3600;
-        uint256 price = 1.0005e18;
-        vm.prank(OWNER);
-        pool.quote(price);
-
-        // transfer in tokens prior
-        uint256 amount = 100e6;
-        vm.prank(OWNER);
-        token.transfer(address(pool), amount);
-        vm.prank(OWNER);
-        synToken.transfer(address(pool), amount);
-
-        uint256 d = 200.05e18;
-        assertEq(pool.D(), d);
-
-        // add liquidity
-        uint256[] memory amounts = new uint256[](2);
-        amounts[0] = 100e6;
-        amounts[1] = 100.05e6;
-        uint256 minted = 200.1e18; // in wad
-
-        uint256 minToMint = minted + 1;
-        vm.expectRevert("minted < min");
-        vm.prank(OWNER);
-        pool.addLiquidity(amounts, minToMint, deadline);
+        pool.addLiquidity(amounts, deadline);
     }
 
     function testRemoveLiquidityTransfersFunds() public {
         // set up
-        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -400,7 +362,7 @@ contract PrivatePoolTest is Test {
         amounts[1] = amountToken / 4;
 
         vm.prank(OWNER);
-        pool.removeLiquidity(amounts, minToBurn, deadline);
+        pool.removeLiquidity(amounts, deadline);
 
         // check pool balances decreased by d / 4
         assertEq(token.balanceOf(address(pool)), amountToken - amountToken / 4);
@@ -413,7 +375,6 @@ contract PrivatePoolTest is Test {
 
     function testRemoveLiquidityChangesD() public {
         // set up
-        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -439,7 +400,7 @@ contract PrivatePoolTest is Test {
         amounts[1] = amountToken / 4;
 
         vm.prank(OWNER);
-        pool.removeLiquidity(amounts, minToBurn, deadline);
+        pool.removeLiquidity(amounts, deadline);
 
         // check D updated
         d -= d / 4; // in wad
@@ -448,7 +409,6 @@ contract PrivatePoolTest is Test {
 
     function testRemoveLiquidityReturnsBurned() public {
         // set up
-        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -475,12 +435,11 @@ contract PrivatePoolTest is Test {
         uint256 burned = d / 4;
 
         vm.prank(OWNER);
-        assertEq(pool.removeLiquidity(amounts, minToBurn, deadline), burned);
+        assertEq(pool.removeLiquidity(amounts, deadline), burned);
     }
 
     function testRemoveLiquidityEmitsRemoveLiquidityEvent() public {
         // set up
-        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -511,12 +470,11 @@ contract PrivatePoolTest is Test {
         emit RemoveLiquidity(OWNER, amounts, fees, d - d / 4, d - d / 4);
 
         vm.prank(OWNER);
-        pool.removeLiquidity(amounts, minToBurn, deadline);
+        pool.removeLiquidity(amounts, deadline);
     }
 
     function testRemoveLiquidityWhenNotOwner() public {
         // set up
-        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -542,12 +500,11 @@ contract PrivatePoolTest is Test {
         amounts[1] = amountToken / 4;
 
         vm.expectRevert("!owner");
-        pool.removeLiquidity(amounts, minToBurn, deadline);
+        pool.removeLiquidity(amounts, deadline);
     }
 
     function testRemoveLiquidityWhenAmountsNotLen2() public {
         // set up
-        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -574,12 +531,11 @@ contract PrivatePoolTest is Test {
 
         vm.expectRevert("invalid amounts");
         vm.prank(OWNER);
-        pool.removeLiquidity(amounts, minToBurn, deadline);
+        pool.removeLiquidity(amounts, deadline);
     }
 
     function testRemoveLiquidityWhenAmount0GtBalance() public {
         // set up
-        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -606,12 +562,11 @@ contract PrivatePoolTest is Test {
 
         vm.expectRevert("dx > max");
         vm.prank(OWNER);
-        pool.removeLiquidity(amounts, minToBurn, deadline);
+        pool.removeLiquidity(amounts, deadline);
     }
 
     function testRemoveLiquidityWhenAmount1GtBalance() public {
         // set up
-        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -638,12 +593,11 @@ contract PrivatePoolTest is Test {
 
         vm.expectRevert("dy > max");
         vm.prank(OWNER);
-        pool.removeLiquidity(amounts, minToBurn, deadline);
+        pool.removeLiquidity(amounts, deadline);
     }
 
     function testRemoveLiquidityWhenPastDeadline() public {
         // set up
-        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp - 1;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -670,43 +624,11 @@ contract PrivatePoolTest is Test {
 
         vm.expectRevert("block.timestamp > deadline");
         vm.prank(OWNER);
-        pool.removeLiquidity(amounts, minToBurn, deadline);
-    }
-
-    function testRemoveLiquidityWhenBurnedLtMinToBurn() public {
-        // set up
-        uint256 deadline = block.timestamp + 3600;
-        uint256 price = 1.0005e18;
-        vm.prank(OWNER);
-        pool.quote(price);
-
-        // transfer in tokens prior
-        uint256 amountSynToken = 100e6;
-        uint256 amountToken = 100.05e6;
-        vm.prank(OWNER);
-        token.transfer(address(pool), amountToken);
-        vm.prank(OWNER);
-        synToken.transfer(address(pool), amountSynToken);
-
-        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
-        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
-
-        uint256 d = 200.10e18;
-        assertEq(pool.D(), d);
-
-        uint256[] memory amounts = new uint256[](2);
-        amounts[0] = amountSynToken / 4;
-        amounts[1] = amountToken / 4;
-
-        uint256 minToBurn = d / 4 + 1;
-        vm.expectRevert("burned < min");
-        vm.prank(OWNER);
-        pool.removeLiquidity(amounts, minToBurn, deadline);
+        pool.removeLiquidity(amounts, deadline);
     }
 
     function testRemoveLiquidityWhenOnlyAmount0() public {
         // set up
-        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -732,7 +654,7 @@ contract PrivatePoolTest is Test {
         amounts[1] = 0;
 
         vm.prank(OWNER);
-        pool.removeLiquidity(amounts, minToBurn, deadline);
+        pool.removeLiquidity(amounts, deadline);
 
         assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken + amountSynToken / 4);
         assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
@@ -740,7 +662,6 @@ contract PrivatePoolTest is Test {
 
     function testRemoveLiquidityWhenOnlyAmount1() public {
         // set up
-        uint256 minToBurn = 0;
         uint256 deadline = block.timestamp + 3600;
         uint256 price = 1.0005e18;
         vm.prank(OWNER);
@@ -766,7 +687,7 @@ contract PrivatePoolTest is Test {
         amounts[1] = amountToken / 4;
 
         vm.prank(OWNER);
-        pool.removeLiquidity(amounts, minToBurn, deadline);
+        pool.removeLiquidity(amounts, deadline);
 
         assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
         assertEq(token.balanceOf(OWNER), 1e12 - amountToken + amountToken / 4);

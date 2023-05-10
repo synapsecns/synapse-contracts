@@ -115,13 +115,14 @@ contract PrivatePool is IPrivatePool {
 
     /// @notice Adds liquidity to pool
     /// @param amounts The token amounts to add in token decimals
-    /// @param minToMint The minimum amount of liquidity to be minted
     /// @param deadline The deadline before which liquidity must be added
-    function addLiquidity(
-        uint256[] calldata amounts,
-        uint256 minToMint,
-        uint256 deadline
-    ) external onlyOwner deadlineCheck(deadline) hasQuote returns (uint256 minted_) {
+    function addLiquidity(uint256[] calldata amounts, uint256 deadline)
+        external
+        onlyOwner
+        deadlineCheck(deadline)
+        hasQuote
+        returns (uint256 minted_)
+    {
         require(amounts.length == 2, "invalid amounts");
 
         // get current token balances in pool
@@ -141,7 +142,6 @@ contract PrivatePool is IPrivatePool {
 
         // calc diff with new D value
         minted_ = _D(xWad, yWad) - _d;
-        require(minted_ >= minToMint, "minted < min");
         _d += minted_;
 
         // transfer amounts in decimals in
@@ -154,13 +154,13 @@ contract PrivatePool is IPrivatePool {
 
     /// @notice Removes liquidity from pool
     /// @param amounts The token amounts to remove in token decimals
-    /// @param minToBurn The minimum amount of liquidity to be burned
     /// @param deadline The deadline before which liquidity must be removed
-    function removeLiquidity(
-        uint256[] calldata amounts,
-        uint256 minToBurn,
-        uint256 deadline
-    ) external onlyOwner deadlineCheck(deadline) returns (uint256 burned_) {
+    function removeLiquidity(uint256[] calldata amounts, uint256 deadline)
+        external
+        onlyOwner
+        deadlineCheck(deadline)
+        returns (uint256 burned_)
+    {
         require(amounts.length == 2, "invalid amounts");
 
         // get current token balances in pool
@@ -186,7 +186,6 @@ contract PrivatePool is IPrivatePool {
 
         // calc diff with new D value
         burned_ = _d - _D(xWad, yWad);
-        require(burned_ >= minToBurn, "burned < min");
         _d -= burned_;
 
         // transfer amounts out

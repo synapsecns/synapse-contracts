@@ -31,23 +31,13 @@ interface IPrivatePool {
 
     /// @notice Adds liquidity to pool
     /// @param amounts The token amounts to add in token decimals
-    /// @param minToMint The minimum amount of liquidity to be minted
     /// @param deadline The deadline before which liquidity must be added
-    function addLiquidity(
-        uint256[] calldata amounts,
-        uint256 minToMint,
-        uint256 deadline
-    ) external returns (uint256 minted_);
+    function addLiquidity(uint256[] calldata amounts, uint256 deadline) external returns (uint256 minted_);
 
     /// @notice Removes liquidity from pool
     /// @param amounts The token amounts to remove in token decimals
-    /// @param minToBurn The minimum amount of liquidity to be burned
     /// @param deadline The deadline before which liquidity must be removed
-    function removeLiquidity(
-        uint256[] calldata amounts,
-        uint256 minToBurn,
-        uint256 deadline
-    ) external returns (uint256 burned_);
+    function removeLiquidity(uint256[] calldata amounts, uint256 deadline) external returns (uint256 burned_);
 
     /// @notice Swaps token from for an amount of token to
     /// @param tokenIndexFrom The index of the token in
