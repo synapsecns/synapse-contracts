@@ -28,13 +28,7 @@ contract PrivatePoolTest is Test {
         uint256 invariant,
         uint256 lpTokenSupply
     );
-    event RemoveLiquidity(
-        address indexed provider,
-        uint256[] tokenAmounts,
-        uint256[] fees,
-        uint256 invariant,
-        uint256 lpTokenSupply
-    );
+    event RemoveLiquidity(address indexed provider, uint256[] tokenAmounts, uint256 lpTokenSupply);
 
     function setUp() public {
         token = new MockToken("X", "X", 6);
@@ -467,7 +461,7 @@ contract PrivatePoolTest is Test {
         uint256[] memory fees = new uint256[](2);
 
         vm.expectEmit(true, false, false, true);
-        emit RemoveLiquidity(OWNER, amounts, fees, d - d / 4, d - d / 4);
+        emit RemoveLiquidity(OWNER, amounts, d - d / 4);
 
         vm.prank(OWNER);
         pool.removeLiquidity(amounts, deadline);
