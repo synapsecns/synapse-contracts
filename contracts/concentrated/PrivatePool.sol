@@ -225,7 +225,7 @@ contract PrivatePool is IPrivatePool {
         dx = IERC20(tokenIn).balanceOf(address(this)) - bal;
 
         // calculate amount out from swap
-        // @dev reverts for invalid token indices
+        // @dev returns zero if amount out exceeds pool balance
         dy_ = calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
         require(dy_ > 0, "dy > pool balance");
         require(dy_ >= minDy, "dy < minDy");
