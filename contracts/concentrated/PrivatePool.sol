@@ -110,7 +110,7 @@ contract PrivatePool is IPrivatePool {
     /// @notice Adds liquidity to pool
     /// @param amounts The token amounts to add in token decimals
     /// @param deadline The deadline before which liquidity must be added
-    function addLiquidity(uint256[] calldata amounts, uint256 deadline)
+    function addLiquidity(uint256[] memory amounts, uint256 deadline)
         external
         onlyOwner
         deadlineCheck(deadline)
@@ -120,11 +120,23 @@ contract PrivatePool is IPrivatePool {
         require(amounts.length == 2, "invalid amounts");
 
         // get current token balances in pool
-        uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
-        uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
+        uint256 xBal = IERC20(token0).balanceOf(address(this));
+        uint256 yBal = IERC20(token1).balanceOf(address(this));
+
+        // convert token balances to wad
+        uint256 xWad = _amountWad(xBal, true);
+        uint256 yWad = _amountWad(yBal, false);
 
         // get D balance before add liquidity
         uint256 _d = _D(xWad, yWad);
+
+        // transfer amounts in decimals in
+        IERC20(token0).safeTransferFrom(msg.sender, address(this), amounts[0]);
+        IERC20(token1).safeTransferFrom(msg.sender, address(this), amounts[1]);
+
+        // update amounts for actual transfer amount in case of fees on transfer
+        amounts[0] = IERC20(token0).balanceOf(address(this)) - xBal;
+        amounts[1] = IERC20(token1).balanceOf(address(this)) - yBal;
 
         // convert amounts to wad for calcs
         uint256 amount0Wad = _amountWad(amounts[0], true);
@@ -138,10 +150,6 @@ contract PrivatePool is IPrivatePool {
         minted_ = _D(xWad, yWad) - _d;
         _d += minted_;
 
-        // transfer amounts in decimals in
-        IERC20(token0).safeTransferFrom(msg.sender, address(this), amounts[0]);
-        IERC20(token1).safeTransferFrom(msg.sender, address(this), amounts[1]);
-
         uint256[] memory fees = new uint256[](2);
         emit AddLiquidity(msg.sender, amounts, fees, _d, _d);
     }
@@ -149,7 +157,7 @@ contract PrivatePool is IPrivatePool {
     /// @notice Removes liquidity from pool
     /// @param amounts The token amounts to remove in token decimals
     /// @param deadline The deadline before which liquidity must be removed
-    function removeLiquidity(uint256[] calldata amounts, uint256 deadline)
+    function removeLiquidity(uint256[] memory amounts, uint256 deadline)
         external
         onlyOwner
         deadlineCheck(deadline)
