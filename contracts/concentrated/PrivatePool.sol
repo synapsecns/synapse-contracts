@@ -5,6 +5,7 @@ import {IERC20} from "@openzeppelin/contracts-4.8.0/token/ERC20/IERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
 import {SafeERC20} from "@openzeppelin/contracts-4.8.0/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts-4.8.0/utils/math/Math.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts-4.8.0/security/ReentrancyGuard.sol";
 
 import {IPrivatePool} from "./interfaces/IPrivatePool.sol";
 
@@ -12,7 +13,7 @@ import {IPrivatePool} from "./interfaces/IPrivatePool.sol";
 /// @notice Allows LP to offer fixed price quote in private pool to bridgers for tighter prices
 /// @dev Obeys constant sum P * x + y = D curve, where P is fixed price and D is liquidity
 /// @dev Functions use same signatures as Swap.sol for easier integration
-contract PrivatePool is IPrivatePool {
+contract PrivatePool is IPrivatePool, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 internal constant wad = 1e18;
@@ -123,7 +124,7 @@ contract PrivatePool is IPrivatePool {
         uint256 xBal = IERC20(token0).balanceOf(address(this));
         uint256 yBal = IERC20(token1).balanceOf(address(this));
 
-        // convert token balances to wad
+        // convert balances to wad for liquidity calcs
         uint256 xWad = _amountWad(xBal, true);
         uint256 yWad = _amountWad(yBal, false);
 
@@ -178,6 +179,14 @@ contract PrivatePool is IPrivatePool {
         // get D balance before remove liquidity
         uint256 _d = _D(xWad, yWad);
 
+        // transfer amounts out
+        IERC20(token0).safeTransfer(msg.sender, amounts[0]);
+        IERC20(token1).safeTransfer(msg.sender, amounts[1]);
+
+        // update amounts for actual transfer amount in case of fees on transfer
+        amounts[0] = xBal - IERC20(token0).balanceOf(address(this));
+        amounts[1] = yBal - IERC20(token1).balanceOf(address(this));
+
         // convert amounts to wad for calcs
         uint256 amount0Wad = _amountWad(amounts[0], true);
         uint256 amount1Wad = _amountWad(amounts[1], false);
@@ -189,10 +198,6 @@ contract PrivatePool is IPrivatePool {
         // calc diff with new D value
         burned_ = _d - _D(xWad, yWad);
         _d -= burned_;
-
-        // transfer amounts out
-        IERC20(token0).safeTransfer(msg.sender, amounts[0]);
-        IERC20(token1).safeTransfer(msg.sender, amounts[1]);
 
         uint256[] memory fees = new uint256[](2);
         emit RemoveLiquidity(msg.sender, amounts, _d);
@@ -212,6 +217,7 @@ contract PrivatePool is IPrivatePool {
         uint256 deadline
     )
         external
+        nonReentrant
         onlyToken(tokenIndexFrom)
         onlyToken(tokenIndexTo)
         deadlineCheck(deadline)
