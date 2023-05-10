@@ -64,13 +64,7 @@ contract PrivatePool is IPrivatePool {
         uint256 invariant,
         uint256 lpTokenSupply
     );
-    event RemoveLiquidity(
-        address indexed provider,
-        uint256[] tokenAmounts,
-        uint256[] fees,
-        uint256 invariant,
-        uint256 lpTokenSupply
-    );
+    event RemoveLiquidity(address indexed provider, uint256[] tokenAmounts, uint256 lpTokenSupply);
 
     constructor(
         address _owner,
@@ -193,7 +187,7 @@ contract PrivatePool is IPrivatePool {
         IERC20(token1).safeTransfer(msg.sender, amounts[1]);
 
         uint256[] memory fees = new uint256[](2);
-        emit RemoveLiquidity(msg.sender, amounts, fees, _d, _d);
+        emit RemoveLiquidity(msg.sender, amounts, _d);
     }
 
     /// @notice Swaps token from for an amount of token to
