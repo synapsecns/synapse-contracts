@@ -226,9 +226,11 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
     {
         require(tokenIndexFrom != tokenIndexTo, "invalid token swap");
 
-        // transfer in tokens and update dx (in case of transfer fees)
+        // get current token in balance in pool
         address tokenIn = tokenIndexFrom == 0 ? token0 : token1;
         uint256 bal = IERC20(tokenIn).balanceOf(address(this));
+
+        // transfer in tokens and update dx (in case of transfer fees)
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), dx);
         dx = IERC20(tokenIn).balanceOf(address(this)) - bal;
 
