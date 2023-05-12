@@ -8,12 +8,15 @@ import "../mocks/MockToken.sol";
 import "../mocks/MockAccessToken.sol";
 import "../mocks/MockTokenWithFee.sol";
 import "../mocks/MockPrivatePool.sol";
+import "../mocks/MockPrivateFactory.sol";
 
 contract PrivatePoolTest is Test {
     bytes32 internal constant MINTER_ROLE = keccak256("MINTER_ROLE");
     address public constant BRIDGE = address(0xB);
     address public constant OWNER = address(0xABCD);
+    address public constant ADMIN = address(0xAD);
 
+    MockPrivateFactory public factory;
     MockPrivatePool public pool;
     MockToken public token;
     MockAccessToken public synToken;
@@ -39,7 +42,12 @@ contract PrivatePoolTest is Test {
         token.mint(OWNER, 1e12);
         synToken.mint(OWNER, 1e12);
 
-        pool = new MockPrivatePool(OWNER, address(synToken), address(token));
+        vm.prank(ADMIN);
+        factory = new MockPrivateFactory(BRIDGE);
+
+        vm.prank(OWNER);
+        address p = factory.deployMock(address(token), address(synToken));
+        pool = MockPrivatePool(p);
 
         vm.prank(OWNER);
         token.approve(address(pool), type(uint256).max);
@@ -56,11 +64,13 @@ contract PrivatePoolTest is Test {
         assertEq(synToken.balanceOf(OWNER), 1e12);
         assertEq(token.allowance(OWNER, address(pool)), type(uint256).max);
         assertEq(synToken.allowance(OWNER, address(pool)), type(uint256).max);
+        assertEq(factory.bridge(), BRIDGE);
+        assertEq(factory.owner(), ADMIN);
     }
 
     function testConstructor() public {
         assertEq(pool.owner(), OWNER);
-        assertEq(pool.factory(), address(this));
+        assertEq(pool.factory(), address(factory));
         assertEq(pool.token0(), address(synToken));
         assertEq(pool.token1(), address(token));
     }
@@ -693,9 +703,13 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.quote(price);
 
-        uint256 fee = 0.00005e18;
+        uint256 fee = 0.00005e18; // 0.5 bps
         vm.prank(OWNER);
         pool.setSwapFee(fee);
+
+        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        vm.prank(ADMIN);
+        factory.setAdminFee(adminFee);
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -726,6 +740,10 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
+        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        vm.prank(ADMIN);
+        factory.setAdminFee(adminFee);
+
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
         uint256 amountToken = 100.05e6;
@@ -754,6 +772,10 @@ contract PrivatePoolTest is Test {
         uint256 fee = 0.00005e18;
         vm.prank(OWNER);
         pool.setSwapFee(fee);
+
+        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        vm.prank(ADMIN);
+        factory.setAdminFee(adminFee);
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -784,6 +806,10 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
+        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        vm.prank(ADMIN);
+        factory.setAdminFee(adminFee);
+
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
         uint256 amountToken = 100.05e6;
@@ -812,6 +838,10 @@ contract PrivatePoolTest is Test {
         uint256 fee = 0.00005e18;
         vm.prank(OWNER);
         pool.setSwapFee(fee);
+
+        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        vm.prank(ADMIN);
+        factory.setAdminFee(adminFee);
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -842,6 +872,10 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
+        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        vm.prank(ADMIN);
+        factory.setAdminFee(adminFee);
+
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
         uint256 amountToken = 100.05e6;
@@ -871,6 +905,10 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
+        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        vm.prank(ADMIN);
+        factory.setAdminFee(adminFee);
+
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
         uint256 amountToken = 100.05e6;
@@ -898,9 +936,11 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.quote(price);
 
-        uint256 fee = 0.00005e18;
         vm.prank(OWNER);
-        pool.setSwapFee(fee);
+        pool.setSwapFee(0.00005e18);
+
+        vm.prank(ADMIN);
+        factory.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -929,6 +969,7 @@ contract PrivatePoolTest is Test {
 
         uint256 dx = 50e6;
         uint256 dy = 50022498; // int(P * X * (1 - fee))
+        uint256 dyAdminFee = 25; // int(P * X * fee * adminFee)
         synToken.approve(address(pool), type(uint256).max);
         pool.swap(0, 1, dx, minDy, deadline);
 
@@ -936,7 +977,9 @@ contract PrivatePoolTest is Test {
         assertEq(synToken.balanceOf(address(pool)), amountSynToken + dx);
 
         assertEq(token.balanceOf(sender), bal + dy);
-        assertEq(token.balanceOf(address(pool)), amountToken - dy);
+        assertEq(token.balanceOf(address(pool)), amountToken - dy - dyAdminFee);
+
+        assertEq(token.balanceOf(ADMIN), dyAdminFee);
     }
 
     function testSwapTransfersFundsWhenFrom1To0() public {
@@ -947,9 +990,11 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.quote(price);
 
-        uint256 fee = 0.00005e18;
         vm.prank(OWNER);
-        pool.setSwapFee(fee);
+        pool.setSwapFee(0.00005e18);
+
+        vm.prank(ADMIN);
+        factory.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -978,6 +1023,7 @@ contract PrivatePoolTest is Test {
 
         uint256 dx = 50e6;
         uint256 dy = 49972513; // int((Y / P) * (1 - fee))
+        uint256 dyAdminFee = 24; // int((Y / P) * fee * adminFee)
         token.approve(address(pool), type(uint256).max);
         pool.swap(1, 0, dx, minDy, deadline);
 
@@ -985,7 +1031,9 @@ contract PrivatePoolTest is Test {
         assertEq(token.balanceOf(address(pool)), amountToken + dx);
 
         assertEq(synToken.balanceOf(sender), bal + dy);
-        assertEq(synToken.balanceOf(address(pool)), amountSynToken - dy);
+        assertEq(synToken.balanceOf(address(pool)), amountSynToken - dy - dyAdminFee);
+
+        assertEq(synToken.balanceOf(ADMIN), dyAdminFee);
     }
 
     function testSwapEmitsTokenSwapEventWhenFrom0To1() public {
@@ -999,6 +1047,9 @@ contract PrivatePoolTest is Test {
         uint256 fee = 0.00005e18;
         vm.prank(OWNER);
         pool.setSwapFee(fee);
+
+        vm.prank(ADMIN);
+        factory.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -1046,6 +1097,9 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
+        vm.prank(ADMIN);
+        factory.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
+
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
         uint256 amountToken = 100.05e6;
@@ -1084,7 +1138,13 @@ contract PrivatePoolTest is Test {
         // set up
         MockTokenWithFee t = new MockTokenWithFee("USDT", "USDT", 6, 0.001e18);
         MockAccessToken synT = new MockAccessToken("synUSDT", "synUSDT", 6);
-        MockPrivatePool p = new MockPrivatePool(OWNER, address(synT), address(t));
+        synT.grantRole(MINTER_ROLE, BRIDGE);
+
+        vm.prank(OWNER);
+        MockPrivatePool p = MockPrivatePool(factory.deployMock(address(synT), address(t)));
+
+        assertEq(p.token0(), address(synT));
+        assertEq(p.token1(), address(t));
 
         t.mint(OWNER, 1e12);
         synT.mint(OWNER, 1e12);
@@ -1101,6 +1161,9 @@ contract PrivatePoolTest is Test {
 
         vm.prank(OWNER);
         p.setSwapFee(0.00005e18);
+
+        vm.prank(ADMIN);
+        factory.setAdminFee(0.01e18);
 
         // transfer in tokens prior
         uint256 amountSynT = 100e6;

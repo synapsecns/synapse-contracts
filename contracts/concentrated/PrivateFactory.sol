@@ -10,13 +10,25 @@ import {PrivatePool} from "./PrivatePool.sol";
 /// @notice Deploys individual private pools owned by LPs
 contract PrivateFactory is IPrivateFactory {
     bytes32 internal constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    uint256 public constant ADMIN_FEE_MAX = 1e18; // 100% of swap fees in wad
 
     address public immutable bridge;
+
+    address public owner;
     mapping(address => mapping(address => mapping(address => address))) public pool;
+    uint256 public adminFee;
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "!owner");
+        _;
+    }
 
     event Deploy(address indexed lp, address token0, address token1, address poolAddress);
+    event NewAdminFee(uint256 newAdminFee);
+    event NewOwner(address newOwner);
 
     constructor(address _bridge) {
+        owner = msg.sender;
         bridge = _bridge;
     }
 
@@ -52,5 +64,24 @@ contract PrivateFactory is IPrivateFactory {
         emit Deploy(msg.sender, token0, token1, p);
 
         return p;
+    }
+
+    /// @notice Updates the admin fee applied on private pool swaps
+    /// @dev Admin fees sent to factory owner
+    /// @param _fee The new admin fee
+    // TODO: test
+    function setAdminFee(uint256 _fee) external onlyOwner {
+        require(_fee <= ADMIN_FEE_MAX, "fee > max");
+        adminFee = _fee;
+        emit NewAdminFee(_fee);
+    }
+
+    /// @notice Updates the owner admin address for the factory
+    /// @param _owner The new owner
+    // TODO: test
+    function setOwner(address _owner) external onlyOwner {
+        require(_owner != owner, "same owner");
+        owner = _owner;
+        emit NewOwner(_owner);
     }
 }
