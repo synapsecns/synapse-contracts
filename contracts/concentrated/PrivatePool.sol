@@ -7,6 +7,7 @@ import {SafeERC20} from "@openzeppelin/contracts-4.8.0/token/ERC20/utils/SafeERC
 import {Math} from "@openzeppelin/contracts-4.8.0/utils/math/Math.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts-4.8.0/security/ReentrancyGuard.sol";
 
+import {IPrivateFactory} from "./interfaces/IPrivateFactory.sol";
 import {IPrivatePool} from "./interfaces/IPrivatePool.sol";
 
 /// @title Private pool for concentrated liquidity
@@ -21,7 +22,7 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
 
     uint256 public constant PRICE_MIN = wad - PRICE_BOUND; // 1 - 10bps in wad
     uint256 public constant PRICE_MAX = wad + PRICE_BOUND; // 1 + 10bps in wad
-    uint256 public constant FEE_MAX = 0.001e18; // 10 bps in wad
+    uint256 public constant FEE_MAX = 0.01e18; // 100 bps in wad
 
     address public immutable factory;
     address public immutable owner;
@@ -234,73 +235,24 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), dx);
         dx = IERC20(tokenIn).balanceOf(address(this)) - bal;
 
-        // calculate amount out from swap
-        // @dev returns zero if amount out exceeds pool balance
-        dy_ = calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
-        require(dy_ > 0, "dy > pool balance");
-        require(dy_ >= minDy, "dy < minDy");
+        {
+            // calculate amount out from swap
+            // @dev returns zero if amount out exceeds pool balance
+            uint256 dyAdminFee;
+            (dy_, , dyAdminFee) = _calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+            require(dy_ > 0, "dy > pool balance");
+            require(dy_ >= minDy, "dy < minDy");
 
-        // transfer dy out
-        address tokenOut = tokenIndexTo == 0 ? token0 : token1;
-        IERC20(tokenOut).safeTransfer(msg.sender, dy_);
+            // transfer dy out to swapper
+            address tokenOut = tokenIndexTo == 0 ? token0 : token1;
+            IERC20(tokenOut).safeTransfer(msg.sender, dy_);
 
-        emit TokenSwap(msg.sender, dx, dy_, tokenIndexFrom, tokenIndexTo);
-    }
-
-    /// @notice Calculates amount of tokens received on swap
-    /// @dev Returns zero if pool balances exceeded on swap or invalid inputs
-    /// @param tokenIndexFrom The index of the token in
-    /// @param tokenIndexTo The index of the token out
-    /// @param dx The amount of token in in token decimals
-    function calculateSwap(
-        uint8 tokenIndexFrom,
-        uint8 tokenIndexTo,
-        uint256 dx
-    ) public view returns (uint256 dy_) {
-        if (tokenIndexFrom > 1 || tokenIndexTo > 1 || tokenIndexFrom == tokenIndexTo) return 0;
-
-        // get current token balances in pool
-        uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
-        uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
-
-        // convert to an amount in wad
-        uint256 amountInWad = _amountWad(dx, tokenIndexFrom == 0);
-
-        // calculate swap amount out wad
-        // @dev obeys P * x + y = D
-        uint256 amountOutWad;
-        if (tokenIndexFrom == 0) {
-            // get D balance before swap
-            uint256 _d = _D(xWad, yWad);
-
-            // token0 in for token1 out
-            xWad += amountInWad;
-
-            // check amount out won't exceed pool balance
-            uint256 prod = Math.mulDiv(P, xWad, wad);
-            if (_d < prod) return 0;
-
-            uint256 yWadAfter = _d - prod;
-            amountOutWad = yWad - yWadAfter;
-        } else {
-            // get D balance before swap
-            uint256 _d = _D(xWad, yWad);
-
-            // token1 in for token0 out
-            yWad += amountInWad;
-
-            // check amount out won't exceed pool balance
-            if (_d < yWad) return 0;
-
-            uint256 xWadAfter = Math.mulDiv(_d - yWad, wad, P);
-            amountOutWad = xWad - xWadAfter;
+            // transfer admin fee out to factory owner
+            address factoryOwner = IPrivateFactory(factory).owner();
+            IERC20(tokenOut).safeTransfer(factoryOwner, dyAdminFee);
         }
 
-        // apply swap fee on amount out
-        amountOutWad -= Math.mulDiv(amountOutWad, fee, wad);
-
-        // convert amount out to decimals
-        dy_ = _amountDecimals(amountOutWad, tokenIndexTo == 0);
+        emit TokenSwap(msg.sender, dx, dy_, tokenIndexFrom, tokenIndexTo);
     }
 
     /// @notice Address of the pooled token at given index
@@ -316,6 +268,19 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
         uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
         return _D(xWad, yWad);
+    }
+
+    /// @notice Calculates amount of tokens received on swap
+    /// @dev Returns zero if pool balances exceeded on swap or invalid inputs
+    /// @param tokenIndexFrom The index of the token in
+    /// @param tokenIndexTo The index of the token out
+    /// @param dx The amount of token in in token decimals
+    function calculateSwap(
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 dx
+    ) external view returns (uint256 dy_) {
+        (dy_, , ) = _calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
     }
 
     /// @notice D liquidity param given pool token balances
@@ -339,5 +304,76 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
     function _amountDecimals(uint256 amount, bool isToken0) internal view returns (uint256) {
         uint256 factor = isToken0 ? 10**(token0Decimals) : 10**(token1Decimals);
         return Math.mulDiv(amount, factor, wad);
+    }
+
+    /// @notice Calculates amount of tokens received on swap
+    /// @dev Returns zero if pool balances exceeded on swap or invalid inputs
+    /// @param tokenIndexFrom The index of the token in
+    /// @param tokenIndexTo The index of the token out
+    /// @param dx The amount of token in in token decimals
+    function _calculateSwap(
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 dx
+    )
+        internal
+        view
+        returns (
+            uint256 dy_,
+            uint256 dyFee_,
+            uint256 dyAdminFee_
+        )
+    {
+        if (tokenIndexFrom > 1 || tokenIndexTo > 1 || tokenIndexFrom == tokenIndexTo) return (0, 0, 0);
+
+        // get current token balances in pool
+        uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
+        uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
+
+        // convert to an amount in wad
+        uint256 amountInWad = _amountWad(dx, tokenIndexFrom == 0);
+
+        // calculate swap amount out wad
+        // @dev obeys P * x + y = D
+        uint256 amountOutWad;
+        if (tokenIndexFrom == 0) {
+            // get D balance before swap
+            uint256 _d = _D(xWad, yWad);
+
+            // token0 in for token1 out
+            xWad += amountInWad;
+
+            // check amount out won't exceed pool balance
+            uint256 prod = Math.mulDiv(P, xWad, wad);
+            if (_d < prod) return (0, 0, 0);
+
+            uint256 yWadAfter = _d - prod;
+            amountOutWad = yWad - yWadAfter;
+        } else {
+            // get D balance before swap
+            uint256 _d = _D(xWad, yWad);
+
+            // token1 in for token0 out
+            yWad += amountInWad;
+
+            // check amount out won't exceed pool balance
+            if (_d < yWad) return (0, 0, 0);
+
+            uint256 xWadAfter = Math.mulDiv(_d - yWad, wad, P);
+            amountOutWad = xWad - xWadAfter;
+        }
+
+        // apply swap fee on amount out
+        uint256 amountSwapFeeWad = Math.mulDiv(amountOutWad, fee, wad);
+        amountOutWad -= amountSwapFeeWad;
+
+        // calculate admin fee on the total swap fee
+        uint256 adminFee = IPrivateFactory(factory).adminFee();
+        uint256 amountAdminFeeWad = Math.mulDiv(amountSwapFeeWad, adminFee, wad);
+
+        // convert amount out to decimals
+        dy_ = _amountDecimals(amountOutWad, tokenIndexTo == 0);
+        dyFee_ = _amountDecimals(amountSwapFeeWad, tokenIndexTo == 0);
+        dyAdminFee_ = _amountDecimals(amountAdminFeeWad, tokenIndexTo == 0);
     }
 }
