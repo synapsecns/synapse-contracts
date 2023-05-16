@@ -69,7 +69,6 @@ contract PrivateFactory is IPrivateFactory {
     /// @notice Updates the admin fee applied on private pool swaps
     /// @dev Admin fees sent to factory owner
     /// @param _fee The new admin fee
-    // TODO: test
     function setAdminFee(uint256 _fee) external onlyOwner {
         require(_fee <= ADMIN_FEE_MAX, "fee > max");
         adminFee = _fee;
