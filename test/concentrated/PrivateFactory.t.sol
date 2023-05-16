@@ -117,4 +117,30 @@ contract PrivateFactoryTest is Test {
         vm.expectRevert("fee > max");
         factory.setAdminFee(fee);
     }
+
+    function testSetOwnerStoresOwner() public {
+        address newOwner = address(0xBEEF);
+        factory.setOwner(newOwner);
+        assertEq(factory.owner(), newOwner);
+    }
+
+    function testSetOwnerEmitsNewOwnerEvent() public {
+        address newOwner = address(0xBEEF);
+        vm.expectEmit(false, false, false, true);
+        emit NewOwner(newOwner);
+        factory.setOwner(newOwner);
+    }
+
+    function testSetOwnerRevertsWhenNotOwner() public {
+        address newOwner = address(0xBEEF);
+        vm.expectRevert("!owner");
+        vm.prank(newOwner);
+        factory.setOwner(newOwner);
+    }
+
+    function testSetOwnerRevertsWhenSameOwner() public {
+        address newOwner = address(this);
+        vm.expectRevert("same owner");
+        factory.setOwner(newOwner);
+    }
 }

@@ -77,7 +77,6 @@ contract PrivateFactory is IPrivateFactory {
 
     /// @notice Updates the owner admin address for the factory
     /// @param _owner The new owner
-    // TODO: test
     function setOwner(address _owner) external onlyOwner {
         require(_owner != owner, "same owner");
         owner = _owner;
