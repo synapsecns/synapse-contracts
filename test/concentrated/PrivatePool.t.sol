@@ -23,6 +23,7 @@ contract PrivatePoolTest is Test {
 
     event Quote(uint256 price);
     event NewSwapFee(uint256 newSwapFee);
+    event NewAdminFee(uint256 newAdminFee);
     event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
     event AddLiquidity(
         address indexed provider,
@@ -708,8 +709,8 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(fee);
 
         uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
-        vm.prank(ADMIN);
-        factory.setAdminFee(adminFee);
+        vm.prank(address(factory));
+        pool.setAdminFee(adminFee);
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -741,8 +742,8 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(fee);
 
         uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
-        vm.prank(ADMIN);
-        factory.setAdminFee(adminFee);
+        vm.prank(address(factory));
+        pool.setAdminFee(adminFee);
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -774,8 +775,8 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(fee);
 
         uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
-        vm.prank(ADMIN);
-        factory.setAdminFee(adminFee);
+        vm.prank(address(factory));
+        pool.setAdminFee(adminFee);
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -807,8 +808,8 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(fee);
 
         uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
-        vm.prank(ADMIN);
-        factory.setAdminFee(adminFee);
+        vm.prank(address(factory));
+        pool.setAdminFee(adminFee);
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -840,8 +841,8 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(fee);
 
         uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
-        vm.prank(ADMIN);
-        factory.setAdminFee(adminFee);
+        vm.prank(address(factory));
+        pool.setAdminFee(adminFee);
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -873,8 +874,8 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(fee);
 
         uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
-        vm.prank(ADMIN);
-        factory.setAdminFee(adminFee);
+        vm.prank(address(factory));
+        pool.setAdminFee(adminFee);
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -906,8 +907,8 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(fee);
 
         uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
-        vm.prank(ADMIN);
-        factory.setAdminFee(adminFee);
+        vm.prank(address(factory));
+        pool.setAdminFee(adminFee);
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -939,8 +940,8 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(0.00005e18);
 
-        vm.prank(ADMIN);
-        factory.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
+        vm.prank(address(factory));
+        pool.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -977,9 +978,7 @@ contract PrivatePoolTest is Test {
         assertEq(synToken.balanceOf(address(pool)), amountSynToken + dx);
 
         assertEq(token.balanceOf(sender), bal + dy);
-        assertEq(token.balanceOf(address(pool)), amountToken - dy - dyAdminFee);
-
-        assertEq(token.balanceOf(ADMIN), dyAdminFee);
+        assertEq(token.balanceOf(address(pool)), amountToken - dy);
     }
 
     function testSwapTransfersFundsWhenFrom1To0() public {
@@ -993,8 +992,8 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(0.00005e18);
 
-        vm.prank(ADMIN);
-        factory.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
+        vm.prank(address(factory));
+        pool.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -1031,9 +1030,7 @@ contract PrivatePoolTest is Test {
         assertEq(token.balanceOf(address(pool)), amountToken + dx);
 
         assertEq(synToken.balanceOf(sender), bal + dy);
-        assertEq(synToken.balanceOf(address(pool)), amountSynToken - dy - dyAdminFee);
-
-        assertEq(synToken.balanceOf(ADMIN), dyAdminFee);
+        assertEq(synToken.balanceOf(address(pool)), amountSynToken - dy);
     }
 
     function testSwapEmitsTokenSwapEventWhenFrom0To1() public {
@@ -1048,8 +1045,8 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
-        vm.prank(ADMIN);
-        factory.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
+        vm.prank(address(factory));
+        pool.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -1097,8 +1094,8 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
-        vm.prank(ADMIN);
-        factory.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
+        vm.prank(address(factory));
+        pool.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -1162,8 +1159,8 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         p.setSwapFee(0.00005e18);
 
-        vm.prank(ADMIN);
-        factory.setAdminFee(0.01e18);
+        vm.prank(address(factory));
+        pool.setAdminFee(0.01e18);
 
         // transfer in tokens prior
         uint256 amountSynT = 100e6;

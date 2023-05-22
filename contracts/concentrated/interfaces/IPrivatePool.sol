@@ -20,6 +20,8 @@ interface IPrivatePool {
 
     function fee() external view returns (uint256);
 
+    function adminFee() external view returns (uint256);
+
     /// @notice Updates the quote price LP is willing to offer tokens at
     /// @param _P The new fixed price LP is willing to buy and sell at
     function quote(uint256 _P) external;
@@ -28,6 +30,11 @@ interface IPrivatePool {
     /// @dev Effectively acts as bid/ask spread for LP
     /// @param _fee The new swap fee
     function setSwapFee(uint256 _fee) external;
+
+    /// @notice Updates the admin fee applied on private pool swaps
+    /// @dev Admin fees sent to factory owner
+    /// @param _fee The new admin fee
+    function setAdminFee(uint256 _fee) external;
 
     /// @notice Adds liquidity to pool
     /// @param amounts The token amounts to add in token decimals
@@ -53,6 +60,10 @@ interface IPrivatePool {
         uint256 deadline
     ) external returns (uint256 dy_);
 
+    /// @notice Transfers protocol fees out
+    /// @param recipient The recipient address of the aggregated admin fees
+    function skim(address recipient) external;
+
     /// @notice Calculates amount of tokens received on swap
     /// @dev Reverts if either token index is invalid
     /// @param tokenIndexFrom The index of the token in
@@ -71,4 +82,7 @@ interface IPrivatePool {
 
     /// @notice D liquidity for current pool balance state
     function D() external view returns (uint256);
+
+    /// @notice D liquidity for current pool balance state adjusted for accumulated protocol fees
+    function DAdjusted() external view returns (uint256);
 }

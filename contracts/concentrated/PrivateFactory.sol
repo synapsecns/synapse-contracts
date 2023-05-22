@@ -4,13 +4,13 @@ pragma solidity 0.8.17;
 import {IAccessControl} from "@openzeppelin/contracts-4.8.0/access/IAccessControl.sol";
 
 import {IPrivateFactory} from "./interfaces/IPrivateFactory.sol";
+import {IPrivatePool} from "./interfaces/IPrivatePool.sol";
 import {PrivatePool} from "./PrivatePool.sol";
 
 /// @title Private factory for concentrated liquidity
 /// @notice Deploys individual private pools owned by LPs
 contract PrivateFactory is IPrivateFactory {
     bytes32 internal constant MINTER_ROLE = keccak256("MINTER_ROLE");
-    uint256 public constant ADMIN_FEE_MAX = 1e18; // 100% of swap fees in wad
 
     address public immutable bridge;
 
@@ -24,7 +24,6 @@ contract PrivateFactory is IPrivateFactory {
     }
 
     event Deploy(address indexed lp, address token0, address token1, address poolAddress);
-    event NewAdminFee(uint256 newAdminFee);
     event NewOwner(address newOwner);
 
     constructor(address _bridge) {
@@ -66,13 +65,34 @@ contract PrivateFactory is IPrivateFactory {
         return p;
     }
 
-    /// @notice Updates the admin fee applied on private pool swaps
-    /// @dev Admin fees sent to factory owner
-    /// @param _fee The new admin fee
-    function setAdminFee(uint256 _fee) external onlyOwner {
-        require(_fee <= ADMIN_FEE_MAX, "fee > max");
-        adminFee = _fee;
-        emit NewAdminFee(_fee);
+    /// @notice Sets the admin fee charged on swaps for given (lp, tokenA, tokenB) pool
+    /// @param lp The address of the pool owner
+    /// @param tokenA The address of token A
+    /// @param tokenB The address of token B
+    /// @param fee The new admin fee
+    // TODO: test
+    function setAdminFeeOnPool(
+        address lp,
+        address tokenA,
+        address tokenB,
+        uint256 fee
+    ) external onlyOwner {
+        address p = pool[lp][tokenA][tokenB];
+        IPrivatePool(p).setAdminFee(fee);
+    }
+
+    /// @notice Skims fees from pool to factory owner
+    /// @param lp The address of the pool owner
+    /// @param tokenA The address of token A
+    /// @param tokenB The address of token B
+    // TODO: test
+    function skimPool(
+        address lp,
+        address tokenA,
+        address tokenB
+    ) external onlyOwner {
+        address p = pool[lp][tokenA][tokenB];
+        IPrivatePool(p).skim(owner);
     }
 
     /// @notice Updates the owner admin address for the factory
