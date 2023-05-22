@@ -14,8 +14,6 @@ interface IPrivateFactory {
 
     function owner() external view returns (address);
 
-    function adminFee() external view returns (uint256);
-
     function orderTokens(address tokenA, address tokenB) external view returns (address, address);
 
     function deploy(address tokenA, address tokenB) external returns (address);

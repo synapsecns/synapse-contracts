@@ -23,6 +23,7 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
     uint256 public constant PRICE_MIN = wad - PRICE_BOUND; // 1 - 10bps in wad
     uint256 public constant PRICE_MAX = wad + PRICE_BOUND; // 1 + 10bps in wad
     uint256 public constant FEE_MAX = 0.01e18; // 100 bps in wad
+    uint256 public constant ADMIN_FEE_MAX = 1e18; // 100% of swap fees in wad
 
     address public immutable factory;
     address public immutable owner;
@@ -35,6 +36,15 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
 
     uint256 public P; // fixed price param: amount of token1 per amount of token0 in wad
     uint256 public fee; // fee charged on swap; acts as LP's bid/ask spread
+    uint256 public adminFee; // % of swap fee to protocol
+
+    uint256 public protocolFees0;
+    uint256 public protocolFees1;
+
+    modifier onlyFactory() {
+        require(msg.sender == factory, "!factory");
+        _;
+    }
 
     modifier onlyOwner() {
         require(msg.sender == owner, "!owner");
@@ -58,6 +68,7 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
 
     event Quote(uint256 price);
     event NewSwapFee(uint256 newSwapFee);
+    event NewAdminFee(uint256 newAdminFee);
     event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
     event AddLiquidity(
         address indexed provider,
@@ -67,6 +78,7 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         uint256 lpTokenSupply
     );
     event RemoveLiquidity(address indexed provider, uint256[] tokenAmounts, uint256 lpTokenSupply);
+    event Skim(address indexed provider, uint256[] tokenAmounts);
 
     constructor(
         address _owner,
@@ -109,6 +121,16 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         emit NewSwapFee(_fee);
     }
 
+    /// @notice Updates the admin fee applied on private pool swaps
+    /// @dev Admin fees sent to factory owner
+    /// @param _fee The new admin fee
+    // TODO: test
+    function setAdminFee(uint256 _fee) external onlyFactory {
+        require(_fee <= ADMIN_FEE_MAX, "fee > max");
+        adminFee = _fee;
+        emit NewAdminFee(_fee);
+    }
+
     /// @notice Adds liquidity to pool
     /// @param amounts The token amounts to add in token decimals
     /// @param deadline The deadline before which liquidity must be added
@@ -125,9 +147,9 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         uint256 xBal = IERC20(token0).balanceOf(address(this));
         uint256 yBal = IERC20(token1).balanceOf(address(this));
 
-        // convert balances to wad for liquidity calcs
-        uint256 xWad = _amountWad(xBal, true);
-        uint256 yWad = _amountWad(yBal, false);
+        // convert balances to wad for liquidity calcs adjusted for protocol fees
+        uint256 xWad = _amountWad(xBal - protocolFees0, true);
+        uint256 yWad = _amountWad(yBal - protocolFees1, false);
 
         // get D balance before add liquidity
         uint256 _d = _D(xWad, yWad);
@@ -170,12 +192,12 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         // get current token balances in pool
         uint256 xBal = IERC20(token0).balanceOf(address(this));
         uint256 yBal = IERC20(token1).balanceOf(address(this));
-        require(amounts[0] <= xBal, "dx > max");
-        require(amounts[1] <= yBal, "dy > max");
+        require(amounts[0] + protocolFees0 <= xBal, "dx > max");
+        require(amounts[1] + protocolFees1 <= yBal, "dy > max");
 
-        // convert balances to wad for liquidity calcs
-        uint256 xWad = _amountWad(xBal, true);
-        uint256 yWad = _amountWad(yBal, false);
+        // convert balances to wad for liquidity calcs adjusted for protocol fees
+        uint256 xWad = _amountWad(xBal - protocolFees0, true);
+        uint256 yWad = _amountWad(yBal - protocolFees1, false);
 
         // get D balance before remove liquidity
         uint256 _d = _D(xWad, yWad);
@@ -235,24 +257,49 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), dx);
         dx = IERC20(tokenIn).balanceOf(address(this)) - bal;
 
-        {
-            // calculate amount out from swap
-            // @dev returns zero if amount out exceeds pool balance
-            uint256 dyAdminFee;
-            (dy_, , dyAdminFee) = _calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
-            require(dy_ > 0, "dy > pool balance");
-            require(dy_ >= minDy, "dy < minDy");
+        // calculate amount out from swap
+        // @dev returns zero if amount out exceeds pool balance
+        uint256 dyAdminFee;
+        (dy_, , dyAdminFee) = _calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+        require(dy_ > 0, "dy > pool balance");
+        require(dy_ >= minDy, "dy < minDy");
+
+        if (tokenIndexTo == 0) {
+            // update admin fee reserves
+            protocolFees0 += dyAdminFee;
 
             // transfer dy out to swapper
-            address tokenOut = tokenIndexTo == 0 ? token0 : token1;
+            address tokenOut = token0;
             IERC20(tokenOut).safeTransfer(msg.sender, dy_);
+        } else {
+            // update admin fee reserves
+            protocolFees1 += dyAdminFee;
 
-            // transfer admin fee out to factory owner
-            address factoryOwner = IPrivateFactory(factory).owner();
-            IERC20(tokenOut).safeTransfer(factoryOwner, dyAdminFee);
+            // transfer dy out to swapper
+            address tokenOut = token1;
+            IERC20(tokenOut).safeTransfer(msg.sender, dy_);
         }
 
         emit TokenSwap(msg.sender, dx, dy_, tokenIndexFrom, tokenIndexTo);
+    }
+
+    /// @notice Transfers protocol fees out
+    /// @param recipient The recipient address of the aggregated admin fees
+    // TODO: test
+    function skim(address recipient) external onlyFactory {
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = protocolFees0;
+        amounts[1] = protocolFees1;
+
+        // clear protocol fees
+        protocolFees0 = 0;
+        protocolFees1 = 0;
+
+        // send out to factory owner
+        IERC20(token0).safeTransfer(recipient, amounts[0]);
+        IERC20(token1).safeTransfer(recipient, amounts[1]);
+
+        emit Skim(msg.sender, amounts);
     }
 
     /// @notice Address of the pooled token at given index
@@ -268,6 +315,17 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
         uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
         return _D(xWad, yWad);
+    }
+
+    /// @notice D liquidity for current pool balance state adjusted for accumulated protocol fees
+    function DAdjusted() external view returns (uint256) {
+        uint256 xBalAdjusted = IERC20(token0).balanceOf(address(this)) - protocolFees0;
+        uint256 yBalAdjusted = IERC20(token1).balanceOf(address(this)) - protocolFees1;
+
+        uint256 xAdjustedWad = _amountWad(xBalAdjusted, true);
+        uint256 yAdjustedWad = _amountWad(yBalAdjusted, false);
+
+        return _D(xAdjustedWad, yAdjustedWad);
     }
 
     /// @notice Calculates amount of tokens received on swap
@@ -326,9 +384,9 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
     {
         if (tokenIndexFrom > 1 || tokenIndexTo > 1 || tokenIndexFrom == tokenIndexTo) return (0, 0, 0);
 
-        // get current token balances in pool
-        uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
-        uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
+        // get current token balances in pool adjusted for protocol fees
+        uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)) - protocolFees0, true);
+        uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)) - protocolFees1, false);
 
         // convert to an amount in wad
         uint256 amountInWad = _amountWad(dx, tokenIndexFrom == 0);
@@ -368,7 +426,6 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         amountOutWad -= amountSwapFeeWad;
 
         // calculate admin fee on the total swap fee
-        uint256 adminFee = IPrivateFactory(factory).adminFee();
         uint256 amountAdminFeeWad = Math.mulDiv(amountSwapFeeWad, adminFee, wad);
 
         // convert amount out to decimals

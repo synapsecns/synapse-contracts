@@ -18,7 +18,6 @@ contract PrivateFactoryTest is Test {
     MockAccessToken public synToken;
 
     event Deploy(address indexed lp, address token0, address token1, address poolAddress);
-    event NewAdminFee(uint256 newAdminFee);
     event NewOwner(address newOwner);
 
     function setUp() public {
@@ -98,25 +97,7 @@ contract PrivateFactoryTest is Test {
         factory.deploy(address(synToken), address(token));
     }
 
-    function testSetAdminFeeStoresFee() public {
-        uint256 fee = 0.01e18;
-        factory.setAdminFee(fee);
-        assertEq(factory.adminFee(), fee);
-    }
-
-    function testSetAdminFeeEmitsNewAdminFeeEvent() public {
-        uint256 fee = 0.01e18;
-
-        vm.expectEmit(false, false, false, true);
-        emit NewAdminFee(fee);
-        factory.setAdminFee(fee);
-    }
-
-    function testSetAdminFeeRevertsWhenGtMax() public {
-        uint256 fee = factory.ADMIN_FEE_MAX() + 1;
-        vm.expectRevert("fee > max");
-        factory.setAdminFee(fee);
-    }
+    // TODO: test setAdminFeeOnPool, skimPool
 
     function testSetOwnerStoresOwner() public {
         address newOwner = address(0xBEEF);
