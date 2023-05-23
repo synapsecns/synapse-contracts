@@ -14,6 +14,16 @@ contract UniversalSwap {
         uint8 parentPool;
     }
 
+    /// @notice Struct to store the liquidity pools
+    /// @dev Logic address is used for delegate calls to get swap quotes, token indexes, etc.
+    /// Set to address(this) if pool conforms to ISaddle interface. Set to 0x0 if pool is not supported.
+    /// @param logic        Address of the logic contract for this pool
+    /// @param poolIndex    Index of the pool in the `_pools` array
+    struct Pool {
+        address logic;
+        uint8 poolIndex;
+    }
+
     // ══════════════════════════════════════════════════ STORAGE ══════════════════════════════════════════════════════
 
     // The nodes of the tree are stored in an array. The root node is at index 0.
@@ -22,9 +32,8 @@ contract UniversalSwap {
     // The list of all supported liquidity pools. All values are unique.
     address[] internal _pools;
 
-    // Logic address for each pool. Will be used for delegate calls to get swap quotes, token indexes, etc.
-    // Set to address(this) if pool conforms to ISaddle interface. Set to 0x0 if pool is not supported.
-    mapping(address => address) public poolLogic;
+    // (pool address => pool description)
+    mapping(address => Pool) internal _poolMap;
 
     // (pool => token => tokenIndex) for each pool, stores the index of each token in the pool.
     mapping(address => mapping(address => uint8)) public tokenIndexes;
@@ -48,6 +57,41 @@ contract UniversalSwap {
     }
 
     // ═════════════════════════════════════════════════ EXTERNAL ══════════════════════════════════════════════════════
+
+    /**
+     * @notice Adds a pool with `N = tokensAmount` tokens to the tree by adding N-1 new nodes
+     * as the children of the given node. Given node needs to represent a token from the pool.
+     */
+    // TODO: add onlyOwner modifier
+    function addPool(
+        uint256 nodeIndex,
+        address pool,
+        address poolLogic,
+        uint256 tokensAmount
+    ) external {
+        require(nodeIndex < _nodes.length, "Out of range");
+        Node memory node = _nodes[nodeIndex];
+        if (poolLogic == address(0)) poolLogic = address(this);
+        (bool wasAdded, uint8 poolIndex) = _addPool(pool, poolLogic);
+        address[] memory tokens = _getPoolTokens(poolLogic, pool, tokensAmount);
+        bool nodeFound = false;
+        uint8 childDepth = node.depth + 1;
+        for (uint256 i = 0; i < tokensAmount; ++i) {
+            address token = tokens[i];
+            // Save token indexes if this is a new pool
+            if (wasAdded) {
+                tokenIndexes[pool][token] = uint8(i);
+            }
+            // Add new nodes to the tree
+            if (token == node.token) {
+                // TODO: check that pool wasn't added twice to the same node
+                nodeFound = true;
+                continue;
+            }
+            _nodes.push(Node({token: token, depth: childDepth, parentPool: poolIndex}));
+        }
+        require(nodeFound, "Node token not found in the pool");
+    }
 
     /**
      * @notice Wrapper for ISaddle.swap()
@@ -114,6 +158,19 @@ contract UniversalSwap {
     }
 
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
+
+    /**
+     * @dev Adds pool to the list of pools, if it hasn't been added yet.
+     */
+    function _addPool(address pool, address poolLogic) internal returns (bool wasAdded, uint8 poolIndex) {
+        if (_poolMap[pool].logic != address(0)) {
+            return (false, _poolMap[pool].poolIndex);
+        }
+        wasAdded = true;
+        poolIndex = uint8(_pools.length);
+        _pools.push(pool);
+        _poolMap[pool] = Pool({logic: poolLogic, poolIndex: uint8(poolIndex)});
+    }
 
     /**
      * @dev Performs a multi-hop swap by following the path from "tokenFrom" node to "tokenTo" node
@@ -219,8 +276,8 @@ contract UniversalSwap {
         uint256 amountIn
     ) internal returns (uint256 amountOut) {
         address pool = _pools[poolIndex];
-        address poolLogic_ = poolLogic[pool];
-        if (poolLogic_ == address(this)) {
+        address poolLogic = _poolMap[pool].logic;
+        if (poolLogic == address(this)) {
             // Pool conforms to ISaddle interface. Note: we check minDy and deadline outside of this function.
             amountOut = ISaddle(pool).swap({
                 tokenIndexFrom: tokenIndexes[pool][_nodes[nodeIndexFrom].token],
@@ -230,7 +287,7 @@ contract UniversalSwap {
                 deadline: type(uint256).max
             });
         } else {
-            // TODO: implement swap using a delegate call to poolLogic_
+            // TODO: implement swap using a delegate call to poolLogic
         }
     }
 
@@ -342,8 +399,8 @@ contract UniversalSwap {
         uint256 amountIn
     ) internal view returns (uint256 amountOut) {
         address pool = _pools[poolIndex];
-        address poolLogic_ = poolLogic[pool];
-        if (poolLogic_ == address(this)) {
+        address poolLogic = _poolMap[pool].logic;
+        if (poolLogic == address(this)) {
             // Pool conforms to ISaddle interface.
             amountOut = ISaddle(pool).calculateSwap({
                 tokenIndexFrom: tokenIndexes[pool][_nodes[nodeIndexFrom].token],
@@ -351,7 +408,26 @@ contract UniversalSwap {
                 dx: amountIn
             });
         } else {
-            // TODO: get quote using delegate call to poolLogic[poolIndex]
+            // TODO: get quote using delegate call to poolLogic
+        }
+    }
+
+    /**
+     * @dev Returns the tokens in the pool at the given address.
+     */
+    function _getPoolTokens(
+        address poolLogic,
+        address pool,
+        uint256 tokensAmount
+    ) internal view returns (address[] memory tokens) {
+        if (poolLogic == address(this)) {
+            // Pool conforms to ISaddle interface.
+            tokens = new address[](tokensAmount);
+            for (uint256 i = 0; i < tokensAmount; ++i) {
+                tokens[i] = ISaddle(pool).getToken(uint8(i));
+            }
+        } else {
+            // TODO: get tokens using delegate call to poolLogic
         }
     }
 
