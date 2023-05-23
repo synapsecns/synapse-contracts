@@ -78,6 +78,7 @@ contract PrivateFactory is IPrivateFactory {
         uint256 fee
     ) external onlyOwner {
         address p = pool[lp][tokenA][tokenB];
+        require(p != address(0), "!pool");
         IPrivatePool(p).setAdminFee(fee);
     }
 
@@ -92,6 +93,7 @@ contract PrivateFactory is IPrivateFactory {
         address tokenB
     ) external onlyOwner {
         address p = pool[lp][tokenA][tokenB];
+        require(p != address(0), "!pool");
         IPrivatePool(p).skim(owner);
     }
 
