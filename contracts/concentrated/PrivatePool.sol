@@ -78,7 +78,7 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         uint256 lpTokenSupply
     );
     event RemoveLiquidity(address indexed provider, uint256[] tokenAmounts, uint256 lpTokenSupply);
-    event Skim(address indexed provider, uint256[] tokenAmounts);
+    event Skim(address indexed recipient, uint256[] tokenAmounts);
 
     constructor(
         address _owner,
@@ -301,7 +301,7 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         IERC20(token0).safeTransfer(recipient, amounts[0]);
         IERC20(token1).safeTransfer(recipient, amounts[1]);
 
-        emit Skim(msg.sender, amounts);
+        emit Skim(recipient, amounts);
     }
 
     /// @notice Address of the pooled token at given index
