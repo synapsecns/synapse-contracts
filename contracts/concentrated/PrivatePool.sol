@@ -388,10 +388,6 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
     {
         if (tokenIndexFrom > 1 || tokenIndexTo > 1 || tokenIndexFrom == tokenIndexTo) return (0, 0, 0);
 
-        // get current token balances in pool adjusted for protocol fees
-        uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)) - protocolFees0, true);
-        uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)) - protocolFees1, false);
-
         // convert to an amount in wad
         uint256 amountInWad = _amountWad(dx, tokenIndexFrom == 0);
 
@@ -399,30 +395,17 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         // @dev obeys P * x + y = D
         uint256 amountOutWad;
         if (tokenIndexFrom == 0) {
-            // get D balance before swap
-            uint256 _d = _D(xWad, yWad);
-
-            // token0 in for token1 out
-            xWad += amountInWad;
+            amountOutWad = Math.mulDiv(amountInWad, P, wad);
 
             // check amount out won't exceed pool balance
-            uint256 prod = Math.mulDiv(P, xWad, wad);
-            if (_d < prod) return (0, 0, 0);
-
-            uint256 yWadAfter = _d - prod;
-            amountOutWad = yWad - yWadAfter;
+            uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)) - protocolFees1, false);
+            if (amountOutWad > yWad) return (0, 0, 0);
         } else {
-            // get D balance before swap
-            uint256 _d = _D(xWad, yWad);
-
-            // token1 in for token0 out
-            yWad += amountInWad;
+            amountOutWad = Math.mulDiv(amountInWad, wad, P);
 
             // check amount out won't exceed pool balance
-            if (_d < yWad) return (0, 0, 0);
-
-            uint256 xWadAfter = Math.mulDiv(_d - yWad, wad, P);
-            amountOutWad = xWad - xWadAfter;
+            uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)) - protocolFees0, true);
+            if (amountOutWad > xWad) return (0, 0, 0);
         }
 
         // apply swap fee on amount out
