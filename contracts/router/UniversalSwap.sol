@@ -67,7 +67,8 @@ contract UniversalSwap {
             tokenIndexFrom < totalTokens && tokenIndexTo < totalTokens && tokenIndexFrom != tokenIndexTo,
             "Swap not supported"
         );
-        // TODO: traverse from "tokenFrom" to lowest common ancestor, then from lowest common ancestor to "tokenTo"
+        amountOut = _multiSwap(tokenIndexFrom, tokenIndexTo, dx);
+        require(amountOut >= minDy, "Swap didn't result in min tokens");
     }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
@@ -105,6 +106,114 @@ contract UniversalSwap {
     function getToken(uint8 index) external view returns (address token) {
         require(index < _nodes.length, "Out of range");
         return _nodes[index].token;
+    }
+
+    // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
+
+    /**
+     * @dev Performs a multi-hop swap by following the path from "tokenFrom" node to "tokenTo" node
+     * in the stored tree. Token indexes are checked to be within range and not the same.
+     */
+    function _multiSwap(
+        uint256 nodeIndexFrom,
+        uint256 nodeIndexTo,
+        uint256 amountIn
+    ) internal returns (uint256 amountOut) {
+        // Check if either of the nodes is the root
+        Node memory nodeTo = _nodes[nodeIndexTo];
+        uint256 rootPathTo = _rootPath[nodeIndexTo];
+        Node memory nodeFrom = _nodes[nodeIndexFrom];
+        uint256 rootPathFrom = _rootPath[nodeIndexFrom];
+        // Find the depth where the paths diverge
+        uint256 depthDiff = _depthDiff(rootPathFrom, rootPathTo);
+        // Check that the nodes are not on the same branch
+        if (depthDiff > nodeTo.depth) {
+            // Path from "tokenFrom" to root includes "tokenTo",
+            // so we simply go from "tokenFrom" to "tokenTo" in the "to root" direction.
+            (, amountOut) = _multiSwapToRoot(rootPathFrom, nodeFrom.depth, nodeTo.depth, amountIn);
+            return amountOut;
+        }
+        if (depthDiff > nodeFrom.depth) {
+            // Path from "tokenTo" to root includes "tokenFrom",
+            // so we simply go from "tokenTo" to "tokenFrom" in the "from root" direction.
+            (, amountOut) = _multiSwapFromRoot(rootPathTo, nodeFrom.depth, nodeTo.depth, amountIn);
+            return amountOut;
+        }
+        // First, we traverse up the tree from "tokenFrom" to one level deeper the lowest common ancestor.
+        (nodeIndexFrom, amountOut) = _multiSwapToRoot(rootPathFrom, nodeFrom.depth, depthDiff, amountIn);
+        // Check if we need to do a sibling swap. When the two nodes are connected to the same parent via the same pool,
+        // we need to do a direct swap between the two nodes, instead of going through the parent.
+        uint256 siblingIndex = _extractNodeIndex(rootPathTo, depthDiff);
+        uint256 firstPoolIndex = _nodes[nodeIndexFrom].parentPool;
+        uint256 secondPoolIndex = _nodes[siblingIndex].parentPool;
+        if (firstPoolIndex == secondPoolIndex) {
+            // Swap nodeIndexFrom -> siblingIndex
+            amountOut = _simpleSwap(firstPoolIndex, nodeIndexFrom, siblingIndex, amountOut);
+        } else {
+            // Swap nodeIndexFrom -> parentIndex
+            uint256 parentIndex = _extractNodeIndex(rootPathFrom, depthDiff - 1);
+            amountOut = _simpleSwap(firstPoolIndex, nodeIndexFrom, parentIndex, amountOut);
+        }
+        // Finally, we traverse down the tree from the lowest common ancestor to "tokenTo".
+        (, amountOut) = _multiSwapFromRoot(rootPathTo, depthDiff, nodeTo.depth, amountOut);
+    }
+
+    /**
+     * @dev Performs a multi-hop swap,
+     * going in "from root direction" via the given `rootPath` from `depthFrom` to `depthTo`.
+     */
+    function _multiSwapFromRoot(
+        uint256 rootPath,
+        uint256 depthFrom,
+        uint256 depthTo,
+        uint256 amountIn
+    ) internal returns (uint256 nodeIndex, uint256 amountOut) {
+        nodeIndex = _extractNodeIndex(rootPath, depthFrom);
+        amountOut = amountIn;
+        // Traverse up the tree following `rootPath` from `depthFrom` to `depthTo`.
+        for (uint256 depth = depthFrom; depth > depthTo; ) {
+            // Get the parent node
+            --depth;
+            uint256 parentIndex = _extractNodeIndex(rootPath, depth);
+            // Swap nodeIndex -> parentIndex
+            amountOut = _simpleSwap(_nodes[nodeIndex].parentPool, nodeIndex, parentIndex, amountOut);
+            nodeIndex = parentIndex;
+        }
+    }
+
+    /**
+     * @dev Performs a multi-hop swap,
+     * going in "to root direction" via the given `rootPath` from `depthFrom` to `depthTo`.
+     */
+    function _multiSwapToRoot(
+        uint256 rootPath,
+        uint256 depthFrom,
+        uint256 depthTo,
+        uint256 amountIn
+    ) internal returns (uint256 nodeIndex, uint256 amountOut) {
+        nodeIndex = _extractNodeIndex(rootPath, depthFrom);
+        amountOut = amountIn;
+        // Traverse down the tree following `rootPath` from `depthFrom` to `depthTo`.
+        for (uint256 depth = depthFrom; depth < depthTo; ) {
+            // Get the child node
+            ++depth;
+            uint256 childIndex = _extractNodeIndex(rootPath, depth);
+            // Swap nodeIndex -> childIndex
+            amountOut = _simpleSwap(_nodes[childIndex].parentPool, nodeIndex, childIndex, amountOut);
+            nodeIndex = childIndex;
+        }
+    }
+
+    /**
+     * @dev Performs a simple swap between two nodes using the given pool.
+     */
+    function _simpleSwap(
+        uint256 poolIndex,
+        uint256 nodeIndexFrom,
+        uint256 nodeIndexTo,
+        uint256 amountIn
+    ) internal returns (uint256 amountOut) {
+        // TODO: swap using poolLogic[poolIndex]
     }
 
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
