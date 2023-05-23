@@ -155,8 +155,8 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         uint256 _d = _D(xWad, yWad);
 
         // transfer amounts in decimals in
-        IERC20(token0).safeTransferFrom(msg.sender, address(this), amounts[0]);
-        IERC20(token1).safeTransferFrom(msg.sender, address(this), amounts[1]);
+        if (amounts[0] > 0) IERC20(token0).safeTransferFrom(msg.sender, address(this), amounts[0]);
+        if (amounts[1] > 0) IERC20(token1).safeTransferFrom(msg.sender, address(this), amounts[1]);
 
         // update amounts for actual transfer amount in case of fees on transfer
         amounts[0] = IERC20(token0).balanceOf(address(this)) - xBal;
@@ -204,8 +204,8 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         uint256 _d = _D(xWad, yWad);
 
         // transfer amounts out
-        IERC20(token0).safeTransfer(msg.sender, amounts[0]);
-        IERC20(token1).safeTransfer(msg.sender, amounts[1]);
+        if (amounts[0] > 0) IERC20(token0).safeTransfer(msg.sender, amounts[0]);
+        if (amounts[1] > 0) IERC20(token1).safeTransfer(msg.sender, amounts[1]);
 
         // update amounts for actual transfer amount in case of fees on transfer
         amounts[0] = xBal - IERC20(token0).balanceOf(address(this));
@@ -298,8 +298,8 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         protocolFees1 = 0;
 
         // send out to factory owner
-        IERC20(token0).safeTransfer(recipient, amounts[0]);
-        IERC20(token1).safeTransfer(recipient, amounts[1]);
+        if (amounts[0] > 0) IERC20(token0).safeTransfer(recipient, amounts[0]);
+        if (amounts[1] > 0) IERC20(token1).safeTransfer(recipient, amounts[1]);
 
         emit Skim(recipient, amounts);
     }
