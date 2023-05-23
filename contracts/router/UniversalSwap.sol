@@ -3,7 +3,9 @@ pragma solidity 0.8.17;
 
 import {ISaddle} from "./interfaces/ISaddle.sol";
 
-contract UniversalSwap {
+import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
+
+contract UniversalSwap is Ownable {
     /// @notice Struct so store the tree nodes
     /// @param token        Address of the token represented by this node
     /// @param depth        Depth of the node in the tree
@@ -62,13 +64,12 @@ contract UniversalSwap {
      * @notice Adds a pool with `N = tokensAmount` tokens to the tree by adding N-1 new nodes
      * as the children of the given node. Given node needs to represent a token from the pool.
      */
-    // TODO: add onlyOwner modifier
     function addPool(
         uint256 nodeIndex,
         address pool,
         address poolLogic,
         uint256 tokensAmount
-    ) external {
+    ) external onlyOwner {
         require(nodeIndex < _nodes.length, "Out of range");
         Node memory node = _nodes[nodeIndex];
         if (poolLogic == address(0)) poolLogic = address(this);
