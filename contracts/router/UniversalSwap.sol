@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {ISaddle} from "./interfaces/ISaddle.sol";
+
 contract UniversalSwap {
     /// @notice Struct so store the tree nodes
     /// @param token        Address of the token represented by this node
@@ -23,6 +25,9 @@ contract UniversalSwap {
     // Logic address for each pool. Will be used for delegate calls to get swap quotes, token indexes, etc.
     // Set to address(this) if pool conforms to ISaddle interface. Set to 0x0 if pool is not supported.
     mapping(address => address) public poolLogic;
+
+    // (pool => token => tokenIndex) for each pool, stores the index of each token in the pool.
+    mapping(address => mapping(address => uint8)) public tokenIndexes;
 
     // The full path from every node to the root is stored using bitmasks in the following way:
     // - For a node at depth N, lowest (N + 1) bytes are used to store the path to the root.
@@ -213,7 +218,20 @@ contract UniversalSwap {
         uint256 nodeIndexTo,
         uint256 amountIn
     ) internal returns (uint256 amountOut) {
-        // TODO: swap using poolLogic[poolIndex]
+        address pool = _pools[poolIndex];
+        address poolLogic_ = poolLogic[pool];
+        if (poolLogic_ == address(this)) {
+            // Pool conforms to ISaddle interface. Note: we check minDy and deadline outside of this function.
+            amountOut = ISaddle(pool).swap({
+                tokenIndexFrom: tokenIndexes[pool][_nodes[nodeIndexFrom].token],
+                tokenIndexTo: tokenIndexes[pool][_nodes[nodeIndexTo].token],
+                dx: amountIn,
+                minDy: 0,
+                deadline: type(uint256).max
+            });
+        } else {
+            // TODO: implement swap using a delegate call to poolLogic_
+        }
     }
 
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
@@ -323,7 +341,18 @@ contract UniversalSwap {
         uint256 nodeIndexTo,
         uint256 amountIn
     ) internal view returns (uint256 amountOut) {
-        // TODO: get quote using poolLogic[poolIndex]
+        address pool = _pools[poolIndex];
+        address poolLogic_ = poolLogic[pool];
+        if (poolLogic_ == address(this)) {
+            // Pool conforms to ISaddle interface.
+            amountOut = ISaddle(pool).calculateSwap({
+                tokenIndexFrom: tokenIndexes[pool][_nodes[nodeIndexFrom].token],
+                tokenIndexTo: tokenIndexes[pool][_nodes[nodeIndexTo].token],
+                dx: amountIn
+            });
+        } else {
+            // TODO: get quote using delegate call to poolLogic[poolIndex]
+        }
     }
 
     /**
