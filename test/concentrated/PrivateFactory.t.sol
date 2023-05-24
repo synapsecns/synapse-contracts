@@ -19,6 +19,7 @@ contract PrivateFactoryTest is Test {
 
     event Deploy(address indexed lp, address token0, address token1, address poolAddress);
     event NewOwner(address newOwner);
+    event NewAdminFee(uint256 newAdminFee);
 
     function setUp() public {
         factory = new PrivateFactory(BRIDGE);
@@ -97,7 +98,49 @@ contract PrivateFactoryTest is Test {
         factory.deploy(address(synToken), address(token));
     }
 
-    // TODO: test setAdminFeeOnPool, skimPool
+    function testSetAdminFeeOnPoolStoresAdminFee() public {
+        address user = address(0xBEEF);
+        vm.prank(user);
+        address p = factory.deploy(address(token), address(synToken));
+        assertEq(factory.pool(user, address(token), address(synToken)), p); // check exists for setup
+
+        uint256 adminFee = 0.1e18;
+        factory.setAdminFeeOnPool(user, address(token), address(synToken), adminFee);
+
+        assertEq(PrivatePool(p).adminFee(), adminFee);
+    }
+
+    function testSetAdminFeeOnPoolEmitsNewAdminFeeEvent() public {
+        address user = address(0xBEEF);
+        vm.prank(user);
+        address p = factory.deploy(address(token), address(synToken));
+        assertEq(factory.pool(user, address(token), address(synToken)), p); // check exists for setup
+
+        uint256 adminFee = 0.1e18;
+        vm.expectEmit(false, false, false, true);
+        emit NewAdminFee(adminFee);
+        factory.setAdminFeeOnPool(user, address(token), address(synToken), adminFee);
+    }
+
+    function testSetAdminFeeOnPoolRevertsWhenNotOwner() public {
+        address user = address(0xBEEF);
+        vm.prank(user);
+        address p = factory.deploy(address(token), address(synToken));
+        assertEq(factory.pool(user, address(token), address(synToken)), p); // check exists for setup
+
+        uint256 adminFee = 0.1e18;
+        vm.expectRevert("!owner");
+        vm.prank(user);
+        factory.setAdminFeeOnPool(user, address(token), address(synToken), adminFee);
+    }
+
+    function testSetAdminFeeOnPoolRevertsWhenNotPool() public {
+        uint256 adminFee = 0.1e18;
+        vm.expectRevert("!pool");
+        factory.setAdminFeeOnPool(address(0xBEEF), address(token), address(synToken), adminFee);
+    }
+
+    // TODO: test skimPool
 
     function testSetOwnerStoresOwner() public {
         address newOwner = address(0xBEEF);
