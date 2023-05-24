@@ -164,6 +164,15 @@ contract UniversalSwap is Ownable {
         return _nodes[index].token;
     }
 
+    /**
+     * @notice Returns the full amount of the "token nodes" in the internal tree.
+     * Note that some of the tokens might be duplicated, as the node in the tree represents
+     * a given path frm the bridge token to the node token using a series of pools.
+     */
+    function tokenNodesAmount() external view returns (uint256) {
+        return _nodes.length;
+    }
+
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
 
     /**
