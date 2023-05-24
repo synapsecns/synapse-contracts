@@ -20,12 +20,12 @@ contract UniversalSwap is Ownable {
     }
 
     /// @notice Struct to store the liquidity pools
-    /// @dev Logic address is used for delegate calls to get swap quotes, token indexes, etc.
+    /// @dev Module address is used for delegate calls to get swap quotes, token indexes, etc.
     /// Set to address(this) if pool conforms to ISaddle interface. Set to 0x0 if pool is not supported.
-    /// @param logic        Address of the logic contract for this pool
+    /// @param module       Address of the module contract for this pool
     /// @param poolIndex    Index of the pool in the `_pools` array
     struct Pool {
-        address logic;
+        address module;
         uint8 poolIndex;
     }
 
@@ -76,14 +76,14 @@ contract UniversalSwap is Ownable {
     function addPool(
         uint256 nodeIndex,
         address pool,
-        address poolLogic,
+        address poolModule,
         uint256 tokensAmount
     ) external onlyOwner {
         require(nodeIndex < _nodes.length, "Out of range");
         Node memory node = _nodes[nodeIndex];
-        if (poolLogic == address(0)) poolLogic = address(this);
-        (bool wasAdded, uint8 poolIndex) = _addPool(pool, poolLogic);
-        address[] memory tokens = _getPoolTokens(poolLogic, pool, tokensAmount);
+        if (poolModule == address(0)) poolModule = address(this);
+        (bool wasAdded, uint8 poolIndex) = _addPool(pool, poolModule);
+        address[] memory tokens = _getPoolTokens(poolModule, pool, tokensAmount);
         bool nodeFound = false;
         uint8 childDepth = node.depth + 1;
         uint256 rootPathParent = _rootPath[nodeIndex];
@@ -187,7 +187,7 @@ contract UniversalSwap is Ownable {
         return _nodes.length;
     }
 
-    // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
+    // ══════════════════════════════════════════════ INTERNAL MODULE ═══════════════════════════════════════════════════
 
     /**
      * @dev Approves the given spender to spend the given token indefinitely.
@@ -207,14 +207,14 @@ contract UniversalSwap is Ownable {
     /**
      * @dev Adds pool to the list of pools, if it hasn't been added yet.
      */
-    function _addPool(address pool, address poolLogic) internal returns (bool wasAdded, uint8 poolIndex) {
-        if (_poolMap[pool].logic != address(0)) {
+    function _addPool(address pool, address poolModule) internal returns (bool wasAdded, uint8 poolIndex) {
+        if (_poolMap[pool].module != address(0)) {
             return (false, _poolMap[pool].poolIndex);
         }
         wasAdded = true;
         poolIndex = uint8(_pools.length);
         _pools.push(pool);
-        _poolMap[pool] = Pool({logic: poolLogic, poolIndex: uint8(poolIndex)});
+        _poolMap[pool] = Pool({module: poolModule, poolIndex: uint8(poolIndex)});
     }
 
     /**
@@ -367,12 +367,12 @@ contract UniversalSwap is Ownable {
         // Mark the pool as visited
         visitedPools_ = visitedPools | (1 << poolIndex);
         address pool = _pools[poolIndex];
-        address poolLogic = _poolMap[pool].logic;
+        address poolModule = _poolMap[pool].module;
         address tokenFrom = _nodes[nodeIndexFrom].token;
         address tokenTo = _nodes[nodeIndexTo].token;
         // Approve pool to spend the token, if needed
         _approveToken({token: tokenFrom, spender: pool});
-        if (poolLogic == address(this)) {
+        if (poolModule == address(this)) {
             // Pool conforms to ISaddle interface. Note: we check minDy and deadline outside of this function.
             amountOut = ISaddle(pool).swap({
                 tokenIndexFrom: tokenIndexes[pool][tokenFrom],
@@ -382,7 +382,7 @@ contract UniversalSwap is Ownable {
                 deadline: type(uint256).max
             });
         } else {
-            // TODO: implement swap using a delegate call to poolLogic
+            // TODO: implement swap using a delegate call to poolModule
         }
     }
 
@@ -535,8 +535,8 @@ contract UniversalSwap is Ownable {
         // Otherwise, mark the pool as visited
         visitedPools_ = visitedPools | (1 << poolIndex);
         address pool = _pools[poolIndex];
-        address poolLogic = _poolMap[pool].logic;
-        if (poolLogic == address(this)) {
+        address poolModule = _poolMap[pool].module;
+        if (poolModule == address(this)) {
             // Pool conforms to ISaddle interface.
             amountOut = ISaddle(pool).calculateSwap({
                 tokenIndexFrom: tokenIndexes[pool][_nodes[nodeIndexFrom].token],
@@ -544,7 +544,7 @@ contract UniversalSwap is Ownable {
                 dx: amountIn
             });
         } else {
-            // TODO: get quote using delegate call to poolLogic
+            // TODO: get quote using delegate call to poolModule
         }
     }
 
@@ -552,18 +552,18 @@ contract UniversalSwap is Ownable {
      * @dev Returns the tokens in the pool at the given address.
      */
     function _getPoolTokens(
-        address poolLogic,
+        address poolModule,
         address pool,
         uint256 tokensAmount
     ) internal view returns (address[] memory tokens) {
-        if (poolLogic == address(this)) {
+        if (poolModule == address(this)) {
             // Pool conforms to ISaddle interface.
             tokens = new address[](tokensAmount);
             for (uint256 i = 0; i < tokensAmount; ++i) {
                 tokens[i] = ISaddle(pool).getToken(uint8(i));
             }
         } else {
-            // TODO: get tokens using delegate call to poolLogic
+            // TODO: get tokens using delegate call to poolModule
         }
     }
 
