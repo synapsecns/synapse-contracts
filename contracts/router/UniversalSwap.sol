@@ -255,6 +255,8 @@ contract UniversalSwap is Ownable {
             // Swap nodeIndexFrom -> parentIndex
             uint256 parentIndex = _extractNodeIndex(rootPathFrom, depthDiff - 1);
             amountOut = _simpleSwap(firstPoolIndex, nodeIndexFrom, parentIndex, amountOut);
+            // Swap parentIndex -> siblingIndex
+            amountOut = _simpleSwap(secondPoolIndex, parentIndex, siblingIndex, amountOut);
         }
         // Finally, we traverse down the tree from the lowest common ancestor to "tokenTo".
         (, amountOut) = _multiSwapFromRoot(rootPathTo, depthDiff, nodeTo.depth, amountOut);
