@@ -82,7 +82,4 @@ interface IPrivatePool {
 
     /// @notice D liquidity for current pool balance state
     function D() external view returns (uint256);
-
-    /// @notice D liquidity for current pool balance state adjusted for accumulated protocol fees
-    function DAdjusted() external view returns (uint256);
 }

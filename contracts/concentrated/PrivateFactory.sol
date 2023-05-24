@@ -84,7 +84,6 @@ contract PrivateFactory is IPrivateFactory {
     /// @param lp The address of the pool owner
     /// @param tokenA The address of token A
     /// @param tokenB The address of token B
-    // TODO: test
     function skimPool(
         address lp,
         address tokenA,
