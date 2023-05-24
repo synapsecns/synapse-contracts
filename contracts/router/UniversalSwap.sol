@@ -167,6 +167,21 @@ contract UniversalSwap is Ownable {
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
 
     /**
+     * @dev Approves the given spender to spend the given token indefinitely.
+     * Note: doesn't do anything if the spender already has infinite allowance.
+     */
+    function _approveToken(address token, address spender) internal {
+        uint256 allowance = IERC20(token).allowance(address(this), spender);
+        if (allowance != type(uint256).max) {
+            // if allowance is neither zero nor infinity, reset if first
+            if (allowance != 0) {
+                IERC20(token).safeApprove(spender, 0);
+            }
+            IERC20(token).safeApprove(spender, type(uint256).max);
+        }
+    }
+
+    /**
      * @dev Adds pool to the list of pools, if it hasn't been added yet.
      */
     function _addPool(address pool, address poolLogic) internal returns (bool wasAdded, uint8 poolIndex) {
@@ -288,11 +303,15 @@ contract UniversalSwap is Ownable {
     ) internal returns (uint256 amountOut) {
         address pool = _pools[poolIndex];
         address poolLogic = _poolMap[pool].logic;
+        address tokenFrom = _nodes[nodeIndexFrom].token;
+        address tokenTo = _nodes[nodeIndexTo].token;
+        // Approve pool to spend the token, if needed
+        _approveToken({token: tokenFrom, spender: pool});
         if (poolLogic == address(this)) {
             // Pool conforms to ISaddle interface. Note: we check minDy and deadline outside of this function.
             amountOut = ISaddle(pool).swap({
-                tokenIndexFrom: tokenIndexes[pool][_nodes[nodeIndexFrom].token],
-                tokenIndexTo: tokenIndexes[pool][_nodes[nodeIndexTo].token],
+                tokenIndexFrom: tokenIndexes[pool][tokenFrom],
+                tokenIndexTo: tokenIndexes[pool][tokenTo],
                 dx: amountIn,
                 minDy: 0,
                 deadline: type(uint256).max
