@@ -16,7 +16,6 @@ contract PrivateFactory is IPrivateFactory {
 
     address public owner;
     mapping(address => mapping(address => mapping(address => address))) public pool;
-    uint256 public adminFee;
 
     modifier onlyOwner() {
         require(msg.sender == owner, "!owner");
