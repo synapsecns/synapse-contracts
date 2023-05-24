@@ -4,8 +4,11 @@ pragma solidity 0.8.17;
 import {ISaddle} from "./interfaces/ISaddle.sol";
 
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
+import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
 contract UniversalSwap is Ownable {
+    using SafeERC20 for IERC20;
+
     /// @notice Struct so store the tree nodes
     /// @param token        Address of the token represented by this node
     /// @param depth        Depth of the node in the tree
@@ -117,6 +120,8 @@ contract UniversalSwap is Ownable {
             tokenIndexFrom < totalTokens && tokenIndexTo < totalTokens && tokenIndexFrom != tokenIndexTo,
             "Swap not supported"
         );
+        // Pull initial token from the user
+        IERC20(_nodes[tokenIndexFrom].token).safeTransferFrom(msg.sender, address(this), dx);
         amountOut = _multiSwap(tokenIndexFrom, tokenIndexTo, dx);
         require(amountOut >= minDy, "Swap didn't result in min tokens");
     }
@@ -177,6 +182,7 @@ contract UniversalSwap is Ownable {
     /**
      * @dev Performs a multi-hop swap by following the path from "tokenFrom" node to "tokenTo" node
      * in the stored tree. Token indexes are checked to be within range and not the same.
+     * Assumes that the initial token is already in this contract.
      */
     function _multiSwap(
         uint256 nodeIndexFrom,
@@ -225,6 +231,7 @@ contract UniversalSwap is Ownable {
     /**
      * @dev Performs a multi-hop swap,
      * going in "from root direction" via the given `rootPath` from `depthFrom` to `depthTo`.
+     * Assumes that the initial token is already in this contract.
      */
     function _multiSwapFromRoot(
         uint256 rootPath,
@@ -248,6 +255,7 @@ contract UniversalSwap is Ownable {
     /**
      * @dev Performs a multi-hop swap,
      * going in "to root direction" via the given `rootPath` from `depthFrom` to `depthTo`.
+     * Assumes that the initial token is already in this contract.
      */
     function _multiSwapToRoot(
         uint256 rootPath,
@@ -270,6 +278,7 @@ contract UniversalSwap is Ownable {
 
     /**
      * @dev Performs a simple swap between two nodes using the given pool.
+     * Assumes that the initial token is already in this contract.
      */
     function _simpleSwap(
         uint256 poolIndex,
