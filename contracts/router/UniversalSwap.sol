@@ -29,6 +29,12 @@ contract UniversalSwap is Ownable {
         uint8 poolIndex;
     }
 
+    /// @notice Struct to get around stack too deep error
+    struct _Route {
+        uint256 visitedPools;
+        uint256 amountOut;
+    }
+
     // ══════════════════════════════════════════════════ STORAGE ══════════════════════════════════════════════════════
 
     // The nodes of the tree are stored in an array. The root node is at index 0.
@@ -159,7 +165,7 @@ contract UniversalSwap is Ownable {
             return 0;
         }
         // Calculate the quote by following the path from "tokenFrom" node to "tokenTo" node in the stored tree
-        return _getMultiSwapQuote(tokenIndexFrom, tokenIndexTo, dx);
+        return _getMultiSwapQuote(tokenIndexFrom, tokenIndexTo, dx).amountOut;
     }
 
     /**
@@ -350,7 +356,7 @@ contract UniversalSwap is Ownable {
         uint256 nodeIndexFrom,
         uint256 nodeIndexTo,
         uint256 amountIn
-    ) internal view returns (uint256 amountOut) {
+    ) internal view returns (_Route memory route) {
         // Check if either of the nodes is the root
         Node memory nodeTo = _nodes[nodeIndexTo];
         uint256 rootPathTo = _rootPath[nodeIndexTo];
@@ -358,75 +364,55 @@ contract UniversalSwap is Ownable {
         uint256 rootPathFrom = _rootPath[nodeIndexFrom];
         // Find the depth where the paths diverge
         uint256 depthDiff = _depthDiff(rootPathFrom, rootPathTo);
-        uint256 visitedPools = 0;
         // Check that the nodes are not on the same branch
         if (depthDiff > nodeTo.depth) {
             // Path from "tokenFrom" to root includes "tokenTo",
             // so we simply go from "tokenFrom" to "tokenTo" in the "to root" direction.
-            (, , amountOut) = _getMultiSwapToRootQuote(
-                visitedPools,
-                rootPathFrom,
-                nodeFrom.depth,
-                nodeTo.depth,
-                amountIn
-            );
-            return amountOut;
+            return _getMultiSwapToRootQuote(0, rootPathFrom, nodeFrom.depth, nodeTo.depth, amountIn);
         }
         if (depthDiff > nodeFrom.depth) {
             // Path from "tokenTo" to root includes "tokenFrom",
             // so we simply go from "tokenTo" to "tokenFrom" in the "from root" direction.
-            (, , amountOut) = _getMultiSwapFromRootQuote(
-                visitedPools,
-                rootPathTo,
-                nodeFrom.depth,
-                nodeTo.depth,
-                amountIn
-            );
-            return amountOut;
+            return _getMultiSwapFromRootQuote(0, rootPathTo, nodeFrom.depth, nodeTo.depth, amountIn);
         }
         // First, we traverse up the tree from "tokenFrom" to one level deeper the lowest common ancestor.
-        (nodeIndexFrom, visitedPools, amountOut) = _getMultiSwapToRootQuote(
-            visitedPools,
-            rootPathFrom,
-            nodeFrom.depth,
-            depthDiff,
-            amountIn
-        );
+        route = _getMultiSwapToRootQuote(route.visitedPools, rootPathFrom, nodeFrom.depth, depthDiff, amountIn);
         // Check if we need to do a sibling swap. When the two nodes are connected to the same parent via the same pool,
         // we need to do a direct swap between the two nodes, instead of going through the parent.
+        uint256 lastNodeIndex = _extractNodeIndex(rootPathFrom, depthDiff);
         uint256 siblingIndex = _extractNodeIndex(rootPathTo, depthDiff);
-        uint256 firstPoolIndex = _nodes[nodeIndexFrom].parentPool;
+        uint256 firstPoolIndex = _nodes[lastNodeIndex].parentPool;
         uint256 secondPoolIndex = _nodes[siblingIndex].parentPool;
         if (firstPoolIndex == secondPoolIndex) {
-            // Swap nodeIndexFrom -> siblingIndex
-            (visitedPools, amountOut) = _getSimpleSwapQuote(
-                visitedPools,
+            // Swap lastNodeIndex -> siblingIndex
+            (route.visitedPools, route.amountOut) = _getSimpleSwapQuote(
+                route.visitedPools,
                 firstPoolIndex,
-                nodeIndexFrom,
+                lastNodeIndex,
                 siblingIndex,
-                amountOut
+                route.amountOut
             );
         } else {
-            // Swap nodeIndexFrom -> parentIndex
+            // Swap lastNodeIndex -> parentIndex
             uint256 parentIndex = _extractNodeIndex(rootPathFrom, depthDiff - 1);
-            (visitedPools, amountOut) = _getSimpleSwapQuote(
-                visitedPools,
+            (route.visitedPools, route.amountOut) = _getSimpleSwapQuote(
+                route.visitedPools,
                 firstPoolIndex,
-                nodeIndexFrom,
+                lastNodeIndex,
                 parentIndex,
-                amountOut
+                route.amountOut
             );
             // Swap parentIndex -> siblingIndex
-            (visitedPools, amountOut) = _getSimpleSwapQuote(
-                visitedPools,
+            (route.visitedPools, route.amountOut) = _getSimpleSwapQuote(
+                route.visitedPools,
                 secondPoolIndex,
                 parentIndex,
                 siblingIndex,
-                amountOut
+                route.amountOut
             );
         }
         // Finally, we traverse down the tree from the lowest common ancestor to "tokenTo".
-        (, , amountOut) = _getMultiSwapFromRootQuote(visitedPools, rootPathTo, depthDiff, nodeTo.depth, amountOut);
+        return _getMultiSwapFromRootQuote(route.visitedPools, rootPathTo, depthDiff, nodeTo.depth, route.amountOut);
     }
 
     /**
@@ -439,33 +425,25 @@ contract UniversalSwap is Ownable {
         uint256 depthFrom,
         uint256 depthTo,
         uint256 amountIn
-    )
-        internal
-        view
-        returns (
-            uint256 nodeIndex,
-            uint256 visitedPools_,
-            uint256 amountOut
-        )
-    {
-        nodeIndex = _extractNodeIndex(rootPath, depthFrom);
-        visitedPools_ = visitedPools;
-        amountOut = amountIn;
+    ) internal view returns (_Route memory route) {
+        uint256 nodeIndex = _extractNodeIndex(rootPath, depthFrom);
         // Traverse down the tree following `rootPath` from `depthFrom` to `depthTo`.
         for (uint256 depth = depthFrom; depth < depthTo; ) {
             // Get the child node
             ++depth;
             uint256 childIndex = _extractNodeIndex(rootPath, depth);
             // Swap nodeIndex -> childIndex
-            (visitedPools_, amountOut) = _getSimpleSwapQuote(
-                visitedPools_,
+            (visitedPools, amountIn) = _getSimpleSwapQuote(
+                visitedPools,
                 _nodes[childIndex].parentPool,
                 nodeIndex,
                 childIndex,
-                amountOut
+                amountIn
             );
             nodeIndex = childIndex;
         }
+        route.visitedPools = visitedPools;
+        route.amountOut = amountIn;
     }
 
     /**
@@ -478,33 +456,25 @@ contract UniversalSwap is Ownable {
         uint256 depthFrom,
         uint256 depthTo,
         uint256 amountIn
-    )
-        internal
-        view
-        returns (
-            uint256 nodeIndex,
-            uint256 visitedPools_,
-            uint256 amountOut
-        )
-    {
-        nodeIndex = _extractNodeIndex(rootPath, depthFrom);
-        amountOut = amountIn;
-        visitedPools_ = visitedPools;
+    ) internal view returns (_Route memory route) {
+        uint256 nodeIndex = _extractNodeIndex(rootPath, depthFrom);
         // Traverse up the tree following `rootPath` from `depthFrom` to `depthTo`.
         for (uint256 depth = depthFrom; depth > depthTo; ) {
             // Get the parent node
             --depth;
             uint256 parentIndex = _extractNodeIndex(rootPath, depth);
             // Swap nodeIndex -> parentIndex
-            (visitedPools_, amountOut) = _getSimpleSwapQuote(
-                visitedPools_,
+            (visitedPools, amountIn) = _getSimpleSwapQuote(
+                visitedPools,
                 _nodes[nodeIndex].parentPool,
                 nodeIndex,
                 parentIndex,
-                amountOut
+                amountIn
             );
             nodeIndex = parentIndex;
         }
+        route.visitedPools = visitedPools;
+        route.amountOut = amountIn;
     }
 
     /**
