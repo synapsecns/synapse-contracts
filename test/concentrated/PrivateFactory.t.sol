@@ -140,7 +140,32 @@ contract PrivateFactoryTest is Test {
         factory.setAdminFeeOnPool(address(0xBEEF), address(token), address(synToken), adminFee);
     }
 
-    // TODO: test skimPool
+    // SEE: PrivatePool.t.sol for skim tests
+
+    function testSkimPoolSucceedsWhenOwner() public {
+        address user = address(0xBEEF);
+        vm.prank(user);
+        address p = factory.deploy(address(token), address(synToken));
+        assertEq(factory.pool(user, address(token), address(synToken)), p); // check exists for setup
+
+        factory.skimPool(user, address(token), address(synToken));
+    }
+
+    function testSkimPoolRevertsWhenNotOwner() public {
+        address user = address(0xBEEF);
+        vm.prank(user);
+        address p = factory.deploy(address(token), address(synToken));
+        assertEq(factory.pool(user, address(token), address(synToken)), p); // check exists for setup
+
+        vm.expectRevert("!owner");
+        vm.prank(user);
+        factory.skimPool(user, address(token), address(synToken));
+    }
+
+    function testSkimPoolRevertsWhenNotPool() public {
+        vm.expectRevert("!pool");
+        factory.skimPool(address(0xBEEF), address(token), address(synToken));
+    }
 
     function testSetOwnerStoresOwner() public {
         address newOwner = address(0xBEEF);

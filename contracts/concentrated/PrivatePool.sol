@@ -133,7 +133,6 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
     /// @notice Adds liquidity to pool
     /// @param amounts The token amounts to add in token decimals
     /// @param deadline The deadline before which liquidity must be added
-    // TODO: test w protocol fees
     function addLiquidity(uint256[] memory amounts, uint256 deadline)
         external
         onlyOwner
@@ -181,7 +180,6 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
     /// @notice Removes liquidity from pool
     /// @param amounts The token amounts to remove in token decimals
     /// @param deadline The deadline before which liquidity must be removed
-    // TODO: test w protocol fees
     function removeLiquidity(uint256[] memory amounts, uint256 deadline)
         external
         onlyOwner
@@ -233,7 +231,6 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
     /// @param dx The amount of token in in token decimals
     /// @param minDy The minimum amount of token out in token decimals
     /// @param deadline The deadline before which swap must be executed
-    // TODO: test w protocol fees
     function swap(
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
@@ -287,7 +284,6 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
 
     /// @notice Transfers protocol fees out
     /// @param recipient The recipient address of the aggregated admin fees
-    // TODO: test
     function skim(address recipient) external onlyFactory {
         uint256[] memory amounts = new uint256[](2);
         amounts[0] = protocolFees0;
@@ -314,14 +310,6 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
 
     /// @notice D liquidity for current pool balance state
     function D() external view returns (uint256) {
-        uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)), true);
-        uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)), false);
-        return _D(xWad, yWad);
-    }
-
-    /// @notice D liquidity for current pool balance state adjusted for accumulated protocol fees
-    // TODO: test
-    function DAdjusted() external view returns (uint256) {
         uint256 xBalAdjusted = IERC20(token0).balanceOf(address(this)) - protocolFees0;
         uint256 yBalAdjusted = IERC20(token1).balanceOf(address(this)) - protocolFees1;
 
@@ -372,7 +360,6 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
     /// @param tokenIndexFrom The index of the token in
     /// @param tokenIndexTo The index of the token out
     /// @param dx The amount of token in in token decimals
-    // TODO: test with protocol fees
     function _calculateSwap(
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,

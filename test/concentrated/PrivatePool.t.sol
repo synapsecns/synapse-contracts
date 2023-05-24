@@ -33,6 +33,7 @@ contract PrivatePoolTest is Test {
         uint256 lpTokenSupply
     );
     event RemoveLiquidity(address indexed provider, uint256[] tokenAmounts, uint256 lpTokenSupply);
+    event Skim(address indexed recipient, uint256[] tokenAmounts);
 
     function setUp() public {
         token = new MockToken("X", "X", 6);
@@ -57,6 +58,43 @@ contract PrivatePoolTest is Test {
         synToken.approve(address(pool), type(uint256).max);
     }
 
+    /// @dev adds to protocol fees0 and fees1
+    function setUpWithSomeSwaps() public {
+        // set up
+        uint256 minDy = 0;
+        uint256 deadline = block.timestamp + 3600;
+        uint256 price = 1.0005e18;
+        vm.prank(OWNER);
+        pool.quote(price);
+
+        vm.prank(OWNER);
+        pool.setSwapFee(0.00005e18);
+
+        vm.prank(address(factory));
+        pool.setAdminFee(0.01e18); // 1% of swap fees ~ 0.005 bps
+
+        // transfer in tokens prior
+        uint256 amountSynToken = 100e6;
+        uint256 amountToken = 100.05e6;
+        vm.prank(OWNER);
+        token.transfer(address(pool), amountToken);
+        vm.prank(OWNER);
+        synToken.transfer(address(pool), amountSynToken);
+
+        // approve pool to spend tokens from owner
+        vm.prank(OWNER);
+        token.approve(address(pool), type(uint256).max);
+        vm.prank(OWNER);
+        synToken.approve(address(pool), type(uint256).max);
+
+        // swap back and forth
+        uint256 dx = 50e6;
+        vm.prank(OWNER);
+        uint256 dy = pool.swap(0, 1, dx, 0, block.timestamp + 3600);
+        vm.prank(OWNER);
+        pool.swap(1, 0, dy, 0, block.timestamp + 3600);
+    }
+
     function testSetup() public {
         assertEq(token.symbol(), "X");
         assertEq(synToken.symbol(), "synX");
@@ -67,6 +105,13 @@ contract PrivatePoolTest is Test {
         assertEq(synToken.allowance(OWNER, address(pool)), type(uint256).max);
         assertEq(factory.bridge(), BRIDGE);
         assertEq(factory.owner(), ADMIN);
+    }
+
+    function testSetupWithSomeSwaps() public {
+        setUpWithSomeSwaps();
+
+        assertEq(pool.protocolFees1(), 25);
+        assertEq(pool.protocolFees0(), 24);
     }
 
     function testConstructor() public {
@@ -302,6 +347,27 @@ contract PrivatePoolTest is Test {
         pool.addLiquidity(amounts, deadline);
     }
 
+    function testAddLiquidityWhenProtocolFeesGtZero() public {
+        setUpWithSomeSwaps();
+        uint256 d = pool.D();
+
+        // add liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = 100e6;
+        amounts[1] = 100.05e6;
+        d += 200.1e18; // in wad
+
+        uint256[] memory fees = new uint256[](2);
+        fees[0] = 0;
+        fees[1] = 0;
+
+        vm.expectEmit(true, false, false, true);
+        emit AddLiquidity(OWNER, amounts, fees, d, d);
+
+        vm.prank(OWNER);
+        pool.addLiquidity(amounts, block.timestamp + 3600);
+    }
+
     function testAddLiquidityWhenNotOwner() public {
         // set up
         uint256 deadline = block.timestamp + 3600;
@@ -507,6 +573,29 @@ contract PrivatePoolTest is Test {
         pool.removeLiquidity(amounts, deadline);
     }
 
+    function testRemoveLiquidityEmitsRemoveLiquidityEventWhenProtocolFeesGtZero() public {
+        setUpWithSomeSwaps();
+
+        uint256 amountSynToken = synToken.balanceOf(address(pool));
+        uint256 amountToken = token.balanceOf(address(pool));
+
+        // remove 25% of the liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amountSynToken / 4;
+        amounts[1] = amountToken / 4;
+
+        uint256 d = 150078703863500000000;
+        uint256[] memory fees = new uint256[](2);
+
+        vm.expectEmit(true, false, false, true);
+        emit RemoveLiquidity(OWNER, amounts, d);
+
+        vm.prank(OWNER);
+        pool.removeLiquidity(amounts, block.timestamp + 3600);
+
+        assertEq(pool.D(), d);
+    }
+
     function testRemoveLiquidityWhenNotOwner() public {
         // set up
         uint256 deadline = block.timestamp + 3600;
@@ -599,6 +688,22 @@ contract PrivatePoolTest is Test {
         pool.removeLiquidity(amounts, deadline);
     }
 
+    function testRemoveLiquidityWhenAmount0GtBalanceAndProtocolFeesGtZero() public {
+        setUpWithSomeSwaps();
+
+        uint256 amountSynToken = synToken.balanceOf(address(pool));
+        uint256 amountToken = token.balanceOf(address(pool));
+
+        // remove 25% of the liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amountSynToken - pool.protocolFees0() + 1;
+        amounts[1] = amountToken / 4;
+
+        vm.expectRevert("dx > max");
+        vm.prank(OWNER);
+        pool.removeLiquidity(amounts, block.timestamp + 3600);
+    }
+
     function testRemoveLiquidityWhenAmount1GtBalance() public {
         // set up
         uint256 deadline = block.timestamp + 3600;
@@ -628,6 +733,22 @@ contract PrivatePoolTest is Test {
         vm.expectRevert("dy > max");
         vm.prank(OWNER);
         pool.removeLiquidity(amounts, deadline);
+    }
+
+    function testRemoveLiquidityWhenAmount1GtBalanceAndProtocolFeesGtZero() public {
+        setUpWithSomeSwaps();
+
+        uint256 amountSynToken = synToken.balanceOf(address(pool));
+        uint256 amountToken = token.balanceOf(address(pool));
+
+        // remove 25% of the liquidity
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = amountSynToken / 4;
+        amounts[1] = amountToken - pool.protocolFees1() + 1;
+
+        vm.expectRevert("dy > max");
+        vm.prank(OWNER);
+        pool.removeLiquidity(amounts, block.timestamp + 3600);
     }
 
     function testRemoveLiquidityWhenPastDeadline() public {
@@ -737,7 +858,7 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
-        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        uint256 adminFee = 0.01e18; // 1% of swap fees ~ 0.05 bps
         vm.prank(address(factory));
         pool.setAdminFee(adminFee);
 
@@ -770,7 +891,7 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
-        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        uint256 adminFee = 0.01e18; // 1% of swap fees ~ 0.05 bps
         vm.prank(address(factory));
         pool.setAdminFee(adminFee);
 
@@ -793,6 +914,22 @@ contract PrivatePoolTest is Test {
         assertEq(pool.calculateSwap(1, 0, dx), dy);
     }
 
+    function testCalculateSwapWhenFrom0To1AndProtocolFeesGtZero() public {
+        setUpWithSomeSwaps();
+
+        uint256 dx = 50e6;
+        uint256 dy = 50022498; // int(P * X * (1 - fee))
+        assertEq(pool.calculateSwap(0, 1, dx), dy);
+    }
+
+    function testCalculateSwapWhenFrom1To0AndProtocolFeesGtZero() public {
+        setUpWithSomeSwaps();
+
+        uint256 dx = 50e6;
+        uint256 dy = 49972513; // int((Y / P) * (1 - fee))
+        assertEq(pool.calculateSwap(1, 0, dx), dy);
+    }
+
     function testCalculateSwapWhenFromNotTokenIndex() public {
         // set up
         uint256 price = 1.0005e18;
@@ -803,7 +940,7 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
-        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        uint256 adminFee = 0.01e18; // 1% of swap fees ~ 0.05 bps
         vm.prank(address(factory));
         pool.setAdminFee(adminFee);
 
@@ -836,7 +973,7 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
-        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        uint256 adminFee = 0.01e18; // 1% of swap fees ~ 0.05 bps
         vm.prank(address(factory));
         pool.setAdminFee(adminFee);
 
@@ -869,7 +1006,7 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
-        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        uint256 adminFee = 0.01e18; // 1% of swap fees ~ 0.05 bps
         vm.prank(address(factory));
         pool.setAdminFee(adminFee);
 
@@ -902,7 +1039,7 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
-        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        uint256 adminFee = 0.01e18; // 1% of swap fees ~ 0.05 bps
         vm.prank(address(factory));
         pool.setAdminFee(adminFee);
 
@@ -925,6 +1062,15 @@ contract PrivatePoolTest is Test {
         assertEq(pool.calculateSwap(0, 1, dx), dy);
     }
 
+    function testCalculateSwapWhenFrom0To1AndDyGtBalanceAndProtocolFeesGtZero() public {
+        setUpWithSomeSwaps();
+
+        uint256 yBalAvail = token.balanceOf(address(pool)) - pool.protocolFees1();
+        uint256 dx = (yBalAvail * 1e18) / pool.P() + 1;
+        uint256 dy = 0;
+        assertEq(pool.calculateSwap(0, 1, dx), dy);
+    }
+
     function testCalculateSwapWhenFrom1To0AndDyGtBalance() public {
         // set up
         uint256 price = 1.0005e18;
@@ -935,7 +1081,7 @@ contract PrivatePoolTest is Test {
         vm.prank(OWNER);
         pool.setSwapFee(fee);
 
-        uint256 adminFee = 0.01e18; // 10% of swap fees ~ 0.05 bps
+        uint256 adminFee = 0.01e18; // 1% of swap fees ~ 0.05 bps
         vm.prank(address(factory));
         pool.setAdminFee(adminFee);
 
@@ -958,6 +1104,15 @@ contract PrivatePoolTest is Test {
         assertEq(pool.calculateSwap(1, 0, dx), dy);
     }
 
+    function testCalculateSwapWhenFrom1To0AndDyGtBalanceAndProtocolFeesGtZero() public {
+        setUpWithSomeSwaps();
+
+        uint256 xBalAvail = synToken.balanceOf(address(pool)) - pool.protocolFees0();
+        uint256 dx = (xBalAvail * pool.P()) / 1e18 + 1;
+        uint256 dy = 0;
+        assertEq(pool.calculateSwap(1, 0, dx), dy);
+    }
+
     function testSwapTransfersFundsWhenFrom0To1() public {
         // set up
         uint256 minDy = 0;
@@ -970,7 +1125,7 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(0.00005e18);
 
         vm.prank(address(factory));
-        pool.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
+        pool.setAdminFee(0.01e18); // 1% of swap fees ~ 0.05 bps
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -1022,7 +1177,7 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(0.00005e18);
 
         vm.prank(address(factory));
-        pool.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
+        pool.setAdminFee(0.01e18); // 1% of swap fees ~ 0.05 bps
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -1074,7 +1229,7 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(0.00005e18);
 
         vm.prank(address(factory));
-        pool.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
+        pool.setAdminFee(0.01e18); // 1% of swap fees ~ 0.05 bps
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -1122,7 +1277,7 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(0.00005e18);
 
         vm.prank(address(factory));
-        pool.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
+        pool.setAdminFee(0.01e18); // 1% of swap fees ~ 0.05 bps
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -1158,6 +1313,66 @@ contract PrivatePoolTest is Test {
         assertEq(pool.protocolFees0(), dyAdminFee);
     }
 
+    function testSwapTransfersFundsWhenFrom0To1AndProtocolFeesGtZero() public {
+        setUpWithSomeSwaps();
+
+        uint256 amountSynToken = synToken.balanceOf(address(pool));
+        uint256 amountToken = token.balanceOf(address(pool));
+
+        // transfer funds from owner to this account
+        uint256 bal = 100e6;
+        address sender = address(this);
+        vm.prank(OWNER);
+        synToken.transfer(sender, bal);
+        vm.prank(OWNER);
+        token.transfer(sender, bal);
+
+        assertEq(token.balanceOf(sender), bal);
+        assertEq(synToken.balanceOf(sender), bal);
+
+        uint256 dx = 50e6;
+        uint256 dy = 50022498; // int(P * X * (1 - fee))
+        uint256 dyAdminFee = 25; // int(P * X * fee * adminFee)
+        synToken.approve(address(pool), type(uint256).max);
+        pool.swap(0, 1, dx, 0, block.timestamp + 3600);
+
+        assertEq(synToken.balanceOf(sender), bal - dx);
+        assertEq(synToken.balanceOf(address(pool)), amountSynToken + dx);
+
+        assertEq(token.balanceOf(sender), bal + dy);
+        assertEq(token.balanceOf(address(pool)), amountToken - dy);
+    }
+
+    function testSwapTransfersFundsWhenFrom1To0AndProtocolFeesGtZero() public {
+        setUpWithSomeSwaps();
+
+        uint256 amountSynToken = synToken.balanceOf(address(pool));
+        uint256 amountToken = token.balanceOf(address(pool));
+
+        // transfer funds from owner to this account
+        uint256 bal = 100e6;
+        address sender = address(this);
+        vm.prank(OWNER);
+        synToken.transfer(sender, bal);
+        vm.prank(OWNER);
+        token.transfer(sender, bal);
+
+        assertEq(token.balanceOf(sender), bal);
+        assertEq(synToken.balanceOf(sender), bal);
+
+        uint256 dx = 50e6;
+        uint256 dy = 49972513; // int((Y / P) * (1 - fee))
+        uint256 dyAdminFee = 24; // int((Y / P) * fee * adminFee)
+        token.approve(address(pool), type(uint256).max);
+        pool.swap(1, 0, dx, 0, block.timestamp + 3600);
+
+        assertEq(token.balanceOf(sender), bal - dx);
+        assertEq(token.balanceOf(address(pool)), amountToken + dx);
+
+        assertEq(synToken.balanceOf(sender), bal + dy);
+        assertEq(synToken.balanceOf(address(pool)), amountSynToken - dy);
+    }
+
     function testSwapEmitsTokenSwapEventWhenFrom0To1() public {
         // set up
         uint256 minDy = 0;
@@ -1171,7 +1386,7 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(fee);
 
         vm.prank(address(factory));
-        pool.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
+        pool.setAdminFee(0.01e18); // 1% of swap fees ~ 0.05 bps
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -1220,7 +1435,7 @@ contract PrivatePoolTest is Test {
         pool.setSwapFee(fee);
 
         vm.prank(address(factory));
-        pool.setAdminFee(0.01e18); // 10% of swap fees ~ 0.05 bps
+        pool.setAdminFee(0.01e18); // 1% of swap fees ~ 0.05 bps
 
         // transfer in tokens prior
         uint256 amountSynToken = 100e6;
@@ -1706,6 +1921,63 @@ contract PrivatePoolTest is Test {
         token.approve(address(pool), type(uint256).max);
         vm.expectRevert("dy < minDy");
         pool.swap(1, 0, dx, minDy, deadline);
+    }
+
+    function testSkimTransfersFunds() public {
+        setUpWithSomeSwaps();
+        address recipient = address(0xBEEF);
+
+        uint256 xBal = synToken.balanceOf(address(pool));
+        uint256 yBal = token.balanceOf(address(pool));
+
+        uint256 xFees = pool.protocolFees0();
+        uint256 yFees = pool.protocolFees1();
+
+        vm.prank(address(factory));
+        pool.skim(recipient);
+
+        assertEq(synToken.balanceOf(address(pool)), xBal - xFees);
+        assertEq(token.balanceOf(address(pool)), yBal - yFees);
+
+        assertEq(synToken.balanceOf(recipient), xFees);
+        assertEq(token.balanceOf(recipient), yFees);
+    }
+
+    function testSkimClearsProtocolFees() public {
+        setUpWithSomeSwaps();
+        address recipient = address(0xBEEF);
+
+        vm.prank(address(factory));
+        pool.skim(recipient);
+
+        assertEq(pool.protocolFees0(), 0);
+        assertEq(pool.protocolFees1(), 0);
+    }
+
+    function testSkimEmitsSkimEvent() public {
+        setUpWithSomeSwaps();
+        address recipient = address(0xBEEF);
+
+        uint256 xFees = pool.protocolFees0();
+        uint256 yFees = pool.protocolFees1();
+
+        uint256[] memory amounts = new uint256[](2);
+        amounts[0] = xFees;
+        amounts[1] = yFees;
+
+        vm.expectEmit(true, false, false, true);
+        emit Skim(recipient, amounts);
+
+        vm.prank(address(factory));
+        pool.skim(recipient);
+    }
+
+    function testSkimRevertsWhenNotFactory() public {
+        setUpWithSomeSwaps();
+        address recipient = address(0xBEEF);
+
+        vm.expectRevert("!factory");
+        pool.skim(recipient);
     }
 
     function testGetTokenWhenIndex0() public {
