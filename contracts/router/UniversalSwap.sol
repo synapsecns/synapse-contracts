@@ -12,21 +12,21 @@ contract UniversalSwap is Ownable {
     /// @notice Struct so store the tree nodes
     /// @param token        Address of the token represented by this node
     /// @param depth        Depth of the node in the tree
-    /// @param parentPool   Index of the pool that connects this node to its parent (0 if root)
+    /// @param poolIndex    Index of the pool that connects this node to its parent (0 if root)
     struct Node {
         address token;
         uint8 depth;
-        uint8 parentPool;
+        uint8 poolIndex;
     }
 
     /// @notice Struct to store the liquidity pools
     /// @dev Module address is used for delegate calls to get swap quotes, token indexes, etc.
     /// Set to address(this) if pool conforms to ISaddle interface. Set to 0x0 if pool is not supported.
     /// @param module       Address of the module contract for this pool
-    /// @param poolIndex    Index of the pool in the `_pools` array
+    /// @param index        Index of the pool in the `_pools` array
     struct Pool {
         address module;
-        uint8 poolIndex;
+        uint8 index;
     }
 
     /// @notice Struct to get around stack too deep error
@@ -61,9 +61,9 @@ contract UniversalSwap is Ownable {
 
     constructor(address bridgeToken) {
         // The root node is always the bridge token
-        _nodes.push(Node({token: bridgeToken, depth: 0, parentPool: 0}));
+        _nodes.push(Node({token: bridgeToken, depth: 0, poolIndex: 0}));
         _rootPath.push(0);
-        // Push the empty pool so that `parentPool` for non-root nodes is never 0
+        // Push the empty pool so that `poolIndex` for non-root nodes is never 0
         _pools.push(address(0));
     }
 
@@ -102,7 +102,7 @@ contract UniversalSwap is Ownable {
             // Index of the newly inserted child node
             uint256 childIndex = _nodes.length;
             require(childIndex < type(uint8).max, "Too many nodes");
-            _nodes.push(Node({token: token, depth: childDepth, parentPool: poolIndex}));
+            _nodes.push(Node({token: token, depth: childDepth, poolIndex: poolIndex}));
             // Push the root path for the new node
             _rootPath.push((childIndex << (8 * childDepth)) | rootPathParent);
         }
@@ -209,12 +209,12 @@ contract UniversalSwap is Ownable {
      */
     function _addPool(address pool, address poolModule) internal returns (bool wasAdded, uint8 poolIndex) {
         if (_poolMap[pool].module != address(0)) {
-            return (false, _poolMap[pool].poolIndex);
+            return (false, _poolMap[pool].index);
         }
         wasAdded = true;
         poolIndex = uint8(_pools.length);
         _pools.push(pool);
-        _poolMap[pool] = Pool({module: poolModule, poolIndex: uint8(poolIndex)});
+        _poolMap[pool] = Pool({module: poolModule, index: uint8(poolIndex)});
     }
 
     /**
@@ -251,8 +251,8 @@ contract UniversalSwap is Ownable {
         // we need to do a direct swap between the two nodes, instead of going through the parent.
         uint256 lastNodeIndex = _extractNodeIndex(rootPathFrom, depthDiff);
         uint256 siblingIndex = _extractNodeIndex(rootPathTo, depthDiff);
-        uint256 firstPoolIndex = _nodes[lastNodeIndex].parentPool;
-        uint256 secondPoolIndex = _nodes[siblingIndex].parentPool;
+        uint256 firstPoolIndex = _nodes[lastNodeIndex].poolIndex;
+        uint256 secondPoolIndex = _nodes[siblingIndex].poolIndex;
         if (firstPoolIndex == secondPoolIndex) {
             // Swap lastNodeIndex -> siblingIndex
             (route.visitedPools, route.amountOut) = _simpleSwap(
@@ -306,7 +306,7 @@ contract UniversalSwap is Ownable {
             // Swap nodeIndex -> childIndex
             (visitedPools, amountIn) = _simpleSwap(
                 visitedPools,
-                _nodes[childIndex].parentPool,
+                _nodes[childIndex].poolIndex,
                 nodeIndex,
                 childIndex,
                 amountIn
@@ -338,7 +338,7 @@ contract UniversalSwap is Ownable {
             // Swap nodeIndex -> parentIndex
             (visitedPools, amountIn) = _simpleSwap(
                 visitedPools,
-                _nodes[nodeIndex].parentPool,
+                _nodes[nodeIndex].poolIndex,
                 nodeIndex,
                 parentIndex,
                 amountIn
@@ -421,8 +421,8 @@ contract UniversalSwap is Ownable {
         // we need to do a direct swap between the two nodes, instead of going through the parent.
         uint256 lastNodeIndex = _extractNodeIndex(rootPathFrom, depthDiff);
         uint256 siblingIndex = _extractNodeIndex(rootPathTo, depthDiff);
-        uint256 firstPoolIndex = _nodes[lastNodeIndex].parentPool;
-        uint256 secondPoolIndex = _nodes[siblingIndex].parentPool;
+        uint256 firstPoolIndex = _nodes[lastNodeIndex].poolIndex;
+        uint256 secondPoolIndex = _nodes[siblingIndex].poolIndex;
         if (firstPoolIndex == secondPoolIndex) {
             // Swap lastNodeIndex -> siblingIndex
             (route.visitedPools, route.amountOut) = _getSimpleSwapQuote(
@@ -475,7 +475,7 @@ contract UniversalSwap is Ownable {
             // Swap nodeIndex -> childIndex
             (visitedPools, amountIn) = _getSimpleSwapQuote(
                 visitedPools,
-                _nodes[childIndex].parentPool,
+                _nodes[childIndex].poolIndex,
                 nodeIndex,
                 childIndex,
                 amountIn
@@ -506,7 +506,7 @@ contract UniversalSwap is Ownable {
             // Swap nodeIndex -> parentIndex
             (visitedPools, amountIn) = _getSimpleSwapQuote(
                 visitedPools,
-                _nodes[nodeIndex].parentPool,
+                _nodes[nodeIndex].poolIndex,
                 nodeIndex,
                 parentIndex,
                 amountIn
