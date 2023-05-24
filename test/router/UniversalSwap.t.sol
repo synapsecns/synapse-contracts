@@ -140,7 +140,7 @@ contract UniversalSwapTest is Test {
         uint256 amountOut = swap.calculateSwap(tokenFrom, tokenTo, amountIn);
         vm.prank(user);
         swap.swap(tokenFrom, tokenTo, amountIn, amountOut, block.timestamp);
-        assertEq(MockERC20(tokenIn).balanceOf(user), 0);
+        if (tokenIn != tokenOut) assertEq(MockERC20(tokenIn).balanceOf(user), 0);
         assertEq(MockERC20(tokenOut).balanceOf(user), amountOut);
     }
 
