@@ -121,6 +121,15 @@ contract UniversalSwapTest is Test {
         assertEq(swap.getToken(7), address(token3));
     }
 
+    function test_duplicatedPool() public {
+        test_complexSetup();
+        // 6: T1 + (8: BT, 9: T0)
+        swap.addPool(6, address(poolB01), address(0), 3);
+        assertEq(swap.tokenNodesAmount(), 10);
+        assertEq(swap.getToken(8), address(bridgeToken));
+        assertEq(swap.getToken(9), address(token0));
+    }
+
     function test_swap(
         uint8 tokenFrom,
         uint8 tokenTo,
@@ -142,6 +151,58 @@ contract UniversalSwapTest is Test {
         swap.swap(tokenFrom, tokenTo, amountIn, amountOut, block.timestamp);
         if (tokenIn != tokenOut) assertEq(MockERC20(tokenIn).balanceOf(user), 0);
         assertEq(MockERC20(tokenOut).balanceOf(user), amountOut);
+    }
+
+    function test_calculateSwap_samePoolTwice(
+        uint8 tokenFrom,
+        uint8 tokenTo,
+        uint256 amount
+    ) public {
+        uint8 tokensAmount = 10;
+        tokenFrom = tokenFrom % tokensAmount;
+        tokenTo = tokenTo % tokensAmount;
+        amount = amount % 1000;
+        vm.assume(tokenFrom != tokenTo);
+        vm.assume(amount > 0);
+        test_duplicatedPool();
+        address tokenIn = swap.getToken(tokenFrom);
+        uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
+        uint256 amountOut = swap.calculateSwap(tokenFrom, tokenTo, amountIn);
+        // Swaps betweens nodes [1..4] and [8..9] contain poolB01 twice, so quote should be zero
+        if (tokenFrom >= 1 && tokenFrom <= 4 && tokenTo >= 8 && tokenTo <= 9) {
+            assertEq(amountOut, 0);
+        } else if (tokenFrom >= 8 && tokenFrom <= 9 && tokenTo >= 1 && tokenTo <= 4) {
+            assertEq(amountOut, 0);
+        } else {
+            // Other quotes should be non-zero
+            assertGt(amountOut, 0);
+        }
+    }
+
+    function test_swap_samePoolTwice(
+        uint8 tokenFrom,
+        uint8 tokenTo,
+        uint256 amount
+    ) public {
+        uint8 tokensAmount = 10;
+        tokenFrom = tokenFrom % tokensAmount;
+        tokenTo = tokenTo % tokensAmount;
+        amount = amount % 1000;
+        vm.assume(tokenFrom != tokenTo);
+        vm.assume(amount > 0);
+        test_duplicatedPool();
+        address tokenIn = swap.getToken(tokenFrom);
+        uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
+        prepareUser(tokenIn, amountIn);
+        address tokenOut = swap.getToken(tokenTo);
+        uint256 amountOut = swap.calculateSwap(tokenFrom, tokenTo, amountIn);
+        vm.prank(user);
+        if (amountOut == 0) vm.expectRevert("Can't use same pool twice");
+        swap.swap(tokenFrom, tokenTo, amountIn, amountOut, block.timestamp);
+        if (amountOut > 0) {
+            if (tokenIn != tokenOut) assertEq(MockERC20(tokenIn).balanceOf(user), 0);
+            assertEq(MockERC20(tokenOut).balanceOf(user), amountOut);
+        }
     }
 
     function prepareUser(address token, uint256 amount) public {
