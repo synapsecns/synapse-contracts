@@ -275,14 +275,14 @@ contract UniversalSwap is Ownable {
     ) internal returns (uint256 nodeIndex, uint256 amountOut) {
         nodeIndex = _extractNodeIndex(rootPath, depthFrom);
         amountOut = amountIn;
-        // Traverse up the tree following `rootPath` from `depthFrom` to `depthTo`.
-        for (uint256 depth = depthFrom; depth > depthTo; ) {
-            // Get the parent node
-            --depth;
-            uint256 parentIndex = _extractNodeIndex(rootPath, depth);
-            // Swap nodeIndex -> parentIndex
-            amountOut = _simpleSwap(_nodes[nodeIndex].parentPool, nodeIndex, parentIndex, amountOut);
-            nodeIndex = parentIndex;
+        // Traverse down the tree following `rootPath` from `depthFrom` to `depthTo`.
+        for (uint256 depth = depthFrom; depth < depthTo; ) {
+            // Get the child node
+            ++depth;
+            uint256 childIndex = _extractNodeIndex(rootPath, depth);
+            // Swap nodeIndex -> childIndex
+            amountOut = _simpleSwap(_nodes[childIndex].parentPool, nodeIndex, childIndex, amountOut);
+            nodeIndex = childIndex;
         }
     }
 
@@ -299,14 +299,14 @@ contract UniversalSwap is Ownable {
     ) internal returns (uint256 nodeIndex, uint256 amountOut) {
         nodeIndex = _extractNodeIndex(rootPath, depthFrom);
         amountOut = amountIn;
-        // Traverse down the tree following `rootPath` from `depthFrom` to `depthTo`.
-        for (uint256 depth = depthFrom; depth < depthTo; ) {
-            // Get the child node
-            ++depth;
-            uint256 childIndex = _extractNodeIndex(rootPath, depth);
-            // Swap nodeIndex -> childIndex
-            amountOut = _simpleSwap(_nodes[childIndex].parentPool, nodeIndex, childIndex, amountOut);
-            nodeIndex = childIndex;
+        // Traverse up the tree following `rootPath` from `depthFrom` to `depthTo`.
+        for (uint256 depth = depthFrom; depth > depthTo; ) {
+            // Get the parent node
+            --depth;
+            uint256 parentIndex = _extractNodeIndex(rootPath, depth);
+            // Swap nodeIndex -> parentIndex
+            amountOut = _simpleSwap(_nodes[nodeIndex].parentPool, nodeIndex, parentIndex, amountOut);
+            nodeIndex = parentIndex;
         }
     }
 
