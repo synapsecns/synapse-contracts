@@ -69,7 +69,6 @@ contract PrivateFactory is IPrivateFactory {
     /// @param tokenA The address of token A
     /// @param tokenB The address of token B
     /// @param fee The new admin fee
-    // TODO: test
     function setAdminFeeOnPool(
         address lp,
         address tokenA,
