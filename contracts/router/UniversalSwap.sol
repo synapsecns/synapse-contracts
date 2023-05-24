@@ -134,7 +134,7 @@ contract UniversalSwap is Ownable {
         );
         // Pull initial token from the user
         IERC20(_nodes[tokenIndexFrom].token).safeTransferFrom(msg.sender, address(this), dx);
-        amountOut = _multiSwap(tokenIndexFrom, tokenIndexTo, dx);
+        amountOut = _multiSwap(tokenIndexFrom, tokenIndexTo, dx).amountOut;
         require(amountOut >= minDy, "Swap didn't result in min tokens");
         // Transfer the tokens to the user
         IERC20(_nodes[tokenIndexTo].token).safeTransfer(msg.sender, amountOut);
@@ -226,7 +226,7 @@ contract UniversalSwap is Ownable {
         uint256 nodeIndexFrom,
         uint256 nodeIndexTo,
         uint256 amountIn
-    ) internal returns (uint256 amountOut) {
+    ) internal returns (_Route memory route) {
         // Check if either of the nodes is the root
         Node memory nodeTo = _nodes[nodeIndexTo];
         uint256 rootPathTo = _rootPath[nodeIndexTo];
@@ -238,34 +238,51 @@ contract UniversalSwap is Ownable {
         if (depthDiff > nodeTo.depth) {
             // Path from "tokenFrom" to root includes "tokenTo",
             // so we simply go from "tokenFrom" to "tokenTo" in the "to root" direction.
-            (, amountOut) = _multiSwapToRoot(rootPathFrom, nodeFrom.depth, nodeTo.depth, amountIn);
-            return amountOut;
+            return _multiSwapToRoot(0, rootPathFrom, nodeFrom.depth, nodeTo.depth, amountIn);
         }
         if (depthDiff > nodeFrom.depth) {
             // Path from "tokenTo" to root includes "tokenFrom",
             // so we simply go from "tokenTo" to "tokenFrom" in the "from root" direction.
-            (, amountOut) = _multiSwapFromRoot(rootPathTo, nodeFrom.depth, nodeTo.depth, amountIn);
-            return amountOut;
+            return _multiSwapFromRoot(0, rootPathTo, nodeFrom.depth, nodeTo.depth, amountIn);
         }
         // First, we traverse up the tree from "tokenFrom" to one level deeper the lowest common ancestor.
-        (nodeIndexFrom, amountOut) = _multiSwapToRoot(rootPathFrom, nodeFrom.depth, depthDiff, amountIn);
+        route = _multiSwapToRoot(0, rootPathFrom, nodeFrom.depth, depthDiff, amountIn);
         // Check if we need to do a sibling swap. When the two nodes are connected to the same parent via the same pool,
         // we need to do a direct swap between the two nodes, instead of going through the parent.
+        uint256 lastNodeIndex = _extractNodeIndex(rootPathFrom, depthDiff);
         uint256 siblingIndex = _extractNodeIndex(rootPathTo, depthDiff);
-        uint256 firstPoolIndex = _nodes[nodeIndexFrom].parentPool;
+        uint256 firstPoolIndex = _nodes[lastNodeIndex].parentPool;
         uint256 secondPoolIndex = _nodes[siblingIndex].parentPool;
         if (firstPoolIndex == secondPoolIndex) {
-            // Swap nodeIndexFrom -> siblingIndex
-            amountOut = _simpleSwap(firstPoolIndex, nodeIndexFrom, siblingIndex, amountOut);
+            // Swap lastNodeIndex -> siblingIndex
+            (route.visitedPools, route.amountOut) = _simpleSwap(
+                route.visitedPools,
+                firstPoolIndex,
+                lastNodeIndex,
+                siblingIndex,
+                route.amountOut
+            );
         } else {
-            // Swap nodeIndexFrom -> parentIndex
+            // Swap lastNodeIndex -> parentIndex
             uint256 parentIndex = _extractNodeIndex(rootPathFrom, depthDiff - 1);
-            amountOut = _simpleSwap(firstPoolIndex, nodeIndexFrom, parentIndex, amountOut);
+            (route.visitedPools, route.amountOut) = _simpleSwap(
+                route.visitedPools,
+                firstPoolIndex,
+                lastNodeIndex,
+                parentIndex,
+                route.amountOut
+            );
             // Swap parentIndex -> siblingIndex
-            amountOut = _simpleSwap(secondPoolIndex, parentIndex, siblingIndex, amountOut);
+            (route.visitedPools, route.amountOut) = _simpleSwap(
+                route.visitedPools,
+                secondPoolIndex,
+                parentIndex,
+                siblingIndex,
+                route.amountOut
+            );
         }
         // Finally, we traverse down the tree from the lowest common ancestor to "tokenTo".
-        (, amountOut) = _multiSwapFromRoot(rootPathTo, depthDiff, nodeTo.depth, amountOut);
+        return _multiSwapFromRoot(route.visitedPools, rootPathTo, depthDiff, nodeTo.depth, route.amountOut);
     }
 
     /**
@@ -274,22 +291,30 @@ contract UniversalSwap is Ownable {
      * Assumes that the initial token is already in this contract.
      */
     function _multiSwapFromRoot(
+        uint256 visitedPools,
         uint256 rootPath,
         uint256 depthFrom,
         uint256 depthTo,
         uint256 amountIn
-    ) internal returns (uint256 nodeIndex, uint256 amountOut) {
-        nodeIndex = _extractNodeIndex(rootPath, depthFrom);
-        amountOut = amountIn;
+    ) internal returns (_Route memory route) {
+        uint256 nodeIndex = _extractNodeIndex(rootPath, depthFrom);
         // Traverse down the tree following `rootPath` from `depthFrom` to `depthTo`.
         for (uint256 depth = depthFrom; depth < depthTo; ) {
             // Get the child node
             ++depth;
             uint256 childIndex = _extractNodeIndex(rootPath, depth);
             // Swap nodeIndex -> childIndex
-            amountOut = _simpleSwap(_nodes[childIndex].parentPool, nodeIndex, childIndex, amountOut);
+            (visitedPools, amountIn) = _simpleSwap(
+                visitedPools,
+                _nodes[childIndex].parentPool,
+                nodeIndex,
+                childIndex,
+                amountIn
+            );
             nodeIndex = childIndex;
         }
+        route.visitedPools = visitedPools;
+        route.amountOut = amountIn;
     }
 
     /**
@@ -298,22 +323,30 @@ contract UniversalSwap is Ownable {
      * Assumes that the initial token is already in this contract.
      */
     function _multiSwapToRoot(
+        uint256 visitedPools,
         uint256 rootPath,
         uint256 depthFrom,
         uint256 depthTo,
         uint256 amountIn
-    ) internal returns (uint256 nodeIndex, uint256 amountOut) {
-        nodeIndex = _extractNodeIndex(rootPath, depthFrom);
-        amountOut = amountIn;
+    ) internal returns (_Route memory route) {
+        uint256 nodeIndex = _extractNodeIndex(rootPath, depthFrom);
         // Traverse up the tree following `rootPath` from `depthFrom` to `depthTo`.
         for (uint256 depth = depthFrom; depth > depthTo; ) {
             // Get the parent node
             --depth;
             uint256 parentIndex = _extractNodeIndex(rootPath, depth);
             // Swap nodeIndex -> parentIndex
-            amountOut = _simpleSwap(_nodes[nodeIndex].parentPool, nodeIndex, parentIndex, amountOut);
+            (visitedPools, amountIn) = _simpleSwap(
+                visitedPools,
+                _nodes[nodeIndex].parentPool,
+                nodeIndex,
+                parentIndex,
+                amountIn
+            );
             nodeIndex = parentIndex;
         }
+        route.visitedPools = visitedPools;
+        route.amountOut = amountIn;
     }
 
     /**
@@ -321,11 +354,18 @@ contract UniversalSwap is Ownable {
      * Assumes that the initial token is already in this contract.
      */
     function _simpleSwap(
+        uint256 visitedPools,
         uint256 poolIndex,
         uint256 nodeIndexFrom,
         uint256 nodeIndexTo,
         uint256 amountIn
-    ) internal returns (uint256 amountOut) {
+    ) internal returns (uint256 visitedPools_, uint256 amountOut) {
+        if (visitedPools & (1 << poolIndex) != 0) {
+            // If we already used this pool on the path, we can't use it again.
+            revert("Can't use same pool twice");
+        }
+        // Mark the pool as visited
+        visitedPools_ = visitedPools | (1 << poolIndex);
         address pool = _pools[poolIndex];
         address poolLogic = _poolMap[pool].logic;
         address tokenFrom = _nodes[nodeIndexFrom].token;
