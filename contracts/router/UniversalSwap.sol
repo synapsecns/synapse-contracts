@@ -56,9 +56,9 @@ contract UniversalSwap is Ownable {
     constructor(address bridgeToken) {
         // The root node is always the bridge token
         _nodes.push(Node({token: bridgeToken, depth: 0, parentPool: 0}));
+        _rootPath.push(0);
         // Push the empty pool so that `parentPool` for non-root nodes is never 0
         _pools.push(address(0));
-        // _rootPath for the root is always 0, so we can skip it
     }
 
     // ═════════════════════════════════════════════════ EXTERNAL ══════════════════════════════════════════════════════
@@ -80,6 +80,7 @@ contract UniversalSwap is Ownable {
         address[] memory tokens = _getPoolTokens(poolLogic, pool, tokensAmount);
         bool nodeFound = false;
         uint8 childDepth = node.depth + 1;
+        uint256 rootPathParent = _rootPath[nodeIndex];
         for (uint256 i = 0; i < tokensAmount; ++i) {
             address token = tokens[i];
             // Save token indexes if this is a new pool
@@ -92,7 +93,12 @@ contract UniversalSwap is Ownable {
                 nodeFound = true;
                 continue;
             }
+            // Index of the newly inserted child node
+            uint256 childIndex = _nodes.length;
+            require(childIndex < type(uint8).max, "Too many nodes");
             _nodes.push(Node({token: token, depth: childDepth, parentPool: poolIndex}));
+            // Push the root path for the new node
+            _rootPath.push((childIndex << (8 * childDepth)) | rootPathParent);
         }
         require(nodeFound, "Node token not found in the pool");
     }
