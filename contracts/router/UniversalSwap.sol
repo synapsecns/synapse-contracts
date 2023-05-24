@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {IndexedToken, IPoolModule} from "./interfaces/IPoolModule.sol";
 import {ISaddle} from "./interfaces/ISaddle.sol";
 import {TokenTree} from "./tree/TokenTree.sol";
 
@@ -140,7 +141,19 @@ contract UniversalSwap is TokenTree, Ownable {
                 deadline: type(uint256).max
             });
         } else {
-            // TODO: implement swap using a delegate call to poolModule
+            // poolSwap(pool, tokenFrom, tokenTo, amountIn)
+            bytes memory payload = abi.encodeWithSelector(
+                IPoolModule.poolSwap.selector,
+                pool,
+                IndexedToken({index: tokenIndexes[pool][tokenFrom], token: tokenFrom}),
+                IndexedToken({index: tokenIndexes[pool][tokenTo], token: tokenTo}),
+                amountIn
+            );
+            // Delegate swap logic to Pool Module. It should approve the pool to spend the token, if needed.
+            // Note that poolModule address is set by the contract owner, so it's safe to delegatecall it.
+            (bool success, bytes memory result) = poolModule.delegatecall(payload);
+            require(success, "Swap failed");
+            amountOut = abi.decode(result, (uint256));
         }
     }
 
@@ -162,7 +175,15 @@ contract UniversalSwap is TokenTree, Ownable {
                 dx: amountIn
             });
         } else {
-            // TODO: get quote using delegate call to poolModule
+            // Ask Pool Module to calculate the quote
+            address tokenFrom = _nodes[nodeIndexFrom].token;
+            address tokenTo = _nodes[nodeIndexTo].token;
+            amountOut = IPoolModule(poolModule).getPoolQuote(
+                pool,
+                IndexedToken({index: tokenIndexes[pool][tokenFrom], token: tokenFrom}),
+                IndexedToken({index: tokenIndexes[pool][tokenTo], token: tokenTo}),
+                amountIn
+            );
         }
     }
 
@@ -179,7 +200,8 @@ contract UniversalSwap is TokenTree, Ownable {
                 tokens[i] = ISaddle(pool).getToken(uint8(i));
             }
         } else {
-            // TODO: get tokens using delegate call to poolModule
+            // Ask Pool Module to return the tokens
+            tokens = IPoolModule(poolModule).getPoolTokens(pool, tokensAmount);
         }
     }
 }
