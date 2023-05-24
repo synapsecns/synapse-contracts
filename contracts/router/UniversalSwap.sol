@@ -130,6 +130,8 @@ contract UniversalSwap is Ownable {
         IERC20(_nodes[tokenIndexFrom].token).safeTransferFrom(msg.sender, address(this), dx);
         amountOut = _multiSwap(tokenIndexFrom, tokenIndexTo, dx);
         require(amountOut >= minDy, "Swap didn't result in min tokens");
+        // Transfer the tokens to the user
+        IERC20(_nodes[tokenIndexTo].token).safeTransfer(msg.sender, amountOut);
     }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
