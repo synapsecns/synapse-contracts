@@ -358,21 +358,40 @@ contract UniversalSwap is Ownable {
         uint256 rootPathFrom = _rootPath[nodeIndexFrom];
         // Find the depth where the paths diverge
         uint256 depthDiff = _depthDiff(rootPathFrom, rootPathTo);
+        uint256 visitedPools = 0;
         // Check that the nodes are not on the same branch
         if (depthDiff > nodeTo.depth) {
             // Path from "tokenFrom" to root includes "tokenTo",
             // so we simply go from "tokenFrom" to "tokenTo" in the "to root" direction.
-            (, amountOut) = _getMultiSwapToRootQuote(rootPathFrom, nodeFrom.depth, nodeTo.depth, amountIn);
+            (, , amountOut) = _getMultiSwapToRootQuote(
+                visitedPools,
+                rootPathFrom,
+                nodeFrom.depth,
+                nodeTo.depth,
+                amountIn
+            );
             return amountOut;
         }
         if (depthDiff > nodeFrom.depth) {
             // Path from "tokenTo" to root includes "tokenFrom",
             // so we simply go from "tokenTo" to "tokenFrom" in the "from root" direction.
-            (, amountOut) = _getMultiSwapFromRootQuote(rootPathTo, nodeFrom.depth, nodeTo.depth, amountIn);
+            (, , amountOut) = _getMultiSwapFromRootQuote(
+                visitedPools,
+                rootPathTo,
+                nodeFrom.depth,
+                nodeTo.depth,
+                amountIn
+            );
             return amountOut;
         }
         // First, we traverse up the tree from "tokenFrom" to one level deeper the lowest common ancestor.
-        (nodeIndexFrom, amountOut) = _getMultiSwapToRootQuote(rootPathFrom, nodeFrom.depth, depthDiff, amountIn);
+        (nodeIndexFrom, visitedPools, amountOut) = _getMultiSwapToRootQuote(
+            visitedPools,
+            rootPathFrom,
+            nodeFrom.depth,
+            depthDiff,
+            amountIn
+        );
         // Check if we need to do a sibling swap. When the two nodes are connected to the same parent via the same pool,
         // we need to do a direct swap between the two nodes, instead of going through the parent.
         uint256 siblingIndex = _extractNodeIndex(rootPathTo, depthDiff);
@@ -380,16 +399,34 @@ contract UniversalSwap is Ownable {
         uint256 secondPoolIndex = _nodes[siblingIndex].parentPool;
         if (firstPoolIndex == secondPoolIndex) {
             // Swap nodeIndexFrom -> siblingIndex
-            amountOut = _getSimpleSwapQuote(firstPoolIndex, nodeIndexFrom, siblingIndex, amountOut);
+            (visitedPools, amountOut) = _getSimpleSwapQuote(
+                visitedPools,
+                firstPoolIndex,
+                nodeIndexFrom,
+                siblingIndex,
+                amountOut
+            );
         } else {
             // Swap nodeIndexFrom -> parentIndex
             uint256 parentIndex = _extractNodeIndex(rootPathFrom, depthDiff - 1);
-            amountOut = _getSimpleSwapQuote(firstPoolIndex, nodeIndexFrom, parentIndex, amountOut);
+            (visitedPools, amountOut) = _getSimpleSwapQuote(
+                visitedPools,
+                firstPoolIndex,
+                nodeIndexFrom,
+                parentIndex,
+                amountOut
+            );
             // Swap parentIndex -> siblingIndex
-            amountOut = _getSimpleSwapQuote(secondPoolIndex, parentIndex, siblingIndex, amountOut);
+            (visitedPools, amountOut) = _getSimpleSwapQuote(
+                visitedPools,
+                secondPoolIndex,
+                parentIndex,
+                siblingIndex,
+                amountOut
+            );
         }
         // Finally, we traverse down the tree from the lowest common ancestor to "tokenTo".
-        (, amountOut) = _getMultiSwapFromRootQuote(rootPathTo, depthDiff, nodeTo.depth, amountOut);
+        (, , amountOut) = _getMultiSwapFromRootQuote(visitedPools, rootPathTo, depthDiff, nodeTo.depth, amountOut);
     }
 
     /**
@@ -397,12 +434,22 @@ contract UniversalSwap is Ownable {
      * when going in "from root direction" via the given `rootPath` from `depthFrom` to `depthTo`.
      */
     function _getMultiSwapFromRootQuote(
+        uint256 visitedPools,
         uint256 rootPath,
         uint256 depthFrom,
         uint256 depthTo,
         uint256 amountIn
-    ) internal view returns (uint256 nodeIndex, uint256 amountOut) {
+    )
+        internal
+        view
+        returns (
+            uint256 nodeIndex,
+            uint256 visitedPools_,
+            uint256 amountOut
+        )
+    {
         nodeIndex = _extractNodeIndex(rootPath, depthFrom);
+        visitedPools_ = visitedPools;
         amountOut = amountIn;
         // Traverse down the tree following `rootPath` from `depthFrom` to `depthTo`.
         for (uint256 depth = depthFrom; depth < depthTo; ) {
@@ -410,7 +457,13 @@ contract UniversalSwap is Ownable {
             ++depth;
             uint256 childIndex = _extractNodeIndex(rootPath, depth);
             // Swap nodeIndex -> childIndex
-            amountOut = _getSimpleSwapQuote(_nodes[childIndex].parentPool, nodeIndex, childIndex, amountOut);
+            (visitedPools_, amountOut) = _getSimpleSwapQuote(
+                visitedPools_,
+                _nodes[childIndex].parentPool,
+                nodeIndex,
+                childIndex,
+                amountOut
+            );
             nodeIndex = childIndex;
         }
     }
@@ -420,20 +473,36 @@ contract UniversalSwap is Ownable {
      * when going in "to root direction" via the given `rootPath` from `depthFrom` to `depthTo`.
      */
     function _getMultiSwapToRootQuote(
+        uint256 visitedPools,
         uint256 rootPath,
         uint256 depthFrom,
         uint256 depthTo,
         uint256 amountIn
-    ) internal view returns (uint256 nodeIndex, uint256 amountOut) {
+    )
+        internal
+        view
+        returns (
+            uint256 nodeIndex,
+            uint256 visitedPools_,
+            uint256 amountOut
+        )
+    {
         nodeIndex = _extractNodeIndex(rootPath, depthFrom);
         amountOut = amountIn;
+        visitedPools_ = visitedPools;
         // Traverse up the tree following `rootPath` from `depthFrom` to `depthTo`.
         for (uint256 depth = depthFrom; depth > depthTo; ) {
             // Get the parent node
             --depth;
             uint256 parentIndex = _extractNodeIndex(rootPath, depth);
             // Swap nodeIndex -> parentIndex
-            amountOut = _getSimpleSwapQuote(_nodes[nodeIndex].parentPool, nodeIndex, parentIndex, amountOut);
+            (visitedPools_, amountOut) = _getSimpleSwapQuote(
+                visitedPools_,
+                _nodes[nodeIndex].parentPool,
+                nodeIndex,
+                parentIndex,
+                amountOut
+            );
             nodeIndex = parentIndex;
         }
     }
@@ -442,11 +511,19 @@ contract UniversalSwap is Ownable {
      * @dev Calculates the amount of tokens that will be received from a simple swap.
      */
     function _getSimpleSwapQuote(
+        uint256 visitedPools,
         uint256 poolIndex,
         uint256 nodeIndexFrom,
         uint256 nodeIndexTo,
         uint256 amountIn
-    ) internal view returns (uint256 amountOut) {
+    ) internal view returns (uint256 visitedPools_, uint256 amountOut) {
+        if (visitedPools & (1 << poolIndex) != 0) {
+            // If we already used this pool on the path, we can't use it again.
+            // Return the full mask and zero amount to indicate that the swap is not possible.
+            return (type(uint256).max, 0);
+        }
+        // Otherwise, mark the pool as visited
+        visitedPools_ = visitedPools | (1 << poolIndex);
         address pool = _pools[poolIndex];
         address poolLogic = _poolMap[pool].logic;
         if (poolLogic == address(this)) {
