@@ -31,7 +31,10 @@ contract UniversalSwapTest is Test {
 
     address public user;
 
-    function setUp() public {
+    // Not assigned in this test, but could be assigned in a child test
+    address public poolModule;
+
+    function setUp() public virtual {
         user = makeAddr("User");
 
         bridgeToken = setupERC20("BT", 18);
@@ -95,15 +98,15 @@ contract UniversalSwapTest is Test {
         // 0: BT
         test_constructor();
         // 0: BT + (1: T0, 2: T1)
-        swap.addPool(0, address(poolB01), address(0), 3);
+        swap.addPool(0, address(poolB01), poolModule, 3);
         // 1: TO + (3: T1)
-        swap.addPool(1, address(pool01), address(0), 2);
+        swap.addPool(1, address(pool01), poolModule, 2);
         // 1: T0 + (4: T2)
-        swap.addPool(1, address(pool02), address(0), 2);
+        swap.addPool(1, address(pool02), poolModule, 2);
         // 0: BT + (5: T2)
-        swap.addPool(0, address(poolB2), address(0), 2);
+        swap.addPool(0, address(poolB2), poolModule, 2);
         // 5: T2 + (6: T1, 7: T3)
-        swap.addPool(5, address(pool123), address(0), 3);
+        swap.addPool(5, address(pool123), poolModule, 3);
         assertEq(swap.tokenNodesAmount(), 8);
         // Initial setup:
         assertEq(swap.getToken(0), address(bridgeToken));
@@ -124,7 +127,7 @@ contract UniversalSwapTest is Test {
     function test_duplicatedPool() public {
         test_complexSetup();
         // 6: T1 + (8: BT, 9: T0)
-        swap.addPool(6, address(poolB01), address(0), 3);
+        swap.addPool(6, address(poolB01), poolModule, 3);
         assertEq(swap.tokenNodesAmount(), 10);
         assertEq(swap.getToken(8), address(bridgeToken));
         assertEq(swap.getToken(9), address(token0));
