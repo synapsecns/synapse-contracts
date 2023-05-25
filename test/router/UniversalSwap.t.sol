@@ -126,11 +126,11 @@ contract UniversalSwapTest is Test {
 
     function test_duplicatedPool() public {
         test_complexSetup();
-        // 6: T1 + (8: BT, 9: T0)
-        swap.addPool(6, address(poolB01), poolModule, 3);
+        // 4: T2 + (8: T1, 9: T3)
+        swap.addPool(4, address(pool123), poolModule, 3);
         assertEq(swap.tokenNodesAmount(), 10);
-        assertEq(swap.getToken(8), address(bridgeToken));
-        assertEq(swap.getToken(9), address(token0));
+        assertEq(swap.getToken(8), address(token1));
+        assertEq(swap.getToken(9), address(token3));
     }
 
     function test_swap(
@@ -145,6 +145,7 @@ contract UniversalSwapTest is Test {
         vm.assume(tokenFrom != tokenTo);
         vm.assume(amount > 0);
         test_complexSetup();
+        require(swap.tokenNodesAmount() == tokensAmount, "Setup failed");
         address tokenIn = swap.getToken(tokenFrom);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
         prepareUser(tokenIn, amountIn);
@@ -168,13 +169,14 @@ contract UniversalSwapTest is Test {
         vm.assume(tokenFrom != tokenTo);
         vm.assume(amount > 0);
         test_duplicatedPool();
+        require(swap.tokenNodesAmount() == tokensAmount, "Setup failed");
         address tokenIn = swap.getToken(tokenFrom);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
         uint256 amountOut = swap.calculateSwap(tokenFrom, tokenTo, amountIn);
-        // Swaps betweens nodes [1..4] and [8..9] contain poolB01 twice, so quote should be zero
-        if (tokenFrom >= 1 && tokenFrom <= 4 && tokenTo >= 8 && tokenTo <= 9) {
+        // Swaps betweens nodes [6..7] and [8..9] contain pool123 twice, so quote should be zero
+        if (tokenFrom >= 6 && tokenFrom <= 7 && tokenTo >= 8 && tokenTo <= 9) {
             assertEq(amountOut, 0);
-        } else if (tokenFrom >= 8 && tokenFrom <= 9 && tokenTo >= 1 && tokenTo <= 4) {
+        } else if (tokenFrom >= 8 && tokenFrom <= 9 && tokenTo >= 6 && tokenTo <= 7) {
             assertEq(amountOut, 0);
         } else {
             // Other quotes should be non-zero
@@ -194,6 +196,7 @@ contract UniversalSwapTest is Test {
         vm.assume(tokenFrom != tokenTo);
         vm.assume(amount > 0);
         test_duplicatedPool();
+        require(swap.tokenNodesAmount() == tokensAmount, "Setup failed");
         address tokenIn = swap.getToken(tokenFrom);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
         prepareUser(tokenIn, amountIn);
