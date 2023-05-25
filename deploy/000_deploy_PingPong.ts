@@ -12,6 +12,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       [
         CHAIN_ID.DFK_TESTNET,
         CHAIN_ID.HARMONY_TESTNET,
+        CHAIN_ID.KLAYTN_TESTNET,
         CHAIN_ID.AVALANCHE,
         CHAIN_ID.FUJI,
         CHAIN_ID.GOERLI,

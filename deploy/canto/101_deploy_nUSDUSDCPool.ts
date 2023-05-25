@@ -25,14 +25,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     TOKEN_ADDRESSES = [(await get("nUSD")).address, (await get("USDC")).address];
     TOKEN_DECIMALS = [18, 6];
 
-    const LP_TOKEN_NAME = "nUSD NOTE LP";
+    const LP_TOKEN_NAME = "nUSD USDC LP";
     const LP_TOKEN_SYMBOL = "nUSD-LP";
     const SWAP_FEE = 1e6; // 4bps
     const ADMIN_FEE = 6000000000;
 
     const receipt = await execute(
       "SwapDeployer",
-      { from: deployer, log: true },
+      { from: deployer, log: true, gasLimit: 10000000 },
       "deploy",
       (
         await get("SwapFlashLoan")
@@ -75,7 +75,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       );
       await execute(
         "nUSDUSDCPool",
-        { from: deployer, log: true },
+        { from: deployer, log: true, gasLimit: 10000000 },
         "transferOwnership",
         (
           await get("DevMultisig")

@@ -141,10 +141,10 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       skipIfAlreadyDeployed: true,
       args: [
         "0x0000000000000000000000000000000000000000",
-        (await get("CantoSwapWrapper")).address,
+        (await get("LegacyCantoSwapWrapper")).address,
         (await get("nUSD")).address,
-        "0x0000000000000000000000000000000000000000",
-        "0x0000000000000000000000000000000000000000",
+        (await get("ETHPool")).address,
+        (await get("nETH")).address,
         (await get("SynapseBridge")).address,
       ],
     });

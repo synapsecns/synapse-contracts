@@ -8,23 +8,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const { deploy, get, execute, getOrNull, log, save } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  if (
-    includes(
-      [
-        CHAIN_ID.ARBITRUM,
-        CHAIN_ID.HARDHAT,
-        CHAIN_ID.BOBA,
-        CHAIN_ID.OPTIMISM,
-        CHAIN_ID.AVALANCHE,
-        CHAIN_ID.HARMONY,
-        CHAIN_ID.FANTOM,
-        CHAIN_ID.METIS,
-        CHAIN_ID.CANTO,
-      ],
-      await getChainId()
-    )
-  ) {
-    if ((await getOrNull("nETH")) == null) {
+  if (includes([CHAIN_ID.ARBITRUM], await getChainId())) {
+    if ((await getOrNull("UNIDX")) == null) {
       const receipt = await execute(
         "SynapseERC20Factory",
         { from: deployer, log: true },
@@ -32,23 +17,26 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         (
           await get("SynapseERC20")
         ).address,
-        "nETH",
-        "nETH",
+        "Unidex",
+        "UNIDX",
         "18",
         deployer
+        // (
+        //   await get("DevMultisig")
+        // ).address,
       );
 
       const newTokenEvent = receipt?.events?.find((e: any) => e["event"] == "SynapseERC20Created");
       const tokenAddress = newTokenEvent["args"]["contractAddress"];
-      log(`deployed nETH token at ${tokenAddress}`);
+      log(`deployed UNIDX token at ${tokenAddress}`);
 
-      await save("nETH", {
+      await save("UNIDX", {
         abi: (await get("SynapseERC20")).abi, // Generic ERC20 ABI
         address: tokenAddress,
       });
 
       await execute(
-        "nETH",
+        "UNIDX",
         { from: deployer, log: true },
         "grantRole",
         "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6",
@@ -58,7 +46,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       );
 
       await execute(
-        "nETH",
+        "UNIDX",
         { from: deployer, log: true },
         "grantRole",
         "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -68,7 +56,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       );
 
       await execute(
-        "nETH",
+        "UNIDX",
         { from: deployer, log: true },
         "renounceRole",
         "0x0000000000000000000000000000000000000000000000000000000000000000",
@@ -79,4 +67,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 
 export default func;
-func.tags = ["nETH", "SynapseERC20Factory"];
+func.tags = ["UNIDX"];

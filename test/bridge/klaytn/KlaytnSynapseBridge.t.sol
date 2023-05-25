@@ -45,8 +45,6 @@ interface IWKlayUnwrapper {
 }
 
 contract KlaytnSynapseBridgeTestFork is Test {
-    // 2022-11-25
-    uint256 public constant TEST_BLOCK_NUMBER = 107_500_000;
     uint256 public constant AMOUNT = 10**18;
     uint256 public constant FEE = 10**15;
 
@@ -71,7 +69,7 @@ contract KlaytnSynapseBridgeTestFork is Test {
     function setUp() public {
         string memory klayRPC = vm.envString("KLAY_API");
         // Fork Klaytn for Bridge tests
-        vm.createSelectFork(klayRPC, TEST_BLOCK_NUMBER);
+        vm.createSelectFork(klayRPC);
         utils = new Utilities();
         // Deploy 0.6.12 contracts, needs to be done via deployCode from 0.8.17 test
         unwrapper = IWKlayUnwrapper(deployCode("WKlayUnwrapper.sol", abi.encode(GOV)));
@@ -80,7 +78,6 @@ contract KlaytnSynapseBridgeTestFork is Test {
 
     function test_upgradedCorrectly() public {
         uint256 startBlockNumber = BRIDGE.startBlockNumber();
-        uint256 bridgeVersion = BRIDGE.bridgeVersion();
         uint256 chainGasAmount = BRIDGE.chainGasAmount();
         address payable wethAddress = BRIDGE.WETH_ADDRESS();
         uint256 wklayFees = BRIDGE.getFeeBalance(WKLAY);
@@ -89,7 +86,7 @@ contract KlaytnSynapseBridgeTestFork is Test {
         }
         upgradeBridge();
         assertEq(BRIDGE.startBlockNumber(), startBlockNumber, "!startBlockNumber");
-        assertEq(BRIDGE.bridgeVersion(), bridgeVersion + 1, "!bridgeVersion");
+        assertEq(BRIDGE.bridgeVersion(), 7, "!bridgeVersion");
         assertEq(BRIDGE.chainGasAmount(), chainGasAmount, "!chainGasAmount");
         assertEq(BRIDGE.WETH_ADDRESS(), wethAddress, "!wethAddress");
         assertEq(BRIDGE.getFeeBalance(WKLAY), wklayFees, "!wklayFees");

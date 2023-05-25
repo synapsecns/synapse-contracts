@@ -4,7 +4,7 @@ optimizer_runs = 200
 auto_detect_solc = true
 src = "contracts"
 out = "artifacts"
-libs = ["node_modules"]
+libs = ["node_modules", "lib"]
 ffi = true
 fs_permissions = [{ access = "read", path = "./artifacts"}, { access = "read-write", path = "./deployments"}, { access = "read-write", path = "./.deployments"}, {access = "read-write", path = "./script"}]
 
