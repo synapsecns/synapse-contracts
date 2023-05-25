@@ -27,6 +27,8 @@ contract UniversalSwapTest is Test {
     // Pool with Token1, Token2, Token3
     MockSaddlePool public pool123;
 
+    mapping(uint256 => address[]) public attachedPools;
+
     UniversalSwap public swap;
 
     address public user;
@@ -98,19 +100,28 @@ contract UniversalSwapTest is Test {
         assertEq(swap.tokenNodesAmount(), 1);
     }
 
+    function addPool(
+        uint256 nodeIndex,
+        address poolAddress,
+        uint256 tokensAmount
+    ) public {
+        swap.addPool(nodeIndex, poolAddress, poolModule, tokensAmount);
+        attachedPools[nodeIndex].push(poolAddress);
+    }
+
     function complexSetup() public {
         // 0: BT
         simpleSetup();
         // 0: BT + (1: T0, 2: T1)
-        swap.addPool(0, address(poolB01), poolModule, 3);
+        addPool(0, address(poolB01), 3);
         // 1: TO + (3: T1)
-        swap.addPool(1, address(pool01), poolModule, 2);
+        addPool(1, address(pool01), 2);
         // 1: T0 + (4: T2)
-        swap.addPool(1, address(pool02), poolModule, 2);
+        addPool(1, address(pool02), 2);
         // 0: BT + (5: T2)
-        swap.addPool(0, address(poolB2), poolModule, 2);
+        addPool(0, address(poolB2), 2);
         // 5: T2 + (6: T1, 7: T3)
-        swap.addPool(5, address(pool123), poolModule, 3);
+        addPool(5, address(pool123), 3);
     }
 
     function test_complexSetup() public {
@@ -135,7 +146,7 @@ contract UniversalSwapTest is Test {
     function duplicatedPoolSetup() public {
         complexSetup();
         // 4: T2 + (8: T1, 9: T3)
-        swap.addPool(4, address(pool123), poolModule, 3);
+        addPool(4, address(pool123), 3);
     }
 
     function test_duplicatedPoolSetup() public {
@@ -256,6 +267,16 @@ contract UniversalSwapTest is Test {
         vm.expectRevert("Swap didn't result in min tokens");
         vm.prank(user);
         swap.swap(0, 1, amountIn, amountOut + 1, type(uint256).max);
+    }
+
+    // ═══════════════════════════════════════════════ GETTERS TESTS ═══════════════════════════════════════════════════
+
+    function test_getAttachedPools() public {
+        duplicatedPoolSetup();
+        uint256 tokensAmount = swap.tokenNodesAmount();
+        for (uint8 i = 0; i < tokensAmount; ++i) {
+            assertEq(swap.getAttachedPools(i), attachedPools[i]);
+        }
     }
 
     // ════════════════════════════════════════════════ SWAP TESTS ═════════════════════════════════════════════════════

@@ -104,6 +104,27 @@ contract UniversalSwap is TokenTree, Ownable {
         return _nodes.length;
     }
 
+    /// @notice Returns the list of pools that are "attached" to a node.
+    /// Pool is attached to a node, if it connects the node to one of its children.
+    /// Note: pool that is connecting the node to its parent is not considered attached.
+    function getAttachedPools(uint8 index) external view returns (address[] memory pools) {
+        require(index < _nodes.length, "Out of range");
+        pools = new address[](_pools.length);
+        uint256 amountAttached = 0;
+        uint256 poolsMask = _attachedPools[index];
+        for (uint256 i = 0; i < pools.length; ++i) {
+            // Check if _pools[i] is attached to the node at `index`
+            if ((poolsMask >> i) & 1 == 1) {
+                pools[amountAttached++] = _pools[i];
+            }
+        }
+        // Use assembly to shrink the array to the actual size
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            mstore(pools, amountAttached)
+        }
+    }
+
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
 
     /// @dev Approves the given spender to spend the given token indefinitely.
