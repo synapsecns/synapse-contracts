@@ -279,6 +279,43 @@ contract UniversalSwapTest is Test {
         }
     }
 
+    function test_getTokenNodes() public {
+        duplicatedPoolSetup();
+        checkTokenNodes(address(bridgeToken));
+        checkTokenNodes(address(token0));
+        checkTokenNodes(address(token1));
+        checkTokenNodes(address(token2));
+        checkTokenNodes(address(token3));
+    }
+
+    function test_getTokenNodes_returnsEmpty_unknownToken(address token) public {
+        vm.assume(
+            token != address(bridgeToken) &&
+                token != address(token0) &&
+                token != address(token1) &&
+                token != address(token2) &&
+                token != address(token3)
+        );
+        duplicatedPoolSetup();
+        assertEq(swap.getTokenNodes(token), new uint256[](0));
+    }
+
+    function checkTokenNodes(address token) public {
+        uint256 tokensAmount = swap.tokenNodesAmount();
+        uint256 nodesFound = 0;
+        for (uint8 i = 0; i < tokensAmount; ++i) {
+            if (swap.getToken(i) == token) ++nodesFound;
+        }
+        uint256[] memory tokenNodes = new uint256[](nodesFound);
+        nodesFound = 0;
+        for (uint8 i = 0; i < tokensAmount; ++i) {
+            if (swap.getToken(i) == token) {
+                tokenNodes[nodesFound++] = i;
+            }
+        }
+        assertEq(swap.getTokenNodes(token), tokenNodes);
+    }
+
     function test_findBestPath(
         uint8 tokenFrom,
         uint8 tokenTo,

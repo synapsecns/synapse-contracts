@@ -169,6 +169,11 @@ contract UniversalSwap is TokenTree, Ownable {
         }
     }
 
+    /// @notice Returns all nodes that represent the given token in the internal tree.
+    function getTokenNodes(address token) external view returns (uint256[] memory nodes) {
+        nodes = _tokenNodes[token];
+    }
+
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
 
     /// @dev Approves the given spender to spend the given token indefinitely.
