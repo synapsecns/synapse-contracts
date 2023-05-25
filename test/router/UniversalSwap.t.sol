@@ -412,6 +412,65 @@ contract UniversalSwapTest is Test {
         }
     }
 
+    function test_calculateSwap_returns0_whenPoolReverts() public {
+        // Force poolB01 to revert on calculateSwap(*, *, *)
+        vm.mockCallRevert(
+            address(poolB01),
+            abi.encodeWithSelector(MockSaddlePool.calculateSwap.selector),
+            "Mocked revert data"
+        );
+        complexSetup();
+        // This goes through the pool that is going to revert
+        uint256 amountOut = swap.calculateSwap(3, 7, 10**18);
+        assertEq(amountOut, 0);
+    }
+
+    function test_findBestPath_returns0_whenOnlyPathReverts() public {
+        // Force pool123 to revert on calculateSwap(*, *, *)
+        vm.mockCallRevert(
+            address(pool123),
+            abi.encodeWithSelector(MockSaddlePool.calculateSwap.selector),
+            "Mocked revert data"
+        );
+        complexSetup();
+        // All paths to/from T3 go through the reverting pool
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(
+            address(token1),
+            address(token3),
+            10**18
+        );
+        assertEq(tokenIndexFrom, 0);
+        assertEq(tokenIndexTo, 0);
+        assertEq(amountOut, 0);
+        (tokenIndexFrom, tokenIndexTo, amountOut) = swap.findBestPath(address(token3), address(token2), 10**18);
+        assertEq(tokenIndexFrom, 0);
+        assertEq(tokenIndexTo, 0);
+        assertEq(amountOut, 0);
+    }
+
+    function test_findBestPath_returnsSomething_whenOnePathReverts() public {
+        // Force poolB01 to revert on calculateSwap(*, *, *)
+        vm.mockCallRevert(
+            address(poolB01),
+            abi.encodeWithSelector(MockSaddlePool.calculateSwap.selector),
+            "Mocked revert data"
+        );
+        complexSetup();
+        // The only remaining path between BT and T1 is BT -> T2 -> T1 via poolB2 and pool123
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(
+            address(bridgeToken),
+            address(token1),
+            10**18
+        );
+        // [BT, T2]
+        uint256 amountOutExpected = poolB2.calculateSwap(0, 1, 10**18);
+        // [T1, T2, T3]
+        amountOutExpected = pool123.calculateSwap(1, 0, amountOutExpected);
+        assertEq(tokenIndexFrom, 0);
+        assertEq(tokenIndexTo, 6);
+        assertEq(amountOut, amountOutExpected);
+    }
+
     // ════════════════════════════════════════════════ SWAP TESTS ═════════════════════════════════════════════════════
 
     function test_swap(
