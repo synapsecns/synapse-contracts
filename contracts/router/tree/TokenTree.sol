@@ -55,6 +55,10 @@ abstract contract TokenTree {
     // This way the finding the lowest common ancestor of two nodes is reduced to finding the first differing byte.
     uint256[] internal _rootPath;
 
+    // (node => bitmask with all attached pools to the node).
+    // Note: This excludes the pool that connects the node to its parent.
+    mapping(uint256 => uint256) internal _attachedPools;
+
     // ════════════════════════════════════════════════ CONSTRUCTOR ════════════════════════════════════════════════════
 
     constructor(address bridgeToken) {
@@ -83,7 +87,14 @@ abstract contract TokenTree {
             _pools.push(pool);
             _poolMap[pool] = Pool({module: poolModule, index: poolIndex});
             wasAdded = true;
+        } else {
+            // Check that the pool does not connect the node to its parent
+            require(node.poolIndex != poolIndex, "Parent pool can't be attached");
+            // Check that the pool is not already attached to the node
+            require(_attachedPools[nodeIndex] & (1 << poolIndex) == 0, "Pool already attached");
         }
+        // Remember that the pool is attached to the node
+        _attachedPools[nodeIndex] |= 1 << poolIndex;
         address[] memory tokens = _getPoolTokens(poolModule, pool, tokensAmount);
         bool nodeFound = false;
         uint8 childDepth = node.depth + 1;

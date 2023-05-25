@@ -116,6 +116,25 @@ contract UniversalSwapTest is Test {
         swap.addPool(0, address(0), address(0), 3);
     }
 
+    function test_addPool_revert_alreadyAttached() public {
+        test_complexSetup();
+        // [BT, T0, T1] was already attached to the root node (0)
+        vm.expectRevert("Pool already attached");
+        swap.addPool(0, address(poolB01), address(0), 3);
+        // [T1, T2, T3] was already attached to node with index 5
+        vm.expectRevert("Pool already attached");
+        swap.addPool(5, address(pool123), address(0), 3);
+    }
+
+    function test_addPool_revert_parentPool() public {
+        test_complexSetup();
+        // [T1, T2, T3] was already used to add node with indexes 6 and 7
+        vm.expectRevert("Parent pool can't be attached");
+        swap.addPool(6, address(pool123), address(0), 3);
+        vm.expectRevert("Parent pool can't be attached");
+        swap.addPool(7, address(pool123), address(0), 3);
+    }
+
     function test_calculateSwap_returns0_tokenIdentical() public {
         test_complexSetup();
         uint256 tokensAmount = swap.tokenNodesAmount();
