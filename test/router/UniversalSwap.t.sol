@@ -279,6 +279,102 @@ contract UniversalSwapTest is Test {
         }
     }
 
+    function test_findBestPath(
+        uint8 tokenFrom,
+        uint8 tokenTo,
+        uint256 amount
+    ) public {
+        uint8 tokensAmount = 10;
+        tokenFrom = tokenFrom % tokensAmount;
+        tokenTo = tokenTo % tokensAmount;
+        amount = 1 + (amount % 1000);
+        duplicatedPoolSetup();
+        require(swap.tokenNodesAmount() == tokensAmount, "Setup failed");
+        address tokenIn = swap.getToken(tokenFrom);
+        address tokenOut = swap.getToken(tokenTo);
+        vm.assume(tokenIn != tokenOut);
+        uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(tokenIn, tokenOut, amountIn);
+        assertEq(swap.getToken(tokenIndexFrom), tokenIn);
+        assertEq(swap.getToken(tokenIndexTo), tokenOut);
+        // Check all possible paths between tokenIn and tokenOut
+        uint256 amountOutBest = 0;
+        for (uint8 i = 0; i < tokensAmount; ++i) {
+            if (swap.getToken(i) != tokenIn) continue;
+            for (uint8 j = 0; j < tokensAmount; ++j) {
+                if (swap.getToken(j) != tokenOut) continue;
+                uint256 amountOutQuote = swap.calculateSwap(i, j, amountIn);
+                if (amountOutQuote > amountOutBest) {
+                    amountOutBest = amountOutQuote;
+                }
+            }
+        }
+        assertEq(amountOut, amountOutBest);
+    }
+
+    function test_findBestPath_returns0_identicalTokens() public {
+        duplicatedPoolSetup();
+        uint256 tokensAmount = swap.tokenNodesAmount();
+        for (uint8 i = 0; i < tokensAmount; ++i) {
+            address tokenIn = swap.getToken(i);
+            for (uint8 j = 0; j < tokensAmount; ++j) {
+                address tokenOut = swap.getToken(j);
+                if (tokenIn != tokenOut) continue;
+                (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(
+                    tokenIn,
+                    tokenOut,
+                    10**18
+                );
+                assertEq(tokenIndexFrom, 0);
+                assertEq(tokenIndexTo, 0);
+                assertEq(amountOut, 0);
+            }
+        }
+    }
+
+    function test_findBestPath_returns0_unknownToken(address token) public {
+        vm.assume(
+            token != address(bridgeToken) &&
+                token != address(token0) &&
+                token != address(token1) &&
+                token != address(token2) &&
+                token != address(token3)
+        );
+        duplicatedPoolSetup();
+        uint256 tokensAmount = swap.tokenNodesAmount();
+        for (uint8 i = 0; i < tokensAmount; ++i) {
+            address existingToken = swap.getToken(i);
+            (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(
+                existingToken,
+                token,
+                10**18
+            );
+            assertEq(tokenIndexFrom, 0);
+            assertEq(tokenIndexTo, 0);
+            assertEq(amountOut, 0);
+            (tokenIndexFrom, tokenIndexTo, amountOut) = swap.findBestPath(token, existingToken, 10**18);
+            assertEq(tokenIndexFrom, 0);
+            assertEq(tokenIndexTo, 0);
+            assertEq(amountOut, 0);
+        }
+    }
+
+    function test_findBestPath_returns0_amountInZero() public {
+        duplicatedPoolSetup();
+        uint256 tokensAmount = swap.tokenNodesAmount();
+        for (uint8 i = 0; i < tokensAmount; ++i) {
+            address tokenIn = swap.getToken(i);
+            for (uint8 j = 0; j < tokensAmount; ++j) {
+                address tokenOut = swap.getToken(j);
+                if (tokenIn == tokenOut) continue;
+                (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(tokenIn, tokenOut, 0);
+                assertEq(tokenIndexFrom, 0);
+                assertEq(tokenIndexTo, 0);
+                assertEq(amountOut, 0);
+            }
+        }
+    }
+
     // ════════════════════════════════════════════════ SWAP TESTS ═════════════════════════════════════════════════════
 
     function test_swap(
@@ -357,6 +453,30 @@ contract UniversalSwapTest is Test {
             if (tokenIn != tokenOut) assertEq(MockERC20(tokenIn).balanceOf(user), 0);
             assertEq(MockERC20(tokenOut).balanceOf(user), amountOut);
         }
+    }
+
+    function test_swap_viaBestPath(
+        uint8 tokenFrom,
+        uint8 tokenTo,
+        uint256 amount
+    ) public {
+        uint8 tokensAmount = 10;
+        tokenFrom = tokenFrom % tokensAmount;
+        tokenTo = tokenTo % tokensAmount;
+        amount = 1 + (amount % 1000);
+        duplicatedPoolSetup();
+        require(swap.tokenNodesAmount() == tokensAmount, "Setup failed");
+        address tokenIn = swap.getToken(tokenFrom);
+        address tokenOut = swap.getToken(tokenTo);
+        vm.assume(tokenIn != tokenOut);
+        uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(tokenIn, tokenOut, amountIn);
+        require(amountOut > 0, "No path found when should've");
+        prepareUser(tokenIn, amountIn);
+        vm.prank(user);
+        swap.swap(tokenIndexFrom, tokenIndexTo, amountIn, amountOut, block.timestamp);
+        assertEq(MockERC20(tokenIn).balanceOf(user), 0);
+        assertEq(MockERC20(tokenOut).balanceOf(user), amountOut);
     }
 
     function prepareUser(address token, uint256 amount) public {

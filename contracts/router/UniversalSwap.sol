@@ -89,6 +89,50 @@ contract UniversalSwap is TokenTree, Ownable {
         return _getMultiSwapQuote(tokenIndexFrom, tokenIndexTo, dx).amountOut;
     }
 
+    /// @notice Returns the best path for swapping the given amount of tokens. All possible paths
+    /// present in the internal tree are considered, if any of the tokens are present in the tree more than once.
+    /// Note: paths that have the same pool more than once are not considered.
+    /// @dev Will return zero values if no path is found.
+    /// @param tokenIn          the token the user wants to sell
+    /// @param tokenOut         the token the user wants to buy
+    /// @param amountIn         the amount of tokens the user wants to sell
+    /// @return tokenIndexFrom  the index of the token the user wants to sell
+    /// @return tokenIndexTo    the index of the token the user wants to buy
+    /// @return amountOut       amount of tokens the user will receive
+    function findBestPath(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn
+    )
+        external
+        view
+        returns (
+            uint8 tokenIndexFrom,
+            uint8 tokenIndexTo,
+            uint256 amountOut
+        )
+    {
+        // Check that the tokens are not the same and that the amount is not zero
+        if (tokenIn == tokenOut || amountIn == 0) {
+            return (0, 0, 0);
+        }
+        uint256 nodesFrom = _tokenNodes[tokenIn].length;
+        uint256 nodesTo = _tokenNodes[tokenOut].length;
+        for (uint256 i = 0; i < nodesFrom; ++i) {
+            uint256 nodeIndexFrom = _tokenNodes[tokenIn][i];
+            for (uint256 j = 0; j < nodesTo; ++j) {
+                uint256 nodeIndexTo = _tokenNodes[tokenOut][j];
+                // Calculate the quote by following the path from "tokenFrom" node to "tokenTo" node in the stored tree
+                uint256 amountOutQuote = _getMultiSwapQuote(nodeIndexFrom, nodeIndexTo, amountIn).amountOut;
+                if (amountOutQuote > amountOut) {
+                    amountOut = amountOutQuote;
+                    tokenIndexFrom = uint8(nodeIndexFrom);
+                    tokenIndexTo = uint8(nodeIndexTo);
+                }
+            }
+        }
+    }
+
     /// @notice Wrapper for ISaddle.getToken()
     /// @param index     the index of the token
     /// @return token    address of the token at given index
