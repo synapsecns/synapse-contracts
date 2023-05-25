@@ -87,131 +87,20 @@ contract UniversalSwapTest is Test {
         }
     }
 
-    // ═══════════════════════════════════════════════ REVERT TESTS ════════════════════════════════════════════════════
-
-    function test_addPool_revert_nodeNotInPool() public {
-        test_complexSetup();
-        // 1 is T0, which is not in pool123
-        vm.expectRevert("Node token not found in the pool");
-        swap.addPool(1, address(pool123), address(0), 3);
-    }
-
-    function test_addPool_revert_bridgeTokenNotRoot() public {
-        test_complexSetup();
-        // Should not be possible to attach a pool with the bridge token to a non-root node
-        vm.expectRevert("Bridge token must be at root");
-        swap.addPool(3, address(poolB01), address(0), 3);
-    }
-
-    function test_addPool_revert_nodeIndexOutOfRange() public {
-        test_complexSetup();
-        uint256 tokensAmount = swap.tokenNodesAmount();
-        vm.expectRevert("Out of range");
-        swap.addPool(tokensAmount, address(pool123), address(0), 3);
-    }
-
-    function test_addPool_revert_emptyPoolAddress() public {
-        test_complexSetup();
-        vm.expectRevert("Pool address can't be zero");
-        swap.addPool(0, address(0), address(0), 3);
-    }
-
-    function test_addPool_revert_alreadyAttached() public {
-        test_complexSetup();
-        // [BT, T0, T1] was already attached to the root node (0)
-        vm.expectRevert("Pool already attached");
-        swap.addPool(0, address(poolB01), address(0), 3);
-        // [T1, T2, T3] was already attached to node with index 5
-        vm.expectRevert("Pool already attached");
-        swap.addPool(5, address(pool123), address(0), 3);
-    }
-
-    function test_addPool_revert_parentPool() public {
-        test_complexSetup();
-        // [T1, T2, T3] was already used to add node with indexes 6 and 7
-        vm.expectRevert("Parent pool can't be attached");
-        swap.addPool(6, address(pool123), address(0), 3);
-        vm.expectRevert("Parent pool can't be attached");
-        swap.addPool(7, address(pool123), address(0), 3);
-    }
-
-    function test_calculateSwap_returns0_tokenIdentical() public {
-        test_complexSetup();
-        uint256 tokensAmount = swap.tokenNodesAmount();
-        for (uint8 i = 0; i < tokensAmount; ++i) {
-            assertEq(swap.calculateSwap(i, i, 10**18), 0);
-        }
-    }
-
-    function test_calculateSwap_returns0_tokenOutOfRange() public {
-        test_complexSetup();
-        uint8 tokensAmount = uint8(swap.tokenNodesAmount());
-        for (uint8 i = 0; i < tokensAmount; ++i) {
-            assertEq(swap.calculateSwap(i, tokensAmount, 10**18), 0);
-            assertEq(swap.calculateSwap(tokensAmount, i, 10**18), 0);
-        }
-    }
-
-    function test_getToken_revert_tokenOutOfRange() public {
-        test_complexSetup();
-        uint8 tokensAmount = uint8(swap.tokenNodesAmount());
-        vm.expectRevert("Out of range");
-        swap.getToken(tokensAmount);
-    }
-
-    function test_swap_revert_tokenIdentical() public {
-        test_complexSetup();
-        uint256 tokensAmount = swap.tokenNodesAmount();
-        for (uint8 i = 0; i < tokensAmount; ++i) {
-            vm.expectRevert("Swap not supported");
-            swap.swap(i, i, 10**18, 0, type(uint256).max);
-        }
-    }
-
-    function test_swap_revert_tokenOutOfRange() public {
-        test_complexSetup();
-        uint8 tokensAmount = uint8(swap.tokenNodesAmount());
-        for (uint8 i = 0; i < tokensAmount; ++i) {
-            vm.expectRevert("Swap not supported");
-            swap.swap(i, tokensAmount, 10**18, 0, type(uint256).max);
-            vm.expectRevert("Swap not supported");
-            swap.swap(tokensAmount, i, 10**18, 0, type(uint256).max);
-        }
-    }
-
-    function test_swap_revert_deadlineExceeded() public {
-        uint256 currentTime = 1234567890;
-        vm.warp(currentTime);
-        test_complexSetup();
-        uint8 tokensAmount = uint8(swap.tokenNodesAmount());
-        for (uint8 i = 0; i < tokensAmount; ++i) {
-            vm.expectRevert("Deadline not met");
-            swap.swap(i, (i + 1) % tokensAmount, 10**18, 0, currentTime - 1);
-        }
-    }
-
-    function test_swap_revert_minDyNotMet() public {
-        test_complexSetup();
-        uint256 amountIn = 10**18;
-        uint256 amountOut = swap.calculateSwap(0, 1, amountIn);
-        prepareUser(address(bridgeToken), amountIn);
-        vm.expectRevert("Swap didn't result in min tokens");
-        vm.prank(user);
-        swap.swap(0, 1, amountIn, amountOut + 1, type(uint256).max);
-    }
-
-    // ════════════════════════════════════════════════ SWAP TESTS ═════════════════════════════════════════════════════
-
-    function test_constructor() public {
+    function simpleSetup() public {
         swap = new UniversalSwap(address(bridgeToken));
+    }
+
+    function test_simpleSetup() public {
+        simpleSetup();
         assertEq(swap.getToken(0), address(bridgeToken));
         assertEq(swap.owner(), address(this));
         assertEq(swap.tokenNodesAmount(), 1);
     }
 
-    function test_complexSetup() public {
+    function complexSetup() public {
         // 0: BT
-        test_constructor();
+        simpleSetup();
         // 0: BT + (1: T0, 2: T1)
         swap.addPool(0, address(poolB01), poolModule, 3);
         // 1: TO + (3: T1)
@@ -222,6 +111,10 @@ contract UniversalSwapTest is Test {
         swap.addPool(0, address(poolB2), poolModule, 2);
         // 5: T2 + (6: T1, 7: T3)
         swap.addPool(5, address(pool123), poolModule, 3);
+    }
+
+    function test_complexSetup() public {
+        complexSetup();
         assertEq(swap.tokenNodesAmount(), 8);
         // Initial setup:
         assertEq(swap.getToken(0), address(bridgeToken));
@@ -239,14 +132,133 @@ contract UniversalSwapTest is Test {
         assertEq(swap.getToken(7), address(token3));
     }
 
-    function test_duplicatedPoolSetup() public {
-        test_complexSetup();
+    function duplicatedPoolSetup() public {
+        complexSetup();
         // 4: T2 + (8: T1, 9: T3)
         swap.addPool(4, address(pool123), poolModule, 3);
+    }
+
+    function test_duplicatedPoolSetup() public {
+        duplicatedPoolSetup();
         assertEq(swap.tokenNodesAmount(), 10);
         assertEq(swap.getToken(8), address(token1));
         assertEq(swap.getToken(9), address(token3));
     }
+
+    // ═══════════════════════════════════════════════ REVERT TESTS ════════════════════════════════════════════════════
+
+    function test_addPool_revert_nodeNotInPool() public {
+        complexSetup();
+        // 1 is T0, which is not in pool123
+        vm.expectRevert("Node token not found in the pool");
+        swap.addPool(1, address(pool123), address(0), 3);
+    }
+
+    function test_addPool_revert_bridgeTokenNotRoot() public {
+        complexSetup();
+        // Should not be possible to attach a pool with the bridge token to a non-root node
+        vm.expectRevert("Bridge token must be at root");
+        swap.addPool(3, address(poolB01), address(0), 3);
+    }
+
+    function test_addPool_revert_nodeIndexOutOfRange() public {
+        complexSetup();
+        uint256 tokensAmount = swap.tokenNodesAmount();
+        vm.expectRevert("Out of range");
+        swap.addPool(tokensAmount, address(pool123), address(0), 3);
+    }
+
+    function test_addPool_revert_emptyPoolAddress() public {
+        complexSetup();
+        vm.expectRevert("Pool address can't be zero");
+        swap.addPool(0, address(0), address(0), 3);
+    }
+
+    function test_addPool_revert_alreadyAttached() public {
+        complexSetup();
+        // [BT, T0, T1] was already attached to the root node (0)
+        vm.expectRevert("Pool already attached");
+        swap.addPool(0, address(poolB01), address(0), 3);
+        // [T1, T2, T3] was already attached to node with index 5
+        vm.expectRevert("Pool already attached");
+        swap.addPool(5, address(pool123), address(0), 3);
+    }
+
+    function test_addPool_revert_parentPool() public {
+        complexSetup();
+        // [T1, T2, T3] was already used to add node with indexes 6 and 7
+        vm.expectRevert("Parent pool can't be attached");
+        swap.addPool(6, address(pool123), address(0), 3);
+        vm.expectRevert("Parent pool can't be attached");
+        swap.addPool(7, address(pool123), address(0), 3);
+    }
+
+    function test_calculateSwap_returns0_tokenIdentical() public {
+        complexSetup();
+        uint256 tokensAmount = swap.tokenNodesAmount();
+        for (uint8 i = 0; i < tokensAmount; ++i) {
+            assertEq(swap.calculateSwap(i, i, 10**18), 0);
+        }
+    }
+
+    function test_calculateSwap_returns0_tokenOutOfRange() public {
+        complexSetup();
+        uint8 tokensAmount = uint8(swap.tokenNodesAmount());
+        for (uint8 i = 0; i < tokensAmount; ++i) {
+            assertEq(swap.calculateSwap(i, tokensAmount, 10**18), 0);
+            assertEq(swap.calculateSwap(tokensAmount, i, 10**18), 0);
+        }
+    }
+
+    function test_getToken_revert_tokenOutOfRange() public {
+        complexSetup();
+        uint8 tokensAmount = uint8(swap.tokenNodesAmount());
+        vm.expectRevert("Out of range");
+        swap.getToken(tokensAmount);
+    }
+
+    function test_swap_revert_tokenIdentical() public {
+        complexSetup();
+        uint256 tokensAmount = swap.tokenNodesAmount();
+        for (uint8 i = 0; i < tokensAmount; ++i) {
+            vm.expectRevert("Swap not supported");
+            swap.swap(i, i, 10**18, 0, type(uint256).max);
+        }
+    }
+
+    function test_swap_revert_tokenOutOfRange() public {
+        complexSetup();
+        uint8 tokensAmount = uint8(swap.tokenNodesAmount());
+        for (uint8 i = 0; i < tokensAmount; ++i) {
+            vm.expectRevert("Swap not supported");
+            swap.swap(i, tokensAmount, 10**18, 0, type(uint256).max);
+            vm.expectRevert("Swap not supported");
+            swap.swap(tokensAmount, i, 10**18, 0, type(uint256).max);
+        }
+    }
+
+    function test_swap_revert_deadlineExceeded() public {
+        uint256 currentTime = 1234567890;
+        vm.warp(currentTime);
+        complexSetup();
+        uint8 tokensAmount = uint8(swap.tokenNodesAmount());
+        for (uint8 i = 0; i < tokensAmount; ++i) {
+            vm.expectRevert("Deadline not met");
+            swap.swap(i, (i + 1) % tokensAmount, 10**18, 0, currentTime - 1);
+        }
+    }
+
+    function test_swap_revert_minDyNotMet() public {
+        complexSetup();
+        uint256 amountIn = 10**18;
+        uint256 amountOut = swap.calculateSwap(0, 1, amountIn);
+        prepareUser(address(bridgeToken), amountIn);
+        vm.expectRevert("Swap didn't result in min tokens");
+        vm.prank(user);
+        swap.swap(0, 1, amountIn, amountOut + 1, type(uint256).max);
+    }
+
+    // ════════════════════════════════════════════════ SWAP TESTS ═════════════════════════════════════════════════════
 
     function test_swap(
         uint8 tokenFrom,
@@ -259,7 +271,7 @@ contract UniversalSwapTest is Test {
         amount = amount % 1000;
         vm.assume(tokenFrom != tokenTo);
         vm.assume(amount > 0);
-        test_complexSetup();
+        complexSetup();
         require(swap.tokenNodesAmount() == tokensAmount, "Setup failed");
         address tokenIn = swap.getToken(tokenFrom);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
@@ -283,7 +295,7 @@ contract UniversalSwapTest is Test {
         amount = amount % 1000;
         vm.assume(tokenFrom != tokenTo);
         vm.assume(amount > 0);
-        test_duplicatedPoolSetup();
+        duplicatedPoolSetup();
         require(swap.tokenNodesAmount() == tokensAmount, "Setup failed");
         address tokenIn = swap.getToken(tokenFrom);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
@@ -310,7 +322,7 @@ contract UniversalSwapTest is Test {
         amount = amount % 1000;
         vm.assume(tokenFrom != tokenTo);
         vm.assume(amount > 0);
-        test_duplicatedPoolSetup();
+        duplicatedPoolSetup();
         require(swap.tokenNodesAmount() == tokensAmount, "Setup failed");
         address tokenIn = swap.getToken(tokenFrom);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
