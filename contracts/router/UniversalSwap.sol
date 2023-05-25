@@ -30,6 +30,7 @@ contract UniversalSwap is TokenTree, Ownable {
         address poolModule,
         uint256 tokensAmount
     ) external onlyOwner {
+        require(pool != address(0), "Pool address can't be zero");
         _addPool(nodeIndex, pool, poolModule, tokensAmount);
     }
 
