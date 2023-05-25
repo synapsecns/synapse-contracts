@@ -17,6 +17,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         CHAIN_ID.FUJI,
         CHAIN_ID.GOERLI,
         CHAIN_ID.KLATYN,
+        CHAIN_ID.KLAYTN_TESTNET,
       ],
       await getChainId()
     )
@@ -28,15 +29,28 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       args: ["0xAA920f7b9039e556d2442113f1fd339e4927Dd9A"],
     });
 
-    if (authVerifierDeploy.newlyDeployed) {
-      await execute(
-        "AuthVerifier",
-        { from: deployer, log: true },
-        "transferOwnership",
-        (
-          await get("DevMultisig")
-        ).address
-      );
+    if (
+      !includes(
+        [
+          CHAIN_ID.DFK_TESTNET,
+          CHAIN_ID.HARMONY_TESTNET,
+          CHAIN_ID.FUJI,
+          CHAIN_ID.GOERLI,
+          CHAIN_ID.KLAYTN_TESTNET,
+        ],
+        await getChainId()
+      )
+    ) {
+      if (authVerifierDeploy.newlyDeployed) {
+        await execute(
+          "AuthVerifier",
+          { from: deployer, log: true },
+          "transferOwnership",
+          (
+            await get("DevMultisig")
+          ).address
+        );
+      }
     }
 
     await deploy("GasFeePricing", {
@@ -53,15 +67,28 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       args: [(await get("GasFeePricing")).address, (await get("AuthVerifier")).address],
     });
 
-    if (messageBusDeploy.newlyDeployed) {
-      await execute(
-        "MessageBus",
-        { from: deployer, log: true },
-        "transferOwnership",
-        (
-          await get("DevMultisig")
-        ).address
-      );
+    if (
+      !includes(
+        [
+          CHAIN_ID.DFK_TESTNET,
+          CHAIN_ID.HARMONY_TESTNET,
+          CHAIN_ID.FUJI,
+          CHAIN_ID.GOERLI,
+          CHAIN_ID.KLAYTN_TESTNET,
+        ],
+        await getChainId()
+      )
+    ) {
+      if (messageBusDeploy.newlyDeployed) {
+        await execute(
+          "MessageBus",
+          { from: deployer, log: true },
+          "transferOwnership",
+          (
+            await get("DevMultisig")
+          ).address
+        );
+      }
     }
   }
 };

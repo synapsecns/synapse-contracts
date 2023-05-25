@@ -4,7 +4,7 @@ optimizer_runs = 200
 auto_detect_solc = true
 src = "contracts"
 out = "artifacts"
-libs = ["node_modules"]
+libs = ["node_modules", "lib"]
 fs_permissions = [{ access = "read", path = "./artifacts"}]
 
 ## set only when the `hardhat` profile is selected
