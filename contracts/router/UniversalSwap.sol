@@ -215,21 +215,35 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
     ) internal view override returns (uint256 amountOut) {
         if (poolModule == address(this)) {
             // Pool conforms to ISaddle interface.
-            amountOut = ISaddle(pool).calculateSwap({
-                tokenIndexFrom: tokenIndexes[pool][_nodes[nodeIndexFrom].token],
-                tokenIndexTo: tokenIndexes[pool][_nodes[nodeIndexTo].token],
-                dx: amountIn
-            });
+            try
+                ISaddle(pool).calculateSwap({
+                    tokenIndexFrom: tokenIndexes[pool][_nodes[nodeIndexFrom].token],
+                    tokenIndexTo: tokenIndexes[pool][_nodes[nodeIndexTo].token],
+                    dx: amountIn
+                })
+            returns (uint256 amountOut_) {
+                amountOut = amountOut_;
+            } catch {
+                // Return zero if the pool doesn't support the given swap
+                amountOut = 0;
+            }
         } else {
             // Ask Pool Module to calculate the quote
             address tokenFrom = _nodes[nodeIndexFrom].token;
             address tokenTo = _nodes[nodeIndexTo].token;
-            amountOut = IPoolModule(poolModule).getPoolQuote(
-                pool,
-                IndexedToken({index: tokenIndexes[pool][tokenFrom], token: tokenFrom}),
-                IndexedToken({index: tokenIndexes[pool][tokenTo], token: tokenTo}),
-                amountIn
-            );
+            try
+                IPoolModule(poolModule).getPoolQuote(
+                    pool,
+                    IndexedToken({index: tokenIndexes[pool][tokenFrom], token: tokenFrom}),
+                    IndexedToken({index: tokenIndexes[pool][tokenTo], token: tokenTo}),
+                    amountIn
+                )
+            returns (uint256 amountOut_) {
+                amountOut = amountOut_;
+            } catch {
+                // Return zero if the pool doesn't support the given swap
+                amountOut = 0;
+            }
         }
     }
 
