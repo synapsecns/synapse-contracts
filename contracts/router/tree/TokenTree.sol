@@ -44,6 +44,9 @@ abstract contract TokenTree {
     // (pool => token => tokenIndex) for each pool, stores the index of each token in the pool.
     mapping(address => mapping(address => uint8)) public tokenIndexes;
 
+    // (token => nodes) for each token, stores the indexes of all nodes that represent this token.
+    mapping(address => uint256[]) internal _tokenNodes;
+
     // The full path from every node to the root is stored using bitmasks in the following way:
     // - For a node at depth N, lowest (N + 1) bytes are used to store the path to the root.
     // - The lowest byte is always the root index. This is always 0, but we store this for consistency.
@@ -56,8 +59,7 @@ abstract contract TokenTree {
 
     constructor(address bridgeToken) {
         // The root node is always the bridge token
-        _nodes.push(Node({token: bridgeToken, depth: 0, poolIndex: 0}));
-        _rootPath.push(0);
+        _addNode({token: bridgeToken, depth: 0, poolIndex: 0, rootPathParent: 0});
         // Push the empty pool so that `poolIndex` for non-root nodes is never 0
         _pools.push(address(0));
     }
@@ -98,14 +100,25 @@ abstract contract TokenTree {
                 nodeFound = true;
                 continue;
             }
-            // Index of the newly inserted child node
-            uint256 childIndex = _nodes.length;
-            require(childIndex < type(uint8).max, "Too many nodes");
-            _nodes.push(Node({token: token, depth: childDepth, poolIndex: poolIndex}));
-            // Push the root path for the new node
-            _rootPath.push((childIndex << (8 * childDepth)) | rootPathParent);
+            _addNode(token, childDepth, poolIndex, rootPathParent);
         }
         require(nodeFound, "Node token not found in the pool");
+    }
+
+    /// @dev Adds a new node to the tree and saves its path to the root.
+    function _addNode(
+        address token,
+        uint8 depth,
+        uint8 poolIndex,
+        uint256 rootPathParent
+    ) internal {
+        // Index of the newly inserted child node
+        uint256 nodeIndex = _nodes.length;
+        require(nodeIndex < type(uint8).max, "Too many nodes");
+        _nodes.push(Node({token: token, depth: depth, poolIndex: poolIndex}));
+        _tokenNodes[token].push(nodeIndex);
+        // Push the root path for the new node
+        _rootPath.push((nodeIndex << (8 * depth)) | rootPathParent);
     }
 
     // ══════════════════════════════════════ INTERNAL LOGIC: MULTIPLE POOLS ═══════════════════════════════════════════
