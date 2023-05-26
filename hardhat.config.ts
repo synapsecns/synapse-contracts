@@ -64,7 +64,7 @@ let config: HardhatUserConfig = {
     },
     avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
-      gasPrice: 200 * 1000000000,
+      // gasPrice: 200 * 1000000000,
     },
     harmony: {
       url: "https://a.api.s0.t.hmny.io/",
@@ -102,7 +102,7 @@ let config: HardhatUserConfig = {
       url: "https://api.avax-test.network/ext/bc/C/rpc",
     },
     goerli: {
-      url: "https://rpc.goerli.mudit.blog/",
+      url: "https://rpc.ankr.com/eth_goerli",
     },
     optimism: {
       url: "https://mainnet.optimism.io",

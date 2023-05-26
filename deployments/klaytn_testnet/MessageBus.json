@@ -1,0 +1,652 @@
+{
+  "address": "0xe0fa08834465EcC36c494F2b6C87b82Ab7970413",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_gasFeePricing",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_authVerifier",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "string",
+          "name": "reason",
+          "type": "string"
+        }
+      ],
+      "name": "CallReverted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "messageId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum MessageBusReceiver.TxStatus",
+          "name": "status",
+          "type": "uint8"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "_dstAddress",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "srcChainId",
+          "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "srcNonce",
+          "type": "uint64"
+        }
+      ],
+      "name": "Executed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "srcChainID",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "receiver",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "dstChainId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "message",
+          "type": "bytes"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "nonce",
+          "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "options",
+          "type": "bytes"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "fee",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "messageId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "MessageSent",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "authVerifier",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_srcAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_srcChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_dstAddress",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_dstChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_srcNonce",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_message",
+          "type": "bytes"
+        }
+      ],
+      "name": "computeMessageId",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_dstChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_options",
+          "type": "bytes"
+        }
+      ],
+      "name": "estimateFee",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_srcChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_srcAddress",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "_dstAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_gasLimit",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_nonce",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_message",
+          "type": "bytes"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_messageId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "executeMessage",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "fees",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "gasFeePricing",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_messageId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getExecutedMessage",
+      "outputs": [
+        {
+          "internalType": "enum MessageBusReceiver.TxStatus",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nonce",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address payable",
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "rescueGas",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_receiver",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_dstChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_message",
+          "type": "bytes"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_options",
+          "type": "bytes"
+        }
+      ],
+      "name": "sendMessage",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_authVerifier",
+          "type": "address"
+        }
+      ],
+      "name": "updateAuthVerifier",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_gasFeePricing",
+          "type": "address"
+        }
+      ],
+      "name": "updateGasFeePricing",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_messageId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "enum MessageBusReceiver.TxStatus",
+          "name": "_status",
+          "type": "uint8"
+        }
+      ],
+      "name": "updateMessageStatus",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address payable",
+          "name": "to",
+          "type": "address"
+        }
+      ],
+      "name": "withdrawGasFees",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x85bc917798595a0d23dfa413f6706e535dc7bd6bee17b6d189f2fe378c127106",
+  "receipt": {
+    "to": null,
+    "from": "0x0AF91FA049A7e1894F480bFE5bBa20142C6c29a9",
+    "contractAddress": "0xe0fa08834465EcC36c494F2b6C87b82Ab7970413",
+    "transactionIndex": 0,
+    "gasUsed": "2057082",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000001000000000000000010000000000000000000020000000000000000000800000000000000000000000040000000400000000000000000000000000040000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020020000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0xbccffd83a7a7b37b929f3afd416940134131e314f1888761c03ad429b6c66e85",
+    "transactionHash": "0x85bc917798595a0d23dfa413f6706e535dc7bd6bee17b6d189f2fe378c127106",
+    "logs": [
+      {
+        "transactionIndex": 0,
+        "blockNumber": 113451105,
+        "transactionHash": "0x85bc917798595a0d23dfa413f6706e535dc7bd6bee17b6d189f2fe378c127106",
+        "address": "0xe0fa08834465EcC36c494F2b6C87b82Ab7970413",
+        "topics": [
+          "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0",
+          "0x0000000000000000000000000000000000000000000000000000000000000000",
+          "0x0000000000000000000000000af91fa049a7e1894f480bfe5bba20142c6c29a9"
+        ],
+        "data": "0x",
+        "logIndex": 0,
+        "blockHash": "0xbccffd83a7a7b37b929f3afd416940134131e314f1888761c03ad429b6c66e85"
+      }
+    ],
+    "blockNumber": 113451105,
+    "cumulativeGasUsed": "2057082",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0x22cdc93F53Ee3F6b8Ad66faD6f98915a5349950E",
+    "0x9508BF380c1e6f751D97604732eF1Bae6673f299"
+  ],
+  "solcInputHash": "ae6da9686381bcba7e3a788eaf7d049c",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.13+commit.abaa5c0e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_gasFeePricing\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_authVerifier\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"reason\",\"type\":\"string\"}],\"name\":\"CallReverted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"messageId\",\"type\":\"bytes32\"},{\"indexed\":false,\"internalType\":\"enum MessageBusReceiver.TxStatus\",\"name\":\"status\",\"type\":\"uint8\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_dstAddress\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"srcChainId\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"srcNonce\",\"type\":\"uint64\"}],\"name\":\"Executed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"srcChainID\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes32\",\"name\":\"receiver\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"dstChainId\",\"type\":\"uint256\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"message\",\"type\":\"bytes\"},{\"indexed\":false,\"internalType\":\"uint64\",\"name\":\"nonce\",\"type\":\"uint64\"},{\"indexed\":false,\"internalType\":\"bytes\",\"name\":\"options\",\"type\":\"bytes\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"fee\",\"type\":\"uint256\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"messageId\",\"type\":\"bytes32\"}],\"name\":\"MessageSent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"authVerifier\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_srcAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_srcChainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"_dstAddress\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"_dstChainId\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_srcNonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"}],\"name\":\"computeMessageId\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_dstChainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_options\",\"type\":\"bytes\"}],\"name\":\"estimateFee\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_srcChainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes32\",\"name\":\"_srcAddress\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"_dstAddress\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_gasLimit\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_nonce\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"},{\"internalType\":\"bytes32\",\"name\":\"_messageId\",\"type\":\"bytes32\"}],\"name\":\"executeMessage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"fees\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"gasFeePricing\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_messageId\",\"type\":\"bytes32\"}],\"name\":\"getExecutedMessage\",\"outputs\":[{\"internalType\":\"enum MessageBusReceiver.TxStatus\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"nonce\",\"outputs\":[{\"internalType\":\"uint64\",\"name\":\"\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address payable\",\"name\":\"to\",\"type\":\"address\"}],\"name\":\"rescueGas\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_receiver\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"_dstChainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"_options\",\"type\":\"bytes\"}],\"name\":\"sendMessage\",\"outputs\":[],\"stateMutability\":\"payable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_authVerifier\",\"type\":\"address\"}],\"name\":\"updateAuthVerifier\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_gasFeePricing\",\"type\":\"address\"}],\"name\":\"updateGasFeePricing\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_messageId\",\"type\":\"bytes32\"},{\"internalType\":\"enum MessageBusReceiver.TxStatus\",\"name\":\"_status\",\"type\":\"uint8\"}],\"name\":\"updateMessageStatus\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address payable\",\"name\":\"to\",\"type\":\"address\"}],\"name\":\"withdrawGasFees\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"executeMessage(uint256,bytes32,address,uint256,uint256,bytes,bytes32)\":{\"params\":{\"_dstAddress\":\"Destination address that the arbitrary message will be passed to\",\"_gasLimit\":\"Gas limit to be passed alongside the message, depending on the fee paid on srcChain\",\"_message\":\"Arbitrary message payload to pass to the destination chain receiver\",\"_srcAddress\":\"Originating bytes32 address of the message sender on the srcChain\",\"_srcChainId\":\"Originating chain ID - typically a standard EVM chain ID, but may refer to a Synapse-specific chain ID on nonEVM chains\"}},\"owner()\":{\"details\":\"Returns the address of the current owner.\"},\"renounceOwnership()\":{\"details\":\"Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.\"},\"rescueGas(address)\":{\"params\":{\"to\":\"Address to which to rescue gas to\"}},\"sendMessage(bytes32,uint256,bytes,bytes)\":{\"params\":{\"_dstChainId\":\"The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains\",\"_message\":\"The arbitrary payload to pass to the destination chain receiver\",\"_options\":\"Versioned struct used to instruct relayer on how to proceed with gas limits\",\"_receiver\":\"The bytes32 address of the destination contract to be called\"}},\"transferOwnership(address)\":{\"details\":\"Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner.\"},\"withdrawGasFees(address)\":{\"params\":{\"to\":\"Address to withdraw gas fees to, which can be specified in the event owner() can't receive native gas\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"executeMessage(uint256,bytes32,address,uint256,uint256,bytes,bytes32)\":{\"notice\":\"Relayer executes messages through an authenticated method to the destination receiver based on the originating transaction on source chain\"},\"rescueGas(address)\":{\"notice\":\"Rescues any gas in contract, aside from fees\"},\"sendMessage(bytes32,uint256,bytes,bytes)\":{\"notice\":\"Sends a message to a receiving contract address on another chain. Sender must make sure that the message is unique and not a duplicate message.\"},\"updateMessageStatus(bytes32,uint8)\":{\"notice\":\"CONTRACT CONFIG \"},\"withdrawGasFees(address)\":{\"notice\":\"Withdraws accumulated fees in native gas token, based on fees variable.\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/messaging/MessageBus.sol\":\"MessageBus\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":5000000},\"remappings\":[]},\"sources\":{\"@openzeppelin/contracts-4.5.0/access/Ownable.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts v4.4.1 (access/Ownable.sol)\\n\\npragma solidity ^0.8.0;\\n\\nimport \\\"../utils/Context.sol\\\";\\n\\n/**\\n * @dev Contract module which provides a basic access control mechanism, where\\n * there is an account (an owner) that can be granted exclusive access to\\n * specific functions.\\n *\\n * By default, the owner account will be the one that deploys the contract. This\\n * can later be changed with {transferOwnership}.\\n *\\n * This module is used through inheritance. It will make available the modifier\\n * `onlyOwner`, which can be applied to your functions to restrict their use to\\n * the owner.\\n */\\nabstract contract Ownable is Context {\\n    address private _owner;\\n\\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\\n\\n    /**\\n     * @dev Initializes the contract setting the deployer as the initial owner.\\n     */\\n    constructor() {\\n        _transferOwnership(_msgSender());\\n    }\\n\\n    /**\\n     * @dev Returns the address of the current owner.\\n     */\\n    function owner() public view virtual returns (address) {\\n        return _owner;\\n    }\\n\\n    /**\\n     * @dev Throws if called by any account other than the owner.\\n     */\\n    modifier onlyOwner() {\\n        require(owner() == _msgSender(), \\\"Ownable: caller is not the owner\\\");\\n        _;\\n    }\\n\\n    /**\\n     * @dev Leaves the contract without owner. It will not be possible to call\\n     * `onlyOwner` functions anymore. Can only be called by the current owner.\\n     *\\n     * NOTE: Renouncing ownership will leave the contract without an owner,\\n     * thereby removing any functionality that is only available to the owner.\\n     */\\n    function renounceOwnership() public virtual onlyOwner {\\n        _transferOwnership(address(0));\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Can only be called by the current owner.\\n     */\\n    function transferOwnership(address newOwner) public virtual onlyOwner {\\n        require(newOwner != address(0), \\\"Ownable: new owner is the zero address\\\");\\n        _transferOwnership(newOwner);\\n    }\\n\\n    /**\\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\\n     * Internal function without access restriction.\\n     */\\n    function _transferOwnership(address newOwner) internal virtual {\\n        address oldOwner = _owner;\\n        _owner = newOwner;\\n        emit OwnershipTransferred(oldOwner, newOwner);\\n    }\\n}\\n\",\"keccak256\":\"0x24e0364e503a9bbde94c715d26573a76f14cd2a202d45f96f52134ab806b67b9\",\"license\":\"MIT\"},\"@openzeppelin/contracts-4.5.0/utils/Context.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n// OpenZeppelin Contracts v4.4.1 (utils/Context.sol)\\n\\npragma solidity ^0.8.0;\\n\\n/**\\n * @dev Provides information about the current execution context, including the\\n * sender of the transaction and its data. While these are generally available\\n * via msg.sender and msg.data, they should not be accessed in such a direct\\n * manner, since when dealing with meta-transactions the account sending and\\n * paying for execution may not be the actual sender (as far as an application\\n * is concerned).\\n *\\n * This contract is only required for intermediate, library-like contracts.\\n */\\nabstract contract Context {\\n    function _msgSender() internal view virtual returns (address) {\\n        return msg.sender;\\n    }\\n\\n    function _msgData() internal view virtual returns (bytes calldata) {\\n        return msg.data;\\n    }\\n}\\n\",\"keccak256\":\"0xe2e337e6dde9ef6b680e07338c493ebea1b5fd09b43424112868e9cc1706bca7\",\"license\":\"MIT\"},\"contracts/messaging/MessageBus.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.8.13;\\n\\nimport \\\"@openzeppelin/contracts-4.5.0/access/Ownable.sol\\\";\\nimport \\\"./MessageBusSender.sol\\\";\\nimport \\\"./MessageBusReceiver.sol\\\";\\n\\ncontract MessageBus is MessageBusSender, MessageBusReceiver {\\n    constructor(address _gasFeePricing, address _authVerifier)\\n        MessageBusSender(_gasFeePricing)\\n        MessageBusReceiver(_authVerifier)\\n    {}\\n}\\n\",\"keccak256\":\"0xa06b67fe831c4da3c49fdac8b3e64315f1d0d96adddb36e5499b6eaf50de2ed1\",\"license\":\"MIT\"},\"contracts/messaging/MessageBusReceiver.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.8.13;\\n\\nimport \\\"@openzeppelin/contracts-4.5.0/access/Ownable.sol\\\";\\nimport \\\"./interfaces/IAuthVerifier.sol\\\";\\nimport \\\"./interfaces/ISynMessagingReceiver.sol\\\";\\n\\ncontract MessageBusReceiver is Ownable {\\n    address public authVerifier;\\n\\n    enum TxStatus {\\n        Null,\\n        Success,\\n        Fail\\n    }\\n\\n    // Store all successfully executed messages\\n    mapping(bytes32 => TxStatus) executedMessages;\\n\\n    // TODO: Rename to follow one standard convention -> Send -> Receive?\\n    event Executed(\\n        bytes32 indexed messageId,\\n        TxStatus status,\\n        address indexed _dstAddress,\\n        uint64 srcChainId,\\n        uint64 srcNonce\\n    );\\n    event CallReverted(string reason);\\n\\n    constructor(address _authVerifier) {\\n        authVerifier = _authVerifier;\\n    }\\n\\n    function getExecutedMessage(bytes32 _messageId) external view returns (TxStatus) {\\n        return executedMessages[_messageId];\\n    }\\n\\n    /**\\n     * @notice Relayer executes messages through an authenticated method to the destination receiver\\n     based on the originating transaction on source chain\\n     * @param _srcChainId Originating chain ID - typically a standard EVM chain ID, but may refer to a Synapse-specific chain ID on nonEVM chains\\n     * @param _srcAddress Originating bytes32 address of the message sender on the srcChain\\n     * @param _dstAddress Destination address that the arbitrary message will be passed to\\n     * @param _gasLimit Gas limit to be passed alongside the message, depending on the fee paid on srcChain\\n     * @param _message Arbitrary message payload to pass to the destination chain receiver\\n     */\\n    function executeMessage(\\n        uint256 _srcChainId,\\n        bytes32 _srcAddress,\\n        address _dstAddress,\\n        uint256 _gasLimit,\\n        uint256 _nonce,\\n        bytes calldata _message,\\n        bytes32 _messageId\\n    ) external {\\n        // In order to guarentee that an individual message is only executed once, a messageId is passed\\n        // enforce that this message ID hasn't already been tried ever\\n        bytes32 messageId = _messageId;\\n        require(executedMessages[messageId] == TxStatus.Null, \\\"Message already executed\\\");\\n        // Authenticate executeMessage, will revert if not authenticated\\n        IAuthVerifier(authVerifier).msgAuth(abi.encode(msg.sender));\\n        // Message is now in-flight, adjust status\\n        // executedMessages[messageId] = TxStatus.Pending;\\n\\n        TxStatus status;\\n        try\\n            ISynMessagingReceiver(_dstAddress).executeMessage{gas: _gasLimit}(\\n                _srcAddress,\\n                _srcChainId,\\n                _message,\\n                msg.sender\\n            )\\n        {\\n            // Assuming success state if no revert\\n            status = TxStatus.Success;\\n        } catch (bytes memory reason) {\\n            // call hard reverted & failed\\n            emit CallReverted(getRevertMsg(reason));\\n            status = TxStatus.Fail;\\n        }\\n\\n        executedMessages[messageId] = status;\\n        emit Executed(messageId, status, _dstAddress, uint64(_srcChainId), uint64(_nonce));\\n    }\\n\\n    /** HELPER VIEW FUNCTION */\\n    // https://ethereum.stackexchange.com/a/83577\\n    // https://github.com/Uniswap/v3-periphery/blob/v1.0.0/contracts/base/Multicall.sol\\n    function getRevertMsg(bytes memory _returnData) private pure returns (string memory) {\\n        // If the _res length is less than 68, then the transaction failed silently (without a revert message)\\n        if (_returnData.length < 68) return \\\"Transaction reverted silently\\\";\\n        assembly {\\n            // Slice the sighash.\\n            _returnData := add(_returnData, 0x04)\\n        }\\n        return abi.decode(_returnData, (string)); // All that remains is the revert string\\n    }\\n\\n    /** CONTRACT CONFIG */\\n\\n    function updateMessageStatus(bytes32 _messageId, TxStatus _status) public onlyOwner {\\n        executedMessages[_messageId] = _status;\\n    }\\n\\n    function updateAuthVerifier(address _authVerifier) public onlyOwner {\\n        require(_authVerifier != address(0), \\\"Cannot set to 0\\\");\\n        authVerifier = _authVerifier;\\n    }\\n}\\n\",\"keccak256\":\"0x052d71d2ef61ced1098c84490349391f9e840f3a3903d3cf28f3acd2edaf5ffe\",\"license\":\"MIT\"},\"contracts/messaging/MessageBusSender.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.8.13;\\n\\nimport \\\"@openzeppelin/contracts-4.5.0/access/Ownable.sol\\\";\\nimport \\\"./interfaces/IGasFeePricing.sol\\\";\\n\\ncontract MessageBusSender is Ownable {\\n    address public gasFeePricing;\\n    uint64 public nonce;\\n    uint256 public fees;\\n\\n    constructor(address _gasFeePricing) {\\n        gasFeePricing = _gasFeePricing;\\n    }\\n\\n    event MessageSent(\\n        address indexed sender,\\n        uint256 srcChainID,\\n        bytes32 receiver,\\n        uint256 indexed dstChainId,\\n        bytes message,\\n        uint64 nonce,\\n        bytes options,\\n        uint256 fee,\\n        bytes32 indexed messageId\\n    );\\n\\n    function computeMessageId(\\n        address _srcAddress,\\n        uint256 _srcChainId,\\n        bytes32 _dstAddress,\\n        uint256 _dstChainId,\\n        uint256 _srcNonce,\\n        bytes calldata _message\\n    ) public view returns (bytes32) {\\n        return keccak256(abi.encode(_srcAddress, _srcChainId, _dstAddress, _dstChainId, _srcNonce, _message));\\n    }\\n\\n    function estimateFee(uint256 _dstChainId, bytes calldata _options) public returns (uint256) {\\n        uint256 fee = IGasFeePricing(gasFeePricing).estimateGasFee(_dstChainId, _options);\\n        require(fee != 0, \\\"Fee not set\\\");\\n        return fee;\\n    }\\n\\n    /**\\n     * @notice Sends a message to a receiving contract address on another chain.\\n     * Sender must make sure that the message is unique and not a duplicate message.\\n     * @param _receiver The bytes32 address of the destination contract to be called\\n     * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains\\n     * @param _message The arbitrary payload to pass to the destination chain receiver\\n     * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits\\n     */\\n    function sendMessage(\\n        bytes32 _receiver,\\n        uint256 _dstChainId,\\n        bytes calldata _message,\\n        bytes calldata _options\\n    ) external payable {\\n        require(_dstChainId != block.chainid, \\\"Invalid chainId\\\");\\n        uint256 fee = estimateFee(_dstChainId, _options);\\n        require(msg.value >= fee, \\\"Insuffient gas fee\\\");\\n        bytes32 msgId = computeMessageId(msg.sender, block.chainid, _receiver, _dstChainId, nonce, _message);\\n        emit MessageSent(\\n            msg.sender,\\n            block.chainid,\\n            _receiver,\\n            _dstChainId,\\n            _message,\\n            nonce,\\n            _options,\\n            msg.value,\\n            msgId\\n        );\\n        fees += msg.value;\\n        ++nonce;\\n    }\\n\\n    /**\\n     * @notice Withdraws accumulated fees in native gas token, based on fees variable.\\n     * @param to Address to withdraw gas fees to, which can be specified in the event owner() can't receive native gas\\n     */\\n    function withdrawGasFees(address payable to) external onlyOwner {\\n        uint256 withdrawAmount = fees;\\n        // Reset fees to 0\\n        to.transfer(withdrawAmount);\\n        delete fees;\\n    }\\n\\n    /**\\n     * @notice Rescues any gas in contract, aside from fees\\n     * @param to Address to which to rescue gas to\\n     */\\n    function rescueGas(address payable to) external onlyOwner {\\n        uint256 withdrawAmount = address(this).balance - fees;\\n        to.transfer(withdrawAmount);\\n    }\\n\\n    function updateGasFeePricing(address _gasFeePricing) public onlyOwner {\\n        require(_gasFeePricing != address(0), \\\"Cannot set to 0\\\");\\n        gasFeePricing = _gasFeePricing;\\n    }\\n}\\n\",\"keccak256\":\"0xbb88d95efa033e45216bbea35f9c231a30a26cbcb0d2c59e47d02b5e24fe82c7\",\"license\":\"MIT\"},\"contracts/messaging/interfaces/IAuthVerifier.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.8.13;\\n\\ninterface IAuthVerifier {\\n    /**\\n     * @notice Authentication library to allow the validator network to execute cross-chain messages.\\n     * @param _authData A bytes32 address encoded via abi.encode(address)\\n     * @return authenticated returns true if bytes data submitted and decoded to the address is correct\\n     */\\n    function msgAuth(bytes calldata _authData) external view returns (bool authenticated);\\n\\n    /**\\n     * @notice Permissioned method to support upgrades to the library\\n     * @param _nodegroup address which has authentication to execute messages\\n     */\\n    function setNodeGroup(address _nodegroup) external;\\n}\\n\",\"keccak256\":\"0x5a2dbd5f05446b3998249078349e84a731acf4323580c410d21e58d79af66df3\",\"license\":\"MIT\"},\"contracts/messaging/interfaces/IGasFeePricing.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.8.13;\\n\\ninterface IGasFeePricing {\\n    /**\\n     * @notice Permissioned method to allow an off-chain party to set what each dstChain's\\n     * gas cost is priced in the srcChain's native gas currency.\\n     * Example: call on ETH, setCostPerChain(43114, 30000000000, 25180000000000000)\\n     * chain ID 43114\\n     * Average of 30 gwei cost to transaction on 43114\\n     * AVAX/ETH = 0.02518, scaled to gas in wei = 25180000000000000\\n     * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains\\n     * @param _gasUnitPrice The estimated current gas price in wei of the destination chain\\n     * @param _gasTokenPriceRatio Gas ratio of dstGasToken / srcGasToken\\n     */\\n    function setCostPerChain(\\n        uint256 _dstChainId,\\n        uint256 _gasUnitPrice,\\n        uint256 _gasTokenPriceRatio\\n    ) external;\\n\\n    /**\\n     * @notice Returns srcGasToken fee to charge in wei for the cross-chain message based on the gas limit\\n     * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits. Contains data on gas limit to submit tx with.\\n     */\\n    function estimateGasFee(uint256 _dstChainId, bytes calldata _options) external returns (uint256);\\n}\\n\",\"keccak256\":\"0x585982cdd2fc7cf4c13651cb89a9cf5e1855abf34208416eefb69bf8389f5909\",\"license\":\"MIT\"},\"contracts/messaging/interfaces/ISynMessagingReceiver.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.8.0;\\n\\ninterface ISynMessagingReceiver {\\n    // Maps chain ID to the bytes32 trusted addresses allowed to be source senders\\n    // mapping(uint256 => bytes32) internal trustedRemoteLookup;\\n\\n    /**\\n     * @notice Called by MessageBus\\n     * @dev MUST be permissioned to trusted source apps via trustedRemote\\n     * @param _srcAddress The bytes32 address of the source app contract\\n     * @param _srcChainId The source chain ID where the transfer is originated from\\n     * @param _message Arbitrary message bytes originated from and encoded by the source app contract\\n     * @param _executor Address who called the MessageBus execution function\\n     */\\n    function executeMessage(\\n        bytes32 _srcAddress,\\n        uint256 _srcChainId,\\n        bytes calldata _message,\\n        address _executor\\n    ) external;\\n}\\n\",\"keccak256\":\"0x575a7299184c321652e31eff3879cb75d0f98bc3d8929aa7fcce9bfcbfb3b687\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x60806040523480156200001157600080fd5b50604051620019e4380380620019e48339810160408190526200003491620000e6565b8082620000413362000079565b600180546001600160a01b039283166001600160a01b03199182161790915560038054939092169216919091179055506200011e9050565b600080546001600160a01b038381166001600160a01b0319831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b80516001600160a01b0381168114620000e157600080fd5b919050565b60008060408385031215620000fa57600080fd5b6200010583620000c9565b91506200011560208401620000c9565b90509250929050565b6118b6806200012e6000396000f3fe60806040526004361061010e5760003560e01c8063a5c0edf3116100a5578063affed0e011610074578063d6b457b911610059578063d6b457b91461035f578063f2fde38b1461037f578063f44d57aa1461039f57600080fd5b8063affed0e0146102e0578063c40873351461033257600080fd5b8063a5c0edf314610260578063a66dd38414610280578063aa70fc0e146102a0578063ac8a4c1b146102cd57600080fd5b80638da5cb5b116100e15780638da5cb5b146101be5780639af1d35a1461020a5780639b11079c14610220578063a1b058d81461024057600080fd5b8063205e157b1461011357806325b19fa3146101355780635da6d2c41461017b578063715018a6146101a9575b600080fd5b34801561011f57600080fd5b5061013361012e3660046111a5565b6103bf565b005b34801561014157600080fd5b506101656101503660046111c9565b60009081526004602052604090205460ff1690565b604051610172919061124c565b60405180910390f35b34801561018757600080fd5b5061019b6101963660046112a3565b6104a0565b604051908152602001610172565b3480156101b557600080fd5b506101336105b6565b3480156101ca57600080fd5b5060005473ffffffffffffffffffffffffffffffffffffffff165b60405173ffffffffffffffffffffffffffffffffffffffff9091168152602001610172565b34801561021657600080fd5b5061019b60025481565b34801561022c57600080fd5b5061013361023b3660046112ef565b610643565b34801561024c57600080fd5b5061013361025b366004611323565b610716565b34801561026c57600080fd5b5061013361027b3660046111a5565b6109da565b34801561028c57600080fd5b5061013361029b3660046111a5565b610b1f565b3480156102ac57600080fd5b506001546101e59073ffffffffffffffffffffffffffffffffffffffff1681565b6101336102db3660046113a7565b610c64565b3480156102ec57600080fd5b506001546103199074010000000000000000000000000000000000000000900467ffffffffffffffff1681565b60405167ffffffffffffffff9091168152602001610172565b34801561033e57600080fd5b506003546101e59073ffffffffffffffffffffffffffffffffffffffff1681565b34801561036b57600080fd5b5061013361037a3660046111a5565b610e66565b34801561038b57600080fd5b5061013361039a3660046111a5565b610f37565b3480156103ab57600080fd5b5061019b6103ba36600461142a565b611067565b60005473ffffffffffffffffffffffffffffffffffffffff163314610445576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e657260448201526064015b60405180910390fd5b60006002544761045591906114d6565b60405190915073ffffffffffffffffffffffffffffffffffffffff83169082156108fc029083906000818181858888f1935050505015801561049b573d6000803e3d6000fd5b505050565b6001546040517f47feadc1000000000000000000000000000000000000000000000000000000008152600091829173ffffffffffffffffffffffffffffffffffffffff909116906347feadc1906104ff90889088908890600401611536565b6020604051808303816000875af115801561051e573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906105429190611559565b9050806000036105ae576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152600b60248201527f466565206e6f7420736574000000000000000000000000000000000000000000604482015260640161043c565b949350505050565b60005473ffffffffffffffffffffffffffffffffffffffff163314610637576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161043c565b61064160006110a9565b565b60005473ffffffffffffffffffffffffffffffffffffffff1633146106c4576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161043c565b600082815260046020526040902080548291907fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0016600183600281111561070d5761070d6111e2565b02179055505050565b806000808281526004602052604090205460ff16600281111561073b5761073b6111e2565b146107a2576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601860248201527f4d65737361676520616c72656164792065786563757465640000000000000000604482015260640161043c565b6003546040805133602082015273ffffffffffffffffffffffffffffffffffffffff90921691638b1b3a2d91016040516020818303038152906040526040518263ffffffff1660e01b81526004016107fa91906115ec565b602060405180830381865afa158015610817573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061083b91906115ff565b5060008773ffffffffffffffffffffffffffffffffffffffff1663a6060871888b8d8989336040518763ffffffff1660e01b8152600401610880959493929190611621565b600060405180830381600088803b15801561089a57600080fd5b5087f1935050505080156108ac575060015b610929573d8080156108da576040519150601f19603f3d011682016040523d82523d6000602084013e6108df565b606091505b507fffdd6142bbb721f3400e3908b04b86f60649b2e4d191e3f4c50c32c3e6471d2f61090a8261111e565b60405161091791906115ec565b60405180910390a1600291505061092d565b5060015b600082815260046020526040902080548291907fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00166001836002811115610976576109766111e2565b02179055508773ffffffffffffffffffffffffffffffffffffffff16827f04214a849019ea3548afcedee810b5bc1680cfb64e22fdf9051a823f3cdfea65838d8a6040516109c693929190611669565b60405180910390a350505050505050505050565b60005473ffffffffffffffffffffffffffffffffffffffff163314610a5b576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161043c565b73ffffffffffffffffffffffffffffffffffffffff8116610ad8576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152600f60248201527f43616e6e6f742073657420746f20300000000000000000000000000000000000604482015260640161043c565b600380547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff92909216919091179055565b60005473ffffffffffffffffffffffffffffffffffffffff163314610ba0576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161043c565b73ffffffffffffffffffffffffffffffffffffffff8116610c1d576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152600f60248201527f43616e6e6f742073657420746f20300000000000000000000000000000000000604482015260640161043c565b600180547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff92909216919091179055565b468503610ccd576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152600f60248201527f496e76616c696420636861696e49640000000000000000000000000000000000604482015260640161043c565b6000610cda8684846104a0565b905080341015610d46576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601260248201527f496e7375666669656e7420676173206665650000000000000000000000000000604482015260640161043c565b6000610d7733468a8a600160149054906101000a900467ffffffffffffffff1667ffffffffffffffff168b8b611067565b905080873373ffffffffffffffffffffffffffffffffffffffff167f864ad5e86ed3626c9517260fbfe1eed395157fd938e459e9fb607a07129cdd2a468c8b8b600160149054906101000a900467ffffffffffffffff168c8c34604051610de5989796959493929190611699565b60405180910390a43460026000828254610dff91906116f2565b909155505060018054601490610e369074010000000000000000000000000000000000000000900467ffffffffffffffff1661170a565b91906101000a81548167ffffffffffffffff021916908367ffffffffffffffff1602179055505050505050505050565b60005473ffffffffffffffffffffffffffffffffffffffff163314610ee7576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161043c565b60025460405173ffffffffffffffffffffffffffffffffffffffff83169082156108fc029083906000818181858888f19350505050158015610f2d573d6000803e3d6000fd5b5050600060025550565b60005473ffffffffffffffffffffffffffffffffffffffff163314610fb8576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161043c565b73ffffffffffffffffffffffffffffffffffffffff811661105b576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201527f6464726573730000000000000000000000000000000000000000000000000000606482015260840161043c565b611064816110a9565b50565b6000878787878787876040516020016110869796959493929190611731565b604051602081830303815290604052805190602001209050979650505050505050565b6000805473ffffffffffffffffffffffffffffffffffffffff8381167fffffffffffffffffffffffff0000000000000000000000000000000000000000831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b606060448251101561116357505060408051808201909152601d81527f5472616e73616374696f6e2072657665727465642073696c656e746c79000000602082015290565b6004820191508180602001905181019061117d91906117b5565b92915050565b73ffffffffffffffffffffffffffffffffffffffff8116811461106457600080fd5b6000602082840312156111b757600080fd5b81356111c281611183565b9392505050565b6000602082840312156111db57600080fd5b5035919050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052602160045260246000fd5b60038110611248577f4e487b7100000000000000000000000000000000000000000000000000000000600052602160045260246000fd5b9052565b6020810161117d8284611211565b60008083601f84011261126c57600080fd5b50813567ffffffffffffffff81111561128457600080fd5b60208301915083602082850101111561129c57600080fd5b9250929050565b6000806000604084860312156112b857600080fd5b83359250602084013567ffffffffffffffff8111156112d657600080fd5b6112e28682870161125a565b9497909650939450505050565b6000806040838503121561130257600080fd5b8235915060208301356003811061131857600080fd5b809150509250929050565b60008060008060008060008060e0898b03121561133f57600080fd5b8835975060208901359650604089013561135881611183565b9550606089013594506080890135935060a089013567ffffffffffffffff81111561138257600080fd5b61138e8b828c0161125a565b999c989b50969995989497949560c00135949350505050565b600080600080600080608087890312156113c057600080fd5b8635955060208701359450604087013567ffffffffffffffff808211156113e657600080fd5b6113f28a838b0161125a565b9096509450606089013591508082111561140b57600080fd5b5061141889828a0161125a565b979a9699509497509295939492505050565b600080600080600080600060c0888a03121561144557600080fd5b873561145081611183565b96506020880135955060408801359450606088013593506080880135925060a088013567ffffffffffffffff81111561148857600080fd5b6114948a828b0161125a565b989b979a50959850939692959293505050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b6000828210156114e8576114e86114a7565b500390565b8183528181602085013750600060208284010152600060207fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0601f840116840101905092915050565b8381526040602082015260006115506040830184866114ed565b95945050505050565b60006020828403121561156b57600080fd5b5051919050565b60005b8381101561158d578181015183820152602001611575565b8381111561159c576000848401525b50505050565b600081518084526115ba816020860160208601611572565b601f017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0169290920160200192915050565b6020815260006111c260208301846115a2565b60006020828403121561161157600080fd5b815180151581146111c257600080fd5b8581528460208201526080604082015260006116416080830185876114ed565b905073ffffffffffffffffffffffffffffffffffffffff831660608301529695505050505050565b606081016116778286611211565b67ffffffffffffffff8085166020840152808416604084015250949350505050565b88815287602082015260c0604082015260006116b960c08301888a6114ed565b67ffffffffffffffff8716606084015282810360808401526116dc8186886114ed565b9150508260a08301529998505050505050505050565b60008219821115611705576117056114a7565b500190565b600067ffffffffffffffff808316818103611727576117276114a7565b6001019392505050565b73ffffffffffffffffffffffffffffffffffffffff8816815286602082015285604082015284606082015283608082015260c060a0820152600061177960c0830184866114ed565b9998505050505050505050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b6000602082840312156117c757600080fd5b815167ffffffffffffffff808211156117df57600080fd5b818401915084601f8301126117f357600080fd5b81518181111561180557611805611786565b604051601f82017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0908116603f0116810190838211818310171561184b5761184b611786565b8160405282815287602084870101111561186457600080fd5b611875836020830160208801611572565b97965050505050505056fea264697066735822122085fe309ffe29ff799efaa733b4314b567102ac59cfab0bf5dd71dd370af8adde64736f6c634300080d0033",
+  "deployedBytecode": "0x60806040526004361061010e5760003560e01c8063a5c0edf3116100a5578063affed0e011610074578063d6b457b911610059578063d6b457b91461035f578063f2fde38b1461037f578063f44d57aa1461039f57600080fd5b8063affed0e0146102e0578063c40873351461033257600080fd5b8063a5c0edf314610260578063a66dd38414610280578063aa70fc0e146102a0578063ac8a4c1b146102cd57600080fd5b80638da5cb5b116100e15780638da5cb5b146101be5780639af1d35a1461020a5780639b11079c14610220578063a1b058d81461024057600080fd5b8063205e157b1461011357806325b19fa3146101355780635da6d2c41461017b578063715018a6146101a9575b600080fd5b34801561011f57600080fd5b5061013361012e3660046111a5565b6103bf565b005b34801561014157600080fd5b506101656101503660046111c9565b60009081526004602052604090205460ff1690565b604051610172919061124c565b60405180910390f35b34801561018757600080fd5b5061019b6101963660046112a3565b6104a0565b604051908152602001610172565b3480156101b557600080fd5b506101336105b6565b3480156101ca57600080fd5b5060005473ffffffffffffffffffffffffffffffffffffffff165b60405173ffffffffffffffffffffffffffffffffffffffff9091168152602001610172565b34801561021657600080fd5b5061019b60025481565b34801561022c57600080fd5b5061013361023b3660046112ef565b610643565b34801561024c57600080fd5b5061013361025b366004611323565b610716565b34801561026c57600080fd5b5061013361027b3660046111a5565b6109da565b34801561028c57600080fd5b5061013361029b3660046111a5565b610b1f565b3480156102ac57600080fd5b506001546101e59073ffffffffffffffffffffffffffffffffffffffff1681565b6101336102db3660046113a7565b610c64565b3480156102ec57600080fd5b506001546103199074010000000000000000000000000000000000000000900467ffffffffffffffff1681565b60405167ffffffffffffffff9091168152602001610172565b34801561033e57600080fd5b506003546101e59073ffffffffffffffffffffffffffffffffffffffff1681565b34801561036b57600080fd5b5061013361037a3660046111a5565b610e66565b34801561038b57600080fd5b5061013361039a3660046111a5565b610f37565b3480156103ab57600080fd5b5061019b6103ba36600461142a565b611067565b60005473ffffffffffffffffffffffffffffffffffffffff163314610445576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e657260448201526064015b60405180910390fd5b60006002544761045591906114d6565b60405190915073ffffffffffffffffffffffffffffffffffffffff83169082156108fc029083906000818181858888f1935050505015801561049b573d6000803e3d6000fd5b505050565b6001546040517f47feadc1000000000000000000000000000000000000000000000000000000008152600091829173ffffffffffffffffffffffffffffffffffffffff909116906347feadc1906104ff90889088908890600401611536565b6020604051808303816000875af115801561051e573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906105429190611559565b9050806000036105ae576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152600b60248201527f466565206e6f7420736574000000000000000000000000000000000000000000604482015260640161043c565b949350505050565b60005473ffffffffffffffffffffffffffffffffffffffff163314610637576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161043c565b61064160006110a9565b565b60005473ffffffffffffffffffffffffffffffffffffffff1633146106c4576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161043c565b600082815260046020526040902080548291907fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0016600183600281111561070d5761070d6111e2565b02179055505050565b806000808281526004602052604090205460ff16600281111561073b5761073b6111e2565b146107a2576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601860248201527f4d65737361676520616c72656164792065786563757465640000000000000000604482015260640161043c565b6003546040805133602082015273ffffffffffffffffffffffffffffffffffffffff90921691638b1b3a2d91016040516020818303038152906040526040518263ffffffff1660e01b81526004016107fa91906115ec565b602060405180830381865afa158015610817573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061083b91906115ff565b5060008773ffffffffffffffffffffffffffffffffffffffff1663a6060871888b8d8989336040518763ffffffff1660e01b8152600401610880959493929190611621565b600060405180830381600088803b15801561089a57600080fd5b5087f1935050505080156108ac575060015b610929573d8080156108da576040519150601f19603f3d011682016040523d82523d6000602084013e6108df565b606091505b507fffdd6142bbb721f3400e3908b04b86f60649b2e4d191e3f4c50c32c3e6471d2f61090a8261111e565b60405161091791906115ec565b60405180910390a1600291505061092d565b5060015b600082815260046020526040902080548291907fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff00166001836002811115610976576109766111e2565b02179055508773ffffffffffffffffffffffffffffffffffffffff16827f04214a849019ea3548afcedee810b5bc1680cfb64e22fdf9051a823f3cdfea65838d8a6040516109c693929190611669565b60405180910390a350505050505050505050565b60005473ffffffffffffffffffffffffffffffffffffffff163314610a5b576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161043c565b73ffffffffffffffffffffffffffffffffffffffff8116610ad8576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152600f60248201527f43616e6e6f742073657420746f20300000000000000000000000000000000000604482015260640161043c565b600380547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff92909216919091179055565b60005473ffffffffffffffffffffffffffffffffffffffff163314610ba0576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161043c565b73ffffffffffffffffffffffffffffffffffffffff8116610c1d576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152600f60248201527f43616e6e6f742073657420746f20300000000000000000000000000000000000604482015260640161043c565b600180547fffffffffffffffffffffffff00000000000000000000000000000000000000001673ffffffffffffffffffffffffffffffffffffffff92909216919091179055565b468503610ccd576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152600f60248201527f496e76616c696420636861696e49640000000000000000000000000000000000604482015260640161043c565b6000610cda8684846104a0565b905080341015610d46576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601260248201527f496e7375666669656e7420676173206665650000000000000000000000000000604482015260640161043c565b6000610d7733468a8a600160149054906101000a900467ffffffffffffffff1667ffffffffffffffff168b8b611067565b905080873373ffffffffffffffffffffffffffffffffffffffff167f864ad5e86ed3626c9517260fbfe1eed395157fd938e459e9fb607a07129cdd2a468c8b8b600160149054906101000a900467ffffffffffffffff168c8c34604051610de5989796959493929190611699565b60405180910390a43460026000828254610dff91906116f2565b909155505060018054601490610e369074010000000000000000000000000000000000000000900467ffffffffffffffff1661170a565b91906101000a81548167ffffffffffffffff021916908367ffffffffffffffff1602179055505050505050505050565b60005473ffffffffffffffffffffffffffffffffffffffff163314610ee7576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161043c565b60025460405173ffffffffffffffffffffffffffffffffffffffff83169082156108fc029083906000818181858888f19350505050158015610f2d573d6000803e3d6000fd5b5050600060025550565b60005473ffffffffffffffffffffffffffffffffffffffff163314610fb8576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820181905260248201527f4f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572604482015260640161043c565b73ffffffffffffffffffffffffffffffffffffffff811661105b576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602660248201527f4f776e61626c653a206e6577206f776e657220697320746865207a65726f206160448201527f6464726573730000000000000000000000000000000000000000000000000000606482015260840161043c565b611064816110a9565b50565b6000878787878787876040516020016110869796959493929190611731565b604051602081830303815290604052805190602001209050979650505050505050565b6000805473ffffffffffffffffffffffffffffffffffffffff8381167fffffffffffffffffffffffff0000000000000000000000000000000000000000831681178455604051919092169283917f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e09190a35050565b606060448251101561116357505060408051808201909152601d81527f5472616e73616374696f6e2072657665727465642073696c656e746c79000000602082015290565b6004820191508180602001905181019061117d91906117b5565b92915050565b73ffffffffffffffffffffffffffffffffffffffff8116811461106457600080fd5b6000602082840312156111b757600080fd5b81356111c281611183565b9392505050565b6000602082840312156111db57600080fd5b5035919050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052602160045260246000fd5b60038110611248577f4e487b7100000000000000000000000000000000000000000000000000000000600052602160045260246000fd5b9052565b6020810161117d8284611211565b60008083601f84011261126c57600080fd5b50813567ffffffffffffffff81111561128457600080fd5b60208301915083602082850101111561129c57600080fd5b9250929050565b6000806000604084860312156112b857600080fd5b83359250602084013567ffffffffffffffff8111156112d657600080fd5b6112e28682870161125a565b9497909650939450505050565b6000806040838503121561130257600080fd5b8235915060208301356003811061131857600080fd5b809150509250929050565b60008060008060008060008060e0898b03121561133f57600080fd5b8835975060208901359650604089013561135881611183565b9550606089013594506080890135935060a089013567ffffffffffffffff81111561138257600080fd5b61138e8b828c0161125a565b999c989b50969995989497949560c00135949350505050565b600080600080600080608087890312156113c057600080fd5b8635955060208701359450604087013567ffffffffffffffff808211156113e657600080fd5b6113f28a838b0161125a565b9096509450606089013591508082111561140b57600080fd5b5061141889828a0161125a565b979a9699509497509295939492505050565b600080600080600080600060c0888a03121561144557600080fd5b873561145081611183565b96506020880135955060408801359450606088013593506080880135925060a088013567ffffffffffffffff81111561148857600080fd5b6114948a828b0161125a565b989b979a50959850939692959293505050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b6000828210156114e8576114e86114a7565b500390565b8183528181602085013750600060208284010152600060207fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0601f840116840101905092915050565b8381526040602082015260006115506040830184866114ed565b95945050505050565b60006020828403121561156b57600080fd5b5051919050565b60005b8381101561158d578181015183820152602001611575565b8381111561159c576000848401525b50505050565b600081518084526115ba816020860160208601611572565b601f017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0169290920160200192915050565b6020815260006111c260208301846115a2565b60006020828403121561161157600080fd5b815180151581146111c257600080fd5b8581528460208201526080604082015260006116416080830185876114ed565b905073ffffffffffffffffffffffffffffffffffffffff831660608301529695505050505050565b606081016116778286611211565b67ffffffffffffffff8085166020840152808416604084015250949350505050565b88815287602082015260c0604082015260006116b960c08301888a6114ed565b67ffffffffffffffff8716606084015282810360808401526116dc8186886114ed565b9150508260a08301529998505050505050505050565b60008219821115611705576117056114a7565b500190565b600067ffffffffffffffff808316818103611727576117276114a7565b6001019392505050565b73ffffffffffffffffffffffffffffffffffffffff8816815286602082015285604082015284606082015283608082015260c060a0820152600061177960c0830184866114ed565b9998505050505050505050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052604160045260246000fd5b6000602082840312156117c757600080fd5b815167ffffffffffffffff808211156117df57600080fd5b818401915084601f8301126117f357600080fd5b81518181111561180557611805611786565b604051601f82017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0908116603f0116810190838211818310171561184b5761184b611786565b8160405282815287602084870101111561186457600080fd5b611875836020830160208801611572565b97965050505050505056fea264697066735822122085fe309ffe29ff799efaa733b4314b567102ac59cfab0bf5dd71dd370af8adde64736f6c634300080d0033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "executeMessage(uint256,bytes32,address,uint256,uint256,bytes,bytes32)": {
+        "params": {
+          "_dstAddress": "Destination address that the arbitrary message will be passed to",
+          "_gasLimit": "Gas limit to be passed alongside the message, depending on the fee paid on srcChain",
+          "_message": "Arbitrary message payload to pass to the destination chain receiver",
+          "_srcAddress": "Originating bytes32 address of the message sender on the srcChain",
+          "_srcChainId": "Originating chain ID - typically a standard EVM chain ID, but may refer to a Synapse-specific chain ID on nonEVM chains"
+        }
+      },
+      "owner()": {
+        "details": "Returns the address of the current owner."
+      },
+      "renounceOwnership()": {
+        "details": "Leaves the contract without owner. It will not be possible to call `onlyOwner` functions anymore. Can only be called by the current owner. NOTE: Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner."
+      },
+      "rescueGas(address)": {
+        "params": {
+          "to": "Address to which to rescue gas to"
+        }
+      },
+      "sendMessage(bytes32,uint256,bytes,bytes)": {
+        "params": {
+          "_dstChainId": "The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains",
+          "_message": "The arbitrary payload to pass to the destination chain receiver",
+          "_options": "Versioned struct used to instruct relayer on how to proceed with gas limits",
+          "_receiver": "The bytes32 address of the destination contract to be called"
+        }
+      },
+      "transferOwnership(address)": {
+        "details": "Transfers ownership of the contract to a new account (`newOwner`). Can only be called by the current owner."
+      },
+      "withdrawGasFees(address)": {
+        "params": {
+          "to": "Address to withdraw gas fees to, which can be specified in the event owner() can't receive native gas"
+        }
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "executeMessage(uint256,bytes32,address,uint256,uint256,bytes,bytes32)": {
+        "notice": "Relayer executes messages through an authenticated method to the destination receiver based on the originating transaction on source chain"
+      },
+      "rescueGas(address)": {
+        "notice": "Rescues any gas in contract, aside from fees"
+      },
+      "sendMessage(bytes32,uint256,bytes,bytes)": {
+        "notice": "Sends a message to a receiving contract address on another chain. Sender must make sure that the message is unique and not a duplicate message."
+      },
+      "updateMessageStatus(bytes32,uint8)": {
+        "notice": "CONTRACT CONFIG "
+      },
+      "withdrawGasFees(address)": {
+        "notice": "Withdraws accumulated fees in native gas token, based on fees variable."
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 539,
+        "contract": "contracts/messaging/MessageBus.sol:MessageBus",
+        "label": "_owner",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_address"
+      },
+      {
+        "astId": 5800,
+        "contract": "contracts/messaging/MessageBus.sol:MessageBus",
+        "label": "gasFeePricing",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_address"
+      },
+      {
+        "astId": 5802,
+        "contract": "contracts/messaging/MessageBus.sol:MessageBus",
+        "label": "nonce",
+        "offset": 20,
+        "slot": "1",
+        "type": "t_uint64"
+      },
+      {
+        "astId": 5804,
+        "contract": "contracts/messaging/MessageBus.sol:MessageBus",
+        "label": "fees",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 5573,
+        "contract": "contracts/messaging/MessageBus.sol:MessageBus",
+        "label": "authVerifier",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_address"
+      },
+      {
+        "astId": 5582,
+        "contract": "contracts/messaging/MessageBus.sol:MessageBus",
+        "label": "executedMessages",
+        "offset": 0,
+        "slot": "4",
+        "type": "t_mapping(t_bytes32,t_enum(TxStatus)5577)"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_bytes32": {
+        "encoding": "inplace",
+        "label": "bytes32",
+        "numberOfBytes": "32"
+      },
+      "t_enum(TxStatus)5577": {
+        "encoding": "inplace",
+        "label": "enum MessageBusReceiver.TxStatus",
+        "numberOfBytes": "1"
+      },
+      "t_mapping(t_bytes32,t_enum(TxStatus)5577)": {
+        "encoding": "mapping",
+        "key": "t_bytes32",
+        "label": "mapping(bytes32 => enum MessageBusReceiver.TxStatus)",
+        "numberOfBytes": "32",
+        "value": "t_enum(TxStatus)5577"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      },
+      "t_uint64": {
+        "encoding": "inplace",
+        "label": "uint64",
+        "numberOfBytes": "8"
+      }
+    }
+  }
+}

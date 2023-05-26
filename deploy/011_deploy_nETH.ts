@@ -19,6 +19,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
         CHAIN_ID.HARMONY,
         CHAIN_ID.FANTOM,
         CHAIN_ID.METIS,
+        CHAIN_ID.CANTO,
       ],
       await getChainId()
     )
@@ -78,4 +79,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 
 export default func;
-func.tags = ["SynapseERC20Factory"];
+func.tags = ["nETH", "SynapseERC20Factory"];

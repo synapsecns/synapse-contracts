@@ -22,7 +22,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     let INITIAL_A = 800;
     if (
       (await getChainId()) === CHAIN_ID.POLYGON ||
-      (await getChainId()) === CHAIN_ID.AVALANCHE ||
       (await getChainId()) === CHAIN_ID.HARDHAT ||
       (await getChainId()) === CHAIN_ID.HARMONY
     ) {
@@ -35,14 +34,24 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       TOKEN_DECIMALS = [18, 18, 6, 6];
     }
 
-    if ((await getChainId()) === CHAIN_ID.BSC) {
+    if ((await getChainId()) === CHAIN_ID.AVALANCHE) {
       TOKEN_ADDRESSES = [
         (await get("nUSD")).address,
-        (await get("BUSD")).address,
         (await get("USDC")).address,
         (await get("USDT")).address,
       ];
-      TOKEN_DECIMALS = [18, 18, 18, 18];
+      INITIAL_A = 600;
+      TOKEN_DECIMALS = [18, 6, 6];
+    }
+
+    if ((await getChainId()) === CHAIN_ID.BSC) {
+      TOKEN_ADDRESSES = [
+        (await get("nUSD")).address,
+        (await get("USDC")).address,
+        (await get("USDT")).address,
+      ];
+      INITIAL_A = 600;
+      TOKEN_DECIMALS = [18, 18, 18];
     }
 
     if ((await getChainId()) === CHAIN_ID.AURORA) {
@@ -109,8 +118,8 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
     const LP_TOKEN_NAME = "nUSD LP";
     const LP_TOKEN_SYMBOL = "nUSD-LP";
-    const SWAP_FEE = 2e6; // 4bps
-    const ADMIN_FEE = 6000000000;
+    const SWAP_FEE = 1e6; // 4bps
+    const ADMIN_FEE = 9900000000;
 
     const receipt = await execute(
       "SwapDeployer",

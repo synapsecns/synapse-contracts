@@ -1,0 +1,246 @@
+{
+  "address": "0x53aB43aA0c2928fBd835E0e88C43B01538eE1864",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_messageBus",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "pings",
+          "type": "uint256"
+        }
+      ],
+      "name": "Ping",
+      "type": "event"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "fallback"
+    },
+    {
+      "inputs": [],
+      "name": "disable",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_srcAddress",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_srcChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_message",
+          "type": "bytes"
+        },
+        {
+          "internalType": "address",
+          "name": "_executor",
+          "type": "address"
+        }
+      ],
+      "name": "executeMessage",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "maxPings",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "messageBus",
+      "outputs": [
+        {
+          "internalType": "contract IMessageBus",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "numPings",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_dstChainId",
+          "type": "uint256"
+        },
+        {
+          "internalType": "address",
+          "name": "_dstPingPongAddr",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "pings",
+          "type": "uint256"
+        }
+      ],
+      "name": "ping",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "pingsEnabled",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "stateMutability": "payable",
+      "type": "receive"
+    }
+  ],
+  "transactionHash": "0x20ea8b9e9eaaccabc40352fc3d352893a693cffe13a33d9b9511417000a5d183",
+  "receipt": {
+    "to": null,
+    "from": "0x235AF07E770f474d24F5bf73074735892371b40D",
+    "contractAddress": "0x53aB43aA0c2928fBd835E0e88C43B01538eE1864",
+    "transactionIndex": 0,
+    "gasUsed": "579806",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "blockHash": "0xe81ae6f67bc6e0565398a24576a644eeb5541e3c60a1755686c152c56eec7e7d",
+    "transactionHash": "0x20ea8b9e9eaaccabc40352fc3d352893a693cffe13a33d9b9511417000a5d183",
+    "logs": [],
+    "blockNumber": 216030,
+    "cumulativeGasUsed": "579806",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    "0xB34C67DB5F0Fd8D3D4238FD0A1cBbfD50a72e177"
+  ],
+  "solcInputHash": "ae6da9686381bcba7e3a788eaf7d049c",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.13+commit.abaa5c0e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_messageBus\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"pings\",\"type\":\"uint256\"}],\"name\":\"Ping\",\"type\":\"event\"},{\"stateMutability\":\"payable\",\"type\":\"fallback\"},{\"inputs\":[],\"name\":\"disable\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"_srcAddress\",\"type\":\"bytes32\"},{\"internalType\":\"uint256\",\"name\":\"_srcChainId\",\"type\":\"uint256\"},{\"internalType\":\"bytes\",\"name\":\"_message\",\"type\":\"bytes\"},{\"internalType\":\"address\",\"name\":\"_executor\",\"type\":\"address\"}],\"name\":\"executeMessage\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maxPings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"messageBus\",\"outputs\":[{\"internalType\":\"contract IMessageBus\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"numPings\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_dstChainId\",\"type\":\"uint256\"},{\"internalType\":\"address\",\"name\":\"_dstPingPongAddr\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"pings\",\"type\":\"uint256\"}],\"name\":\"ping\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pingsEnabled\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"stateMutability\":\"payable\",\"type\":\"receive\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"executeMessage(bytes32,uint256,bytes,address)\":{\"params\":{\"_executor\":\"Address who called the MessageBus execution function\",\"_message\":\"Arbitrary message bytes originated from and encoded by the source app contract\",\"_srcAddress\":\"The bytes32 address of the source app contract\",\"_srcChainId\":\"The source chain ID where the transfer is originated from\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"executeMessage(bytes32,uint256,bytes,address)\":{\"notice\":\"Called by MessageBus (MessageBusReceiver)\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/messaging/apps/PingPong.sol\":\"PingPong\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":5000000},\"remappings\":[]},\"sources\":{\"contracts/messaging/apps/PingPong.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.8.13;\\n\\nimport \\\"../interfaces/ISynMessagingReceiver.sol\\\";\\nimport \\\"../interfaces/IMessageBus.sol\\\";\\n\\ncontract PingPong is ISynMessagingReceiver {\\n    // MessageBus is responsible for sending messages to receiving apps and sending messages across chains\\n    IMessageBus public messageBus;\\n    // whether to ping and pong back and forth\\n    bool public pingsEnabled;\\n    // event emitted everytime it is pinged, counting number of pings\\n    event Ping(uint256 pings);\\n    // total pings in a loops\\n    uint256 public maxPings;\\n    uint256 public numPings;\\n\\n    constructor(address _messageBus) {\\n        pingsEnabled = true;\\n        messageBus = IMessageBus(_messageBus);\\n        maxPings = 5;\\n    }\\n\\n    function disable() external {\\n        pingsEnabled = false;\\n    }\\n\\n    function ping(\\n        uint256 _dstChainId,\\n        address _dstPingPongAddr,\\n        uint256 pings\\n    ) public {\\n        require(address(this).balance > 0, \\\"the balance of this contract needs to be able to pay for native gas\\\");\\n        require(pingsEnabled, \\\"pingsEnabled is false. messages stopped\\\");\\n        require(maxPings > pings, \\\"maxPings has been reached, no more looping\\\");\\n\\n        emit Ping(pings);\\n\\n        bytes memory message = abi.encode(pings);\\n\\n        // this will have to be changed soon (WIP, options disabled)\\n        uint256 fee = messageBus.estimateFee(_dstChainId, bytes(\\\"\\\"));\\n        require(address(this).balance >= fee, \\\"not enough gas for fees\\\");\\n\\n        messageBus.sendMessage{value: fee}(\\n            bytes32(uint256(uint160(_dstPingPongAddr))),\\n            _dstChainId,\\n            message,\\n            bytes(\\\"\\\")\\n        );\\n    }\\n\\n    /**\\n     * @notice Called by MessageBus (MessageBusReceiver)\\n     * @param _srcAddress The bytes32 address of the source app contract\\n     * @param _srcChainId The source chain ID where the transfer is originated from\\n     * @param _message Arbitrary message bytes originated from and encoded by the source app contract\\n     * @param _executor Address who called the MessageBus execution function\\n     */\\n    function executeMessage(\\n        bytes32 _srcAddress,\\n        uint256 _srcChainId,\\n        bytes calldata _message,\\n        address _executor\\n    ) external {\\n        require(msg.sender == address(messageBus));\\n        // In production the srcAddress should be a verified sender\\n\\n        address fromAddress = address(uint160(uint256(_srcAddress)));\\n\\n        uint256 pings = abi.decode(_message, (uint256));\\n\\n        // recursively call ping again upon pong\\n        ++pings;\\n        numPings = pings;\\n\\n        ping(_srcChainId, fromAddress, pings);\\n    }\\n\\n    // allow this contract to receive ether\\n    fallback() external payable {}\\n\\n    receive() external payable {}\\n}\\n\",\"keccak256\":\"0x21bfffc7292eaf7c0785e8277a73aa7eace7bdebed0d5507bef132207edb3c72\",\"license\":\"MIT\"},\"contracts/messaging/interfaces/IMessageBus.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity 0.8.13;\\n\\ninterface IMessageBus {\\n    /**\\n     * @notice Sends a message to a receiving contract address on another chain.\\n     * Sender must make sure that the message is unique and not a duplicate message.\\n     * @param _receiver The bytes32 address of the destination contract to be called\\n     * @param _dstChainId The destination chain ID - typically, standard EVM chain ID, but differs on nonEVM chains\\n     * @param _message The arbitrary payload to pass to the destination chain receiver\\n     * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits\\n     */\\n    function sendMessage(\\n        bytes32 _receiver,\\n        uint256 _dstChainId,\\n        bytes calldata _message,\\n        bytes calldata _options\\n    ) external payable;\\n\\n    /**\\n     * @notice Relayer executes messages through an authenticated method to the destination receiver based on the originating transaction on source chain\\n     * @param _srcChainId Originating chain ID - typically a standard EVM chain ID, but may refer to a Synapse-specific chain ID on nonEVM chains\\n     * @param _srcAddress Originating bytes address of the message sender on the srcChain\\n     * @param _dstAddress Destination address that the arbitrary message will be passed to\\n     * @param _gasLimit Gas limit to be passed alongside the message, depending on the fee paid on srcChain\\n     * @param _nonce Nonce from origin chain\\n     * @param _message Arbitrary message payload to pass to the destination chain receiver\\n     * @param _messageId MessageId for uniqueness of messages (alongisde nonce)\\n     */\\n    function executeMessage(\\n        uint256 _srcChainId,\\n        bytes calldata _srcAddress,\\n        address _dstAddress,\\n        uint256 _gasLimit,\\n        uint256 _nonce,\\n        bytes calldata _message,\\n        bytes32 _messageId\\n    ) external;\\n\\n    /**\\n     * @notice Returns srcGasToken fee to charge in wei for the cross-chain message based on the gas limit\\n     * @param _options Versioned struct used to instruct relayer on how to proceed with gas limits. Contains data on gas limit to submit tx with.\\n     */\\n    function estimateFee(uint256 _dstChainId, bytes calldata _options) external returns (uint256);\\n\\n    /**\\n     * @notice Withdraws message fee in the form of native gas token.\\n     * @param _account The address receiving the fee.\\n     */\\n    function withdrawFee(address _account) external;\\n}\\n\",\"keccak256\":\"0xf5c498f6d95e1a9b3722ca72bd1ff081102ade51456495d5991d970658b6c5d2\",\"license\":\"MIT\"},\"contracts/messaging/interfaces/ISynMessagingReceiver.sol\":{\"content\":\"// SPDX-License-Identifier: MIT\\n\\npragma solidity >=0.8.0;\\n\\ninterface ISynMessagingReceiver {\\n    // Maps chain ID to the bytes32 trusted addresses allowed to be source senders\\n    // mapping(uint256 => bytes32) internal trustedRemoteLookup;\\n\\n    /**\\n     * @notice Called by MessageBus\\n     * @dev MUST be permissioned to trusted source apps via trustedRemote\\n     * @param _srcAddress The bytes32 address of the source app contract\\n     * @param _srcChainId The source chain ID where the transfer is originated from\\n     * @param _message Arbitrary message bytes originated from and encoded by the source app contract\\n     * @param _executor Address who called the MessageBus execution function\\n     */\\n    function executeMessage(\\n        bytes32 _srcAddress,\\n        uint256 _srcChainId,\\n        bytes calldata _message,\\n        address _executor\\n    ) external;\\n}\\n\",\"keccak256\":\"0x575a7299184c321652e31eff3879cb75d0f98bc3d8929aa7fcce9bfcbfb3b687\",\"license\":\"MIT\"}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b5060405161095f38038061095f83398101604081905261002f91610060565b600080546001600160a01b039092166001600160a81b031990921691909117600160a01b1790556005600155610090565b60006020828403121561007257600080fd5b81516001600160a01b038116811461008957600080fd5b9392505050565b6108c08061009f6000396000f3fe60806040526004361061006e5760003560e01c806358f2948f1161004b57806358f2948f1461011c5780636c7c091b1461013c578063a1a227fa14610152578063a6060871146101a457005b80632f2770db14610077578063315f7a7f146100b15780633ba6107f146100da57005b3661007557005b005b34801561008357600080fd5b50610075600080547fffffffffffffffffffffff00ffffffffffffffffffffffffffffffffffffffff169055565b3480156100bd57600080fd5b506100c760025481565b6040519081526020015b60405180910390f35b3480156100e657600080fd5b5060005461010c9074010000000000000000000000000000000000000000900460ff1681565b60405190151581526020016100d1565b34801561012857600080fd5b50610075610137366004610665565b6101c4565b34801561014857600080fd5b506100c760015481565b34801561015e57600080fd5b5060005461017f9073ffffffffffffffffffffffffffffffffffffffff1681565b60405173ffffffffffffffffffffffffffffffffffffffff90911681526020016100d1565b3480156101b057600080fd5b506100756101bf36600461069a565b6105e3565b6000471161027f576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152604360248201527f7468652062616c616e6365206f66207468697320636f6e7472616374206e656560448201527f647320746f2062652061626c6520746f2070617920666f72206e61746976652060648201527f6761730000000000000000000000000000000000000000000000000000000000608482015260a4015b60405180910390fd5b60005474010000000000000000000000000000000000000000900460ff16610329576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602760248201527f70696e6773456e61626c65642069732066616c73652e206d657373616765732060448201527f73746f70706564000000000000000000000000000000000000000000000000006064820152608401610276565b80600154116103ba576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602a60248201527f6d617850696e677320686173206265656e20726561636865642c206e6f206d6f60448201527f7265206c6f6f70696e67000000000000000000000000000000000000000000006064820152608401610276565b6040518181527f48257dc961b6f792c2b78a080dacfed693b660960a702de21cee364e20270e2f9060200160405180910390a160008160405160200161040291815260200190565b604080517fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe08184030181526000805460208501845281855292517f5da6d2c40000000000000000000000000000000000000000000000000000000081529194509273ffffffffffffffffffffffffffffffffffffffff90921691635da6d2c49161049091899160040161079c565b6020604051808303816000875af11580156104af573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906104d391906107bd565b90508047101561053f576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601760248201527f6e6f7420656e6f7567682067617320666f7220666565730000000000000000006044820152606401610276565b6000805460408051602081018252928352517fac8a4c1b00000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff9182169263ac8a4c1b9285926105aa92918a16918b918991906004016107d6565b6000604051808303818588803b1580156105c357600080fd5b505af11580156105d7573d6000803e3d6000fd5b50505050505050505050565b60005473ffffffffffffffffffffffffffffffffffffffff16331461060757600080fd5b84600061061684860186610812565b90506106218161082b565b600281905590506106338683836101c4565b50505050505050565b803573ffffffffffffffffffffffffffffffffffffffff8116811461066057600080fd5b919050565b60008060006060848603121561067a57600080fd5b8335925061068a6020850161063c565b9150604084013590509250925092565b6000806000806000608086880312156106b257600080fd5b8535945060208601359350604086013567ffffffffffffffff808211156106d857600080fd5b818801915088601f8301126106ec57600080fd5b8135818111156106fb57600080fd5b89602082850101111561070d57600080fd5b6020830195508094505050506107256060870161063c565b90509295509295909350565b6000815180845260005b818110156107575760208185018101518683018201520161073b565b81811115610769576000602083870101525b50601f017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0169290920160200192915050565b8281526040602082015260006107b56040830184610731565b949350505050565b6000602082840312156107cf57600080fd5b5051919050565b8481528360208201526080604082015260006107f56080830185610731565b82810360608401526108078185610731565b979650505050505050565b60006020828403121561082457600080fd5b5035919050565b60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8203610883577f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b506001019056fea26469706673582212207ae3427e313b38d24b94bb0ece786326738fc22bf1af54238e7ad14fe2552eb464736f6c634300080d0033",
+  "deployedBytecode": "0x60806040526004361061006e5760003560e01c806358f2948f1161004b57806358f2948f1461011c5780636c7c091b1461013c578063a1a227fa14610152578063a6060871146101a457005b80632f2770db14610077578063315f7a7f146100b15780633ba6107f146100da57005b3661007557005b005b34801561008357600080fd5b50610075600080547fffffffffffffffffffffff00ffffffffffffffffffffffffffffffffffffffff169055565b3480156100bd57600080fd5b506100c760025481565b6040519081526020015b60405180910390f35b3480156100e657600080fd5b5060005461010c9074010000000000000000000000000000000000000000900460ff1681565b60405190151581526020016100d1565b34801561012857600080fd5b50610075610137366004610665565b6101c4565b34801561014857600080fd5b506100c760015481565b34801561015e57600080fd5b5060005461017f9073ffffffffffffffffffffffffffffffffffffffff1681565b60405173ffffffffffffffffffffffffffffffffffffffff90911681526020016100d1565b3480156101b057600080fd5b506100756101bf36600461069a565b6105e3565b6000471161027f576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152604360248201527f7468652062616c616e6365206f66207468697320636f6e7472616374206e656560448201527f647320746f2062652061626c6520746f2070617920666f72206e61746976652060648201527f6761730000000000000000000000000000000000000000000000000000000000608482015260a4015b60405180910390fd5b60005474010000000000000000000000000000000000000000900460ff16610329576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602760248201527f70696e6773456e61626c65642069732066616c73652e206d657373616765732060448201527f73746f70706564000000000000000000000000000000000000000000000000006064820152608401610276565b80600154116103ba576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152602a60248201527f6d617850696e677320686173206265656e20726561636865642c206e6f206d6f60448201527f7265206c6f6f70696e67000000000000000000000000000000000000000000006064820152608401610276565b6040518181527f48257dc961b6f792c2b78a080dacfed693b660960a702de21cee364e20270e2f9060200160405180910390a160008160405160200161040291815260200190565b604080517fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe08184030181526000805460208501845281855292517f5da6d2c40000000000000000000000000000000000000000000000000000000081529194509273ffffffffffffffffffffffffffffffffffffffff90921691635da6d2c49161049091899160040161079c565b6020604051808303816000875af11580156104af573d6000803e3d6000fd5b505050506040513d601f19601f820116820180604052508101906104d391906107bd565b90508047101561053f576040517f08c379a000000000000000000000000000000000000000000000000000000000815260206004820152601760248201527f6e6f7420656e6f7567682067617320666f7220666565730000000000000000006044820152606401610276565b6000805460408051602081018252928352517fac8a4c1b00000000000000000000000000000000000000000000000000000000815273ffffffffffffffffffffffffffffffffffffffff9182169263ac8a4c1b9285926105aa92918a16918b918991906004016107d6565b6000604051808303818588803b1580156105c357600080fd5b505af11580156105d7573d6000803e3d6000fd5b50505050505050505050565b60005473ffffffffffffffffffffffffffffffffffffffff16331461060757600080fd5b84600061061684860186610812565b90506106218161082b565b600281905590506106338683836101c4565b50505050505050565b803573ffffffffffffffffffffffffffffffffffffffff8116811461066057600080fd5b919050565b60008060006060848603121561067a57600080fd5b8335925061068a6020850161063c565b9150604084013590509250925092565b6000806000806000608086880312156106b257600080fd5b8535945060208601359350604086013567ffffffffffffffff808211156106d857600080fd5b818801915088601f8301126106ec57600080fd5b8135818111156106fb57600080fd5b89602082850101111561070d57600080fd5b6020830195508094505050506107256060870161063c565b90509295509295909350565b6000815180845260005b818110156107575760208185018101518683018201520161073b565b81811115610769576000602083870101525b50601f017fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe0169290920160200192915050565b8281526040602082015260006107b56040830184610731565b949350505050565b6000602082840312156107cf57600080fd5b5051919050565b8481528360208201526080604082015260006107f56080830185610731565b82810360608401526108078185610731565b979650505050505050565b60006020828403121561082457600080fd5b5035919050565b60007fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff8203610883577f4e487b7100000000000000000000000000000000000000000000000000000000600052601160045260246000fd5b506001019056fea26469706673582212207ae3427e313b38d24b94bb0ece786326738fc22bf1af54238e7ad14fe2552eb464736f6c634300080d0033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {
+      "executeMessage(bytes32,uint256,bytes,address)": {
+        "params": {
+          "_executor": "Address who called the MessageBus execution function",
+          "_message": "Arbitrary message bytes originated from and encoded by the source app contract",
+          "_srcAddress": "The bytes32 address of the source app contract",
+          "_srcChainId": "The source chain ID where the transfer is originated from"
+        }
+      }
+    },
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {
+      "executeMessage(bytes32,uint256,bytes,address)": {
+        "notice": "Called by MessageBus (MessageBusReceiver)"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 6170,
+        "contract": "contracts/messaging/apps/PingPong.sol:PingPong",
+        "label": "messageBus",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_contract(IMessageBus)13439"
+      },
+      {
+        "astId": 6172,
+        "contract": "contracts/messaging/apps/PingPong.sol:PingPong",
+        "label": "pingsEnabled",
+        "offset": 20,
+        "slot": "0",
+        "type": "t_bool"
+      },
+      {
+        "astId": 6178,
+        "contract": "contracts/messaging/apps/PingPong.sol:PingPong",
+        "label": "maxPings",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 6180,
+        "contract": "contracts/messaging/apps/PingPong.sol:PingPong",
+        "label": "numPings",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_uint256"
+      }
+    ],
+    "types": {
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      },
+      "t_contract(IMessageBus)13439": {
+        "encoding": "inplace",
+        "label": "contract IMessageBus",
+        "numberOfBytes": "20"
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  }
+}

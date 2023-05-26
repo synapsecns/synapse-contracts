@@ -6,13 +6,15 @@ on: ["push", "pull_request"]
 jobs:
   coverage:
     name: Build
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     env:
       AVAX_API: https://api.avax.network/ext/bc/C/rpc
       ALCHEMY_API: ${{ secrets.ALCHEMY_API }}
 
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: recursive
 
       - name: Datadog Agent
         uses: DataDog/agent-github-action@v1
