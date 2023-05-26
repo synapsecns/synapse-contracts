@@ -25,11 +25,9 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDeposit(TO, OPT_CHAINID, address(origin.nusd), originQuery.minAmountOut);
+        depositEvent = DepositEvent(TO, OPT_CHAINID, address(origin.nusd), originQuery.minAmountOut);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -49,9 +47,7 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDepositAndSwap({
+        depositAndSwapEvent = DepositAndSwapEvent({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(origin.nusd),
@@ -62,7 +58,7 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             deadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositAndSwapEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -82,11 +78,9 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDeposit(TO, OPT_CHAINID, address(origin.nusd), originQuery.minAmountOut);
+        depositEvent = DepositEvent(TO, OPT_CHAINID, address(origin.nusd), originQuery.minAmountOut);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -106,9 +100,7 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDepositAndSwap({
+        depositAndSwapEvent = DepositAndSwapEvent({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(origin.nusd),
@@ -119,7 +111,7 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             deadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositAndSwapEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -143,11 +135,9 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, ETH_CHAINID, address(origin.nusd), originQuery.minAmountOut);
+        redeemEvent = RedeemEvent(TO, ETH_CHAINID, address(origin.nusd), originQuery.minAmountOut);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -167,9 +157,7 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeemAndRemove({
+        redeemAndRemoveEvent = RedeemAndRemoveEvent({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(origin.nusd),
@@ -179,7 +167,7 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             swapDeadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemAndRemoveEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -199,11 +187,9 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, ETH_CHAINID, address(origin.nusd), originQuery.minAmountOut);
+        redeemEvent = RedeemEvent(TO, ETH_CHAINID, address(origin.nusd), originQuery.minAmountOut);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -223,9 +209,7 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeemAndRemove({
+        redeemAndRemoveEvent = RedeemAndRemoveEvent({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(origin.nusd),
@@ -235,7 +219,7 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             swapDeadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemAndRemoveEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -259,11 +243,9 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, ARB_CHAINID, address(origin.nusd), originQuery.minAmountOut);
+        redeemEvent = RedeemEvent(TO, ARB_CHAINID, address(origin.nusd), originQuery.minAmountOut);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -283,9 +265,7 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeemAndSwap({
+        redeemAndSwapEvent = RedeemAndSwapEvent({
             to: TO,
             chainId: ARB_CHAINID,
             token: address(origin.nusd),
@@ -296,7 +276,7 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             deadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemAndSwapEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -316,11 +296,9 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, ARB_CHAINID, address(origin.nusd), originQuery.minAmountOut);
+        redeemEvent = RedeemEvent(TO, ARB_CHAINID, address(origin.nusd), originQuery.minAmountOut);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -340,9 +318,7 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeemAndSwap({
+        redeemAndSwapEvent = RedeemAndSwapEvent({
             to: TO,
             chainId: ARB_CHAINID,
             token: address(origin.nusd),
@@ -353,7 +329,7 @@ contract SynapseRouterEndToEndNUSDTest is SynapseRouterSuite {
             deadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemAndSwapEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }

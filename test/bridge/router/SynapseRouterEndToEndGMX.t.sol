@@ -114,11 +114,9 @@ contract SynapseRouterEndToEndGMXTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDeposit(TO, AVA_CHAINID, address(arbGMX), amountIn);
+        depositEvent = DepositEvent(TO, AVA_CHAINID, address(arbGMX), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -139,11 +137,9 @@ contract SynapseRouterEndToEndGMXTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, ARB_CHAINID, address(avaGmxWrapper), amountIn);
+        redeemEvent = RedeemEvent(TO, ARB_CHAINID, address(avaGmxWrapper), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }

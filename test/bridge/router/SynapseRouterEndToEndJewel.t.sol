@@ -61,11 +61,9 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, DFK_CHAINID, address(avaJewel), amountIn);
+        redeemEvent = RedeemEvent(TO, DFK_CHAINID, address(avaJewel), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -85,11 +83,9 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, HAR_CHAINID, address(avaJewel), amountIn);
+        redeemEvent = RedeemEvent(TO, HAR_CHAINID, address(avaJewel), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -109,9 +105,7 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeemAndSwap({
+        redeemAndSwapEvent = RedeemAndSwapEvent({
             to: TO,
             chainId: HAR_CHAINID,
             token: address(avaJewel),
@@ -122,7 +116,7 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             deadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemAndSwapEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -146,11 +140,9 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDeposit(TO, AVA_CHAINID, address(origin.wgas), amountIn);
+        depositEvent = DepositEvent(TO, AVA_CHAINID, address(origin.wgas), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -170,11 +162,9 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDeposit(TO, AVA_CHAINID, address(origin.wgas), amountIn);
+        depositEvent = DepositEvent(TO, AVA_CHAINID, address(origin.wgas), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -194,11 +184,9 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDeposit(TO, HAR_CHAINID, address(origin.wgas), amountIn);
+        depositEvent = DepositEvent(TO, HAR_CHAINID, address(origin.wgas), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -218,9 +206,7 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDepositAndSwap({
+        depositAndSwapEvent = DepositAndSwapEvent({
             to: TO,
             chainId: HAR_CHAINID,
             token: address(origin.wgas),
@@ -231,7 +217,7 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             deadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositAndSwapEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -255,11 +241,9 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, AVA_CHAINID, address(harJewel), amountIn);
+        redeemEvent = RedeemEvent(TO, AVA_CHAINID, address(harJewel), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -279,11 +263,9 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, AVA_CHAINID, address(harJewel), amountIn);
+        redeemEvent = RedeemEvent(TO, AVA_CHAINID, address(harJewel), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -303,11 +285,9 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, DFK_CHAINID, address(harJewel), amountIn);
+        redeemEvent = RedeemEvent(TO, DFK_CHAINID, address(harJewel), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -327,11 +307,9 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             tokenOut,
             amountIn
         );
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, DFK_CHAINID, address(harJewel), amountIn);
+        redeemEvent = RedeemEvent(TO, DFK_CHAINID, address(harJewel), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
