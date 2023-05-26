@@ -85,10 +85,9 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
         // Only DAI could be used on origin chain
         address bridgeTokenOrigin = address(origin.dai);
         address bridgeTokenDest = address(destination.dai);
-        vm.expectEmit(true, true, true, true);
-        emit TokenDeposit(TO, KLAY_CHAINID, bridgeTokenOrigin, originQuery.minAmountOut);
+        depositEvent = DepositEvent(TO, KLAY_CHAINID, bridgeTokenOrigin, originQuery.minAmountOut);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -160,16 +159,16 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
         if (checkUSDC) require(bridgeTokenOrigin == address(origin.usdc), "!USDC");
         if (checkNUSD) require(bridgeTokenOrigin == address(origin.nusd), "!NUSD");
         address bridgeTokenDest;
+        function() internal expectEvent;
         if (bridgeTokenOrigin == address(origin.usdc)) {
             // Ethereum: tokenIn -> USDC; Klaytn: USDC -> USDC
             // Expect Bridge event to be emitted
-            vm.expectEmit(true, true, true, true);
-            emit TokenDeposit(TO, KLAY_CHAINID, bridgeTokenOrigin, originQuery.minAmountOut);
+            depositEvent = DepositEvent(TO, KLAY_CHAINID, bridgeTokenOrigin, originQuery.minAmountOut);
+            expectEvent = expectDepositEvent;
             bridgeTokenDest = address(destination.usdc);
         } else {
             // Ethereum: tokenIn -> nUSD; Klaytn: nUSD -> USDC
-            vm.expectEmit(true, true, true, true);
-            emit TokenDepositAndSwap({
+            depositAndSwapEvent = DepositAndSwapEvent({
                 to: TO,
                 chainId: KLAY_CHAINID,
                 token: bridgeTokenOrigin,
@@ -179,10 +178,11 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
                 minDy: destQuery.minAmountOut,
                 deadline: destQuery.deadline
             });
+            expectEvent = expectDepositAndSwapEvent;
             bridgeTokenDest = address(destination.nusd);
         }
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -222,9 +222,7 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
         address bridgeTokenOrigin = address(origin.nusd);
         address bridgeTokenDest = address(destination.nusd);
         // Klaytn: USDC -> nUSD; Ethereum: nUSD -> USDT
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeemAndRemove({
+        redeemAndRemoveEvent = RedeemAndRemoveEvent({
             to: TO,
             chainId: ETH_CHAINID,
             token: bridgeTokenOrigin,
@@ -234,7 +232,7 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
             swapDeadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemAndRemoveEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }
@@ -287,16 +285,16 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
         if (checkUSDC) require(bridgeTokenOrigin == address(origin.usdc), "!USDC");
         if (checkNUSD) require(bridgeTokenOrigin == address(origin.nusd), "!NUSD");
         address bridgeTokenDest;
+        function() internal expectEvent;
         if (bridgeTokenOrigin == address(origin.usdc)) {
             // Klaytn: nUSD -> USDC; Ethereum: USDC -> USDC
             // Expect Bridge event to be emitted
-            vm.expectEmit(true, true, true, true);
-            emit TokenRedeem(TO, ETH_CHAINID, bridgeTokenOrigin, originQuery.minAmountOut);
+            redeemEvent = RedeemEvent(TO, ETH_CHAINID, bridgeTokenOrigin, originQuery.minAmountOut);
+            expectEvent = expectRedeemEvent;
             bridgeTokenDest = address(destination.usdc);
         } else {
             // Klaytn: nUSD -> nUSD; Ethereum: nUSD -> USDC
-            vm.expectEmit(true, true, true, true);
-            emit TokenRedeemAndRemove({
+            redeemAndRemoveEvent = RedeemAndRemoveEvent({
                 to: TO,
                 chainId: ETH_CHAINID,
                 token: bridgeTokenOrigin,
@@ -305,10 +303,11 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
                 swapMinAmount: destQuery.minAmountOut,
                 swapDeadline: destQuery.deadline
             });
+            expectEvent = expectRedeemAndRemoveEvent;
             bridgeTokenDest = address(destination.nusd);
         }
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectEvent, origin, destination, tokenIn, tokenOut, amountIn);
         // Validator completes the transaction on destination chain
         checkCompletedBridgeTx(destination, bridgeTokenDest, originQuery, destQuery);
     }

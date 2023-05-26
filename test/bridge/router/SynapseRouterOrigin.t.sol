@@ -23,11 +23,9 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         IERC20 tokenIn = origin.nusd;
         IERC20 tokenOut = destination.nusd;
         uint256 amountIn = 10**18;
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDeposit(TO, OPT_CHAINID, address(origin.nusd), amountIn);
+        depositEvent = DepositEvent(TO, OPT_CHAINID, address(origin.nusd), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 
     function test_b_depositETH() public {
@@ -37,11 +35,9 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         IERC20 tokenIn = origin.gas;
         IERC20 tokenOut = destination.neth;
         uint256 amountIn = 10**18;
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDeposit(TO, OPT_CHAINID, address(origin.weth), amountIn);
+        depositEvent = DepositEvent(TO, OPT_CHAINID, address(origin.weth), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 
     function test_b_redeem() public {
@@ -51,11 +47,9 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         IERC20 tokenIn = origin.nusd;
         IERC20 tokenOut = destination.nusd;
         uint256 amountIn = 10**18;
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, ETH_CHAINID, address(origin.nusd), amountIn);
+        redeemEvent = RedeemEvent(TO, ETH_CHAINID, address(origin.nusd), amountIn);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -72,11 +66,9 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         uint256 amountIn = 10**6;
         // Peek pool swap quotes
         (SwapQuery memory originQuery, ) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, ETH_CHAINID, address(origin.nusd), originQuery.minAmountOut);
+        redeemEvent = RedeemEvent(TO, ETH_CHAINID, address(origin.nusd), originQuery.minAmountOut);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 
     function test_sb_swapETHAndRedeem() public {
@@ -88,11 +80,9 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         uint256 amountIn = 10**18;
         // Peek pool swap quotes
         (SwapQuery memory originQuery, ) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeem(TO, ETH_CHAINID, address(origin.neth), originQuery.minAmountOut);
+        redeemEvent = RedeemEvent(TO, ETH_CHAINID, address(origin.neth), originQuery.minAmountOut);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 
     function test_sb_zapAndDeposit() public {
@@ -104,11 +94,9 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         uint256 amountIn = 10**6;
         // Peek pool swap quotes
         (SwapQuery memory originQuery, ) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDeposit(TO, OPT_CHAINID, address(origin.nusd), originQuery.minAmountOut);
+        depositEvent = DepositEvent(TO, OPT_CHAINID, address(origin.nusd), originQuery.minAmountOut);
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -125,9 +113,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         uint256 amountIn = 10**18;
         // Peek pool swap quotes
         (, SwapQuery memory destQuery) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDepositAndSwap({
+        depositAndSwapEvent = DepositAndSwapEvent({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(origin.nusd),
@@ -138,7 +124,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
             deadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositAndSwapEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 
     function test_bs_depositETHAndSwap() public {
@@ -150,9 +136,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         uint256 amountIn = 10**18;
         // Peek pool swap quotes
         (, SwapQuery memory destQuery) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDepositAndSwap({
+        depositAndSwapEvent = DepositAndSwapEvent({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(origin.weth),
@@ -163,7 +147,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
             deadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositAndSwapEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 
     function test_bs_redeemAndSwap() public {
@@ -175,9 +159,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         uint256 amountIn = 10**18;
         // Peek pool swap quotes
         (, SwapQuery memory destQuery) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeemAndSwap({
+        redeemAndSwapEvent = RedeemAndSwapEvent({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(origin.nusd),
@@ -188,7 +170,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
             deadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemAndSwapEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 
     function test_bs_redeemAndRemove() public {
@@ -199,9 +181,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         IERC20 tokenOut = destination.usdc;
         uint256 amountIn = 10**18;
         (, SwapQuery memory destQuery) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeemAndRemove({
+        redeemAndRemoveEvent = RedeemAndRemoveEvent({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(origin.nusd),
@@ -211,7 +191,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
             swapDeadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemAndRemoveEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -230,9 +210,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         SwapQuery memory originQuery;
         SwapQuery memory destQuery;
         (originQuery, destQuery) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeemAndSwap({
+        redeemAndSwapEvent = RedeemAndSwapEvent({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(origin.nusd),
@@ -243,7 +221,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
             deadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemAndSwapEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 
     function test_sbs_swapETHAndRedeemAndSwap() public {
@@ -257,9 +235,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         SwapQuery memory originQuery;
         SwapQuery memory destQuery;
         (originQuery, destQuery) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeemAndSwap({
+        redeemAndSwapEvent = RedeemAndSwapEvent({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(origin.neth),
@@ -270,7 +246,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
             deadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemAndSwapEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 
     function test_sbs_swapAndRedeemAndRemove() public {
@@ -284,9 +260,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         SwapQuery memory originQuery;
         SwapQuery memory destQuery;
         (originQuery, destQuery) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenRedeemAndRemove({
+        redeemAndRemoveEvent = RedeemAndRemoveEvent({
             to: TO,
             chainId: ETH_CHAINID,
             token: address(origin.nusd),
@@ -296,7 +270,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
             swapDeadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectRedeemAndRemoveEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 
     function test_sbs_zapAndDepositAndSwap() public {
@@ -310,9 +284,7 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
         SwapQuery memory originQuery;
         SwapQuery memory destQuery;
         (originQuery, destQuery) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
-        // Expect Bridge event to be emitted
-        vm.expectEmit(true, true, true, true);
-        emit TokenDepositAndSwap({
+        depositAndSwapEvent = DepositAndSwapEvent({
             to: TO,
             chainId: OPT_CHAINID,
             token: address(origin.nusd),
@@ -323,6 +295,6 @@ contract SynapseRouterOriginTest is SynapseRouterSuite {
             deadline: destQuery.deadline
         });
         // User interacts with the SynapseRouter on origin chain
-        initiateBridgeTx(origin, destination, tokenIn, tokenOut, amountIn);
+        initiateBridgeTx(expectDepositAndSwapEvent, origin, destination, tokenIn, tokenOut, amountIn);
     }
 }
