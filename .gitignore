@@ -52,7 +52,12 @@ artifacts
 build
 tenderly.yaml
 
+broadcast
+
 .env
 doc/
 .openzeppelin
  report.*.json
+
+# Optimistically saved unverified deployments
+.deployments

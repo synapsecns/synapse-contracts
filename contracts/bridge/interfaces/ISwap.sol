@@ -8,6 +8,8 @@ interface ISwap {
     // pool data view functions
     function getA() external view returns (uint256);
 
+    function getAPrecise() external view returns (uint256);
+
     function getToken(uint8 index) external view returns (IERC20);
 
     function getTokenIndex(address tokenAddress) external view returns (uint8);
@@ -15,6 +17,19 @@ interface ISwap {
     function getTokenBalance(uint8 index) external view returns (uint256);
 
     function getVirtualPrice() external view returns (uint256);
+
+    function swapStorage()
+        external
+        view
+        returns (
+            uint256 initialA,
+            uint256 futureA,
+            uint256 initialATime,
+            uint256 futureATime,
+            uint256 swapFee,
+            uint256 adminFee,
+            address lpToken
+        );
 
     // min return calculation functions
     function calculateSwap(
