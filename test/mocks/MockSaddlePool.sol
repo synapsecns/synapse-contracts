@@ -15,6 +15,9 @@ contract MockSaddlePool is ISaddle {
     address[] internal _tokens;
     uint256 internal _coins;
 
+    // We don't expose paused() in this contract to test that UniversalSwap could handle pools without this function.
+    bool internal _paused;
+
     constructor(address[] memory tokens) {
         _tokens = tokens;
         _coins = tokens.length;
@@ -27,6 +30,7 @@ contract MockSaddlePool is ISaddle {
         uint256 minDy,
         uint256 deadline
     ) external returns (uint256 amountOut) {
+        if (_paused) revert("Siesta time");
         amountOut = _calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
         require(amountOut >= minDy, "Insufficient output amount");
         // solhint-disable-next-line not-rely-on-time

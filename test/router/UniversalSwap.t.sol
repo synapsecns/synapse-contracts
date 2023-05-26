@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import {UniversalSwap} from "../../contracts/router/UniversalSwap.sol";
 
 import {MockERC20} from "../mocks/MockERC20.sol";
-import {MockSaddlePool} from "../mocks/MockSaddlePool.sol";
+import {MockSaddlePool, MockSaddlePausablePool} from "../mocks/MockSaddlePausablePool.sol";
 
 import {Test} from "forge-std/Test.sol";
 
@@ -17,7 +17,7 @@ contract UniversalSwapTest is Test {
     MockERC20 public token3;
 
     // Pool with Bridge token, Token0, Token1
-    MockSaddlePool public poolB01;
+    MockSaddlePausablePool public poolB01;
     // Pool with Bridge token, Token2
     MockSaddlePool public poolB2;
     // Pool with Token0, Token1
@@ -25,7 +25,7 @@ contract UniversalSwapTest is Test {
     // Pool with Token0, Token2
     MockSaddlePool public pool02;
     // Pool with Token1, Token2, Token3
-    MockSaddlePool public pool123;
+    MockSaddlePausablePool public pool123;
 
     mapping(uint256 => address[]) public attachedPools;
 
@@ -50,7 +50,7 @@ contract UniversalSwapTest is Test {
             tokens[0] = address(bridgeToken);
             tokens[1] = address(token0);
             tokens[2] = address(token1);
-            poolB01 = new MockSaddlePool(tokens);
+            poolB01 = new MockSaddlePausablePool(tokens);
             setupPool(poolB01, tokens, 100_000);
             vm.label(address(poolB01), "[BT, T0, T1]");
         }
@@ -83,7 +83,7 @@ contract UniversalSwapTest is Test {
             tokens[0] = address(token1);
             tokens[1] = address(token2);
             tokens[2] = address(token3);
-            pool123 = new MockSaddlePool(tokens);
+            pool123 = new MockSaddlePausablePool(tokens);
             setupPool(pool123, tokens, 50_000);
             vm.label(address(pool123), "[T1, T2, T3]");
         }
@@ -425,6 +425,16 @@ contract UniversalSwapTest is Test {
         assertEq(amountOut, 0);
     }
 
+    function test_calculateSwap_returnsNonZero_whenPoolPaused() public {
+        complexSetup();
+        // This goes through the pool that is going to be paused
+        uint256 amountOutQuote = swap.calculateSwap(3, 7, 10**18);
+        // Pause poolB01
+        poolB01.setPaused(true);
+        // Should return the same quote (ignoring the fact that pool is paused)
+        assertEq(swap.calculateSwap(3, 7, 10**18), amountOutQuote);
+    }
+
     function test_findBestPath_returns0_whenOnlyPathReverts() public {
         // Force pool123 to revert on calculateSwap(*, *, *)
         vm.mockCallRevert(
@@ -448,6 +458,25 @@ contract UniversalSwapTest is Test {
         assertEq(amountOut, 0);
     }
 
+    function test_findBestPath_returns0_whenOnlyPathPaused() public {
+        complexSetup();
+        // Pause pool123
+        pool123.setPaused(true);
+        // All paths to/from T3 go through the paused pool
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(
+            address(token1),
+            address(token3),
+            10**18
+        );
+        assertEq(tokenIndexFrom, 0);
+        assertEq(tokenIndexTo, 0);
+        assertEq(amountOut, 0);
+        (tokenIndexFrom, tokenIndexTo, amountOut) = swap.findBestPath(address(token3), address(token2), 10**18);
+        assertEq(tokenIndexFrom, 0);
+        assertEq(tokenIndexTo, 0);
+        assertEq(amountOut, 0);
+    }
+
     function test_findBestPath_returnsSomething_whenOnePathReverts() public {
         // Force poolB01 to revert on calculateSwap(*, *, *)
         vm.mockCallRevert(
@@ -456,6 +485,25 @@ contract UniversalSwapTest is Test {
             "Mocked revert data"
         );
         complexSetup();
+        // The only remaining path between BT and T1 is BT -> T2 -> T1 via poolB2 and pool123
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(
+            address(bridgeToken),
+            address(token1),
+            10**18
+        );
+        // [BT, T2]
+        uint256 amountOutExpected = poolB2.calculateSwap(0, 1, 10**18);
+        // [T1, T2, T3]
+        amountOutExpected = pool123.calculateSwap(1, 0, amountOutExpected);
+        assertEq(tokenIndexFrom, 0);
+        assertEq(tokenIndexTo, 6);
+        assertEq(amountOut, amountOutExpected);
+    }
+
+    function test_findBestPath_returnsSomething_whenOnePathPaused() public {
+        complexSetup();
+        // Pause poolB01
+        poolB01.setPaused(true);
         // The only remaining path between BT and T1 is BT -> T2 -> T1 via poolB2 and pool123
         (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(
             address(bridgeToken),
@@ -495,6 +543,23 @@ contract UniversalSwapTest is Test {
         swap.swap(tokenFrom, tokenTo, amountIn, amountOut, block.timestamp);
         if (tokenIn != tokenOut) assertEq(MockERC20(tokenIn).balanceOf(user), 0);
         assertEq(MockERC20(tokenOut).balanceOf(user), amountOut);
+    }
+
+    function test_swap_revert_poolPaused() public virtual {
+        complexSetup();
+        // Pause poolB01
+        poolB01.setPaused(true);
+        uint8 tokenFrom = 3;
+        uint8 tokenTo = 7;
+        uint256 amount = 100;
+        // This goes through the paused pool
+        address tokenIn = swap.getToken(tokenFrom);
+        uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
+        prepareUser(tokenIn, amountIn);
+        // Expect mock-specific revert message
+        vm.expectRevert("Siesta time");
+        vm.prank(user);
+        swap.swap(tokenFrom, tokenTo, amountIn, 0, type(uint256).max);
     }
 
     function test_calculateSwap_samePoolTwice(
