@@ -10,6 +10,18 @@ import {TokenTree} from "./tree/TokenTree.sol";
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
+/// UniversalSwap is using an internal Token Tree to aggregate a collection of pools with correlated
+/// tokens into a single wrapper, conforming to ISaddle interface.
+/// The internal Token Tree allows to store up to 256 tokens, which should be enough for most use cases.
+/// Note: unlike traditional Saddle pools, tokens in UniversalSwap could be duplicated.
+/// This contract is supposed to be used in conjunction with Synapse:Bridge:
+/// - The bridged token has index == 0, and could not be duplicated in the tree.
+/// - Other tokens (correlated to bridge token) could be duplicated in the tree. Every node token in the tree
+/// is represented by a trade path from root token to node token.
+/// > This is the reason why token could be duplicated. `nUSD -> USDC` and `nUSD -> USDT -> USDC` both represent
+/// > USDC token, but via different paths from nUSD, the bridge token.
+/// In addition to the standard ISaddle interface, UniversalSwap also implements getters to observe the internal
+/// tree, as well as the best path finder between any two tokens in the tree.
 contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
     using SafeERC20 for IERC20;
 
@@ -79,9 +91,17 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
         // Calculate the quote by following the path from "tokenFrom" node to "tokenTo" node in the stored tree
         // This function might be called by Synapse:Bridge before the swap, so we don't waste gas checking if pool is paused,
         // as the swap will fail anyway if it is.
-        return _getMultiSwapQuote(tokenIndexFrom, tokenIndexTo, dx, false).amountOut;
+        amountOut = _getMultiSwapQuote({
+            nodeIndexFrom: tokenIndexFrom,
+            nodeIndexTo: tokenIndexTo,
+            amountIn: dx,
+            probePaused: false
+        }).amountOut;
     }
 
+    /// Note: this could be potentially a gas expensive operation. This should be used as an off-chain call
+    /// to get the best quote. As pair of token nodes define a single trade path, it will be possible to go
+    /// through the found path by simply supplying the found indexes (instead of searching for the best path again).
     /// @inheritdoc IUniversalSwap
     function findBestPath(
         address tokenIn,
@@ -102,13 +122,20 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
         }
         uint256 nodesFrom = _tokenNodes[tokenIn].length;
         uint256 nodesTo = _tokenNodes[tokenOut].length;
+        // Go through every node that represents `tokenIn`
         for (uint256 i = 0; i < nodesFrom; ++i) {
             uint256 nodeIndexFrom = _tokenNodes[tokenIn][i];
+            // Go through every node that represents `tokenOut`
             for (uint256 j = 0; j < nodesTo; ++j) {
                 uint256 nodeIndexTo = _tokenNodes[tokenOut][j];
                 // Calculate the quote by following the path from "tokenFrom" node to "tokenTo" node in the stored tree
                 // We discard any paths with paused pools, as it's not possible to swap via them anyway.
-                uint256 amountOutQuote = _getMultiSwapQuote(nodeIndexFrom, nodeIndexTo, amountIn, true).amountOut;
+                uint256 amountOutQuote = _getMultiSwapQuote({
+                    nodeIndexFrom: nodeIndexFrom,
+                    nodeIndexTo: nodeIndexTo,
+                    amountIn: amountIn,
+                    probePaused: true
+                }).amountOut;
                 if (amountOutQuote > amountOut) {
                     amountOut = amountOutQuote;
                     tokenIndexFrom = uint8(nodeIndexFrom);
@@ -240,7 +267,7 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
             returns (uint256 amountOut_) {
                 amountOut = amountOut_;
             } catch {
-                // Return zero if the pool doesn't support the given swap
+                // Return zero if the pool getter reverts for any reason
                 amountOut = 0;
             }
         } else {
@@ -258,7 +285,7 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
             returns (uint256 amountOut_) {
                 amountOut = amountOut_;
             } catch {
-                // Return zero if the pool doesn't support the given swap
+                // Return zero if the pool module getter reverts for any reason
                 amountOut = 0;
             }
         }
