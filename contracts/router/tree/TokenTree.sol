@@ -161,7 +161,7 @@ abstract contract TokenTree {
         require(_nodes.length == 0 || token != _nodes[0].token, "Bridge token must be at root");
         _nodes.push(Node({token: token, depth: depth, poolIndex: poolIndex}));
         _tokenNodes[token].push(nodeIndex);
-        // Push the root path for the new node
+        // Push the root path for the new node. The root path is the inserted node index + the parent's root path.
         _rootPath.push((nodeIndex << (8 * depth)) | rootPathParent);
     }
 

@@ -73,6 +73,9 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
 
+    /// Note: this calculates a quote for a predefined swap path between two tokens. If any of the tokens is
+    /// presented more than once in the internal tree, there might be a better quote. Integration should use
+    /// findBestPath() instead. This function is present for backwards compatibility.
     /// @inheritdoc IUniversalSwap
     function calculateSwap(
         uint8 tokenIndexFrom,
