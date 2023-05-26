@@ -221,7 +221,6 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         burned_ = _d - _D(xWad, yWad);
         _d -= burned_;
 
-        uint256[] memory fees = new uint256[](2);
         emit RemoveLiquidity(msg.sender, amounts, _d);
     }
 
@@ -259,7 +258,7 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         // calculate amount out from swap
         // @dev returns zero if amount out exceeds pool balance
         uint256 dyAdminFee;
-        (dy_, , dyAdminFee) = _calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+        (dy_, dyAdminFee) = _calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
         require(dy_ > 0, "dy > pool balance");
         require(dy_ >= minDy, "dy < minDy");
 
@@ -329,7 +328,7 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         uint8 tokenIndexTo,
         uint256 dx
     ) external view returns (uint256 dy_) {
-        (dy_, , ) = _calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
+        (dy_, ) = _calculateSwap(tokenIndexFrom, tokenIndexTo, dx);
     }
 
     /// @notice D liquidity param given pool token balances
@@ -364,16 +363,8 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
         uint256 dx
-    )
-        internal
-        view
-        returns (
-            uint256 dy_,
-            uint256 dyFee_,
-            uint256 dyAdminFee_
-        )
-    {
-        if (tokenIndexFrom > 1 || tokenIndexTo > 1 || tokenIndexFrom == tokenIndexTo) return (0, 0, 0);
+    ) internal view returns (uint256 dy_, uint256 dyAdminFee_) {
+        if (tokenIndexFrom > 1 || tokenIndexTo > 1 || tokenIndexFrom == tokenIndexTo) return (0, 0);
 
         // convert to an amount in wad
         uint256 amountInWad = _amountWad(dx, tokenIndexFrom == 0);
@@ -386,13 +377,13 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
 
             // check amount out won't exceed pool balance
             uint256 yWad = _amountWad(IERC20(token1).balanceOf(address(this)) - protocolFees1, false);
-            if (amountOutWad > yWad) return (0, 0, 0);
+            if (amountOutWad > yWad) return (0, 0);
         } else {
             amountOutWad = Math.mulDiv(amountInWad, wad, P);
 
             // check amount out won't exceed pool balance
             uint256 xWad = _amountWad(IERC20(token0).balanceOf(address(this)) - protocolFees0, true);
-            if (amountOutWad > xWad) return (0, 0, 0);
+            if (amountOutWad > xWad) return (0, 0);
         }
 
         // apply swap fee on amount out
@@ -404,7 +395,6 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
 
         // convert amount out to decimals
         dy_ = _amountDecimals(amountOutWad, tokenIndexTo == 0);
-        dyFee_ = _amountDecimals(amountSwapFeeWad, tokenIndexTo == 0);
         dyAdminFee_ = _amountDecimals(amountAdminFeeWad, tokenIndexTo == 0);
     }
 }
