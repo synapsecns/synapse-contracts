@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {IPausable} from "./interfaces/IPausable.sol";
 import {IndexedToken, IPoolModule} from "./interfaces/IPoolModule.sol";
 import {IUniversalSwap} from "./interfaces/IUniversalSwap.sol";
 import {ISaddle} from "./interfaces/ISaddle.sol";
@@ -217,8 +218,18 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
         uint256 amountIn,
         bool probePaused
     ) internal view override returns (uint256 amountOut) {
-        // TODO: check if the pool is paused, if requested
         if (poolModule == address(this)) {
+            // Check if pool is paused, if requested
+            if (probePaused) {
+                // We issue a static call in case the pool does not conform to IPausable interface.
+                (bool success, bytes memory returnData) = pool.staticcall(
+                    abi.encodeWithSelector(IPausable.paused.selector)
+                );
+                if (success && abi.decode(returnData, (bool))) {
+                    // Pool is paused, return zero
+                    return 0;
+                }
+            }
             // Pool conforms to ISaddle interface.
             try
                 ISaddle(pool).calculateSwap({
@@ -233,6 +244,7 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
                 amountOut = 0;
             }
         } else {
+            // TODO: check if pool is paused, if requested
             // Ask Pool Module to calculate the quote
             address tokenFrom = _nodes[nodeIndexFrom].token;
             address tokenTo = _nodes[nodeIndexTo].token;
