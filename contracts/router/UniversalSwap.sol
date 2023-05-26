@@ -50,8 +50,8 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
 
     /// @inheritdoc IUniversalSwap
     function swap(
-        uint8 tokenIndexFrom,
-        uint8 tokenIndexTo,
+        uint8 nodeIndexFrom,
+        uint8 nodeIndexTo,
         uint256 dx,
         uint256 minDy,
         uint256 deadline
@@ -60,15 +60,15 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp <= deadline, "Deadline not met");
         require(
-            tokenIndexFrom < totalTokens && tokenIndexTo < totalTokens && tokenIndexFrom != tokenIndexTo,
+            nodeIndexFrom < totalTokens && nodeIndexTo < totalTokens && nodeIndexFrom != nodeIndexTo,
             "Swap not supported"
         );
         // Pull initial token from the user
-        IERC20(_nodes[tokenIndexFrom].token).safeTransferFrom(msg.sender, address(this), dx);
-        amountOut = _multiSwap(tokenIndexFrom, tokenIndexTo, dx).amountOut;
+        IERC20(_nodes[nodeIndexFrom].token).safeTransferFrom(msg.sender, address(this), dx);
+        amountOut = _multiSwap(nodeIndexFrom, nodeIndexTo, dx).amountOut;
         require(amountOut >= minDy, "Swap didn't result in min tokens");
         // Transfer the tokens to the user
-        IERC20(_nodes[tokenIndexTo].token).safeTransfer(msg.sender, amountOut);
+        IERC20(_nodes[nodeIndexTo].token).safeTransfer(msg.sender, amountOut);
     }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
@@ -78,25 +78,25 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
     /// findBestPath() instead. This function is present for backwards compatibility.
     /// @inheritdoc IUniversalSwap
     function calculateSwap(
-        uint8 tokenIndexFrom,
-        uint8 tokenIndexTo,
+        uint8 nodeIndexFrom,
+        uint8 nodeIndexTo,
         uint256 dx
     ) external view returns (uint256 amountOut) {
         uint256 totalTokens = _nodes.length;
         // Check that the token indexes are within range
-        if (tokenIndexFrom >= totalTokens || tokenIndexTo >= totalTokens) {
+        if (nodeIndexFrom >= totalTokens || nodeIndexTo >= totalTokens) {
             return 0;
         }
         // Check that the token indexes are not the same
-        if (tokenIndexFrom == tokenIndexTo) {
+        if (nodeIndexFrom == nodeIndexTo) {
             return 0;
         }
         // Calculate the quote by following the path from "tokenFrom" node to "tokenTo" node in the stored tree
         // This function might be called by Synapse:Bridge before the swap, so we don't waste gas checking if pool is paused,
         // as the swap will fail anyway if it is.
         amountOut = _getMultiSwapQuote({
-            nodeIndexFrom: tokenIndexFrom,
-            nodeIndexTo: tokenIndexTo,
+            nodeIndexFrom: nodeIndexFrom,
+            nodeIndexTo: nodeIndexTo,
             amountIn: dx,
             probePaused: false
         }).amountOut;
@@ -114,9 +114,9 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
         external
         view
         returns (
-            uint8 tokenIndexFrom,
-            uint8 tokenIndexTo,
-            uint256 amountOut
+            uint8 nodeIndexFromBest,
+            uint8 nodeIndexToBest,
+            uint256 amountOutBest
         )
     {
         // Check that the tokens are not the same and that the amount is not zero
@@ -133,16 +133,16 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
                 uint256 nodeIndexTo = _tokenNodes[tokenOut][j];
                 // Calculate the quote by following the path from "tokenFrom" node to "tokenTo" node in the stored tree
                 // We discard any paths with paused pools, as it's not possible to swap via them anyway.
-                uint256 amountOutQuote = _getMultiSwapQuote({
+                uint256 amountOut = _getMultiSwapQuote({
                     nodeIndexFrom: nodeIndexFrom,
                     nodeIndexTo: nodeIndexTo,
                     amountIn: amountIn,
                     probePaused: true
                 }).amountOut;
-                if (amountOutQuote > amountOut) {
-                    amountOut = amountOutQuote;
-                    tokenIndexFrom = uint8(nodeIndexFrom);
-                    tokenIndexTo = uint8(nodeIndexTo);
+                if (amountOut > amountOutBest) {
+                    amountOutBest = amountOut;
+                    nodeIndexFromBest = uint8(nodeIndexFrom);
+                    nodeIndexToBest = uint8(nodeIndexTo);
                 }
             }
         }
