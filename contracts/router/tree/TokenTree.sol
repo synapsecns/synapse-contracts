@@ -1,6 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+/// TokenTree implements the internal logic for storing a set of tokens in a rooted tree.
+/// - Root node represents a Synapse-bridged token.
+/// - The root token could not appear more than once in the tree.
+/// - Other tree nodes represent tokens that are correlated with the root token.
+/// - These other tokens could appear more than once in the tree.
+/// - Every edge between a child and a parent node is associated with a single liquidity pool that contains both tokens.
+/// - The tree is rooted => the root of the tree has a zero depth. A child node depth is one greater than its parent.
+/// - Every node can have arbitrary amount of children.
+/// - New nodes are added to the tree by "attaching" a pool to an existing node. This adds all the other pool tokens
+/// as new children of the existing node (which represents one of the tokens from the pool).
+/// - Pool could be only attached once to any given node. Pool could not be attached to a node, if it connects the node
+/// with its parent.
+/// - Pool could be potentially attached to two different nodes in the tree.
+/// - By definition a tree has no cycles, so there exists only one path between any two nodes. Every edge on this path
+/// represents a liquidity pool, and the whole path represents a series of swaps that lead from one token to another.
+/// - Paths that contain a pool more than once are not allowed, and are not used for quotes/swaps. This is due to
+/// the fact that it's impossible to get an accurate quote for the second swap through the pool in the same tx.
+/// > This contract is only responsible for storing and traversing the tree. The swap/quote logic, as well as
+/// > transformation of the inner tree into ISaddle interface is implemented in the child contract.
 abstract contract TokenTree {
     /// @notice Struct so store the tree nodes
     /// @param token        Address of the token represented by this node
@@ -57,11 +76,12 @@ abstract contract TokenTree {
     mapping(address => uint256[]) internal _tokenNodes;
 
     // The full path from every node to the root is stored using bitmasks in the following way:
-    // - For a node at depth N, lowest (N + 1) bytes are used to store the path to the root.
+    // - For a node with index i at depth N, lowest N + 1 bytes of _rootPath[i] are used to store the path to the root.
     // - The lowest byte is always the root index. This is always 0, but we store this for consistency.
-    // - The highest byte is always the node index.
+    // - The highest byte is always the node index. This is always i, but we store this for consistency.
     // - The remaining bytes are indexes of the nodes on the path from the node to the root (from highest to lowest).
-    // This way the finding the lowest common ancestor of two nodes is reduced to finding the first differing byte.
+    // This way the finding the lowest common ancestor of two nodes is reduced to finding the lowest differing byte
+    // in node's encoded root paths.
     uint256[] internal _rootPath;
 
     // (node => bitmask with all attached pools to the node).
@@ -152,17 +172,19 @@ abstract contract TokenTree {
         uint256 nodeIndexTo,
         uint256 amountIn
     ) internal returns (Route memory route) {
+        // Struct to get around stack too deep
         Request memory req = Request({from: _nodes[nodeIndexFrom], to: _nodes[nodeIndexTo], probePaused: false});
         uint256 rootPathFrom = _rootPath[nodeIndexFrom];
         uint256 rootPathTo = _rootPath[nodeIndexTo];
         // Find the depth where the paths diverge
         uint256 depthDiff = _depthDiff(rootPathFrom, rootPathTo);
-        // Check that the nodes are not on the same branch
+        // Check if `nodeIndexTo` is an ancestor of `nodeIndexFrom`. True if paths diverge below `nodeIndexTo`.
         if (depthDiff > req.to.depth) {
             // Path from "tokenFrom" to root includes "tokenTo",
             // so we simply go from "tokenFrom" to "tokenTo" in the "to root" direction.
             return _multiSwapToRoot(0, rootPathFrom, req.from.depth, req.to.depth, amountIn);
         }
+        // Check if `nodeIndexFrom` is an ancestor of `nodeIndexTo`. True if paths diverge below `nodeIndexFrom`.
         if (depthDiff > req.from.depth) {
             // Path from "tokenTo" to root includes "tokenFrom",
             // so we simply go from "tokenTo" to "tokenFrom" in the "from root" direction.
@@ -171,13 +193,13 @@ abstract contract TokenTree {
         // First, we traverse up the tree from "tokenFrom" to one level deeper the lowest common ancestor.
         route = _multiSwapToRoot(0, rootPathFrom, req.from.depth, depthDiff, amountIn);
         // Check if we need to do a sibling swap. When the two nodes are connected to the same parent via the same pool,
-        // we need to do a direct swap between the two nodes, instead of going through the parent.
+        // we do a direct swap between the two nodes, instead of doing two swaps through the parent using the same pool.
         uint256 lastNodeIndex = _extractNodeIndex(rootPathFrom, depthDiff);
         uint256 siblingIndex = _extractNodeIndex(rootPathTo, depthDiff);
         uint256 firstPoolIndex = _nodes[lastNodeIndex].poolIndex;
         uint256 secondPoolIndex = _nodes[siblingIndex].poolIndex;
         if (firstPoolIndex == secondPoolIndex) {
-            // Swap lastNodeIndex -> siblingIndex
+            // Swap lastNode -> sibling
             (route.visitedPools, route.amountOut) = _singleSwap(
                 route.visitedPools,
                 firstPoolIndex,
@@ -186,7 +208,7 @@ abstract contract TokenTree {
                 route.amountOut
             );
         } else {
-            // Swap lastNodeIndex -> parentIndex
+            // Swap lastNode -> parent
             uint256 parentIndex = _extractNodeIndex(rootPathFrom, depthDiff - 1);
             (route.visitedPools, route.amountOut) = _singleSwap(
                 route.visitedPools,
@@ -195,7 +217,7 @@ abstract contract TokenTree {
                 parentIndex,
                 route.amountOut
             );
-            // Swap parentIndex -> siblingIndex
+            // Swap parent -> sibling
             (route.visitedPools, route.amountOut) = _singleSwap(
                 route.visitedPools,
                 secondPoolIndex,
@@ -208,8 +230,8 @@ abstract contract TokenTree {
         return _multiSwapFromRoot(route.visitedPools, rootPathTo, depthDiff, req.to.depth, route.amountOut);
     }
 
-    /// @dev Performs a multi-hop swap,
-    /// going in "from root direction" via the given `rootPath` from `depthFrom` to `depthTo`.
+    /// @dev Performs a multi-hop swap, going in "from root direction" (where depth increases)
+    /// via the given `rootPath` from `depthFrom` to `depthTo`.
     /// Assumes that the initial token is already in this contract.
     function _multiSwapFromRoot(
         uint256 visitedPools,
@@ -224,7 +246,7 @@ abstract contract TokenTree {
             // Get the child node
             ++depth;
             uint256 childIndex = _extractNodeIndex(rootPath, depth);
-            // Swap nodeIndex -> childIndex
+            // Swap node -> child
             (visitedPools, amountIn) = _singleSwap(
                 visitedPools,
                 _nodes[childIndex].poolIndex,
@@ -238,8 +260,8 @@ abstract contract TokenTree {
         route.amountOut = amountIn;
     }
 
-    /// @dev Performs a multi-hop swap,
-    /// going in "to root direction" via the given `rootPath` from `depthFrom` to `depthTo`.
+    /// @dev Performs a multi-hop swap, going in "to root direction" (where depth decreases)
+    /// via the given `rootPath` from `depthFrom` to `depthTo`.
     /// Assumes that the initial token is already in this contract.
     function _multiSwapToRoot(
         uint256 visitedPools,
@@ -254,7 +276,7 @@ abstract contract TokenTree {
             // Get the parent node
             --depth;
             uint256 parentIndex = _extractNodeIndex(rootPath, depth);
-            // Swap nodeIndex -> parentIndex
+            // Swap node -> parent
             (visitedPools, amountIn) = _singleSwap(
                 visitedPools,
                 _nodes[nodeIndex].poolIndex,
@@ -310,17 +332,19 @@ abstract contract TokenTree {
         uint256 amountIn,
         bool probePaused
     ) internal view returns (Route memory route) {
+        // Struct to get around stack too deep
         Request memory req = Request({from: _nodes[nodeIndexFrom], to: _nodes[nodeIndexTo], probePaused: probePaused});
         uint256 rootPathFrom = _rootPath[nodeIndexFrom];
         uint256 rootPathTo = _rootPath[nodeIndexTo];
         // Find the depth where the paths diverge
         uint256 depthDiff = _depthDiff(rootPathFrom, rootPathTo);
-        // Check that the nodes are not on the same branch
+        // Check if `nodeIndexTo` is an ancestor of `nodeIndexFrom`. True if paths diverge below `nodeIndexTo`.
         if (depthDiff > req.to.depth) {
             // Path from "tokenFrom" to root includes "tokenTo",
             // so we simply go from "tokenFrom" to "tokenTo" in the "to root" direction.
             return _getMultiSwapToRootQuote(0, rootPathFrom, req.from.depth, req.to.depth, amountIn, probePaused);
         }
+        // Check if `nodeIndexFrom` is an ancestor of `nodeIndexTo`. True if paths diverge below `nodeIndexFrom`.
         if (depthDiff > req.from.depth) {
             // Path from "tokenTo" to root includes "tokenFrom",
             // so we simply go from "tokenTo" to "tokenFrom" in the "from root" direction.
@@ -336,13 +360,13 @@ abstract contract TokenTree {
             req.probePaused
         );
         // Check if we need to do a sibling swap. When the two nodes are connected to the same parent via the same pool,
-        // we need to do a direct swap between the two nodes, instead of going through the parent.
+        // we do a direct swap between the two nodes, instead of doing two swaps through the parent using the same pool.
         uint256 lastNodeIndex = _extractNodeIndex(rootPathFrom, depthDiff);
         uint256 siblingIndex = _extractNodeIndex(rootPathTo, depthDiff);
         uint256 firstPoolIndex = _nodes[lastNodeIndex].poolIndex;
         uint256 secondPoolIndex = _nodes[siblingIndex].poolIndex;
         if (firstPoolIndex == secondPoolIndex) {
-            // Swap lastNodeIndex -> siblingIndex
+            // Swap lastNode -> sibling
             (route.visitedPools, route.amountOut) = _getSingleSwapQuote(
                 route.visitedPools,
                 firstPoolIndex,
@@ -352,7 +376,7 @@ abstract contract TokenTree {
                 req.probePaused
             );
         } else {
-            // Swap lastNodeIndex -> parentIndex
+            // Swap lastNode -> parent
             uint256 parentIndex = _extractNodeIndex(rootPathFrom, depthDiff - 1);
             (route.visitedPools, route.amountOut) = _getSingleSwapQuote(
                 route.visitedPools,
@@ -362,7 +386,7 @@ abstract contract TokenTree {
                 route.amountOut,
                 req.probePaused
             );
-            // Swap parentIndex -> siblingIndex
+            // Swap parent -> sibling
             (route.visitedPools, route.amountOut) = _getSingleSwapQuote(
                 route.visitedPools,
                 secondPoolIndex,
@@ -385,7 +409,7 @@ abstract contract TokenTree {
     }
 
     /// @dev Calculates the amount of tokens that will be received from a multi-hop swap,
-    /// when going in "from root direction" via the given `rootPath` from `depthFrom` to `depthTo`.
+    /// going in "from root direction" (where depth increases) via the given `rootPath` from `depthFrom` to `depthTo`.
     function _getMultiSwapFromRootQuote(
         uint256 visitedPools,
         uint256 rootPath,
@@ -400,7 +424,7 @@ abstract contract TokenTree {
             // Get the child node
             ++depth;
             uint256 childIndex = _extractNodeIndex(rootPath, depth);
-            // Swap nodeIndex -> childIndex
+            // Swap node -> child
             (visitedPools, amountIn) = _getSingleSwapQuote(
                 visitedPools,
                 _nodes[childIndex].poolIndex,
@@ -416,7 +440,7 @@ abstract contract TokenTree {
     }
 
     /// @dev Calculates the amount of tokens that will be received from a multi-hop swap,
-    /// when going in "to root direction" via the given `rootPath` from `depthFrom` to `depthTo`.
+    /// going in "to root direction" (where depth decreases) via the given `rootPath` from `depthFrom` to `depthTo`.
     function _getMultiSwapToRootQuote(
         uint256 visitedPools,
         uint256 rootPath,
@@ -431,7 +455,7 @@ abstract contract TokenTree {
             // Get the parent node
             --depth;
             uint256 parentIndex = _extractNodeIndex(rootPath, depth);
-            // Swap nodeIndex -> parentIndex
+            // Swap node -> parent
             (visitedPools, amountIn) = _getSingleSwapQuote(
                 visitedPools,
                 _nodes[nodeIndex].poolIndex,
@@ -456,6 +480,7 @@ abstract contract TokenTree {
     ) internal view virtual returns (address[] memory tokens);
 
     /// @dev Returns the amount of tokens that will be received from a single swap.
+    /// Will check if the pool is paused beforehand, if requested.
     function _getPoolQuote(
         address poolModule,
         address pool,
@@ -483,6 +508,7 @@ abstract contract TokenTree {
         // Otherwise, mark the pool as visited
         visitedPools_ = visitedPools | (1 << poolIndex);
         address pool = _pools[poolIndex];
+        // Pass the parameter for whether we want to check that the pool is paused or not.
         amountOut = _getPoolQuote(_poolMap[pool].module, pool, nodeIndexFrom, nodeIndexTo, amountIn, probePaused);
     }
 
@@ -491,7 +517,8 @@ abstract contract TokenTree {
     /// @dev Finds the lowest common ancestor of two different nodes in the tree.
     /// Node is defined by the path from the root to the node, and the depth of the node.
     function _depthDiff(uint256 rootPath0, uint256 rootPath1) internal pure returns (uint256 depthDiff) {
-        // Xor the paths to get the first differing byte. Values are different, so the result is never zero.
+        // Xor the paths to get the first differing byte.
+        // Nodes are different => root paths are different => the result is never zero.
         rootPath0 ^= rootPath1;
         // Sanity check for invariant: rootPath0 != rootPath1
         assert(rootPath0 != 0);
