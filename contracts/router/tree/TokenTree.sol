@@ -113,6 +113,7 @@ abstract contract TokenTree {
         (bool wasAdded, uint8 poolIndex) = (false, _poolMap[pool].index);
         if (poolIndex == 0) {
             poolIndex = uint8(_pools.length);
+            require(poolIndex <= type(uint8).max, "Too many pools");
             _pools.push(pool);
             _poolMap[pool] = Pool({module: poolModule, index: poolIndex});
             wasAdded = true;
@@ -154,7 +155,7 @@ abstract contract TokenTree {
     ) internal {
         // Index of the newly inserted child node
         uint256 nodeIndex = _nodes.length;
-        require(nodeIndex < type(uint8).max, "Too many nodes");
+        require(nodeIndex <= type(uint8).max, "Too many nodes");
         require(_nodes.length == 0 || token != _nodes[0].token, "Bridge token must be at root");
         _nodes.push(Node({token: token, depth: depth, poolIndex: poolIndex}));
         _tokenNodes[token].push(nodeIndex);
