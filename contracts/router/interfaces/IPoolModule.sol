@@ -15,7 +15,8 @@ interface IPoolModule {
         address pool,
         IndexedToken memory tokenFrom,
         IndexedToken memory tokenTo,
-        uint256 amountIn
+        uint256 amountIn,
+        bool probePaused
     ) external view returns (uint256 amountOut);
 
     function getPoolTokens(address pool, uint256 tokensAmount) external view returns (address[] memory tokens);

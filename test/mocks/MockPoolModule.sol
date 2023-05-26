@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {IPausable} from "../../contracts/router/interfaces/IPausable.sol";
 import {IndexedToken, IPoolModule} from "../../contracts/router/interfaces/IPoolModule.sol";
 import {ISaddle} from "../../contracts/router/interfaces/ISaddle.sol";
 
@@ -25,8 +26,19 @@ contract MockPoolModule is IPoolModule {
         address pool,
         IndexedToken memory tokenFrom,
         IndexedToken memory tokenTo,
-        uint256 amountIn
+        uint256 amountIn,
+        bool probePaused
     ) external view returns (uint256 amountOut) {
+        if (probePaused) {
+            // We issue a static call in case the pool does not conform to IPausable interface.
+            (bool success, bytes memory returnData) = pool.staticcall(
+                abi.encodeWithSelector(IPausable.paused.selector)
+            );
+            if (success && abi.decode(returnData, (bool))) {
+                // Pool is paused, return zero
+                return 0;
+            }
+        }
         amountOut = ISaddle(pool).calculateSwap(tokenFrom.index, tokenTo.index, amountIn);
     }
 

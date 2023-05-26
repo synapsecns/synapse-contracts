@@ -244,7 +244,6 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
                 amountOut = 0;
             }
         } else {
-            // TODO: check if pool is paused, if requested
             // Ask Pool Module to calculate the quote
             address tokenFrom = _nodes[nodeIndexFrom].token;
             address tokenTo = _nodes[nodeIndexTo].token;
@@ -253,7 +252,8 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
                     pool,
                     IndexedToken({index: tokenIndexes[pool][tokenFrom], token: tokenFrom}),
                     IndexedToken({index: tokenIndexes[pool][tokenTo], token: tokenTo}),
-                    amountIn
+                    amountIn,
+                    probePaused
                 )
             returns (uint256 amountOut_) {
                 amountOut = amountOut_;
