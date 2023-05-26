@@ -2,7 +2,8 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../../utils/Utilities06.sol";
+import {SynapseRouterExpectations} from "./SynapseRouterExpectations.t.sol";
+import {SynapseERC20} from "../../utils/Utilities06.sol";
 
 import "../../../contracts/bridge/router/SwapQuoter.sol";
 import "../../../contracts/bridge/router/SynapseRouter.sol";
@@ -92,7 +93,7 @@ contract ValidatorMock {
 
 // solhint-disable func-name-mixedcase
 // solhint-disable not-rely-on-time
-abstract contract SynapseRouterSuite is Utilities06 {
+abstract contract SynapseRouterSuite is SynapseRouterExpectations {
     using SafeERC20 for IERC20;
 
     address internal constant USER = address(4242);
@@ -310,12 +311,13 @@ abstract contract SynapseRouterSuite is Utilities06 {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function initiateBridgeTx(
+        function() internal expectEmitOrRevert,
         ChainSetup memory origin,
         ChainSetup memory destination,
         IERC20 tokenIn,
         IERC20 tokenOut,
         uint256 amountIn
-    ) public returns (SwapQuery memory originQuery, SwapQuery memory destQuery) {
+    ) internal returns (SwapQuery memory originQuery, SwapQuery memory destQuery) {
         prepareBridgeTx(origin, tokenIn, amountIn);
         (originQuery, destQuery) = performQuoteCalls(origin, destination, tokenIn, tokenOut, amountIn);
         SwapQuery memory _originQuery;
@@ -325,6 +327,9 @@ abstract contract SynapseRouterSuite is Utilities06 {
         checkEqualQueries(destQuery, _destQuery, "destQuery");
         vm.prank(USER);
         bool startFromETH = address(tokenIn) == UniversalToken.ETH_ADDRESS;
+        // Callback to expect emits or reverts
+        emittingBridge = address(origin.bridge);
+        expectEmitOrRevert();
         origin.router.bridge{value: startFromETH ? amountIn : 0}({
             to: TO,
             chainId: destination.chainId,
