@@ -127,21 +127,23 @@ abstract contract TokenTree {
         _attachedPools[nodeIndex] |= 1 << poolIndex;
         address[] memory tokens = _getPoolTokens(poolModule, pool, tokensAmount);
         bool nodeFound = false;
-        uint8 childDepth = node.depth + 1;
-        uint256 rootPathParent = _rootPath[nodeIndex];
-        for (uint256 i = 0; i < tokensAmount; ++i) {
-            address token = tokens[i];
-            // Save token indexes if this is a new pool
-            if (wasAdded) {
-                tokenIndexes[pool][token] = uint8(i);
+        unchecked {
+            uint8 childDepth = node.depth + 1;
+            uint256 rootPathParent = _rootPath[nodeIndex];
+            for (uint256 i = 0; i < tokensAmount; ++i) {
+                address token = tokens[i];
+                // Save token indexes if this is a new pool
+                if (wasAdded) {
+                    tokenIndexes[pool][token] = uint8(i);
+                }
+                // Add new nodes to the tree
+                if (token == node.token) {
+                    // TODO: check that pool wasn't added twice to the same node
+                    nodeFound = true;
+                    continue;
+                }
+                _addNode(token, childDepth, poolIndex, rootPathParent);
             }
-            // Add new nodes to the tree
-            if (token == node.token) {
-                // TODO: check that pool wasn't added twice to the same node
-                nodeFound = true;
-                continue;
-            }
-            _addNode(token, childDepth, poolIndex, rootPathParent);
         }
         require(nodeFound, "Node token not found in the pool");
     }
@@ -245,7 +247,9 @@ abstract contract TokenTree {
         // Traverse down the tree following `rootPath` from `depthFrom` to `depthTo`.
         for (uint256 depth = depthFrom; depth < depthTo; ) {
             // Get the child node
-            ++depth;
+            unchecked {
+                ++depth;
+            }
             uint256 childIndex = _extractNodeIndex(rootPath, depth);
             // Swap node -> child
             (visitedPools, amountIn) = _singleSwap(
@@ -275,7 +279,9 @@ abstract contract TokenTree {
         // Traverse up the tree following `rootPath` from `depthFrom` to `depthTo`.
         for (uint256 depth = depthFrom; depth > depthTo; ) {
             // Get the parent node
-            --depth;
+            unchecked {
+                --depth; // depth > 0 so we can do unchecked math
+            }
             uint256 parentIndex = _extractNodeIndex(rootPath, depth);
             // Swap node -> parent
             (visitedPools, amountIn) = _singleSwap(
@@ -423,7 +429,9 @@ abstract contract TokenTree {
         // Traverse down the tree following `rootPath` from `depthFrom` to `depthTo`.
         for (uint256 depth = depthFrom; depth < depthTo; ) {
             // Get the child node
-            ++depth;
+            unchecked {
+                ++depth;
+            }
             uint256 childIndex = _extractNodeIndex(rootPath, depth);
             // Swap node -> child
             (visitedPools, amountIn) = _getSingleSwapQuote(
@@ -454,7 +462,9 @@ abstract contract TokenTree {
         // Traverse up the tree following `rootPath` from `depthFrom` to `depthTo`.
         for (uint256 depth = depthFrom; depth > depthTo; ) {
             // Get the parent node
-            --depth;
+            unchecked {
+                --depth; // depth > 0 so we can do unchecked math
+            }
             uint256 parentIndex = _extractNodeIndex(rootPath, depth);
             // Swap node -> parent
             (visitedPools, amountIn) = _getSingleSwapQuote(
@@ -527,7 +537,9 @@ abstract contract TokenTree {
         while ((rootPath0 & 0xFF) == 0) {
             // Shift off the lowest byte which are identical in both paths.
             rootPath0 >>= 8;
-            depthDiff++;
+            unchecked {
+                depthDiff++;
+            }
         }
     }
 

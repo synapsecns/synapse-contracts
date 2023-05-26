@@ -162,10 +162,13 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
         pools = new address[](_pools.length);
         uint256 amountAttached = 0;
         uint256 poolsMask = _attachedPools[index];
-        for (uint256 i = 0; i < pools.length; ++i) {
+        for (uint256 i = 0; i < pools.length; ) {
             // Check if _pools[i] is attached to the node at `index`
-            if ((poolsMask >> i) & 1 == 1) {
-                pools[amountAttached++] = _pools[i];
+            unchecked {
+                if ((poolsMask >> i) & 1 == 1) {
+                    pools[amountAttached++] = _pools[i];
+                }
+                ++i;
             }
         }
         // Use assembly to shrink the array to the actual size
@@ -300,8 +303,11 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
         if (poolModule == address(this)) {
             // Pool conforms to ISaddle interface.
             tokens = new address[](tokensAmount);
-            for (uint256 i = 0; i < tokensAmount; ++i) {
+            for (uint256 i = 0; i < tokensAmount; ) {
                 tokens[i] = ISaddle(pool).getToken(uint8(i));
+                unchecked {
+                    ++i;
+                }
             }
         } else {
             // Ask Pool Module to return the tokens
