@@ -76,7 +76,9 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
             return 0;
         }
         // Calculate the quote by following the path from "tokenFrom" node to "tokenTo" node in the stored tree
-        return _getMultiSwapQuote(tokenIndexFrom, tokenIndexTo, dx).amountOut;
+        // This function might be called by Synapse:Bridge before the swap, so we don't waste gas checking if pool is paused,
+        // as the swap will fail anyway if it is.
+        return _getMultiSwapQuote(tokenIndexFrom, tokenIndexTo, dx, false).amountOut;
     }
 
     /// @inheritdoc IUniversalSwap
@@ -104,7 +106,8 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
             for (uint256 j = 0; j < nodesTo; ++j) {
                 uint256 nodeIndexTo = _tokenNodes[tokenOut][j];
                 // Calculate the quote by following the path from "tokenFrom" node to "tokenTo" node in the stored tree
-                uint256 amountOutQuote = _getMultiSwapQuote(nodeIndexFrom, nodeIndexTo, amountIn).amountOut;
+                // We discard any paths with paused pools, as it's not possible to swap via them anyway.
+                uint256 amountOutQuote = _getMultiSwapQuote(nodeIndexFrom, nodeIndexTo, amountIn, true).amountOut;
                 if (amountOutQuote > amountOut) {
                     amountOut = amountOutQuote;
                     tokenIndexFrom = uint8(nodeIndexFrom);
@@ -211,8 +214,10 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
         address pool,
         uint256 nodeIndexFrom,
         uint256 nodeIndexTo,
-        uint256 amountIn
+        uint256 amountIn,
+        bool probePaused
     ) internal view override returns (uint256 amountOut) {
+        // TODO: check if the pool is paused, if requested
         if (poolModule == address(this)) {
             // Pool conforms to ISaddle interface.
             try
