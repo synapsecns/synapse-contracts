@@ -61,7 +61,7 @@ contract SynapseRouterViewsTest is Utilities06 {
         bridge = deployBridge();
         // We're using this contract as owner for testing suite deployments
         router = new SynapseRouter(address(bridge), address(this));
-        quoter = new SwapQuoter(address(router), address(weth), address(this));
+        quoter = SwapQuoter(deploySwapQuoter(address(router), address(weth), address(this)));
 
         addSwapPool(quoter, address(neth), nEthPool);
         addSwapPool(quoter, address(nusd), nUsdPool);
@@ -72,6 +72,14 @@ contract SynapseRouterViewsTest is Utilities06 {
         _addRedeemToken("nETH", address(neth));
         _addRedeemToken("nUSD", address(nusd));
         _addDepositToken("Nexus nUSD", address(nexusNusd));
+    }
+
+    function deploySwapQuoter(
+        address router_,
+        address weth_,
+        address owner
+    ) internal virtual returns (address) {
+        return address(new SwapQuoter(router_, weth_, owner));
     }
 
     function addSwapPool(
