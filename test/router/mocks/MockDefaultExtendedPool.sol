@@ -87,4 +87,14 @@ contract MockDefaultExtendedPool is MockDefaultPool, IDefaultExtendedPool {
         require(tokenIndex < _tokens.length, "ExtendedPool: !tokenIndex");
         return lpTokenAmount / 10**(18 - IERC20Metadata(_tokens[tokenIndex]).decimals());
     }
+
+    // ═══════════════════════════════════ REMAINING EXTENDED DEFAULT POOL VIEWS ═══════════════════════════════════════
+
+    // These are added to comply with the interface, but are not used in the tests.
+
+    function calculateRemoveLiquidity(uint256 amount) external view returns (uint256[] memory) {}
+
+    function getAPrecise() external view returns (uint256) {}
+
+    function getTokenBalance(uint8 index) external view returns (uint256) {}
 }
