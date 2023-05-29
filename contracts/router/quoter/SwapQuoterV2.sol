@@ -6,7 +6,7 @@ import {ISwapQuoterV1, LimitedToken, SwapQuery, Pool, PoolToken} from "../interf
 
 contract SwapQuoterV2 is PoolQuoterV1 {
     // solhint-disable-next-line no-empty-blocks
-    constructor(address defaultPoolCalc) PoolQuoterV1(defaultPoolCalc) {}
+    constructor(address defaultPoolCalc, address weth) PoolQuoterV1(defaultPoolCalc, weth) {}
 
     // ═════════════════════════════════════════════ GENERAL QUOTES V1 ═════════════════════════════════════════════════
 
