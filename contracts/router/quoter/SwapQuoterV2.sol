@@ -5,9 +5,16 @@ import {PoolQuoterV1} from "./PoolQuoterV1.sol";
 import {ISwapQuoterV1, LimitedToken, SwapQuery, Pool, PoolToken} from "../interfaces/ISwapQuoterV1.sol";
 
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
+import {EnumerableSet} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableSet.sol";
 
 contract SwapQuoterV2 is PoolQuoterV1, Ownable {
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     address public immutable synapseRouter;
+
+    // ══════════════════════════════════════════════════ STORAGE ══════════════════════════════════════════════════════
+
+    EnumerableSet.AddressSet internal _linkedPools;
 
     constructor(
         address synapseRouter_,
@@ -22,7 +29,7 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     // ════════════════════════════════════════════════ OWNER ONLY ═════════════════════════════════════════════════════
 
     /// @notice Adds a few pools to the list of pools used for finding a trade path.
-    /// @dev The list should NOT include any UniversalSwap contracts.
+    /// @dev The list should NOT include any LinkedPool contracts.
     function addPools(address[] calldata pools) external onlyOwner {
         uint256 amount = pools.length;
         for (uint256 i = 0; i < amount; ++i) {
@@ -31,7 +38,7 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     }
 
     /// @notice Adds a pool to the list of pools used for finding a trade path.
-    /// @dev The pool should NOT be a UniversalSwap contract.
+    /// @dev The pool should NOT be a LinkedPool contract.
     function addPool(address pool) external onlyOwner {
         _addPool(pool);
     }
@@ -39,6 +46,36 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     /// @notice Removes a pool from the list of pools used for finding a trade path.
     function removePool(address pool) external onlyOwner {
         _removePool(pool);
+    }
+
+    /// @notice Adds a few LinkedPool contracts for finding a trade path.
+    function addLinkedPools(address[] calldata linkedPools) external onlyOwner {
+        uint256 amount = linkedPools.length;
+        for (uint256 i = 0; i < amount; ++i) {
+            _linkedPools.add(linkedPools[i]);
+        }
+    }
+
+    /// @notice Adds a LinkedPool contract for finding a trade path.
+    function addLinkedPool(address linkedPool) external onlyOwner {
+        _linkedPools.add(linkedPool);
+    }
+
+    /// @notice Removes a LinkedPool contract from the list of contracts used for finding a trade path.
+    function removeLinkedPool(address linkedPool) external onlyOwner {
+        _linkedPools.remove(linkedPool);
+    }
+
+    // ══════════════════════════════════════════ UNIVERSAL SWAP GETTERS ═══════════════════════════════════════════════
+
+    /// @notice Returns the list of LinkedPool contracts used for finding a trade path.
+    function allLinkedPools() external view returns (address[] memory linkedPools) {
+        return _linkedPools.values();
+    }
+
+    /// @notice Returns the amount of LinkedPool contracts used for finding a trade path.
+    function linkedPoolsAmount() external view returns (uint256 amount) {
+        return _linkedPools.length();
     }
 
     // ═════════════════════════════════════════════ GENERAL QUOTES V1 ═════════════════════════════════════════════════

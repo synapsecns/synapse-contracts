@@ -80,7 +80,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
     }
 
     /// @inheritdoc ISwapQuoterV1
-    function poolsAmount() external view returns (uint256 tokens) {
+    function poolsAmount() external view returns (uint256 amount) {
         return _pools.length();
     }
 
