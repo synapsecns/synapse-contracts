@@ -129,6 +129,13 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         }
     }
 
+    /// @dev Removes a pool from the list of pools. Leaves the records of its tokens intact in case it is added again.
+    function _removePool(address pool) internal {
+        _pools.remove(pool);
+        // We don't clear _poolTokens or _poolLpToken, as pool's set of tokens doesn't change over time.
+        // PoolQuoterV1 iterates through all pools in `_pools`, so removing it from there is enough.
+    }
+
     // ════════════════════════════════════════════ FINDING QUOTE LOGIC ════════════════════════════════════════════════
 
     /// @dev Returns pool indexes for the two given tokens plus 1.
