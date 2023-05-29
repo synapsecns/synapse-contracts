@@ -27,6 +27,9 @@ contract UniversalSwapTest is Test {
     // Pool with Token1, Token2, Token3
     MockSaddlePausablePool public pool123;
 
+    // Pool with Bridge Token, Token0, Token1, Token2
+    MockSaddlePool public poolB012;
+
     mapping(uint256 => address[]) public attachedPools;
 
     UniversalSwap public swap;
@@ -86,6 +89,16 @@ contract UniversalSwapTest is Test {
             pool123 = new MockSaddlePausablePool(tokens);
             setupPool(pool123, tokens, 50_000);
             vm.label(address(pool123), "[T1, T2, T3]");
+        }
+        {
+            address[] memory tokens = new address[](4);
+            tokens[0] = address(bridgeToken);
+            tokens[1] = address(token0);
+            tokens[2] = address(token1);
+            tokens[3] = address(token2);
+            poolB012 = new MockSaddlePool(tokens);
+            setupPool(poolB012, tokens, 20_000);
+            vm.label(address(poolB012), "[BT, T0, T1, T2]");
         }
     }
 
@@ -156,6 +169,17 @@ contract UniversalSwapTest is Test {
         assertEq(swap.getToken(9), address(token3));
     }
 
+    // Setup where pool with a bridge token is attached to a non-root node
+    function bridgeTokenPoolAttachedSetup() public {
+        complexSetup();
+        // Should not add the bridge token to the tree more than once
+        // 4: T2 + ([BT: ignored], 8: T0, 9: T1)
+        addPool(4, address(poolB012), 4);
+        assertEq(swap.tokenNodesAmount(), 10);
+        assertEq(swap.getToken(8), address(token0));
+        assertEq(swap.getToken(9), address(token1));
+    }
+
     // ═══════════════════════════════════════════════ REVERT TESTS ════════════════════════════════════════════════════
 
     function test_addPool_revert_nodeNotInPool() public {
@@ -163,13 +187,6 @@ contract UniversalSwapTest is Test {
         // 1 is T0, which is not in pool123
         vm.expectRevert("Node token not found in the pool");
         swap.addPool(1, address(pool123), address(0), 3);
-    }
-
-    function test_addPool_revert_bridgeTokenNotRoot() public {
-        complexSetup();
-        // Should not be possible to attach a pool with the bridge token to a non-root node
-        vm.expectRevert("Bridge token must be at root");
-        swap.addPool(3, address(poolB01), address(0), 3);
     }
 
     function test_addPool_revert_nodeIndexOutOfRange() public {

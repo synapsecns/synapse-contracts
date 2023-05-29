@@ -138,7 +138,6 @@ abstract contract TokenTree {
                 }
                 // Add new nodes to the tree
                 if (token == node.token) {
-                    // TODO: check that pool wasn't added twice to the same node
                     nodeFound = true;
                     continue;
                 }
@@ -158,7 +157,13 @@ abstract contract TokenTree {
         // Index of the newly inserted child node
         uint256 nodeIndex = _nodes.length;
         require(nodeIndex <= type(uint8).max, "Too many nodes");
-        require(_nodes.length == 0 || token != _nodes[0].token, "Bridge token must be at root");
+        // Don't add the bridge token (root) twice. This may happen if we add a new pool containing the bridge token
+        // to a few existing nodes. E.g. we have old nUSD/USDC/USDT pool, and we add a new nUSD/USDC pool. In this case
+        // we attach nUSD/USDC pool to root, and then attach old nUSD/USDC/USDT pool to the newly added USDC node
+        // to enable nUSD -> USDC -> USDT swaps via new + old pools.
+        if (_nodes.length > 0 && token == _nodes[0].token) {
+            return;
+        }
         _nodes.push(Node({token: token, depth: depth, poolIndex: poolIndex}));
         _tokenNodes[token].push(nodeIndex);
         // Push the root path for the new node. The root path is the inserted node index + the parent's root path.
