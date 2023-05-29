@@ -196,7 +196,7 @@ abstract contract SynapseRouterSuite is SynapseRouterExpectations {
     function deployChainRouter(ChainSetup memory chain) public virtual {
         // We're using this contract as owner for testing suite deployments
         chain.router = new SynapseRouter(address(chain.bridge), address(this));
-        chain.quoter = new SwapQuoter(address(chain.router), address(chain.wgas), address(this));
+        chain.quoter = SwapQuoter(deploySwapQuoter(address(chain.router), address(chain.wgas), address(this)));
         chain.router.setSwapQuoter(chain.quoter);
 
         vm.label(address(chain.bridge), concat(chain.name, " Bridge"));
@@ -208,6 +208,15 @@ abstract contract SynapseRouterSuite is SynapseRouterExpectations {
             chain.neth = deploySynapseERC20(chain, SYMBOL_NETH, 18);
             chain.nusd = deploySynapseERC20(chain, SYMBOL_NUSD, 18);
         }
+    }
+
+    /// @notice Child contract can override this to test another version of SwapQuoter
+    function deploySwapQuoter(
+        address router_,
+        address weth_,
+        address owner
+    ) internal virtual returns (address) {
+        return address(new SwapQuoter(router_, weth_, owner));
     }
 
     function deployTestEthereum() public virtual returns (ChainSetup memory chain) {
