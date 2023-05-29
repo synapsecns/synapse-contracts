@@ -204,6 +204,35 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         }
     }
 
+    /// @dev Checks if a single tokenIn -> tokenOut action is available via any of the supported pools.
+    function _isConnected(LimitedToken memory tokenIn, address tokenOut) internal view returns (bool isConnected) {
+        // If token addresses match, no action is required whatsoever.
+        if (tokenIn.token == tokenOut) {
+            return true;
+        }
+        // Check if ETH <> WETH (Action.HandleEth) could fulfill tokenIn -> tokenOut request.
+        if (Action.HandleEth.isIncluded(tokenIn.actionMask) && _isEthAndWeth(tokenIn.token, tokenOut)) {
+            return true;
+        }
+        uint256 amount = _pools.length();
+        for (uint256 i = 0; i < amount; ++i) {
+            address pool = _pools.at(i);
+            address lpToken = _poolLpToken[pool];
+            // Check if tokenIn and tokenOut are pool tokens
+            (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn.token, tokenOut);
+            if (indexIn > 0 && indexOut > 0) {
+                // tokenIn, tokenOut are pool tokens: Action.Swap is required
+                isConnected = isConnected || Action.Swap.isIncluded(tokenIn.actionMask);
+            } else if (tokenOut == lpToken && indexIn > 0) {
+                // tokenIn is pool token, tokenOut is LP token: Action.AddLiquidity is required
+                isConnected = isConnected || Action.AddLiquidity.isIncluded(tokenIn.actionMask);
+            } else if (tokenIn.token == lpToken && indexOut > 0) {
+                // tokenIn is LP token, tokenOut is pool token: Action.RemoveLiquidity is required
+                isConnected = isConnected || Action.RemoveLiquidity.isIncluded(tokenIn.actionMask);
+            }
+        }
+    }
+
     // ════════════════════════════════════════════ CHECK QUOTES LOGIC ═════════════════════════════════════════════════
 
     /// @dev Checks a swap quote for the given pool, updates `query` if output amount is better.

@@ -7,11 +7,15 @@ import {ISwapQuoterV1, LimitedToken, SwapQuery, Pool, PoolToken} from "../interf
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
 contract SwapQuoterV2 is PoolQuoterV1, Ownable {
+    address public immutable synapseRouter;
+
     constructor(
+        address synapseRouter_,
         address defaultPoolCalc,
         address weth,
         address owner_
     ) PoolQuoterV1(defaultPoolCalc, weth) {
+        synapseRouter = synapseRouter_;
         _transferOwnership(owner_);
     }
 
@@ -44,12 +48,34 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         external
         view
         returns (uint256 amountFound, bool[] memory isConnected)
-    {}
+    {
+        uint256 amount = tokensIn.length;
+        isConnected = new bool[](amount);
+        for (uint256 i = 0; i < amount; ++i) {
+            if (_isConnected(tokensIn[i], tokenOut)) {
+                isConnected[i] = true;
+                ++amountFound;
+            }
+        }
+    }
 
     /// @inheritdoc ISwapQuoterV1
     function getAmountOut(
         LimitedToken memory tokenIn,
         address tokenOut,
         uint256 amountIn
-    ) external view returns (SwapQuery memory query) {}
+    ) external view returns (SwapQuery memory query) {
+        query = _findBestQuote(tokenIn, tokenOut, amountIn);
+        // tokenOut filed should always be populated, even if a path wasn't found
+        query.tokenOut = tokenOut;
+        // Fill the remaining fields if a path was found
+        if (query.minAmountOut > 0) {
+            // SynapseRouter is used as "Router Adapter" for doing a swap through Default Pools (or handling ETH).
+            // query.rawParams is left empty only if tokenIn == tokenOut (if no swap or ETH operation is required).
+            if (query.rawParams.length > 0) query.routerAdapter = synapseRouter;
+            // Set default deadline to infinity. Not using the value of 0,
+            // which would lead to every swap to revert by default.
+            query.deadline = type(uint256).max;
+        }
+    }
 }
