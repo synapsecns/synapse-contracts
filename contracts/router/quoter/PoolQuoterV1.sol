@@ -6,7 +6,7 @@ import {IDefaultExtendedPool} from "../interfaces/IDefaultExtendedPool.sol";
 import {ISwapQuoterV1, SwapQuery} from "../interfaces/ISwapQuoterV1.sol";
 import {UniversalTokenLib} from "../libs/UniversalToken.sol";
 
-import {Action, Pool, PoolToken, DefaultParams} from "../libs/Structs.sol";
+import {Action, LimitedToken, Pool, PoolToken, DefaultParams} from "../libs/Structs.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableSet.sol";
 
@@ -129,6 +129,74 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         }
     }
 
+    // ════════════════════════════════════════════ FINDING QUOTE LOGIC ════════════════════════════════════════════════
+
+    /// @dev Returns pool indexes for the two given tokens plus 1.
+    /// - The default value of 0 means a token is not supported by the pool.
+    /// - If one of the pool tokens is WETH, ETH_ADDRESS is also considered as a pool token.
+    function _getTokenIndexes(
+        address pool,
+        address tokenIn,
+        address tokenOut
+    ) internal view returns (uint8 indexIn, uint8 indexOut) {
+        PoolToken[] storage tokens = _poolTokens[pool];
+        uint256 amount = tokens.length;
+        for (uint8 t = 0; t < amount; ++t) {
+            address poolToken = tokens[t].token;
+            if (tokenIn == poolToken || _isEthAndWeth(tokenIn, poolToken)) {
+                indexIn = t + 1;
+            } else if (tokenOut == poolToken || _isEthAndWeth(tokenOut, poolToken)) {
+                indexOut = t + 1;
+            }
+        }
+    }
+
+    /// @dev Finds the best pool for a single tokenIn -> tokenOut action from the list of supported pools.
+    /// - If no pool is found, returns an empty SwapQuery.
+    /// - Otherwise, only populates `minAmountOut` and `rawParams` fields of `query`.
+    /// - Action.HandleEth is used if (tokenIn, tokenOut) is either (ETH, WETH) or (WETH, ETH).
+    /// - Action.Swap is used if (tokenIn, tokenOut) are tokens from the same supported pool.
+    /// - Action.AddLiquidity is used if tokenIn is a pool token, and tokenOut is the pool LP token.
+    /// - Action.RemoveLiquidity is used if tokenIn is the pool LP token, and tokenOut is a pool token.
+    function _findBestQuote(
+        LimitedToken memory tokenIn,
+        address tokenOut,
+        uint256 amountIn
+    ) internal view returns (SwapQuery memory query) {
+        // If token addresses match, no action is required whatsoever.
+        if (tokenIn.token == tokenOut) {
+            // Form a SynapseRouter-compatible struct indicating no action is required.
+            // query.rawParams is left empty, as it is not required for this action.
+            query.minAmountOut = amountIn;
+            return query;
+        }
+        // Check if ETH <> WETH (Action.HandleEth) could fulfill tokenIn -> tokenOut request.
+        _checkHandleETH(tokenIn.actionMask, tokenIn.token, tokenOut, amountIn, query);
+        uint256 amount = _pools.length();
+        for (uint256 i = 0; i < amount; ++i) {
+            address pool = _pools.at(i);
+            address lpToken = _poolLpToken[pool];
+            // Check if tokenIn and tokenOut are pool tokens
+            (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn.token, tokenOut);
+            if (indexIn > 0 && indexOut > 0) {
+                // tokenIn, tokenOut are pool tokens: Action.Swap is required
+                unchecked {
+                    _checkSwapQuote(tokenIn.actionMask, pool, indexIn - 1, indexOut - 1, amountIn, query);
+                }
+            } else if (tokenOut == lpToken && indexIn > 0) {
+                // tokenIn is pool token, tokenOut is LP token: Action.AddLiquidity is required
+                unchecked {
+                    _checkAddLiquidityQuote(tokenIn.actionMask, pool, indexIn - 1, amountIn, query);
+                }
+            } else if (tokenIn.token == lpToken && indexOut > 0) {
+                // tokenIn is LP token, tokenOut is pool token: Action.RemoveLiquidity is required
+                unchecked {
+                    _checkRemoveLiquidityQuote(tokenIn.actionMask, pool, indexOut - 1, amountIn, query);
+                }
+            }
+        }
+    }
+
     // ════════════════════════════════════════════ CHECK QUOTES LOGIC ═════════════════════════════════════════════════
 
     /// @dev Checks a swap quote for the given pool, updates `query` if output amount is better.
@@ -225,13 +293,17 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
     ) internal view {
         // Don't do anything if we haven't specified HandleETH as possible action
         if (!Action.HandleEth.isIncluded(actionMask)) return;
-        if (
-            (tokenIn == UniversalTokenLib.ETH_ADDRESS && tokenOut == _weth) ||
-            (tokenIn == _weth && tokenOut == UniversalTokenLib.ETH_ADDRESS)
-        ) {
+        if (_isEthAndWeth(tokenIn, tokenOut)) {
             query.minAmountOut = amountIn;
             // Encode params for handling ETH: no pool is present, indexFrom and indexTo are 0xFF
             query.rawParams = abi.encode(DefaultParams(Action.HandleEth, address(0), type(uint8).max, type(uint8).max));
         }
+    }
+
+    /// @dev Checks that (tokenA, tokenB) is either (ETH, WETH) or (WETH, ETH).
+    function _isEthAndWeth(address tokenA, address tokenB) internal view returns (bool) {
+        return
+            (tokenA == UniversalTokenLib.ETH_ADDRESS && tokenB == _weth) ||
+            (tokenA == _weth && tokenB == UniversalTokenLib.ETH_ADDRESS);
     }
 }
