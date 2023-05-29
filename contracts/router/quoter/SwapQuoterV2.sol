@@ -23,18 +23,4 @@ contract SwapQuoterV2 is PoolQuoterV1 {
         address tokenOut,
         uint256 amountIn
     ) external view returns (SwapQuery memory query) {}
-
-    // ══════════════════════════════════════════════ POOL GETTERS V1 ══════════════════════════════════════════════════
-
-    /// @inheritdoc ISwapQuoterV1
-    function allPools() external view returns (Pool[] memory pools) {}
-
-    /// @inheritdoc ISwapQuoterV1
-    function poolsAmount() external view returns (uint256 tokens) {}
-
-    /// @inheritdoc ISwapQuoterV1
-    function poolInfo(address pool) external view returns (uint256 tokens, address lpToken) {}
-
-    /// @inheritdoc ISwapQuoterV1
-    function poolTokens(address pool) external view returns (PoolToken[] memory tokens) {}
 }

@@ -6,12 +6,25 @@ import {IDefaultExtendedPool} from "../interfaces/IDefaultExtendedPool.sol";
 import {ISwapQuoterV1, SwapQuery} from "../interfaces/ISwapQuoterV1.sol";
 import {UniversalTokenLib} from "../libs/UniversalToken.sol";
 
-import {Action, DefaultParams} from "../libs/Structs.sol";
+import {Action, Pool, PoolToken, DefaultParams} from "../libs/Structs.sol";
+
+import {EnumerableSet} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableSet.sol";
 
 /// @notice Abstraction to calculate quotes for a given DefaultPool
 abstract contract PoolQuoterV1 is ISwapQuoterV1 {
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     IDefaultPoolCalc internal immutable _defaultPoolCalc;
     address internal immutable _weth;
+
+    // ══════════════════════════════════════════════════ STORAGE ══════════════════════════════════════════════════════
+
+    // All Default Pools that are supported by this quoter. Note: This excludes UniversalSwap wrappers.
+    EnumerableSet.AddressSet internal _pools;
+    /// @dev Pool tokens for every supported IDefaultPool pool
+    mapping(address => PoolToken[]) internal _poolTokens;
+    /// @dev LP token for every supported IDefaultPool pool (if exists)
+    mapping(address => address) internal _poolLpToken;
 
     constructor(address defaultPoolCalc, address weth) {
         _defaultPoolCalc = IDefaultPoolCalc(defaultPoolCalc);
@@ -54,6 +67,68 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         return IDefaultExtendedPool(pool).calculateRemoveLiquidityOneToken(tokenAmount, tokenIndex);
     }
 
+    // ═══════════════════════════════════════════════ POOL GETTERS ════════════════════════════════════════════════════
+
+    /// @inheritdoc ISwapQuoterV1
+    function allPools() external view returns (Pool[] memory pools) {
+        uint256 amount = _pools.length();
+        pools = new Pool[](amount);
+        for (uint256 i = 0; i < amount; ++i) {
+            address pool = _pools.at(i);
+            pools[i] = Pool({pool: pool, lpToken: _poolLpToken[pool], tokens: _poolTokens[pool]});
+        }
+    }
+
+    /// @inheritdoc ISwapQuoterV1
+    function poolsAmount() external view returns (uint256 tokens) {
+        return _pools.length();
+    }
+
+    /// @inheritdoc ISwapQuoterV1
+    function poolInfo(address pool) external view returns (uint256 tokens, address lpToken) {
+        tokens = _poolTokens[pool].length;
+        lpToken = _poolLpToken[pool];
+    }
+
+    /// @inheritdoc ISwapQuoterV1
+    function poolTokens(address pool) external view returns (PoolToken[] memory tokens) {
+        tokens = _poolTokens[pool];
+    }
+
+    // ══════════════════════════════════════════════ POOL MANAGEMENT ══════════════════════════════════════════════════
+
+    /// @dev Adds a pool to the list of pools, and saves its tokens if done for the first time.
+    function _addPool(address pool) internal {
+        if (_pools.add(pool)) {
+            PoolToken[] storage tokens = _poolTokens[pool];
+            // Don't do anything if pool was added before
+            if (tokens.length != 0) return;
+            for (uint8 i = 0; ; ++i) {
+                try IDefaultExtendedPool(pool).getToken(i) returns (address token) {
+                    PoolToken memory poolToken = PoolToken({isWeth: address(token) == _weth, token: address(token)});
+                    _poolTokens[pool].push(poolToken);
+                } catch {
+                    // End of pool reached
+                    break;
+                }
+            }
+            try IDefaultExtendedPool(pool).swapStorage() returns (
+                uint256,
+                uint256,
+                uint256,
+                uint256,
+                uint256,
+                uint256,
+                address lpToken
+            ) {
+                _poolLpToken[pool] = lpToken;
+            } catch {
+                // solhint-disable-previous-line no-empty-blocks
+                // Don't do anything if swapStorage fails, this is probably a IDefaultPool wrapper contract
+            }
+        }
+    }
+
     // ════════════════════════════════════════════ CHECK QUOTES LOGIC ═════════════════════════════════════════════════
 
     /// @dev Checks a swap quote for the given pool, updates `query` if output amount is better.
@@ -91,12 +166,11 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         address pool,
         uint8 tokenIndexFrom,
         uint256 amountIn,
-        SwapQuery memory query,
-        uint256 poolNumTokens
+        SwapQuery memory query
     ) internal view {
         // Don't do anything if we haven't specified AddLiquidity as possible action
         if (!Action.AddLiquidity.isIncluded(actionMask)) return;
-        uint256[] memory amounts = new uint256[](poolNumTokens);
+        uint256[] memory amounts = new uint256[](_poolTokens[pool].length);
         amounts[tokenIndexFrom] = amountIn;
         // Use DefaultPool Calc as we need the exact quote here
         try _defaultPoolCalc.calculateAddLiquidity(pool, amounts) returns (uint256 amountOut) {
