@@ -150,9 +150,9 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         uint256 amount = tokens.length;
         for (uint8 t = 0; t < amount; ++t) {
             address poolToken = tokens[t].token;
-            if (tokenIn == poolToken || _isEthAndWeth(tokenIn, poolToken)) {
+            if (_poolToken(tokenIn) == poolToken) {
                 indexIn = t + 1;
-            } else if (tokenOut == poolToken || _isEthAndWeth(tokenOut, poolToken)) {
+            } else if (_poolToken(tokenOut) == poolToken) {
                 indexOut = t + 1;
             }
         }
@@ -341,6 +341,12 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         return
             (tokenA == UniversalTokenLib.ETH_ADDRESS && tokenB == _weth) ||
             (tokenA == _weth && tokenB == UniversalTokenLib.ETH_ADDRESS);
+    }
+
+    /// @dev Returns token address used in the pool for the given token.
+    /// This is either the token itself, or WETH if the token is ETH.
+    function _poolToken(address token) internal view returns (address) {
+        return token == UniversalTokenLib.ETH_ADDRESS ? _weth : token;
     }
 
     /// @dev Encodes swap params for SynapseRouter. To be used as `swapQuery.rawParams`.

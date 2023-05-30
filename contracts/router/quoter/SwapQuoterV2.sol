@@ -94,11 +94,13 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
                 isConnected[i] = true;
                 ++amountFound;
             }
+            // Convert to pool tokens for following LinkedPool requests (which is unaware of ETH/WETH interactions)
+            tokensIn[i].token = _poolToken(tokensIn[i].token);
         }
+        tokenOut = _poolToken(tokenOut);
         uint256 length = _linkedPools.length();
         for (uint256 i = 0; i < length; ++i) {
             // Check what tokens are connected to tokenOut through LinkedPool
-            // TODO: handle ETH/WETH
             bool[] memory connectedViaPool = ILinkedPool(_linkedPools.at(i)).getConnectedTokens(tokensIn, tokenOut);
             // Update the result
             for (uint256 j = 0; j < amount; ++j) {
@@ -125,6 +127,9 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             // as per SynapseRouter implementation. Otherwise, it's an origin swap (tokenIn -> bridge token),
             // or a general quote request (tokenIn -> tokenOut).
             bool isDestinationSwap = tokenIn.actionMask == Action.Swap.mask();
+            // Convert to pool tokens for following LinkedPool requests (which is unaware of ETH/WETH interactions)
+            address poolTokenIn = _poolToken(tokenIn.token);
+            address poolTokenOut = _poolToken(tokenOut);
             uint256 length = _linkedPools.length();
             for (uint256 i = 0; i < length; ++i) {
                 address pool = _linkedPools.at(i);
@@ -132,13 +137,12 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
                 // Bridge token has a single whitelisted pool, which would be the LinkedPool having
                 // the bridge token as a root token. We need to skip the other pools, as it won't be
                 // possible to swap the bridge token in them.
-                if (isDestinationSwap && tokenIn.token != ILinkedPool(pool).getToken(0)) continue;
+                if (isDestinationSwap && poolTokenIn != ILinkedPool(pool).getToken(0)) continue;
                 // For origin swaps any pool could be used, so we don't check the root token.
                 // Check if the LinkedPool contract can find a better quote
-                // TODO: handle ETH/WETH
                 (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = ILinkedPool(pool).findBestPath(
-                    tokenIn.token,
-                    tokenOut,
+                    poolTokenIn,
+                    poolTokenOut,
                     amountIn
                 );
                 if (amountOut > query.minAmountOut) {
