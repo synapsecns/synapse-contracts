@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {PoolQuoterV1} from "./PoolQuoterV1.sol";
+import {Action, PoolQuoterV1} from "./PoolQuoterV1.sol";
 import {ISwapQuoterV1, LimitedToken, SwapQuery, Pool, PoolToken} from "../interfaces/ISwapQuoterV1.sol";
+import {ILinkedPool} from "../interfaces/ILinkedPool.sol";
 
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableSet.sol";
@@ -94,6 +95,20 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
                 ++amountFound;
             }
         }
+        uint256 length = _linkedPools.length();
+        for (uint256 i = 0; i < length; ++i) {
+            // Check what tokens are connected to tokenOut through LinkedPool
+            // TODO: handle ETH/WETH
+            bool[] memory connectedViaPool = ILinkedPool(_linkedPools.at(i)).getConnectedTokens(tokensIn, tokenOut);
+            // Update the result
+            for (uint256 j = 0; j < amount; ++j) {
+                // We only care about tokens that weren't connected before
+                if (connectedViaPool[j] && !isConnected[j]) {
+                    isConnected[j] = true;
+                    ++amountFound;
+                }
+            }
+        }
     }
 
     /// @inheritdoc ISwapQuoterV1
@@ -102,7 +117,36 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         address tokenOut,
         uint256 amountIn
     ) external view returns (SwapQuery memory query) {
+        // First, find best quote using only DefaultPools
         query = _findBestQuote(tokenIn, tokenOut, amountIn);
+        // Check LinkedPools if `tokenIn.actionMask` allows to do a swap
+        if (Action.Swap.isIncluded(tokenIn.actionMask)) {
+            // This is a request for destination swap (bridge token -> final token) if only Swap action is allowed,
+            // as per SynapseRouter implementation. Otherwise, it's an origin swap (tokenIn -> bridge token),
+            // or a general quote request (tokenIn -> tokenOut).
+            bool isDestinationSwap = tokenIn.actionMask == Action.Swap.mask();
+            uint256 length = _linkedPools.length();
+            for (uint256 i = 0; i < length; ++i) {
+                address pool = _linkedPools.at(i);
+                // If this is a destination swap, tokenIn represents a bridge token.
+                // Bridge token has a single whitelisted pool, which would be the LinkedPool having
+                // the bridge token as a root token. We need to skip the other pools, as it won't be
+                // possible to swap the bridge token in them.
+                if (isDestinationSwap && tokenIn.token != ILinkedPool(pool).getToken(0)) continue;
+                // For origin swaps any pool could be used, so we don't check the root token.
+                // Check if the LinkedPool contract can find a better quote
+                // TODO: handle ETH/WETH
+                (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = ILinkedPool(pool).findBestPath(
+                    tokenIn.token,
+                    tokenOut,
+                    amountIn
+                );
+                if (amountOut > query.minAmountOut) {
+                    query.minAmountOut = amountOut;
+                    query.rawParams = _encodeSwapParams(pool, tokenIndexFrom, tokenIndexTo);
+                }
+            }
+        }
         // tokenOut filed should always be populated, even if a path wasn't found
         query.tokenOut = tokenOut;
         // Fill the remaining fields if a path was found

@@ -254,7 +254,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
             if (amountOut > query.minAmountOut) {
                 query.minAmountOut = amountOut;
                 // Encode params for swapping via the current pool: specify indexFrom and indexTo
-                query.rawParams = abi.encode(DefaultParams(Action.Swap, pool, tokenIndexFrom, tokenIndexTo));
+                query.rawParams = _encodeSwapParams(pool, tokenIndexFrom, tokenIndexTo);
             }
         } catch {
             // solhint-disable-previous-line no-empty-blocks
@@ -341,5 +341,14 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         return
             (tokenA == UniversalTokenLib.ETH_ADDRESS && tokenB == _weth) ||
             (tokenA == _weth && tokenB == UniversalTokenLib.ETH_ADDRESS);
+    }
+
+    /// @dev Encodes swap params for SynapseRouter. To be used as `swapQuery.rawParams`.
+    function _encodeSwapParams(
+        address pool,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo
+    ) internal pure returns (bytes memory rawParams) {
+        return abi.encode(DefaultParams(Action.Swap, pool, tokenIndexFrom, tokenIndexTo));
     }
 }
