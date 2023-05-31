@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {UniversalSwap} from "../../contracts/router/UniversalSwap.sol";
+import {Action, LimitedToken, UniversalSwap} from "../../contracts/router/UniversalSwap.sol";
 
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockSaddlePool, MockSaddlePausablePool} from "../mocks/MockSaddlePausablePool.sol";
@@ -10,6 +10,9 @@ import {Test} from "forge-std/Test.sol";
 
 // solhint-disable func-name-mixedcase
 contract UniversalSwapTest is Test {
+    uint256 public maskOnlySwap = Action.Swap.mask();
+    uint256 public maskNoSwaps = type(uint256).max ^ Action.Swap.mask();
+
     MockERC20 public bridgeToken;
     MockERC20 public token0;
     MockERC20 public token1;
@@ -180,6 +183,23 @@ contract UniversalSwapTest is Test {
         assertEq(swap.getToken(9), address(token1));
     }
 
+    function compactSetup() public {
+        // 0: BT
+        simpleSetup();
+        // 0: BT + (1: T2)
+        addPool(0, address(poolB2), 2);
+        // 1: T2 + (2: T0)
+        addPool(1, address(pool02), 2);
+    }
+
+    function test_compactSetup() public {
+        compactSetup();
+        assertEq(swap.tokenNodesAmount(), 3);
+        assertEq(swap.getToken(0), address(bridgeToken));
+        assertEq(swap.getToken(1), address(token2));
+        assertEq(swap.getToken(2), address(token0));
+    }
+
     // ═══════════════════════════════════════════════ REVERT TESTS ════════════════════════════════════════════════════
 
     function test_addPool_revert_nodeNotInPool() public {
@@ -331,6 +351,62 @@ contract UniversalSwapTest is Test {
             }
         }
         assertEq(swap.getTokenNodes(token), tokenNodes);
+    }
+
+    function test_getConnectedTokens_endWithRootNode() public {
+        // Setup where only BT, T0 and T2 are added
+        compactSetup();
+        bool[] memory isConnected = swap.getConnectedTokens(createTokensIn(), address(bridgeToken));
+        assertEq(isConnected.length, 10);
+        // Only T0 and T2 with Action.Swap enabled should be true
+        assertFalse(isConnected[0], "isConnected[0]"); // Swap enabled, but tokenIn == tokenOut
+        assertFalse(isConnected[1], "isConnected[1]"); // Swap disabled
+        assertTrue(isConnected[2], "isConnected[2]"); // Swap enabled, T0 -> BT exists
+        assertFalse(isConnected[3], "isConnected[3]"); // Swap disabled
+        assertFalse(isConnected[4], "isConnected[4]"); // Swap enabled, T1 -> BT does not exist
+        assertFalse(isConnected[5], "isConnected[5]"); // Swap disabled
+        assertTrue(isConnected[6], "isConnected[6]"); // Swap enabled, T2 -> BT exists
+        assertFalse(isConnected[7], "isConnected[7]"); // Swap disabled
+        assertFalse(isConnected[8], "isConnected[8]"); // Swap enabled T3 -> BT does not exist
+        assertFalse(isConnected[9], "isConnected[9]"); // Swap disabled
+    }
+
+    function test_getConnectedTokens_endWithNonRootNode() public {
+        // Setup where only BT, T0 and T2 are added
+        compactSetup();
+        bool[] memory isConnected = swap.getConnectedTokens(createTokensIn(), address(token0));
+        assertEq(isConnected.length, 10);
+        // Only BT with Action.Swap enabled should be true
+        assertTrue(isConnected[0], "isConnected[0]"); // Swap enabled, T0 -> BT exists
+        // Rest should be false (either tokenIn or tokenOut ned to be root)
+        for (uint256 i = 1; i < 10; ++i) {
+            assertFalse(isConnected[i]);
+        }
+    }
+
+    function test_getConnectedTokens_endWithNonAddedToken() public {
+        // Setup where only BT, T0 and T2 are added
+        compactSetup();
+        bool[] memory isConnected = swap.getConnectedTokens(createTokensIn(), address(token1));
+        // Everything should be false
+        for (uint256 i = 0; i < 10; ++i) {
+            assertFalse(isConnected[i]);
+        }
+    }
+
+    function createTokensIn() public view returns (LimitedToken[] memory tokens) {
+        // Use every token twice: with `maskOnlySwap` and its counterpart
+        tokens = new LimitedToken[](10);
+        tokens[0] = LimitedToken({actionMask: maskOnlySwap, token: address(bridgeToken)});
+        tokens[1] = LimitedToken({actionMask: maskNoSwaps, token: address(bridgeToken)});
+        tokens[2] = LimitedToken({actionMask: maskOnlySwap, token: address(token0)});
+        tokens[3] = LimitedToken({actionMask: maskNoSwaps, token: address(token0)});
+        tokens[4] = LimitedToken({actionMask: maskOnlySwap, token: address(token1)});
+        tokens[5] = LimitedToken({actionMask: maskNoSwaps, token: address(token1)});
+        tokens[6] = LimitedToken({actionMask: maskOnlySwap, token: address(token2)});
+        tokens[7] = LimitedToken({actionMask: maskNoSwaps, token: address(token2)});
+        tokens[8] = LimitedToken({actionMask: maskOnlySwap, token: address(token3)});
+        tokens[9] = LimitedToken({actionMask: maskNoSwaps, token: address(token3)});
     }
 
     function test_findBestPath(
