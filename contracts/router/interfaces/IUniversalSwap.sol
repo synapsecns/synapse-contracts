@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {LimitedToken} from "../libs/Structs.sol";
+
 interface IUniversalSwap {
     /// @notice Wrapper for ISaddle.swap()
     /// @param tokenIndexFrom    the token the user wants to swap from
@@ -35,6 +37,21 @@ interface IUniversalSwap {
     /// @param index     the index of the token
     /// @return token    address of the token at given index
     function getToken(uint8 index) external view returns (address token);
+
+    /// @notice Checks if a it is possible to start from any of the tokens in the given list
+    /// and finish with tokenOut, using any of the supported pools. Only checks the paths that start or end
+    /// with a root node (the bridge token).
+    /// @dev This is used by SwapQuoterV2 to find bridge tokens that could fulfill the cross-chain swap request on
+    /// either origin or destination chain, meaning either `tokensIn` or `tokenOut` should be a bridge token.
+    /// @param tokensIn List of structs with following information:
+    ///                 - actionMask    Bitmask representing what actions are available for doing tokenIn -> tokenOut
+    ///                 - token         Token address to begin from
+    /// @param tokenOut Token address to end up with
+    /// @return isConnected List of bool values, specifying whether a token from the list is swappable to tokenOut
+    function getConnectedTokens(LimitedToken[] memory tokensIn, address tokenOut)
+        external
+        view
+        returns (bool[] memory isConnected);
 
     /// @notice Returns the best path for swapping the given amount of tokens. All possible paths
     /// present in the internal tree are considered, if any of the tokens are present in the tree more than once.

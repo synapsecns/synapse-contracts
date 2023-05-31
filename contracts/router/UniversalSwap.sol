@@ -3,8 +3,9 @@ pragma solidity 0.8.17;
 
 import {IPausable} from "./interfaces/IPausable.sol";
 import {IndexedToken, IPoolModule} from "./interfaces/IPoolModule.sol";
-import {IUniversalSwap} from "./interfaces/IUniversalSwap.sol";
+import {IUniversalSwap, LimitedToken} from "./interfaces/IUniversalSwap.sol";
 import {ISaddle} from "./interfaces/ISaddle.sol";
+import {Action} from "./libs/Structs.sol";
 import {TokenTree} from "./tree/TokenTree.sol";
 
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
@@ -100,6 +101,41 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
             amountIn: dx,
             probePaused: false
         }).amountOut;
+    }
+
+    /// @inheritdoc IUniversalSwap
+    function getConnectedTokens(LimitedToken[] memory tokensIn, address tokenOut)
+        external
+        view
+        returns (bool[] memory isConnected)
+    {
+        uint256 numTokens = tokensIn.length;
+        isConnected = new bool[](numTokens);
+        uint256 tokenOutNodes = _tokenNodes[tokenOut].length;
+        // Check if `tokenOut` is in the tree
+        if (tokenOutNodes == 0) {
+            return isConnected;
+        }
+        bool isTokenOutRoot = _tokenNodes[tokenOut][0] == 0;
+        for (uint256 i = 0; i < numTokens; ++i) {
+            LimitedToken memory token = tokensIn[i];
+            // `tokenIn` should be swappable
+            if (!Action.Swap.isIncluded(token.actionMask)) {
+                continue;
+            }
+            // `tokenIn` should differ from `tokenOut`
+            if (token.token == tokenOut) {
+                continue;
+            }
+            uint256 tokenInNodes = _tokenNodes[token.token].length;
+            // Check if `tokenIn` is in the tree
+            if (tokenInNodes == 0) {
+                continue;
+            }
+            // We only consider paths where either of the tokens is the bridge(root) token,
+            // as this is either "swap into bridge token" or "swap from bridge token" case.
+            isConnected[i] = isTokenOutRoot || _tokenNodes[token.token][0] == 0;
+        }
     }
 
     /// Note: this could be potentially a gas expensive operation. This should be used as an off-chain call
