@@ -138,8 +138,11 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
         }
     }
 
-    /// Note: this could be potentially a gas expensive operation. This should be used as an off-chain call
-    /// to get the best quote. As pair of token nodes define a single trade path, it will be possible to go
+    /// Note: this could be potentially a gas expensive operation. This is used by SwapQuoterV2 to get the best quote
+    /// for tokenIn -> tokenOut swap request (the call to SwapQuoter is an off-chain call).
+    /// This should NOT be used as a part of "find path + perform a swap" on-chain flow.
+    /// Instead, do an off-chain call to findBestPath() and then perform a swap using the found node indexes.
+    /// As pair of token nodes defines only a single trade path (tree has no cycles), it will be possible to go
     /// through the found path by simply supplying the found indexes (instead of searching for the best path again).
     /// @inheritdoc IUniversalSwap
     function findBestPath(
