@@ -237,8 +237,8 @@ abstract contract SynapseRouterSuite is SynapseRouterExpectations {
         // Deploy nUSD pool: nUSD + USDC + USDT
         chain.nUsdPool = deployPool(chain, castToArray(chain.nusd, chain.usdc, chain.usdt), 100_000);
         // Set up Swap Quoter
-        chain.quoter.addPool(chain.nEthPool);
-        chain.quoter.addPool(chain.nUsdPool);
+        addSwapPool(chain, address(chain.neth), chain.nEthPool, 2);
+        addSwapPool(chain, address(chain.nusd), chain.nUsdPool, 3);
     }
 
     function deployTestOptimism() public virtual returns (ChainSetup memory chain) {
@@ -250,8 +250,8 @@ abstract contract SynapseRouterSuite is SynapseRouterExpectations {
         // Deploy nUSD pool: nUSD + USDC
         chain.nUsdPool = deployPool(chain, castToArray(chain.nusd, chain.usdc), 200_000);
         // Set up Swap Quoter
-        chain.quoter.addPool(chain.nEthPool);
-        chain.quoter.addPool(chain.nUsdPool);
+        addSwapPool(chain, address(chain.neth), chain.nEthPool, 2);
+        addSwapPool(chain, address(chain.nusd), chain.nUsdPool, 2);
     }
 
     function deployTestAvalanche() public virtual returns (ChainSetup memory chain) {
@@ -264,8 +264,8 @@ abstract contract SynapseRouterSuite is SynapseRouterExpectations {
         // Deploy nUSD pool: nUSD + DAI + USDC + USDT
         chain.nUsdPool = deployPool(chain, castToArray(chain.nusd, chain.dai, chain.usdc, chain.usdt), 300_000);
         // Set up Swap Quoter
-        chain.quoter.addPool(chain.nEthPool);
-        chain.quoter.addPool(chain.nUsdPool);
+        addSwapPool(chain, address(chain.neth), chain.nEthPool, 2);
+        addSwapPool(chain, address(chain.nusd), chain.nUsdPool, 4);
     }
 
     function deployTestDFK() public virtual returns (ChainSetup memory chain) {
@@ -285,8 +285,27 @@ abstract contract SynapseRouterSuite is SynapseRouterExpectations {
         // Deploy nUSD pool: nUSD + DAI + USDC + USDT
         chain.nUsdPool = deployPool(chain, castToArray(chain.nusd, chain.dai, chain.usdc, chain.usdt), 50_000);
         // Set up Swap Quoter
-        chain.quoter.addPool(chain.nEthPool);
-        chain.quoter.addPool(chain.nUsdPool);
+        addSwapPool(chain, address(chain.neth), chain.nEthPool, 2);
+        addSwapPool(chain, address(chain.nusd), chain.nUsdPool, 4);
+    }
+
+    function addSwapPool(
+        ChainSetup memory chain,
+        address, // bridgeToken
+        address pool,
+        uint256 // tokensAmount
+    ) public virtual {
+        // Add pool to Swap Quoter
+        chain.quoter.addPool(pool);
+    }
+
+    function removeSwapPool(
+        ChainSetup memory chain,
+        address, // bridgeToken
+        address pool
+    ) public virtual {
+        // Remove pool from Swap Quoter
+        chain.quoter.removePool(pool);
     }
 
     function deployPool(

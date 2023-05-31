@@ -25,8 +25,8 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
         // Deploy nUSD pool: nUSD + USDC
         chain.nUsdPool = deployPool(chain, castToArray(chain.nusd, chain.usdc), 10_000);
         // Set up Swap Quoter
-        chain.quoter.addPool(chain.nEthPool);
-        chain.quoter.addPool(chain.nUsdPool);
+        addSwapPool(chain, address(chain.neth), chain.nEthPool, 2);
+        addSwapPool(chain, address(chain.nusd), chain.nUsdPool, 2);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -121,7 +121,7 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
 
         // Step 2: only USDC are available as intermediate token
         // Remove nUSD pool on Klaytn, this will make the transaction go through USDC
-        destination.quoter.removePool(destination.nUsdPool);
+        removeSwapPool(destination, address(destination.nusd), destination.nUsdPool);
         ethereumToKlaytn_outUSDC({tokenIn: tokenIn, checkUSDC: true, checkNUSD: false});
 
         // Step 3: no options are available for bridging
@@ -133,7 +133,7 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
 
         // Step 4: only nUSD are available as intermediate token
         // Add back nUSD pool on Klaytn, this will route tx through nUSD
-        destination.quoter.addPool(destination.nUsdPool);
+        addSwapPool(destination, address(destination.nusd), destination.nUsdPool, 2);
         ethereumToKlaytn_outUSDC({tokenIn: tokenIn, checkUSDC: false, checkNUSD: true});
     }
 
