@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {IPausable} from "../interfaces/IPausable.sol";
 import {IDefaultPoolCalc} from "../interfaces/IDefaultPoolCalc.sol";
 import {IDefaultExtendedPool} from "../interfaces/IDefaultExtendedPool.sol";
 import {ISwapQuoterV1, SwapQuery} from "../interfaces/ISwapQuoterV1.sol";
@@ -182,6 +183,8 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         uint256 amount = _pools.length();
         for (uint256 i = 0; i < amount; ++i) {
             address pool = _pools.at(i);
+            // Skip paused pools
+            if (_isPoolPaused(pool)) continue;
             address lpToken = _poolLpToken[pool];
             // Check if tokenIn and tokenOut are pool tokens
             (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn.token, tokenOut);
@@ -217,6 +220,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         uint256 amount = _pools.length();
         for (uint256 i = 0; i < amount; ++i) {
             address pool = _pools.at(i);
+            // We don't check for paused pools here, as we only need to know if a connection exists.
             address lpToken = _poolLpToken[pool];
             // Check if tokenIn and tokenOut are pool tokens
             (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn.token, tokenOut);
@@ -231,6 +235,18 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
                 isConnected = isConnected || Action.RemoveLiquidity.isIncluded(tokenIn.actionMask);
             }
         }
+    }
+
+    // ══════════════════════════════════════════════ PAUSABLE LOGIC ═══════════════════════════════════════════════════
+
+    /// @dev Checks if a pool conforms to IPausable interface, and if so, returns its paused state.
+    /// Returns false if pool does not conform to IPausable interface.
+    function _isPoolPaused(address pool) internal view returns (bool) {
+        // We issue a static call in case the pool does not conform to IPausable interface.
+        (bool success, bytes memory returnData) = pool.staticcall(abi.encodeWithSelector(IPausable.paused.selector));
+        // Pool is paused if the call was successful and returned true.
+        // We check the return data length to ensure abi.decode won't revert.
+        return success && returnData.length == 32 && abi.decode(returnData, (bool));
     }
 
     // ════════════════════════════════════════════ CHECK QUOTES LOGIC ═════════════════════════════════════════════════
