@@ -46,12 +46,21 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
         router = new SynapseRouter(address(bridge), address(this));
         quoter = new SwapQuoter(address(router), address(weth), address(this));
 
-        quoter.addPool(nEthPool);
+        addSwapPool(quoter, address(neth), nEthPool, 2);
         router.setSwapQuoter(quoter);
 
         _dealAndApprove(address(weth));
         _dealAndApprove(address(neth));
         // Don't deal ETH: unwrap WETH for ETH tests to make sure WETH is not being used
+    }
+
+    function addSwapPool(
+        SwapQuoter swapQuoter,
+        address, // bridgeToken
+        address pool,
+        uint256 // bridgeTokens
+    ) public virtual {
+        swapQuoter.addPool(pool);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

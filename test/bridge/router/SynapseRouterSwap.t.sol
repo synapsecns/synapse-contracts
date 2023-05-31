@@ -51,19 +51,28 @@ contract SynapseRouterSwapTest is Utilities06 {
         // We're using this contract as owner for testing suite deployments
         router = new SynapseRouter(address(0), address(this));
         quoter = new SwapQuoter(address(router), address(weth), address(this));
-        quoter.addPool(nEthPool);
+        addSwapPool(quoter, address(neth), nEthPool, 2);
         router.setSwapQuoter(quoter);
 
         // Deploy "external" router/quoter
         // We're using this contract as owner for testing suite deployments
         routerExt = new SynapseRouter(address(0), address(this));
         quoterExt = new SwapQuoter(address(routerExt), address(weth), address(this));
-        quoterExt.addPool(nEthPool);
+        addSwapPool(quoterExt, address(neth), nEthPool, 2);
         routerExt.setSwapQuoter(quoterExt);
 
         _dealAndApprove(address(weth));
         _dealAndApprove(address(neth));
         // Don't deal ETH: unwrap WETH for ETH tests to make sure WETH is not being used
+    }
+
+    function addSwapPool(
+        SwapQuoter swapQuoter,
+        address, // bridgeToken
+        address pool,
+        uint256 // bridgeTokens
+    ) public virtual {
+        swapQuoter.addPool(pool);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
