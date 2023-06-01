@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import {IPausable} from "./interfaces/IPausable.sol";
 import {IndexedToken, IPoolModule} from "./interfaces/IPoolModule.sol";
 import {ILinkedPool, LimitedToken} from "./interfaces/ILinkedPool.sol";
-import {ISaddle} from "./interfaces/ISaddle.sol";
+import {IDefaultPool} from "./interfaces/IDefaultPool.sol";
 import {Action} from "./libs/Structs.sol";
 import {TokenTree} from "./tree/TokenTree.sol";
 
@@ -12,16 +12,16 @@ import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
 /// LinkedPool is using an internal Token Tree to aggregate a collection of pools with correlated
-/// tokens into a single wrapper, conforming to ISaddle interface.
+/// tokens into a single wrapper, conforming to IDefaultPool interface.
 /// The internal Token Tree allows to store up to 256 tokens, which should be enough for most use cases.
-/// Note: unlike traditional Saddle pools, tokens in LinkedPool could be duplicated.
+/// Note: unlike traditional Default pools, tokens in LinkedPool could be duplicated.
 /// This contract is supposed to be used in conjunction with Synapse:Bridge:
 /// - The bridged token has index == 0, and could not be duplicated in the tree.
 /// - Other tokens (correlated to bridge token) could be duplicated in the tree. Every node token in the tree
 /// is represented by a trade path from root token to node token.
 /// > This is the reason why token could be duplicated. `nUSD -> USDC` and `nUSD -> USDT -> USDC` both represent
 /// > USDC token, but via different paths from nUSD, the bridge token.
-/// In addition to the standard ISaddle interface, LinkedPool also implements getters to observe the internal
+/// In addition to the standard IDefaultPool interface, LinkedPool also implements getters to observe the internal
 /// tree, as well as the best path finder between any two tokens in the tree.
 contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     using SafeERC20 for IERC20;
@@ -33,7 +33,7 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
 
     /// @notice Adds a pool with `N = tokensAmount` tokens to the tree by adding N-1 new nodes
     /// as the children of the given node. Given node needs to represent a token from the pool.
-    /// @dev `poolModule` should be set to address(this) if the pool conforms to ISaddle interface.
+    /// @dev `poolModule` should be set to address(this) if the pool conforms to IDefaultPool interface.
     /// Otherwise, it should be set to the address of the contract that implements the logic for pool handling.
     /// @param nodeIndex        The index of the node to which the pool will be added
     /// @param pool             The address of the pool
@@ -258,8 +258,8 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         // Approve pool to spend the token, if needed
         if (poolModule == address(this)) {
             _approveToken({token: tokenFrom, spender: pool, minAllowance: amountIn});
-            // Pool conforms to ISaddle interface. Note: we check minDy and deadline outside of this function.
-            amountOut = ISaddle(pool).swap({
+            // Pool conforms to IDefaultPool interface. Note: we check minDy and deadline outside of this function.
+            amountOut = IDefaultPool(pool).swap({
                 tokenIndexFrom: tokenIndexes[pool][tokenFrom],
                 tokenIndexTo: tokenIndexes[pool][tokenTo],
                 dx: amountIn,
@@ -306,9 +306,9 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
                     return 0;
                 }
             }
-            // Pool conforms to ISaddle interface.
+            // Pool conforms to IDefaultPool interface.
             try
-                ISaddle(pool).calculateSwap({
+                IDefaultPool(pool).calculateSwap({
                     tokenIndexFrom: tokenIndexes[pool][_nodes[nodeIndexFrom].token],
                     tokenIndexTo: tokenIndexes[pool][_nodes[nodeIndexTo].token],
                     dx: amountIn
@@ -347,10 +347,10 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         uint256 tokensAmount
     ) internal view override returns (address[] memory tokens) {
         if (poolModule == address(this)) {
-            // Pool conforms to ISaddle interface.
+            // Pool conforms to IDefaultPool interface.
             tokens = new address[](tokensAmount);
             for (uint256 i = 0; i < tokensAmount; ) {
-                tokens[i] = ISaddle(pool).getToken(uint8(i));
+                tokens[i] = IDefaultPool(pool).getToken(uint8(i));
                 unchecked {
                     ++i;
                 }

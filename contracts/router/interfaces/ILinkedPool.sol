@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import {LimitedToken} from "../libs/Structs.sol";
 
 interface ILinkedPool {
-    /// @notice Wrapper for ISaddle.swap()
+    /// @notice Wrapper for IDefaultPool.swap()
     /// @param tokenIndexFrom    the token the user wants to swap from
     /// @param tokenIndexTo      the token the user wants to swap to
     /// @param dx                the amount of tokens the user wants to swap from
@@ -21,7 +21,7 @@ interface ILinkedPool {
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
 
-    /// @notice Wrapper for ISaddle.calculateSwap()
+    /// @notice Wrapper for IDefaultPool.calculateSwap()
     /// @param tokenIndexFrom    the token the user wants to sell
     /// @param tokenIndexTo      the token the user wants to buy
     /// @param dx                the amount of tokens the user wants to sell. If the token charges
@@ -33,7 +33,7 @@ interface ILinkedPool {
         uint256 dx
     ) external view returns (uint256 amountOut);
 
-    /// @notice Wrapper for ISaddle.getToken()
+    /// @notice Wrapper for IDefaultPool.getToken()
     /// @param index     the index of the token
     /// @return token    address of the token at given index
     function getToken(uint8 index) external view returns (address token);

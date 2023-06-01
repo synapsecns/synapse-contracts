@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {ISaddle} from "../../contracts/router/interfaces/ISaddle.sol";
+import {IDefaultPool} from "../../contracts/router/interfaces/IDefaultPool.sol";
 
 import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
-/// A simple lightweight mock of the Saddle pool contract for testing purposes.
+/// A simple lightweight mock of the Default pool contract for testing purposes.
 /// Note that the mock is using the UniSwap formula for price calculations. This is done to simplify the logic.
 /// Note there is no addLiquidity or removeLiquidity. This pool is using the whole balance of each token as liquidity.
 /// Mint of transfer test tokens to the pool address before using the pool.
-contract MockSaddlePool is ISaddle {
+contract MockDefaultPool is IDefaultPool {
     using SafeERC20 for IERC20;
 
     address[] internal _tokens;

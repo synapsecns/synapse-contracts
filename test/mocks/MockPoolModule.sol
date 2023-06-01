@@ -3,11 +3,11 @@ pragma solidity 0.8.17;
 
 import {IPausable} from "../../contracts/router/interfaces/IPausable.sol";
 import {IndexedToken, IPoolModule} from "../../contracts/router/interfaces/IPoolModule.sol";
-import {ISaddle} from "../../contracts/router/interfaces/ISaddle.sol";
+import {IDefaultPool} from "../../contracts/router/interfaces/IDefaultPool.sol";
 
 import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
-/// PoolModule for Saddle pools. This is not required in production, but could be used to test delegation logic.
+/// PoolModule for Default pools. This is not required in production, but could be used to test delegation logic.
 contract MockPoolModule is IPoolModule {
     using SafeERC20 for IERC20;
 
@@ -19,7 +19,7 @@ contract MockPoolModule is IPoolModule {
     ) external returns (uint256 amountOut) {
         _approveToken(tokenFrom.token, pool);
         // Note: we check minDy and deadline outside of this function.
-        amountOut = ISaddle(pool).swap(tokenFrom.index, tokenTo.index, amountIn, 0, type(uint256).max);
+        amountOut = IDefaultPool(pool).swap(tokenFrom.index, tokenTo.index, amountIn, 0, type(uint256).max);
     }
 
     function getPoolQuote(
@@ -39,13 +39,13 @@ contract MockPoolModule is IPoolModule {
                 return 0;
             }
         }
-        amountOut = ISaddle(pool).calculateSwap(tokenFrom.index, tokenTo.index, amountIn);
+        amountOut = IDefaultPool(pool).calculateSwap(tokenFrom.index, tokenTo.index, amountIn);
     }
 
     function getPoolTokens(address pool, uint256 tokensAmount) external view returns (address[] memory tokens) {
         tokens = new address[](tokensAmount);
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            tokens[i] = ISaddle(pool).getToken(i);
+            tokens[i] = IDefaultPool(pool).getToken(i);
         }
     }
 

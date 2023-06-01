@@ -3,11 +3,11 @@ pragma solidity 0.8.17;
 
 import {IPausable} from "../../contracts/router/interfaces/IPausable.sol";
 
-import {MockSaddlePool} from "./MockSaddlePool.sol";
+import {MockDefaultPool} from "./MockDefaultPool.sol";
 
-contract MockSaddlePausablePool is MockSaddlePool, IPausable {
+contract MockDefaultPausablePool is MockDefaultPool, IPausable {
     // solhint-disable-next-line no-empty-blocks
-    constructor(address[] memory tokens) MockSaddlePool(tokens) {}
+    constructor(address[] memory tokens) MockDefaultPool(tokens) {}
 
     function paused() external view override returns (bool) {
         return _paused;

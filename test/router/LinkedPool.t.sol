@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import {Action, LimitedToken, LinkedPool} from "../../contracts/router/LinkedPool.sol";
 
 import {MockERC20} from "../mocks/MockERC20.sol";
-import {MockSaddlePool, MockSaddlePausablePool} from "../mocks/MockSaddlePausablePool.sol";
+import {MockDefaultPool, MockDefaultPausablePool} from "../mocks/MockDefaultPausablePool.sol";
 
 import {Test} from "forge-std/Test.sol";
 
@@ -20,18 +20,18 @@ contract LinkedPoolTest is Test {
     MockERC20 public token3;
 
     // Pool with Bridge token, Token0, Token1
-    MockSaddlePausablePool public poolB01;
+    MockDefaultPausablePool public poolB01;
     // Pool with Bridge token, Token2
-    MockSaddlePool public poolB2;
+    MockDefaultPool public poolB2;
     // Pool with Token0, Token1
-    MockSaddlePool public pool01;
+    MockDefaultPool public pool01;
     // Pool with Token0, Token2
-    MockSaddlePool public pool02;
+    MockDefaultPool public pool02;
     // Pool with Token1, Token2, Token3
-    MockSaddlePausablePool public pool123;
+    MockDefaultPausablePool public pool123;
 
     // Pool with Bridge Token, Token0, Token1, Token2
-    MockSaddlePool public poolB012;
+    MockDefaultPool public poolB012;
 
     mapping(uint256 => address[]) public attachedPools;
 
@@ -56,7 +56,7 @@ contract LinkedPoolTest is Test {
             tokens[0] = address(bridgeToken);
             tokens[1] = address(token0);
             tokens[2] = address(token1);
-            poolB01 = new MockSaddlePausablePool(tokens);
+            poolB01 = new MockDefaultPausablePool(tokens);
             setupPool(poolB01, tokens, 100_000);
             vm.label(address(poolB01), "[BT, T0, T1]");
         }
@@ -64,7 +64,7 @@ contract LinkedPoolTest is Test {
             address[] memory tokens = new address[](2);
             tokens[0] = address(bridgeToken);
             tokens[1] = address(token2);
-            poolB2 = new MockSaddlePool(tokens);
+            poolB2 = new MockDefaultPool(tokens);
             setupPool(poolB2, tokens, 10_000);
             vm.label(address(poolB2), "[BT, T2]");
         }
@@ -72,7 +72,7 @@ contract LinkedPoolTest is Test {
             address[] memory tokens = new address[](2);
             tokens[0] = address(token0);
             tokens[1] = address(token1);
-            pool01 = new MockSaddlePool(tokens);
+            pool01 = new MockDefaultPool(tokens);
             setupPool(pool01, tokens, 1_000);
             vm.label(address(pool01), "[T0, T1]");
         }
@@ -80,7 +80,7 @@ contract LinkedPoolTest is Test {
             address[] memory tokens = new address[](2);
             tokens[0] = address(token0);
             tokens[1] = address(token2);
-            pool02 = new MockSaddlePool(tokens);
+            pool02 = new MockDefaultPool(tokens);
             setupPool(pool02, tokens, 100);
             vm.label(address(pool02), "[T0, T2]");
         }
@@ -89,7 +89,7 @@ contract LinkedPoolTest is Test {
             tokens[0] = address(token1);
             tokens[1] = address(token2);
             tokens[2] = address(token3);
-            pool123 = new MockSaddlePausablePool(tokens);
+            pool123 = new MockDefaultPausablePool(tokens);
             setupPool(pool123, tokens, 50_000);
             vm.label(address(pool123), "[T1, T2, T3]");
         }
@@ -99,7 +99,7 @@ contract LinkedPoolTest is Test {
             tokens[1] = address(token0);
             tokens[2] = address(token1);
             tokens[3] = address(token2);
-            poolB012 = new MockSaddlePool(tokens);
+            poolB012 = new MockDefaultPool(tokens);
             setupPool(poolB012, tokens, 20_000);
             vm.label(address(poolB012), "[BT, T0, T1, T2]");
         }
@@ -509,7 +509,7 @@ contract LinkedPoolTest is Test {
         // Force poolB01 to revert on calculateSwap(*, *, *)
         vm.mockCallRevert(
             address(poolB01),
-            abi.encodeWithSelector(MockSaddlePool.calculateSwap.selector),
+            abi.encodeWithSelector(MockDefaultPool.calculateSwap.selector),
             "Mocked revert data"
         );
         complexSetup();
@@ -532,7 +532,7 @@ contract LinkedPoolTest is Test {
         // Force pool123 to revert on calculateSwap(*, *, *)
         vm.mockCallRevert(
             address(pool123),
-            abi.encodeWithSelector(MockSaddlePool.calculateSwap.selector),
+            abi.encodeWithSelector(MockDefaultPool.calculateSwap.selector),
             "Mocked revert data"
         );
         complexSetup();
@@ -574,7 +574,7 @@ contract LinkedPoolTest is Test {
         // Force poolB01 to revert on calculateSwap(*, *, *)
         vm.mockCallRevert(
             address(poolB01),
-            abi.encodeWithSelector(MockSaddlePool.calculateSwap.selector),
+            abi.encodeWithSelector(MockDefaultPool.calculateSwap.selector),
             "Mocked revert data"
         );
         complexSetup();
@@ -745,7 +745,7 @@ contract LinkedPoolTest is Test {
     }
 
     function setupPool(
-        MockSaddlePool pool,
+        MockDefaultPool pool,
         address[] memory tokens,
         uint256 amountNoDecimals
     ) public {

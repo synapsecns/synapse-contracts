@@ -64,7 +64,7 @@ struct DestRequest {
 /// @param minAmountOut     Minimum amount of tokens to receive after the swap, or tx will be reverted.
 /// @param deadline         Latest timestamp for when the transaction needs to be executed, or tx will be reverted.
 /// @param rawParams        ABI-encoded params for the swap that will be passed to `swapAdapter`.
-///                         Should be SaddleParams for swaps via SaddleAdapter.
+///                         Should be DefaultParams for swaps via DefaultAdapter.
 struct SwapQuery {
     address swapAdapter;
     address tokenOut;
@@ -75,19 +75,19 @@ struct SwapQuery {
 
 // ════════════════════════════════════════════════ ADAPTER STRUCTS ════════════════════════════════════════════════════
 
-/// @notice Struct representing parameters for swapping via SaddleAdapter.
-/// @param action           Action that SaddleAdapter needs to perform.
+/// @notice Struct representing parameters for swapping via DefaultAdapter.
+/// @param action           Action that DefaultAdapter needs to perform.
 /// @param pool             Liquidity pool that will be used for Swap/AddLiquidity/RemoveLiquidity actions.
 /// @param tokenIndexFrom   Token index to swap from. Used for swap/addLiquidity actions.
 /// @param tokenIndexTo     Token index to swap to. Used for swap/removeLiquidity actions.
-struct SaddleParams {
+struct DefaultParams {
     Action action;
     address pool;
     uint8 tokenIndexFrom;
     uint8 tokenIndexTo;
 }
 
-/// @notice All possible actions that SaddleAdapter could perform.
+/// @notice All possible actions that DefaultAdapter could perform.
 enum Action {
     Swap, // swap between two pools tokens
     AddLiquidity, // add liquidity in a form of a single pool token

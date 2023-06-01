@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-interface ISaddle {
+interface IDefaultPool {
     function swap(
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,

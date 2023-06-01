@@ -19,7 +19,7 @@ pragma solidity 0.8.17;
 /// - Paths that contain a pool more than once are not allowed, and are not used for quotes/swaps. This is due to
 /// the fact that it's impossible to get an accurate quote for the second swap through the pool in the same tx.
 /// > This contract is only responsible for storing and traversing the tree. The swap/quote logic, as well as
-/// > transformation of the inner tree into ISaddle interface is implemented in the child contract.
+/// > transformation of the inner tree into IDefaultPool interface is implemented in the child contract.
 abstract contract TokenTree {
     /// @notice Struct so store the tree nodes
     /// @param token        Address of the token represented by this node
@@ -33,7 +33,7 @@ abstract contract TokenTree {
 
     /// @notice Struct to store the liquidity pools
     /// @dev Module address is used for delegate calls to get swap quotes, token indexes, etc.
-    /// Set to address(this) if pool conforms to ISaddle interface. Set to 0x0 if pool is not supported.
+    /// Set to address(this) if pool conforms to IDefaultPool interface. Set to 0x0 if pool is not supported.
     /// @param module       Address of the module contract for this pool
     /// @param index        Index of the pool in the `_pools` array
     struct Pool {
