@@ -15,7 +15,7 @@ contract MockSaddlePool is ISaddle {
     address[] internal _tokens;
     uint256 internal _coins;
 
-    // We don't expose paused() in this contract to test that UniversalSwap could handle pools without this function.
+    // We don't expose paused() in this contract to test that LinkedPool could handle pools without this function.
     bool internal _paused;
 
     constructor(address[] memory tokens) {

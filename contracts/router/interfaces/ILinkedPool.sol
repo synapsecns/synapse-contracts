@@ -3,7 +3,7 @@ pragma solidity 0.8.17;
 
 import {LimitedToken} from "../libs/Structs.sol";
 
-interface IUniversalSwap {
+interface ILinkedPool {
     /// @notice Wrapper for ISaddle.swap()
     /// @param tokenIndexFrom    the token the user wants to swap from
     /// @param tokenIndexTo      the token the user wants to swap to

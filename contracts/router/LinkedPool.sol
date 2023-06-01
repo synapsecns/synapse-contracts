@@ -3,7 +3,7 @@ pragma solidity 0.8.17;
 
 import {IPausable} from "./interfaces/IPausable.sol";
 import {IndexedToken, IPoolModule} from "./interfaces/IPoolModule.sol";
-import {IUniversalSwap, LimitedToken} from "./interfaces/IUniversalSwap.sol";
+import {ILinkedPool, LimitedToken} from "./interfaces/ILinkedPool.sol";
 import {ISaddle} from "./interfaces/ISaddle.sol";
 import {Action} from "./libs/Structs.sol";
 import {TokenTree} from "./tree/TokenTree.sol";
@@ -11,19 +11,19 @@ import {TokenTree} from "./tree/TokenTree.sol";
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
-/// UniversalSwap is using an internal Token Tree to aggregate a collection of pools with correlated
+/// LinkedPool is using an internal Token Tree to aggregate a collection of pools with correlated
 /// tokens into a single wrapper, conforming to ISaddle interface.
 /// The internal Token Tree allows to store up to 256 tokens, which should be enough for most use cases.
-/// Note: unlike traditional Saddle pools, tokens in UniversalSwap could be duplicated.
+/// Note: unlike traditional Saddle pools, tokens in LinkedPool could be duplicated.
 /// This contract is supposed to be used in conjunction with Synapse:Bridge:
 /// - The bridged token has index == 0, and could not be duplicated in the tree.
 /// - Other tokens (correlated to bridge token) could be duplicated in the tree. Every node token in the tree
 /// is represented by a trade path from root token to node token.
 /// > This is the reason why token could be duplicated. `nUSD -> USDC` and `nUSD -> USDT -> USDC` both represent
 /// > USDC token, but via different paths from nUSD, the bridge token.
-/// In addition to the standard ISaddle interface, UniversalSwap also implements getters to observe the internal
+/// In addition to the standard ISaddle interface, LinkedPool also implements getters to observe the internal
 /// tree, as well as the best path finder between any two tokens in the tree.
-contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
+contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     using SafeERC20 for IERC20;
 
     // solhint-disable-next-line no-empty-blocks
@@ -49,7 +49,7 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
         _addPool(nodeIndex, pool, poolModule, tokensAmount);
     }
 
-    /// @inheritdoc IUniversalSwap
+    /// @inheritdoc ILinkedPool
     function swap(
         uint8 nodeIndexFrom,
         uint8 nodeIndexTo,
@@ -77,7 +77,7 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
     /// Note: this calculates a quote for a predefined swap path between two tokens. If any of the tokens is
     /// presented more than once in the internal tree, there might be a better quote. Integration should use
     /// findBestPath() instead. This function is present for backwards compatibility.
-    /// @inheritdoc IUniversalSwap
+    /// @inheritdoc ILinkedPool
     function calculateSwap(
         uint8 nodeIndexFrom,
         uint8 nodeIndexTo,
@@ -103,7 +103,7 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
         }).amountOut;
     }
 
-    /// @inheritdoc IUniversalSwap
+    /// @inheritdoc ILinkedPool
     function getConnectedTokens(LimitedToken[] memory tokensIn, address tokenOut)
         external
         view
@@ -144,7 +144,7 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
     /// Instead, do an off-chain call to findBestPath() and then perform a swap using the found node indexes.
     /// As pair of token nodes defines only a single trade path (tree has no cycles), it will be possible to go
     /// through the found path by simply supplying the found indexes (instead of searching for the best path again).
-    /// @inheritdoc IUniversalSwap
+    /// @inheritdoc ILinkedPool
     function findBestPath(
         address tokenIn,
         address tokenOut,
@@ -187,18 +187,18 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
         }
     }
 
-    /// @inheritdoc IUniversalSwap
+    /// @inheritdoc ILinkedPool
     function getToken(uint8 index) external view returns (address token) {
         require(index < _nodes.length, "Out of range");
         return _nodes[index].token;
     }
 
-    /// @inheritdoc IUniversalSwap
+    /// @inheritdoc ILinkedPool
     function tokenNodesAmount() external view returns (uint256) {
         return _nodes.length;
     }
 
-    /// @inheritdoc IUniversalSwap
+    /// @inheritdoc ILinkedPool
     function getAttachedPools(uint8 index) external view returns (address[] memory pools) {
         require(index < _nodes.length, "Out of range");
         pools = new address[](_pools.length);
@@ -220,7 +220,7 @@ contract UniversalSwap is TokenTree, Ownable, IUniversalSwap {
         }
     }
 
-    /// @inheritdoc IUniversalSwap
+    /// @inheritdoc ILinkedPool
     function getTokenNodes(address token) external view returns (uint256[] memory nodes) {
         nodes = _tokenNodes[token];
     }

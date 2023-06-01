@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {MockERC20, UniversalSwapTest} from "./UniversalSwap.t.sol";
+import {MockERC20, LinkedPoolTest} from "./LinkedPool.t.sol";
 
 import {MockPoolModule} from "../mocks/MockPoolModule.sol";
 
 // solhint-disable func-name-mixedcase
-contract UniversalSwapDelegationTest is UniversalSwapTest {
+contract LinkedPoolModuleTest is LinkedPoolTest {
     function setUp() public virtual override {
         poolModule = address(new MockPoolModule());
         super.setUp();
@@ -23,7 +23,7 @@ contract UniversalSwapDelegationTest is UniversalSwapTest {
         address tokenIn = swap.getToken(tokenFrom);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
         prepareUser(tokenIn, amountIn);
-        // Expect revert message for failed delegated swap
+        // Expect revert message for failed swap delegated to a pool module
         vm.expectRevert("Swap failed");
         vm.prank(user);
         swap.swap(tokenFrom, tokenTo, amountIn, 0, type(uint256).max);

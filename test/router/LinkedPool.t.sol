@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Action, LimitedToken, UniversalSwap} from "../../contracts/router/UniversalSwap.sol";
+import {Action, LimitedToken, LinkedPool} from "../../contracts/router/LinkedPool.sol";
 
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockSaddlePool, MockSaddlePausablePool} from "../mocks/MockSaddlePausablePool.sol";
@@ -9,7 +9,7 @@ import {MockSaddlePool, MockSaddlePausablePool} from "../mocks/MockSaddlePausabl
 import {Test} from "forge-std/Test.sol";
 
 // solhint-disable func-name-mixedcase
-contract UniversalSwapTest is Test {
+contract LinkedPoolTest is Test {
     uint256 public maskOnlySwap = Action.Swap.mask();
     uint256 public maskNoSwaps = type(uint256).max ^ Action.Swap.mask();
 
@@ -35,7 +35,7 @@ contract UniversalSwapTest is Test {
 
     mapping(uint256 => address[]) public attachedPools;
 
-    UniversalSwap public swap;
+    LinkedPool public swap;
 
     address public user;
 
@@ -106,7 +106,7 @@ contract UniversalSwapTest is Test {
     }
 
     function simpleSetup() public {
-        swap = new UniversalSwap(address(bridgeToken));
+        swap = new LinkedPool(address(bridgeToken));
     }
 
     function test_simpleSetup() public {
