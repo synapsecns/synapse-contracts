@@ -2,31 +2,31 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import {UniversalSwapSetup} from "./UniversalSwapSetup.t.sol";
+import {LinkedPoolSetup} from "./LinkedPoolSetup.t.sol";
 import {SwapQuoter, SynapseRouterViewsTest} from "../SynapseRouterViews.t.sol";
 
-contract SynapseRouterViewsWithUniversalSwapTest is UniversalSwapSetup, SynapseRouterViewsTest {
+contract SynapseRouterViewsWithLinkedPoolTest is LinkedPoolSetup, SynapseRouterViewsTest {
     function addSwapPool(
         SwapQuoter swapQuoter,
         address bridgeToken,
         address pool,
         uint256 tokensAmount
     ) public override {
-        deployUniversalSwap(bridgeToken, pool, tokensAmount);
-        addUniversalSwap(swapQuoter, bridgeToken);
+        deployLinkedPool(bridgeToken, pool, tokensAmount);
+        addLinkedPool(swapQuoter, bridgeToken);
     }
 
     function addedEthPool() public view override returns (address) {
-        return tokenToUniversalSwap[address(neth)];
+        return tokenToLinkedPool[address(neth)];
     }
 
     function addedUsdPool() public view override returns (address) {
-        return tokenToUniversalSwap[address(nusd)];
+        return tokenToLinkedPool[address(nusd)];
     }
 
     function _getLpToken(address pool) internal view override returns (address) {
         if (pool == nexusPool) return address(nexusNusd);
-        // Instead of other pools we add UniversalSwap pools which don't have LP tokens
+        // Instead of other pools we add LinkedPool pools which don't have LP tokens
         return address(0);
     }
 }

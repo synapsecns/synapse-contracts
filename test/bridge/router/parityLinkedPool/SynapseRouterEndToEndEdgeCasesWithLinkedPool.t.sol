@@ -2,18 +2,18 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import {UniversalSwapSetup} from "./UniversalSwapSetup.t.sol";
+import {LinkedPoolSetup} from "./LinkedPoolSetup.t.sol";
 import {SynapseRouterEndToEndEdgeCasesTest} from "../SynapseRouterEndToEndEdgeCases.t.sol";
 
-contract SynapseRouterEndToEndEdgeCasesWithUniversalSwapTest is UniversalSwapSetup, SynapseRouterEndToEndEdgeCasesTest {
+contract SynapseRouterEndToEndEdgeCasesWithLinkedPoolTest is LinkedPoolSetup, SynapseRouterEndToEndEdgeCasesTest {
     function addSwapPool(
         ChainSetup memory chain,
         address bridgeToken,
         address pool,
         uint256 tokensAmount
     ) public override {
-        deployUniversalSwap(bridgeToken, pool, tokensAmount);
-        addUniversalSwap(chain.quoter, bridgeToken);
+        deployLinkedPool(bridgeToken, pool, tokensAmount);
+        addLinkedPool(chain.quoter, bridgeToken);
     }
 
     function removeSwapPool(
@@ -21,6 +21,6 @@ contract SynapseRouterEndToEndEdgeCasesWithUniversalSwapTest is UniversalSwapSet
         address bridgeToken,
         address // pool
     ) public override {
-        removeUniversalSwap(chain.quoter, bridgeToken);
+        removeLinkedPool(chain.quoter, bridgeToken);
     }
 }

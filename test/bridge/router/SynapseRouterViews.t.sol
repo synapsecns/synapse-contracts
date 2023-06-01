@@ -65,7 +65,7 @@ contract SynapseRouterViewsTest is Utilities06 {
 
         addSwapPool(quoter, address(neth), nEthPool, 2);
         addSwapPool(quoter, address(nusd), nUsdPool, 2);
-        // Nexus pool is used for add/remove liquidity bridge operations and does not require UniversalSwap
+        // Nexus pool is used for add/remove liquidity bridge operations and does not require LinkedPool
         quoter.addPool(nexusPool);
 
         router.setSwapQuoter(quoter);
