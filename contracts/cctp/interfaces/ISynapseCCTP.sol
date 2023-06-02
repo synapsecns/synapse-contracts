@@ -24,11 +24,15 @@ interface ISynapseCCTP {
     /// as well as an optional swap action to take on this domain.
     /// @param message              Message raw bytes emitted by CCTP MessageTransmitter on origin domain
     /// @param signature            Circle's attestation for the message obtained from Circle's API
+    /// @param originDomain         Domain of origin chain
+    /// @param nonce                Nonce of the CCTP message on origin domain
     /// @param requestVersion       Version of the request format
     /// @param request              Request for the action to take on this domain
     function receiveCircleToken(
         bytes calldata message,
         bytes calldata signature,
+        uint32 originDomain,
+        uint64 nonce,
         uint32 requestVersion,
         bytes memory request
     ) external;

@@ -9,10 +9,17 @@ abstract contract SynapseCCTPEvents {
     /// emitted by Circle's MessageTransmitter in the same tx, then fetch `signature` for the message from Circle API.
     /// All this data will need to be presented to SynapseCCTP on the destination domain.
     /// @param destinationDomain    Domain of destination chain
+    /// @param nonce                Nonce of the CCTP message on origin domain
+    /// @param requestVersion       Version of the request format
     /// @param request              Request for the action to take on the destination domain
-    /// @param recipient            End recipient of the tokens on the destination domain
     /// @param kappa                Unique identifier of the request
-    event CircleRequestSent(uint32 destinationDomain, bytes request, address indexed recipient, bytes32 indexed kappa);
+    event CircleRequestSent(
+        uint32 destinationDomain,
+        uint64 nonce,
+        uint32 requestVersion,
+        bytes request,
+        bytes32 indexed kappa
+    );
 
     /// @notice Emitted when a Circle token is received with an attached action request.
     /// @param recipient            End recipient of the tokens on this domain
