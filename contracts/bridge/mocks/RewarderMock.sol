@@ -51,7 +51,7 @@ contract RewarderMock is IRewarder {
         return (_rewardTokens, _rewardAmounts);
     }
 
-    modifier onlyMCV2 {
+    modifier onlyMCV2() {
         require(msg.sender == MASTERCHEF_V2, "Only MCV2 can call this function.");
         _;
     }
