@@ -65,7 +65,11 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
             "Swap not supported"
         );
         // Pull initial token from the user
-        IERC20(_nodes[nodeIndexFrom].token).safeTransferFrom(msg.sender, address(this), dx);
+        address tokenIn = _nodes[nodeIndexFrom].token;
+        uint256 balanceBefore = IERC20(tokenIn).balanceOf(address(this));
+        IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), dx);
+        // transfer in tokens and update dx (in case of transfer fees)
+        dx = IERC20(tokenIn).balanceOf(address(this)) - balanceBefore;
         amountOut = _multiSwap(nodeIndexFrom, nodeIndexTo, dx).amountOut;
         require(amountOut >= minDy, "Swap didn't result in min tokens");
         // Transfer the tokens to the user
