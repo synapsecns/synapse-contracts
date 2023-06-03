@@ -6,17 +6,19 @@ interface ISynapseCCTP {
     /// with the request for the action to take on the destination domain.
     /// @dev The request is a bytes array containing information about the end recipient of the tokens,
     /// as well as an optional swap action to take on the destination domain.
+    /// @param recipient            Recipient of the tokens on destination domain
     /// @param destinationDomain    Domain of destination chain
     /// @param burnToken            Address of Circle token to burn
     /// @param amount               Amount of tokens to burn
     /// @param requestVersion       Version of the request format
-    /// @param request              Request for the action to take on the destination domain
+    /// @param swapParams           Swap parameters for the action to take on the destination domain (could be empty)
     function sendCircleToken(
+        address recipient,
         uint32 destinationDomain,
         address burnToken,
         uint256 amount,
         uint32 requestVersion,
-        bytes memory request
+        bytes memory swapParams
     ) external;
 
     /// @notice Receive  Circle token supported by CCTP with the request for the action to take.
@@ -24,16 +26,12 @@ interface ISynapseCCTP {
     /// as well as an optional swap action to take on this domain.
     /// @param message              Message raw bytes emitted by CCTP MessageTransmitter on origin domain
     /// @param signature            Circle's attestation for the message obtained from Circle's API
-    /// @param originDomain         Domain of origin chain
-    /// @param nonce                Nonce of the CCTP message on origin domain
     /// @param requestVersion       Version of the request format
-    /// @param request              Request for the action to take on this domain
+    /// @param formattedRequest     Formatted request for the action to take on this domain
     function receiveCircleToken(
         bytes calldata message,
         bytes calldata signature,
-        uint32 originDomain,
-        uint64 nonce,
         uint32 requestVersion,
-        bytes memory request
+        bytes memory formattedRequest
     ) external;
 }
