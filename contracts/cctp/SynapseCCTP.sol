@@ -31,7 +31,8 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
             swapParams
         );
         // Construct the request identifier to be used as salt later.
-        bytes32 kappa = _kappa(localDomain, destinationDomain, nonce, requestVersion, formattedRequest);
+        // Origin domain and nonce are already part of the request, so we only need to add the destination domain.
+        bytes32 kappa = _kappa(destinationDomain, requestVersion, formattedRequest);
         tokenMessenger.depositForBurnWithCaller(
             amount,
             destinationDomain,
@@ -52,13 +53,12 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
     ) external {
         // This will revert if the request version is not supported, or request is not properly formatted.
         Request request = RequestLib.wrapRequest(requestVersion, formattedRequest);
-        (uint32 originDomain, uint64 nonce, address originBurnToken, uint256 amount) = request.originData();
-        bytes32 kappa = _kappa(originDomain, localDomain, nonce, requestVersion, formattedRequest);
+        bytes32 kappa = _kappa(localDomain, requestVersion, formattedRequest);
         // Kindly ask the Circle Bridge to mint the tokens for us.
         _mintCircleToken(message, signature, kappa);
-        address token = _getMintedToken(originDomain, originBurnToken);
-        // Apply the bridging fee. This will revert if amount <= fee.
+        (address token, uint256 amount) = _getMintedToken(request);
         uint256 fee;
+        // Apply the bridging fee. This will revert if amount <= fee.
         (amount, fee) = _applyFee(token, amount);
         // Fulfill the request: perform an optional swap and send the end tokens to the recipient.
         address recipient = _fulfillRequest(token, amount, request);
@@ -98,16 +98,14 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         // TODO: implement
     }
 
-    /// @dev Fetches the address of the minted Circle token, being a local counterpart of the origin burned token.
-    function _getMintedToken(uint32 originDomain, address originBurnToken) internal view returns (address) {
+    /// @dev Fetches the address and the amount of the minted Circle token.
+    function _getMintedToken(Request request) internal view returns (address token, uint256 amount) {
         // TODO: implement
     }
 
     /// @dev Calculates the unique identifier of the request.
     function _kappa(
-        uint32 originDomain,
         uint32 destinationDomain,
-        uint64 nonce,
         uint32 requestVersion,
         bytes memory request
     ) internal pure returns (bytes32) {
