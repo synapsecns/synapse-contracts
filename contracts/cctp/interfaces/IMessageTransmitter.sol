@@ -44,4 +44,9 @@ interface IMessageTransmitter {
         bytes32 destinationCaller,
         bytes calldata messageBody
     ) external returns (uint64);
+
+    // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
+
+    // Next available nonce from this source domain
+    function nextAvailableNonce() external view returns (uint64);
 }
