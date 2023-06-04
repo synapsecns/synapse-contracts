@@ -2,7 +2,7 @@
 pragma solidity 0.8.17;
 
 import {ForwarderDeploymentFailed} from "../../../contracts/cctp/libs/Errors.sol";
-import {MockCallRecipient} from "../../mocks/MockCallRecipient.sol";
+import {MockCallRecipient} from "../mocks/MockCallRecipient.sol";
 import {MinimalForwarderLib, MinimalForwarderLibHarness} from "../harnesses/MinimalForwarderLibHarness.sol";
 import {Test} from "forge-std/Test.sol";
 
