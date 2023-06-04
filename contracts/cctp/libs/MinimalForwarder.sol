@@ -6,7 +6,19 @@ import {TypeCasts} from "./TypeCasts.sol";
 
 import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 
+/// Minimal Forwarder is a EIP-1167 (Minimal Proxy Contract) spin-off that
+/// forwards all calls to a any target address with any payload.
+/// Unlike EIP-1167, delegates calls are not used, so the forwarder contract
+/// is `msg.sender` as far as the target contract is concerned.
 /// # Minimal Forwarder Bytecode
+/// Inspired by [EIP-1167](https://eips.ethereum.org/EIPS/eip-1167).
+/// Following changes were made:
+/// - Target address is not saved in the deployed contract code, but is passed as a part of the payload.
+/// - To forward a call, the sender needs to provide the target address as the first 32 bytes of the payload.
+/// - The payload to pass to the target contract occupies the rest of the payload, having an offset of 32 bytes.
+/// - The target address is derived using CALLDATALOAD.
+/// - CALLVALUE is used to pass the msg.value to the target contract.
+/// - `call()` is used instead of `delegatecall()`.
 /// | Pos  | Opcode | Opcode + Args | Description    | Stack View                    |
 /// | ---- | ------ | ------------- | -------------- | ----------------------------- |
 /// | 0x00 | 0x60   | 0x6020        | push1 0x20     | 32                            |
@@ -39,9 +51,14 @@ import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 /// | 0x1e | 0x5b   | 0x5b          | jumpdest       | 0 rds                         |
 /// | 0x1f | 0xf3   | 0xf3          | return         |                               |
 /// # Minimal Forwarder Init Code
+/// Inspired by [Create3 Init Code](https://github.com/0xSequence/create3/blob/master/contracts/Create3.sol).
+/// Following changes were made:
+/// - Adjusted bytecode length to 32 bytes.
+/// - Replaced second PUSH1 opcode with RETURNDATASIZE to push 0 onto the stack.
+/// > `bytecode` refers to the bytecode specified in the above table.
 /// | Pos  | Opcode | Opcode + Args | Description     | Stack View |
 /// | ---- | ------ | ------------- | --------------- | ---------- |
-/// | 0x00 | 0x7F   | 0x7FXXXX      | push32 bytecode | bytecode   |
+/// | 0x00 | 0x7f   | 0x7fXXXX      | push32 bytecode | bytecode   |
 /// | 0x1b | 0x3d   | 0x3d          | returndatasize  | 0 bytecode |
 /// | 0x1c | 0x52   | 0x52          | mstore          |            |
 /// | 0x1d | 0x60   | 0x6020        | push1 0x20      | 32         |
@@ -60,6 +77,9 @@ library MinimalForwarderLib {
     bytes32 internal constant FORWARDER_INIT_CODE_HASH = keccak256(FORWARDER_INIT_CODE);
 
     /// @notice Deploys a minimal forwarder contract using `CREATE2` with a given salt.
+    /// @dev Will revert if the salt is already used.
+    /// @param salt         The salt to use for the deployment
+    /// @return forwarder   The address of the deployed minimal forwarder
     function deploy(bytes32 salt) internal returns (address forwarder) {
         // `bytes arr` is stored in memory in the following way
         // 1. First, uint256 arr.length is stored. That requires 32 bytes (0x20).
@@ -71,6 +91,7 @@ library MinimalForwarderLib {
             // We add 0x20 to get the location where the init code starts.
             forwarder := create2(0, add(initCode, 0x20), mload(initCode), salt)
         }
+        // Deploy fails if the given salt is already used.
         if (forwarder == address(0)) {
             revert ForwarderDeploymentFailed();
         }
@@ -94,6 +115,9 @@ library MinimalForwarderLib {
     }
 
     /// @notice Predicts the address of a minimal forwarder contract deployed using `deploy()`.
+    /// @param deployer     The address of the deployer of the minimal forwarder
+    /// @param salt         The salt to use for the deployment
+    /// @return The predicted address of the minimal forwarder deployed with the given salt
     function predictAddress(address deployer, bytes32 salt) internal pure returns (address) {
         return keccak256(abi.encodePacked(hex"ff", deployer, salt, FORWARDER_INIT_CODE_HASH)).bytes32ToAddress();
     }
