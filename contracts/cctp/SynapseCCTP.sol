@@ -6,8 +6,14 @@ import {IMessageTransmitter} from "./interfaces/IMessageTransmitter.sol";
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
 import {ITokenMessenger} from "./interfaces/ITokenMessenger.sol";
 import {Request, RequestLib} from "./libs/Request.sol";
+import {MinimalForwarderLib} from "./libs/MinimalForwarder.sol";
+import {TypeCasts} from "./libs/TypeCasts.sol";
 
 contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
+    using MinimalForwarderLib for address;
+    using TypeCasts for address;
+    using TypeCasts for bytes32;
+
     // TODO: add setters for these (or make them immutable)
     uint32 public localDomain;
     IMessageTransmitter public messageTransmitter;
@@ -32,13 +38,14 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         );
         // Construct the request identifier to be used as salt later.
         // Origin domain and nonce are already part of the request, so we only need to add the destination domain.
+        bytes32 dstSynapseCCTP = remoteSynapseCCTP[destinationDomain];
         bytes32 kappa = _kappa(destinationDomain, requestVersion, formattedRequest);
         tokenMessenger.depositForBurnWithCaller(
             amount,
             destinationDomain,
-            remoteSynapseCCTP[destinationDomain],
+            dstSynapseCCTP,
             burnToken,
-            _destinationCaller(destinationDomain, kappa)
+            _destinationCaller(dstSynapseCCTP.bytes32ToAddress(), kappa)
         );
         emit CircleRequestSent(destinationDomain, nonce, requestVersion, formattedRequest, kappa);
     }
@@ -78,7 +85,13 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         bytes calldata signature,
         bytes32 kappa
     ) internal {
-        // TODO: implement
+        // Deploy a forwarder specific to this request. Will revert if the kappa has been used before.
+        address forwarder = MinimalForwarderLib.deploy(kappa);
+        // Form the payload for the Circle Bridge.
+        bytes memory payload = abi.encodeWithSelector(IMessageTransmitter.receiveMessage.selector, message, signature);
+        // Use the deployed forwarder (who is the only one who can call the Circle Bridge for this message)
+        // This will revert if the provided message is not properly formatted, or if the signatures are invalid.
+        forwarder.forwardCall(address(messageTransmitter), payload);
     }
 
     /// @dev Performs a swap, if was requested back on origin chain, and transfers the tokens to the recipient.
@@ -93,14 +106,14 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
 
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
 
-    /// @dev Predicts the address of the destination caller.
-    function _destinationCaller(uint32 destinationDomain, bytes32 kappa) internal view returns (bytes32) {
-        // TODO: implement
-    }
-
     /// @dev Fetches the address and the amount of the minted Circle token.
     function _getMintedToken(Request request) internal view returns (address token, uint256 amount) {
         // TODO: implement
+    }
+
+    /// @dev Predicts the address of the destination caller.
+    function _destinationCaller(address synapseCCTP, bytes32 kappa) internal pure returns (bytes32) {
+        return synapseCCTP.predictAddress(kappa).addressToBytes32();
     }
 
     /// @dev Calculates the unique identifier of the request.
