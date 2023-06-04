@@ -16,6 +16,14 @@ contract MinimalForwarderLibHarness {
         returnData = MinimalForwarderLib.forwardCall(forwarder, target, payload);
     }
 
+    function forwardCallWithValue(
+        address forwarder,
+        address target,
+        bytes memory payload
+    ) public payable returns (bytes memory returnData) {
+        returnData = MinimalForwarderLib.forwardCallWithValue(forwarder, target, payload, msg.value);
+    }
+
     function predictAddress(address deployer, bytes32 salt) public pure returns (address forwarder) {
         forwarder = MinimalForwarderLib.predictAddress(deployer, salt);
     }
