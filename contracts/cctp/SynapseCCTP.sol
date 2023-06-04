@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {RemoteCCTPTokenNotSet} from "./libs/Errors.sol";
+import {RemoteCCTPDeploymentNotSet, RemoteCCTPTokenNotSet} from "./libs/Errors.sol";
 import {SynapseCCTPEvents} from "./events/SynapseCCTPEvents.sol";
 import {IMessageTransmitter} from "./interfaces/IMessageTransmitter.sol";
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
@@ -76,6 +76,7 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         // Construct the request identifier to be used as salt later.
         // Origin domain and nonce are already part of the request, so we only need to add the destination domain.
         bytes32 dstSynapseCCTP = remoteSynapseCCTP[destinationDomain];
+        if (dstSynapseCCTP == 0) revert RemoteCCTPDeploymentNotSet();
         bytes32 kappa = _kappa(destinationDomain, requestVersion, formattedRequest);
         // Issue allowance if needed
         _approveToken(burnToken, amount);

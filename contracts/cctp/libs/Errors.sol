@@ -7,6 +7,7 @@ error SliceOverrun();
 error IncorrectRequestLength();
 error UnknownRequestVersion();
 
+error RemoteCCTPDeploymentNotSet();
 error RemoteCCTPTokenNotSet();
 
 error ForwarderDeploymentFailed();
