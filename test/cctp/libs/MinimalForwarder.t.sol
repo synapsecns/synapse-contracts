@@ -11,6 +11,7 @@ contract MinimalForwarderLibraryTest is Test {
     MockCallRecipient public mockRecipient;
 
     event CallReceived(address caller, bytes32 data);
+    event ValueCallReceived(address caller, bytes32 data, uint256 value);
 
     function setUp() public {
         libHarness = new MinimalForwarderLibHarness();
@@ -53,5 +54,30 @@ contract MinimalForwarderLibraryTest is Test {
         vm.mockCallRevert(address(mockRecipient), payload, revertMsg);
         vm.expectRevert(revertMsg);
         libHarness.forwardCall(forwarder, address(mockRecipient), payload);
+    }
+
+    function testForwardCallWithValue(bytes32 data, uint256 value) public {
+        vm.deal(address(this), value);
+        address forwarder = libHarness.deploy(0);
+        bytes memory payload = abi.encodeWithSelector(MockCallRecipient.valueCallMeMaybe.selector, data);
+        vm.expectEmit();
+        emit ValueCallReceived(forwarder, data, value);
+        bytes memory returnData = libHarness.forwardCallWithValue{value: value}(
+            forwarder,
+            address(mockRecipient),
+            payload
+        );
+        assertEq(abi.decode(returnData, (bytes32)), mockRecipient.transformData(data));
+    }
+
+    function testForwardCallWithValueRevert(bytes32 data, uint256 value) public {
+        bytes memory revertMsg = "AHHH IM REVERTIIING";
+        vm.deal(address(this), value);
+        address forwarder = libHarness.deploy(0);
+        bytes memory payload = abi.encodeWithSelector(MockCallRecipient.valueCallMeMaybe.selector, data);
+        // Force mockRecipient.callMeMaybe(data) to revert with revertMsg
+        vm.mockCallRevert(address(mockRecipient), payload, revertMsg);
+        vm.expectRevert(revertMsg);
+        libHarness.forwardCallWithValue{value: value}(forwarder, address(mockRecipient), payload);
     }
 }
