@@ -6,3 +6,5 @@ error SliceOverrun();
 
 error IncorrectRequestLength();
 error UnknownRequestVersion();
+
+error ForwarderDeploymentFailed();
