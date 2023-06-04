@@ -34,9 +34,9 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
     function setUp() public virtual {
         deployCCTP(DOMAIN_ETH);
         deployCCTP(DOMAIN_AVAX);
-        linkDomains(DOMAIN_ETH, DOMAIN_AVAX);
         deploySynapseCCTP(DOMAIN_ETH);
         deploySynapseCCTP(DOMAIN_AVAX);
+        linkDomains(DOMAIN_ETH, DOMAIN_AVAX);
         user = makeAddr("User");
         recipient = makeAddr("Recipient");
     }
@@ -79,6 +79,15 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
             remoteDomain: domainA,
             remoteToken: bytes32(uint256(uint160(address(setupA.mintBurnToken)))),
             localToken: address(setupB.mintBurnToken)
+        });
+
+        synapseCCTPs[domainA].setRemoteSynapseCCTP({
+            remoteDomain: domainB,
+            remoteSynapseCCTP_: address(synapseCCTPs[domainB])
+        });
+        synapseCCTPs[domainB].setRemoteSynapseCCTP({
+            remoteDomain: domainA,
+            remoteSynapseCCTP_: address(synapseCCTPs[domainA])
         });
     }
 
