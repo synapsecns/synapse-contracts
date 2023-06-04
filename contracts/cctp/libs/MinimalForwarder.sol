@@ -4,6 +4,8 @@ pragma solidity 0.8.17;
 import {ForwarderDeploymentFailed} from "./Errors.sol";
 import {TypeCasts} from "./TypeCasts.sol";
 
+import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
+
 /// # Minimal Forwarder Bytecode
 /// | Pos  | Opcode | Opcode + Args | Description    | Stack View                    |
 /// | ---- | ------ | ------------- | -------------- | ----------------------------- |
@@ -46,6 +48,8 @@ import {TypeCasts} from "./TypeCasts.sol";
 /// | 0x1f | 0x3d   | 0x3d          | returndatasize  | 0 32       |
 /// | 0x20 | 0xf3   | 0xf3          | return          |            |
 library MinimalForwarderLib {
+    using Address for address;
+    using TypeCasts for address;
     using TypeCasts for bytes32;
 
     bytes internal constant FORWARDER_BYTECODE =
@@ -70,6 +74,23 @@ library MinimalForwarderLib {
         if (forwarder == address(0)) {
             revert ForwarderDeploymentFailed();
         }
+    }
+
+    /// @notice Forwards a call to a target address using a minimal forwarder.
+    /// @dev Will bubble up any revert messages from the target.
+    /// @param forwarder    The address of the minimal forwarder to use
+    /// @param target       The address of the target contract to call
+    /// @param payload      The payload to pass to the target contract
+    /// @return returnData  The return data from the target contract
+    function forwardCall(
+        address forwarder,
+        address target,
+        bytes memory payload
+    ) internal returns (bytes memory returnData) {
+        // The payload to pass to the forwarder:
+        // 1. First 32 bytes is the encoded target address
+        // 2. The rest is the encoded payload to pass to the target
+        returnData = forwarder.functionCall(abi.encodePacked(target.addressToBytes32(), payload));
     }
 
     /// @notice Predicts the address of a minimal forwarder contract deployed using `deploy()`.
