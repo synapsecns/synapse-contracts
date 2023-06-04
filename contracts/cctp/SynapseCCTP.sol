@@ -5,22 +5,55 @@ import {RemoteCCTPTokenNotSet} from "./libs/Errors.sol";
 import {SynapseCCTPEvents} from "./events/SynapseCCTPEvents.sol";
 import {IMessageTransmitter} from "./interfaces/IMessageTransmitter.sol";
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
+import {ITokenMinter} from "./interfaces/ITokenMinter.sol";
 import {ITokenMessenger} from "./interfaces/ITokenMessenger.sol";
 import {Request, RequestLib} from "./libs/Request.sol";
 import {MinimalForwarderLib} from "./libs/MinimalForwarder.sol";
 import {TypeCasts} from "./libs/TypeCasts.sol";
 
+import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
+
 contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
     using MinimalForwarderLib for address;
+    using SafeERC20 for IERC20;
     using TypeCasts for address;
     using TypeCasts for bytes32;
 
-    // TODO: add setters for these (or make them immutable)
-    uint32 public localDomain;
-    IMessageTransmitter public messageTransmitter;
-    ITokenMessenger public tokenMessenger;
+    uint32 public immutable localDomain;
+    IMessageTransmitter public immutable messageTransmitter;
+    ITokenMessenger public immutable tokenMessenger;
+
+    // TODO: onlyOwner setters for these
     mapping(uint32 => bytes32) public remoteSynapseCCTP;
     mapping(uint256 => address) internal _remoteTokenIdToLocalToken;
+
+    constructor(ITokenMessenger tokenMessenger_) {
+        tokenMessenger = tokenMessenger_;
+        messageTransmitter = IMessageTransmitter(tokenMessenger_.localMessageTransmitter());
+        localDomain = messageTransmitter.localDomain();
+    }
+
+    // ═════════════════════════════════════════════ SET CONFIG LOGIC ══════════════════════════════════════════════════
+
+    /// @notice Sets the local token associated with the given remote domain and token.
+    // TODO: add ownerOnly modifier
+    function setLocalToken(uint32 remoteDomain, address remoteToken) external {
+        ITokenMinter minter = ITokenMinter(tokenMessenger.localMinter());
+        // TODO: add address(0) check
+        _remoteTokenIdToLocalToken[_remoteTokenId(remoteDomain, remoteToken)] = minter.getLocalToken(
+            remoteDomain,
+            remoteToken.addressToBytes32()
+        );
+    }
+
+    /// @notice Sets the remote deployment of SynapseCCTP for the given remote domain.
+    // TODO: add ownerOnly modifier
+    function setRemoteSynapseCCTP(uint32 remoteDomain, address remoteSynapseCCTP_) external {
+        // TODO: add zero checks
+        remoteSynapseCCTP[remoteDomain] = remoteSynapseCCTP_.addressToBytes32();
+    }
+
+    // ════════════════════════════════════════════════ CCTP LOGIC ═════════════════════════════════════════════════════
 
     /// @inheritdoc ISynapseCCTP
     function sendCircleToken(
@@ -74,11 +107,19 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         emit CircleRequestFulfilled(recipient, token, amount, fee, kappa);
     }
 
+    // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
+
+    /// @notice Get the local token associated with the given remote domain and token.
+    function getLocalToken(uint32 remoteDomain, address remoteToken) external view returns (address) {
+        return _remoteTokenIdToLocalToken[_remoteTokenId(remoteDomain, remoteToken)];
+    }
+
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
 
     /// @dev Applies the bridging fee. Will revert if amount <= fee.
     function _applyFee(address token, uint256 amount) internal returns (uint256 amountAfterFee, uint256 fee) {
-        // TODO: implement
+        // TODO: implement actual fee logic
+        return (amount, 0);
     }
 
     /// @dev Mints the Circle token by sending the message and signature to the Circle Bridge.
@@ -103,7 +144,9 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         uint256 amount,
         Request request
     ) internal returns (address recipient) {
-        // TODO: implement
+        // TODO: implement swap logic
+        recipient = request.recipient();
+        IERC20(token).safeTransfer(recipient, amount);
     }
 
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
