@@ -94,7 +94,6 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
     function getExpectedMessage(
         uint32 originDomain,
         uint32 destinationDomain,
-        address finalRecipient,
         address originBurnToken,
         uint256 amount,
         bytes32 destinationCaller
@@ -108,7 +107,7 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         expectedMessage = cctpSetups[originDomain].messageTransmitter.formatMessage({
             remoteDomain: originDomain,
             sender: address(cctpSetups[originDomain].tokenMessenger),
-            recipient: finalRecipient,
+            recipient: address(cctpSetups[destinationDomain].tokenMessenger),
             destinationCaller: destinationCaller,
             messageBody: messageBody
         });

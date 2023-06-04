@@ -16,30 +16,12 @@ contract SynapseCCTPTest is BaseCCTPTest {
         uint256 amount = 10**8;
         prepareUser(DOMAIN_ETH, amount);
         uint64 nonce = cctpSetups[DOMAIN_ETH].messageTransmitter.nextAvailableNonce();
-        Params memory expected;
-        expected.kappa = getExpectedKappa({
+        Params memory expected = getExpectedParams({
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
-            finalRecipient: recipient,
-            originBurnToken: originBurnToken,
             amount: amount,
             requestVersion: RequestLib.REQUEST_BASE,
             swapParams: ""
-        });
-        expected.request = getExpectedRequest({
-            originDomain: DOMAIN_ETH,
-            amount: amount,
-            requestVersion: RequestLib.REQUEST_BASE,
-            swapParams: ""
-        });
-        expected.destinationCaller = getExpectedDstCaller({destinationDomain: DOMAIN_AVAX, kappa: expected.kappa});
-        expected.message = getExpectedMessage({
-            originDomain: DOMAIN_ETH,
-            destinationDomain: DOMAIN_AVAX,
-            finalRecipient: recipient,
-            originBurnToken: originBurnToken,
-            amount: amount,
-            destinationCaller: expected.destinationCaller
         });
         vm.expectEmit();
         emit MessageSent(expected.message);
@@ -70,6 +52,42 @@ contract SynapseCCTPTest is BaseCCTPTest {
             amount: amount,
             requestVersion: RequestLib.REQUEST_BASE,
             swapParams: ""
+        });
+    }
+
+    function getExpectedParams(
+        uint32 originDomain,
+        uint32 destinationDomain,
+        uint256 amount,
+        uint32 requestVersion,
+        bytes memory swapParams
+    ) public view returns (Params memory expected) {
+        address originBurnToken = address(cctpSetups[originDomain].mintBurnToken);
+        expected.kappa = getExpectedKappa({
+            originDomain: originDomain,
+            destinationDomain: destinationDomain,
+            finalRecipient: recipient,
+            originBurnToken: originBurnToken,
+            amount: amount,
+            requestVersion: requestVersion,
+            swapParams: swapParams
+        });
+        expected.request = getExpectedRequest({
+            originDomain: originDomain,
+            amount: amount,
+            requestVersion: requestVersion,
+            swapParams: swapParams
+        });
+        expected.destinationCaller = getExpectedDstCaller({
+            destinationDomain: destinationDomain,
+            kappa: expected.kappa
+        });
+        expected.message = getExpectedMessage({
+            originDomain: originDomain,
+            destinationDomain: destinationDomain,
+            originBurnToken: originBurnToken,
+            amount: amount,
+            destinationCaller: expected.destinationCaller
         });
     }
 
