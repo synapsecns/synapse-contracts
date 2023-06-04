@@ -17,13 +17,21 @@ contract MockMessageTransmitter is MessageTransmitterEvents, IMessageTransmitter
 
     function sendMessageWithCaller(
         uint32,
-        bytes32,
-        bytes32,
-        bytes calldata message
+        bytes32 recipient,
+        bytes32 destinationCaller,
+        bytes calldata messageBody
     ) external returns (uint64 reservedNonce) {
         reservedNonce = nextAvailableNonce;
         nextAvailableNonce = reservedNonce + 1;
-        emit MessageSent(message);
+        emit MessageSent(
+            formatMessage({
+                remoteDomain: localDomain,
+                sender: msg.sender,
+                recipient: address(uint160(uint256(recipient))),
+                destinationCaller: destinationCaller,
+                messageBody: messageBody
+            })
+        );
     }
 
     function receiveMessage(bytes calldata message, bytes calldata signature) external returns (bool success) {
@@ -51,7 +59,7 @@ contract MockMessageTransmitter is MessageTransmitterEvents, IMessageTransmitter
         address recipient,
         bytes32 destinationCaller,
         bytes memory messageBody
-    ) external pure returns (bytes memory message) {
+    ) public pure returns (bytes memory message) {
         message = abi.encode(remoteDomain, sender, recipient, destinationCaller, messageBody);
     }
 }
