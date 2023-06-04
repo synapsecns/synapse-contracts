@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {TokenMessengerEvents} from "../../../contracts/cctp/events/TokenMessengerEvents.sol";
 import {IMessageTransmitter} from "../../../contracts/cctp/interfaces/IMessageTransmitter.sol";
 import {ITokenMessenger} from "../../../contracts/cctp/interfaces/ITokenMessenger.sol";
 import {ITokenMinter} from "../../../contracts/cctp/interfaces/ITokenMinter.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
-contract MockTokenMessenger is ITokenMessenger {
+contract MockTokenMessenger is TokenMessengerEvents, ITokenMessenger {
     using SafeERC20 for IERC20;
 
     address public override localMessageTransmitter;
@@ -42,6 +43,16 @@ contract MockTokenMessenger is ITokenMessenger {
             destinationCaller,
             messageBody
         );
+        emit DepositForBurn({
+            nonce: nonce,
+            burnToken: burnToken,
+            amount: amount,
+            depositor: msg.sender,
+            mintRecipient: mintRecipient,
+            destinationDomain: destinationDomain,
+            destinationTokenMessenger: remoteTokenMessenger[destinationDomain],
+            destinationCaller: destinationCaller
+        });
     }
 
     function handleReceiveMessage(
@@ -55,7 +66,17 @@ contract MockTokenMessenger is ITokenMessenger {
             messageBody,
             (uint256, bytes32, bytes32)
         );
-        ITokenMinter(localMinter).mint(remoteDomain, burnToken, address(uint160(uint256(mintRecipient))), amount);
+        address mintToken = ITokenMinter(localMinter).mint(
+            remoteDomain,
+            burnToken,
+            address(uint160(uint256(mintRecipient))),
+            amount
+        );
+        emit MintAndWithdraw({
+            mintRecipient: address(uint160(uint256(mintRecipient))),
+            amount: amount,
+            mintToken: mintToken
+        });
         return true;
     }
 
