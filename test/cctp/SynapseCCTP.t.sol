@@ -53,6 +53,41 @@ contract SynapseCCTPTest is BaseCCTPTest {
             requestVersion: RequestLib.REQUEST_BASE,
             swapParams: ""
         });
+        assertEq(cctpSetups[DOMAIN_ETH].mintBurnToken.balanceOf(user), 0);
+    }
+
+    function testReceiveCircleTokenBaseRequest() public {
+        address destMintToken = address(cctpSetups[DOMAIN_AVAX].mintBurnToken);
+        uint256 amount = 10**8;
+        Params memory expected = getExpectedParams({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+        vm.expectEmit();
+        emit MintAndWithdraw({
+            mintRecipient: address(synapseCCTPs[DOMAIN_AVAX]),
+            mintToken: destMintToken,
+            amount: amount
+        });
+        // TODO: adjust when fees are implemented
+        vm.expectEmit();
+        emit CircleRequestFulfilled({
+            recipient: recipient,
+            token: destMintToken,
+            amount: amount,
+            fee: 0,
+            kappa: expected.kappa
+        });
+        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
+            message: expected.message,
+            signature: "",
+            requestVersion: RequestLib.REQUEST_BASE,
+            formattedRequest: expected.request
+        });
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount);
     }
 
     function getExpectedParams(
