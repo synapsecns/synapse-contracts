@@ -64,6 +64,8 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         uint32 requestVersion,
         bytes memory swapParams
     ) external {
+        // Pull token from user and update the amount if case of transfer fee.
+        amount = _pullToken(burnToken, amount);
         uint64 nonce = messageTransmitter.nextAvailableNonce();
         // This will revert if the request version is not supported, or swap params are not properly formatted.
         bytes memory formattedRequest = RequestLib.formatRequest(
@@ -75,6 +77,8 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         // Origin domain and nonce are already part of the request, so we only need to add the destination domain.
         bytes32 dstSynapseCCTP = remoteSynapseCCTP[destinationDomain];
         bytes32 kappa = _kappa(destinationDomain, requestVersion, formattedRequest);
+        // Issue allowance if needed
+        _approveToken(burnToken, amount);
         tokenMessenger.depositForBurnWithCaller(
             amount,
             destinationDomain,
@@ -120,6 +124,23 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
     function _applyFee(address token, uint256 amount) internal returns (uint256 amountAfterFee, uint256 fee) {
         // TODO: implement actual fee logic
         return (amount, 0);
+    }
+
+    /// @dev Approves the token to be transferred to the Circle Bridge.
+    function _approveToken(address token, uint256 amount) internal {
+        uint256 allowance = IERC20(token).allowance(address(this), address(tokenMessenger));
+        if (allowance < amount) {
+            // Reset allowance to 0 before setting it to the new value.
+            if (allowance != 0) IERC20(token).safeApprove(address(tokenMessenger), 0);
+            IERC20(token).safeApprove(address(tokenMessenger), type(uint256).max);
+        }
+    }
+
+    /// @dev Pulls the token from the sender.
+    function _pullToken(address token, uint256 amount) internal returns (uint256 amountPulled) {
+        uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        amountPulled = IERC20(token).balanceOf(address(this)) - balanceBefore;
     }
 
     /// @dev Mints the Circle token by sending the message and signature to the Circle Bridge.
