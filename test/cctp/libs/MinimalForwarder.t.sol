@@ -2,14 +2,19 @@
 pragma solidity 0.8.17;
 
 import {ForwarderDeploymentFailed} from "../../../contracts/cctp/libs/Errors.sol";
+import {MockCallRecipient} from "../../mocks/MockCallRecipient.sol";
 import {MinimalForwarderLib, MinimalForwarderLibHarness} from "../harnesses/MinimalForwarderLibHarness.sol";
 import {Test} from "forge-std/Test.sol";
 
 contract MinimalForwarderLibraryTest is Test {
     MinimalForwarderLibHarness public libHarness;
+    MockCallRecipient public mockRecipient;
+
+    event CallReceived(address caller, bytes32 data);
 
     function setUp() public {
         libHarness = new MinimalForwarderLibHarness();
+        mockRecipient = new MockCallRecipient();
     }
 
     function testDeploy(bytes32 salt) public {
@@ -29,5 +34,24 @@ contract MinimalForwarderLibraryTest is Test {
     function testForwarderBytecodeLength() public {
         // We use push32 to push the bytecode onto stack, so need to check that it's the right length
         assertEq(MinimalForwarderLib.FORWARDER_BYTECODE.length, 32);
+    }
+
+    function testForwardCall(bytes32 data) public {
+        address forwarder = libHarness.deploy(0);
+        bytes memory payload = abi.encodeWithSelector(MockCallRecipient.callMeMaybe.selector, data);
+        vm.expectEmit();
+        emit CallReceived(forwarder, data);
+        bytes memory returnData = libHarness.forwardCall(forwarder, address(mockRecipient), payload);
+        assertEq(abi.decode(returnData, (bytes32)), mockRecipient.transformData(data));
+    }
+
+    function testForwardCallRevert(bytes32 data) public {
+        bytes memory revertMsg = "AHHH IM REVERTIIING";
+        address forwarder = libHarness.deploy(0);
+        bytes memory payload = abi.encodeWithSelector(MockCallRecipient.callMeMaybe.selector, data);
+        // Force mockRecipient.callMeMaybe(data) to revert with revertMsg
+        vm.mockCallRevert(address(mockRecipient), payload, revertMsg);
+        vm.expectRevert(revertMsg);
+        libHarness.forwardCall(forwarder, address(mockRecipient), payload);
     }
 }
