@@ -47,6 +47,9 @@ interface IMessageTransmitter {
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
 
+    // Domain of chain on which the contract is deployed
+    function localDomain() external view returns (uint32);
+
     // Next available nonce from this source domain
     function nextAvailableNonce() external view returns (uint64);
 }

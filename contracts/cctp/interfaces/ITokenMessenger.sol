@@ -54,4 +54,12 @@ interface ITokenMessenger {
         address burnToken,
         bytes32 destinationCaller
     ) external returns (uint64 nonce);
+
+    // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
+
+    // Local Message Transmitter responsible for sending and receiving messages to/from remote domains
+    function localMessageTransmitter() external view returns (address);
+
+    // Minter responsible for minting and burning tokens on the local domain
+    function localMinter() external view returns (address);
 }
