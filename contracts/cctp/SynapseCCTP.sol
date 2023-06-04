@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {RemoteCCTPDeploymentNotSet, RemoteCCTPTokenNotSet} from "./libs/Errors.sol";
+import {LocalCCTPTokenNotFound, RemoteCCTPDeploymentNotSet, RemoteCCTPTokenNotSet} from "./libs/Errors.sol";
 import {SynapseCCTPEvents} from "./events/SynapseCCTPEvents.sol";
 import {IMessageTransmitter} from "./interfaces/IMessageTransmitter.sol";
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
@@ -39,11 +39,9 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
     // TODO: add ownerOnly modifier
     function setLocalToken(uint32 remoteDomain, address remoteToken) external {
         ITokenMinter minter = ITokenMinter(tokenMessenger.localMinter());
-        // TODO: add address(0) check
-        _remoteTokenIdToLocalToken[_remoteTokenId(remoteDomain, remoteToken)] = minter.getLocalToken(
-            remoteDomain,
-            remoteToken.addressToBytes32()
-        );
+        address localToken = minter.getLocalToken(remoteDomain, remoteToken.addressToBytes32());
+        if (localToken == address(0)) revert LocalCCTPTokenNotFound();
+        _remoteTokenIdToLocalToken[_remoteTokenId(remoteDomain, remoteToken)] = localToken;
     }
 
     /// @notice Sets the remote deployment of SynapseCCTP for the given remote domain.
