@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {MessageTransmitterEvents} from "../../../contracts/cctp/events/MessageTransmitterEvents.sol";
 import {IMessageTransmitter} from "../../../contracts/cctp/interfaces/IMessageTransmitter.sol";
 import {ITokenMessenger} from "../../../contracts/cctp/interfaces/ITokenMessenger.sol";
 
 /// Very simplified version of CCTP's MessageTransmitter for testing purposes.
-contract MockMessageTransmitter is IMessageTransmitter {
+contract MockMessageTransmitter is MessageTransmitterEvents, IMessageTransmitter {
     uint32 public override localDomain;
     uint64 public override nextAvailableNonce;
 
@@ -18,10 +19,11 @@ contract MockMessageTransmitter is IMessageTransmitter {
         uint32,
         bytes32,
         bytes32,
-        bytes calldata
+        bytes calldata message
     ) external returns (uint64 reservedNonce) {
         reservedNonce = nextAvailableNonce;
         nextAvailableNonce = reservedNonce + 1;
+        emit MessageSent(message);
     }
 
     function receiveMessage(bytes calldata message, bytes calldata signature) external returns (bool success) {
