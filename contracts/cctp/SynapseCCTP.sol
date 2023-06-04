@@ -116,8 +116,20 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
     function _kappa(
         uint32 destinationDomain,
         uint32 requestVersion,
-        bytes memory request
-    ) internal pure returns (bytes32) {
-        // TODO: implement
+        bytes memory formattedRequest
+    ) internal pure returns (bytes32 kappa) {
+        // Merge the destination domain and the request version into a single uint256.
+        uint256 prefix = (uint256(destinationDomain) << 32) | requestVersion;
+        bytes32 requestHash = keccak256(formattedRequest);
+        // Use assembly to return hash of the prefix and the request hash.
+        // We are using scratch space to avoid unnecessary memory expansion.
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            // Store prefix in memory at 0x00, and requestHash at 0x20.
+            mstore(0x00, prefix)
+            mstore(0x20, requestHash)
+            // Return hash of first 64 bytes of memory.
+            kappa := keccak256(0, 64)
+        }
     }
 }
