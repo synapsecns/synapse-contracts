@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {RemoteCCTPTokenNotSet} from "./libs/Errors.sol";
 import {SynapseCCTPEvents} from "./events/SynapseCCTPEvents.sol";
 import {IMessageTransmitter} from "./interfaces/IMessageTransmitter.sol";
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
@@ -19,6 +20,7 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
     IMessageTransmitter public messageTransmitter;
     ITokenMessenger public tokenMessenger;
     mapping(uint32 => bytes32) public remoteSynapseCCTP;
+    mapping(uint256 => address) internal _remoteTokenIdToLocalToken;
 
     /// @inheritdoc ISynapseCCTP
     function sendCircleToken(
@@ -71,7 +73,7 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         bytes32 kappa = _kappa(localDomain, requestVersion, formattedRequest);
         // Kindly ask the Circle Bridge to mint the tokens for us.
         _mintCircleToken(message, signature, kappa);
-        address token = _getMintedToken(originDomain, originBurnToken);
+        address token = _getLocalMintedToken(originDomain, originBurnToken);
         uint256 fee;
         // Apply the bridging fee. This will revert if amount <= fee.
         (amount, fee) = _applyFee(token, amount);
@@ -116,8 +118,10 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
 
     /// @dev Fetches the address and the amount of the minted Circle token.
-    function _getMintedToken(uint32 originDomain, address originBurnToken) internal view returns (address token) {
-        // TODO: implement
+    function _getLocalMintedToken(uint32 originDomain, address originBurnToken) internal view returns (address token) {
+        // Map the remote token to the local token.
+        token = _remoteTokenIdToLocalToken[_remoteTokenId(originDomain, originBurnToken)];
+        if (token == address(0)) revert RemoteCCTPTokenNotSet();
     }
 
     /// @dev Predicts the address of the destination caller that will be used to call the Circle Message Transmitter.
@@ -138,11 +142,16 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         // We are using scratch space to avoid unnecessary memory expansion.
         // solhint-disable-next-line no-inline-assembly
         assembly {
-            // Store prefix in memory at 0x00, and requestHash at 0x20.
-            mstore(0x00, prefix)
-            mstore(0x20, requestHash)
+            // Store prefix in memory at 0, and requestHash at 32.
+            mstore(0, prefix)
+            mstore(32, requestHash)
             // Return hash of first 64 bytes of memory.
             kappa := keccak256(0, 64)
         }
+    }
+
+    /// @dev Packs the domain and the token into a single uint256 value using bitwise operations.
+    function _remoteTokenId(uint32 remoteDomain, address remoteToken) internal pure returns (uint256) {
+        return (uint256(remoteDomain) << 160) | uint160(remoteToken);
     }
 }

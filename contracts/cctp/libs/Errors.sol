@@ -4,4 +4,6 @@ pragma solidity 0.8.17;
 error IncorrectRequestLength();
 error UnknownRequestVersion();
 
+error RemoteCCTPTokenNotSet();
+
 error ForwarderDeploymentFailed();
