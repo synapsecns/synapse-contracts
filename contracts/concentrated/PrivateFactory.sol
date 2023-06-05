@@ -45,21 +45,32 @@ contract PrivateFactory is IPrivateFactory {
         }
     }
 
-    /// @notice Deploys private pool for tokenA, tokenB pair owned by msg sender
+    /// @notice Deploys private pool for tokenA, tokenB pair owned by lp
+    /// @param lp The address of the lp
     /// @param tokenA The address of token A
     /// @param tokenB The address of token B
-    function deploy(address tokenA, address tokenB) external returns (address) {
+    /// @param P The initial price of the pool
+    /// @param fee The initial fee of the pool
+    /// @param adminFee The initial admin fee of the pool
+    function deploy(
+        address lp,
+        address tokenA,
+        address tokenB,
+        uint256 P,
+        uint256 fee,
+        uint256 adminFee
+    ) external onlyOwner returns (address) {
         require(tokenA != tokenB, "same token for base and quote");
-        require(pool[msg.sender][tokenA][tokenB] == address(0), "pool already exists");
+        require(pool[lp][tokenA][tokenB] == address(0), "pool already exists");
 
         (address token0, address token1) = orderTokens(tokenA, tokenB);
 
-        bytes32 salt = keccak256(abi.encode(msg.sender, token0, token1));
-        address p = address(new PrivatePool{salt: salt}(msg.sender, token0, token1));
-        pool[msg.sender][token0][token1] = p;
-        pool[msg.sender][token1][token0] = p;
+        bytes32 salt = keccak256(abi.encode(lp, token0, token1));
+        address p = address(new PrivatePool{salt: salt}(lp, token0, token1, P, fee, adminFee));
+        pool[lp][token0][token1] = p;
+        pool[lp][token1][token0] = p;
 
-        emit Deploy(msg.sender, token0, token1, p);
+        emit Deploy(lp, token0, token1, p);
 
         return p;
     }

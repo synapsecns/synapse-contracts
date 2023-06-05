@@ -16,5 +16,12 @@ interface IPrivateFactory {
 
     function orderTokens(address tokenA, address tokenB) external view returns (address, address);
 
-    function deploy(address tokenA, address tokenB) external returns (address);
+    function deploy(
+        address lp,
+        address tokenA,
+        address tokenB,
+        uint256 P,
+        uint256 fee,
+        uint256 adminFee
+    ) external returns (address);
 }

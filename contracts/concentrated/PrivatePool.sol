@@ -61,11 +61,6 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         _;
     }
 
-    modifier hasQuote() {
-        require(P > 0, "invalid quote");
-        _;
-    }
-
     event Quote(uint256 price);
     event NewSwapFee(uint256 newSwapFee);
     event NewAdminFee(uint256 newAdminFee);
@@ -83,7 +78,10 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
     constructor(
         address _owner,
         address _token0,
-        address _token1
+        address _token1,
+        uint256 _P,
+        uint256 _fee,
+        uint256 _adminFee
     ) {
         factory = msg.sender;
         owner = _owner;
@@ -98,6 +96,16 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         uint256 _token1Decimals = IERC20Metadata(_token1).decimals();
         require(_token1Decimals <= 18, "token1 decimals > 18");
         token1Decimals = _token1Decimals;
+
+        // initialize price, fee, admin fee
+        require(_P >= PRICE_MIN && _P <= PRICE_MAX, "price out of range");
+        P = _P;
+
+        require(_fee <= FEE_MAX, "fee > max");
+        fee = _fee;
+
+        require(_adminFee <= ADMIN_FEE_MAX, "adminFee > max");
+        adminFee = _adminFee;
     }
 
     /// @notice Updates the quote price LP is willing to offer tokens at
@@ -125,7 +133,7 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
     /// @dev Admin fees sent to factory owner
     /// @param _fee The new admin fee
     function setAdminFee(uint256 _fee) external onlyFactory {
-        require(_fee <= ADMIN_FEE_MAX, "fee > max");
+        require(_fee <= ADMIN_FEE_MAX, "adminFee > max");
         adminFee = _fee;
         emit NewAdminFee(_fee);
     }
@@ -137,7 +145,6 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         external
         onlyOwner
         deadlineCheck(deadline)
-        hasQuote
         returns (uint256 minted_)
     {
         require(amounts.length == 2, "invalid amounts");
@@ -242,7 +249,6 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
         onlyToken(tokenIndexFrom)
         onlyToken(tokenIndexTo)
         deadlineCheck(deadline)
-        hasQuote
         returns (uint256 dy_)
     {
         require(tokenIndexFrom != tokenIndexTo, "invalid token swap");

@@ -47,8 +47,8 @@ contract PrivatePoolTest is Test {
         vm.prank(ADMIN);
         factory = new MockPrivateFactory(BRIDGE);
 
-        vm.prank(OWNER);
-        address p = factory.deployMock(address(token), address(synToken));
+        vm.prank(ADMIN);
+        address p = factory.deployMock(OWNER, address(token), address(synToken), 1.0000e18, 0.00010e18, 0.10e18);
         pool = MockPrivatePool(p);
 
         vm.prank(OWNER);
@@ -124,14 +124,16 @@ contract PrivatePoolTest is Test {
     function testConstructorWhenToken0DecimalsGt18() public {
         address t = address(new MockToken("Y", "Y", 19));
         vm.expectRevert("token0 decimals > 18");
-        new PrivatePool(OWNER, t, address(token));
+        new PrivatePool(OWNER, t, address(token), 1e18, 0.001e18, 0.01e18);
     }
 
     function testConstructorWhenToken1DecimalsGt18() public {
         address t = address(new MockToken("Y", "Y", 19));
         vm.expectRevert("token1 decimals > 18");
-        new PrivatePool(OWNER, address(token), t);
+        new PrivatePool(OWNER, address(token), t, 1e18, 0.001e18, 0.01e18);
     }
+
+    // TODO: test constructor initialization
 
     function testQuoteUpdatesPrice() public {
         uint256 price = 1e18; // 1 wad
@@ -1477,8 +1479,10 @@ contract PrivatePoolTest is Test {
         MockAccessToken synT = new MockAccessToken("synUSDT", "synUSDT", 6);
         synT.grantRole(MINTER_ROLE, BRIDGE);
 
-        vm.prank(OWNER);
-        MockPrivatePool p = MockPrivatePool(factory.deployMock(address(synT), address(t)));
+        vm.prank(ADMIN);
+        MockPrivatePool p = MockPrivatePool(
+            factory.deployMock(OWNER, address(synT), address(t), 1.0000e18, 0.0001e18, 0.10e18)
+        );
 
         assertEq(p.token0(), address(synT));
         assertEq(p.token1(), address(t));
@@ -2013,7 +2017,7 @@ contract PrivatePoolTest is Test {
 
     function testAmountWadWhenToken0() public {
         MockToken t = new MockToken("Y", "Y", 8);
-        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token));
+        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token), 1e18, 0.001e18, 0.01e18);
 
         uint256 dx = 100e8;
         uint256 amountWad = 100e18;
@@ -2022,7 +2026,7 @@ contract PrivatePoolTest is Test {
 
     function testAmountWadWhenToken1() public {
         MockToken t = new MockToken("Y", "Y", 8);
-        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token));
+        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token), 1e18, 0.001e18, 0.01e18);
 
         uint256 dx = 100e6;
         uint256 amountWad = 100e18;
@@ -2031,7 +2035,7 @@ contract PrivatePoolTest is Test {
 
     function testAmountDecimalsWhenToken0() public {
         MockToken t = new MockToken("Y", "Y", 8);
-        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token));
+        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token), 1e18, 0.001e18, 0.01e18);
 
         uint256 dx = 100e8;
         uint256 amount = 100e18;
@@ -2040,7 +2044,7 @@ contract PrivatePoolTest is Test {
 
     function testAmountDecimalsWhenToken1() public {
         MockToken t = new MockToken("Y", "Y", 8);
-        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token));
+        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token), 1e18, 0.001e18, 0.01e18);
 
         uint256 dx = 100e6;
         uint256 amount = 100e18;
