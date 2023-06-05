@@ -57,7 +57,7 @@ contract PrivateFactoryTest is Test {
         IPrivatePool pool = IPrivatePool(p);
 
         assertEq(pool.factory(), address(factory));
-        assertEq(pool.owner(), address(this));
+        assertEq(pool.owner(), user);
         assertEq(pool.token0(), address(synToken));
         assertEq(pool.token1(), address(token));
 
@@ -69,8 +69,8 @@ contract PrivateFactoryTest is Test {
     function testDeployStoresPool() public {
         address user = address(0xBEEF);
         address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.001e18, 0.01e18);
-        assertEq(factory.pool(address(this), address(token), address(synToken)), p);
-        assertEq(factory.pool(address(this), address(synToken), address(token)), p);
+        assertEq(factory.pool(user, address(token), address(synToken)), p);
+        assertEq(factory.pool(user, address(synToken), address(token)), p);
     }
 
     function testDeployEmitsDeployEvent() public {
@@ -79,9 +79,9 @@ contract PrivateFactoryTest is Test {
         address user = address(0xBEEF);
 
         bytes memory code = type(PrivatePool).creationCode;
-        bytes memory bytecode = abi.encodePacked(code, abi.encode(address(this), token0, token1));
+        bytes memory bytecode = abi.encodePacked(code, abi.encode(user, token0, token1, 1e18, 0.001e18, 0.01e18));
 
-        bytes32 salt = keccak256(abi.encode(address(this), token0, token1));
+        bytes32 salt = keccak256(abi.encode(user, token0, token1));
         bytes32 hash = keccak256(abi.encodePacked(bytes1(0xff), address(factory), uint256(salt), keccak256(bytecode)));
         address p = address(uint160(uint256(hash)));
 

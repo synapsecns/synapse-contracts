@@ -136,14 +136,14 @@ contract PrivatePoolTest is Test {
     // TODO: test constructor initialization
 
     function testQuoteUpdatesPrice() public {
-        uint256 price = 1e18; // 1 wad
+        uint256 price = 1.0005e18; // 1 wad
         vm.prank(OWNER);
         pool.quote(price);
         assertEq(pool.P(), price);
     }
 
     function testQuoteEmitsQuoteEvent() public {
-        uint256 price = 1e18; // 1 wad
+        uint256 price = 1.0005e18; // 1 wad
         vm.expectEmit(false, false, false, true);
         emit Quote(price);
 
@@ -152,13 +152,13 @@ contract PrivatePoolTest is Test {
     }
 
     function testQuoteWhenNotOwner() public {
-        uint256 price = 1e18; // 1 wad
+        uint256 price = 1.0005e18; // 1 wad
         vm.expectRevert("!owner");
         pool.quote(price);
     }
 
     function testQuoteWhenPriceSame() public {
-        uint256 price = 1e18; // 1 wad
+        uint256 price = 1.0005e18; // 1 wad
         vm.prank(OWNER);
         pool.quote(price);
 
@@ -235,7 +235,7 @@ contract PrivatePoolTest is Test {
 
     function testSetAdminFeeWhenFeeGtMax() public {
         uint256 fee = pool.ADMIN_FEE_MAX() + 1;
-        vm.expectRevert("fee > max");
+        vm.expectRevert("adminFee > max");
         vm.prank(address(factory));
         pool.setAdminFee(fee);
     }
@@ -417,20 +417,6 @@ contract PrivatePoolTest is Test {
         amounts[1] = 100.05e6;
 
         vm.expectRevert("block.timestamp > deadline");
-        vm.prank(OWNER);
-        pool.addLiquidity(amounts, deadline);
-    }
-
-    function testAddLiquidityWhenNotHasQuote() public {
-        // set up
-        uint256 deadline = block.timestamp + 3600;
-
-        // add liquidity
-        uint256[] memory amounts = new uint256[](2);
-        amounts[0] = 100e6;
-        amounts[1] = 100.05e6;
-
-        vm.expectRevert("invalid quote");
         vm.prank(OWNER);
         pool.addLiquidity(amounts, deadline);
     }
@@ -1576,44 +1562,6 @@ contract PrivatePoolTest is Test {
         token.approve(address(pool), type(uint256).max);
 
         vm.expectRevert("block.timestamp > deadline");
-        pool.swap(1, 0, dx, minDy, deadline);
-    }
-
-    function testSwapWhenNotHasQuote() public {
-        // set up
-        uint256 minDy = 0;
-        uint256 deadline = block.timestamp + 3600;
-
-        uint256 fee = 0.00005e18;
-        vm.prank(OWNER);
-        pool.setSwapFee(fee);
-
-        // transfer in tokens prior
-        uint256 amountSynToken = 100e6;
-        uint256 amountToken = 100.05e6;
-        vm.prank(OWNER);
-        token.transfer(address(pool), amountToken);
-        vm.prank(OWNER);
-        synToken.transfer(address(pool), amountSynToken);
-
-        assertEq(token.balanceOf(OWNER), 1e12 - amountToken);
-        assertEq(synToken.balanceOf(OWNER), 1e12 - amountSynToken);
-
-        // transfer funds from owner to this account
-        uint256 bal = 100e6;
-        address sender = address(this);
-        vm.prank(OWNER);
-        synToken.transfer(sender, bal);
-        vm.prank(OWNER);
-        token.transfer(sender, bal);
-
-        assertEq(token.balanceOf(sender), bal);
-        assertEq(synToken.balanceOf(sender), bal);
-
-        uint256 dx = 50e6;
-        token.approve(address(pool), type(uint256).max);
-
-        vm.expectRevert("invalid quote");
         pool.swap(1, 0, dx, minDy, deadline);
     }
 
