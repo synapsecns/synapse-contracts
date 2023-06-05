@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 import {LocalCCTPTokenNotFound, RemoteCCTPDeploymentNotSet, RemoteCCTPTokenNotSet} from "./libs/Errors.sol";
 import {SynapseCCTPEvents} from "./events/SynapseCCTPEvents.sol";
+import {IDefaultPool} from "./interfaces/IDefaultPool.sol";
 import {IMessageTransmitter} from "./interfaces/IMessageTransmitter.sol";
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
 import {ITokenMinter} from "./interfaces/ITokenMinter.sol";
@@ -106,7 +107,8 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         // Apply the bridging fee. This will revert if amount <= fee.
         (amount, fee) = _applyFee(token, amount);
         // Fulfill the request: perform an optional swap and send the end tokens to the recipient.
-        (address recipient, address tokenOut, uint256 amountOut) = _fulfillRequest(token, amount, request);
+        address recipient = request.recipient();
+        (address tokenOut, uint256 amountOut) = _fulfillRequest(recipient, token, amount, requestVersion, request);
         emit CircleRequestFulfilled(recipient, token, fee, tokenOut, amountOut, kappa);
     }
 
@@ -160,22 +162,62 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
     /// @dev Performs a swap, if was requested back on origin chain, and transfers the tokens to the recipient.
     /// Should the swap fail, will transfer `token` to the recipient instead.
     function _fulfillRequest(
+        address recipient,
         address token,
         uint256 amount,
+        uint32 requestVersion,
         Request request
-    )
-        internal
-        returns (
-            address recipient,
-            address tokenOut,
-            uint256 amountOut
-        )
-    {
-        // TODO: implement swap logic
-        recipient = request.recipient();
+    ) internal returns (address tokenOut, uint256 amountOut) {
+        if (requestVersion == RequestLib.REQUEST_BASE) {
+            return _fullfilBaseRequest(recipient, token, amount);
+        }
+        // We checked request version to be a valid value when wrapping into `request`,
+        // so this could only be `RequestLib.REQUEST_SWAP`.
+        (address pool, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint80 deadline, uint256 minAmountOut) = request
+            .swapParams();
+        tokenOut = _tryGetToken(pool, tokenIndexTo);
+        // Fallback to Base Request if failed to get tokenOut address
+        if (tokenOut == address(0)) {
+            return _fullfilBaseRequest(recipient, token, amount);
+        }
+        amountOut = _trySwap(pool, tokenIndexFrom, tokenIndexTo, amount, deadline, minAmountOut);
+        // Fallback to Base Request if failed to swap
+        if (amountOut == 0) {
+            return _fullfilBaseRequest(recipient, token, amount);
+        }
+        // Transfer the swapped tokens to the recipient.
+        IERC20(tokenOut).safeTransfer(recipient, amountOut);
+    }
+
+    /// @dev Fulfills a base request by transferring the tokens to the recipient.
+    function _fullfilBaseRequest(
+        address recipient,
+        address token,
+        uint256 amount
+    ) internal returns (address tokenOut, uint256 amountOut) {
         tokenOut = token;
         amountOut = amount;
         IERC20(token).safeTransfer(recipient, amount);
+    }
+
+    /// @dev Tries to swap tokens using the provided swap instructions.
+    /// Instead of reverting, returns 0 if the swap failed.
+    function _trySwap(
+        address pool,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 amount,
+        uint80 deadline,
+        uint256 minAmountOut
+    ) internal returns (uint256 amountOut) {
+        try IDefaultPool(pool).swap(tokenIndexFrom, tokenIndexTo, amount, minAmountOut, deadline) returns (
+            uint256 amountOut_
+        ) {
+            amountOut = amountOut_;
+        } catch {
+            // Swapping failed, return 0
+            amountOut = 0;
+        }
     }
 
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
@@ -188,6 +230,17 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         // Map the remote token to the local token.
         token = _remoteTokenIdToLocalToken[_remoteTokenId(originDomain, originBurnToken)];
         if (token == address(0)) revert RemoteCCTPTokenNotSet();
+    }
+
+    /// @dev Tries to get the token address from the pool.
+    /// Instead of reverting, returns 0 if the getToken failed.
+    function _tryGetToken(address pool, uint8 tokenIndex) internal view returns (address token) {
+        try IDefaultPool(pool).getToken(tokenIndex) returns (address _token) {
+            token = _token;
+        } catch {
+            // Return 0 on revert
+            token = address(0);
+        }
     }
 
     /// @dev Predicts the address of the destination caller.
