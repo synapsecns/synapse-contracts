@@ -41,6 +41,8 @@ contract SynapseCCTPTest is BaseCCTPTest {
         emit CircleRequestSent({
             destinationDomain: DOMAIN_AVAX,
             nonce: nonce,
+            token: originBurnToken,
+            amount: amount,
             requestVersion: RequestLib.REQUEST_BASE,
             request: expected.request,
             kappa: expected.kappa
@@ -77,9 +79,10 @@ contract SynapseCCTPTest is BaseCCTPTest {
         vm.expectEmit();
         emit CircleRequestFulfilled({
             recipient: recipient,
+            mintToken: destMintToken,
+            fee: 0,
             token: destMintToken,
             amount: amount,
-            fee: 0,
             kappa: expected.kappa
         });
         synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({

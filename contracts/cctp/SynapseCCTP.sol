@@ -85,7 +85,7 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
             burnToken,
             _destinationCaller(dstSynapseCCTP.bytes32ToAddress(), kappa)
         );
-        emit CircleRequestSent(destinationDomain, nonce, requestVersion, formattedRequest, kappa);
+        emit CircleRequestSent(destinationDomain, nonce, burnToken, amount, requestVersion, formattedRequest, kappa);
     }
 
     // TODO: guard this to be only callable by the validators?
@@ -106,8 +106,8 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         // Apply the bridging fee. This will revert if amount <= fee.
         (amount, fee) = _applyFee(token, amount);
         // Fulfill the request: perform an optional swap and send the end tokens to the recipient.
-        address recipient = _fulfillRequest(token, amount, request);
-        emit CircleRequestFulfilled(recipient, token, amount, fee, kappa);
+        (address recipient, address tokenOut, uint256 amountOut) = _fulfillRequest(token, amount, request);
+        emit CircleRequestFulfilled(recipient, token, fee, tokenOut, amountOut, kappa);
     }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
@@ -163,9 +163,18 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         address token,
         uint256 amount,
         Request request
-    ) internal returns (address recipient) {
+    )
+        internal
+        returns (
+            address recipient,
+            address tokenOut,
+            uint256 amountOut
+        )
+    {
         // TODO: implement swap logic
         recipient = request.recipient();
+        tokenOut = token;
+        amountOut = amount;
         IERC20(token).safeTransfer(recipient, amount);
     }
 
