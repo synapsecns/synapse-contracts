@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {IncorrectRequestLength} from "../../contracts/cctp/libs/Errors.sol";
 import {BaseCCTPTest, RequestLib} from "./BaseCCTP.t.sol";
 
 contract SynapseCCTPTest is BaseCCTPTest {
@@ -88,6 +89,92 @@ contract SynapseCCTPTest is BaseCCTPTest {
             formattedRequest: expected.request
         });
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount);
+    }
+
+    function testReceiveCircleTokenBaseRequestRevertMalformedRequest() public {
+        uint256 amount = 10**8;
+        Params memory expected = getExpectedParams({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+        // Test all possible malformed requests: we change a single bit in one of the bytes
+        for (uint256 i = 0; i < expected.request.length; ++i) {
+            bytes memory malformedRequest = abi.encodePacked(expected.request);
+            for (uint8 j = 0; j < 8; ++j) {
+                // Change a single bit in request[i]
+                malformedRequest[i] = expected.request[i] ^ bytes1(uint8(1) << j);
+                // destinationCaller check in MessageTransmitter should fail
+                vm.expectRevert("Invalid caller for message");
+                synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
+                    message: expected.message,
+                    signature: "",
+                    requestVersion: RequestLib.REQUEST_BASE,
+                    formattedRequest: malformedRequest
+                });
+            }
+        }
+    }
+
+    function testReceiveCircleTokenBaseRequestRevertChangedRequestType() public {
+        uint256 amount = 10**8;
+        Params memory expected = getExpectedParams({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+        // Simply changing the request type should fail when request is wrapped
+        vm.expectRevert(IncorrectRequestLength.selector);
+        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
+            message: expected.message,
+            signature: "",
+            requestVersion: RequestLib.REQUEST_SWAP,
+            formattedRequest: expected.request
+        });
+    }
+
+    function testReceiveCircleTokenBaseRequestRevertAddedSwapParams() public {
+        uint256 amount = 10**8;
+        Params memory expected = getExpectedParams({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+        bytes memory swapParams = RequestLib.formatSwapParams(address(0), 0, 0, 0, 0);
+        // Simply adding swap params w/o changing the request type should fail when request is wrapped
+        vm.expectRevert(IncorrectRequestLength.selector);
+        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
+            message: expected.message,
+            signature: "",
+            requestVersion: RequestLib.REQUEST_BASE,
+            formattedRequest: abi.encodePacked(expected.request, swapParams)
+        });
+    }
+
+    function testReceiveCircleTokenBaseRequestRevertAddedSwapParamsChangedRequestType() public {
+        uint256 amount = 10**8;
+        Params memory expected = getExpectedParams({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+        bytes memory swapParams = RequestLib.formatSwapParams(address(0), 0, 0, 0, 0);
+        // Proving a valid request of another type leads to a faild destinationCaller check in MessageTransmitter
+        vm.expectRevert("Invalid caller for message");
+        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
+            message: expected.message,
+            signature: "",
+            requestVersion: RequestLib.REQUEST_SWAP,
+            formattedRequest: abi.encodePacked(expected.request, swapParams)
+        });
     }
 
     function getExpectedParams(
