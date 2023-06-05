@@ -6,6 +6,9 @@ import {MockMintBurnToken} from "./mocks/MockMintBurnToken.sol";
 import {MockTokenMessenger} from "./mocks/MockTokenMessenger.sol";
 import {MockTokenMinter} from "./mocks/MockTokenMinter.sol";
 
+import {MockERC20} from "./mocks/MockERC20.sol";
+import {MockDefaultPool} from "./mocks/MockDefaultPool.sol";
+
 import {MessageTransmitterEvents} from "../../contracts/cctp/events/MessageTransmitterEvents.sol";
 import {TokenMessengerEvents} from "../../contracts/cctp/events/TokenMessengerEvents.sol";
 import {MinimalForwarderLib} from "../../contracts/cctp/libs/MinimalForwarder.sol";
@@ -22,11 +25,17 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         MockTokenMinter tokenMinter;
     }
 
+    struct PoolSetup {
+        MockERC20 token;
+        MockDefaultPool pool;
+    }
+
     uint32 public constant DOMAIN_ETH = 1;
     uint32 public constant DOMAIN_AVAX = 43114;
 
     mapping(uint32 => CCTPSetup) public cctpSetups;
     mapping(uint32 => SynapseCCTP) public synapseCCTPs;
+    mapping(uint32 => PoolSetup) public poolSetups;
 
     address public user;
     address public recipient;
@@ -37,6 +46,8 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         deploySynapseCCTP(DOMAIN_ETH);
         deploySynapseCCTP(DOMAIN_AVAX);
         linkDomains(DOMAIN_ETH, DOMAIN_AVAX);
+        deployPool(DOMAIN_ETH);
+        deployPool(DOMAIN_AVAX);
         user = makeAddr("User");
         recipient = makeAddr("Recipient");
     }
@@ -92,6 +103,18 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
 
         synapseCCTPs[domainA].setLocalToken({remoteDomain: domainB, remoteToken: address(setupB.mintBurnToken)});
         synapseCCTPs[domainB].setLocalToken({remoteDomain: domainA, remoteToken: address(setupA.mintBurnToken)});
+    }
+
+    function deployPool(uint32 domain) public returns (PoolSetup memory setup) {
+        setup.token = new MockERC20("MockT", 6);
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(cctpSetups[domain].mintBurnToken);
+        tokens[1] = address(setup.token);
+        setup.pool = new MockDefaultPool(tokens);
+        // Mint some initial tokens to the pool
+        cctpSetups[domain].mintBurnToken.mintPublic(address(setup.pool), 10**10);
+        setup.token.mint(address(setup.pool), 10**10);
+        poolSetups[domain] = setup;
     }
 
     function getExpectedMessage(
