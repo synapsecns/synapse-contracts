@@ -18,10 +18,10 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     uint256 internal constant wad = 1e18;
-    uint256 internal constant PRICE_BOUND = 0.001e18; // 10 bps in wad
+    uint256 internal constant PRICE_BOUND = 0.005e18; // 50 bps in wad
 
-    uint256 public constant PRICE_MIN = wad - PRICE_BOUND; // 1 - 10bps in wad
-    uint256 public constant PRICE_MAX = wad + PRICE_BOUND; // 1 + 10bps in wad
+    uint256 public constant PRICE_MIN = wad - PRICE_BOUND; // 1 - 50bps in wad
+    uint256 public constant PRICE_MAX = wad + PRICE_BOUND; // 1 + 50bps in wad
     uint256 public constant FEE_MAX = 0.0001e18; // 1 bps in wad
     uint256 public constant ADMIN_FEE_MAX = 1e18; // 100% of swap fees in wad
 
