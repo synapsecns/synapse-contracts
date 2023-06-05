@@ -62,36 +62,14 @@ contract SynapseCCTPTest is BaseCCTPTest {
     // ═════════════════════════════════════ TESTS: RECEIVE WITH BASE REQUEST ══════════════════════════════════════════
 
     function testReceiveCircleTokenBaseRequest() public {
-        address destMintToken = address(cctpSetups[DOMAIN_AVAX].mintBurnToken);
         uint256 amount = 10**8;
-        Params memory expected = getExpectedParams({
+        checkRequestFulfilled({
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
-            amount: amount,
-            requestVersion: RequestLib.REQUEST_BASE,
+            amountIn: amount,
+            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
+            expectedAmountOut: amount,
             swapParams: ""
-        });
-        vm.expectEmit();
-        emit MintAndWithdraw({
-            mintRecipient: address(synapseCCTPs[DOMAIN_AVAX]),
-            mintToken: destMintToken,
-            amount: amount
-        });
-        // TODO: adjust when fees are implemented
-        vm.expectEmit();
-        emit CircleRequestFulfilled({
-            recipient: recipient,
-            mintToken: destMintToken,
-            fee: 0,
-            token: destMintToken,
-            amount: amount,
-            kappa: expected.kappa
-        });
-        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
-            message: expected.message,
-            signature: "",
-            requestVersion: RequestLib.REQUEST_BASE,
-            formattedRequest: expected.request
         });
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount);
     }
@@ -170,7 +148,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
     // ═════════════════════════════════════ TESTS: RECEIVE WITH SWAP REQUEST ══════════════════════════════════════════
 
     function testReceiveCircleTokenSwapRequest() public {
-        address destMintToken = address(cctpSetups[DOMAIN_AVAX].mintBurnToken);
         uint256 amount = 10**8;
         // TODO: adjust for fees when implemented
         address tokenOut = address(poolSetups[DOMAIN_AVAX].token);
@@ -182,34 +159,13 @@ contract SynapseCCTPTest is BaseCCTPTest {
             deadline_: uint80(block.timestamp),
             minAmountOut_: amountOut
         });
-        Params memory expected = getExpectedParams({
+        checkRequestFulfilled({
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
-            amount: amount,
-            requestVersion: RequestLib.REQUEST_SWAP,
+            amountIn: amount,
+            expectedTokenOut: tokenOut,
+            expectedAmountOut: amountOut,
             swapParams: swapParams
-        });
-        vm.expectEmit();
-        emit MintAndWithdraw({
-            mintRecipient: address(synapseCCTPs[DOMAIN_AVAX]),
-            mintToken: destMintToken,
-            amount: amount
-        });
-        // TODO: adjust when fees are implemented
-        vm.expectEmit();
-        emit CircleRequestFulfilled({
-            recipient: recipient,
-            mintToken: destMintToken,
-            fee: 0,
-            token: tokenOut,
-            amount: amountOut,
-            kappa: expected.kappa
-        });
-        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
-            message: expected.message,
-            signature: "",
-            requestVersion: RequestLib.REQUEST_SWAP,
-            formattedRequest: expected.request
         });
         assertEq(poolSetups[DOMAIN_AVAX].token.balanceOf(recipient), amountOut);
     }
@@ -296,6 +252,47 @@ contract SynapseCCTPTest is BaseCCTPTest {
     }
 
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
+
+    function checkRequestFulfilled(
+        uint32 originDomain,
+        uint32 destinationDomain,
+        uint256 amountIn,
+        address expectedTokenOut,
+        uint256 expectedAmountOut,
+        bytes memory swapParams
+    ) public {
+        address destMintToken = address(cctpSetups[destinationDomain].mintBurnToken);
+        uint32 requestVersion = swapParams.length == 0 ? RequestLib.REQUEST_BASE : RequestLib.REQUEST_SWAP;
+        Params memory expected = getExpectedParams({
+            originDomain: originDomain,
+            destinationDomain: destinationDomain,
+            amount: amountIn,
+            requestVersion: requestVersion,
+            swapParams: swapParams
+        });
+        vm.expectEmit();
+        emit MintAndWithdraw({
+            mintRecipient: address(synapseCCTPs[destinationDomain]),
+            mintToken: destMintToken,
+            amount: amountIn
+        });
+        // TODO: adjust when fees are implemented
+        vm.expectEmit();
+        emit CircleRequestFulfilled({
+            recipient: recipient,
+            mintToken: destMintToken,
+            fee: 0,
+            token: expectedTokenOut,
+            amount: expectedAmountOut,
+            kappa: expected.kappa
+        });
+        synapseCCTPs[destinationDomain].receiveCircleToken({
+            message: expected.message,
+            signature: "",
+            requestVersion: requestVersion,
+            formattedRequest: expected.request
+        });
+    }
 
     function checkMalformedRequests(Params memory expected, uint32 requestVersion) public {
         // Test all possible malformed requests: we change a single bit in one of the bytes
