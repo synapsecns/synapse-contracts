@@ -78,7 +78,7 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         if (dstSynapseCCTP == 0) revert RemoteCCTPDeploymentNotSet();
         bytes32 kappa = _kappa(destinationDomain, requestVersion, formattedRequest);
         // Issue allowance if needed
-        _approveToken(burnToken, amount);
+        _approveToken(burnToken, address(tokenMessenger), amount);
         tokenMessenger.depositForBurnWithCaller(
             amount,
             destinationDomain,
@@ -128,12 +128,16 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
     }
 
     /// @dev Approves the token to be transferred to the Circle Bridge.
-    function _approveToken(address token, uint256 amount) internal {
-        uint256 allowance = IERC20(token).allowance(address(this), address(tokenMessenger));
+    function _approveToken(
+        address token,
+        address spender,
+        uint256 amount
+    ) internal {
+        uint256 allowance = IERC20(token).allowance(address(this), spender);
         if (allowance < amount) {
             // Reset allowance to 0 before setting it to the new value.
-            if (allowance != 0) IERC20(token).safeApprove(address(tokenMessenger), 0);
-            IERC20(token).safeApprove(address(tokenMessenger), type(uint256).max);
+            if (allowance != 0) IERC20(token).safeApprove(spender, 0);
+            IERC20(token).safeApprove(spender, type(uint256).max);
         }
     }
 
@@ -180,6 +184,7 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         if (tokenOut == address(0)) {
             return _fullfilBaseRequest(recipient, token, amount);
         }
+        _approveToken(token, pool, amount);
         amountOut = _trySwap(pool, tokenIndexFrom, tokenIndexTo, amount, deadline, minAmountOut);
         // Fallback to Base Request if failed to swap
         if (amountOut == 0) {
