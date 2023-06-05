@@ -22,7 +22,7 @@ contract PrivatePool is IPrivatePool, ReentrancyGuard {
 
     uint256 public constant PRICE_MIN = wad - PRICE_BOUND; // 1 - 10bps in wad
     uint256 public constant PRICE_MAX = wad + PRICE_BOUND; // 1 + 10bps in wad
-    uint256 public constant FEE_MAX = 0.01e18; // 100 bps in wad
+    uint256 public constant FEE_MAX = 0.0001e18; // 1 bps in wad
     uint256 public constant ADMIN_FEE_MAX = 1e18; // 100% of swap fees in wad
 
     address public immutable factory;

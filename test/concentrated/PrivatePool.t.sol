@@ -1467,7 +1467,7 @@ contract PrivatePoolTest is Test {
 
         vm.prank(ADMIN);
         MockPrivatePool p = MockPrivatePool(
-            factory.deployMock(OWNER, address(synT), address(t), 1.0000e18, 0.0001e18, 0.10e18)
+            factory.deployMock(OWNER, address(synT), address(t), 1.0000e18, 0.00010e18, 0.10e18)
         );
 
         assertEq(p.token0(), address(synT));
@@ -1965,7 +1965,7 @@ contract PrivatePoolTest is Test {
 
     function testAmountWadWhenToken0() public {
         MockToken t = new MockToken("Y", "Y", 8);
-        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token), 1e18, 0.001e18, 0.01e18);
+        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token), 1e18, 0.00005e18, 0.01e18);
 
         uint256 dx = 100e8;
         uint256 amountWad = 100e18;
@@ -1974,7 +1974,7 @@ contract PrivatePoolTest is Test {
 
     function testAmountWadWhenToken1() public {
         MockToken t = new MockToken("Y", "Y", 8);
-        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token), 1e18, 0.001e18, 0.01e18);
+        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token), 1e18, 0.00005e18, 0.01e18);
 
         uint256 dx = 100e6;
         uint256 amountWad = 100e18;
@@ -1983,7 +1983,7 @@ contract PrivatePoolTest is Test {
 
     function testAmountDecimalsWhenToken0() public {
         MockToken t = new MockToken("Y", "Y", 8);
-        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token), 1e18, 0.001e18, 0.01e18);
+        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token), 1e18, 0.00005e18, 0.01e18);
 
         uint256 dx = 100e8;
         uint256 amount = 100e18;
@@ -1992,7 +1992,7 @@ contract PrivatePoolTest is Test {
 
     function testAmountDecimalsWhenToken1() public {
         MockToken t = new MockToken("Y", "Y", 8);
-        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token), 1e18, 0.001e18, 0.01e18);
+        MockPrivatePool p = new MockPrivatePool(OWNER, address(t), address(token), 1e18, 0.00005e18, 0.01e18);
 
         uint256 dx = 100e6;
         uint256 amount = 100e18;

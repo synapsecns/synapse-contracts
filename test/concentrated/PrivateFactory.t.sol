@@ -53,7 +53,7 @@ contract PrivateFactoryTest is Test {
 
     function testDeployCreatesPool() public {
         address user = address(0xBEEF);
-        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.001e18, 0.01e18);
+        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.00005e18, 0.01e18);
         IPrivatePool pool = IPrivatePool(p);
 
         assertEq(pool.factory(), address(factory));
@@ -62,13 +62,13 @@ contract PrivateFactoryTest is Test {
         assertEq(pool.token1(), address(token));
 
         assertEq(pool.P(), 1e18);
-        assertEq(pool.fee(), 0.001e18);
+        assertEq(pool.fee(), 0.00005e18);
         assertEq(pool.adminFee(), 0.01e18);
     }
 
     function testDeployStoresPool() public {
         address user = address(0xBEEF);
-        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.001e18, 0.01e18);
+        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.00005e18, 0.01e18);
         assertEq(factory.pool(user, address(token), address(synToken)), p);
         assertEq(factory.pool(user, address(synToken), address(token)), p);
     }
@@ -79,7 +79,7 @@ contract PrivateFactoryTest is Test {
         address user = address(0xBEEF);
 
         bytes memory code = type(PrivatePool).creationCode;
-        bytes memory bytecode = abi.encodePacked(code, abi.encode(user, token0, token1, 1e18, 0.001e18, 0.01e18));
+        bytes memory bytecode = abi.encodePacked(code, abi.encode(user, token0, token1, 1e18, 0.00005e18, 0.01e18));
 
         bytes32 salt = keccak256(abi.encode(user, token0, token1));
         bytes32 hash = keccak256(abi.encodePacked(bytes1(0xff), address(factory), uint256(salt), keccak256(bytecode)));
@@ -87,27 +87,27 @@ contract PrivateFactoryTest is Test {
 
         vm.expectEmit(true, false, false, true);
         emit Deploy(user, address(synToken), address(token), p);
-        factory.deploy(user, address(token), address(synToken), 1e18, 0.001e18, 0.01e18);
+        factory.deploy(user, address(token), address(synToken), 1e18, 0.00005e18, 0.01e18);
     }
 
     function testDeployRevertsWhenSameToken() public {
         vm.expectRevert("same token for base and quote");
-        factory.deploy(address(0xBEEF), address(token), address(token), 1e18, 0.001e18, 0.01e18);
+        factory.deploy(address(0xBEEF), address(token), address(token), 1e18, 0.00005e18, 0.01e18);
     }
 
     function testDeployRevertsWhenAlreadyExists() public {
-        factory.deploy(address(0xBEEF), address(token), address(synToken), 1e18, 0.001e18, 0.01e18);
+        factory.deploy(address(0xBEEF), address(token), address(synToken), 1e18, 0.00005e18, 0.01e18);
 
         vm.expectRevert("pool already exists");
-        factory.deploy(address(0xBEEF), address(token), address(synToken), 1e18, 0.001e18, 0.01e18);
+        factory.deploy(address(0xBEEF), address(token), address(synToken), 1e18, 0.00005e18, 0.01e18);
 
         vm.expectRevert("pool already exists");
-        factory.deploy(address(0xBEEF), address(synToken), address(token), 1e18, 0.001e18, 0.01e18);
+        factory.deploy(address(0xBEEF), address(synToken), address(token), 1e18, 0.00005e18, 0.01e18);
     }
 
     function testSetAdminFeeOnPoolStoresAdminFee() public {
         address user = address(0xBEEF);
-        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.001e18, 0.01e18);
+        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.00005e18, 0.01e18);
         assertEq(factory.pool(user, address(token), address(synToken)), p); // check exists for setup
 
         uint256 adminFee = 0.1e18;
@@ -118,7 +118,7 @@ contract PrivateFactoryTest is Test {
 
     function testSetAdminFeeOnPoolEmitsNewAdminFeeEvent() public {
         address user = address(0xBEEF);
-        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.001e18, 0.01e18);
+        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.00005e18, 0.01e18);
         assertEq(factory.pool(user, address(token), address(synToken)), p); // check exists for setup
 
         uint256 adminFee = 0.1e18;
@@ -129,7 +129,7 @@ contract PrivateFactoryTest is Test {
 
     function testSetAdminFeeOnPoolRevertsWhenNotOwner() public {
         address user = address(0xBEEF);
-        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.001e18, 0.01e18);
+        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.00005e18, 0.01e18);
         assertEq(factory.pool(user, address(token), address(synToken)), p); // check exists for setup
 
         uint256 adminFee = 0.1e18;
@@ -148,7 +148,7 @@ contract PrivateFactoryTest is Test {
 
     function testSkimPoolSucceedsWhenOwner() public {
         address user = address(0xBEEF);
-        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.001e18, 0.01e18);
+        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.00005e18, 0.01e18);
         assertEq(factory.pool(user, address(token), address(synToken)), p); // check exists for setup
 
         factory.skimPool(user, address(token), address(synToken));
@@ -156,7 +156,7 @@ contract PrivateFactoryTest is Test {
 
     function testSkimPoolRevertsWhenNotOwner() public {
         address user = address(0xBEEF);
-        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.001e18, 0.01e18);
+        address p = factory.deploy(user, address(token), address(synToken), 1e18, 0.00005e18, 0.01e18);
         assertEq(factory.pool(user, address(token), address(synToken)), p); // check exists for setup
 
         vm.expectRevert("!owner");
