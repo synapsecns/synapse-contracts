@@ -100,7 +100,7 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         // Origin domain and nonce are included in `formattedRequest`, so we only need to add the destination domain.
         bytes32 kappa = _kappa(destinationDomain, requestVersion, formattedRequest);
         // Issue allowance if needed
-        _approveToken(burnToken, amount);
+        _approveToken(burnToken, address(tokenMessenger), amount);
         tokenMessenger.depositForBurnWithCaller(
             amount,
             destinationDomain,
@@ -154,13 +154,18 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         return (amount, 0);
     }
 
-    /// @dev Approves the token to be transferred to the Circle Bridge.
-    function _approveToken(address token, uint256 amount) internal {
-        uint256 allowance = IERC20(token).allowance(address(this), address(tokenMessenger));
+    /// @dev Approves the token to be spent by the given spender indefinitely by giving infinite allowance.
+    /// Doesn't modify the allowance if it's already enough for the given amount.
+    function _approveToken(
+        address token,
+        address spender,
+        uint256 amount
+    ) internal {
+        uint256 allowance = IERC20(token).allowance(address(this), spender);
         if (allowance < amount) {
             // Reset allowance to 0 before setting it to the new value.
-            if (allowance != 0) IERC20(token).safeApprove(address(tokenMessenger), 0);
-            IERC20(token).safeApprove(address(tokenMessenger), type(uint256).max);
+            if (allowance != 0) IERC20(token).safeApprove(spender, 0);
+            IERC20(token).safeApprove(spender, type(uint256).max);
         }
     }
 
@@ -211,6 +216,8 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
             IERC20(token).safeTransfer(recipient, amount);
             return (token, amount);
         }
+        // Approve the pool to spend the token, if needed.
+        _approveToken(token, pool, amount);
         amountOut = _trySwap(pool, tokenIndexFrom, tokenIndexTo, amount, deadline, minAmountOut);
         // Fallback to Base Request if failed to swap
         if (amountOut == 0) {
