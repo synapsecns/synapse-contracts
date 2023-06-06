@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IncorrectRequestLength} from "../../contracts/cctp/libs/Errors.sol";
+import {CCTPMessageNotReceived, IncorrectRequestLength} from "../../contracts/cctp/libs/Errors.sol";
 import {BaseCCTPTest, RequestLib} from "./BaseCCTP.t.sol";
 
 contract SynapseCCTPTest is BaseCCTPTest {
@@ -85,6 +85,38 @@ contract SynapseCCTPTest is BaseCCTPTest {
             amount: amount,
             kappa: expected.kappa
         });
+        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
+            message: expected.message,
+            signature: "",
+            requestVersion: RequestLib.REQUEST_BASE,
+            formattedRequest: expected.request
+        });
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount);
+    }
+
+    function testReceiveCircleTokenBaseRequestRevertTransmitterReturnsFalse() public {
+        uint256 amount = 10**8;
+        Params memory expected = getExpectedParams({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+        // Let's imagine that SynapseCCTP has required amount of tokens prior to the call
+        cctpSetups[DOMAIN_AVAX].mintBurnToken.mintPublic(address(synapseCCTPs[DOMAIN_AVAX]), amount);
+        vm.expectRevert(CCTPMessageNotReceived.selector);
+        // Pass 1-byte signature to make MessageTransmitter return false
+        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
+            message: expected.message,
+            signature: new bytes(1),
+            requestVersion: RequestLib.REQUEST_BASE,
+            formattedRequest: expected.request
+        });
+        // Transfer out the tokens that were minted
+        vm.prank(address(synapseCCTPs[DOMAIN_AVAX]));
+        cctpSetups[DOMAIN_AVAX].mintBurnToken.transfer(address(1), amount);
+        // Should be completed when the Transmitter returns true
         synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
             message: expected.message,
             signature: "",

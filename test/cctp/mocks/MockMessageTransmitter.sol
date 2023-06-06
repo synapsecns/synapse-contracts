@@ -35,6 +35,8 @@ contract MockMessageTransmitter is MessageTransmitterEvents, IMessageTransmitter
     }
 
     function receiveMessage(bytes calldata message, bytes calldata signature) external returns (bool success) {
+        // This is added to test if SynapseCCTP could handle MessageTransmitter returning false.
+        if (signature.length == 1) return false;
         require(signature.length % 65 == 0, "Invalid attestation length");
         (
             uint32 remoteDomain,
