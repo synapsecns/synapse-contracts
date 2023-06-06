@@ -20,39 +20,41 @@ import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 /// - CALLVALUE is used to pass the msg.value to the target contract.
 /// - `call()` is used instead of `delegatecall()`.
 /// ## Bytecode Table
-/// | Pos  | Opcode | Opcode + Args | Description    | Stack View                    |
-/// | ---- | ------ | ------------- | -------------- | ----------------------------- |
-/// | 0x00 | 0x60   | 0x6020        | push1 0x20     | 32                            |
-/// | 0x02 | 0x36   | 0x36          | calldatasize   | cds 32                        |
-/// | 0x03 | 0x03   | 0x03          | sub            | (cds-32)                      |
-/// | 0x04 | 0x80   | 0x80          | dup1           | (cds-32) (cds-32)             |
-/// | 0x05 | 0x60   | 0x6020        | push1 0x20     | 32 (cds-32) (cds-32)          |
-/// | 0x07 | 0x3d   | 0x3d          | returndatasize | 0 0 (cds-32) (cds-32)         |
-/// | 0x08 | 0x37   | 0x37          | calldatacopy   | (cds-32)                      |
-/// | 0x09 | 0x3d   | 0x3d          | returndatasize | 0 (cds-32)                    |
-/// | 0x0a | 0x3d   | 0x3d          | returndatasize | 0 0 (cds-32)                  |
-/// | 0x0b | 0x3d   | 0x3d          | returndatasize | 0 0 0 (cds-32)                |
-/// | 0x0c | 0x92   | 0x92          | swap3          | (cds-32) 0 0 0                |
-/// | 0x0d | 0x3d   | 0x3d          | returndatasize | 0 (cds-32) 0 0 0              |
-/// | 0x0e | 0x34   | 0x34          | callvalue      | val 0 (cds-32) 0 0 0          |
-/// | 0x0f | 0x3d   | 0x3d          | returndatasize | 0 val 0 (cds-32) 0 0 0        |
-/// | 0x10 | 0x35   | 0x35          | calldataload   | addr val 0 (cds-32) 0 0 0     |
-/// | 0x11 | 0x5a   | 0x5a          | gas            | gas addr val 0 (cds-32) 0 0 0 |
-/// | 0x12 | 0xf1   | 0xf1          | call           | suc 0                         |
-/// | 0x13 | 0x3d   | 0x3d          | returndatasize | rds suc 0                     |
-/// | 0x14 | 0x82   | 0x82          | dup3           | 0 rds suc 0                   |
-/// | 0x15 | 0x80   | 0x80          | dup1           | 0 0 rds suc 0                 |
-/// | 0x16 | 0x3e   | 0x3e          | returndatacopy | suc 0                         |
-/// | 0x17 | 0x90   | 0x90          | swap1          | 0 suc                         |
-/// | 0x18 | 0x3d   | 0x3d          | returndatasize | rds 0 suc                     |
-/// | 0x19 | 0x91   | 0x91          | swap2          | suc 0 rds                     |
-/// | 0x1a | 0x60   | 0x601e        | push1 0x1e     | 0x1e suc 0 rds                |
-/// | 0x1c | 0x57   | 0x57          | jumpi          | 0 rds                         |
-/// | 0x1d | 0xfd   | 0xfd          | revert         |                               |
-/// | 0x1e | 0x5b   | 0x5b          | jumpdest       | 0 rds                         |
-/// | 0x1f | 0xf3   | 0xf3          | return         |                               |
+/// | Pos  | OP   | OP + Args | Description    | S7  | S6   | S5  | S4  | S3     | S2  | S1     | S0     |
+/// | ---- | ---- | --------- | -------------- | --- | ---- | --- | --- | ------ | --- | ------ | ------ |
+/// | 0x00 | 0x60 | 0x6020    | push1 0x20     |     |      |     |     |        |     |        | 32     |
+/// | 0x02 | 0x36 | 0x36      | calldatasize   |     |      |     |     |        |     | cds    | 32     |
+/// | 0x03 | 0x03 | 0x03      | sub            |     |      |     |     |        |     |        | cds-32 |
+/// | 0x04 | 0x80 | 0x80      | dup1           |     |      |     |     |        |     | cds-32 | cds-32 |
+/// | 0x05 | 0x60 | 0x6020    | push1 0x20     |     |      |     |     |        | 32  | cds-32 | cds-32 |
+/// | 0x07 | 0x3d | 0x3d      | returndatasize |     |      |     |     | 0      | 32  | cds-32 | cds-32 |
+/// | 0x08 | 0x37 | 0x37      | calldatacopy   |     |      |     |     |        |     |        | cds-32 |
+/// | 0x09 | 0x3d | 0x3d      | returndatasize |     |      |     |     |        |     | 0      | cds-32 |
+/// | 0x0a | 0x3d | 0x3d      | returndatasize |     |      |     |     |        | 0   | 0      | cds-32 |
+/// | 0x0b | 0x3d | 0x3d      | returndatasize |     |      |     |     | 0      | 0   | 0      | cds-32 |
+/// | 0x0c | 0x92 | 0x92      | swap3          |     |      |     |     | cds-32 | 0   | 0      | 0      |
+/// | 0x0d | 0x3d | 0x3d      | returndatasize |     |      |     | 0   | cds-32 | 0   | 0      | 0      |
+/// | 0x0e | 0x34 | 0x34      | callvalue      |     |      | val | 0   | cds-32 | 0   | 0      | 0      |
+/// | 0x0f | 0x3d | 0x3d      | returndatasize |     | 0    | val | 0   | cds-32 | 0   | 0      | 0      |
+/// | 0x10 | 0x35 | 0x35      | calldataload   |     | addr | val | 0   | cds-32 | 0   | 0      | 0      |
+/// | 0x11 | 0x5a | 0x5a      | gas            | gas | addr | val | 0   | cds-32 | 0   | 0      | 0      |
+/// | 0x12 | 0xf1 | 0xf1      | call           |     |      |     |     |        |     | suc    | 0      |
+/// | 0x13 | 0x3d | 0x3d      | returndatasize |     |      |     |     |        | rds | suc    | 0      |
+/// | 0x14 | 0x82 | 0x82      | dup3           |     |      |     |     | 0      | rds | suc    | 0      |
+/// | 0x15 | 0x80 | 0x80      | dup1           |     |      |     | 0   | 0      | rds | suc    | 0      |
+/// | 0x16 | 0x3e | 0x3e      | returndatacopy |     |      |     |     |        |     | suc    | 0      |
+/// | 0x17 | 0x90 | 0x90      | swap1          |     |      |     |     |        |     | 0      | suc    |
+/// | 0x18 | 0x3d | 0x3d      | returndatasize |     |      |     |     |        | rds | 0      | suc    |
+/// | 0x19 | 0x91 | 0x91      | swap2          |     |      |     |     |        | suc | 0      | rds    |
+/// | 0x1a | 0x60 | 0x601e    | push1 0x1e     |     |      |     |     | 0x1e   | suc | 0      | rds    |
+/// | 0x1c | 0x57 | 0x57      | jumpi          |     |      |     |     |        |     | 0      | rds    |
+/// | 0x1d | 0xfd | 0xfd      | revert         |     |      |     |     |        |     |        |        |
+/// | 0x1e | 0x5b | 0x5b      | jumpdest       |     |      |     |     |        |     | 0      | rds    |
+/// | 0x1f | 0xf3 | 0xf3      | return         |     |      |     |     |        |     |        |        |
 /// > - Opcode + Args refers to the bytecode of the opcode and its arguments (if there are any).
-/// > - Stack View is shown after the execution of the opcode.
+/// > - Stack View (S7..S0) is shown after the execution of the opcode.
+/// > - The stack elements are shown from top to bottom.
+/// > Opcodes are typically dealing with the top stack elements, so they are shown first.
 /// > - `cds` refers to the calldata size.
 /// > - `rds` refers to the returndata size (which is zero before the first external call).
 /// > - `val` refers to the provided `msg.value`.
@@ -108,14 +110,14 @@ import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 /// - Replaced second PUSH1 opcode with RETURNDATASIZE to push 0 onto the stack.
 /// > `bytecode` refers to the bytecode specified in the above table.
 /// ## Init Code Table
-/// | Pos  | Opcode | Opcode + Args | Description     | Stack View |
-/// | ---- | ------ | ------------- | --------------- | ---------- |
-/// | 0x00 | 0x7f   | 0x7fXXXX      | push32 bytecode | bytecode   |
-/// | 0x1b | 0x3d   | 0x3d          | returndatasize  | 0 bytecode |
-/// | 0x1c | 0x52   | 0x52          | mstore          |            |
-/// | 0x1d | 0x60   | 0x6020        | push1 0x20      | 32         |
-/// | 0x1f | 0x3d   | 0x3d          | returndatasize  | 0 32       |
-/// | 0x20 | 0xf3   | 0xf3          | return          |            |
+/// | Pos  | OP   | OP + Args | Description     | S1  | S0       |
+/// | ---- | ---- | --------- | --------------- | --- | -------- |
+/// | 0x00 | 0x7f | 0x7fXXXX  | push32 bytecode |     | bytecode |
+/// | 0x1b | 0x3d | 0x3d      | returndatasize  | 0   | bytecode |
+/// | 0x1c | 0x52 | 0x52      | mstore          |     |          |
+/// | 0x1d | 0x60 | 0x6020    | push1 0x20      |     | 32       |
+/// | 0x1f | 0x3d | 0x3d      | returndatasize  | 0   | 32       |
+/// | 0x20 | 0xf3 | 0xf3      | return          |     |          |
 /// > Init Code is executed when a contract is deployed. The returned value is saved as the contract code.
 /// > Therefore, the init code is constructed in such a way that it returns the Minimal Forwarder bytecode.
 /// ## Init Code Explanation
