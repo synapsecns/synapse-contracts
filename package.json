@@ -6,7 +6,7 @@
   "scripts": {
     "test": "hardhat test --parallel",
     "build": "hardhat compile && npm run build:go",
-    "build:go": "sol-merger \"./contracts/bridge/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/wrappers/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/testing/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/meta/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/messaging/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/messaging/apps/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin",
+    "build:go": "script/sh/flatten.sh contracts/bridge/*.sol contracts/bridge/wrappers/*.sol contracts/bridge/testing/*.sol contracts/amm/*.sol contracts/messaging/*.sol contracts/messaging/apps/*.sol",
     "post-install": "build:go",
     "test:coverage": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" hardhat coverage",
     "prepublishOnly": "npm run build",
