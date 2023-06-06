@@ -235,10 +235,18 @@ contract LinkedPoolTest is Test {
     function test_addPool_revert_parentPool() public {
         complexSetup();
         // [T1, T2, T3] was already used to add node with indexes 6 and 7
-        vm.expectRevert("Parent pool can't be attached");
+        vm.expectRevert("Pool already on path to root");
         swap.addPool(6, address(pool123), address(0), 3);
-        vm.expectRevert("Parent pool can't be attached");
+        vm.expectRevert("Pool already on path to root");
         swap.addPool(7, address(pool123), address(0), 3);
+    }
+
+    function test_addPool_revert_poolUsedOnRootPath() public {
+        complexSetup();
+        // [BT, T0, T1] was already used to add node with indexes 1 and 2
+        vm.expectRevert("Pool already on path to root");
+        // Node 3 was added using pool01, but poolB01 is present on the root path
+        swap.addPool(3, address(poolB01), address(0), 3);
     }
 
     function test_calculateSwap_returns0_tokenIdentical() public {
