@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {LocalCCTPTokenNotFound, RemoteCCTPDeploymentNotSet, RemoteCCTPTokenNotSet} from "./libs/Errors.sol";
+import {CCTPMessageNotReceived, LocalCCTPTokenNotFound, RemoteCCTPDeploymentNotSet, RemoteCCTPTokenNotSet} from "./libs/Errors.sol";
 import {SynapseCCTPEvents} from "./events/SynapseCCTPEvents.sol";
 import {IMessageTransmitter} from "./interfaces/IMessageTransmitter.sol";
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
@@ -162,7 +162,9 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         bytes memory payload = abi.encodeWithSelector(IMessageTransmitter.receiveMessage.selector, message, signature);
         // Use the deployed forwarder (who is the only one who can call the Circle Bridge for this message)
         // This will revert if the provided message is not properly formatted, or if the signatures are invalid.
-        forwarder.forwardCall(address(messageTransmitter), payload);
+        bytes memory returnData = forwarder.forwardCall(address(messageTransmitter), payload);
+        // messageTransmitter.receiveMessage is supposed to return true if the message was received.
+        if (!abi.decode(returnData, (bool))) revert CCTPMessageNotReceived();
     }
 
     /// @dev Performs a swap, if was requested back on origin chain, and transfers the tokens to the recipient.
