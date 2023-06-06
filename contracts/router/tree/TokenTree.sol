@@ -118,10 +118,9 @@ abstract contract TokenTree {
             _poolMap[pool] = Pool({module: poolModule, index: poolIndex});
             wasAdded = true;
         } else {
-            // Check that the pool does not connect the node to its parent
-            require(node.poolIndex != poolIndex, "Parent pool can't be attached");
-            // Check that the pool is not already attached to the node
-            require(_attachedPools[nodeIndex] & (1 << poolIndex) == 0, "Pool already attached");
+            // Check if the existing pool could be added to the node. This enforces some sanity checks,
+            // as well the invariant that any path from root to node doesn't contain the same pool twice.
+            _checkPoolAddition(nodeIndex, node.depth, poolIndex);
         }
         // Remember that the pool is attached to the node
         _attachedPools[nodeIndex] |= 1 << poolIndex;
@@ -529,6 +528,29 @@ abstract contract TokenTree {
     }
 
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
+
+    /// @dev Checks if a pool could be added to the tree at the given node. Requirements:
+    /// - Pool is not already attached to the node: no need to add twice.
+    /// - Pool is not present on the path from the node to root: this would invalidate swaps from added nodes to root,
+    /// as this path would contain this pool twice.
+    function _checkPoolAddition(
+        uint256 nodeIndex,
+        uint256 nodeDepth,
+        uint8 poolIndex
+    ) internal view {
+        // Check that the pool is not already attached to the node
+        require(_attachedPools[nodeIndex] & (1 << poolIndex) == 0, "Pool already attached");
+        // Here we iterate over all nodes from the root to the node, and check that the pool connecting the current node
+        // to its parent is not the pool we want to add. We skip the root node (depth 0), as it has no parent.
+        uint256 rootPath = _rootPath[nodeIndex];
+        for (uint256 d = 1; d <= nodeDepth; ) {
+            uint256 nodeIndex_ = _extractNodeIndex(rootPath, d);
+            require(_nodes[nodeIndex_].poolIndex != poolIndex, "Pool already on path to root");
+            unchecked {
+                ++d;
+            }
+        }
+    }
 
     /// @dev Finds the lowest common ancestor of two different nodes in the tree.
     /// Node is defined by the path from the root to the node, and the depth of the node.
