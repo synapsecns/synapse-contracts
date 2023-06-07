@@ -31,7 +31,9 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
             swapParams
         );
         // Construct the request identifier to be used as salt later.
-        // Origin domain and nonce are already part of the request, so we only need to add the destination domain.
+        // The identifier (kappa) is unique for every single request on all the chains.
+        // This is done by including origin and destination domains as well as origin nonce in the hashed data.
+        // Origin domain and nonce are included in `formattedRequest`, so we only need to add the destination domain.
         bytes32 kappa = _kappa(destinationDomain, requestVersion, formattedRequest);
         tokenMessenger.depositForBurnWithCaller(
             amount,
@@ -57,6 +59,8 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         );
         (uint32 originDomain, , address originBurnToken, uint256 amount, address recipient) = RequestLib
             .decodeBaseRequest(baseRequest);
+        // For kappa hashing we use origin and destination domains as well as origin nonce.
+        // This ensures that kappa is unique for each request, and that it is not possible to replay requests.
         bytes32 kappa = _kappa(localDomain, requestVersion, formattedRequest);
         // Kindly ask the Circle Bridge to mint the tokens for us.
         _mintCircleToken(message, signature, kappa);
