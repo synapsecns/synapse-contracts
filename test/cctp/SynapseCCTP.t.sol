@@ -39,7 +39,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
         });
         vm.expectEmit();
         emit CircleRequestSent({
-            destinationDomain: DOMAIN_AVAX,
+            chainId: CHAINID_AVAX,
             nonce: nonce,
             token: originBurnToken,
             amount: amount,
@@ -50,7 +50,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
         vm.prank(user);
         synapseCCTPs[DOMAIN_ETH].sendCircleToken({
             recipient: recipient,
-            destinationDomain: DOMAIN_AVAX,
+            chainId: CHAINID_AVAX,
             burnToken: address(cctpSetups[DOMAIN_ETH].mintBurnToken),
             amount: amount,
             requestVersion: RequestLib.REQUEST_BASE,

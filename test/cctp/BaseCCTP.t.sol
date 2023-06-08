@@ -22,8 +22,11 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         MockTokenMinter tokenMinter;
     }
 
-    uint32 public constant DOMAIN_ETH = 1;
-    uint32 public constant DOMAIN_AVAX = 43114;
+    uint256 public constant CHAINID_ETH = 1;
+    uint256 public constant CHAINID_AVAX = 43114;
+
+    uint32 public constant DOMAIN_ETH = 0;
+    uint32 public constant DOMAIN_AVAX = 1;
 
     mapping(uint32 => CCTPSetup) public cctpSetups;
     mapping(uint32 => SynapseCCTP) public synapseCCTPs;
@@ -36,7 +39,7 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         deployCCTP(DOMAIN_AVAX);
         deploySynapseCCTP(DOMAIN_ETH);
         deploySynapseCCTP(DOMAIN_AVAX);
-        linkDomains(DOMAIN_ETH, DOMAIN_AVAX);
+        linkDomains(CHAINID_ETH, DOMAIN_ETH, CHAINID_AVAX, DOMAIN_AVAX);
         user = makeAddr("User");
         recipient = makeAddr("Recipient");
     }
@@ -57,7 +60,12 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         synapseCCTPs[domain] = synapseCCTP;
     }
 
-    function linkDomains(uint32 domainA, uint32 domainB) public {
+    function linkDomains(
+        uint256 chainIdA,
+        uint32 domainA,
+        uint256 chainIdB,
+        uint32 domainB
+    ) public {
         CCTPSetup memory setupA = cctpSetups[domainA];
         CCTPSetup memory setupB = cctpSetups[domainB];
 
@@ -81,13 +89,15 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
             localToken: address(setupB.mintBurnToken)
         });
 
-        synapseCCTPs[domainA].setRemoteSynapseCCTP({
+        synapseCCTPs[domainA].setRemoteDomainConfig({
+            remoteChainId: chainIdB,
             remoteDomain: domainB,
-            remoteSynapseCCTP_: address(synapseCCTPs[domainB])
+            remoteSynapseCCTP: address(synapseCCTPs[domainB])
         });
-        synapseCCTPs[domainB].setRemoteSynapseCCTP({
+        synapseCCTPs[domainB].setRemoteDomainConfig({
+            remoteChainId: chainIdA,
             remoteDomain: domainA,
-            remoteSynapseCCTP_: address(synapseCCTPs[domainA])
+            remoteSynapseCCTP: address(synapseCCTPs[domainA])
         });
 
         synapseCCTPs[domainA].setLocalToken({remoteDomain: domainB, remoteToken: address(setupB.mintBurnToken)});
