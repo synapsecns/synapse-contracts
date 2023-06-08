@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {CCTPSymbolAlreadyAdded, CCTPSymbolIncorrect, CCTPTokenAlreadyAdded, CCTPTokenNotFound} from "../libs/Errors.sol";
+import {CCTPIncorrectConfig, CCTPSymbolAlreadyAdded, CCTPSymbolIncorrect, CCTPTokenAlreadyAdded, CCTPTokenNotFound} from "../libs/Errors.sol";
 import {BridgeToken} from "../libs/Structs.sol";
 import {TypeCasts} from "../libs/TypeCasts.sol";
 
@@ -28,6 +28,8 @@ abstract contract SynapseCCTPFees is Ownable {
 
     /// @dev Denominator used to calculate the bridge fee
     uint256 private constant FEE_DENOMINATOR = 10**10;
+    /// @dev Maximum relayer fee that can be set: 10 bps
+    uint256 private constant MAX_RELAYER_FEE = 10**7;
     /// @dev Mandatory prefix used for CCTP token symbols to distinguish them from other bridge symbols
     bytes private constant SYMBOL_PREFIX = "CCTP.";
     /// @dev Length of the mandatory prefix used for CCTP token symbols
@@ -62,6 +64,7 @@ abstract contract SynapseCCTPFees is Ownable {
         uint256 minSwapFee,
         uint256 maxFee
     ) external onlyOwner {
+        if (token == address(0)) revert CCTPIncorrectConfig();
         // Add a new token to the list of supported tokens, and check that it hasn't been added before
         if (!_bridgeTokens.add(token)) revert CCTPTokenAlreadyAdded();
         // Check that symbol hasn't been added yet and starts with "CCTP."
@@ -140,6 +143,12 @@ abstract contract SynapseCCTPFees is Ownable {
         uint256 minSwapFee,
         uint256 maxFee
     ) internal {
+        // Check that relayer fee is not too high
+        if (relayerFee > MAX_RELAYER_FEE) revert CCTPIncorrectConfig();
+        // Min base fee must not exceed min swap fee
+        if (minBaseFee > minSwapFee) revert CCTPIncorrectConfig();
+        // Min swap fee must not exceed max fee
+        if (minSwapFee > maxFee) revert CCTPIncorrectConfig();
         feeStructures[token] = CCTPFee({
             relayerFee: relayerFee.safeCastToUint40(),
             minBaseFee: minBaseFee.safeCastToUint72(),

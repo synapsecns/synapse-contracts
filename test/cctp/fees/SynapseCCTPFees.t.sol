@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {CCTPSymbolAlreadyAdded, CCTPSymbolIncorrect, CCTPTokenAlreadyAdded, CCTPTokenNotFound} from "../../../contracts/cctp/libs/Errors.sol";
+import {CCTPIncorrectConfig, CCTPSymbolAlreadyAdded, CCTPSymbolIncorrect, CCTPTokenAlreadyAdded, CCTPTokenNotFound} from "../../../contracts/cctp/libs/Errors.sol";
 import {BridgeToken, SynapseCCTPFees} from "../../../contracts/cctp/fees/SynapseCCTPFees.sol";
 
 import {Test} from "forge-std/Test.sol";
@@ -121,6 +121,31 @@ contract SynapseCCTPFeesTest is Test {
         cctpFees.addToken("CCTP.USDC-new", usdc, 0, 0, 0, 0);
     }
 
+    function testAddTokenRevertsWhenTokenAddressZero() public {
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(0), 0, 0, 0, 0);
+    }
+
+    function testAddTokenRevertsBridgeFeeTooHigh() public {
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        // A bit over 10 bps
+        cctpFees.addToken("CCTP.USDC", address(1), 10**7 + 1, 0, 0, 0);
+    }
+
+    function testAddTokenRevertsMinBaseFeeHigherThanMinSwapFee() public {
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, 10, 9, 100);
+    }
+
+    function testAddTokenRevertsMinSwapFeeHigherThanMaxFee() public {
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, 10, 11, 10);
+    }
+
     // ══════════════════════════════════════════ TESTS: REMOVING TOKENS ═══════════════════════════════════════════════
 
     function addTokensThenRemoveOne() public {
@@ -196,6 +221,28 @@ contract SynapseCCTPFeesTest is Test {
         vm.expectRevert(CCTPTokenNotFound.selector);
         vm.prank(owner);
         cctpFees.setTokenFee(usdc, 0, 0, 0, 0);
+    }
+
+    function testSetTokenFeeRevertsWhenBridgeFeeTooHigh() public {
+        addTokens();
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        // A bit over 10 bps
+        cctpFees.setTokenFee(usdc, 10**7 + 1, 0, 0, 0);
+    }
+
+    function testSetTokenFeeRevertsWhenMinBaseFeeHigherThanMinSwapFee() public {
+        addTokens();
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, 10, 9, 100);
+    }
+
+    function testSetTokenFeeRevertsWhenMinSwapFeeHigherThanMaxFee() public {
+        addTokens();
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, 10, 11, 10);
     }
 
     // ══════════════════════════════════════ TESTS: CALCULATING BRIDGE FEES ═══════════════════════════════════════════

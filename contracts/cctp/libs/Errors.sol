@@ -6,6 +6,7 @@ error CastOverflow();
 error IncorrectRequestLength();
 error UnknownRequestVersion();
 
+error CCTPIncorrectConfig();
 error CCTPSymbolAlreadyAdded();
 error CCTPSymbolIncorrect();
 error CCTPTokenAlreadyAdded();
