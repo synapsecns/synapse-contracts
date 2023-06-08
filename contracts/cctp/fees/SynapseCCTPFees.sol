@@ -73,6 +73,19 @@ abstract contract SynapseCCTPFees is Ownable {
         _setTokenFee(token, relayerFee, minBaseFee, minSwapFee, maxFee);
     }
 
+    /// @notice Removes a token from the list of supported tokens.
+    /// @dev Will revert if the token is not supported.
+    function removeToken(address token) external onlyOwner {
+        // Remove a token from the list of supported tokens, and check that it has been added before
+        if (!_bridgeTokens.remove(token)) revert CCTPTokenNotFound();
+        // Remove token <> symbol link
+        string memory symbol = tokenToSymbol[token];
+        delete tokenToSymbol[token];
+        delete symbolToToken[symbol];
+        // Remove token fee structure
+        delete feeStructures[token];
+    }
+
     /// @notice Updates the fee structure for a supported Circle token.
     /// @dev Will revert if the token is not supported.
     /// @param token        Address of the token

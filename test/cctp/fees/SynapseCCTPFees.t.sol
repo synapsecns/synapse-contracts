@@ -121,6 +121,55 @@ contract SynapseCCTPFeesTest is Test {
         cctpFees.addToken("CCTP.USDC-new", usdc, 0, 0, 0, 0);
     }
 
+    // ══════════════════════════════════════════ TESTS: REMOVING TOKENS ═══════════════════════════════════════════════
+
+    function addTokensThenRemoveOne() public {
+        addTokens();
+        vm.prank(owner);
+        cctpFees.removeToken(usdc);
+    }
+
+    function testRemoveTokenUpdatesBridgeTokensList() public {
+        addTokensThenRemoveOne();
+        BridgeToken[] memory tokens = cctpFees.getBridgeTokens();
+        assertEq(tokens.length, 1);
+        assertEq(tokens[0].symbol, "CCTP.EURC");
+        assertEq(tokens[0].token, eurc);
+    }
+
+    function testRemoveTokenClearsFeeStructure() public {
+        addTokensThenRemoveOne();
+        (uint256 relayerFee, uint256 minBaseFee, uint256 minSwapFee, uint256 maxFee) = cctpFees.feeStructures(usdc);
+        assertEq(relayerFee, 0);
+        assertEq(minBaseFee, 0);
+        assertEq(minSwapFee, 0);
+        assertEq(maxFee, 0);
+    }
+
+    function testRemoveTokenClearsTokenAddress() public {
+        addTokensThenRemoveOne();
+        assertEq(cctpFees.tokenToSymbol(usdc), "");
+    }
+
+    function testRemoveTokenClearsTokenSymbol() public {
+        addTokensThenRemoveOne();
+        assertEq(cctpFees.symbolToToken("CCTP.USDC"), address(0));
+    }
+
+    function testRemoveTokenRevertsWhenCallerNotOwner(address caller) public {
+        addTokens();
+        vm.assume(caller != owner);
+        vm.prank(caller);
+        vm.expectRevert("Ownable: caller is not the owner");
+        cctpFees.removeToken(usdc);
+    }
+
+    function testRemoveTokenRevertsWhenTokenNotFound() public {
+        vm.expectRevert(CCTPTokenNotFound.selector);
+        vm.prank(owner);
+        cctpFees.removeToken(usdc);
+    }
+
     // ════════════════════════════════════════ TESTS: UPDATING TOKEN FEES ═════════════════════════════════════════════
 
     function testSetTokenFee() public {
