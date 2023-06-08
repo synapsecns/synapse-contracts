@@ -10,6 +10,8 @@ contract MockMessageTransmitter is MessageTransmitterEvents, IMessageTransmitter
     uint32 public override localDomain;
     uint64 public override nextAvailableNonce;
 
+    event SignatureReceived(bytes signature);
+
     constructor(uint32 localDomain_) {
         localDomain = localDomain_;
         nextAvailableNonce = 1;
@@ -52,6 +54,7 @@ contract MockMessageTransmitter is MessageTransmitterEvents, IMessageTransmitter
             ITokenMessenger(recipient).handleReceiveMessage(remoteDomain, sender, messageBody),
             "handleReceiveMessage() failed"
         );
+        emit SignatureReceived(signature);
         return true;
     }
 
