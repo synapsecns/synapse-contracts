@@ -7,17 +7,17 @@ abstract contract SynapseCCTPEvents {
     /// @notice Emitted when a Circle token is sent with an attached action request.
     /// @dev To fulfill the request, the validator needs to fetch `message` from `MessageSent` event
     /// emitted by Circle's MessageTransmitter in the same tx, then fetch `signature` for the message from Circle API.
-    /// This data will need to be presented to SynapseCCTP on the destination domain,
+    /// This data will need to be presented to SynapseCCTP on the destination chain,
     /// along with `requestVersion` and `formattedRequest` emitted in this event.
-    /// @param destinationDomain    Domain of destination chain
-    /// @param nonce                Nonce of the CCTP message on origin domain
+    /// @param chainId              Chain ID of the destination chain
+    /// @param nonce                Nonce of the CCTP message on origin chain
     /// @param token                Address of Circle token that was burnt
     /// @param amount               Amount of Circle tokens burnt
     /// @param requestVersion       Version of the request format
-    /// @param formattedRequest     Formatted request for the action to take on the destination domain
+    /// @param formattedRequest     Formatted request for the action to take on the destination chain
     /// @param kappa                Unique identifier of the request
     event CircleRequestSent(
-        uint32 destinationDomain,
+        uint256 chainId,
         uint64 nonce,
         address token,
         uint256 amount,
@@ -27,7 +27,7 @@ abstract contract SynapseCCTPEvents {
     );
 
     /// @notice Emitted when a Circle token is received with an attached action request.
-    /// @param recipient            End recipient of the tokens on this domain
+    /// @param recipient            End recipient of the tokens on this chain
     /// @param mintToken            Address of the minted Circle token
     /// @param fee                  Fee paid for fulfilling the request, in minted tokens
     /// @param token                Address of token that recipient received

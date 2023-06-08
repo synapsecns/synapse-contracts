@@ -31,6 +31,7 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         address synapseCCTP;
     }
 
+    /// @notice Refers to the local domain number used in CCTP messages.
     uint32 public immutable localDomain;
     IMessageTransmitter public immutable messageTransmitter;
     ITokenMessenger public immutable tokenMessenger;
@@ -73,7 +74,7 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
     /// @inheritdoc ISynapseCCTP
     function sendCircleToken(
         address recipient,
-        uint32 destinationDomain,
+        uint256 chainId,
         address burnToken,
         uint256 amount,
         uint32 requestVersion,
@@ -88,12 +89,14 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
             RequestLib.formatBaseRequest(localDomain, nonce, burnToken, amount, recipient),
             swapParams
         );
+        DomainConfig memory config = remoteDomainConfig[chainId];
+        bytes32 dstSynapseCCTP = config.synapseCCTP.addressToBytes32();
+        if (dstSynapseCCTP == 0) revert RemoteCCTPDeploymentNotSet();
+        uint32 destinationDomain = config.domain;
         // Construct the request identifier to be used as salt later.
         // The identifier (kappa) is unique for every single request on all the chains.
         // This is done by including origin and destination domains as well as origin nonce in the hashed data.
         // Origin domain and nonce are included in `formattedRequest`, so we only need to add the destination domain.
-        bytes32 dstSynapseCCTP = remoteSynapseCCTP[destinationDomain];
-        if (dstSynapseCCTP == 0) revert RemoteCCTPDeploymentNotSet();
         bytes32 kappa = _kappa(destinationDomain, requestVersion, formattedRequest);
         // Issue allowance if needed
         _approveToken(burnToken, amount);
@@ -104,7 +107,7 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
             burnToken,
             _destinationCaller(dstSynapseCCTP.bytes32ToAddress(), kappa)
         );
-        emit CircleRequestSent(destinationDomain, nonce, burnToken, amount, requestVersion, formattedRequest, kappa);
+        emit CircleRequestSent(chainId, nonce, burnToken, amount, requestVersion, formattedRequest, kappa);
     }
 
     // TODO: guard this to be only callable by the validators?
