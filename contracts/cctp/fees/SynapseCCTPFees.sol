@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {CCTPSymbolAlreadyAdded, CCTPSymbolIncorrect, CCTPTokenAlreadyAdded, CCTPTokenNotFound} from "../libs/Errors.sol";
+import {BridgeToken} from "../libs/Structs.sol";
 import {TypeCasts} from "../libs/TypeCasts.sol";
 
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
@@ -38,8 +39,8 @@ abstract contract SynapseCCTPFees is Ownable {
     mapping(address => string) public tokenToSymbol;
     /// @notice Maps bridge token symbol into bridge token address
     mapping(string => address) public symbolToToken;
-    /// @dev Maps bridge token address into CCTP fee structure
-    mapping(address => CCTPFee) internal _tokenFees;
+    /// @notice Maps bridge token address into CCTP fee structure
+    mapping(address => CCTPFee) public feeStructures;
     /// @dev A list of all supported bridge tokens
     EnumerableSet.AddressSet internal _bridgeTokens;
 
@@ -90,6 +91,32 @@ abstract contract SynapseCCTPFees is Ownable {
         _setTokenFee(token, relayerFee, minBaseFee, minSwapFee, maxFee);
     }
 
+    // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
+
+    /// @notice Calculates the fee amount for bridging a token to this chain using CCTP.
+    /// @dev Will not check if fee exceeds the token amount. Will return 0 if the token is not supported.
+    /// @param token        Address of the Circle token
+    /// @param amount       Amount of the Circle tokens to be bridged to this chain
+    /// @param isSwap       Whether the request is a swap request
+    /// @return fee         Fee amount
+    function calculateFeeAmount(
+        address token,
+        uint256 amount,
+        bool isSwap
+    ) external view returns (uint256 fee) {
+        return _calculateFeeAmount(token, amount, isSwap);
+    }
+
+    /// @notice Returns the list of all supported bridge tokens and their symbols.
+    function getBridgeTokens() external view returns (BridgeToken[] memory bridgeTokens) {
+        uint256 length = _bridgeTokens.length();
+        bridgeTokens = new BridgeToken[](length);
+        for (uint256 i = 0; i < length; i++) {
+            address token = _bridgeTokens.at(i);
+            bridgeTokens[i] = BridgeToken({symbol: tokenToSymbol[token], token: token});
+        }
+    }
+
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
 
     /// @dev Sets the fee structure for a supported Circle token.
@@ -100,7 +127,7 @@ abstract contract SynapseCCTPFees is Ownable {
         uint256 minSwapFee,
         uint256 maxFee
     ) internal {
-        _tokenFees[token] = CCTPFee({
+        feeStructures[token] = CCTPFee({
             relayerFee: relayerFee.safeCastToUint40(),
             minBaseFee: minBaseFee.safeCastToUint72(),
             minSwapFee: minSwapFee.safeCastToUint72(),
@@ -124,5 +151,22 @@ abstract contract SynapseCCTPFees is Ownable {
                 ++i;
             }
         }
+    }
+
+    /// @dev Calculates the fee amount for bridging a token to this chain using CCTP.
+    /// Will not check if fee exceeds the token amount. Will return 0 if the token is not supported.
+    function _calculateFeeAmount(
+        address token,
+        uint256 amount,
+        bool isSwap
+    ) internal view returns (uint256 fee) {
+        CCTPFee memory feeStructure = feeStructures[token];
+        // Calculate the fee amount
+        fee = (amount * feeStructure.relayerFee) / FEE_DENOMINATOR;
+        // Apply minimum fee
+        uint256 minFee = isSwap ? feeStructure.minSwapFee : feeStructure.minBaseFee;
+        if (fee < minFee) fee = minFee;
+        // Apply maximum fee
+        if (fee > feeStructure.maxFee) fee = feeStructure.maxFee;
     }
 }
