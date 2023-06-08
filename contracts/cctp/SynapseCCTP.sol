@@ -19,12 +19,25 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
     using TypeCasts for address;
     using TypeCasts for bytes32;
 
+    /// @notice Struct defining the configuration of a remote domain that has SynapseCCTP deployed.
+    /// @dev CCTP uses the following convention for domain numbers:
+    /// - 0: Ethereum Mainnet
+    /// - 1: Avalanche Mainnet
+    /// With more chains added, the convention will be extended.
+    /// @param domain       Value for the remote domain used in CCTP messages.
+    /// @param synapseCCTP  Address of the SynapseCCTP deployed on the remote chain.
+    struct DomainConfig {
+        uint32 domain;
+        address synapseCCTP;
+    }
+
     uint32 public immutable localDomain;
     IMessageTransmitter public immutable messageTransmitter;
     ITokenMessenger public immutable tokenMessenger;
 
     // TODO: onlyOwner setters for these
-    mapping(uint32 => bytes32) public remoteSynapseCCTP;
+    // (chainId => configuration of the remote chain)
+    mapping(uint256 => DomainConfig) public remoteDomainConfig;
     mapping(uint256 => address) internal _remoteTokenIdToLocalToken;
 
     constructor(ITokenMessenger tokenMessenger_) {
@@ -44,11 +57,15 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         _remoteTokenIdToLocalToken[_remoteTokenId(remoteDomain, remoteToken)] = localToken;
     }
 
-    /// @notice Sets the remote deployment of SynapseCCTP for the given remote domain.
+    /// @notice Sets the remote domain and deployment of SynapseCCTP for the given remote chainId.
     // TODO: add ownerOnly modifier
-    function setRemoteSynapseCCTP(uint32 remoteDomain, address remoteSynapseCCTP_) external {
+    function setRemoteDomainConfig(
+        uint256 remoteChainId,
+        uint32 remoteDomain,
+        address remoteSynapseCCTP
+    ) external {
         // TODO: add zero checks
-        remoteSynapseCCTP[remoteDomain] = remoteSynapseCCTP_.addressToBytes32();
+        remoteDomainConfig[remoteChainId] = DomainConfig(remoteDomain, remoteSynapseCCTP);
     }
 
     // ════════════════════════════════════════════════ CCTP LOGIC ═════════════════════════════════════════════════════
