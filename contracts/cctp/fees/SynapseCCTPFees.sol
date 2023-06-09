@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {CCTPIncorrectConfig, CCTPSymbolAlreadyAdded, CCTPSymbolIncorrect, CCTPTokenAlreadyAdded, CCTPTokenNotFound} from "../libs/Errors.sol";
+// prettier-ignore
+import {
+    CCTPIncorrectConfig,
+    CCTPInsufficientAmount,
+    CCTPSymbolAlreadyAdded,
+    CCTPSymbolIncorrect,
+    CCTPTokenAlreadyAdded,
+    CCTPTokenNotFound
+} from "../libs/Errors.sol";
 import {BridgeToken} from "../libs/Structs.sol";
 import {TypeCasts} from "../libs/TypeCasts.sol";
 
@@ -43,6 +51,8 @@ abstract contract SynapseCCTPFees is Ownable {
     mapping(string => address) public symbolToToken;
     /// @notice Maps bridge token address into CCTP fee structure
     mapping(address => CCTPFee) public feeStructures;
+    /// @notice Maps bridge token address into accumulated fees
+    mapping(address => uint256) public accumulatedFees;
     /// @dev A list of all supported bridge tokens
     EnumerableSet.AddressSet internal _bridgeTokens;
 
@@ -134,6 +144,23 @@ abstract contract SynapseCCTPFees is Ownable {
     }
 
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
+
+    /// @dev Applies the relayer fee and updates the accumulated fee amount for the token.
+    /// Will revert if the fee exceeds the token amount, or token is not supported.
+    function _applyRelayerFee(
+        address token,
+        uint256 amount,
+        bool isSwap
+    ) internal returns (uint256 amountAfterFee, uint256 fee) {
+        if (!_bridgeTokens.contains(token)) revert CCTPTokenNotFound();
+        fee = _calculateFeeAmount(token, amount, isSwap);
+        if (fee >= amount) revert CCTPInsufficientAmount();
+        // Could use the unchecked math, as we already checked that fee < amount
+        unchecked {
+            amountAfterFee = amount - fee;
+        }
+        accumulatedFees[token] += fee;
+    }
 
     /// @dev Sets the fee structure for a supported Circle token.
     function _setTokenFee(
