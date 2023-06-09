@@ -1,14 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {CCTPIncorrectConfig, CCTPSymbolAlreadyAdded, CCTPSymbolIncorrect, CCTPTokenAlreadyAdded, CCTPTokenNotFound} from "../../../contracts/cctp/libs/Errors.sol";
+// prettier-ignore
+import {
+    CCTPIncorrectConfig,
+    CCTPInsufficientAmount,
+    CCTPSymbolAlreadyAdded,
+    CCTPSymbolIncorrect,
+    CCTPTokenAlreadyAdded,
+    CCTPTokenNotFound
+} from "../../../contracts/cctp/libs/Errors.sol";
 import {BridgeToken, SynapseCCTPFees} from "../../../contracts/cctp/fees/SynapseCCTPFees.sol";
 
 import {Test} from "forge-std/Test.sol";
 
 // solhint-disable-next-line no-empty-blocks
 contract SynapseCCTPFeesHarness is SynapseCCTPFees {
-
+    /// @notice Exposes the internal `_applyRelayerFee` function for testing purposes
+    function applyRelayerFee(
+        address token,
+        uint256 amount,
+        bool isSwap
+    ) external returns (uint256 amountAfterFee, uint256 fee) {
+        return _applyRelayerFee(token, amount, isSwap);
+    }
 }
 
 contract SynapseCCTPFeesTest is Test {
@@ -271,5 +286,93 @@ contract SynapseCCTPFeesTest is Test {
         // EURC fee is 10bps
         assertEq(cctpFees.calculateFeeAmount(eurc, 10**10, false), 10 * 10**6);
         assertEq(cctpFees.calculateFeeAmount(eurc, 2 * 10**10, true), 20 * 10**6);
+    }
+
+    // ══════════════════════════════════════════ TESTS: COLLECTING FEES ═══════════════════════════════════════════════
+
+    function testApplyRelayerFeeReturnsCorrectValues() public {
+        addTokens();
+        // Check Min Fee
+        checkBridgeFeeValues(usdc, 10**9, false, 1 * 10**6);
+        checkBridgeFeeValues(usdc, 10**9, true, 5 * 10**6);
+        checkBridgeFeeValues(eurc, 10**9, false, 2 * 10**6);
+        checkBridgeFeeValues(eurc, 10**9, true, 10 * 10**6);
+        // Check Max Fee
+        checkBridgeFeeValues(usdc, 10**12, false, 100 * 10**6);
+        checkBridgeFeeValues(usdc, 10**12, true, 100 * 10**6);
+        checkBridgeFeeValues(eurc, 10**12, false, 50 * 10**6);
+        checkBridgeFeeValues(eurc, 10**12, true, 50 * 10**6);
+        // Check Percentage Fee
+        checkBridgeFeeValues(usdc, 10**10, false, 5 * 10**6);
+        checkBridgeFeeValues(usdc, 2 * 10**10, true, 10 * 10**6);
+        checkBridgeFeeValues(eurc, 10**10, false, 10 * 10**6);
+        checkBridgeFeeValues(eurc, 2 * 10**10, true, 20 * 10**6);
+    }
+
+    function testApplyRelayerFeeUpdatesAccumulatedFees() public {
+        addTokens();
+        // Check Min Fee
+        checkAccumulatedFees(usdc, 10**9, false, 1 * 10**6);
+        checkAccumulatedFees(usdc, 10**9, true, 5 * 10**6);
+        checkAccumulatedFees(eurc, 10**9, false, 2 * 10**6);
+        checkAccumulatedFees(eurc, 10**9, true, 10 * 10**6);
+        // Check Max Fee
+        checkAccumulatedFees(usdc, 10**12, false, 100 * 10**6);
+        checkAccumulatedFees(usdc, 10**12, true, 100 * 10**6);
+        checkAccumulatedFees(eurc, 10**12, false, 50 * 10**6);
+        checkAccumulatedFees(eurc, 10**12, true, 50 * 10**6);
+        // Check Percentage Fee
+        checkAccumulatedFees(usdc, 10**10, false, 5 * 10**6);
+        checkAccumulatedFees(usdc, 2 * 10**10, true, 10 * 10**6);
+        checkAccumulatedFees(eurc, 10**10, false, 10 * 10**6);
+        checkAccumulatedFees(eurc, 2 * 10**10, true, 20 * 10**6);
+    }
+
+    function checkBridgeFeeValues(
+        address token,
+        uint256 amount,
+        bool isSwap,
+        uint256 expectedFee
+    ) public {
+        (uint256 amountAfterFee, uint256 fee) = cctpFees.applyRelayerFee(token, amount, isSwap);
+        assertEq(amountAfterFee, amount - fee);
+        assertEq(fee, expectedFee);
+    }
+
+    function checkAccumulatedFees(
+        address token,
+        uint256 amount,
+        bool isSwap,
+        uint256 expectedFee
+    ) public {
+        uint256 accumulatedFeesBefore = cctpFees.accumulatedFees(token);
+        cctpFees.applyRelayerFee(token, amount, isSwap);
+        uint256 accumulatedFeesAfter = cctpFees.accumulatedFees(token);
+        assertEq(accumulatedFeesAfter - accumulatedFeesBefore, expectedFee);
+    }
+
+    function testApplyRelayerFeeRevertsWhenTokenNotFound() public {
+        vm.expectRevert(CCTPTokenNotFound.selector);
+        cctpFees.applyRelayerFee(usdc, 10**9, false);
+        vm.expectRevert(CCTPTokenNotFound.selector);
+        cctpFees.applyRelayerFee(eurc, 10**9, true);
+    }
+
+    function testApplyRelayerFeeRevertsWhenAmountInsufficientBaseRequest() public {
+        addTokens();
+        // Set amount equal to min base fee
+        vm.expectRevert(CCTPInsufficientAmount.selector);
+        cctpFees.applyRelayerFee(usdc, 1 * 10**6, false);
+        vm.expectRevert(CCTPInsufficientAmount.selector);
+        cctpFees.applyRelayerFee(eurc, 2 * 10**6, false);
+    }
+
+    function testApplyRelayerFeeRevertsWhenAmountInsufficientSwapRequest() public {
+        addTokens();
+        // Set amount equal to min swap fee
+        vm.expectRevert(CCTPInsufficientAmount.selector);
+        cctpFees.applyRelayerFee(usdc, 5 * 10**6, true);
+        vm.expectRevert(CCTPInsufficientAmount.selector);
+        cctpFees.applyRelayerFee(eurc, 10 * 10**6, true);
     }
 }
