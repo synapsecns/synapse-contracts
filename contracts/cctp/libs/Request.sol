@@ -30,6 +30,9 @@ library RequestLib {
     uint256 internal constant REQUEST_BASE_LENGTH = 5 * 32;
     /// @notice Length of the encoded swap parameters.
     uint256 internal constant SWAP_PARAMS_LENGTH = 5 * 32;
+    /// @notice Length of the encoded swap request.
+    /// Need 2 extra words for each `bytes` field to store its offset in the full payload, and length.
+    uint256 internal constant REQUEST_SWAP_LENGTH = 4 * 32 + REQUEST_BASE_LENGTH + SWAP_PARAMS_LENGTH;
 
     // ════════════════════════════════════════════════ FORMATTING ═════════════════════════════════════════════════════
 
@@ -99,6 +102,7 @@ library RequestLib {
     // ═════════════════════════════════════════════════ DECODING ══════════════════════════════════════════════════════
 
     /// @notice Decodes the base request from a bytes array.
+    /// @dev Will revert if the request is not properly formatted.
     /// @param baseRequest          Formatted base request
     /// @return originDomain        Domain of the origin chain
     /// @return nonce               Nonce of the CCTP message on origin domain
@@ -116,10 +120,12 @@ library RequestLib {
             address recipient
         )
     {
+        if (baseRequest.length != REQUEST_BASE_LENGTH) revert IncorrectRequestLength();
         return abi.decode(baseRequest, (uint32, uint64, address, uint256, address));
     }
 
     /// @notice Decodes the swap parameters from a bytes array.
+    /// @dev Will revert if the swap parameters are not properly formatted.
     /// @param swapParams           Formatted swap parameters
     /// @return pool                Liquidity pool for swapping Circle token on destination chain
     /// @return tokenIndexFrom      Index of the minted Circle token in the pool
@@ -137,11 +143,14 @@ library RequestLib {
             uint256 minAmountOut
         )
     {
+        if (swapParams.length != SWAP_PARAMS_LENGTH) revert IncorrectRequestLength();
         return abi.decode(swapParams, (address, uint8, uint8, uint256, uint256));
     }
 
     /// @notice Decodes the versioned request from a bytes array.
-    /// @dev Will revert if the request version is unknown.
+    /// @dev Will revert if the either of these is true:
+    /// - Request version is unknown.
+    /// - Request is not properly formatted.
     /// @param requestVersion       Version of the request format
     /// @param formattedRequest     Formatted request
     /// @return baseRequest         Formatted base request
@@ -152,8 +161,10 @@ library RequestLib {
         returns (bytes memory baseRequest, bytes memory swapParams)
     {
         if (requestVersion == REQUEST_BASE) {
+            if (formattedRequest.length != REQUEST_BASE_LENGTH) revert IncorrectRequestLength();
             return (formattedRequest, "");
         } else if (requestVersion == REQUEST_SWAP) {
+            if (formattedRequest.length != REQUEST_SWAP_LENGTH) revert IncorrectRequestLength();
             return abi.decode(formattedRequest, (bytes, bytes));
         } else {
             revert UnknownRequestVersion();
