@@ -27,6 +27,9 @@ contract RequestLibraryTest is Test {
 
     uint256 public constant EXPECTED_BASE_REQUEST_LENGTH = 160;
     uint256 public constant EXPECTED_SWAP_PARAMS_LENGTH = 160;
+    // Extra data is two offsets (32 bytes each) and a length (32 bytes)
+    uint256 public constant EXPECTED_SWAP_REQUEST_LENGTH =
+        4 * 32 + EXPECTED_BASE_REQUEST_LENGTH + EXPECTED_SWAP_PARAMS_LENGTH;
 
     function setUp() public {
         libHarness = new RequestLibHarness();
@@ -42,11 +45,11 @@ contract RequestLibraryTest is Test {
         );
         assertEq(baseRequest, abi.encode(rbr.originDomain, rbr.nonce, rbr.originBurnToken, rbr.amount, rbr.recipient));
         assertEq(baseRequest.length, RequestLib.REQUEST_BASE_LENGTH);
-        bytes memory fullRequest = libHarness.formatRequest(RequestLib.REQUEST_BASE, baseRequest, "");
-        assertEq(fullRequest, baseRequest);
+        bytes memory swapRequest = libHarness.formatRequest(RequestLib.REQUEST_BASE, baseRequest, "");
+        assertEq(swapRequest, baseRequest);
         (bytes memory baseRequest_, bytes memory swapParams_) = libHarness.decodeRequest(
             RequestLib.REQUEST_BASE,
-            fullRequest
+            swapRequest
         );
         assertEq(baseRequest_, baseRequest);
         assertEq(swapParams_, "");
@@ -67,22 +70,23 @@ contract RequestLibraryTest is Test {
             rsp.deadline,
             rsp.minAmountOut
         );
-        bytes memory fullRequest = libHarness.formatRequest(RequestLib.REQUEST_SWAP, baseRequest, swapParams);
+        bytes memory swapRequest = libHarness.formatRequest(RequestLib.REQUEST_SWAP, baseRequest, swapParams);
         assertEq(
             swapParams,
             abi.encode(rsp.pool, rsp.tokenIndexFrom, rsp.tokenIndexTo, rsp.deadline, rsp.minAmountOut)
         );
         assertEq(swapParams.length, RequestLib.SWAP_PARAMS_LENGTH);
         assertEq(
-            fullRequest,
+            swapRequest,
             abi.encode(
                 abi.encode(rbr.originDomain, rbr.nonce, rbr.originBurnToken, rbr.amount, rbr.recipient),
                 abi.encode(rsp.pool, rsp.tokenIndexFrom, rsp.tokenIndexTo, rsp.deadline, rsp.minAmountOut)
             )
         );
+        assertEq(swapRequest.length, RequestLib.REQUEST_SWAP_LENGTH);
         (bytes memory baseRequest_, bytes memory swapParams_) = libHarness.decodeRequest(
             RequestLib.REQUEST_SWAP,
-            fullRequest
+            swapRequest
         );
         assertEq(baseRequest_, baseRequest);
         assertEq(swapParams_, swapParams);
@@ -138,6 +142,34 @@ contract RequestLibraryTest is Test {
         assertEq(recipient, rbr.recipient);
     }
 
+    function testDecodeBaseRequestRevertsWhenIncorrectLength(uint256 length) public {
+        length = length % 1024;
+        vm.assume(length != EXPECTED_BASE_REQUEST_LENGTH);
+        bytes memory baseRequest = new bytes(length);
+        vm.expectRevert(IncorrectRequestLength.selector);
+        libHarness.decodeBaseRequest(baseRequest);
+    }
+
+    function testDecodeBaseRequestWithExtraBytes() public {
+        bytes memory baseRequest = abi.encodePacked(
+            libHarness.formatBaseRequest(1, 2, address(3), 4, address(5)),
+            type(uint256).max
+        );
+        // Default ABI decoding ignores extra bytes
+        (uint32 originDomain, uint64 nonce, address originBurnToken, uint256 amount, address recipient) = abi.decode(
+            baseRequest,
+            (uint32, uint64, address, uint256, address)
+        );
+        assertEq(originDomain, 1);
+        assertEq(nonce, 2);
+        assertEq(originBurnToken, address(3));
+        assertEq(amount, 4);
+        assertEq(recipient, address(5));
+        // Decoding library should throw an error
+        vm.expectRevert(IncorrectRequestLength.selector);
+        libHarness.decodeBaseRequest(baseRequest);
+    }
+
     function testDecodeSwapParams(RawSwapParams memory rsp) public {
         bytes memory swapParams = libHarness.formatSwapParams(
             rsp.pool,
@@ -153,5 +185,62 @@ contract RequestLibraryTest is Test {
         assertEq(tokenIndexTo, rsp.tokenIndexTo);
         assertEq(deadline, rsp.deadline);
         assertEq(minAmountOut, rsp.minAmountOut);
+    }
+
+    function testDecodeSwapParamsRevertsWhenIncorrectLength(uint256 length) public {
+        length = length % 1024;
+        vm.assume(length != EXPECTED_SWAP_PARAMS_LENGTH);
+        bytes memory swapParams = new bytes(length);
+        vm.expectRevert(IncorrectRequestLength.selector);
+        libHarness.decodeSwapParams(swapParams);
+    }
+
+    function testDecodeSwapParamsWithExtraBytes() public {
+        bytes memory swapParams = abi.encodePacked(
+            libHarness.formatSwapParams(address(1), 2, 3, 4, 5),
+            type(uint256).max
+        );
+        // Default ABI decoding ignores extra bytes
+        (address pool, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 deadline, uint256 minAmountOut) = abi.decode(
+            swapParams,
+            (address, uint8, uint8, uint256, uint256)
+        );
+        assertEq(pool, address(1));
+        assertEq(tokenIndexFrom, 2);
+        assertEq(tokenIndexTo, 3);
+        assertEq(deadline, 4);
+        assertEq(minAmountOut, 5);
+        // Decoding library should throw an error
+        vm.expectRevert(IncorrectRequestLength.selector);
+        libHarness.decodeSwapParams(swapParams);
+    }
+
+    function testDecodeRequestRevertsWhenIncorrectLength(uint256 length) public {
+        length = length % 1024;
+        bytes memory request = new bytes(length);
+        if (length != EXPECTED_BASE_REQUEST_LENGTH) {
+            vm.expectRevert(IncorrectRequestLength.selector);
+            libHarness.decodeRequest(RequestLib.REQUEST_BASE, request);
+        }
+        if (length != EXPECTED_SWAP_REQUEST_LENGTH) {
+            vm.expectRevert(IncorrectRequestLength.selector);
+            libHarness.decodeRequest(RequestLib.REQUEST_SWAP, request);
+        }
+    }
+
+    function testDecodeRequestWithExtraBytes() public {
+        bytes memory baseRequest = libHarness.formatBaseRequest(1, 2, address(3), 4, address(5));
+        bytes memory swapParams = libHarness.formatSwapParams(address(6), 7, 8, 9, 10);
+        bytes memory swapRequest = abi.encodePacked(
+            libHarness.formatRequest(1, baseRequest, swapParams),
+            type(uint256).max
+        );
+        // Default ABI decoding ignores extra bytes
+        (bytes memory baseRequest_, bytes memory swapParams_) = abi.decode(swapRequest, (bytes, bytes));
+        assertEq(baseRequest_, baseRequest);
+        assertEq(swapParams_, swapParams);
+        // Decoding library should throw an error
+        vm.expectRevert(IncorrectRequestLength.selector);
+        libHarness.decodeRequest(RequestLib.REQUEST_SWAP, swapRequest);
     }
 }
