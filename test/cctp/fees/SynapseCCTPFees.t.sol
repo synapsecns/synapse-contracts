@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 // prettier-ignore
 import {
     CCTPIncorrectConfig,
+    CCTPIncorrectProtocolFee,
     CCTPInsufficientAmount,
     CCTPSymbolAlreadyAdded,
     CCTPSymbolIncorrect,
@@ -43,6 +44,7 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
     function testSetup() public {
         assertEq(cctpFees.owner(), owner);
         assertEq(cctpFees.getBridgeTokens().length, 0);
+        assertEq(cctpFees.protocolFee(), 0);
     }
 
     // ═══════════════════════════════════════════ TESTS: ADDING TOKENS ════════════════════════════════════════════════
@@ -450,5 +452,44 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         cctpFees.setFeeCollector(collector2);
         assertEq(cctpFees.relayerFeeCollectors(relayer0), collector1);
         assertEq(cctpFees.relayerFeeCollectors(relayer1), collector2);
+    }
+
+    // ════════════════════════════════════════════ TESTS: PROTOCOL FEE ════════════════════════════════════════════════
+
+    function testSetProtocolFeeUpdatesProtocolFee() public {
+        // Set initial protocol fee
+        vm.prank(owner);
+        cctpFees.setProtocolFee(10**9);
+        assertEq(cctpFees.protocolFee(), 10**9);
+        // Update protocol fee
+        vm.prank(owner);
+        cctpFees.setProtocolFee(5 * 10**9);
+        assertEq(cctpFees.protocolFee(), 5 * 10**9);
+    }
+
+    function testSetProtocolFeeEmitsEvent() public {
+        // Set initial protocol fee
+        vm.expectEmit();
+        emit ProtocolFeeUpdated(10**9);
+        vm.prank(owner);
+        cctpFees.setProtocolFee(10**9);
+        // Update protocol fee
+        vm.expectEmit();
+        emit ProtocolFeeUpdated(5 * 10**9);
+        vm.prank(owner);
+        cctpFees.setProtocolFee(5 * 10**9);
+    }
+
+    function testSetProtocolFeeRevertsWhenCallerNotOwner(address caller) public {
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        cctpFees.setProtocolFee(10**9);
+    }
+
+    function testSetProtocolFeeRevertsWhenProtocolFeeTooHigh() public {
+        vm.expectRevert(CCTPIncorrectProtocolFee.selector);
+        vm.prank(owner);
+        cctpFees.setProtocolFee(5 * 10**9 + 1);
     }
 }

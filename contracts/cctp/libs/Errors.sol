@@ -7,6 +7,7 @@ error IncorrectRequestLength();
 error UnknownRequestVersion();
 
 error CCTPIncorrectConfig();
+error CCTPIncorrectProtocolFee();
 error CCTPInsufficientAmount();
 error CCTPSymbolAlreadyAdded();
 error CCTPSymbolIncorrect();

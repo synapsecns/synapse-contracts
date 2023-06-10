@@ -5,6 +5,7 @@ import {SynapseCCTPFeesEvents} from "../events/SynapseCCTPFeesEvents.sol";
 // prettier-ignore
 import {
     CCTPIncorrectConfig,
+    CCTPIncorrectProtocolFee,
     CCTPInsufficientAmount,
     CCTPSymbolAlreadyAdded,
     CCTPSymbolIncorrect,
@@ -39,6 +40,8 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
     uint256 private constant FEE_DENOMINATOR = 10**10;
     /// @dev Maximum relayer fee that can be set: 10 bps
     uint256 private constant MAX_RELAYER_FEE = 10**7;
+    /// @dev Maximum protocol fee that can be set: 50%
+    uint256 private constant MAX_PROTOCOL_FEE = FEE_DENOMINATOR / 2;
     /// @dev Mandatory prefix used for CCTP token symbols to distinguish them from other bridge symbols
     bytes private constant SYMBOL_PREFIX = "CCTP.";
     /// @dev Length of the mandatory prefix used for CCTP token symbols
@@ -57,8 +60,11 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
     /// @dev Fee collector address of address(0) indicates that fees are accumulated by the Protocol
     mapping(address => mapping(address => uint256)) public accumulatedFees;
     /// @notice Maps Relayer address into collector address for accumulated Relayer's fees
-    /// @dev Default value of address(0) indicates that Relayer's fees are accumulated by the Protocol
+    /// @dev Default value of address(0) indicates that a Relayer's fees are accumulated by the Protocol
     mapping(address => address) public relayerFeeCollectors;
+    /// @notice Protocol fee: percentage of the relayer fee that is collected by the Protocol
+    /// @dev Protocol collects the full fee amount, if the Relayer hasn't set a fee collector
+    uint256 public protocolFee;
     /// @dev A list of all supported bridge tokens
     EnumerableSet.AddressSet internal _bridgeTokens;
 
@@ -121,6 +127,15 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
     ) external onlyOwner {
         if (!_bridgeTokens.contains(token)) revert CCTPTokenNotFound();
         _setTokenFee(token, relayerFee, minBaseFee, minSwapFee, maxFee);
+    }
+
+    /// @notice Sets a new protocol fee.
+    /// @dev The protocol fee is a percentage of the relayer fee that is collected by the Protocol.
+    /// @param newProtocolFee   New protocol fee, multiplied by `FEE_DENOMINATOR`
+    function setProtocolFee(uint256 newProtocolFee) external onlyOwner {
+        if (newProtocolFee > MAX_PROTOCOL_FEE) revert CCTPIncorrectProtocolFee();
+        protocolFee = newProtocolFee;
+        emit ProtocolFeeUpdated(newProtocolFee);
     }
 
     // ═══════════════════════════════════════════ RELAYER INTERACTIONS ════════════════════════════════════════════════
