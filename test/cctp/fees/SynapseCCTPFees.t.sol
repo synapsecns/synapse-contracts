@@ -10,7 +10,7 @@ import {
     CCTPTokenAlreadyAdded,
     CCTPTokenNotFound
 } from "../../../contracts/cctp/libs/Errors.sol";
-import {BridgeToken, SynapseCCTPFees} from "../../../contracts/cctp/fees/SynapseCCTPFees.sol";
+import {BridgeToken, SynapseCCTPFees, SynapseCCTPFeesEvents} from "../../../contracts/cctp/fees/SynapseCCTPFees.sol";
 
 import {Test} from "forge-std/Test.sol";
 
@@ -26,7 +26,7 @@ contract SynapseCCTPFeesHarness is SynapseCCTPFees {
     }
 }
 
-contract SynapseCCTPFeesTest is Test {
+contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
     SynapseCCTPFeesHarness public cctpFees;
     address public owner;
     address public usdc;
@@ -374,5 +374,65 @@ contract SynapseCCTPFeesTest is Test {
         cctpFees.applyRelayerFee(usdc, 5 * 10**6, true);
         vm.expectRevert(CCTPInsufficientAmount.selector);
         cctpFees.applyRelayerFee(eurc, 10 * 10**6, true);
+    }
+
+    // ═══════════════════════════════════════ TESTS: SETTING FEE COLLECTOR ════════════════════════════════════════════
+
+    function testSetFeeCollectorFirstCallSetsCollector() public {
+        address relayer = makeAddr("Relayer");
+        address collector = makeAddr("Collector");
+        vm.prank(relayer);
+        cctpFees.setFeeCollector(collector);
+        assertEq(cctpFees.relayerFeeCollectors(relayer), collector);
+    }
+
+    function testSetFeeCollectorFirstCallEmitsEvent() public {
+        address relayer = makeAddr("Relayer");
+        address collector = makeAddr("Collector");
+        vm.expectEmit();
+        emit FeeCollectorUpdated(relayer, address(0), collector);
+        vm.prank(relayer);
+        cctpFees.setFeeCollector(collector);
+    }
+
+    function testSetFeeCollectorSubsequentCallUpdatesCollector() public {
+        address relayer = makeAddr("Relayer");
+        address collector0 = makeAddr("Collector 0");
+        address collector1 = makeAddr("Collector 1");
+        vm.prank(relayer);
+        cctpFees.setFeeCollector(collector0);
+        vm.prank(relayer);
+        cctpFees.setFeeCollector(collector1);
+        assertEq(cctpFees.relayerFeeCollectors(relayer), collector1);
+    }
+
+    function testSetFeeCollectorSubsequentCallEmitsEvent() public {
+        address relayer = makeAddr("Relayer");
+        address collector0 = makeAddr("Collector 0");
+        address collector1 = makeAddr("Collector 1");
+        vm.prank(relayer);
+        cctpFees.setFeeCollector(collector0);
+        vm.expectEmit();
+        emit FeeCollectorUpdated(relayer, collector0, collector1);
+        vm.prank(relayer);
+        cctpFees.setFeeCollector(collector1);
+    }
+
+    function testSetFeeCollectorDifferentRelayers() public {
+        address relayer0 = makeAddr("Relayer 0");
+        address relayer1 = makeAddr("Relayer 1");
+        address collector0 = makeAddr("Collector 0");
+        address collector1 = makeAddr("Collector 1");
+        address collector2 = makeAddr("Collector 2");
+        vm.prank(relayer0);
+        cctpFees.setFeeCollector(collector0);
+        vm.prank(relayer1);
+        cctpFees.setFeeCollector(collector0);
+        vm.prank(relayer0);
+        cctpFees.setFeeCollector(collector1);
+        vm.prank(relayer1);
+        cctpFees.setFeeCollector(collector2);
+        assertEq(cctpFees.relayerFeeCollectors(relayer0), collector1);
+        assertEq(cctpFees.relayerFeeCollectors(relayer1), collector2);
     }
 }

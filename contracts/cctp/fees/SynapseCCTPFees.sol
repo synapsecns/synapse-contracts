@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {SynapseCCTPFeesEvents} from "../events/SynapseCCTPFeesEvents.sol";
 // prettier-ignore
 import {
     CCTPIncorrectConfig,
@@ -16,7 +17,7 @@ import {TypeCasts} from "../libs/TypeCasts.sol";
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableSet.sol";
 
-abstract contract SynapseCCTPFees is Ownable {
+abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     using TypeCasts for uint256;
 
@@ -53,6 +54,9 @@ abstract contract SynapseCCTPFees is Ownable {
     mapping(address => CCTPFee) public feeStructures;
     /// @notice Maps bridge token address into accumulated fees
     mapping(address => uint256) public accumulatedFees;
+    /// @notice Maps Relayer address into collector address for accumulated Relayer's fees
+    /// @dev Default value of address(0) indicates that Relayer's fees are accumulated by the Protocol
+    mapping(address => address) public relayerFeeCollectors;
     /// @dev A list of all supported bridge tokens
     EnumerableSet.AddressSet internal _bridgeTokens;
 
@@ -115,6 +119,18 @@ abstract contract SynapseCCTPFees is Ownable {
     ) external onlyOwner {
         if (!_bridgeTokens.contains(token)) revert CCTPTokenNotFound();
         _setTokenFee(token, relayerFee, minBaseFee, minSwapFee, maxFee);
+    }
+
+    // ═══════════════════════════════════════════ RELAYER INTERACTIONS ════════════════════════════════════════════════
+
+    /// @notice Allows the Relayer to set a fee collector for accumulated fees.
+    /// - New fees accumulated by the Relayer could only be withdrawn by new Relayer's fee collector.
+    /// - Old fees accumulated by the Relayer could only be withdrawn by old Relayer's fee collector.
+    /// @dev Default value of address(0) indicates that a Relayer's fees are accumulated by the Protocol.
+    function setFeeCollector(address feeCollector) external {
+        address oldFeeCollector = relayerFeeCollectors[msg.sender];
+        relayerFeeCollectors[msg.sender] = feeCollector;
+        emit FeeCollectorUpdated(msg.sender, oldFeeCollector, feeCollector);
     }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
