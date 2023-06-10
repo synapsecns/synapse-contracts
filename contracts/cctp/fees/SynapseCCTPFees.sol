@@ -192,9 +192,18 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
         unchecked {
             amountAfterFee = amount - fee;
         }
-        // Get the fee collector for the Relayer. If it is not set (address(0)), Protocol will collect the fees.
+        // Check if the Relayer has specified a fee collector
         address feeCollector = relayerFeeCollectors[msg.sender];
-        accumulatedFees[feeCollector][token] += fee;
+        if (feeCollector == address(0)) {
+            // If the fee collector is not set, the Protocol will collect the full fees
+            accumulatedFees[address(0)][token] += fee;
+        } else {
+            // Otherwise, the Relayer and the Protocol will split the fees
+            uint256 protocolFeeAmount = (fee * protocolFee) / FEE_DENOMINATOR;
+            accumulatedFees[address(0)][token] += protocolFeeAmount;
+            accumulatedFees[feeCollector][token] += fee - protocolFeeAmount;
+        }
+        // TODO: emit event with fee distribution?
     }
 
     /// @dev Sets the fee structure for a supported Circle token.
