@@ -52,8 +52,10 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
     mapping(string => address) public symbolToToken;
     /// @notice Maps bridge token address into CCTP fee structure
     mapping(address => CCTPFee) public feeStructures;
-    /// @notice Maps bridge token address into accumulated fees
-    mapping(address => uint256) public accumulatedFees;
+    /// @notice Maps fee collector address into accumulated fees for a token
+    /// (feeCollector => (token => amount))
+    /// @dev Fee collector address of address(0) indicates that fees are accumulated by the Protocol
+    mapping(address => mapping(address => uint256)) public accumulatedFees;
     /// @notice Maps Relayer address into collector address for accumulated Relayer's fees
     /// @dev Default value of address(0) indicates that Relayer's fees are accumulated by the Protocol
     mapping(address => address) public relayerFeeCollectors;
@@ -175,7 +177,9 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
         unchecked {
             amountAfterFee = amount - fee;
         }
-        accumulatedFees[token] += fee;
+        // Get the fee collector for the Relayer. If it is not set (address(0)), Protocol will collect the fees.
+        address feeCollector = relayerFeeCollectors[msg.sender];
+        accumulatedFees[feeCollector][token] += fee;
     }
 
     /// @dev Sets the fee structure for a supported Circle token.

@@ -309,23 +309,36 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         checkBridgeFeeValues(eurc, 2 * 10**10, true, 20 * 10**6);
     }
 
-    function testApplyRelayerFeeUpdatesAccumulatedFees() public {
+    function testApplyRelayerFeeUpdatesAccumulatedFeesCollectorNotSet() public {
         addTokens();
+        applyRelayerFeeScenarios(makeAddr("Relayer"), address(0));
+    }
+
+    function testApplyRelayerFeeUpdatesAccumulatedFeesCollectorSet() public {
+        addTokens();
+        address relayer = makeAddr("Relayer");
+        address collector = makeAddr("Collector");
+        vm.prank(relayer);
+        cctpFees.setFeeCollector(collector);
+        applyRelayerFeeScenarios(relayer, collector);
+    }
+
+    function applyRelayerFeeScenarios(address relayer, address collector) public {
         // Check Min Fee
-        checkAccumulatedFees(usdc, 10**9, false, 1 * 10**6);
-        checkAccumulatedFees(usdc, 10**9, true, 5 * 10**6);
-        checkAccumulatedFees(eurc, 10**9, false, 2 * 10**6);
-        checkAccumulatedFees(eurc, 10**9, true, 10 * 10**6);
+        checkAccumulatedFees(usdc, 10**9, false, 1 * 10**6, relayer, collector);
+        checkAccumulatedFees(usdc, 10**9, true, 5 * 10**6, relayer, collector);
+        checkAccumulatedFees(eurc, 10**9, false, 2 * 10**6, relayer, collector);
+        checkAccumulatedFees(eurc, 10**9, true, 10 * 10**6, relayer, collector);
         // Check Max Fee
-        checkAccumulatedFees(usdc, 10**12, false, 100 * 10**6);
-        checkAccumulatedFees(usdc, 10**12, true, 100 * 10**6);
-        checkAccumulatedFees(eurc, 10**12, false, 50 * 10**6);
-        checkAccumulatedFees(eurc, 10**12, true, 50 * 10**6);
+        checkAccumulatedFees(usdc, 10**12, false, 100 * 10**6, relayer, collector);
+        checkAccumulatedFees(usdc, 10**12, true, 100 * 10**6, relayer, collector);
+        checkAccumulatedFees(eurc, 10**12, false, 50 * 10**6, relayer, collector);
+        checkAccumulatedFees(eurc, 10**12, true, 50 * 10**6, relayer, collector);
         // Check Percentage Fee
-        checkAccumulatedFees(usdc, 10**10, false, 5 * 10**6);
-        checkAccumulatedFees(usdc, 2 * 10**10, true, 10 * 10**6);
-        checkAccumulatedFees(eurc, 10**10, false, 10 * 10**6);
-        checkAccumulatedFees(eurc, 2 * 10**10, true, 20 * 10**6);
+        checkAccumulatedFees(usdc, 10**10, false, 5 * 10**6, relayer, collector);
+        checkAccumulatedFees(usdc, 2 * 10**10, true, 10 * 10**6, relayer, collector);
+        checkAccumulatedFees(eurc, 10**10, false, 10 * 10**6, relayer, collector);
+        checkAccumulatedFees(eurc, 2 * 10**10, true, 20 * 10**6, relayer, collector);
     }
 
     function checkBridgeFeeValues(
@@ -343,11 +356,14 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         address token,
         uint256 amount,
         bool isSwap,
-        uint256 expectedFee
+        uint256 expectedFee,
+        address relayer,
+        address collector
     ) public {
-        uint256 accumulatedFeesBefore = cctpFees.accumulatedFees(token);
+        uint256 accumulatedFeesBefore = cctpFees.accumulatedFees(collector, token);
+        vm.prank(relayer);
         cctpFees.applyRelayerFee(token, amount, isSwap);
-        uint256 accumulatedFeesAfter = cctpFees.accumulatedFees(token);
+        uint256 accumulatedFeesAfter = cctpFees.accumulatedFees(collector, token);
         assertEq(accumulatedFeesAfter - accumulatedFeesBefore, expectedFee);
     }
 
