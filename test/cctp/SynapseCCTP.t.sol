@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {CCTPMessageNotReceived, IncorrectRequestLength} from "../../contracts/cctp/libs/Errors.sol";
+import {CCTPMessageNotReceived, CCTPZeroAmount, IncorrectRequestLength} from "../../contracts/cctp/libs/Errors.sol";
 import {BaseCCTPTest, RequestLib} from "./BaseCCTP.t.sol";
 
 contract SynapseCCTPTest is BaseCCTPTest {
@@ -521,6 +521,103 @@ contract SynapseCCTPTest is BaseCCTPTest {
             swapParams: swapParams
         });
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
+    }
+
+    // ══════════════════════════════════════════ TESTS: WITHDRAWING FEES ══════════════════════════════════════════════
+
+    function accumulateFees() public {
+        uint256 amount = 10**8; // baseFee is 10**6
+        Params memory expected = getExpectedParams({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+        address unregisteredRelayer = makeAddr("UnregisteredRelayer");
+        vm.prank(unregisteredRelayer);
+        // Full fee should go to the protocol: 10**6
+        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
+            message: expected.message,
+            signature: "",
+            requestVersion: RequestLib.REQUEST_BASE,
+            formattedRequest: expected.request
+        });
+        amount = 2 * 10**10; // baseFee is 2 * 10**6
+        expected = getExpectedParams({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+        vm.prank(relayer);
+        // Half of the fee should go to the relayer: 10**6
+        // The other half should go to the protocol: 10**6
+        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
+            message: expected.message,
+            signature: "",
+            requestVersion: RequestLib.REQUEST_BASE,
+            formattedRequest: expected.request
+        });
+        // Total protocol fees: 2 * 10**6
+        // Total relayer fees: 1 * 10**6
+    }
+
+    function testAccumulateFees() public {
+        address token = address(cctpSetups[DOMAIN_AVAX].mintBurnToken);
+        accumulateFees();
+        assertEq(synapseCCTPs[DOMAIN_AVAX].accumulatedFees(address(0), token), 2 * 10**6);
+        assertEq(synapseCCTPs[DOMAIN_AVAX].accumulatedFees(collector, token), 1 * 10**6);
+    }
+
+    function testWithdrawProtocolFeesResetsAccumulatedFees() public {
+        address token = address(cctpSetups[DOMAIN_AVAX].mintBurnToken);
+        accumulateFees();
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_AVAX].withdrawProtocolFees(token);
+        assertEq(synapseCCTPs[DOMAIN_AVAX].accumulatedFees(address(0), token), 0);
+    }
+
+    function testWithdrawProtocolFeesTransfersToken() public {
+        accumulateFees();
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_AVAX].withdrawProtocolFees(address(cctpSetups[DOMAIN_AVAX].mintBurnToken));
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(owner), 2 * 10**6);
+    }
+
+    function testWithdrawProtocolFeesRevertsWhenCallerNotOwner(address caller) public {
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        synapseCCTPs[DOMAIN_AVAX].withdrawProtocolFees(address(cctpSetups[DOMAIN_AVAX].mintBurnToken));
+    }
+
+    function testWithdrawProtocolFeesRevertsWhenZeroAmount() public {
+        vm.expectRevert(CCTPZeroAmount.selector);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_AVAX].withdrawProtocolFees(address(cctpSetups[DOMAIN_AVAX].mintBurnToken));
+    }
+
+    function testWithdrawRelayerFeesResetsAccumulatedFees() public {
+        address token = address(cctpSetups[DOMAIN_AVAX].mintBurnToken);
+        accumulateFees();
+        vm.prank(collector);
+        synapseCCTPs[DOMAIN_AVAX].withdrawRelayerFees(token);
+        assertEq(synapseCCTPs[DOMAIN_AVAX].accumulatedFees(collector, token), 0);
+    }
+
+    function testWithdrawRelayerFeesTransfersToken() public {
+        accumulateFees();
+        vm.prank(collector);
+        synapseCCTPs[DOMAIN_AVAX].withdrawRelayerFees(address(cctpSetups[DOMAIN_AVAX].mintBurnToken));
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(collector), 1 * 10**6);
+    }
+
+    function testWithdrawRelayerFeesRevertsWhenZeroAmount() public {
+        vm.expectRevert(CCTPZeroAmount.selector);
+        vm.prank(collector);
+        synapseCCTPs[DOMAIN_AVAX].withdrawRelayerFees(address(cctpSetups[DOMAIN_AVAX].mintBurnToken));
     }
 
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════

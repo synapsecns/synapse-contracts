@@ -42,12 +42,14 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
 
     address public user;
     address public recipient;
+    address public owner;
     address public relayer;
     address public collector;
 
     function setUp() public virtual {
         user = makeAddr("User");
         recipient = makeAddr("Recipient");
+        owner = makeAddr("Owner");
         relayer = makeAddr("Relayer");
         collector = makeAddr("Collector");
         deployCCTP(DOMAIN_ETH);
@@ -85,6 +87,7 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         synapseCCTP.setProtocolFee(5 * 10**9);
         vm.prank(relayer);
         synapseCCTP.setFeeCollector(collector);
+        synapseCCTP.transferOwnership(owner);
         synapseCCTPs[domain] = synapseCCTP;
     }
 
@@ -117,6 +120,7 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
             localToken: address(setupB.mintBurnToken)
         });
 
+        vm.startPrank(owner);
         synapseCCTPs[domainA].setRemoteDomainConfig({
             remoteChainId: chainIdB,
             remoteDomain: domainB,
@@ -130,6 +134,7 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
 
         synapseCCTPs[domainA].setLocalToken({remoteDomain: domainB, remoteToken: address(setupB.mintBurnToken)});
         synapseCCTPs[domainB].setLocalToken({remoteDomain: domainA, remoteToken: address(setupA.mintBurnToken)});
+        vm.stopPrank();
     }
 
     function deployPool(uint32 domain) public returns (PoolSetup memory setup) {
