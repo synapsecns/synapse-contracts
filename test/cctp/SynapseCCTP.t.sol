@@ -558,12 +558,24 @@ contract SynapseCCTPTest is BaseCCTPTest {
             amount: expectedAmountOut,
             kappa: expected.kappa
         });
+        vm.prank(relayer);
         synapseCCTPs[destinationDomain].receiveCircleToken({
             message: expected.message,
             signature: "",
             requestVersion: requestVersion,
             formattedRequest: expected.request
         });
+        checkAccumulatedRelayerFee(destinationDomain, expectedFeeAmount);
+    }
+
+    function checkAccumulatedRelayerFee(uint32 domain, uint256 expectedFeeAmount) public {
+        address token = address(cctpSetups[domain].mintBurnToken);
+        // Protocol fee is 50% of the total fee in this setup
+        uint256 protocolFeeAmount = expectedFeeAmount / 2;
+        // Remainder of the fee goes to the relayer's collector
+        uint256 relayerFeeAmount = expectedFeeAmount - protocolFeeAmount;
+        assertEq(synapseCCTPs[domain].accumulatedFees(address(0), token), protocolFeeAmount);
+        assertEq(synapseCCTPs[domain].accumulatedFees(collector, token), relayerFeeAmount);
     }
 
     function getExpectedParams(
