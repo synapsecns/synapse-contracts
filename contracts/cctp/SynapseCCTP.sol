@@ -3,8 +3,11 @@ pragma solidity 0.8.17;
 
 // prettier-ignore
 import {
+    CCTPIncorrectChainId,
+    CCTPIncorrectDomain,
     CCTPMessageNotReceived,
     CCTPTokenNotFound,
+    CCTPZeroAddress,
     CCTPZeroAmount,
     RemoteCCTPDeploymentNotSet,
     RemoteCCTPTokenNotSet
@@ -65,7 +68,14 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         uint32 remoteDomain,
         address remoteSynapseCCTP
     ) external onlyOwner {
-        // TODO: add zero checks
+        // ChainId should be non-zero and different from the local chain id.
+        if (remoteChainId == 0 || remoteChainId == block.chainid) revert CCTPIncorrectChainId();
+        // Remote domain should differ from the local domain.
+        if (remoteDomain == localDomain) revert CCTPIncorrectDomain();
+        // Remote domain should be 0 IF AND ONLY IF remote chain id is 1 (Ethereum Mainnet).
+        if ((remoteDomain == 0) != (remoteChainId == 1)) revert CCTPIncorrectDomain();
+        // Remote SynapseCCTP should be non-zero.
+        if (remoteSynapseCCTP == address(0)) revert CCTPZeroAddress();
         remoteDomainConfig[remoteChainId] = DomainConfig(remoteDomain, remoteSynapseCCTP);
     }
 
