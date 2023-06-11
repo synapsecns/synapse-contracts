@@ -640,6 +640,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             requestVersion: requestVersion,
             swapParams: swapParams
         });
+        assertFalse(synapseCCTPs[destinationDomain].isRequestFulfilled(expected.kappa));
         vm.expectEmit();
         emit MintAndWithdraw({
             mintRecipient: address(synapseCCTPs[destinationDomain]),
@@ -662,6 +663,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             requestVersion: requestVersion,
             formattedRequest: expected.request
         });
+        assertTrue(synapseCCTPs[destinationDomain].isRequestFulfilled(expected.kappa));
         checkAccumulatedRelayerFee(destinationDomain, expectedFeeAmount);
     }
 

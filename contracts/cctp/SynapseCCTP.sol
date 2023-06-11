@@ -165,6 +165,12 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         return _getLocalToken(remoteDomain, remoteToken);
     }
 
+    /// @notice Checks if the given request is already fulfilled.
+    function isRequestFulfilled(bytes32 kappa) external view returns (bool) {
+        // Request is fulfilled if the kappa is already used, meaning the forwarder is already deployed.
+        return MinimalForwarderLib.predictAddress(address(this), kappa).code.length > 0;
+    }
+
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
 
     /// @dev Approves the token to be spent by the given spender indefinitely by giving infinite allowance.
