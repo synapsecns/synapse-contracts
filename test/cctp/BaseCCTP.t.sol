@@ -131,9 +131,6 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
             remoteDomain: domainA,
             remoteSynapseCCTP: address(synapseCCTPs[domainA])
         });
-
-        synapseCCTPs[domainA].setLocalToken({remoteDomain: domainB, remoteToken: address(setupB.mintBurnToken)});
-        synapseCCTPs[domainB].setLocalToken({remoteDomain: domainA, remoteToken: address(setupA.mintBurnToken)});
         vm.stopPrank();
     }
 

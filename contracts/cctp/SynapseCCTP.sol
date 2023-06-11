@@ -49,7 +49,6 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
     // TODO: onlyOwner setters for these
     // (chainId => configuration of the remote chain)
     mapping(uint256 => DomainConfig) public remoteDomainConfig;
-    mapping(uint256 => address) internal _remoteTokenIdToLocalToken;
 
     constructor(ITokenMessenger tokenMessenger_) {
         tokenMessenger = tokenMessenger_;
@@ -58,15 +57,6 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
     }
 
     // ═════════════════════════════════════════════ SET CONFIG LOGIC ══════════════════════════════════════════════════
-
-    /// @notice Sets the local token associated with the given remote domain and token.
-    // TODO: add ownerOnly tests
-    function setLocalToken(uint32 remoteDomain, address remoteToken) external onlyOwner {
-        ITokenMinter minter = ITokenMinter(tokenMessenger.localMinter());
-        address localToken = minter.getLocalToken(remoteDomain, remoteToken.addressToBytes32());
-        if (localToken == address(0)) revert CCTPTokenNotFound();
-        _remoteTokenIdToLocalToken[_remoteTokenId(remoteDomain, remoteToken)] = localToken;
-    }
 
     /// @notice Sets the remote domain and deployment of SynapseCCTP for the given remote chainId.
     // TODO: add ownerOnly tests
@@ -159,7 +149,7 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         bytes32 kappa = _kappa(localDomain, requestVersion, formattedRequest);
         // Kindly ask the Circle Bridge to mint the tokens for us.
         _mintCircleToken(message, signature, kappa);
-        address token = _getLocalMintedToken(originDomain, originBurnToken);
+        address token = _getLocalToken(originDomain, originBurnToken);
         uint256 fee;
         // Apply the bridging fee. This will revert if amount <= fee.
         (amount, fee) = _applyRelayerFee(token, amount, requestVersion == RequestLib.REQUEST_SWAP);
@@ -172,7 +162,7 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
 
     /// @notice Get the local token associated with the given remote domain and token.
     function getLocalToken(uint32 remoteDomain, address remoteToken) external view returns (address) {
-        return _remoteTokenIdToLocalToken[_remoteTokenId(remoteDomain, remoteToken)];
+        return _getLocalToken(remoteDomain, remoteToken);
     }
 
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
@@ -273,11 +263,12 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
 
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
 
-    /// @dev Fetches the address and the amount of the minted Circle token.
-    function _getLocalMintedToken(uint32 originDomain, address originBurnToken) internal view returns (address token) {
-        // Map the remote token to the local token.
-        token = _remoteTokenIdToLocalToken[_remoteTokenId(originDomain, originBurnToken)];
-        if (token == address(0)) revert RemoteCCTPTokenNotSet();
+    /// @dev Gets the address of the local minted Circle token from the local TokenMinter.
+    function _getLocalToken(uint32 remoteDomain, address remoteToken) internal view returns (address token) {
+        ITokenMinter minter = ITokenMinter(tokenMessenger.localMinter());
+        token = minter.getLocalToken(remoteDomain, remoteToken.addressToBytes32());
+        // Revert if TokenMinter is not aware of this remote token.
+        if (token == address(0)) revert CCTPTokenNotFound();
     }
 
     /// @dev Tries to get the token address from the pool.
@@ -315,10 +306,5 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
             // Return hash of first 64 bytes of memory.
             kappa := keccak256(0, 64)
         }
-    }
-
-    /// @dev Packs the domain and the token into a single uint256 value using bitwise operations.
-    function _remoteTokenId(uint32 remoteDomain, address remoteToken) internal pure returns (uint256) {
-        return (uint256(remoteDomain) << 160) | uint160(remoteToken);
     }
 }
