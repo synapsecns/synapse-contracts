@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 // prettier-ignore
 import {
+    CastOverflow,
     CCTPIncorrectConfig,
     CCTPIncorrectProtocolFee,
     CCTPInsufficientAmount,
@@ -163,6 +164,43 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         cctpFees.addToken("CCTP.USDC", address(1), 0, 10, 11, 10);
     }
 
+    function testAddTokenRevertsRelayerFeeOverflows() public {
+        // Check that relayer fee % is not too high is failed prior to casting to uint40
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 2**40, 0, 0, 0);
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), type(uint256).max, 0, 0, 0);
+    }
+
+    function testAddTokenRevertsMinBaseFeeOverflows() public {
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, 2**72, 2**72, 2**72);
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, type(uint256).max, type(uint256).max, type(uint256).max);
+    }
+
+    function testAddTokenRevertsMinSwapFeeOverflows() public {
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, 0, 2**72, 2**72);
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, 0, type(uint256).max, type(uint256).max);
+    }
+
+    function testAddTokenRevertsMaxFeeOverflows() public {
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, 0, 0, 2**72);
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, 0, 0, type(uint256).max);
+    }
+
     // ══════════════════════════════════════════ TESTS: REMOVING TOKENS ═══════════════════════════════════════════════
 
     function addTokensThenRemoveOne() public {
@@ -260,6 +298,47 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         vm.expectRevert(CCTPIncorrectConfig.selector);
         vm.prank(owner);
         cctpFees.setTokenFee(usdc, 0, 10, 11, 10);
+    }
+
+    function testSetTokenFeeRevertsRelayerFeeOverflows() public {
+        // Check that relayer fee % is not too high is failed prior to casting to uint40
+        addTokens();
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 2**40, 0, 0, 0);
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, type(uint256).max, 0, 0, 0);
+    }
+
+    function testSetTokenFeeRevertsMinBaseFeeOverflows() public {
+        addTokens();
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, 2**72, 2**72, 2**72);
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, type(uint256).max, type(uint256).max, type(uint256).max);
+    }
+
+    function testSetTokenFeeRevertsMinSwapFeeOverflows() public {
+        addTokens();
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, 0, 2**72, 2**72);
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, 0, type(uint256).max, type(uint256).max);
+    }
+
+    function testSetTokenFeeRevertsMaxFeeOverflows() public {
+        addTokens();
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, 0, 0, 2**72);
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, 0, 0, type(uint256).max);
     }
 
     // ══════════════════════════════════════ TESTS: CALCULATING BRIDGE FEES ═══════════════════════════════════════════
