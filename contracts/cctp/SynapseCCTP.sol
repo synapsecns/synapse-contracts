@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 import {
     CCTPMessageNotReceived,
     CCTPTokenNotFound,
+    CCTPZeroAmount,
     RemoteCCTPDeploymentNotSet,
     RemoteCCTPTokenNotSet
 } from "./libs/Errors.sol";
@@ -76,6 +77,24 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
     ) external onlyOwner {
         // TODO: add zero checks
         remoteDomainConfig[remoteChainId] = DomainConfig(remoteDomain, remoteSynapseCCTP);
+    }
+
+    // ═════════════════════════════════════════════ FEES WITHDRAWING ══════════════════════════════════════════════════
+
+    /// @notice Allows the owner to withdraw accumulated protocol fees.
+    function withdrawProtocolFees(address token) external onlyOwner {
+        uint256 accFees = accumulatedFees[address(0)][token];
+        if (accFees == 0) revert CCTPZeroAmount();
+        accumulatedFees[address(0)][token] = 0;
+        IERC20(token).safeTransfer(msg.sender, accFees);
+    }
+
+    /// @notice Allows the Relayer's fee collector to withdraw accumulated relayer fees.
+    function withdrawRelayerFees(address token) external {
+        uint256 accFees = accumulatedFees[msg.sender][token];
+        if (accFees == 0) revert CCTPZeroAmount();
+        accumulatedFees[msg.sender][token] = 0;
+        IERC20(token).safeTransfer(msg.sender, accFees);
     }
 
     // ════════════════════════════════════════════════ CCTP LOGIC ═════════════════════════════════════════════════════

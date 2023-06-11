@@ -13,6 +13,7 @@ error CCTPSymbolAlreadyAdded();
 error CCTPSymbolIncorrect();
 error CCTPTokenAlreadyAdded();
 error CCTPTokenNotFound();
+error CCTPZeroAmount();
 
 error CCTPMessageNotReceived();
 error RemoteCCTPDeploymentNotSet();
