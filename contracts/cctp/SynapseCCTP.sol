@@ -49,7 +49,6 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
     IMessageTransmitter public immutable messageTransmitter;
     ITokenMessenger public immutable tokenMessenger;
 
-    // TODO: onlyOwner setters for these
     // (chainId => configuration of the remote chain)
     mapping(uint256 => DomainConfig) public remoteDomainConfig;
 
@@ -62,7 +61,6 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
     // ═════════════════════════════════════════════ SET CONFIG LOGIC ══════════════════════════════════════════════════
 
     /// @notice Sets the remote domain and deployment of SynapseCCTP for the given remote chainId.
-    // TODO: add ownerOnly tests
     function setRemoteDomainConfig(
         uint256 remoteChainId,
         uint32 remoteDomain,

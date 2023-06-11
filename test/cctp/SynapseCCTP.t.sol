@@ -1,7 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {CCTPMessageNotReceived, CCTPZeroAmount, IncorrectRequestLength} from "../../contracts/cctp/libs/Errors.sol";
+// prettier-ignore
+import {
+    CCTPIncorrectChainId,
+    CCTPIncorrectDomain,
+    CCTPMessageNotReceived,
+    CCTPZeroAddress,
+    CCTPZeroAmount,
+    IncorrectRequestLength
+} from "../../contracts/cctp/libs/Errors.sol";
 import {BaseCCTPTest, RequestLib} from "./BaseCCTP.t.sol";
 
 contract SynapseCCTPTest is BaseCCTPTest {
@@ -618,6 +626,99 @@ contract SynapseCCTPTest is BaseCCTPTest {
         vm.expectRevert(CCTPZeroAmount.selector);
         vm.prank(collector);
         synapseCCTPs[DOMAIN_AVAX].withdrawRelayerFees(address(cctpSetups[DOMAIN_AVAX].mintBurnToken));
+    }
+
+    // ═══════════════════════════════════════ TESTS: SETTING REMOTE CONFIG ════════════════════════════════════════════
+
+    function testSetRemoteDomainConfigSetsConfig() public {
+        vm.chainId(CHAINID_ETH);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setRemoteDomainConfig({
+            remoteChainId: 10,
+            remoteDomain: 2,
+            remoteSynapseCCTP: address(42)
+        });
+        (uint32 domain, address synapseCCTP) = synapseCCTPs[DOMAIN_ETH].remoteDomainConfig(10);
+        assertEq(domain, 2);
+        assertEq(synapseCCTP, address(42));
+    }
+
+    function testSetRemoteDomainConfigRevertsWhenCallerNotOwner(address caller) public {
+        vm.chainId(CHAINID_ETH);
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        synapseCCTPs[DOMAIN_ETH].setRemoteDomainConfig({
+            remoteChainId: 10,
+            remoteDomain: 2,
+            remoteSynapseCCTP: address(42)
+        });
+    }
+
+    function testSetRemoteDomainConfigRevertsWhenRemoteChainIdZero() public {
+        vm.chainId(CHAINID_ETH);
+        vm.expectRevert(CCTPIncorrectChainId.selector);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setRemoteDomainConfig({
+            remoteChainId: 0,
+            remoteDomain: 2,
+            remoteSynapseCCTP: address(42)
+        });
+    }
+
+    function testSetRemoteDomainConfigRevertsWhenRemoteChainIdEqualsLocal() public {
+        vm.chainId(CHAINID_ETH);
+        vm.expectRevert(CCTPIncorrectChainId.selector);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setRemoteDomainConfig({
+            remoteChainId: CHAINID_ETH,
+            remoteDomain: 2,
+            remoteSynapseCCTP: address(42)
+        });
+    }
+
+    function testSetRemoteDomainConfigRevertsWhenRemoteDomainEqualsLocal() public {
+        vm.chainId(CHAINID_ETH);
+        vm.expectRevert(CCTPIncorrectDomain.selector);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setRemoteDomainConfig({
+            remoteChainId: 10,
+            remoteDomain: DOMAIN_ETH,
+            remoteSynapseCCTP: address(42)
+        });
+    }
+
+    function testSetRemoteDomainConfigRevertsWhenRemoteDomainZeroChainIdNotOne() public {
+        vm.chainId(CHAINID_AVAX);
+        vm.expectRevert(CCTPIncorrectDomain.selector);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_AVAX].setRemoteDomainConfig({
+            remoteChainId: 10,
+            remoteDomain: 0,
+            remoteSynapseCCTP: address(42)
+        });
+    }
+
+    function testSetRemoteDomainConfigRevertsWhenRemoteDomainNotZeroChainIdOne() public {
+        vm.chainId(CHAINID_AVAX);
+        vm.expectRevert(CCTPIncorrectDomain.selector);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_AVAX].setRemoteDomainConfig({
+            remoteChainId: CHAINID_ETH,
+            remoteDomain: 2,
+            remoteSynapseCCTP: address(42)
+        });
+    }
+
+    function testSetRemoteDomainConfigRevertsWhenRemoteSynapseCCTPZero() public {
+        vm.chainId(CHAINID_ETH);
+        vm.expectRevert(CCTPZeroAddress.selector);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setRemoteDomainConfig({
+            remoteChainId: 10,
+            remoteDomain: 2,
+            remoteSynapseCCTP: address(0)
+        });
     }
 
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════

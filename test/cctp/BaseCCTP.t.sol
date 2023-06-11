@@ -121,11 +121,13 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         });
 
         vm.startPrank(owner);
+        vm.chainId(chainIdA);
         synapseCCTPs[domainA].setRemoteDomainConfig({
             remoteChainId: chainIdB,
             remoteDomain: domainB,
             remoteSynapseCCTP: address(synapseCCTPs[domainB])
         });
+        vm.chainId(chainIdB);
         synapseCCTPs[domainB].setRemoteDomainConfig({
             remoteChainId: chainIdA,
             remoteDomain: domainA,
