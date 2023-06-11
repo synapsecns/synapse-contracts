@@ -8,6 +8,13 @@ abstract contract SynapseCCTPFeesEvents {
     /// @param newFeeCollector  The new fee collector address: will be able to withdraw future fees
     event FeeCollectorUpdated(address indexed relayer, address oldFeeCollector, address newFeeCollector);
 
+    /// @notice Emitted when the fee for relaying a CCTP message is collected
+    /// @dev If fee collector address is not set, the full fee is collected for the protocol
+    /// @param feeCollector      The fee collector address
+    /// @param relayerFeeAmount  The amount of fees collected for the relayer
+    /// @param protocolFeeAmount The amount of fees collected for the protocol
+    event FeeCollected(address feeCollector, uint256 relayerFeeAmount, uint256 protocolFeeAmount);
+
     /// @notice Emitted when the protocol fee is updated
     /// @param newProtocolFee  The new protocol fee
     event ProtocolFeeUpdated(uint256 newProtocolFee);

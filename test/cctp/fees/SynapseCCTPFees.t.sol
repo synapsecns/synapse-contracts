@@ -389,6 +389,9 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         bool isSwap,
         uint256 expectedFee
     ) public {
+        vm.expectEmit();
+        // Full fee goes to protocol
+        emit FeeCollected({feeCollector: address(0), relayerFeeAmount: 0, protocolFeeAmount: expectedFee});
         (uint256 amountAfterFee, uint256 fee) = cctpFees.applyRelayerFee(token, amount, isSwap);
         assertEq(amountAfterFee, amount - fee);
         assertEq(fee, expectedFee);
@@ -403,6 +406,14 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         address collector
     ) public {
         uint256 accumulatedFeesBefore = cctpFees.accumulatedFees(collector, token);
+        vm.expectEmit();
+        // Full fee goes to relayer if they specified a collector
+        // Otherwise, full fee goes to protocol
+        emit FeeCollected({
+            feeCollector: collector,
+            relayerFeeAmount: collector == address(0) ? 0 : expectedFee,
+            protocolFeeAmount: collector == address(0) ? expectedFee : 0
+        });
         vm.prank(relayer);
         cctpFees.applyRelayerFee(token, amount, isSwap);
         uint256 accumulatedFeesAfter = cctpFees.accumulatedFees(collector, token);
@@ -420,6 +431,13 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
     ) public {
         uint256 protocolFeesBefore = cctpFees.accumulatedFees(address(0), token);
         uint256 accumulatedFeesBefore = cctpFees.accumulatedFees(collector, token);
+        vm.expectEmit();
+        // Fee is split between protocol and relayer
+        emit FeeCollected({
+            feeCollector: collector,
+            relayerFeeAmount: expectedTotalFee - expectedProtocolFee,
+            protocolFeeAmount: expectedProtocolFee
+        });
         vm.prank(relayer);
         cctpFees.applyRelayerFee(token, amount, isSwap);
         uint256 protocolFeesAfter = cctpFees.accumulatedFees(address(0), token);
