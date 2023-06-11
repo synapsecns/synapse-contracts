@@ -15,7 +15,6 @@ error CCTPTokenAlreadyAdded();
 error CCTPTokenNotFound();
 
 error CCTPMessageNotReceived();
-error LocalCCTPTokenNotFound();
 error RemoteCCTPDeploymentNotSet();
 error RemoteCCTPTokenNotSet();
 

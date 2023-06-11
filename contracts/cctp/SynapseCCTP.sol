@@ -1,8 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {CCTPMessageNotReceived, LocalCCTPTokenNotFound, RemoteCCTPDeploymentNotSet, RemoteCCTPTokenNotSet} from "./libs/Errors.sol";
+// prettier-ignore
+import {
+    CCTPMessageNotReceived,
+    CCTPTokenNotFound,
+    RemoteCCTPDeploymentNotSet,
+    RemoteCCTPTokenNotSet
+} from "./libs/Errors.sol";
 import {SynapseCCTPEvents} from "./events/SynapseCCTPEvents.sol";
+import {EnumerableSet, SynapseCCTPFees} from "./fees/SynapseCCTPFees.sol";
 import {IDefaultPool} from "./interfaces/IDefaultPool.sol";
 import {IMessageTransmitter} from "./interfaces/IMessageTransmitter.sol";
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
@@ -14,7 +21,8 @@ import {TypeCasts} from "./libs/TypeCasts.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
-contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
+contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
+    using EnumerableSet for EnumerableSet.AddressSet;
     using MinimalForwarderLib for address;
     using SafeERC20 for IERC20;
     using TypeCasts for address;
@@ -51,21 +59,21 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
     // ═════════════════════════════════════════════ SET CONFIG LOGIC ══════════════════════════════════════════════════
 
     /// @notice Sets the local token associated with the given remote domain and token.
-    // TODO: add ownerOnly modifier
-    function setLocalToken(uint32 remoteDomain, address remoteToken) external {
+    // TODO: add ownerOnly tests
+    function setLocalToken(uint32 remoteDomain, address remoteToken) external onlyOwner {
         ITokenMinter minter = ITokenMinter(tokenMessenger.localMinter());
         address localToken = minter.getLocalToken(remoteDomain, remoteToken.addressToBytes32());
-        if (localToken == address(0)) revert LocalCCTPTokenNotFound();
+        if (localToken == address(0)) revert CCTPTokenNotFound();
         _remoteTokenIdToLocalToken[_remoteTokenId(remoteDomain, remoteToken)] = localToken;
     }
 
     /// @notice Sets the remote domain and deployment of SynapseCCTP for the given remote chainId.
-    // TODO: add ownerOnly modifier
+    // TODO: add ownerOnly tests
     function setRemoteDomainConfig(
         uint256 remoteChainId,
         uint32 remoteDomain,
         address remoteSynapseCCTP
-    ) external {
+    ) external onlyOwner {
         // TODO: add zero checks
         remoteDomainConfig[remoteChainId] = DomainConfig(remoteDomain, remoteSynapseCCTP);
     }
@@ -81,6 +89,8 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         uint32 requestVersion,
         bytes memory swapParams
     ) external {
+        // Check if token is supported before doing anything else.
+        if (!_bridgeTokens.contains(burnToken)) revert CCTPTokenNotFound();
         // Pull token from user and update the amount in case of transfer fee.
         amount = _pullToken(burnToken, amount);
         uint64 nonce = messageTransmitter.nextAvailableNonce();
@@ -133,7 +143,7 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         address token = _getLocalMintedToken(originDomain, originBurnToken);
         uint256 fee;
         // Apply the bridging fee. This will revert if amount <= fee.
-        (amount, fee) = _applyFee(token, amount);
+        (amount, fee) = _applyRelayerFee(token, amount, requestVersion == RequestLib.REQUEST_SWAP);
         // Fulfill the request: perform an optional swap and send the end tokens to the recipient.
         (address tokenOut, uint256 amountOut) = _fulfillRequest(recipient, token, amount, swapParams);
         emit CircleRequestFulfilled(recipient, token, fee, tokenOut, amountOut, kappa);
@@ -147,12 +157,6 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
     }
 
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
-
-    /// @dev Applies the bridging fee. Will revert if amount <= fee.
-    function _applyFee(address token, uint256 amount) internal returns (uint256 amountAfterFee, uint256 fee) {
-        // TODO: implement actual fee logic
-        return (amount, 0);
-    }
 
     /// @dev Approves the token to be spent by the given spender indefinitely by giving infinite allowance.
     /// Doesn't modify the allowance if it's already enough for the given amount.
