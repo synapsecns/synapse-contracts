@@ -74,7 +74,8 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         // Remote domain should differ from the local domain.
         if (remoteDomain == localDomain) revert CCTPIncorrectDomain();
         // Remote domain should be 0 IF AND ONLY IF remote chain id is 1 (Ethereum Mainnet).
-        if ((remoteDomain == 0) != (remoteChainId == 1)) revert CCTPIncorrectDomain();
+        // Or if remote chain id is 5 (Goerli). TODO: remove this in production.
+        if ((remoteDomain == 0) != (remoteChainId == 1 || remoteChainId == 5)) revert CCTPIncorrectDomain();
         // Remote SynapseCCTP should be non-zero.
         if (remoteSynapseCCTP == address(0)) revert CCTPZeroAddress();
         remoteDomainConfig[remoteChainId] = DomainConfig(remoteDomain, remoteSynapseCCTP);
