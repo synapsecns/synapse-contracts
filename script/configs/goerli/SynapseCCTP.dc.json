@@ -1,0 +1,13 @@
+{
+  "tokenMessenger": "0xD0C3da58f55358142b8d3e06C1C30c5C6114EFE8",
+  "tokens": {
+    "symbols": ["testUSDC"],
+    "testUSDC": {
+      "token": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F",
+      "relayerFee": 10000000, 
+      "minBaseFee": 10000,
+      "minSwapFee": 100000,
+      "maxFee": 1000000
+    }
+  }
+}

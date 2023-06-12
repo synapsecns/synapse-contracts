@@ -21,8 +21,10 @@ verbosity = 4
 
 [rpc_endpoints]
 arbitrum = "${rpc_arbitrum}"
+arbitrum_goerli = "${rpc_arbitrum_goerli}"
 aurora = "${rpc_aurora}"
 avalanche = "${rpc_avalanche}"
+fuji = "${rpc_fuji}"
 boba = "${rpc_boba}"
 bsc = "${rpc_bsc}"
 canto = "${rpc_canto}"
@@ -33,6 +35,7 @@ fantom = "${rpc_fantom}"
 harmony = "${rpc_harmony}"
 klatyn = "${rpc_klatyn}"
 mainnet = "${rpc_mainnet}"
+goerli = "${rpc_goerli}"
 metis = "${rpc_metis}"
 moonbeam = "${rpc_moonbeam}"
 moonriver = "${rpc_moonriver}"
@@ -41,8 +44,10 @@ polygon = "${rpc_polygon}"
 
 [etherscan]
 arbitrum = { key = "${etherscan_arbitrum_key}" }
+arbitrum_goerli = { key = "${etherscan_arbitrum_key}", url = "https://api-goerli.arbiscan.io/api" }
 # aurora = { key = "${etherscan_aurora_key}", url = "https://explorer.mainnet.aurora.dev/api" }
 avalanche = { key = "${etherscan_avalanche_key}" }
+fuji = { key = "${etherscan_avalanche_key}", url = "https://api-testnet.snowtrace.io/api" }
 boba = { key = "${etherscan_boba_key}", url = "https://api.bobascan.com/api" }
 bsc = { key = "${etherscan_bsc_key}" }
 # canto = { key = "${etherscan_canto_key}", url = "https://evm.explorer.canto.io/api" }
@@ -53,6 +58,7 @@ fantom = { key = "${etherscan_fantom_key}" }
 # harmony = { key = "${etherscan_harmony_key}" }
 # klatyn = { key = "${etherscan_klatyn_key}" }
 mainnet = { key = "${etherscan_mainnet_key}" }
+goerli = { key = "${etherscan_mainnet_key}", url = "https://api-goerli.etherscan.io/api" }
 # metis = { key = "${etherscan_metis_key}" }
 moonbeam = { key = "${etherscan_moonbeam_key}" }
 moonriver = { key = "${etherscan_moonriver_key}" }
