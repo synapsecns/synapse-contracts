@@ -6,8 +6,10 @@ import {
     CCTPIncorrectChainId,
     CCTPIncorrectDomain,
     CCTPMessageNotReceived,
+    CCTPTokenNotFound,
     CCTPZeroAddress,
     CCTPZeroAmount,
+    RemoteCCTPDeploymentNotSet,
     IncorrectRequestLength
 } from "../../contracts/cctp/libs/Errors.sol";
 import {BaseCCTPTest, RequestLib} from "./BaseCCTP.t.sol";
@@ -16,55 +18,92 @@ contract SynapseCCTPTest is BaseCCTPTest {
     struct Params {
         bytes32 kappa;
         bytes request;
+        bytes32 mintRecipient;
         bytes32 destinationCaller;
+        bytes32 destinationTokenMessenger;
         bytes message;
     }
 
     function testSendCircleTokenBaseRequest() public {
-        address originBurnToken = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
         uint256 amount = 10**8;
         prepareUser(DOMAIN_ETH, amount);
-        uint64 nonce = cctpSetups[DOMAIN_ETH].messageTransmitter.nextAvailableNonce();
-        Params memory expected = getExpectedParams({
+        checkRequestSent({
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
+            destinationChainId: CHAINID_AVAX,
             amount: amount,
-            requestVersion: RequestLib.REQUEST_BASE,
             swapParams: ""
         });
-        vm.expectEmit();
-        emit MessageSent(expected.message);
-        vm.expectEmit();
-        emit DepositForBurn({
-            nonce: nonce,
-            burnToken: originBurnToken,
-            amount: amount,
-            depositor: address(synapseCCTPs[DOMAIN_ETH]),
-            mintRecipient: bytes32(uint256(uint160(address(synapseCCTPs[DOMAIN_AVAX])))),
+        assertEq(cctpSetups[DOMAIN_ETH].mintBurnToken.balanceOf(user), 0);
+    }
+
+    function testSendCircleTokenSwapRequest() public {
+        uint256 amount = 10**8;
+        prepareUser(DOMAIN_ETH, amount);
+        bytes memory swapParams = RequestLib.formatSwapParams({
+            pool: address(1234),
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            deadline: 4321,
+            minAmountOut: 9876543210
+        });
+        checkRequestSent({
+            originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
-            destinationTokenMessenger: bytes32(uint256(uint160(address(cctpSetups[DOMAIN_AVAX].tokenMessenger)))),
-            destinationCaller: expected.destinationCaller
-        });
-        vm.expectEmit();
-        emit CircleRequestSent({
-            chainId: CHAINID_AVAX,
-            nonce: nonce,
-            token: originBurnToken,
+            destinationChainId: CHAINID_AVAX,
             amount: amount,
-            requestVersion: RequestLib.REQUEST_BASE,
-            formattedRequest: expected.request,
-            kappa: expected.kappa
+            swapParams: swapParams
         });
+        assertEq(cctpSetups[DOMAIN_ETH].mintBurnToken.balanceOf(user), 0);
+    }
+
+    function testSendCircleTokenRevertsWhenRemoteDeploymentNotSet() public {
+        uint256 amount = 10**8;
+        prepareUser(DOMAIN_ETH, amount);
+        vm.expectRevert(RemoteCCTPDeploymentNotSet.selector);
         vm.prank(user);
         synapseCCTPs[DOMAIN_ETH].sendCircleToken({
             recipient: recipient,
-            chainId: CHAINID_AVAX,
+            chainId: CHAINID_AVAX + 1, // unknown chainId
             burnToken: address(cctpSetups[DOMAIN_ETH].mintBurnToken),
             amount: amount,
             requestVersion: RequestLib.REQUEST_BASE,
             swapParams: ""
         });
-        assertEq(cctpSetups[DOMAIN_ETH].mintBurnToken.balanceOf(user), 0);
+    }
+
+    function testSendCircleTokenRevertsWhenTokenNotSupported() public {
+        uint256 amount = 10**8;
+        prepareUser(DOMAIN_ETH, amount);
+        vm.expectRevert(CCTPTokenNotFound.selector);
+        vm.prank(user);
+        // Use ETH token in AVAX SynapseCCTP
+        synapseCCTPs[DOMAIN_AVAX].sendCircleToken({
+            recipient: recipient,
+            chainId: CHAINID_ETH,
+            burnToken: address(cctpSetups[DOMAIN_ETH].mintBurnToken),
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+    }
+
+    // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
+
+    function testGetLocalToken() public {
+        address ethToken = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        address avaxToken = address(cctpSetups[DOMAIN_AVAX].mintBurnToken);
+        assertEq(synapseCCTPs[DOMAIN_ETH].getLocalToken({remoteDomain: DOMAIN_AVAX, remoteToken: avaxToken}), ethToken);
+        assertEq(synapseCCTPs[DOMAIN_AVAX].getLocalToken({remoteDomain: DOMAIN_ETH, remoteToken: ethToken}), avaxToken);
+    }
+
+    function testGetLocalTokenRevertsForUnknownToken() public {
+        address ethToken = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        address avaxToken = address(cctpSetups[DOMAIN_AVAX].mintBurnToken);
+        vm.expectRevert(CCTPTokenNotFound.selector);
+        synapseCCTPs[DOMAIN_ETH].getLocalToken({remoteDomain: DOMAIN_AVAX, remoteToken: ethToken});
+        vm.expectRevert(CCTPTokenNotFound.selector);
+        synapseCCTPs[DOMAIN_AVAX].getLocalToken({remoteDomain: DOMAIN_ETH, remoteToken: avaxToken});
     }
 
     // ═════════════════════════════════════ TESTS: RECEIVE WITH BASE REQUEST ══════════════════════════════════════════
@@ -723,6 +762,57 @@ contract SynapseCCTPTest is BaseCCTPTest {
 
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
 
+    function checkRequestSent(
+        uint32 originDomain,
+        uint32 destinationDomain,
+        uint256 destinationChainId,
+        uint256 amount,
+        bytes memory swapParams
+    ) public {
+        address originBurnToken = address(cctpSetups[originDomain].mintBurnToken);
+        uint32 requestVersion = swapParams.length == 0 ? RequestLib.REQUEST_BASE : RequestLib.REQUEST_SWAP;
+        uint64 nonce = cctpSetups[originDomain].messageTransmitter.nextAvailableNonce();
+        Params memory expected = getExpectedParams({
+            originDomain: originDomain,
+            destinationDomain: destinationDomain,
+            amount: amount,
+            requestVersion: requestVersion,
+            swapParams: swapParams
+        });
+        vm.expectEmit();
+        emit MessageSent(expected.message);
+        vm.expectEmit();
+        emit DepositForBurn({
+            nonce: nonce,
+            burnToken: originBurnToken,
+            amount: amount,
+            depositor: address(synapseCCTPs[originDomain]),
+            mintRecipient: expected.mintRecipient,
+            destinationDomain: destinationDomain,
+            destinationTokenMessenger: expected.destinationTokenMessenger,
+            destinationCaller: expected.destinationCaller
+        });
+        vm.expectEmit();
+        emit CircleRequestSent({
+            chainId: destinationChainId,
+            nonce: nonce,
+            token: originBurnToken,
+            amount: amount,
+            requestVersion: requestVersion,
+            formattedRequest: expected.request,
+            kappa: expected.kappa
+        });
+        vm.prank(user);
+        synapseCCTPs[originDomain].sendCircleToken({
+            recipient: recipient,
+            chainId: destinationChainId,
+            burnToken: originBurnToken,
+            amount: amount,
+            requestVersion: requestVersion,
+            swapParams: swapParams
+        });
+    }
+
     function checkRequestFulfilled(
         uint32 originDomain,
         uint32 destinationDomain,
@@ -801,10 +891,14 @@ contract SynapseCCTPTest is BaseCCTPTest {
             requestVersion: requestVersion,
             swapParams: swapParams
         });
+        expected.mintRecipient = bytes32(uint256(uint160(address(synapseCCTPs[destinationDomain]))));
         expected.destinationCaller = getExpectedDstCaller({
             destinationDomain: destinationDomain,
             kappa: expected.kappa
         });
+        expected.destinationTokenMessenger = bytes32(
+            uint256(uint160(address(cctpSetups[destinationDomain].tokenMessenger)))
+        );
         expected.message = getExpectedMessage({
             originDomain: originDomain,
             destinationDomain: destinationDomain,
