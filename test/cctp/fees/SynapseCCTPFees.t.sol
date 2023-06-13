@@ -46,6 +46,7 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         assertEq(cctpFees.owner(), owner);
         assertEq(cctpFees.getBridgeTokens().length, 0);
         assertEq(cctpFees.protocolFee(), 0);
+        assertEq(cctpFees.chainGasAmount(), 0);
     }
 
     // ═══════════════════════════════════════════ TESTS: ADDING TOKENS ════════════════════════════════════════════════
@@ -647,5 +648,38 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         vm.expectRevert(CCTPIncorrectProtocolFee.selector);
         vm.prank(owner);
         cctpFees.setProtocolFee(5 * 10**9 + 1);
+    }
+
+    // ════════════════════════════════════════ TESTS: SETTING GAS AIRDROP ═════════════════════════════════════════════
+
+    function testSetChainGasAmountSetsValue() public {
+        // Set initial chain gas amount
+        vm.prank(owner);
+        cctpFees.setChainGasAmount(10**9);
+        assertEq(cctpFees.chainGasAmount(), 10**9);
+        // Update chain gas amount
+        vm.prank(owner);
+        cctpFees.setChainGasAmount(5 * 10**9);
+        assertEq(cctpFees.chainGasAmount(), 5 * 10**9);
+    }
+
+    function testSetChainGasAmountEmitsEvent() public {
+        // Set initial chain gas amount
+        vm.expectEmit();
+        emit ChainGasAmountUpdated(10**9);
+        vm.prank(owner);
+        cctpFees.setChainGasAmount(10**9);
+        // Update chain gas amount
+        vm.expectEmit();
+        emit ChainGasAmountUpdated(5 * 10**9);
+        vm.prank(owner);
+        cctpFees.setChainGasAmount(5 * 10**9);
+    }
+
+    function testSetChainGasAmountRevertsWhenCallerNotOwner(address caller) public {
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        cctpFees.setChainGasAmount(10**9);
     }
 }

@@ -65,6 +65,8 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
     /// @notice Protocol fee: percentage of the relayer fee that is collected by the Protocol
     /// @dev Protocol collects the full fee amount, if the Relayer hasn't set a fee collector
     uint256 public protocolFee;
+    /// @notice Amount of chain's native gas airdropped to the token recipient for every fulfilled CCTP request
+    uint256 public chainGasAmount;
     /// @dev A list of all supported bridge tokens
     EnumerableSet.AddressSet internal _bridgeTokens;
 
@@ -109,6 +111,12 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
         delete symbolToToken[symbol];
         // Remove token fee structure
         delete feeStructures[token];
+    }
+
+    /// @notice Sets the amount of chain gas airdropped to the token recipient for every fulfilled CCTP request.
+    function setChainGasAmount(uint256 newChainGasAmount) external onlyOwner {
+        chainGasAmount = newChainGasAmount;
+        emit ChainGasAmountUpdated(newChainGasAmount);
     }
 
     /// @notice Updates the fee structure for a supported Circle token.
