@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import {SynapseCCTPFeesEvents} from "../events/SynapseCCTPFeesEvents.sol";
 // prettier-ignore
 import {
+    CCTPGasRescueFailed,
     CCTPIncorrectConfig,
     CCTPIncorrectProtocolFee,
     CCTPInsufficientAmount,
@@ -111,6 +112,12 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
         delete symbolToToken[symbol];
         // Remove token fee structure
         delete feeStructures[token];
+    }
+
+    /// @notice Allows to rescue stuck gas from the contract.
+    function rescueGas() external onlyOwner {
+        (bool success, ) = msg.sender.call{value: address(this).balance}("");
+        if (!success) revert CCTPGasRescueFailed();
     }
 
     /// @notice Sets the amount of chain gas airdropped to the token recipient for every fulfilled CCTP request.
@@ -236,6 +243,14 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
             minSwapFee: minSwapFee.safeCastToUint72(),
             maxFee: maxFee.safeCastToUint72()
         });
+    }
+
+    /// @dev Transfers `msg.value` to the recipient. Assumes that `msg.value == chainGasAmount` at this point.
+    function _transferMsgValue(address recipient) internal {
+        // Try to send the gas airdrop to the recipient
+        (bool success, ) = recipient.call{value: msg.value}("");
+        // If the transfer failed, set the emitted amount to 0
+        emit ChainGasAirdropped(success ? msg.value : 0);
     }
 
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════

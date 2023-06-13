@@ -19,6 +19,9 @@ abstract contract SynapseCCTPFeesEvents {
     /// @param chainGasAmount   The new amount of native gas airdropped to recipients
     event ChainGasAmountUpdated(uint256 chainGasAmount);
 
+    /// @notice Emitted when the native chain gas is airdropped to a recipient
+    event ChainGasAirdropped(uint256 amount);
+
     /// @notice Emitted when the protocol fee is updated
     /// @param newProtocolFee  The new protocol fee
     event ProtocolFeeUpdated(uint256 newProtocolFee);

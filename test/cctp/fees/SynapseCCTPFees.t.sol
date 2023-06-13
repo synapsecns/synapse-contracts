@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 // prettier-ignore
 import {
     CastOverflow,
+    CCTPGasRescueFailed,
     CCTPIncorrectConfig,
     CCTPIncorrectProtocolFee,
     CCTPInsufficientAmount,
@@ -14,10 +15,14 @@ import {
 } from "../../../contracts/cctp/libs/Errors.sol";
 import {BridgeToken, SynapseCCTPFees, SynapseCCTPFeesEvents} from "../../../contracts/cctp/fees/SynapseCCTPFees.sol";
 
+import {MockRevertingRecipient} from "../../mocks/MockRevertingRecipient.sol";
+
 import {Test} from "forge-std/Test.sol";
 
 // solhint-disable-next-line no-empty-blocks
 contract SynapseCCTPFeesHarness is SynapseCCTPFees {
+    receive() external payable {}
+
     /// @notice Exposes the internal `_applyRelayerFee` function for testing purposes
     function applyRelayerFee(
         address token,
@@ -25,6 +30,11 @@ contract SynapseCCTPFeesHarness is SynapseCCTPFees {
         bool isSwap
     ) external returns (uint256 amountAfterFee, uint256 fee) {
         return _applyRelayerFee(token, amount, isSwap);
+    }
+
+    /// @notice Exposes the internal `_transferMsgValue` function for testing purposes
+    function transferMsgValue(address recipient) external payable {
+        _transferMsgValue(recipient);
     }
 }
 
@@ -681,5 +691,67 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(caller);
         cctpFees.setChainGasAmount(10**9);
+    }
+
+    // ════════════════════════════════════════ TESTS: TRANSFER GAS AIRDROP ════════════════════════════════════════════
+
+    function testTransferMsgValueTransfersGas() public {
+        uint256 amount = 10**9;
+        address relayer = makeAddr("Relayer");
+        address recipient = makeAddr("Recipient");
+        deal(relayer, amount);
+        vm.prank(relayer);
+        cctpFees.transferMsgValue{value: amount}(recipient);
+        assertEq(recipient.balance, amount);
+    }
+
+    function testTransferMsgValueEmitsEvent() public {
+        uint256 amount = 10**9;
+        address relayer = makeAddr("Relayer");
+        address recipient = makeAddr("Recipient");
+        deal(relayer, amount);
+        vm.expectEmit();
+        emit ChainGasAirdropped(amount);
+        vm.prank(relayer);
+        cctpFees.transferMsgValue{value: amount}(recipient);
+    }
+
+    function testTransferMsgValueWhenRecipientReverted() public {
+        uint256 amount = 10**9;
+        address relayer = makeAddr("Relayer");
+        address recipient = address(new MockRevertingRecipient());
+        deal(relayer, amount);
+        vm.expectEmit();
+        emit ChainGasAirdropped(0);
+        vm.prank(relayer);
+        cctpFees.transferMsgValue{value: amount}(recipient);
+        assertEq(address(cctpFees).balance, amount);
+    }
+
+    // ════════════════════════════════════════════ TESTS: RESCUING GAS ════════════════════════════════════════════════
+
+    function testRescueGasTransfersGas() public {
+        uint256 amount = 10**9;
+        deal(address(cctpFees), amount);
+        vm.prank(owner);
+        cctpFees.rescueGas();
+        assertEq(owner.balance, amount);
+    }
+
+    function testRescueGasRevertsWhenCallerNotOwner(address caller) public {
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        cctpFees.rescueGas();
+    }
+
+    function testRescueGasRevertsWhenOwnerReverts() public {
+        uint256 amount = 10**9;
+        deal(address(cctpFees), amount);
+        address revertingOwner = address(new MockRevertingRecipient());
+        vm.prank(owner);
+        cctpFees.transferOwnership(revertingOwner);
+        vm.expectRevert(CCTPGasRescueFailed.selector);
+        vm.prank(revertingOwner);
+        cctpFees.rescueGas();
     }
 }
