@@ -293,10 +293,16 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
     /// @dev Tries to get the token address from the pool.
     /// Instead of reverting, returns 0 if the getToken failed.
     function _tryGetToken(address pool, uint8 tokenIndex) internal view returns (address token) {
-        try IDefaultPool(pool).getToken(tokenIndex) returns (address _token) {
-            token = _token;
-        } catch {
-            // Return 0 on revert
+        // Issue a low level static call instead of IDefaultPool(pool).getToken(tokenIndex)
+        // to ensure this never reverts
+        (bool success, bytes memory returnData) = pool.staticcall(
+            abi.encodeWithSelector(IDefaultPool.getToken.selector, tokenIndex)
+        );
+        if (success && returnData.length == 32) {
+            // Do the casting instead of using abi.decode to discard the dirty highest bits if there are any
+            token = bytes32(returnData).bytes32ToAddress();
+        } else {
+            // Return 0 on revert or if pool returned something unexpected
             token = address(0);
         }
     }
