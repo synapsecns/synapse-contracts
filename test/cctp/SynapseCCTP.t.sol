@@ -14,6 +14,16 @@ import {
 } from "../../contracts/cctp/libs/Errors.sol";
 import {BaseCCTPTest, RequestLib} from "./BaseCCTP.t.sol";
 
+// prettier-ignore
+import {
+    WeirdPoolBase,
+    WeirdPoolGetTokenNull,
+    WeirdPoolGetTokenNonView,
+    WeirdPoolGetTokenReturnsBytes32,
+    WeirdPoolGetTokenReturnsTwoAddresses,
+    WeirdPoolGetTokenReturnsZero
+} from "./mocks/WeirdPools.sol";
+
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 contract SynapseCCTPTest is BaseCCTPTest {
@@ -596,6 +606,167 @@ contract SynapseCCTPTest is BaseCCTPTest {
             tokenIndexTo: 2, // out of range
             deadline: block.timestamp,
             minAmountOut: amountOut
+        });
+        // Swap fails, and as a result the recipient gets the minted tokens instead
+        checkRequestFulfilled({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
+            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
+            expectedAmountOut: amount - swapFeeAmount,
+            swapParams: swapParams
+        });
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
+    }
+
+    function testReceiveCircleTokenSwapRequestSwapRequestZeroValues() public {
+        uint256 amount = 10**8;
+        uint256 swapFeeAmount = 2 * 10**6;
+        bytes memory swapParams = RequestLib.formatSwapParams({
+            pool: address(0),
+            tokenIndexFrom: 0,
+            tokenIndexTo: 0,
+            deadline: 0,
+            minAmountOut: 0
+        });
+        // Swap fails, and as a result the recipient gets the minted tokens instead
+        checkRequestFulfilled({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
+            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
+            expectedAmountOut: amount - swapFeeAmount,
+            swapParams: swapParams
+        });
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
+    }
+
+    function testReceiveCircleTokenSwapRequestPoolHasNoGetToken() public {
+        uint256 amount = 10**8;
+        uint256 swapFeeAmount = 2 * 10**6;
+        bytes memory swapParams = RequestLib.formatSwapParams({
+            pool: address(new WeirdPoolBase()),
+            tokenIndexFrom: 0,
+            tokenIndexTo: 0,
+            deadline: 0,
+            minAmountOut: 0
+        });
+        // Swap fails, and as a result the recipient gets the minted tokens instead
+        checkRequestFulfilled({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
+            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
+            expectedAmountOut: amount - swapFeeAmount,
+            swapParams: swapParams
+        });
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
+    }
+
+    function testReceiveCircleTokenSwapRequestPoolGetTokenMutable() public {
+        uint256 amount = 10**8;
+        uint256 swapFeeAmount = 2 * 10**6;
+        bytes memory swapParams = RequestLib.formatSwapParams({
+            pool: address(new WeirdPoolGetTokenNonView()),
+            tokenIndexFrom: 0,
+            tokenIndexTo: 0,
+            deadline: 0,
+            minAmountOut: 0
+        });
+        // Swap fails, and as a result the recipient gets the minted tokens instead
+        checkRequestFulfilled({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
+            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
+            expectedAmountOut: amount - swapFeeAmount,
+            swapParams: swapParams
+        });
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
+    }
+
+    function testReceiveCircleTokenSwapRequestPoolGetTokenNoReturnData() public {
+        uint256 amount = 10**8;
+        uint256 swapFeeAmount = 2 * 10**6;
+        bytes memory swapParams = RequestLib.formatSwapParams({
+            pool: address(new WeirdPoolGetTokenNull()),
+            tokenIndexFrom: 0,
+            tokenIndexTo: 0,
+            deadline: 0,
+            minAmountOut: 0
+        });
+        // Swap fails, and as a result the recipient gets the minted tokens instead
+        checkRequestFulfilled({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
+            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
+            expectedAmountOut: amount - swapFeeAmount,
+            swapParams: swapParams
+        });
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
+    }
+
+    function testReceiveCircleTokenSwapRequestPoolGetTokenReturnsBytes32() public {
+        uint256 amount = 10**8;
+        uint256 swapFeeAmount = 2 * 10**6;
+        bytes memory swapParams = RequestLib.formatSwapParams({
+            pool: address(new WeirdPoolGetTokenReturnsBytes32()),
+            tokenIndexFrom: 0,
+            tokenIndexTo: 0,
+            deadline: 0,
+            minAmountOut: 0
+        });
+        // Swap fails, and as a result the recipient gets the minted tokens instead
+        checkRequestFulfilled({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
+            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
+            expectedAmountOut: amount - swapFeeAmount,
+            swapParams: swapParams
+        });
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
+    }
+
+    function testReceiveCircleTokenSwapRequestPoolGetTokenReturnsTwoAddresses() public {
+        uint256 amount = 10**8;
+        uint256 swapFeeAmount = 2 * 10**6;
+        bytes memory swapParams = RequestLib.formatSwapParams({
+            pool: address(new WeirdPoolGetTokenReturnsTwoAddresses()),
+            tokenIndexFrom: 0,
+            tokenIndexTo: 0,
+            deadline: 0,
+            minAmountOut: 0
+        });
+        // Swap fails, and as a result the recipient gets the minted tokens instead
+        checkRequestFulfilled({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
+            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
+            expectedAmountOut: amount - swapFeeAmount,
+            swapParams: swapParams
+        });
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
+    }
+
+    function testReceiveCircleTokenSwapRequestPoolGetTokenReturnsZero() public {
+        uint256 amount = 10**8;
+        uint256 swapFeeAmount = 2 * 10**6;
+        bytes memory swapParams = RequestLib.formatSwapParams({
+            pool: address(new WeirdPoolGetTokenReturnsZero()),
+            tokenIndexFrom: 0,
+            tokenIndexTo: 0,
+            deadline: 0,
+            minAmountOut: 0
         });
         // Swap fails, and as a result the recipient gets the minted tokens instead
         checkRequestFulfilled({
