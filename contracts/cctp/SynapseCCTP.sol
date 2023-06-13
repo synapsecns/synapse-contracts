@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 import {
     CCTPIncorrectChainId,
     CCTPIncorrectDomain,
+    CCTPIncorrectGasAmount,
     CCTPMessageNotReceived,
     CCTPTokenNotFound,
     CCTPZeroAddress,
@@ -145,7 +146,9 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         bytes calldata signature,
         uint32 requestVersion,
         bytes memory formattedRequest
-    ) external {
+    ) external payable {
+        // Check that the Relayer provided correct `msg.value`
+        if (msg.value != chainGasAmount) revert CCTPIncorrectGasAmount();
         (bytes memory baseRequest, bytes memory swapParams) = RequestLib.decodeRequest(
             requestVersion,
             formattedRequest
@@ -163,6 +166,8 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         (amount, fee) = _applyRelayerFee(token, amount, requestVersion == RequestLib.REQUEST_SWAP);
         // Fulfill the request: perform an optional swap and send the end tokens to the recipient.
         (address tokenOut, uint256 amountOut) = _fulfillRequest(recipient, token, amount, swapParams);
+        // Perform the gas airdrop and emit corresponding event if gas airdrop is enabled
+        if (msg.value > 0) _transferMsgValue(recipient);
         emit CircleRequestFulfilled(recipient, token, fee, tokenOut, amountOut, kappa);
     }
 

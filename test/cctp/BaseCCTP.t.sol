@@ -36,9 +36,13 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
     uint32 public constant DOMAIN_ETH = 0;
     uint32 public constant DOMAIN_AVAX = 1;
 
+    uint256 public constant GAS_AIRDROP_ETH = 0;
+    uint256 public constant GAS_AIRDROP_AVAX = 10**18;
+
     mapping(uint32 => CCTPSetup) public cctpSetups;
     mapping(uint32 => SynapseCCTP) public synapseCCTPs;
     mapping(uint32 => PoolSetup) public poolSetups;
+    mapping(uint32 => uint256) public chainGasAmounts;
 
     address public user;
     address public recipient;
@@ -54,8 +58,8 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         collector = makeAddr("Collector");
         deployCCTP(DOMAIN_ETH);
         deployCCTP(DOMAIN_AVAX);
-        deploySynapseCCTP(DOMAIN_ETH);
-        deploySynapseCCTP(DOMAIN_AVAX);
+        deploySynapseCCTP(DOMAIN_ETH, GAS_AIRDROP_ETH);
+        deploySynapseCCTP(DOMAIN_AVAX, GAS_AIRDROP_AVAX);
         linkDomains(CHAINID_ETH, DOMAIN_ETH, CHAINID_AVAX, DOMAIN_AVAX);
         deployPool(DOMAIN_ETH);
         deployPool(DOMAIN_AVAX);
@@ -72,8 +76,10 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         cctpSetups[domain] = setup;
     }
 
-    function deploySynapseCCTP(uint32 domain) public returns (SynapseCCTP synapseCCTP) {
+    function deploySynapseCCTP(uint32 domain, uint256 chainGasAmount) public returns (SynapseCCTP synapseCCTP) {
         synapseCCTP = new SynapseCCTP(cctpSetups[domain].tokenMessenger);
+        chainGasAmounts[domain] = chainGasAmount;
+        synapseCCTP.setChainGasAmount(chainGasAmount);
         // 1 bps relayer fee, minBaseFee = 1, minSwapFee = 2, maxFee = 100
         synapseCCTP.addToken({
             symbol: "CCTP.MockC",
@@ -146,6 +152,17 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         cctpSetups[domain].mintBurnToken.mintPublic(address(setup.pool), 10**10);
         setup.token.mint(address(setup.pool), 10**10);
         poolSetups[domain] = setup;
+    }
+
+    function disableGasAirdrops() public {
+        // Disable for ETH
+        chainGasAmounts[DOMAIN_ETH] = 0;
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setChainGasAmount(0);
+        // Disable for AVAX
+        chainGasAmounts[DOMAIN_AVAX] = 0;
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_AVAX].setChainGasAmount(0);
     }
 
     function getExpectedMessage(

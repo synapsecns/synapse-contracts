@@ -158,6 +158,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
     }
 
     function testReceiveCircleTokenBaseRequestRevertTransmitterReturnsFalse() public {
+        disableGasAirdrops();
         uint256 amount = 10**8;
         uint256 baseFeeAmount = 10**6;
         uint256 expectedAmountOut = amount - baseFeeAmount;
@@ -192,6 +193,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
     }
 
     function testReceiveCircleTokenBaseRequestRevertMalformedRequest() public {
+        disableGasAirdrops();
         uint256 amount = 10**8;
         Params memory expected = getExpectedParams({
             originDomain: DOMAIN_ETH,
@@ -223,6 +225,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
     }
 
     function testReceiveCircleTokenBaseRequestRevertChangedRequestType() public {
+        disableGasAirdrops();
         uint256 amount = 10**8;
         Params memory expected = getExpectedParams({
             originDomain: DOMAIN_ETH,
@@ -242,6 +245,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
     }
 
     function testReceiveCircleTokenBaseRequestRevertAddedSwapParams() public {
+        disableGasAirdrops();
         uint256 amount = 10**8;
         Params memory expected = getExpectedParams({
             originDomain: DOMAIN_ETH,
@@ -267,6 +271,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
     }
 
     function testReceiveCircleTokenBaseRequestRevertAddedSwapParamsChangedRequestType() public {
+        disableGasAirdrops();
         uint256 amount = 10**8;
         Params memory expected = getExpectedParams({
             originDomain: DOMAIN_ETH,
@@ -296,7 +301,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
     function testReceiveCircleTokenSwapRequest() public {
         uint256 amount = 10**8;
         uint256 swapFeeAmount = 2 * 10**6;
-        // TODO: adjust for fees when implemented
         address tokenOut = address(poolSetups[DOMAIN_AVAX].token);
         uint256 expectedAmountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
@@ -319,6 +323,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
     }
 
     function testReceiveCircleTokenSwapRequestRevertMalformedRequest() public {
+        disableGasAirdrops();
         uint256 amount = 10**8;
         uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount);
         bytes memory swapParams = RequestLib.formatSwapParams({
@@ -395,6 +400,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
     }
 
     function testReceiveCircleTokenSwapRequestRevertChangedRequestType() public {
+        disableGasAirdrops();
         uint256 amount = 10**8;
         uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount);
         bytes memory swapParams = RequestLib.formatSwapParams({
@@ -422,6 +428,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
     }
 
     function testReceiveCircleTokenSwapRequestRevertChangedRequestTypeRemovedSwapParams() public {
+        disableGasAirdrops();
         uint256 amount = 10**8;
         uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount);
         bytes memory swapParams = RequestLib.formatSwapParams({
@@ -606,6 +613,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
     // ══════════════════════════════════════════ TESTS: WITHDRAWING FEES ══════════════════════════════════════════════
 
     function accumulateFees() public {
+        disableGasAirdrops();
         uint256 amount = 10**8; // baseFee is 10**6
         Params memory expected = getExpectedParams({
             originDomain: DOMAIN_ETH,
@@ -865,6 +873,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             swapParams: swapParams
         });
         assertFalse(synapseCCTPs[destinationDomain].isRequestFulfilled(expected.kappa));
+        deal(relayer, chainGasAmounts[destinationDomain]);
         vm.expectEmit();
         emit MintAndWithdraw({
             mintRecipient: address(synapseCCTPs[destinationDomain]),
@@ -881,13 +890,14 @@ contract SynapseCCTPTest is BaseCCTPTest {
             kappa: expected.kappa
         });
         vm.prank(relayer);
-        synapseCCTPs[destinationDomain].receiveCircleToken({
+        synapseCCTPs[destinationDomain].receiveCircleToken{value: chainGasAmounts[destinationDomain]}({
             message: expected.message,
             signature: "",
             requestVersion: requestVersion,
             formattedRequest: expected.request
         });
         assertTrue(synapseCCTPs[destinationDomain].isRequestFulfilled(expected.kappa));
+        assertEq(recipient.balance, chainGasAmounts[destinationDomain]);
         checkAccumulatedRelayerFee(destinationDomain, expectedFeeAmount);
     }
 
