@@ -14,6 +14,8 @@ import {
 } from "../../contracts/cctp/libs/Errors.sol";
 import {BaseCCTPTest, RequestLib} from "./BaseCCTP.t.sol";
 
+import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
+
 contract SynapseCCTPTest is BaseCCTPTest {
     struct Params {
         bytes32 kappa;
@@ -32,6 +34,37 @@ contract SynapseCCTPTest is BaseCCTPTest {
             destinationDomain: DOMAIN_AVAX,
             destinationChainId: CHAINID_AVAX,
             amount: amount,
+            swapParams: ""
+        });
+        assertEq(cctpSetups[DOMAIN_ETH].mintBurnToken.balanceOf(user), 0);
+    }
+
+    function testSendCircleTokenBaseRequestWithLowAllowance() public {
+        uint256 amount = 10**8;
+        prepareUser(DOMAIN_ETH, amount);
+        // Imagine a scenario where SynapseCCTP somehow issued a low spending allowance to TokenMessenger
+        address synCCTP = address(synapseCCTPs[DOMAIN_ETH]);
+        address tokenMessenger = address(cctpSetups[DOMAIN_ETH].tokenMessenger);
+        address originBurnToken = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        vm.prank(synCCTP);
+        cctpSetups[DOMAIN_ETH].mintBurnToken.approve(tokenMessenger, amount - 1);
+        require(
+            cctpSetups[DOMAIN_ETH].mintBurnToken.allowance(synCCTP, tokenMessenger) == amount - 1,
+            "Failed to set low allowance"
+        );
+        // Should be able to reset the allowance to zero and then set it to infinity
+        vm.expectCall(originBurnToken, abi.encodeWithSelector(IERC20.approve.selector, tokenMessenger, 0));
+        vm.expectCall(
+            originBurnToken,
+            abi.encodeWithSelector(IERC20.approve.selector, tokenMessenger, type(uint256).max)
+        );
+        vm.prank(user);
+        synapseCCTPs[DOMAIN_ETH].sendCircleToken({
+            recipient: recipient,
+            chainId: CHAINID_AVAX,
+            burnToken: originBurnToken,
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
             swapParams: ""
         });
         assertEq(cctpSetups[DOMAIN_ETH].mintBurnToken.balanceOf(user), 0);
