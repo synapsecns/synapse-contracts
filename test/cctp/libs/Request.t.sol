@@ -228,6 +228,12 @@ contract RequestLibraryTest is Test {
         }
     }
 
+    function testDecodeRequestRevertsUnknownRequestVersion(uint32 version) public {
+        vm.assume(version > RequestLib.REQUEST_SWAP);
+        vm.expectRevert(UnknownRequestVersion.selector);
+        libHarness.decodeRequest(version, new bytes(0));
+    }
+
     function testDecodeRequestWithExtraBytes() public {
         bytes memory baseRequest = libHarness.formatBaseRequest(1, 2, address(3), 4, address(5));
         bytes memory swapParams = libHarness.formatSwapParams(address(6), 7, 8, 9, 10);
