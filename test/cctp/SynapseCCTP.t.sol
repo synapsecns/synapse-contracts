@@ -972,6 +972,36 @@ contract SynapseCCTPTest is BaseCCTPTest {
         });
     }
 
+    // ══════════════════════════════════════ TESTS: SETTING LIQUIDITY POOLS ═══════════════════════════════════════════
+
+    function testSetCircleTokenPoolSetsPool() public {
+        address token = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setCircleTokenPool(token, address(42));
+        assertEq(synapseCCTPs[DOMAIN_ETH].circleTokenPool(token), address(42));
+    }
+
+    function testSetCircleTokenPoolRevertsWhenCallerNotOwner(address caller) public {
+        address token = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        synapseCCTPs[DOMAIN_ETH].setCircleTokenPool(token, address(42));
+    }
+
+    function testSetCircleTokenPoolRevertsWhenTokenNotFound() public {
+        address token = address(cctpSetups[DOMAIN_AVAX].mintBurnToken);
+        vm.expectRevert(CCTPTokenNotFound.selector);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setCircleTokenPool(token, address(42));
+    }
+
+    function testSetCircleTokenPoolRevertsWhenTokenZero() public {
+        vm.expectRevert(CCTPZeroAddress.selector);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setCircleTokenPool(address(0), address(42));
+    }
+
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
 
     function checkRequestSent(

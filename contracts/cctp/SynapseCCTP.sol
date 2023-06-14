@@ -52,6 +52,8 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
 
     // (chainId => configuration of the remote chain)
     mapping(uint256 => DomainConfig) public remoteDomainConfig;
+    // (Circle token => liquidity pool with the token)
+    mapping(address => address) public circleTokenPool;
 
     constructor(ITokenMessenger tokenMessenger_) {
         tokenMessenger = tokenMessenger_;
@@ -76,6 +78,14 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         // Remote SynapseCCTP should be non-zero.
         if (remoteSynapseCCTP == address(0)) revert CCTPZeroAddress();
         remoteDomainConfig[remoteChainId] = DomainConfig(remoteDomain, remoteSynapseCCTP);
+    }
+
+    /// @notice Sets the liquidity pool for the given Circle token.
+    function setCircleTokenPool(address circleToken, address pool) external onlyOwner {
+        if (circleToken == address(0)) revert CCTPZeroAddress();
+        if (!_bridgeTokens.contains(circleToken)) revert CCTPTokenNotFound();
+        // Pool address can be zero if no swaps are supported for the Circle token.
+        circleTokenPool[circleToken] = pool;
     }
 
     // ═════════════════════════════════════════════ FEES WITHDRAWING ══════════════════════════════════════════════════
