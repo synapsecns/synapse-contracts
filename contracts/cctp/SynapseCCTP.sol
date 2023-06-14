@@ -250,7 +250,13 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         }
         // We checked request version to be a valid value when wrapping into `request`,
         // so this could only be `RequestLib.REQUEST_SWAP`.
-        (address pool, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 deadline, uint256 minAmountOut) = RequestLib
+        address pool = circleTokenPool[token];
+        // Fallback to Base Request if no pool is found
+        if (pool == address(0)) {
+            IERC20(token).safeTransfer(recipient, amount);
+            return (token, amount);
+        }
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 deadline, uint256 minAmountOut) = RequestLib
             .decodeSwapParams(swapParams);
         tokenOut = _tryGetToken(pool, tokenIndexTo);
         // Fallback to Base Request if failed to get tokenOut address

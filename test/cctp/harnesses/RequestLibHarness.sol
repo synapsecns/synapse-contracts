@@ -16,13 +16,12 @@ contract RequestLibHarness {
     }
 
     function formatSwapParams(
-        address pool,
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
         uint256 deadline,
         uint256 minAmountOut
     ) public pure returns (bytes memory) {
-        bytes memory result = RequestLib.formatSwapParams(pool, tokenIndexFrom, tokenIndexTo, deadline, minAmountOut);
+        bytes memory result = RequestLib.formatSwapParams(tokenIndexFrom, tokenIndexTo, deadline, minAmountOut);
         return result;
     }
 
@@ -55,16 +54,15 @@ contract RequestLibHarness {
         public
         pure
         returns (
-            address,
             uint8,
             uint8,
             uint256,
             uint256
         )
     {
-        (address pool, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 deadline, uint256 minAmountOut) = RequestLib
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 deadline, uint256 minAmountOut) = RequestLib
             .decodeSwapParams(swapParams);
-        return (pool, tokenIndexFrom, tokenIndexTo, deadline, minAmountOut);
+        return (tokenIndexFrom, tokenIndexTo, deadline, minAmountOut);
     }
 
     function decodeRequest(uint32 requestVersion, bytes memory request)
