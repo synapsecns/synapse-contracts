@@ -14,16 +14,6 @@ import {
 } from "../../contracts/cctp/libs/Errors.sol";
 import {BaseCCTPTest, RequestLib} from "./BaseCCTP.t.sol";
 
-// prettier-ignore
-import {
-    WeirdPoolBase,
-    WeirdPoolGetTokenNull,
-    WeirdPoolGetTokenNonView,
-    WeirdPoolGetTokenReturnsBytes32,
-    WeirdPoolGetTokenReturnsTwoAddresses,
-    WeirdPoolGetTokenReturnsZero
-} from "./mocks/WeirdPools.sol";
-
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 contract SynapseCCTPTest is BaseCCTPTest {
@@ -84,7 +74,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
         uint256 amount = 10**8;
         prepareUser(DOMAIN_ETH, amount);
         bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(1234),
             tokenIndexFrom: 0,
             tokenIndexTo: 1,
             deadline: 4321,
@@ -214,7 +203,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
         });
         // Test all possible malformed requests: we change a lowest byte in one of the request fields:
         // originDomain, nonce, originBurnToken, amount, recipient
-        for (uint256 i = 0; i < 5; ++i) {
+        for (uint256 i = 0; i < RequestLib.REQUEST_BASE_LENGTH / 32; ++i) {
             bytes memory malformedRequest = abi.encodePacked(expected.request);
             // Figure out the byte index of the field we want to change
             // request[byteIndex] is the lowest byte of the field `i`
@@ -268,7 +257,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
         bytes memory swapRequest = RequestLib.formatRequest({
             requestVersion: RequestLib.REQUEST_SWAP,
             baseRequest: expected.request,
-            swapParams: RequestLib.formatSwapParams(address(0), 0, 0, 0, 0)
+            swapParams: RequestLib.formatSwapParams(0, 0, 0, 0)
         });
         // Simply adding swap params w/o changing the request type should fail when request is wrapped
         vm.expectRevert(IncorrectRequestLength.selector);
@@ -294,7 +283,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
         bytes memory swapRequest = RequestLib.formatRequest({
             requestVersion: RequestLib.REQUEST_SWAP,
             baseRequest: expected.request,
-            swapParams: RequestLib.formatSwapParams(address(0), 0, 0, 0, 0)
+            swapParams: RequestLib.formatSwapParams(0, 0, 0, 0)
         });
         // Proving a valid request of another type leads to a failed destinationCaller check in MessageTransmitter
         vm.expectRevert("Invalid caller for message");
@@ -314,7 +303,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
         address tokenOut = address(poolSetups[DOMAIN_AVAX].token);
         uint256 expectedAmountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 0,
             tokenIndexTo: 1,
             deadline: block.timestamp,
@@ -337,7 +325,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
         uint256 amount = 10**8;
         uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount);
         bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 0,
             tokenIndexTo: 1,
             deadline: block.timestamp,
@@ -359,7 +346,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
         });
         // Test all possible malformed base requests: we change a lowest byte in one of the request fields:
         // originDomain, nonce, originBurnToken, amount, recipient
-        for (uint256 i = 0; i < 5; ++i) {
+        for (uint256 i = 0; i < RequestLib.REQUEST_BASE_LENGTH / 32; ++i) {
             bytes memory malformedRequest = abi.encodePacked(expectedBase.request);
             // Figure out the byte index of the field we want to change
             // request[byteIndex] is the lowest byte of the field `i`
@@ -383,8 +370,8 @@ contract SynapseCCTPTest is BaseCCTPTest {
             }
         }
         // Test all possible malformed swap params: we change a lowest byte in one of the request fields:
-        // pool, tokenIndexFrom, tokenIndexTo, deadline, minAmountOut
-        for (uint256 i = 0; i < 5; ++i) {
+        // tokenIndexFrom, tokenIndexTo, deadline, minAmountOut
+        for (uint256 i = 0; i < RequestLib.SWAP_PARAMS_LENGTH / 32; ++i) {
             bytes memory malformedSwapParams = abi.encodePacked(swapParams);
             // Figure out the byte index of the field we want to change
             // swapParams[byteIndex] is the lowest byte of the field `i`
@@ -397,6 +384,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
                     baseRequest: expectedBase.request,
                     swapParams: malformedSwapParams
                 });
+
                 // destinationCaller check in MessageTransmitter should fail
                 vm.expectRevert("Invalid caller for message");
                 synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
@@ -414,7 +402,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
         uint256 amount = 10**8;
         uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount);
         bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 0,
             tokenIndexTo: 1,
             deadline: block.timestamp,
@@ -442,7 +429,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
         uint256 amount = 10**8;
         uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount);
         bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 0,
             tokenIndexTo: 1,
             deadline: block.timestamp,
@@ -481,7 +467,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
         uint256 swapFeeAmount = 2 * 10**6;
         uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 0,
             tokenIndexTo: 1,
             deadline: block.timestamp - 1, // deadline exceeded
@@ -505,7 +490,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
         uint256 swapFeeAmount = 2 * 10**6;
         uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 0,
             tokenIndexTo: 1,
             deadline: block.timestamp,
@@ -529,7 +513,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
         uint256 swapFeeAmount = 2 * 10**6;
         uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 0,
             tokenIndexTo: 0, // identical token indexes
             deadline: block.timestamp,
@@ -553,7 +536,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
         uint256 swapFeeAmount = 2 * 10**6;
         uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 1, // incorrect order
             tokenIndexTo: 0,
             deadline: block.timestamp,
@@ -577,7 +559,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
         uint256 swapFeeAmount = 2 * 10**6;
         uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 2, // out of range
             tokenIndexTo: 1,
             deadline: block.timestamp,
@@ -601,7 +582,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
         uint256 swapFeeAmount = 2 * 10**6;
         uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 0,
             tokenIndexTo: 2, // out of range
             deadline: block.timestamp,
@@ -624,7 +604,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
         uint256 amount = 10**8;
         uint256 swapFeeAmount = 2 * 10**6;
         bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(0),
             tokenIndexFrom: 0,
             tokenIndexTo: 0,
             deadline: 0,
@@ -643,132 +622,17 @@ contract SynapseCCTPTest is BaseCCTPTest {
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
-    function testReceiveCircleTokenSwapRequestPoolHasNoGetToken() public {
+    function testReceiveCircleTokenSwapRequestNoWhitelistedPool() public {
         uint256 amount = 10**8;
         uint256 swapFeeAmount = 2 * 10**6;
         bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(new WeirdPoolBase()),
             tokenIndexFrom: 0,
-            tokenIndexTo: 0,
-            deadline: 0,
+            tokenIndexTo: 1,
+            deadline: type(uint256).max,
             minAmountOut: 0
         });
-        // Swap fails, and as a result the recipient gets the minted tokens instead
-        checkRequestFulfilled({
-            originDomain: DOMAIN_ETH,
-            destinationDomain: DOMAIN_AVAX,
-            amountIn: amount,
-            expectedFeeAmount: swapFeeAmount,
-            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
-            expectedAmountOut: amount - swapFeeAmount,
-            swapParams: swapParams
-        });
-        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
-    }
-
-    function testReceiveCircleTokenSwapRequestPoolGetTokenMutable() public {
-        uint256 amount = 10**8;
-        uint256 swapFeeAmount = 2 * 10**6;
-        bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(new WeirdPoolGetTokenNonView()),
-            tokenIndexFrom: 0,
-            tokenIndexTo: 0,
-            deadline: 0,
-            minAmountOut: 0
-        });
-        // Swap fails, and as a result the recipient gets the minted tokens instead
-        checkRequestFulfilled({
-            originDomain: DOMAIN_ETH,
-            destinationDomain: DOMAIN_AVAX,
-            amountIn: amount,
-            expectedFeeAmount: swapFeeAmount,
-            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
-            expectedAmountOut: amount - swapFeeAmount,
-            swapParams: swapParams
-        });
-        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
-    }
-
-    function testReceiveCircleTokenSwapRequestPoolGetTokenNoReturnData() public {
-        uint256 amount = 10**8;
-        uint256 swapFeeAmount = 2 * 10**6;
-        bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(new WeirdPoolGetTokenNull()),
-            tokenIndexFrom: 0,
-            tokenIndexTo: 0,
-            deadline: 0,
-            minAmountOut: 0
-        });
-        // Swap fails, and as a result the recipient gets the minted tokens instead
-        checkRequestFulfilled({
-            originDomain: DOMAIN_ETH,
-            destinationDomain: DOMAIN_AVAX,
-            amountIn: amount,
-            expectedFeeAmount: swapFeeAmount,
-            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
-            expectedAmountOut: amount - swapFeeAmount,
-            swapParams: swapParams
-        });
-        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
-    }
-
-    function testReceiveCircleTokenSwapRequestPoolGetTokenReturnsBytes32() public {
-        uint256 amount = 10**8;
-        uint256 swapFeeAmount = 2 * 10**6;
-        bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(new WeirdPoolGetTokenReturnsBytes32()),
-            tokenIndexFrom: 0,
-            tokenIndexTo: 0,
-            deadline: 0,
-            minAmountOut: 0
-        });
-        // Swap fails, and as a result the recipient gets the minted tokens instead
-        checkRequestFulfilled({
-            originDomain: DOMAIN_ETH,
-            destinationDomain: DOMAIN_AVAX,
-            amountIn: amount,
-            expectedFeeAmount: swapFeeAmount,
-            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
-            expectedAmountOut: amount - swapFeeAmount,
-            swapParams: swapParams
-        });
-        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
-    }
-
-    function testReceiveCircleTokenSwapRequestPoolGetTokenReturnsTwoAddresses() public {
-        uint256 amount = 10**8;
-        uint256 swapFeeAmount = 2 * 10**6;
-        bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(new WeirdPoolGetTokenReturnsTwoAddresses()),
-            tokenIndexFrom: 0,
-            tokenIndexTo: 0,
-            deadline: 0,
-            minAmountOut: 0
-        });
-        // Swap fails, and as a result the recipient gets the minted tokens instead
-        checkRequestFulfilled({
-            originDomain: DOMAIN_ETH,
-            destinationDomain: DOMAIN_AVAX,
-            amountIn: amount,
-            expectedFeeAmount: swapFeeAmount,
-            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
-            expectedAmountOut: amount - swapFeeAmount,
-            swapParams: swapParams
-        });
-        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
-    }
-
-    function testReceiveCircleTokenSwapRequestPoolGetTokenReturnsZero() public {
-        uint256 amount = 10**8;
-        uint256 swapFeeAmount = 2 * 10**6;
-        bytes memory swapParams = RequestLib.formatSwapParams({
-            pool: address(new WeirdPoolGetTokenReturnsZero()),
-            tokenIndexFrom: 0,
-            tokenIndexTo: 0,
-            deadline: 0,
-            minAmountOut: 0
-        });
-        // Swap fails, and as a result the recipient gets the minted tokens instead
+        removeCircleTokenPool(DOMAIN_AVAX);
+        // No Swap is available, and as a result the recipient gets the minted tokens instead
         checkRequestFulfilled({
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,

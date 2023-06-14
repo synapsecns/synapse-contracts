@@ -152,6 +152,14 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         cctpSetups[domain].mintBurnToken.mintPublic(address(setup.pool), 10**10);
         setup.token.mint(address(setup.pool), 10**10);
         poolSetups[domain] = setup;
+        // Whitelist pool in SynapseCCTP
+        vm.prank(owner);
+        synapseCCTPs[domain].setCircleTokenPool(address(cctpSetups[domain].mintBurnToken), address(setup.pool));
+    }
+
+    function removeCircleTokenPool(uint32 domain) public {
+        vm.prank(owner);
+        synapseCCTPs[domain].setCircleTokenPool(address(cctpSetups[domain].mintBurnToken), address(0));
     }
 
     function disableGasAirdrops() public {
