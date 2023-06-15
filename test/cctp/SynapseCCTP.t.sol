@@ -18,7 +18,7 @@ import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 contract SynapseCCTPTest is BaseCCTPTest {
     struct Params {
-        bytes32 kappa;
+        bytes32 requestID;
         bytes request;
         bytes32 mintRecipient;
         bytes32 destinationCaller;
@@ -906,7 +906,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             amount: amount,
             requestVersion: requestVersion,
             formattedRequest: expected.request,
-            kappa: expected.kappa
+            requestID: expected.requestID
         });
         vm.prank(user);
         synapseCCTPs[originDomain].sendCircleToken({
@@ -937,7 +937,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             requestVersion: requestVersion,
             swapParams: swapParams
         });
-        assertFalse(synapseCCTPs[destinationDomain].isRequestFulfilled(expected.kappa));
+        assertFalse(synapseCCTPs[destinationDomain].isRequestFulfilled(expected.requestID));
         deal(relayer, chainGasAmounts[destinationDomain]);
         vm.expectEmit();
         emit MintAndWithdraw({
@@ -952,7 +952,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             fee: expectedFeeAmount,
             token: expectedTokenOut,
             amount: expectedAmountOut,
-            kappa: expected.kappa
+            requestID: expected.requestID
         });
         vm.prank(relayer);
         synapseCCTPs[destinationDomain].receiveCircleToken{value: chainGasAmounts[destinationDomain]}({
@@ -961,7 +961,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             requestVersion: requestVersion,
             formattedRequest: expected.request
         });
-        assertTrue(synapseCCTPs[destinationDomain].isRequestFulfilled(expected.kappa));
+        assertTrue(synapseCCTPs[destinationDomain].isRequestFulfilled(expected.requestID));
         assertEq(recipient.balance, chainGasAmounts[destinationDomain]);
         checkAccumulatedRelayerFee(destinationDomain, expectedFeeAmount);
     }
@@ -984,7 +984,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
         bytes memory swapParams
     ) public view returns (Params memory expected) {
         address originBurnToken = address(cctpSetups[originDomain].mintBurnToken);
-        expected.kappa = getExpectedKappa({
+        expected.requestID = getExpectedrequestID({
             originDomain: originDomain,
             destinationDomain: destinationDomain,
             finalRecipient: recipient,
@@ -1002,7 +1002,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
         expected.mintRecipient = bytes32(uint256(uint160(address(synapseCCTPs[destinationDomain]))));
         expected.destinationCaller = getExpectedDstCaller({
             destinationDomain: destinationDomain,
-            kappa: expected.kappa
+            requestID: expected.requestID
         });
         expected.destinationTokenMessenger = bytes32(
             uint256(uint160(address(cctpSetups[destinationDomain].tokenMessenger)))

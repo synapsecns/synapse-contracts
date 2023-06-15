@@ -133,10 +133,10 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         if (dstSynapseCCTP == 0) revert RemoteCCTPDeploymentNotSet();
         uint32 destinationDomain = config.domain;
         // Construct the request identifier to be used as salt later.
-        // The identifier (kappa) is unique for every single request on all the chains.
+        // The identifier (requestID) is unique for every single request on all the chains.
         // This is done by including origin and destination domains as well as origin nonce in the hashed data.
         // Origin domain and nonce are included in `formattedRequest`, so we only need to add the destination domain.
-        bytes32 kappa = _kappa(destinationDomain, requestVersion, formattedRequest);
+        bytes32 requestID = _requestID(destinationDomain, requestVersion, formattedRequest);
         // Issue allowance if needed
         _approveToken(burnToken, address(tokenMessenger), amount);
         tokenMessenger.depositForBurnWithCaller(
@@ -144,9 +144,9 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
             destinationDomain,
             dstSynapseCCTP,
             burnToken,
-            _destinationCaller(dstSynapseCCTP.bytes32ToAddress(), kappa)
+            _destinationCaller(dstSynapseCCTP.bytes32ToAddress(), requestID)
         );
-        emit CircleRequestSent(chainId, nonce, burnToken, amount, requestVersion, formattedRequest, kappa);
+        emit CircleRequestSent(chainId, nonce, burnToken, amount, requestVersion, formattedRequest, requestID);
     }
 
     // TODO: guard this to be only callable by the validators?
@@ -165,11 +165,11 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         );
         (uint32 originDomain, , address originBurnToken, uint256 amount, address recipient) = RequestLib
             .decodeBaseRequest(baseRequest);
-        // For kappa hashing we use origin and destination domains as well as origin nonce.
-        // This ensures that kappa is unique for each request, and that it is not possible to replay requests.
-        bytes32 kappa = _kappa(localDomain, requestVersion, formattedRequest);
+        // For requestID hashing we use origin and destination domains as well as origin nonce.
+        // This ensures that requestID is unique for each request, and that it is not possible to replay requests.
+        bytes32 requestID = _requestID(localDomain, requestVersion, formattedRequest);
         // Kindly ask the Circle Bridge to mint the tokens for us.
-        _mintCircleToken(message, signature, kappa);
+        _mintCircleToken(message, signature, requestID);
         address token = _getLocalToken(originDomain, originBurnToken);
         uint256 fee;
         // Apply the bridging fee. This will revert if amount <= fee.
@@ -178,7 +178,7 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         (address tokenOut, uint256 amountOut) = _fulfillRequest(recipient, token, amount, swapParams);
         // Perform the gas airdrop and emit corresponding event if gas airdrop is enabled
         if (msg.value > 0) _transferMsgValue(recipient);
-        emit CircleRequestFulfilled(recipient, token, fee, tokenOut, amountOut, kappa);
+        emit CircleRequestFulfilled(recipient, token, fee, tokenOut, amountOut, requestID);
     }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
@@ -189,9 +189,9 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
     }
 
     /// @notice Checks if the given request is already fulfilled.
-    function isRequestFulfilled(bytes32 kappa) external view returns (bool) {
-        // Request is fulfilled if the kappa is already used, meaning the forwarder is already deployed.
-        return MinimalForwarderLib.predictAddress(address(this), kappa).code.length > 0;
+    function isRequestFulfilled(bytes32 requestID) external view returns (bool) {
+        // Request is fulfilled if the requestID is already used, meaning the forwarder is already deployed.
+        return MinimalForwarderLib.predictAddress(address(this), requestID).code.length > 0;
     }
 
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
@@ -222,10 +222,10 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
     function _mintCircleToken(
         bytes calldata message,
         bytes calldata signature,
-        bytes32 kappa
+        bytes32 requestID
     ) internal {
-        // Deploy a forwarder specific to this request. Will revert if the kappa has been used before.
-        address forwarder = MinimalForwarderLib.deploy(kappa);
+        // Deploy a forwarder specific to this request. Will revert if the requestID has been used before.
+        address forwarder = MinimalForwarderLib.deploy(requestID);
         // Form the payload for the Circle Bridge.
         bytes memory payload = abi.encodeWithSelector(IMessageTransmitter.receiveMessage.selector, message, signature);
         // Use the deployed forwarder (who is the only one who can call the Circle Bridge for this message)
@@ -324,16 +324,18 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
     }
 
     /// @dev Predicts the address of the destination caller that will be used to call the Circle Message Transmitter.
-    function _destinationCaller(address synapseCCTP, bytes32 kappa) internal pure returns (bytes32) {
-        return synapseCCTP.predictAddress(kappa).addressToBytes32();
+    function _destinationCaller(address synapseCCTP, bytes32 requestID) internal pure returns (bytes32) {
+        // On the destination chain, Synapse CCTP will deploy a MinimalForwarder for each request,
+        // using requestID as salt for the create2 deployment.
+        return synapseCCTP.predictAddress(requestID).addressToBytes32();
     }
 
     /// @dev Calculates the unique identifier of the request.
-    function _kappa(
+    function _requestID(
         uint32 destinationDomain,
         uint32 requestVersion,
         bytes memory formattedRequest
-    ) internal pure returns (bytes32 kappa) {
+    ) internal pure returns (bytes32 requestID) {
         // Merge the destination domain and the request version into a single uint256.
         uint256 prefix = (uint256(destinationDomain) << 32) | requestVersion;
         bytes32 requestHash = keccak256(formattedRequest);
@@ -345,7 +347,7 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
             mstore(0, prefix)
             mstore(32, requestHash)
             // Return hash of first 64 bytes of memory.
-            kappa := keccak256(0, 64)
+            requestID := keccak256(0, 64)
         }
     }
 }

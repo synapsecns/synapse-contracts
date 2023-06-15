@@ -195,7 +195,7 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         });
     }
 
-    function getExpectedKappa(
+    function getExpectedrequestID(
         uint32 originDomain,
         uint32 destinationDomain,
         address finalRecipient,
@@ -203,7 +203,7 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         uint256 amount,
         uint32 requestVersion,
         bytes memory swapParams
-    ) public view returns (bytes32 kappa) {
+    ) public view returns (bytes32 requestID) {
         uint64 nonce = cctpSetups[originDomain].messageTransmitter.nextAvailableNonce();
         bytes memory formattedRequest = RequestLib.formatRequest({
             requestVersion: requestVersion,
@@ -218,17 +218,17 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         });
         bytes32 requestHash = keccak256(formattedRequest);
         uint256 prefix = uint256(destinationDomain) * 2**32 + requestVersion;
-        kappa = keccak256(abi.encodePacked(prefix, requestHash));
+        requestID = keccak256(abi.encodePacked(prefix, requestHash));
     }
 
-    function getExpectedDstCaller(uint32 destinationDomain, bytes32 kappa)
+    function getExpectedDstCaller(uint32 destinationDomain, bytes32 requestID)
         public
         view
         returns (bytes32 destinationCaller)
     {
         address dstCaller = MinimalForwarderLib.predictAddress({
             deployer: address(synapseCCTPs[destinationDomain]),
-            salt: kappa
+            salt: requestID
         });
         destinationCaller = bytes32(uint256(uint160(dstCaller)));
     }
