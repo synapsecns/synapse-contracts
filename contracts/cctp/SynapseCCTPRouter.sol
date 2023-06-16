@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
 import {ISynapseCCTPFees} from "./interfaces/ISynapseCCTPFees.sol";
 import {BridgeToken, DestRequest, SwapQuery, ISynapseCCTPRouter} from "./interfaces/ISynapseCCTPRouter.sol";
+import {Action, DefaultParams} from "../router/libs/Structs.sol";
 
 import {IDefaultPool} from "../router/interfaces/IDefaultPool.sol";
 
@@ -67,6 +68,44 @@ contract SynapseCCTPRouter is ISynapseCCTPRouter {
     {}
 
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
+
+    /// @dev Finds the quote for tokenIn -> tokenOut swap using a given pool.
+    /// Note: only populates `tokenOut`, `minAmountOut` and `rawParams` fields.
+    function _getAmountOut(
+        address pool,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn
+    ) internal view returns (SwapQuery memory query) {
+        query.tokenOut = tokenOut;
+        if (tokenIn == tokenOut) {
+            query.minAmountOut = amountIn;
+            // query.rawParams is "", indicating that no further action is required
+            return query;
+        }
+        if (pool == address(0)) {
+            // query.minAmountOut is 0, indicating that no quote was found
+            // query.rawParams is "", indicating that no further action is required
+            return query;
+        }
+        address[] memory poolTokens = _getPoolTokens(pool);
+        uint256 numTokens = poolTokens.length;
+        // Iterate over all valid (tokenIndexFrom, tokenIndexTo) combinations for tokenIn -> tokenOut swap
+        for (uint8 tokenIndexFrom = 0; tokenIndexFrom < numTokens; ++tokenIndexFrom) {
+            // We are only interested in the tokenFrom == tokenIn case
+            if (poolTokens[tokenIndexFrom] != tokenIn) continue;
+            for (uint8 tokenIndexTo = 0; tokenIndexTo < numTokens; ++tokenIndexTo) {
+                // We are only interested in the tokenTo == tokenOut case
+                if (poolTokens[tokenIndexTo] != tokenOut) continue;
+                uint256 amountOut = _getPoolSwapQuote(pool, tokenIndexFrom, tokenIndexTo, amountIn);
+                // Update the query if the new quote is better than the previous one
+                if (amountOut > query.minAmountOut) {
+                    query.minAmountOut = amountOut;
+                    query.rawParams = abi.encode(DefaultParams(Action.Swap, pool, tokenIndexFrom, tokenIndexTo));
+                }
+            }
+        }
+    }
 
     /// @dev Checks if a token is connected to a Circle token: whether the token is in the whitelisted liquidity pool
     /// for the Circle token.
