@@ -4,11 +4,14 @@ pragma solidity 0.8.17;
 import {IDefaultPool, IDefaultExtendedPool} from "../interfaces/IDefaultExtendedPool.sol";
 import {IRouterAdapter} from "../interfaces/IRouterAdapter.sol";
 import {IWETH9} from "../interfaces/IWETH9.sol";
-import {MsgValueIncorrect, TokenAddressMismatch} from "../libs/Errors.sol";
+import {MsgValueIncorrect, PoolNotFound, TokenAddressMismatch, TokensIdentical} from "../libs/Errors.sol";
 import {Action, DefaultParams} from "../libs/Structs.sol";
 import {UniversalTokenLib} from "../libs/UniversalToken.sol";
 
+import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
+
 contract DefaultAdapter is IRouterAdapter {
+    using SafeERC20 for IERC20;
     using UniversalTokenLib for address;
 
     /// @notice Enable this contract to receive Ether when withdrawing from WETH.
@@ -34,7 +37,120 @@ contract DefaultAdapter is IRouterAdapter {
         uint256 amountIn,
         address tokenOut,
         bytes memory rawParams
-    ) internal returns (uint256 amountOut) {}
+    ) internal returns (uint256 amountOut) {
+        // We define a few phases for the whole Adapter's swap process.
+        // (?) means the phase is optional.
+        // (!) means the phase is mandatory.
+
+        // PHASE 0(!): CHECK ALL THE PARAMS
+        DefaultParams memory params = _checkParams(tokenIn, tokenOut, rawParams);
+
+        // PHASE 1(?): WRAP RECEIVED ETH INTO WETH
+        tokenIn = _wrapReceivedETH(tokenIn, amountIn, tokenOut, params);
+        // After PHASE 1 this contract has `amountIn` worth of `tokenIn`, tokenIn != ETH_ADDRESS
+
+        // PHASE 2(?): PREPARE TO UNWRAP SWAPPED WETH
+        address tokenSwapTo = _deriveTokenSwapTo(tokenIn, tokenOut, params);
+        // We need to perform tokenIn -> tokenSwapTo action in PHASE 3.
+        // if tokenOut == ETH_ADDRESS, we need to unwrap WETH in PHASE 4.
+        // Recipient will receive `tokenOut` in PHASE 5.
+
+        // PHASE 3(?): PERFORM A REQUESTED SWAP
+        amountOut = _performPoolAction(tokenIn, amountIn, tokenSwapTo, params);
+        // After PHASE 3 this contract has `amountOut` worth of `tokenSwapTo`, tokenSwapTo != ETH_ADDRESS
+
+        // PHASE 4(?): UNWRAP SWAPPED WETH
+        // Check if the final token is native ETH
+        if (tokenOut == UniversalTokenLib.ETH_ADDRESS) {
+            // PHASE 2: WETH address was stored as `tokenSwapTo`
+            _unwrapETH(tokenSwapTo, amountOut);
+        }
+
+        // PHASE 5(!): TRANSFER SWAPPED TOKENS TO RECIPIENT
+        // Note: this will transfer native ETH, if tokenOut == ETH_ADDRESS
+        // Note: this is a no-op if recipient == address(this)
+        tokenOut.universalTransfer(recipient, amountOut);
+    }
+
+    /// @dev Checks the params and decodes them into a struct.
+    function _checkParams(
+        address tokenIn,
+        address tokenOut,
+        bytes memory rawParams
+    ) internal pure returns (DefaultParams memory params) {
+        if (tokenIn == tokenOut) revert TokensIdentical();
+        // Decode params for swapping via a Default pool
+        params = abi.decode(rawParams, (DefaultParams));
+        // Swap pool should exist, if action other than HandleEth was requested
+        if (params.pool == address(0) && params.action != Action.HandleEth) revert PoolNotFound();
+    }
+
+    /// @dev Wraps native ETH into WETH, if requested.
+    /// Returns the address of the token this contract ends up with.
+    function _wrapReceivedETH(
+        address tokenIn,
+        uint256 amountIn,
+        address tokenOut,
+        DefaultParams memory params
+    ) internal returns (address wrappedTokenIn) {
+        // tokenIn was already transferred to this contract, check if we start from native ETH
+        if (tokenIn == UniversalTokenLib.ETH_ADDRESS) {
+            // Determine WETH address: this is either tokenOut (if no swap is needed),
+            // or a pool token with index `tokenIndexFrom` (if swap is needed).
+            wrappedTokenIn = _deriveWethAddress({token: tokenOut, params: params, isTokenFromWeth: true});
+            // Wrap ETH into WETH and leave it in this contract
+            _wrapETH(wrappedTokenIn, amountIn);
+        } else {
+            wrappedTokenIn = tokenIn;
+            // For ERC20 tokens msg.value should be zero
+            if (msg.value != 0) revert MsgValueIncorrect();
+        }
+    }
+
+    /// @dev Derives the address of token to be received after an action defined in `params`.
+    function _deriveTokenSwapTo(
+        address tokenIn,
+        address tokenOut,
+        DefaultParams memory params
+    ) internal view returns (address tokenSwapTo) {
+        // Check if swap to native ETH was requested
+        if (tokenOut == UniversalTokenLib.ETH_ADDRESS) {
+            // Determine WETH address: this is either tokenIn (if no swap is needed),
+            // or a pool token with index `tokenIndexTo` (if swap is needed).
+            tokenSwapTo = _deriveWethAddress({token: tokenIn, params: params, isTokenFromWeth: false});
+        } else {
+            tokenSwapTo = tokenOut;
+        }
+    }
+
+    /// @dev Performs an action defined in `params` and returns the amount of `tokenSwapTo` received.
+    function _performPoolAction(
+        address tokenIn,
+        uint256 amountIn,
+        address tokenSwapTo,
+        DefaultParams memory params
+    ) internal returns (uint256 amountOut) {
+        // Determine if we need to perform a swap
+        if (params.action == Action.HandleEth) {
+            // If no swap is required, amountOut doesn't change
+            amountOut = amountIn;
+        } else {
+            // Record balance before the swap
+            amountOut = IERC20(tokenSwapTo).balanceOf(address(this));
+            // Approve the pool for spending exactly `amountIn` of `tokenIn`
+            IERC20(tokenIn).safeIncreaseAllowance(params.pool, amountIn);
+            if (params.action == Action.Swap) {
+                _swap(params.pool, params, amountIn, tokenSwapTo);
+            } else if (params.action == Action.AddLiquidity) {
+                _addLiquidity(params.pool, params, amountIn, tokenSwapTo);
+            } else {
+                // The only remaining action is RemoveLiquidity
+                _removeLiquidity(params.pool, params, amountIn, tokenSwapTo);
+            }
+            // Use the difference between the balance after the swap and the recorded balance as `amountOut`
+            amountOut = IERC20(tokenSwapTo).balanceOf(address(this)) - amountOut;
+        }
+    }
 
     // ═══════════════════════════════════════ INTERNAL LOGIC: SWAP ACTIONS ════════════════════════════════════════════
 
@@ -45,11 +161,11 @@ contract DefaultAdapter is IRouterAdapter {
         DefaultParams memory params,
         uint256 amountIn,
         address tokenOut
-    ) internal returns (uint256 amountOut) {
+    ) internal {
         // tokenOut should match the "swap to" token
         if (IDefaultPool(pool).getToken(params.tokenIndexTo) != tokenOut) revert TokenAddressMismatch();
         // amountOut and deadline are not checked in RouterAdapter
-        amountOut = IDefaultPool(pool).swap({
+        IDefaultPool(pool).swap({
             tokenIndexFrom: params.tokenIndexFrom,
             tokenIndexTo: params.tokenIndexTo,
             dx: amountIn,
@@ -65,7 +181,7 @@ contract DefaultAdapter is IRouterAdapter {
         DefaultParams memory params,
         uint256 amountIn,
         address tokenOut
-    ) internal returns (uint256 amountOut) {
+    ) internal {
         uint256 numTokens = _getPoolNumTokens(pool);
         address lpToken = _getPoolLPToken(pool);
         // tokenOut should match the LP token
@@ -73,11 +189,7 @@ contract DefaultAdapter is IRouterAdapter {
         uint256[] memory amounts = new uint256[](numTokens);
         amounts[params.tokenIndexFrom] = amountIn;
         // amountOut and deadline are not checked in RouterAdapter
-        amountOut = IDefaultExtendedPool(pool).addLiquidity({
-            amounts: amounts,
-            minToMint: 0,
-            deadline: type(uint256).max
-        });
+        IDefaultExtendedPool(pool).addLiquidity({amounts: amounts, minToMint: 0, deadline: type(uint256).max});
     }
 
     /// @dev Removes liquidity in a form of a single token from the given pool.
@@ -87,11 +199,11 @@ contract DefaultAdapter is IRouterAdapter {
         DefaultParams memory params,
         uint256 amountIn,
         address tokenOut
-    ) internal returns (uint256 amountOut) {
+    ) internal {
         // tokenOut should match the "swap to" token
         if (IDefaultPool(pool).getToken(params.tokenIndexTo) != tokenOut) revert TokenAddressMismatch();
         // amountOut and deadline are not checked in RouterAdapter
-        amountOut = IDefaultExtendedPool(pool).removeLiquidityOneToken({
+        IDefaultExtendedPool(pool).removeLiquidityOneToken({
             tokenAmount: amountIn,
             tokenIndex: params.tokenIndexTo,
             minAmount: 0,
