@@ -3,12 +3,17 @@ pragma solidity 0.8.17;
 
 import {IDefaultPool, IDefaultExtendedPool} from "../interfaces/IDefaultExtendedPool.sol";
 import {IRouterAdapter} from "../interfaces/IRouterAdapter.sol";
-import {TokenAddressMismatch} from "../libs/Errors.sol";
-import {DefaultParams} from "../libs/Structs.sol";
+import {IWETH9} from "../interfaces/IWETH9.sol";
+import {MsgValueIncorrect, TokenAddressMismatch} from "../libs/Errors.sol";
+import {Action, DefaultParams} from "../libs/Structs.sol";
 import {UniversalTokenLib} from "../libs/UniversalToken.sol";
 
 contract DefaultAdapter is IRouterAdapter {
     using UniversalTokenLib for address;
+
+    /// @notice Enable this contract to receive Ether when withdrawing from WETH.
+    /// @dev Consider implementing rescue functions to withdraw Ether from this contract.
+    receive() external payable {}
 
     /// @inheritdoc IRouterAdapter
     function adapterSwap(
@@ -116,8 +121,32 @@ contract DefaultAdapter is IRouterAdapter {
     // ════════════════════════════════════════ INTERNAL LOGIC: ETH <> WETH ════════════════════════════════════════════
 
     /// @dev Wraps ETH into WETH.
-    function _wrapETH(address weth, uint256 amount) internal {}
+    function _wrapETH(address weth, uint256 amount) internal {
+        if (amount != msg.value) revert MsgValueIncorrect();
+        // Deposit in order to have WETH in this contract
+        IWETH9(weth).deposit{value: amount}();
+    }
 
     /// @dev Unwraps WETH into ETH.
-    function _unwrapETH(address weth, uint256 amount) internal {}
+    function _unwrapETH(address weth, uint256 amount) internal {
+        // Withdraw ETH to this contract
+        IWETH9(weth).withdraw(amount);
+    }
+
+    /// @dev Derives WETH address from swap parameters.
+    function _deriveWethAddress(
+        address token,
+        DefaultParams memory params,
+        bool isTokenFromWeth
+    ) internal view returns (address weth) {
+        if (params.action == Action.HandleEth) {
+            // If we only need to wrap/unwrap ETH, WETH address should be specified as the other token
+            weth = token;
+        } else {
+            // Otherwise, we need to get WETH address from the liquidity pool
+            weth = address(
+                IDefaultPool(params.pool).getToken(isTokenFromWeth ? params.tokenIndexFrom : params.tokenIndexTo)
+            );
+        }
+    }
 }
