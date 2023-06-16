@@ -73,6 +73,16 @@ struct SwapQuery {
     bytes rawParams;
 }
 
+using SwapQueryLib for SwapQuery global;
+
+library SwapQueryLib {
+    /// @notice Checks whether the router adapter was specified in the query.
+    /// Query without a router adapter specifies that no action needs to be taken.
+    function hasAdapter(SwapQuery memory query) internal pure returns (bool) {
+        return query.routerAdapter != address(0);
+    }
+}
+
 // ════════════════════════════════════════════════ ADAPTER STRUCTS ════════════════════════════════════════════════════
 
 /// @notice Struct representing parameters for swapping via DefaultAdapter.

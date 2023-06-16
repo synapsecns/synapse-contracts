@@ -4,11 +4,18 @@ pragma solidity 0.8.17;
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
 import {ISynapseCCTPFees} from "./interfaces/ISynapseCCTPFees.sol";
 import {BridgeToken, DestRequest, SwapQuery, ISynapseCCTPRouter} from "./interfaces/ISynapseCCTPRouter.sol";
-import {Action, DefaultParams} from "../router/libs/Structs.sol";
+import {UnknownRequestAction} from "./libs/RouterErrors.sol";
+import {RequestLib} from "./libs/Request.sol";
+import {MsgValueIncorrect, DefaultRouter} from "../router/DefaultRouter.sol";
 
 import {IDefaultPool} from "../router/interfaces/IDefaultPool.sol";
+import {Action, DefaultParams} from "../router/libs/Structs.sol";
 
-contract SynapseCCTPRouter is ISynapseCCTPRouter {
+import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
+
+contract SynapseCCTPRouter is DefaultRouter, ISynapseCCTPRouter {
+    using SafeERC20 for IERC20;
+
     address public immutable synapseCCTP;
 
     constructor(address _synapseCCTP) {
@@ -25,7 +32,29 @@ contract SynapseCCTPRouter is ISynapseCCTPRouter {
         uint256 amount,
         SwapQuery memory originQuery,
         SwapQuery memory destQuery
-    ) external payable {}
+    ) external payable {
+        if (originQuery.hasAdapter()) {
+            // Perform a swap using the swap adapter, set this contract as recipient
+            (token, amount) = _doSwap(address(this), token, amount, originQuery);
+        } else {
+            // If no swap is required, msg.value must be left as zero
+            if (msg.value != 0) revert MsgValueIncorrect();
+            // Pull the token from the user to this contract
+            amount = _pullToken(address(this), token, amount);
+        }
+        // Either way, this contract has `amount` worth of `token`
+        (uint32 requestVersion, bytes memory swapParams) = _deriveCCTPSwapParams(destQuery);
+        // Approve SynapseCCTP to spend the token
+        _approveToken(token, synapseCCTP, amount);
+        ISynapseCCTP(synapseCCTP).sendCircleToken({
+            recipient: recipient,
+            chainId: chainId,
+            burnToken: token,
+            amount: amount,
+            requestVersion: requestVersion,
+            swapParams: swapParams
+        });
+    }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
 
@@ -95,6 +124,23 @@ contract SynapseCCTPRouter is ISynapseCCTPRouter {
         }
     }
 
+    // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
+
+    /// @dev Approves the token to be spent by the given spender indefinitely by giving infinite allowance.
+    /// Doesn't modify the allowance if it's already enough for the given amount.
+    function _approveToken(
+        address token,
+        address spender,
+        uint256 amount
+    ) internal {
+        uint256 allowance = IERC20(token).allowance(address(this), spender);
+        if (allowance < amount) {
+            // Reset allowance to 0 before setting it to the new value.
+            if (allowance != 0) IERC20(token).safeApprove(spender, 0);
+            IERC20(token).safeApprove(spender, type(uint256).max);
+        }
+    }
+
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
 
     /// @dev Finds the quote for tokenIn -> tokenOut swap using a given pool.
@@ -151,5 +197,31 @@ contract SynapseCCTPRouter is ISynapseCCTPRouter {
             }
         }
         return false;
+    }
+
+    /// @dev Derives the `swapParams` for following interaction with SynapseCCTP contract.
+    function _deriveCCTPSwapParams(SwapQuery memory destQuery)
+        internal
+        pure
+        returns (uint32 requestVersion, bytes memory swapParams)
+    {
+        // Check if any action was specified in `destQuery`
+        if (destQuery.routerAdapter == address(0)) {
+            // No action was specified, so no swap is required
+            return (RequestLib.REQUEST_BASE, "");
+        }
+        DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
+        // Check if the action is a swap
+        if (params.action != Action.Swap) {
+            // Actions other than swap are not supported for Circle tokens on the destination chain
+            revert UnknownRequestAction();
+        }
+        requestVersion = RequestLib.REQUEST_SWAP;
+        swapParams = RequestLib.formatSwapParams({
+            tokenIndexFrom: params.tokenIndexFrom,
+            tokenIndexTo: params.tokenIndexTo,
+            deadline: destQuery.deadline,
+            minAmountOut: destQuery.minAmountOut
+        });
     }
 }
