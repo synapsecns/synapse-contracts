@@ -96,6 +96,7 @@ contract SynapseCCTPRouter is DefaultRouter, ISynapseCCTPRouter {
             address circleToken = ISynapseCCTPFees(synapseCCTP).symbolToToken(tokenSymbols[i]);
             address pool = ISynapseCCTP(synapseCCTP).circleTokenPool(circleToken);
             // Get the quote for tokenIn -> circleToken swap
+            // Note: this only populates `tokenOut`, `minAmountOut` and `rawParams` fields.
             originQueries[i] = _getAmountOut(pool, tokenIn, circleToken, amountIn);
             // Check if the amount out is higher than the burn limit
             uint256 burnLimit = ITokenMinter(tokenMinter).burnLimitsPerMessage(circleToken);
@@ -103,6 +104,9 @@ contract SynapseCCTPRouter is DefaultRouter, ISynapseCCTPRouter {
                 // Nullify the query, leaving tokenOut intact (this allows SDK to get the bridge token address)
                 originQueries[i].minAmountOut = 0;
                 originQueries[i].rawParams = "";
+            } else {
+                // Fill the remaining fields, use this contract as "Router Adapter"
+                originQueries[i].fillAdapterAndDeadline({routerAdapter: address(this)});
             }
         }
     }
@@ -128,7 +132,10 @@ contract SynapseCCTPRouter is DefaultRouter, ISynapseCCTPRouter {
             // Only populate the query if the amountIn is higher than the feeAmount
             if (amountIn > feeAmount) {
                 // Get the quote for circleToken -> tokenOut swap after the fee is applied
+                // Note: this only populates `tokenOut`, `minAmountOut` and `rawParams` fields.
                 destQueries[i] = _getAmountOut(pool, circleToken, tokenOut, amountIn - feeAmount);
+                // Fill the remaining fields, use this contract as "Router Adapter"
+                destQueries[i].fillAdapterAndDeadline({routerAdapter: address(this)});
             }
         }
     }
