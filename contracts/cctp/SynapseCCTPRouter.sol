@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
 import {ISynapseCCTPFees} from "./interfaces/ISynapseCCTPFees.sol";
 import {BridgeToken, DestRequest, SwapQuery, ISynapseCCTPRouter} from "./interfaces/ISynapseCCTPRouter.sol";
+import {ITokenMinter} from "./interfaces/ITokenMinter.sol";
 import {UnknownRequestAction} from "./libs/RouterErrors.sol";
 import {RequestLib} from "./libs/Request.sol";
 import {MsgValueIncorrect, DefaultRouter} from "../router/DefaultRouter.sol";
@@ -90,11 +91,19 @@ contract SynapseCCTPRouter is DefaultRouter, ISynapseCCTPRouter {
     ) external view returns (SwapQuery[] memory originQueries) {
         uint256 length = tokenSymbols.length;
         originQueries = new SwapQuery[](length);
+        address tokenMinter = ISynapseCCTP(synapseCCTP).tokenMessenger().localMinter();
         for (uint256 i = 0; i < length; ++i) {
             address circleToken = ISynapseCCTPFees(synapseCCTP).symbolToToken(tokenSymbols[i]);
             address pool = ISynapseCCTP(synapseCCTP).circleTokenPool(circleToken);
             // Get the quote for tokenIn -> circleToken swap
             originQueries[i] = _getAmountOut(pool, tokenIn, circleToken, amountIn);
+            // Check if the amount out is higher than the burn limit
+            uint256 burnLimit = ITokenMinter(tokenMinter).burnLimitsPerMessage(circleToken);
+            if (originQueries[i].minAmountOut > burnLimit) {
+                // Nullify the query, leaving tokenOut intact (this allows SDK to get the bridge token address)
+                originQueries[i].minAmountOut = 0;
+                originQueries[i].rawParams = "";
+            }
         }
     }
 
