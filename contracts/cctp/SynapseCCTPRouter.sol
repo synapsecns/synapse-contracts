@@ -58,14 +58,42 @@ contract SynapseCCTPRouter is ISynapseCCTPRouter {
         address tokenIn,
         string[] memory tokenSymbols,
         uint256 amountIn
-    ) external view returns (SwapQuery[] memory originQueries) {}
+    ) external view returns (SwapQuery[] memory originQueries) {
+        uint256 length = tokenSymbols.length;
+        originQueries = new SwapQuery[](length);
+        for (uint256 i = 0; i < length; ++i) {
+            address circleToken = ISynapseCCTPFees(synapseCCTP).symbolToToken(tokenSymbols[i]);
+            address pool = ISynapseCCTP(synapseCCTP).circleTokenPool(circleToken);
+            // Get the quote for tokenIn -> circleToken swap
+            originQueries[i] = _getAmountOut(pool, tokenIn, circleToken, amountIn);
+        }
+    }
 
     /// @inheritdoc ISynapseCCTPRouter
     function getDestinationAmountOut(DestRequest[] memory requests, address tokenOut)
         external
         view
         returns (SwapQuery[] memory destQueries)
-    {}
+    {
+        uint256 length = requests.length;
+        destQueries = new SwapQuery[](length);
+        for (uint256 i = 0; i < length; ++i) {
+            address circleToken = ISynapseCCTPFees(synapseCCTP).symbolToToken(requests[i].symbol);
+            address pool = ISynapseCCTP(synapseCCTP).circleTokenPool(circleToken);
+            // Calculate the relayer fee amount
+            uint256 amountIn = requests[i].amountIn;
+            uint256 feeAmount = ISynapseCCTPFees(synapseCCTP).calculateFeeAmount({
+                token: circleToken,
+                amount: amountIn,
+                isSwap: circleToken != tokenOut
+            });
+            // Only populate the query if the amountIn is higher than the feeAmount
+            if (amountIn > feeAmount) {
+                // Get the quote for circleToken -> tokenOut swap after the fee is applied
+                destQueries[i] = _getAmountOut(pool, circleToken, tokenOut, amountIn - feeAmount);
+            }
+        }
+    }
 
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
 
