@@ -230,6 +230,32 @@ contract DefaultAdapter is IRouterAdapter {
         }
     }
 
+    /// @dev Returns the tokens in the given pool.
+    function _getPoolTokens(address pool) internal view returns (address[] memory tokens) {
+        uint256 numTokens = _getPoolNumTokens(pool);
+        tokens = new address[](numTokens);
+        for (uint8 i = 0; i < numTokens; ++i) {
+            // This will not revert because we already know the number of tokens in the pool
+            tokens[i] = IDefaultPool(pool).getToken(i);
+        }
+    }
+
+    /// @dev Returns the quote for a swap through the given pool.
+    /// Note: will return 0 on invalid swaps.
+    function _getPoolSwapQuote(
+        address pool,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 amountIn
+    ) internal view returns (uint256 amountOut) {
+        try IDefaultPool(pool).calculateSwap(tokenIndexFrom, tokenIndexTo, amountIn) returns (uint256 dy) {
+            amountOut = dy;
+        } catch {
+            // Return 0 instead of reverting
+            amountOut = 0;
+        }
+    }
+
     // ════════════════════════════════════════ INTERNAL LOGIC: ETH <> WETH ════════════════════════════════════════════
 
     /// @dev Wraps ETH into WETH.
