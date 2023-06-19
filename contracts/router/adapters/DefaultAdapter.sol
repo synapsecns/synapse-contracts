@@ -37,7 +37,7 @@ contract DefaultAdapter is IRouterAdapter {
         uint256 amountIn,
         address tokenOut,
         bytes memory rawParams
-    ) internal returns (uint256 amountOut) {
+    ) internal virtual returns (uint256 amountOut) {
         // We define a few phases for the whole Adapter's swap process.
         // (?) means the phase is optional.
         // (!) means the phase is mandatory.
