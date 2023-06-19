@@ -116,6 +116,14 @@ contract DefaultAdapterTest is Test {
         checkAdapterRemoveLiquidity(1 * 10**18, address(dai));
     }
 
+    function testAdapterActionHandleEthWrap() public {
+        checkHandleEth({amountIn: 10**18, wrapETH: true});
+    }
+
+    function testAdapterActionHandleEthUnwrap() public {
+        checkHandleEth({amountIn: 10**18, wrapETH: false});
+    }
+
     function checkAdapterSwap(
         address pool,
         address tokenIn,
@@ -217,6 +225,37 @@ contract DefaultAdapterTest is Test {
         MockERC20(address(nusd)).mint(address(adapter), amountIn);
         vm.prank(user);
         adapter.adapterSwap(recipient, address(nusd), amountIn, tokenOut, rawParams);
+        assertEq(balanceOf(tokenOut, recipient), expectedAmountOut);
+        clearBalance(tokenOut, recipient);
+    }
+
+    function checkHandleEth(uint256 amountIn, bool wrapETH) public {
+        // Test with external recipient
+        checkHandleEth(amountIn, wrapETH, userRecipient);
+        // Test with self recipient
+        checkHandleEth(amountIn, wrapETH, address(adapter));
+    }
+
+    function checkHandleEth(
+        uint256 amountIn,
+        bool wrapETH,
+        address recipient
+    ) public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.HandleEth, pool: address(0), tokenIndexFrom: 0xFF, tokenIndexTo: 0xFF})
+        );
+        uint256 expectedAmountOut = amountIn;
+        address tokenIn = wrapETH ? address(weth) : ETH;
+        address tokenOut = wrapETH ? ETH : address(weth);
+        // Mint test tokens to adapter
+        if (tokenIn != ETH) {
+            MockERC20(tokenIn).mint(address(adapter), amountIn);
+        } else {
+            deal(user, amountIn);
+        }
+        uint256 msgValue = tokenIn == ETH ? amountIn : 0;
+        vm.prank(user);
+        adapter.adapterSwap{value: msgValue}(recipient, tokenIn, amountIn, tokenOut, rawParams);
         assertEq(balanceOf(tokenOut, recipient), expectedAmountOut);
         clearBalance(tokenOut, recipient);
     }
