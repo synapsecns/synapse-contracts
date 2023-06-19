@@ -98,6 +98,24 @@ contract DefaultAdapterTest is Test {
         checkAdapterSwap(address(nethPool), address(neth), 1 * 10**18, ETH);
     }
 
+    function testAdapterActionAddLiquidityDiffDecimals() public {
+        checkAdapterAddLiquidity(address(usdc), 1 * 10**6);
+        checkAdapterAddLiquidity(address(usdt), 1 * 10**6);
+    }
+
+    function testAdapterActionAddLiquiditySameDecimals() public {
+        checkAdapterAddLiquidity(address(dai), 1 * 10**18);
+    }
+
+    function testAdapterActionRemoveLiquidityDiffDecimals() public {
+        checkAdapterRemoveLiquidity(1 * 10**6, address(usdc));
+        checkAdapterRemoveLiquidity(1 * 10**6, address(usdt));
+    }
+
+    function testAdapterActionRemoveLiquiditySameDecimals() public {
+        checkAdapterRemoveLiquidity(1 * 10**18, address(dai));
+    }
+
     function checkAdapterSwap(
         address pool,
         address tokenIn,
@@ -140,6 +158,75 @@ contract DefaultAdapterTest is Test {
         vm.prank(user);
         adapter.adapterSwap{value: msgValue}(recipient, tokenIn, amountIn, tokenOut, rawParams);
         assertEq(balanceOf(tokenOut, recipient), expectedAmountOut);
+        clearBalance(tokenOut, recipient);
+    }
+
+    function checkAdapterAddLiquidity(address tokenIn, uint256 amountIn) public {
+        // Test with external recipient
+        checkAdapterAddLiquidity(tokenIn, amountIn, userRecipient);
+        // Test with self recipient
+        checkAdapterAddLiquidity(tokenIn, amountIn, address(adapter));
+    }
+
+    function checkAdapterAddLiquidity(
+        address tokenIn,
+        uint256 amountIn,
+        address recipient
+    ) public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({
+                action: Action.AddLiquidity,
+                pool: address(nusdPool),
+                tokenIndexFrom: tokenToIndex[tokenIn],
+                tokenIndexTo: 0xFF
+            })
+        );
+        uint256[] memory amounts = new uint256[](3);
+        amounts[tokenToIndex[tokenIn]] = amountIn;
+        uint256 expectedAmountOut = nusdPool.calculateAddLiquidity(amounts);
+        // Mint test tokens to adapter
+        MockERC20(tokenIn).mint(address(adapter), amountIn);
+        vm.prank(user);
+        adapter.adapterSwap(recipient, tokenIn, amountIn, address(nusd), rawParams);
+        assertEq(balanceOf(address(nusd), recipient), expectedAmountOut);
+        clearBalance(address(nusd), recipient);
+    }
+
+    function checkAdapterRemoveLiquidity(uint256 amountIn, address tokenOut) public {
+        // Test with external recipient
+        checkAdapterRemoveLiquidity(amountIn, tokenOut, userRecipient);
+        // Test with self recipient
+        checkAdapterRemoveLiquidity(amountIn, tokenOut, address(adapter));
+    }
+
+    function checkAdapterRemoveLiquidity(
+        uint256 amountIn,
+        address tokenOut,
+        address recipient
+    ) public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({
+                action: Action.RemoveLiquidity,
+                pool: address(nusdPool),
+                tokenIndexFrom: 0xFF,
+                tokenIndexTo: tokenToIndex[tokenOut]
+            })
+        );
+        uint256 expectedAmountOut = nusdPool.calculateRemoveLiquidityOneToken(amountIn, tokenToIndex[tokenOut]);
+        // Mint test tokens to adapter
+        MockERC20(address(nusd)).mint(address(adapter), amountIn);
+        vm.prank(user);
+        adapter.adapterSwap(recipient, address(nusd), amountIn, tokenOut, rawParams);
+        assertEq(balanceOf(tokenOut, recipient), expectedAmountOut);
+        clearBalance(tokenOut, recipient);
+    }
+
+    function clearBalance(address token, address who) public {
+        if (token == ETH) {
+            deal(who, 0);
+        } else {
+            MockERC20(token).burn(who, MockERC20(token).balanceOf(who));
+        }
     }
 
     function balanceOf(address token, address who) public view returns (uint256) {
