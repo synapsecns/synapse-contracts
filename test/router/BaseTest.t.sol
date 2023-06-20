@@ -91,6 +91,27 @@ abstract contract BaseTest is Test {
 
     // ══════════════════════════════════════════════ COMMON HELPERS ═══════════════════════════════════════════════════
 
+    function calculateAddLiquidity(address token, uint256 amount) public view returns (uint256) {
+        uint8 index = tokenToIndex[token];
+        uint256[] memory amounts = new uint256[](poolTokens[address(nusdPool)].length);
+        amounts[index] = amount;
+        return nusdPool.calculateAddLiquidity(amounts);
+    }
+
+    function mintToUserAndApprove(
+        address token,
+        address spender,
+        uint256 amount
+    ) public {
+        if (token == ETH) {
+            deal(user, amount);
+        } else {
+            MockERC20(token).mint(user, amount);
+            vm.prank(user);
+            MockERC20(token).approve(spender, amount);
+        }
+    }
+
     function clearBalance(address token, address who) public {
         if (token == ETH) {
             deal(who, 0);
