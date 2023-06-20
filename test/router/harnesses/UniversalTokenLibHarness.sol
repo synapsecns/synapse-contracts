@@ -15,4 +15,12 @@ contract UniversalTokenLibHarness {
     function ethAddress() public pure returns (address) {
         return UniversalTokenLib.ETH_ADDRESS;
     }
+
+    function universalBalanceOf(address token, address account) public view returns (uint256) {
+        return UniversalTokenLib.universalBalanceOf(token, account);
+    }
+
+    function assertIsContract(address token) public view {
+        UniversalTokenLib.assertIsContract(token);
+    }
 }

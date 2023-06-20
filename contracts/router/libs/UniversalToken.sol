@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {TokenNotContract} from "./Errors.sol";
 import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
 library UniversalTokenLib {
@@ -26,5 +27,22 @@ library UniversalTokenLib {
         } else {
             IERC20(token).safeTransfer(to, value);
         }
+    }
+
+    /// @notice Returns the balance of the given token (or native ETH) for the given account.
+    function universalBalanceOf(address token, address account) internal view returns (uint256) {
+        if (token == ETH_ADDRESS) {
+            return account.balance;
+        } else {
+            return IERC20(token).balanceOf(account);
+        }
+    }
+
+    /// @dev Checks that token is a contract and not ETH_ADDRESS.
+    function assertIsContract(address token) internal view {
+        // Check that ETH_ADDRESS was not used (in case this is a predeploy on any of the chains)
+        if (token == UniversalTokenLib.ETH_ADDRESS) revert TokenNotContract();
+        // Check that token is not an EOA
+        if (token.code.length == 0) revert TokenNotContract();
     }
 }

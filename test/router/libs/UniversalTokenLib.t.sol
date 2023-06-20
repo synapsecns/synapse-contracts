@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {TokenNotContract} from "../../../contracts/router/libs/Errors.sol";
 import {UniversalTokenLibHarness} from "../harnesses/UniversalTokenLibHarness.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockRevertingRecipient} from "../mocks/MockRevertingRecipient.sol";
@@ -78,5 +79,40 @@ contract UniversalTokenLibraryTest is Test {
         for (uint256 i = 0; i < 20; i++) {
             assertEq(uint8(bytes20(ethAddress)[i]), 0xEE);
         }
+    }
+
+    function testUniversalBalanceOfWhenToken(uint256 amount) public {
+        token.mint(address(libHarness), amount);
+        assertEq(libHarness.universalBalanceOf(address(token), address(libHarness)), amount);
+    }
+
+    function testUniversalBalanceOfWhenETH(uint256 amount) public {
+        deal(address(libHarness), amount);
+        assertEq(libHarness.universalBalanceOf(libHarness.ethAddress(), address(libHarness)), amount);
+    }
+
+    function testAssertIsContractWhenContract() public view {
+        // Should not revert
+        libHarness.assertIsContract(address(token));
+    }
+
+    function testAssertIsContractRevertsWhenETHAddress() public {
+        address eth = libHarness.ethAddress();
+        vm.expectRevert(TokenNotContract.selector);
+        libHarness.assertIsContract(eth);
+    }
+
+    function testAssertIsContractRevertsWhenETHAddressWithCode() public {
+        address eth = libHarness.ethAddress();
+        vm.etch(eth, address(token).code);
+        require(eth.code.length > 0, "ETH address should have code");
+        vm.expectRevert(TokenNotContract.selector);
+        libHarness.assertIsContract(eth);
+    }
+
+    function testAssertIsContractRevertsWhenEOA() public {
+        address eoa = makeAddr("EOA");
+        vm.expectRevert(TokenNotContract.selector);
+        libHarness.assertIsContract(eoa);
     }
 }
