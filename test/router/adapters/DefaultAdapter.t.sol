@@ -2,6 +2,13 @@
 pragma solidity 0.8.17;
 
 import {DefaultAdapter} from "../../../contracts/router/adapters/DefaultAdapter.sol";
+// prettier-ignore
+import {
+    MsgValueIncorrect,
+    PoolNotFound,
+    TokenAddressMismatch,
+    TokensIdentical
+} from "../../../contracts/router/libs/Errors.sol";
 import {Action, DefaultParams} from "../../../contracts/router/libs/Structs.sol";
 
 import {MockDefaultPool, MockDefaultExtendedPool} from "../mocks/MockDefaultExtendedPool.sol";
@@ -139,6 +146,171 @@ contract DefaultAdapterTest is Test {
 
     function testAdapterActionHandleEthUnwrap() public {
         checkHandleEth({amountIn: 10**18, wrapETH: false});
+    }
+
+    // ════════════════════════════════════════════ TESTS: SWAP REVERTS ════════════════════════════════════════════════
+
+    function testAdapterActionSwapRevertsWhenTokensIdentical() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.Swap, pool: address(nusdPool), tokenIndexFrom: 0, tokenIndexTo: 0})
+        );
+        vm.expectRevert(TokensIdentical.selector);
+        adapter.adapterSwap(userRecipient, address(dai), 10**18, address(dai), rawParams);
+    }
+
+    function testAdapterActionSwapRevertsWhenPoolNotFound() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.Swap, pool: address(0), tokenIndexFrom: 0, tokenIndexTo: 1})
+        );
+        vm.expectRevert(PoolNotFound.selector);
+        adapter.adapterSwap(userRecipient, address(dai), 10**18, address(usdc), rawParams);
+    }
+
+    function testAdapterActionSwapRevertsWhenMsgValueLower() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.Swap, pool: address(nethPool), tokenIndexFrom: 1, tokenIndexTo: 0})
+        );
+        vm.expectRevert(MsgValueIncorrect.selector);
+        adapter.adapterSwap{value: 10**18 - 1}(userRecipient, ETH, 10**18, address(neth), rawParams);
+    }
+
+    function testAdapterActionSwapRevertsWhenMsgValueHigher() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.Swap, pool: address(nethPool), tokenIndexFrom: 1, tokenIndexTo: 0})
+        );
+        vm.expectRevert(MsgValueIncorrect.selector);
+        adapter.adapterSwap{value: 10**18 + 1}(userRecipient, ETH, 10**18, address(neth), rawParams);
+    }
+
+    function testAdapterActionSwapRevertsWhenMsgValueForERC20() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.Swap, pool: address(nethPool), tokenIndexFrom: 1, tokenIndexTo: 0})
+        );
+        vm.expectRevert(MsgValueIncorrect.selector);
+        adapter.adapterSwap{value: 10**18}(userRecipient, address(weth), 10**18, address(neth), rawParams);
+    }
+
+    function testAdapterActionSwapRevertsWhenIncorrectTokenOut() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.Swap, pool: address(nusdPool), tokenIndexFrom: 0, tokenIndexTo: 1})
+        );
+        vm.expectRevert(TokenAddressMismatch.selector);
+        // Should be usdc, not usdt
+        adapter.adapterSwap(userRecipient, address(dai), 10**18, address(usdt), rawParams);
+    }
+
+    // ═══════════════════════════════════════ TESTS: ADD LIQUIDITY REVERTS ════════════════════════════════════════════
+
+    function testAdapterActionAddLiquidityRevertsWhenTokensIdentical() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.AddLiquidity, pool: address(nusdPool), tokenIndexFrom: 0, tokenIndexTo: 0})
+        );
+        vm.expectRevert(TokensIdentical.selector);
+        adapter.adapterSwap(userRecipient, address(dai), 10**18, address(dai), rawParams);
+    }
+
+    function testAdapterActionAddLiquidityRevertsWhenPoolNotFound() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.AddLiquidity, pool: address(0), tokenIndexFrom: 0, tokenIndexTo: 0xFF})
+        );
+        vm.expectRevert(PoolNotFound.selector);
+        adapter.adapterSwap(userRecipient, address(dai), 10**18, address(nusd), rawParams);
+    }
+
+    function testAdapterActionAddLiquidityRevertsWhenMsgValueWithERC20() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.AddLiquidity, pool: address(nusdPool), tokenIndexFrom: 0, tokenIndexTo: 0xFF})
+        );
+        vm.expectRevert(MsgValueIncorrect.selector);
+        adapter.adapterSwap{value: 10**18}(userRecipient, address(dai), 10**18, address(nusd), rawParams);
+    }
+
+    function testAdapterActionAddLiquidityRevertsWhenIncorrectTokenOut() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.AddLiquidity, pool: address(nusdPool), tokenIndexFrom: 0, tokenIndexTo: 0xFF})
+        );
+        vm.expectRevert(TokenAddressMismatch.selector);
+        // Should be nusd, not usdt
+        adapter.adapterSwap(userRecipient, address(dai), 10**18, address(usdt), rawParams);
+    }
+
+    // ══════════════════════════════════════ TESTS: REMOVE LIQUIDITY REVERTS ══════════════════════════════════════════
+
+    function testAdapterActionRemoveLiquidityRevertsWhenTokensIdentical() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.RemoveLiquidity, pool: address(nusdPool), tokenIndexFrom: 0, tokenIndexTo: 0})
+        );
+        vm.expectRevert(TokensIdentical.selector);
+        adapter.adapterSwap(userRecipient, address(dai), 10**18, address(dai), rawParams);
+    }
+
+    function testAdapterActionRemoveLiquidityRevertsWhenPoolNotFound() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.RemoveLiquidity, pool: address(0), tokenIndexFrom: 0xFF, tokenIndexTo: 0})
+        );
+        vm.expectRevert(PoolNotFound.selector);
+        adapter.adapterSwap(userRecipient, address(nusd), 10**18, address(dai), rawParams);
+    }
+
+    function testAdapterActionRemoveLiquidityRevertsWhenMsgValueWithERC20() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({
+                action: Action.RemoveLiquidity,
+                pool: address(nusdPool),
+                tokenIndexFrom: 0xFF,
+                tokenIndexTo: 0
+            })
+        );
+        vm.expectRevert(MsgValueIncorrect.selector);
+        adapter.adapterSwap{value: 10**18}(userRecipient, address(nusd), 10**18, address(dai), rawParams);
+    }
+
+    function testAdapterActionRemoveLiquidityRevertsWhenIncorrectTokenOut() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({
+                action: Action.RemoveLiquidity,
+                pool: address(nusdPool),
+                tokenIndexFrom: 0xFF,
+                tokenIndexTo: 0
+            })
+        );
+        vm.expectRevert(TokenAddressMismatch.selector);
+        // Should be dai, not usdt
+        adapter.adapterSwap(userRecipient, address(nusd), 10**18, address(usdt), rawParams);
+    }
+
+    // ═════════════════════════════════════════ TESTS: HANDLE ETH REVERTS ═════════════════════════════════════════════
+
+    function testAdapterActionHandleEthRevertsWhenTokensIdentical() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.HandleEth, pool: address(0), tokenIndexFrom: 0xFF, tokenIndexTo: 0xFF})
+        );
+        vm.expectRevert(TokensIdentical.selector);
+        adapter.adapterSwap(userRecipient, address(weth), 10**18, address(weth), rawParams);
+    }
+
+    function testAdapterActionHandleEthRevertsWhenMsgValueLower() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.HandleEth, pool: address(0), tokenIndexFrom: 0xFF, tokenIndexTo: 0xFF})
+        );
+        vm.expectRevert(MsgValueIncorrect.selector);
+        adapter.adapterSwap{value: 10**18 - 1}(userRecipient, ETH, 10**18, address(weth), rawParams);
+    }
+
+    function testAdapterActionHandleEthRevertsWhenMsgValueHigher() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.HandleEth, pool: address(0), tokenIndexFrom: 0xFF, tokenIndexTo: 0xFF})
+        );
+        vm.expectRevert(MsgValueIncorrect.selector);
+        adapter.adapterSwap{value: 10**18 + 1}(userRecipient, ETH, 10**18, address(weth), rawParams);
+    }
+
+    function testAdapterActionHandleEthRevertsWhenMsgValueWithERC20() public {
+        bytes memory rawParams = abi.encode(
+            DefaultParams({action: Action.HandleEth, pool: address(0), tokenIndexFrom: 0xFF, tokenIndexTo: 0xFF})
+        );
+        vm.expectRevert(MsgValueIncorrect.selector);
+        adapter.adapterSwap{value: 10**18}(userRecipient, address(weth), 10**18, ETH, rawParams);
     }
 
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
