@@ -58,8 +58,7 @@ contract MockDefaultPool is IDefaultPool {
         uint8 tokenIndexTo,
         uint256 dx
     ) internal view returns (uint256 amountOut) {
-        if (tokenIndexFrom == tokenIndexTo) return 0;
-        if (tokenIndexFrom >= _coins || tokenIndexTo >= _coins) return 0;
+        require(tokenIndexFrom != tokenIndexTo, "Token indexes are equal");
         uint256 balanceFrom = _getBalance(_getToken(tokenIndexFrom));
         uint256 balanceTo = _getBalance(_getToken(tokenIndexTo));
         require(balanceFrom > 0 && balanceTo > 0, "No liquidity");

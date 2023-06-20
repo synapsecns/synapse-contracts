@@ -11,6 +11,23 @@ import {MockWETH} from "../mocks/MockWETH.sol";
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 import {Test} from "forge-std/Test.sol";
 
+contract DefaultAdapterHarness is DefaultAdapter {
+    /// @notice Exposes the internal function `_getPoolTokens`
+    function getPoolTokens(address pool) external view returns (address[] memory tokens) {
+        return _getPoolTokens(pool);
+    }
+
+    /// @notice Exposes the internal function `_getPoolTokenIndex`
+    function getPoolSwapQuote(
+        address pool,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 amountIn
+    ) external view returns (uint256 amountOut) {
+        return _getPoolSwapQuote(pool, tokenIndexFrom, tokenIndexTo, amountIn);
+    }
+}
+
 contract DefaultAdapterTest is Test {
     address public constant ETH = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
@@ -24,7 +41,7 @@ contract DefaultAdapterTest is Test {
     MockERC20 public usdc;
     MockERC20 public usdt;
 
-    DefaultAdapter public adapter;
+    DefaultAdapterHarness public adapter;
 
     mapping(address => uint8) public tokenToIndex;
 
@@ -39,7 +56,7 @@ contract DefaultAdapterTest is Test {
         usdc = new MockERC20("USDC", 6);
         usdt = new MockERC20("USDT", 6);
 
-        adapter = new DefaultAdapter();
+        adapter = new DefaultAdapterHarness();
         user = makeAddr("User");
         userRecipient = makeAddr("Recipient");
 
@@ -123,6 +140,31 @@ contract DefaultAdapterTest is Test {
     function testAdapterActionHandleEthUnwrap() public {
         checkHandleEth({amountIn: 10**18, wrapETH: false});
     }
+
+    // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
+
+    function testGetPoolTokens() public {
+        address[] memory tokens = adapter.getPoolTokens(address(nusdPool));
+        assertEq(tokens.length, 3);
+        assertEq(tokens[0], address(dai));
+        assertEq(tokens[1], address(usdc));
+        assertEq(tokens[2], address(usdt));
+    }
+
+    function testGetPoolSwapQuote() public {
+        uint256 expectedAmountOut = nusdPool.calculateSwap(0, 1, 10**18);
+        assertEq(adapter.getPoolSwapQuote(address(nusdPool), 0, 1, 10**18), expectedAmountOut);
+    }
+
+    function testGetPoolSwapQuoteReturnsZeroOnRevert() public {
+        // Pool getter will revert when token indexes are out of range
+        vm.expectRevert();
+        nusdPool.calculateSwap(0, 4, 10**18);
+        // Adapter should return 0 instead
+        assertEq(adapter.getPoolSwapQuote(address(nusdPool), 0, 4, 10**18), 0);
+    }
+
+    // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
 
     function checkAdapterSwap(
         address pool,
