@@ -51,6 +51,11 @@ contract SetupCCTPScript is DeployScript {
             synapseCCTP.setRemoteDomainConfig(chainid, domain, remoteSynapseCCTP);
         }
         require(chainFound, "Chain not found in .chains");
+        // Setup gas airdrop
+        uint256 gasAirdrop = config.readUint(_concat(ENVIRONMENT, ".gasAirdrop.", chain));
+        console.log("Gas airdrop: %s", _fromWei(gasAirdrop));
+        synapseCCTP.setChainGasAmount(gasAirdrop);
         stopBroadcast();
+        require(synapseCCTP.chainGasAmount() == gasAirdrop, "Incorrect gas airdrop");
     }
 }
