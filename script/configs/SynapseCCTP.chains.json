@@ -1,3 +1,10 @@
 {
-  "testnet": ["arbitrum_goerli", "fuji", "goerli"]
+  "testnet": {
+    "chains": ["arbitrum_goerli", "fuji", "goerli"],
+    "domains": {
+      "arbitrum_goerli": 3,
+      "fuji": 1,
+      "goerli": 0
+    }
+  }
 }
