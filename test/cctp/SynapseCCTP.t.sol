@@ -70,6 +70,22 @@ contract SynapseCCTPTest is BaseCCTPTest {
         assertEq(cctpSetups[DOMAIN_ETH].mintBurnToken.balanceOf(user), 0);
     }
 
+    function testSendCircleTokenBaseRequestRevertsWhenPaused() public {
+        pauseSending(DOMAIN_ETH);
+        uint256 amount = 10**8;
+        prepareUser(DOMAIN_ETH, amount);
+        vm.expectRevert("Pausable: paused");
+        vm.prank(user);
+        synapseCCTPs[DOMAIN_ETH].sendCircleToken({
+            recipient: recipient,
+            chainId: CHAINID_AVAX,
+            burnToken: address(cctpSetups[DOMAIN_ETH].mintBurnToken),
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+    }
+
     function testSendCircleTokenSwapRequest() public {
         uint256 amount = 10**8;
         prepareUser(DOMAIN_ETH, amount);
@@ -87,6 +103,28 @@ contract SynapseCCTPTest is BaseCCTPTest {
             swapParams: swapParams
         });
         assertEq(cctpSetups[DOMAIN_ETH].mintBurnToken.balanceOf(user), 0);
+    }
+
+    function testSendCircleTokenSwapRequestRevertsWhenPaused() public {
+        pauseSending(DOMAIN_ETH);
+        uint256 amount = 10**8;
+        prepareUser(DOMAIN_ETH, amount);
+        bytes memory swapParams = RequestLib.formatSwapParams({
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            deadline: 4321,
+            minAmountOut: 9876543210
+        });
+        vm.expectRevert("Pausable: paused");
+        vm.prank(user);
+        synapseCCTPs[DOMAIN_ETH].sendCircleToken({
+            recipient: recipient,
+            chainId: CHAINID_AVAX,
+            burnToken: address(cctpSetups[DOMAIN_ETH].mintBurnToken),
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_SWAP,
+            swapParams: swapParams
+        });
     }
 
     function testSendCircleTokenRevertsWhenRemoteDeploymentNotSet() public {
@@ -141,6 +179,25 @@ contract SynapseCCTPTest is BaseCCTPTest {
     // ═════════════════════════════════════ TESTS: RECEIVE WITH BASE REQUEST ══════════════════════════════════════════
 
     function testReceiveCircleTokenBaseRequest() public {
+        uint256 amount = 10**8;
+        uint256 baseFeeAmount = 10**6;
+        uint256 expectedAmountOut = amount - baseFeeAmount;
+        checkRequestFulfilled({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amountIn: amount,
+            expectedFeeAmount: baseFeeAmount,
+            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
+            expectedAmountOut: expectedAmountOut,
+            swapParams: ""
+        });
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), expectedAmountOut);
+    }
+
+    function testReceiveCircleTokenBaseRequestSucceedsWhenPaused() public {
+        // Pause both sides just in case
+        pauseSending(DOMAIN_AVAX);
+        pauseSending(DOMAIN_ETH);
         uint256 amount = 10**8;
         uint256 baseFeeAmount = 10**6;
         uint256 expectedAmountOut = amount - baseFeeAmount;
@@ -298,6 +355,32 @@ contract SynapseCCTPTest is BaseCCTPTest {
     // ═════════════════════════════════════ TESTS: RECEIVE WITH SWAP REQUEST ══════════════════════════════════════════
 
     function testReceiveCircleTokenSwapRequest() public {
+        uint256 amount = 10**8;
+        uint256 swapFeeAmount = 2 * 10**6;
+        address tokenOut = address(poolSetups[DOMAIN_AVAX].token);
+        uint256 expectedAmountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
+        bytes memory swapParams = RequestLib.formatSwapParams({
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            deadline: block.timestamp,
+            minAmountOut: expectedAmountOut
+        });
+        checkRequestFulfilled({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
+            expectedTokenOut: tokenOut,
+            expectedAmountOut: expectedAmountOut,
+            swapParams: swapParams
+        });
+        assertEq(poolSetups[DOMAIN_AVAX].token.balanceOf(recipient), expectedAmountOut);
+    }
+
+    function testReceiveCircleTokenSwapRequestSucceedsWhenPaused() public {
+        // Pause both sides just in case
+        pauseSending(DOMAIN_AVAX);
+        pauseSending(DOMAIN_ETH);
         uint256 amount = 10**8;
         uint256 swapFeeAmount = 2 * 10**6;
         address tokenOut = address(poolSetups[DOMAIN_AVAX].token);
@@ -866,6 +949,35 @@ contract SynapseCCTPTest is BaseCCTPTest {
         synapseCCTPs[DOMAIN_ETH].setCircleTokenPool(address(0), address(42));
     }
 
+    // ═══════════════════════════════════════════ TESTS: PAUSE TOGGLING ═══════════════════════════════════════════════
+
+    function testPauseByOwner() public {
+        pauseSending(DOMAIN_ETH);
+        assertTrue(synapseCCTPs[DOMAIN_ETH].paused());
+    }
+
+    function testPauseRevertsWhenCallerNotOwner(address caller) public {
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        synapseCCTPs[DOMAIN_ETH].pauseSending();
+    }
+
+    function testUnpauseByOwner() public {
+        pauseSending(DOMAIN_ETH);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].unpauseSending();
+        assertFalse(synapseCCTPs[DOMAIN_ETH].paused());
+    }
+
+    function testUnpauseRevertsWhenCallerNotOwner(address caller) public {
+        pauseSending(DOMAIN_ETH);
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        synapseCCTPs[DOMAIN_ETH].unpauseSending();
+    }
+
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
 
     function checkRequestSent(
@@ -1021,5 +1133,10 @@ contract SynapseCCTPTest is BaseCCTPTest {
         setup.mintBurnToken.mintPublic(user, amount);
         vm.prank(user);
         setup.mintBurnToken.approve(address(synapseCCTPs[originDomain]), amount);
+    }
+
+    function pauseSending(uint32 domain) public {
+        vm.prank(owner);
+        synapseCCTPs[domain].pauseSending();
     }
 }

@@ -25,8 +25,9 @@ import {MinimalForwarderLib} from "./libs/MinimalForwarder.sol";
 import {TypeCasts} from "./libs/TypeCasts.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
+import {Pausable} from "@openzeppelin/contracts-4.5.0/security/Pausable.sol";
 
-contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
+contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCCTP {
     using EnumerableSet for EnumerableSet.AddressSet;
     using MinimalForwarderLib for address;
     using SafeERC20 for IERC20;
@@ -88,6 +89,18 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         circleTokenPool[circleToken] = pool;
     }
 
+    /// @notice Allows the contract owner to pause the sending of CCTP tokens.
+    /// Note: this does not affect the receiving of CCTP tokens.
+    function pauseSending() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Allows the contract owner to unpause the sending of CCTP tokens.
+    /// Note: this does not affect the receiving of CCTP tokens.
+    function unpauseSending() external onlyOwner {
+        _unpause();
+    }
+
     // ═════════════════════════════════════════════ FEES WITHDRAWING ══════════════════════════════════════════════════
 
     /// @notice Allows the owner to withdraw accumulated protocol fees.
@@ -116,7 +129,7 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         uint256 amount,
         uint32 requestVersion,
         bytes memory swapParams
-    ) external {
+    ) external whenNotPaused {
         // Check if token is supported before doing anything else.
         if (!_bridgeTokens.contains(burnToken)) revert CCTPTokenNotFound();
         // Pull token from user and update the amount in case of transfer fee.
