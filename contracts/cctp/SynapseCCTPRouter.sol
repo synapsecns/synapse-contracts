@@ -136,6 +136,9 @@ contract SynapseCCTPRouter is DefaultRouter, ISynapseCCTPRouter {
                 destQueries[i] = _getAmountOut(pool, circleToken, tokenOut, amountIn - feeAmount);
                 // Fill the remaining fields, use this contract as "Router Adapter"
                 destQueries[i].fillAdapterAndDeadline({routerAdapter: address(this)});
+            } else {
+                // Fill only tokenOut otherwise
+                destQueries[i].tokenOut = tokenOut;
             }
         }
     }
