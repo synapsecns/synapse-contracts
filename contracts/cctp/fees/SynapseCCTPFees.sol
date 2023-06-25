@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {SynapseCCTPFeesEvents} from "../events/SynapseCCTPFeesEvents.sol";
+import {ISynapseCCTPFees} from "../interfaces/ISynapseCCTPFees.sol";
 // prettier-ignore
 import {
     CCTPGasRescueFailed,
@@ -19,7 +20,7 @@ import {BridgeToken} from "../../router/libs/Structs.sol";
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableSet.sol";
 
-abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
+abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable, ISynapseCCTPFees {
     using EnumerableSet for EnumerableSet.AddressSet;
     using TypeCasts for uint256;
 
