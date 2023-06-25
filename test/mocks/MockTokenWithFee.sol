@@ -34,6 +34,11 @@ contract MockTokenWithFee is ERC20, Ownable {
         _burn(user, amount);
     }
 
+    function setFee(uint256 _fee) external {
+        require(_fee <= wad, "fee > max");
+        fee = _fee;
+    }
+
     function _afterTokenTransfer(
         address from,
         address to,
