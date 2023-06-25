@@ -13,6 +13,7 @@ import {IDefaultPool} from "../router/interfaces/IDefaultPool.sol";
 import {Action, DefaultParams} from "../router/libs/Structs.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
+import {Pausable} from "@openzeppelin/contracts-4.5.0/security/Pausable.sol";
 
 contract SynapseCCTPRouter is DefaultRouter, ISynapseCCTPRouter {
     using SafeERC20 for IERC20;
@@ -92,6 +93,8 @@ contract SynapseCCTPRouter is DefaultRouter, ISynapseCCTPRouter {
         uint256 length = tokenSymbols.length;
         originQueries = new SwapQuery[](length);
         address tokenMinter = ISynapseCCTP(synapseCCTP).tokenMessenger().localMinter();
+        // Check if it is possible to send Circle tokens (it is always possible to receive them though).
+        bool isPaused = Pausable(synapseCCTP).paused();
         for (uint256 i = 0; i < length; ++i) {
             address circleToken = ISynapseCCTPFees(synapseCCTP).symbolToToken(tokenSymbols[i]);
             address pool = ISynapseCCTP(synapseCCTP).circleTokenPool(circleToken);
@@ -100,7 +103,7 @@ contract SynapseCCTPRouter is DefaultRouter, ISynapseCCTPRouter {
             originQueries[i] = _getAmountOut(pool, tokenIn, circleToken, amountIn);
             // Check if the amount out is higher than the burn limit
             uint256 burnLimit = ITokenMinter(tokenMinter).burnLimitsPerMessage(circleToken);
-            if (originQueries[i].minAmountOut > burnLimit) {
+            if (originQueries[i].minAmountOut > burnLimit || isPaused) {
                 // Nullify the query, leaving tokenOut intact (this allows SDK to get the bridge token address)
                 originQueries[i].minAmountOut = 0;
                 originQueries[i].rawParams = "";

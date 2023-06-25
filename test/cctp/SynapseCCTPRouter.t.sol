@@ -298,6 +298,18 @@ contract SynapseCCTPRouterTest is BaseCCTPTest {
         checkNoPathQuery(queries[0], usdc);
     }
 
+    function testGetOriginAmountOutForUSDCWhenPaused() public {
+        address usdc = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].pauseSending();
+        uint256 amountIn = 10**6;
+        string[] memory symbols = new string[](1);
+        symbols[0] = SYMBOL_USDC;
+        SwapQuery[] memory queries = cctpRouters[DOMAIN_ETH].getOriginAmountOut(usdc, symbols, amountIn);
+        assertEq(queries.length, 1);
+        checkNoPathQuery(queries[0], usdc);
+    }
+
     function testGetOriginAmountOutForPoolStable() public {
         address usdc = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
         address usdt = address(poolSetups[DOMAIN_ETH].token);
@@ -396,6 +408,19 @@ contract SynapseCCTPRouterTest is BaseCCTPTest {
         checkNoPathQuery(queries[0], usdc);
     }
 
+    function testGetOriginAmountOutForPoolStableWhenPaused() public {
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].pauseSending();
+        address usdc = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        address usdt = address(poolSetups[DOMAIN_ETH].token);
+        uint256 amountIn = 10**6;
+        string[] memory symbols = new string[](1);
+        symbols[0] = SYMBOL_USDC;
+        SwapQuery[] memory queries = cctpRouters[DOMAIN_ETH].getOriginAmountOut(usdt, symbols, amountIn);
+        assertEq(queries.length, 1);
+        checkNoPathQuery(queries[0], usdc);
+    }
+
     function testGetOriginAmountOutForUnknownToken() public {
         address unknownToken = makeAddr("Unknown");
         address usdc = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
@@ -435,6 +460,13 @@ contract SynapseCCTPRouterTest is BaseCCTPTest {
         SwapQuery[] memory queries = cctpRouters[DOMAIN_ETH].getDestinationAmountOut(requests, usdc);
         assertEq(queries.length, 1);
         checkSameTokenQuery(queries[0], usdc, expectedAmountOut);
+    }
+
+    function testGetDestinationAmountOutForUSDCWhenPaused() public {
+        // Paused state should not affect the result
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].pauseSending();
+        testGetDestinationAmountOutForUSDC();
     }
 
     function testGetDestinationAmountOutForUSDCWhenUnderBaseFee() public {
@@ -482,6 +514,13 @@ contract SynapseCCTPRouterTest is BaseCCTPTest {
                 tokenIndexTo: tokenIndexTo
             })
         );
+    }
+
+    function testGetDestinationAmountOutForPoolStableWhenPaused() public {
+        // Paused state should not affect the result
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].pauseSending();
+        testGetDestinationAmountOutForPoolStable();
     }
 
     function testGetDestinationAmountOutForPoolStableWhenUnderSwapFee() public {
