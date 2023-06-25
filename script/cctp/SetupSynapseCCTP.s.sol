@@ -17,6 +17,7 @@ contract SetupCCTPScript is DeployScript {
         uint256 maxFee;
         uint256 minBaseFee;
         uint256 minSwapFee;
+        address pool;
         uint256 relayerFee;
         address token;
     }
@@ -89,6 +90,13 @@ contract SetupCCTPScript is DeployScript {
                 minSwapFee: token.minSwapFee,
                 maxFee: token.maxFee
             });
+            // Setup token pool if needed
+            if (token.pool != SynapseCCTP(synapseCCTP).circleTokenPool(token.token)) {
+                console.log("            pool: %s", token.pool);
+                SynapseCCTP(synapseCCTP).setCircleTokenPool({circleToken: token.token, pool: token.pool});
+            } else {
+                console.log("            pool: already setup [%s]", token.pool);
+            }
         }
     }
 

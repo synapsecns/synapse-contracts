@@ -3,11 +3,12 @@
   "tokens": {
     "symbols": ["USDC"],
     "USDC": {
+      "pool": "0x0000000000000000000000000000000000000000",
       "token": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-      "relayerFee": 5000000,
+      "relayerFee": 4000000,
       "minBaseFee": 2000000,
       "minSwapFee": 2000000,
-      "maxFee": 200000000
+      "maxFee": 400000000
     }
   }
 }
