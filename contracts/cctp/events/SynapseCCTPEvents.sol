@@ -2,8 +2,6 @@
 pragma solidity 0.8.17;
 
 abstract contract SynapseCCTPEvents {
-    // TODO: figure out what we need to emit for the Explorer
-
     /// @notice Emitted when a Circle token is sent with an attached action request.
     /// @dev To fulfill the request, the validator needs to fetch `message` from `MessageSent` event
     /// emitted by Circle's MessageTransmitter in the same tx, then fetch `signature` for the message from Circle API.

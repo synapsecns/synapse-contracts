@@ -176,7 +176,6 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
         );
     }
 
-    // TODO: guard this to be only callable by the validators?
     /// @inheritdoc ISynapseCCTP
     function receiveCircleToken(
         bytes calldata message,
