@@ -192,7 +192,7 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
         (address tokenOut, uint256 amountOut) = _fulfillRequest(recipient, token, amount, swapParams);
         // Perform the gas airdrop and emit corresponding event if gas airdrop is enabled
         if (msg.value > 0) _transferMsgValue(recipient);
-        emit CircleRequestFulfilled(recipient, token, fee, tokenOut, amountOut, requestID);
+        emit CircleRequestFulfilled(originDomain, recipient, token, fee, tokenOut, amountOut, requestID);
     }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════

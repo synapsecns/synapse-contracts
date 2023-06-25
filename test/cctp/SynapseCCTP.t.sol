@@ -1059,6 +1059,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
         });
         vm.expectEmit();
         emit CircleRequestFulfilled({
+            originDomain: originDomain,
             recipient: recipient,
             mintToken: destMintToken,
             fee: expectedFeeAmount,

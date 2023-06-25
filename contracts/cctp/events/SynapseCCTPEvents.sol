@@ -27,6 +27,7 @@ abstract contract SynapseCCTPEvents {
     );
 
     /// @notice Emitted when a Circle token is received with an attached action request.
+    /// @param originDomain         CCTP domain of the origin chain
     /// @param recipient            End recipient of the tokens on this chain
     /// @param mintToken            Address of the minted Circle token
     /// @param fee                  Fee paid for fulfilling the request, in minted tokens
@@ -34,6 +35,7 @@ abstract contract SynapseCCTPEvents {
     /// @param amount               Amount of tokens received by recipient
     /// @param requestID            Unique identifier of the request
     event CircleRequestFulfilled(
+        uint32 originDomain,
         address indexed recipient,
         address mintToken,
         uint256 fee,
