@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 import {CCTPMessageNotReceived, LocalCCTPTokenNotFound, RemoteCCTPDeploymentNotSet, RemoteCCTPTokenNotSet} from "./libs/Errors.sol";
 import {SynapseCCTPEvents} from "./events/SynapseCCTPEvents.sol";
+import {IDefaultPool} from "./interfaces/IDefaultPool.sol";
 import {IMessageTransmitter} from "./interfaces/IMessageTransmitter.sol";
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
 import {ITokenMinter} from "./interfaces/ITokenMinter.sol";
@@ -99,7 +100,7 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         // Origin domain and nonce are included in `formattedRequest`, so we only need to add the destination domain.
         bytes32 kappa = _kappa(destinationDomain, requestVersion, formattedRequest);
         // Issue allowance if needed
-        _approveToken(burnToken, amount);
+        _approveToken(burnToken, address(tokenMessenger), amount);
         tokenMessenger.depositForBurnWithCaller(
             amount,
             destinationDomain,
@@ -153,13 +154,18 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         return (amount, 0);
     }
 
-    /// @dev Approves the token to be transferred to the Circle Bridge.
-    function _approveToken(address token, uint256 amount) internal {
-        uint256 allowance = IERC20(token).allowance(address(this), address(tokenMessenger));
+    /// @dev Approves the token to be spent by the given spender indefinitely by giving infinite allowance.
+    /// Doesn't modify the allowance if it's already enough for the given amount.
+    function _approveToken(
+        address token,
+        address spender,
+        uint256 amount
+    ) internal {
+        uint256 allowance = IERC20(token).allowance(address(this), spender);
         if (allowance < amount) {
             // Reset allowance to 0 before setting it to the new value.
-            if (allowance != 0) IERC20(token).safeApprove(address(tokenMessenger), 0);
-            IERC20(token).safeApprove(address(tokenMessenger), type(uint256).max);
+            if (allowance != 0) IERC20(token).safeApprove(spender, 0);
+            IERC20(token).safeApprove(spender, type(uint256).max);
         }
     }
 
@@ -195,10 +201,51 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         uint256 amount,
         bytes memory swapParams
     ) internal returns (address tokenOut, uint256 amountOut) {
-        // TODO: implement swap logic
-        tokenOut = token;
-        amountOut = amount;
-        IERC20(token).safeTransfer(recipient, amount);
+        // Fallback to Base Request if no swap params are provided
+        if (swapParams.length == 0) {
+            IERC20(token).safeTransfer(recipient, amount);
+            return (token, amount);
+        }
+        // We checked request version to be a valid value when wrapping into `request`,
+        // so this could only be `RequestLib.REQUEST_SWAP`.
+        (address pool, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 deadline, uint256 minAmountOut) = RequestLib
+            .decodeSwapParams(swapParams);
+        tokenOut = _tryGetToken(pool, tokenIndexTo);
+        // Fallback to Base Request if failed to get tokenOut address
+        if (tokenOut == address(0)) {
+            IERC20(token).safeTransfer(recipient, amount);
+            return (token, amount);
+        }
+        // Approve the pool to spend the token, if needed.
+        _approveToken(token, pool, amount);
+        amountOut = _trySwap(pool, tokenIndexFrom, tokenIndexTo, amount, deadline, minAmountOut);
+        // Fallback to Base Request if failed to swap
+        if (amountOut == 0) {
+            IERC20(token).safeTransfer(recipient, amount);
+            return (token, amount);
+        }
+        // Transfer the swapped tokens to the recipient.
+        IERC20(tokenOut).safeTransfer(recipient, amountOut);
+    }
+
+    /// @dev Tries to swap tokens using the provided swap instructions.
+    /// Instead of reverting, returns 0 if the swap failed.
+    function _trySwap(
+        address pool,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 amount,
+        uint256 deadline,
+        uint256 minAmountOut
+    ) internal returns (uint256 amountOut) {
+        try IDefaultPool(pool).swap(tokenIndexFrom, tokenIndexTo, amount, minAmountOut, deadline) returns (
+            uint256 amountOut_
+        ) {
+            amountOut = amountOut_;
+        } catch {
+            // Swapping failed, return 0
+            amountOut = 0;
+        }
     }
 
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
@@ -208,6 +255,17 @@ contract SynapseCCTP is SynapseCCTPEvents, ISynapseCCTP {
         // Map the remote token to the local token.
         token = _remoteTokenIdToLocalToken[_remoteTokenId(originDomain, originBurnToken)];
         if (token == address(0)) revert RemoteCCTPTokenNotSet();
+    }
+
+    /// @dev Tries to get the token address from the pool.
+    /// Instead of reverting, returns 0 if the getToken failed.
+    function _tryGetToken(address pool, uint8 tokenIndex) internal view returns (address token) {
+        try IDefaultPool(pool).getToken(tokenIndex) returns (address _token) {
+            token = _token;
+        } catch {
+            // Return 0 on revert
+            token = address(0);
+        }
     }
 
     /// @dev Predicts the address of the destination caller that will be used to call the Circle Message Transmitter.
