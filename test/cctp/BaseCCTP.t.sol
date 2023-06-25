@@ -42,8 +42,14 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
 
     address public user;
     address public recipient;
+    address public relayer;
+    address public collector;
 
     function setUp() public virtual {
+        user = makeAddr("User");
+        recipient = makeAddr("Recipient");
+        relayer = makeAddr("Relayer");
+        collector = makeAddr("Collector");
         deployCCTP(DOMAIN_ETH);
         deployCCTP(DOMAIN_AVAX);
         deploySynapseCCTP(DOMAIN_ETH);
@@ -51,8 +57,6 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
         linkDomains(CHAINID_ETH, DOMAIN_ETH, CHAINID_AVAX, DOMAIN_AVAX);
         deployPool(DOMAIN_ETH);
         deployPool(DOMAIN_AVAX);
-        user = makeAddr("User");
-        recipient = makeAddr("Recipient");
     }
 
     function deployCCTP(uint32 domain) public returns (CCTPSetup memory setup) {
@@ -68,6 +72,19 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
 
     function deploySynapseCCTP(uint32 domain) public returns (SynapseCCTP synapseCCTP) {
         synapseCCTP = new SynapseCCTP(cctpSetups[domain].tokenMessenger);
+        // 1 bps relayer fee, minBaseFee = 1, minSwapFee = 2, maxFee = 100
+        synapseCCTP.addToken({
+            symbol: "CCTP.MockC",
+            token: address(cctpSetups[domain].mintBurnToken),
+            relayerFee: 1 * 10**6,
+            minBaseFee: 1 * 10**6,
+            minSwapFee: 2 * 10**6,
+            maxFee: 100 * 10**6
+        });
+        // Protocol fee: 50%
+        synapseCCTP.setProtocolFee(5 * 10**9);
+        vm.prank(relayer);
+        synapseCCTP.setFeeCollector(collector);
         synapseCCTPs[domain] = synapseCCTP;
     }
 

@@ -63,19 +63,24 @@ contract SynapseCCTPTest is BaseCCTPTest {
 
     function testReceiveCircleTokenBaseRequest() public {
         uint256 amount = 10**8;
+        uint256 baseFeeAmount = 10**6;
+        uint256 expectedAmountOut = amount - baseFeeAmount;
         checkRequestFulfilled({
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
             amountIn: amount,
+            expectedFeeAmount: baseFeeAmount,
             expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
-            expectedAmountOut: amount,
+            expectedAmountOut: expectedAmountOut,
             swapParams: ""
         });
-        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount);
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), expectedAmountOut);
     }
 
     function testReceiveCircleTokenBaseRequestRevertTransmitterReturnsFalse() public {
         uint256 amount = 10**8;
+        uint256 baseFeeAmount = 10**6;
+        uint256 expectedAmountOut = amount - baseFeeAmount;
         Params memory expected = getExpectedParams({
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
@@ -103,7 +108,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             requestVersion: RequestLib.REQUEST_BASE,
             formattedRequest: expected.request
         });
-        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount);
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), expectedAmountOut);
     }
 
     function testReceiveCircleTokenBaseRequestRevertMalformedRequest() public {
@@ -210,25 +215,27 @@ contract SynapseCCTPTest is BaseCCTPTest {
 
     function testReceiveCircleTokenSwapRequest() public {
         uint256 amount = 10**8;
+        uint256 swapFeeAmount = 2 * 10**6;
         // TODO: adjust for fees when implemented
         address tokenOut = address(poolSetups[DOMAIN_AVAX].token);
-        uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount);
+        uint256 expectedAmountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
             pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 0,
             tokenIndexTo: 1,
             deadline: block.timestamp,
-            minAmountOut: amountOut
+            minAmountOut: expectedAmountOut
         });
         checkRequestFulfilled({
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
             amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
             expectedTokenOut: tokenOut,
-            expectedAmountOut: amountOut,
+            expectedAmountOut: expectedAmountOut,
             swapParams: swapParams
         });
-        assertEq(poolSetups[DOMAIN_AVAX].token.balanceOf(recipient), amountOut);
+        assertEq(poolSetups[DOMAIN_AVAX].token.balanceOf(recipient), expectedAmountOut);
     }
 
     function testReceiveCircleTokenSwapRequestRevertMalformedRequest() public {
@@ -374,7 +381,8 @@ contract SynapseCCTPTest is BaseCCTPTest {
         // Adjust block.timestamp
         vm.warp(123456789);
         uint256 amount = 10**8;
-        uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount);
+        uint256 swapFeeAmount = 2 * 10**6;
+        uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
             pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 0,
@@ -387,16 +395,18 @@ contract SynapseCCTPTest is BaseCCTPTest {
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
             amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
             expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
-            expectedAmountOut: amount,
+            expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
-        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount);
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
     function testReceiveCircleTokenSwapRequestMinAmountOutNotReached() public {
         uint256 amount = 10**8;
-        uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount);
+        uint256 swapFeeAmount = 2 * 10**6;
+        uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
             pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 0,
@@ -409,16 +419,18 @@ contract SynapseCCTPTest is BaseCCTPTest {
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
             amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
             expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
-            expectedAmountOut: amount,
+            expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
-        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount);
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
     function testReceiveCircleTokenSwapRequestTokenIndexesIdentical() public {
         uint256 amount = 10**8;
-        uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount);
+        uint256 swapFeeAmount = 2 * 10**6;
+        uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
             pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 0,
@@ -431,16 +443,18 @@ contract SynapseCCTPTest is BaseCCTPTest {
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
             amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
             expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
-            expectedAmountOut: amount,
+            expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
-        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount);
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
     function testReceiveCircleTokenSwapRequestTokenIndexesIncorrectOrder() public {
         uint256 amount = 10**8;
-        uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount);
+        uint256 swapFeeAmount = 2 * 10**6;
+        uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
             pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 1, // incorrect order
@@ -453,16 +467,18 @@ contract SynapseCCTPTest is BaseCCTPTest {
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
             amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
             expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
-            expectedAmountOut: amount,
+            expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
-        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount);
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
     function testReceiveCircleTokenSwapRequestTokenFromIndexOutOfRange() public {
         uint256 amount = 10**8;
-        uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount);
+        uint256 swapFeeAmount = 2 * 10**6;
+        uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
             pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 2, // out of range
@@ -475,16 +491,18 @@ contract SynapseCCTPTest is BaseCCTPTest {
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
             amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
             expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
-            expectedAmountOut: amount,
+            expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
-        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount);
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
     function testReceiveCircleTokenSwapRequestTokenToIndexOutOfRange() public {
         uint256 amount = 10**8;
-        uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount);
+        uint256 swapFeeAmount = 2 * 10**6;
+        uint256 amountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
         bytes memory swapParams = RequestLib.formatSwapParams({
             pool: address(poolSetups[DOMAIN_AVAX].pool),
             tokenIndexFrom: 0,
@@ -497,11 +515,12 @@ contract SynapseCCTPTest is BaseCCTPTest {
             originDomain: DOMAIN_ETH,
             destinationDomain: DOMAIN_AVAX,
             amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
             expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
-            expectedAmountOut: amount,
+            expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
-        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount);
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
@@ -510,6 +529,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
         uint32 originDomain,
         uint32 destinationDomain,
         uint256 amountIn,
+        uint256 expectedFeeAmount,
         address expectedTokenOut,
         uint256 expectedAmountOut,
         bytes memory swapParams
@@ -529,22 +549,33 @@ contract SynapseCCTPTest is BaseCCTPTest {
             mintToken: destMintToken,
             amount: amountIn
         });
-        // TODO: adjust when fees are implemented
         vm.expectEmit();
         emit CircleRequestFulfilled({
             recipient: recipient,
             mintToken: destMintToken,
-            fee: 0,
+            fee: expectedFeeAmount,
             token: expectedTokenOut,
             amount: expectedAmountOut,
             kappa: expected.kappa
         });
+        vm.prank(relayer);
         synapseCCTPs[destinationDomain].receiveCircleToken({
             message: expected.message,
             signature: "",
             requestVersion: requestVersion,
             formattedRequest: expected.request
         });
+        checkAccumulatedRelayerFee(destinationDomain, expectedFeeAmount);
+    }
+
+    function checkAccumulatedRelayerFee(uint32 domain, uint256 expectedFeeAmount) public {
+        address token = address(cctpSetups[domain].mintBurnToken);
+        // Protocol fee is 50% of the total fee in this setup
+        uint256 protocolFeeAmount = expectedFeeAmount / 2;
+        // Remainder of the fee goes to the relayer's collector
+        uint256 relayerFeeAmount = expectedFeeAmount - protocolFeeAmount;
+        assertEq(synapseCCTPs[domain].accumulatedFees(address(0), token), protocolFeeAmount);
+        assertEq(synapseCCTPs[domain].accumulatedFees(collector, token), relayerFeeAmount);
     }
 
     function getExpectedParams(
