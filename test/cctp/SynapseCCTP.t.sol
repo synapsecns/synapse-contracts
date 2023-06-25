@@ -866,6 +866,35 @@ contract SynapseCCTPTest is BaseCCTPTest {
         synapseCCTPs[DOMAIN_ETH].setCircleTokenPool(address(0), address(42));
     }
 
+    // ═══════════════════════════════════════════ TESTS: PAUSE TOGGLING ═══════════════════════════════════════════════
+
+    function testPauseByOwner() public {
+        pauseSending(DOMAIN_ETH);
+        assertTrue(synapseCCTPs[DOMAIN_ETH].paused());
+    }
+
+    function testPauseRevertsWhenCallerNotOwner(address caller) public {
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        synapseCCTPs[DOMAIN_ETH].pauseSending();
+    }
+
+    function testUnpauseByOwner() public {
+        pauseSending(DOMAIN_ETH);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].unpauseSending();
+        assertFalse(synapseCCTPs[DOMAIN_ETH].paused());
+    }
+
+    function testUnpauseRevertsWhenCallerNotOwner(address caller) public {
+        pauseSending(DOMAIN_ETH);
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        synapseCCTPs[DOMAIN_ETH].unpauseSending();
+    }
+
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
 
     function checkRequestSent(
@@ -1021,5 +1050,10 @@ contract SynapseCCTPTest is BaseCCTPTest {
         setup.mintBurnToken.mintPublic(user, amount);
         vm.prank(user);
         setup.mintBurnToken.approve(address(synapseCCTPs[originDomain]), amount);
+    }
+
+    function pauseSending(uint32 domain) public {
+        vm.prank(owner);
+        synapseCCTPs[domain].pauseSending();
     }
 }
