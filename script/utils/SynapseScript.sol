@@ -7,6 +7,7 @@ import {ScriptUtils} from "./ScriptUtils.sol";
 import {console, Script} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 
+// solhint-disable no-console
 contract SynapseScript is ScriptUtils, Script {
     using stdJson for string;
 
@@ -42,6 +43,7 @@ contract SynapseScript is ScriptUtils, Script {
         broadcasterAddress = vm.addr(broadcasterPK);
         console.log("Deployer address: %s", broadcasterAddress);
         console.log("Deployer balance: %s", _fromWei(broadcasterAddress.balance));
+        console.log("  Deployer nonce: %s", vm.getNonce(broadcasterAddress));
     }
 
     function setupChain(string memory _chain) public {
