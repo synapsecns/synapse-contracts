@@ -160,7 +160,19 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
             burnToken,
             _destinationCaller(dstSynapseCCTP.bytes32ToAddress(), requestID)
         );
-        emit CircleRequestSent(chainId, nonce, burnToken, amount, requestVersion, formattedRequest, requestID);
+        // We want to emit the EOA address that initiated the transaction as "sender",
+        // so we use `tx.origin` instead of `msg.sender`.
+        // solhint-disable avoid-tx-origin
+        emit CircleRequestSent(
+            chainId,
+            tx.origin,
+            nonce,
+            burnToken,
+            amount,
+            requestVersion,
+            formattedRequest,
+            requestID
+        );
     }
 
     // TODO: guard this to be only callable by the validators?

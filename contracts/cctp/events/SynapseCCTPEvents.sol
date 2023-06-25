@@ -10,6 +10,7 @@ abstract contract SynapseCCTPEvents {
     /// This data will need to be presented to SynapseCCTP on the destination chain,
     /// along with `requestVersion` and `formattedRequest` emitted in this event.
     /// @param chainId              Chain ID of the destination chain
+    /// @param sender               Sender of the CCTP tokens on origin chain
     /// @param nonce                Nonce of the CCTP message on origin chain
     /// @param token                Address of Circle token that was burnt
     /// @param amount               Amount of Circle tokens burnt
@@ -18,12 +19,13 @@ abstract contract SynapseCCTPEvents {
     /// @param requestID            Unique identifier of the request
     event CircleRequestSent(
         uint256 chainId,
+        address indexed sender,
         uint64 nonce,
         address token,
         uint256 amount,
         uint32 requestVersion,
         bytes formattedRequest,
-        bytes32 indexed requestID
+        bytes32 requestID
     );
 
     /// @notice Emitted when a Circle token is received with an attached action request.
@@ -41,6 +43,6 @@ abstract contract SynapseCCTPEvents {
         uint256 fee,
         address token,
         uint256 amount,
-        bytes32 indexed requestID
+        bytes32 requestID
     );
 }

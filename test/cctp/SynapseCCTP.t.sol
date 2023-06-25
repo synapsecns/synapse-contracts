@@ -14,6 +14,8 @@ import {
 } from "../../contracts/cctp/libs/Errors.sol";
 import {BaseCCTPTest, RequestLib} from "./BaseCCTP.t.sol";
 
+import {MockRouter} from "./mocks/MockRouter.sol";
+
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 contract SynapseCCTPTest is BaseCCTPTest {
@@ -37,6 +39,44 @@ contract SynapseCCTPTest is BaseCCTPTest {
             swapParams: ""
         });
         assertEq(cctpSetups[DOMAIN_ETH].mintBurnToken.balanceOf(user), 0);
+    }
+
+    function testSendCircleTokenBaseRequestUsingRouter() public {
+        uint64 nonce = cctpSetups[DOMAIN_ETH].messageTransmitter.nextAvailableNonce();
+        MockRouter router = new MockRouter(address(synapseCCTPs[DOMAIN_ETH]));
+        uint256 amount = 10**8;
+        CCTPSetup memory setup = cctpSetups[DOMAIN_ETH];
+        Params memory expected = getExpectedParams({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+        setup.mintBurnToken.mintPublic(user, amount);
+        vm.prank(user);
+        setup.mintBurnToken.approve(address(router), amount);
+        vm.expectEmit();
+        emit CircleRequestSent({
+            chainId: CHAINID_AVAX,
+            sender: user,
+            nonce: nonce,
+            token: address(setup.mintBurnToken),
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            formattedRequest: expected.request,
+            requestID: expected.requestID
+        });
+        // prank both msg.sender and tx.origin
+        vm.prank(user, user);
+        router.sendCircleToken({
+            recipient: recipient,
+            chainId: CHAINID_AVAX,
+            burnToken: address(setup.mintBurnToken),
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
     }
 
     function testSendCircleTokenBaseRequestWithLowAllowance() public {
@@ -1013,6 +1053,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
         vm.expectEmit();
         emit CircleRequestSent({
             chainId: destinationChainId,
+            sender: user,
             nonce: nonce,
             token: originBurnToken,
             amount: amount,
@@ -1020,7 +1061,8 @@ contract SynapseCCTPTest is BaseCCTPTest {
             formattedRequest: expected.request,
             requestID: expected.requestID
         });
-        vm.prank(user);
+        // prank both msg.sender and tx.origin
+        vm.prank(user, user);
         synapseCCTPs[originDomain].sendCircleToken({
             recipient: recipient,
             chainId: destinationChainId,
