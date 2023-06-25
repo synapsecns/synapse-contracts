@@ -146,14 +146,32 @@ contract SynapseScript is ScriptUtils, Script {
     /// @notice Returns the deployment for a contract on a given chain, if it exists.
     /// Reverts if it doesn't exist.
     function loadDeployment(string memory contractName) public returns (address deployment) {
-        deployment = tryLoadDeployment(contractName);
-        require(deployment != address(0), _concat(contractName, " doesn't exist on ", chain));
+        return loadRemoteDeployment(chain, contractName);
+    }
+
+    /// @notice Returns the deployment for a contract on a given chain, if it exists.
+    /// Reverts if it doesn't exist.
+    function loadRemoteDeployment(string memory remoteChain, string memory contractName)
+        public
+        returns (address deployment)
+    {
+        deployment = tryLoadRemoteDeployment(remoteChain, contractName);
+        require(deployment != address(0), _concat(contractName, " doesn't exist on ", remoteChain));
     }
 
     /// @notice Returns the deployment for a contract on a given chain, if it exists.
     /// Returns address(0), if it doesn't exist.
     function tryLoadDeployment(string memory contractName) public returns (address deployment) {
-        try vm.readFile(_deploymentPath(contractName)) returns (string memory json) {
+        return tryLoadRemoteDeployment(chain, contractName);
+    }
+
+    /// @notice Returns the deployment for a contract on a given chain, if it exists.
+    /// Returns address(0), if it doesn't exist.
+    function tryLoadRemoteDeployment(string memory remoteChain, string memory contractName)
+        public
+        returns (address deployment)
+    {
+        try vm.readFile(_remoteDeploymentPath(remoteChain, contractName)) returns (string memory json) {
             // We assume that if a deployment file exists, the contract is indeed deployed
             deployment = json.readAddress(".address");
         } catch {
@@ -211,7 +229,16 @@ contract SynapseScript is ScriptUtils, Script {
 
     /// @dev Returns the full path to the contract deployment JSON.
     function _deploymentPath(string memory contractName) internal view returns (string memory path) {
-        return _concat(DEPLOYMENTS, chain, "/", contractName, ".json");
+        return _remoteDeploymentPath(chain, contractName);
+    }
+
+    /// @dev Returns the full path to the contract deployment JSON.
+    function _remoteDeploymentPath(string memory remoteChain, string memory contractName)
+        internal
+        pure
+        returns (string memory path)
+    {
+        return _concat(DEPLOYMENTS, remoteChain, "/", contractName, ".json");
     }
 
     /// @dev Returns the full path to the contract deploy config JSON.

@@ -98,9 +98,13 @@ abstract contract ScriptUtils {
     }
 
     function _fromWei(uint256 amount) internal pure returns (string memory s) {
-        string memory a = _intToStr(amount / 10**18);
-        string memory b = _intToStr(amount % 10**18);
-        while (bytes(b).length < 18) {
+        return _castToFloat(amount, 18);
+    }
+
+    function _castToFloat(uint256 amount, uint256 decimals) internal pure returns (string memory s) {
+        string memory a = _intToStr(amount / 10**decimals);
+        string memory b = _intToStr(amount % 10**decimals);
+        while (bytes(b).length < decimals) {
             b = string(abi.encodePacked("0", b));
         }
         return _concat(a, ".", b);
