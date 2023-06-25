@@ -1,0 +1,28 @@
+{
+  "mainnet": {
+    "chains": ["arbitrum", "avalanche", "mainnet"],
+    "domains": {
+      "arbitrum": 3,
+      "avalanche": 1,
+      "mainnet": 0
+    },
+    "gasAirdrop": {
+      "arbitrum": 600000000000000,
+      "avalanche": 25000000000000000,
+      "mainnet": 0
+    }
+  },
+  "testnet": {
+    "chains": ["arbitrum_goerli", "fuji", "goerli"],
+    "domains": {
+      "arbitrum_goerli": 3,
+      "fuji": 1,
+      "goerli": 0
+    },
+    "gasAirdrop": {
+      "arbitrum_goerli": 600000000000000,
+      "fuji": 25000000000000000,
+      "goerli": 0
+    }
+  }
+}
