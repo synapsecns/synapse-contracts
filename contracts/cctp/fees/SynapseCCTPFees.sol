@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import {SynapseCCTPFeesEvents} from "../events/SynapseCCTPFeesEvents.sol";
 // prettier-ignore
 import {
+    CCTPGasRescueFailed,
     CCTPIncorrectConfig,
     CCTPIncorrectProtocolFee,
     CCTPInsufficientAmount,
@@ -65,6 +66,8 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
     /// @notice Protocol fee: percentage of the relayer fee that is collected by the Protocol
     /// @dev Protocol collects the full fee amount, if the Relayer hasn't set a fee collector
     uint256 public protocolFee;
+    /// @notice Amount of chain's native gas airdropped to the token recipient for every fulfilled CCTP request
+    uint256 public chainGasAmount;
     /// @dev A list of all supported bridge tokens
     EnumerableSet.AddressSet internal _bridgeTokens;
 
@@ -109,6 +112,18 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
         delete symbolToToken[symbol];
         // Remove token fee structure
         delete feeStructures[token];
+    }
+
+    /// @notice Allows to rescue stuck gas from the contract.
+    function rescueGas() external onlyOwner {
+        (bool success, ) = msg.sender.call{value: address(this).balance}("");
+        if (!success) revert CCTPGasRescueFailed();
+    }
+
+    /// @notice Sets the amount of chain gas airdropped to the token recipient for every fulfilled CCTP request.
+    function setChainGasAmount(uint256 newChainGasAmount) external onlyOwner {
+        chainGasAmount = newChainGasAmount;
+        emit ChainGasAmountUpdated(newChainGasAmount);
     }
 
     /// @notice Updates the fee structure for a supported Circle token.
@@ -197,13 +212,15 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
         if (feeCollector == address(0)) {
             // If the fee collector is not set, the Protocol will collect the full fees
             accumulatedFees[address(0)][token] += fee;
+            emit FeeCollected(address(0), 0, fee);
         } else {
             // Otherwise, the Relayer and the Protocol will split the fees
             uint256 protocolFeeAmount = (fee * protocolFee) / FEE_DENOMINATOR;
+            uint256 relayerFeeAmount = fee - protocolFeeAmount;
             accumulatedFees[address(0)][token] += protocolFeeAmount;
-            accumulatedFees[feeCollector][token] += fee - protocolFeeAmount;
+            accumulatedFees[feeCollector][token] += relayerFeeAmount;
+            emit FeeCollected(feeCollector, relayerFeeAmount, protocolFeeAmount);
         }
-        // TODO: emit event with fee distribution?
     }
 
     /// @dev Sets the fee structure for a supported Circle token.
@@ -226,6 +243,14 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable {
             minSwapFee: minSwapFee.safeCastToUint72(),
             maxFee: maxFee.safeCastToUint72()
         });
+    }
+
+    /// @dev Transfers `msg.value` to the recipient. Assumes that `msg.value == chainGasAmount` at this point.
+    function _transferMsgValue(address recipient) internal {
+        // Try to send the gas airdrop to the recipient
+        (bool success, ) = recipient.call{value: msg.value}("");
+        // If the transfer failed, set the emitted amount to 0
+        emit ChainGasAirdropped(success ? msg.value : 0);
     }
 
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════

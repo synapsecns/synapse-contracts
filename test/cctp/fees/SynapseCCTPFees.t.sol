@@ -3,6 +3,8 @@ pragma solidity 0.8.17;
 
 // prettier-ignore
 import {
+    CastOverflow,
+    CCTPGasRescueFailed,
     CCTPIncorrectConfig,
     CCTPIncorrectProtocolFee,
     CCTPInsufficientAmount,
@@ -13,10 +15,14 @@ import {
 } from "../../../contracts/cctp/libs/Errors.sol";
 import {BridgeToken, SynapseCCTPFees, SynapseCCTPFeesEvents} from "../../../contracts/cctp/fees/SynapseCCTPFees.sol";
 
+import {MockRevertingRecipient} from "../../mocks/MockRevertingRecipient.sol";
+
 import {Test} from "forge-std/Test.sol";
 
 // solhint-disable-next-line no-empty-blocks
 contract SynapseCCTPFeesHarness is SynapseCCTPFees {
+    receive() external payable {}
+
     /// @notice Exposes the internal `_applyRelayerFee` function for testing purposes
     function applyRelayerFee(
         address token,
@@ -24,6 +30,11 @@ contract SynapseCCTPFeesHarness is SynapseCCTPFees {
         bool isSwap
     ) external returns (uint256 amountAfterFee, uint256 fee) {
         return _applyRelayerFee(token, amount, isSwap);
+    }
+
+    /// @notice Exposes the internal `_transferMsgValue` function for testing purposes
+    function transferMsgValue(address recipient) external payable {
+        _transferMsgValue(recipient);
     }
 }
 
@@ -45,6 +56,7 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         assertEq(cctpFees.owner(), owner);
         assertEq(cctpFees.getBridgeTokens().length, 0);
         assertEq(cctpFees.protocolFee(), 0);
+        assertEq(cctpFees.chainGasAmount(), 0);
     }
 
     // ═══════════════════════════════════════════ TESTS: ADDING TOKENS ════════════════════════════════════════════════
@@ -163,6 +175,43 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         cctpFees.addToken("CCTP.USDC", address(1), 0, 10, 11, 10);
     }
 
+    function testAddTokenRevertsRelayerFeeOverflows() public {
+        // Check that relayer fee % is not too high is failed prior to casting to uint40
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 2**40, 0, 0, 0);
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), type(uint256).max, 0, 0, 0);
+    }
+
+    function testAddTokenRevertsMinBaseFeeOverflows() public {
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, 2**72, 2**72, 2**72);
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, type(uint256).max, type(uint256).max, type(uint256).max);
+    }
+
+    function testAddTokenRevertsMinSwapFeeOverflows() public {
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, 0, 2**72, 2**72);
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, 0, type(uint256).max, type(uint256).max);
+    }
+
+    function testAddTokenRevertsMaxFeeOverflows() public {
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, 0, 0, 2**72);
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", address(1), 0, 0, 0, type(uint256).max);
+    }
+
     // ══════════════════════════════════════════ TESTS: REMOVING TOKENS ═══════════════════════════════════════════════
 
     function addTokensThenRemoveOne() public {
@@ -260,6 +309,47 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         vm.expectRevert(CCTPIncorrectConfig.selector);
         vm.prank(owner);
         cctpFees.setTokenFee(usdc, 0, 10, 11, 10);
+    }
+
+    function testSetTokenFeeRevertsRelayerFeeOverflows() public {
+        // Check that relayer fee % is not too high is failed prior to casting to uint40
+        addTokens();
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 2**40, 0, 0, 0);
+        vm.expectRevert(CCTPIncorrectConfig.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, type(uint256).max, 0, 0, 0);
+    }
+
+    function testSetTokenFeeRevertsMinBaseFeeOverflows() public {
+        addTokens();
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, 2**72, 2**72, 2**72);
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, type(uint256).max, type(uint256).max, type(uint256).max);
+    }
+
+    function testSetTokenFeeRevertsMinSwapFeeOverflows() public {
+        addTokens();
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, 0, 2**72, 2**72);
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, 0, type(uint256).max, type(uint256).max);
+    }
+
+    function testSetTokenFeeRevertsMaxFeeOverflows() public {
+        addTokens();
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, 0, 0, 2**72);
+        vm.expectRevert(CastOverflow.selector);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 0, 0, 0, type(uint256).max);
     }
 
     // ══════════════════════════════════════ TESTS: CALCULATING BRIDGE FEES ═══════════════════════════════════════════
@@ -389,6 +479,9 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         bool isSwap,
         uint256 expectedFee
     ) public {
+        vm.expectEmit();
+        // Full fee goes to protocol
+        emit FeeCollected({feeCollector: address(0), relayerFeeAmount: 0, protocolFeeAmount: expectedFee});
         (uint256 amountAfterFee, uint256 fee) = cctpFees.applyRelayerFee(token, amount, isSwap);
         assertEq(amountAfterFee, amount - fee);
         assertEq(fee, expectedFee);
@@ -403,6 +496,14 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         address collector
     ) public {
         uint256 accumulatedFeesBefore = cctpFees.accumulatedFees(collector, token);
+        vm.expectEmit();
+        // Full fee goes to relayer if they specified a collector
+        // Otherwise, full fee goes to protocol
+        emit FeeCollected({
+            feeCollector: collector,
+            relayerFeeAmount: collector == address(0) ? 0 : expectedFee,
+            protocolFeeAmount: collector == address(0) ? expectedFee : 0
+        });
         vm.prank(relayer);
         cctpFees.applyRelayerFee(token, amount, isSwap);
         uint256 accumulatedFeesAfter = cctpFees.accumulatedFees(collector, token);
@@ -420,6 +521,13 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
     ) public {
         uint256 protocolFeesBefore = cctpFees.accumulatedFees(address(0), token);
         uint256 accumulatedFeesBefore = cctpFees.accumulatedFees(collector, token);
+        vm.expectEmit();
+        // Fee is split between protocol and relayer
+        emit FeeCollected({
+            feeCollector: collector,
+            relayerFeeAmount: expectedTotalFee - expectedProtocolFee,
+            protocolFeeAmount: expectedProtocolFee
+        });
         vm.prank(relayer);
         cctpFees.applyRelayerFee(token, amount, isSwap);
         uint256 protocolFeesAfter = cctpFees.accumulatedFees(address(0), token);
@@ -550,5 +658,100 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         vm.expectRevert(CCTPIncorrectProtocolFee.selector);
         vm.prank(owner);
         cctpFees.setProtocolFee(5 * 10**9 + 1);
+    }
+
+    // ════════════════════════════════════════ TESTS: SETTING GAS AIRDROP ═════════════════════════════════════════════
+
+    function testSetChainGasAmountSetsValue() public {
+        // Set initial chain gas amount
+        vm.prank(owner);
+        cctpFees.setChainGasAmount(10**9);
+        assertEq(cctpFees.chainGasAmount(), 10**9);
+        // Update chain gas amount
+        vm.prank(owner);
+        cctpFees.setChainGasAmount(5 * 10**9);
+        assertEq(cctpFees.chainGasAmount(), 5 * 10**9);
+    }
+
+    function testSetChainGasAmountEmitsEvent() public {
+        // Set initial chain gas amount
+        vm.expectEmit();
+        emit ChainGasAmountUpdated(10**9);
+        vm.prank(owner);
+        cctpFees.setChainGasAmount(10**9);
+        // Update chain gas amount
+        vm.expectEmit();
+        emit ChainGasAmountUpdated(5 * 10**9);
+        vm.prank(owner);
+        cctpFees.setChainGasAmount(5 * 10**9);
+    }
+
+    function testSetChainGasAmountRevertsWhenCallerNotOwner(address caller) public {
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        cctpFees.setChainGasAmount(10**9);
+    }
+
+    // ════════════════════════════════════════ TESTS: TRANSFER GAS AIRDROP ════════════════════════════════════════════
+
+    function testTransferMsgValueTransfersGas() public {
+        uint256 amount = 10**9;
+        address relayer = makeAddr("Relayer");
+        address recipient = makeAddr("Recipient");
+        deal(relayer, amount);
+        vm.prank(relayer);
+        cctpFees.transferMsgValue{value: amount}(recipient);
+        assertEq(recipient.balance, amount);
+    }
+
+    function testTransferMsgValueEmitsEvent() public {
+        uint256 amount = 10**9;
+        address relayer = makeAddr("Relayer");
+        address recipient = makeAddr("Recipient");
+        deal(relayer, amount);
+        vm.expectEmit();
+        emit ChainGasAirdropped(amount);
+        vm.prank(relayer);
+        cctpFees.transferMsgValue{value: amount}(recipient);
+    }
+
+    function testTransferMsgValueWhenRecipientReverted() public {
+        uint256 amount = 10**9;
+        address relayer = makeAddr("Relayer");
+        address recipient = address(new MockRevertingRecipient());
+        deal(relayer, amount);
+        vm.expectEmit();
+        emit ChainGasAirdropped(0);
+        vm.prank(relayer);
+        cctpFees.transferMsgValue{value: amount}(recipient);
+        assertEq(address(cctpFees).balance, amount);
+    }
+
+    // ════════════════════════════════════════════ TESTS: RESCUING GAS ════════════════════════════════════════════════
+
+    function testRescueGasTransfersGas() public {
+        uint256 amount = 10**9;
+        deal(address(cctpFees), amount);
+        vm.prank(owner);
+        cctpFees.rescueGas();
+        assertEq(owner.balance, amount);
+    }
+
+    function testRescueGasRevertsWhenCallerNotOwner(address caller) public {
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        cctpFees.rescueGas();
+    }
+
+    function testRescueGasRevertsWhenOwnerReverts() public {
+        uint256 amount = 10**9;
+        deal(address(cctpFees), amount);
+        address revertingOwner = address(new MockRevertingRecipient());
+        vm.prank(owner);
+        cctpFees.transferOwnership(revertingOwner);
+        vm.expectRevert(CCTPGasRescueFailed.selector);
+        vm.prank(revertingOwner);
+        cctpFees.rescueGas();
     }
 }

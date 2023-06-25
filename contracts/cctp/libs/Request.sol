@@ -17,7 +17,6 @@ import {IncorrectRequestLength, UnknownRequestVersion} from "./Errors.sol";
 ///
 /// | Field          | Type    | Description                                                   |
 /// | -------------- | ------- | ------------------------------------------------------------- |
-/// | pool           | address | Liquidity pool for swapping Circle token on destination chain |
 /// | tokenIndexFrom | uint8   | Index of the minted Circle token in the pool                  |
 /// | tokenIndexTo   | uint8   | Index of the final token in the pool                          |
 /// | deadline       | uint256 | Latest timestamp to execute the swap                          |
@@ -29,7 +28,7 @@ library RequestLib {
     /// @notice Length of the encoded base request.
     uint256 internal constant REQUEST_BASE_LENGTH = 5 * 32;
     /// @notice Length of the encoded swap parameters.
-    uint256 internal constant SWAP_PARAMS_LENGTH = 5 * 32;
+    uint256 internal constant SWAP_PARAMS_LENGTH = 4 * 32;
     /// @notice Length of the encoded swap request.
     /// Need 2 extra words for each `bytes` field to store its offset in the full payload, and length.
     uint256 internal constant REQUEST_SWAP_LENGTH = 4 * 32 + REQUEST_BASE_LENGTH + SWAP_PARAMS_LENGTH;
@@ -54,20 +53,18 @@ library RequestLib {
     }
 
     /// @notice Formats the swap parameters part of the swap request into a bytes array.
-    /// @param pool                 Liquidity pool for swapping Circle token on destination chain
     /// @param tokenIndexFrom       Index of the minted Circle token in the pool
     /// @param tokenIndexTo         Index of the final token in the pool
     /// @param deadline             Latest timestamp to execute the swap
     /// @param minAmountOut         Minimum amount of tokens to receive from the swap
     /// @return formattedSwapParams Properly formatted swap parameters
     function formatSwapParams(
-        address pool,
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
         uint256 deadline,
         uint256 minAmountOut
     ) internal pure returns (bytes memory formattedSwapParams) {
-        return abi.encode(pool, tokenIndexFrom, tokenIndexTo, deadline, minAmountOut);
+        return abi.encode(tokenIndexFrom, tokenIndexTo, deadline, minAmountOut);
     }
 
     /// @notice Formats the request into a bytes array.
@@ -127,7 +124,6 @@ library RequestLib {
     /// @notice Decodes the swap parameters from a bytes array.
     /// @dev Will revert if the swap parameters are not properly formatted.
     /// @param swapParams           Formatted swap parameters
-    /// @return pool                Liquidity pool for swapping Circle token on destination chain
     /// @return tokenIndexFrom      Index of the minted Circle token in the pool
     /// @return tokenIndexTo        Index of the final token in the pool
     /// @return deadline            Latest timestamp to execute the swap
@@ -136,7 +132,6 @@ library RequestLib {
         internal
         pure
         returns (
-            address pool,
             uint8 tokenIndexFrom,
             uint8 tokenIndexTo,
             uint256 deadline,
@@ -144,7 +139,7 @@ library RequestLib {
         )
     {
         if (swapParams.length != SWAP_PARAMS_LENGTH) revert IncorrectRequestLength();
-        return abi.decode(swapParams, (address, uint8, uint8, uint256, uint256));
+        return abi.decode(swapParams, (uint8, uint8, uint256, uint256));
     }
 
     /// @notice Decodes the versioned request from a bytes array.

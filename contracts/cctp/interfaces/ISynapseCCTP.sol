@@ -25,6 +25,8 @@ interface ISynapseCCTP {
     /// @notice Receive  Circle token supported by CCTP with the request for the action to take.
     /// @dev The request is a bytes array containing information about the end recipient of the tokens,
     /// as well as an optional swap action to take on this chain.
+    /// @dev The relayers need to use SynapseCCTP.chainGasAmount() as `msg.value` when calling this function,
+    /// or the call will revert.
     /// @param message              Message raw bytes emitted by CCTP MessageTransmitter on origin chain
     /// @param signature            Circle's attestation for the message obtained from Circle's API
     /// @param requestVersion       Version of the request format
@@ -34,5 +36,5 @@ interface ISynapseCCTP {
         bytes calldata signature,
         uint32 requestVersion,
         bytes memory formattedRequest
-    ) external;
+    ) external payable;
 }

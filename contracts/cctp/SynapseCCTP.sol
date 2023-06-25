@@ -3,8 +3,13 @@ pragma solidity 0.8.17;
 
 // prettier-ignore
 import {
+    CCTPIncorrectChainId,
+    CCTPIncorrectDomain,
+    CCTPIncorrectGasAmount,
     CCTPMessageNotReceived,
     CCTPTokenNotFound,
+    CCTPZeroAddress,
+    CCTPZeroAmount,
     RemoteCCTPDeploymentNotSet,
     RemoteCCTPTokenNotSet
 } from "./libs/Errors.sol";
@@ -45,10 +50,10 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
     IMessageTransmitter public immutable messageTransmitter;
     ITokenMessenger public immutable tokenMessenger;
 
-    // TODO: onlyOwner setters for these
     // (chainId => configuration of the remote chain)
     mapping(uint256 => DomainConfig) public remoteDomainConfig;
-    mapping(uint256 => address) internal _remoteTokenIdToLocalToken;
+    // (Circle token => liquidity pool with the token)
+    mapping(address => address) public circleTokenPool;
 
     constructor(ITokenMessenger tokenMessenger_) {
         tokenMessenger = tokenMessenger_;
@@ -58,24 +63,47 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
 
     // ═════════════════════════════════════════════ SET CONFIG LOGIC ══════════════════════════════════════════════════
 
-    /// @notice Sets the local token associated with the given remote domain and token.
-    // TODO: add ownerOnly tests
-    function setLocalToken(uint32 remoteDomain, address remoteToken) external onlyOwner {
-        ITokenMinter minter = ITokenMinter(tokenMessenger.localMinter());
-        address localToken = minter.getLocalToken(remoteDomain, remoteToken.addressToBytes32());
-        if (localToken == address(0)) revert CCTPTokenNotFound();
-        _remoteTokenIdToLocalToken[_remoteTokenId(remoteDomain, remoteToken)] = localToken;
-    }
-
     /// @notice Sets the remote domain and deployment of SynapseCCTP for the given remote chainId.
-    // TODO: add ownerOnly tests
     function setRemoteDomainConfig(
         uint256 remoteChainId,
         uint32 remoteDomain,
         address remoteSynapseCCTP
     ) external onlyOwner {
-        // TODO: add zero checks
+        // ChainId should be non-zero and different from the local chain id.
+        if (remoteChainId == 0 || remoteChainId == block.chainid) revert CCTPIncorrectChainId();
+        // Remote domain should differ from the local domain.
+        if (remoteDomain == localDomain) revert CCTPIncorrectDomain();
+        // Remote domain should be 0 IF AND ONLY IF remote chain id is 1 (Ethereum Mainnet).
+        if ((remoteDomain == 0) != (remoteChainId == 1)) revert CCTPIncorrectDomain();
+        // Remote SynapseCCTP should be non-zero.
+        if (remoteSynapseCCTP == address(0)) revert CCTPZeroAddress();
         remoteDomainConfig[remoteChainId] = DomainConfig(remoteDomain, remoteSynapseCCTP);
+    }
+
+    /// @notice Sets the liquidity pool for the given Circle token.
+    function setCircleTokenPool(address circleToken, address pool) external onlyOwner {
+        if (circleToken == address(0)) revert CCTPZeroAddress();
+        if (!_bridgeTokens.contains(circleToken)) revert CCTPTokenNotFound();
+        // Pool address can be zero if no swaps are supported for the Circle token.
+        circleTokenPool[circleToken] = pool;
+    }
+
+    // ═════════════════════════════════════════════ FEES WITHDRAWING ══════════════════════════════════════════════════
+
+    /// @notice Allows the owner to withdraw accumulated protocol fees.
+    function withdrawProtocolFees(address token) external onlyOwner {
+        uint256 accFees = accumulatedFees[address(0)][token];
+        if (accFees == 0) revert CCTPZeroAmount();
+        accumulatedFees[address(0)][token] = 0;
+        IERC20(token).safeTransfer(msg.sender, accFees);
+    }
+
+    /// @notice Allows the Relayer's fee collector to withdraw accumulated relayer fees.
+    function withdrawRelayerFees(address token) external {
+        uint256 accFees = accumulatedFees[msg.sender][token];
+        if (accFees == 0) revert CCTPZeroAmount();
+        accumulatedFees[msg.sender][token] = 0;
+        IERC20(token).safeTransfer(msg.sender, accFees);
     }
 
     // ════════════════════════════════════════════════ CCTP LOGIC ═════════════════════════════════════════════════════
@@ -105,10 +133,10 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         if (dstSynapseCCTP == 0) revert RemoteCCTPDeploymentNotSet();
         uint32 destinationDomain = config.domain;
         // Construct the request identifier to be used as salt later.
-        // The identifier (kappa) is unique for every single request on all the chains.
+        // The identifier (requestID) is unique for every single request on all the chains.
         // This is done by including origin and destination domains as well as origin nonce in the hashed data.
         // Origin domain and nonce are included in `formattedRequest`, so we only need to add the destination domain.
-        bytes32 kappa = _kappa(destinationDomain, requestVersion, formattedRequest);
+        bytes32 requestID = _requestID(destinationDomain, requestVersion, formattedRequest);
         // Issue allowance if needed
         _approveToken(burnToken, address(tokenMessenger), amount);
         tokenMessenger.depositForBurnWithCaller(
@@ -116,9 +144,9 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
             destinationDomain,
             dstSynapseCCTP,
             burnToken,
-            _destinationCaller(dstSynapseCCTP.bytes32ToAddress(), kappa)
+            _destinationCaller(dstSynapseCCTP.bytes32ToAddress(), requestID)
         );
-        emit CircleRequestSent(chainId, nonce, burnToken, amount, requestVersion, formattedRequest, kappa);
+        emit CircleRequestSent(chainId, nonce, burnToken, amount, requestVersion, formattedRequest, requestID);
     }
 
     // TODO: guard this to be only callable by the validators?
@@ -128,32 +156,42 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         bytes calldata signature,
         uint32 requestVersion,
         bytes memory formattedRequest
-    ) external {
+    ) external payable {
+        // Check that the Relayer provided correct `msg.value`
+        if (msg.value != chainGasAmount) revert CCTPIncorrectGasAmount();
         (bytes memory baseRequest, bytes memory swapParams) = RequestLib.decodeRequest(
             requestVersion,
             formattedRequest
         );
         (uint32 originDomain, , address originBurnToken, uint256 amount, address recipient) = RequestLib
             .decodeBaseRequest(baseRequest);
-        // For kappa hashing we use origin and destination domains as well as origin nonce.
-        // This ensures that kappa is unique for each request, and that it is not possible to replay requests.
-        bytes32 kappa = _kappa(localDomain, requestVersion, formattedRequest);
+        // For requestID hashing we use origin and destination domains as well as origin nonce.
+        // This ensures that requestID is unique for each request, and that it is not possible to replay requests.
+        bytes32 requestID = _requestID(localDomain, requestVersion, formattedRequest);
         // Kindly ask the Circle Bridge to mint the tokens for us.
-        _mintCircleToken(message, signature, kappa);
-        address token = _getLocalMintedToken(originDomain, originBurnToken);
+        _mintCircleToken(message, signature, requestID);
+        address token = _getLocalToken(originDomain, originBurnToken);
         uint256 fee;
         // Apply the bridging fee. This will revert if amount <= fee.
         (amount, fee) = _applyRelayerFee(token, amount, requestVersion == RequestLib.REQUEST_SWAP);
         // Fulfill the request: perform an optional swap and send the end tokens to the recipient.
         (address tokenOut, uint256 amountOut) = _fulfillRequest(recipient, token, amount, swapParams);
-        emit CircleRequestFulfilled(recipient, token, fee, tokenOut, amountOut, kappa);
+        // Perform the gas airdrop and emit corresponding event if gas airdrop is enabled
+        if (msg.value > 0) _transferMsgValue(recipient);
+        emit CircleRequestFulfilled(recipient, token, fee, tokenOut, amountOut, requestID);
     }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
 
     /// @notice Get the local token associated with the given remote domain and token.
     function getLocalToken(uint32 remoteDomain, address remoteToken) external view returns (address) {
-        return _remoteTokenIdToLocalToken[_remoteTokenId(remoteDomain, remoteToken)];
+        return _getLocalToken(remoteDomain, remoteToken);
+    }
+
+    /// @notice Checks if the given request is already fulfilled.
+    function isRequestFulfilled(bytes32 requestID) external view returns (bool) {
+        // Request is fulfilled if the requestID is already used, meaning the forwarder is already deployed.
+        return MinimalForwarderLib.predictAddress(address(this), requestID).code.length > 0;
     }
 
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
@@ -184,10 +222,10 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
     function _mintCircleToken(
         bytes calldata message,
         bytes calldata signature,
-        bytes32 kappa
+        bytes32 requestID
     ) internal {
-        // Deploy a forwarder specific to this request. Will revert if the kappa has been used before.
-        address forwarder = MinimalForwarderLib.deploy(kappa);
+        // Deploy a forwarder specific to this request. Will revert if the requestID has been used before.
+        address forwarder = MinimalForwarderLib.deploy(requestID);
         // Form the payload for the Circle Bridge.
         bytes memory payload = abi.encodeWithSelector(IMessageTransmitter.receiveMessage.selector, message, signature);
         // Use the deployed forwarder (who is the only one who can call the Circle Bridge for this message)
@@ -212,7 +250,13 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
         }
         // We checked request version to be a valid value when wrapping into `request`,
         // so this could only be `RequestLib.REQUEST_SWAP`.
-        (address pool, uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 deadline, uint256 minAmountOut) = RequestLib
+        address pool = circleTokenPool[token];
+        // Fallback to Base Request if no pool is found
+        if (pool == address(0)) {
+            IERC20(token).safeTransfer(recipient, amount);
+            return (token, amount);
+        }
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 deadline, uint256 minAmountOut) = RequestLib
             .decodeSwapParams(swapParams);
         tokenOut = _tryGetToken(pool, tokenIndexTo);
         // Fallback to Base Request if failed to get tokenOut address
@@ -254,35 +298,44 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
 
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
 
-    /// @dev Fetches the address and the amount of the minted Circle token.
-    function _getLocalMintedToken(uint32 originDomain, address originBurnToken) internal view returns (address token) {
-        // Map the remote token to the local token.
-        token = _remoteTokenIdToLocalToken[_remoteTokenId(originDomain, originBurnToken)];
-        if (token == address(0)) revert RemoteCCTPTokenNotSet();
+    /// @dev Gets the address of the local minted Circle token from the local TokenMinter.
+    function _getLocalToken(uint32 remoteDomain, address remoteToken) internal view returns (address token) {
+        ITokenMinter minter = ITokenMinter(tokenMessenger.localMinter());
+        token = minter.getLocalToken(remoteDomain, remoteToken.addressToBytes32());
+        // Revert if TokenMinter is not aware of this remote token.
+        if (token == address(0)) revert CCTPTokenNotFound();
     }
 
     /// @dev Tries to get the token address from the pool.
     /// Instead of reverting, returns 0 if the getToken failed.
     function _tryGetToken(address pool, uint8 tokenIndex) internal view returns (address token) {
-        try IDefaultPool(pool).getToken(tokenIndex) returns (address _token) {
-            token = _token;
-        } catch {
-            // Return 0 on revert
+        // Issue a low level static call instead of IDefaultPool(pool).getToken(tokenIndex)
+        // to ensure this never reverts
+        (bool success, bytes memory returnData) = pool.staticcall(
+            abi.encodeWithSelector(IDefaultPool.getToken.selector, tokenIndex)
+        );
+        if (success && returnData.length == 32) {
+            // Do the casting instead of using abi.decode to discard the dirty highest bits if there are any
+            token = bytes32(returnData).bytes32ToAddress();
+        } else {
+            // Return 0 on revert or if pool returned something unexpected
             token = address(0);
         }
     }
 
     /// @dev Predicts the address of the destination caller that will be used to call the Circle Message Transmitter.
-    function _destinationCaller(address synapseCCTP, bytes32 kappa) internal pure returns (bytes32) {
-        return synapseCCTP.predictAddress(kappa).addressToBytes32();
+    function _destinationCaller(address synapseCCTP, bytes32 requestID) internal pure returns (bytes32) {
+        // On the destination chain, Synapse CCTP will deploy a MinimalForwarder for each request,
+        // using requestID as salt for the create2 deployment.
+        return synapseCCTP.predictAddress(requestID).addressToBytes32();
     }
 
     /// @dev Calculates the unique identifier of the request.
-    function _kappa(
+    function _requestID(
         uint32 destinationDomain,
         uint32 requestVersion,
         bytes memory formattedRequest
-    ) internal pure returns (bytes32 kappa) {
+    ) internal pure returns (bytes32 requestID) {
         // Merge the destination domain and the request version into a single uint256.
         uint256 prefix = (uint256(destinationDomain) << 32) | requestVersion;
         bytes32 requestHash = keccak256(formattedRequest);
@@ -294,12 +347,7 @@ contract SynapseCCTP is SynapseCCTPFees, SynapseCCTPEvents, ISynapseCCTP {
             mstore(0, prefix)
             mstore(32, requestHash)
             // Return hash of first 64 bytes of memory.
-            kappa := keccak256(0, 64)
+            requestID := keccak256(0, 64)
         }
-    }
-
-    /// @dev Packs the domain and the token into a single uint256 value using bitwise operations.
-    function _remoteTokenId(uint32 remoteDomain, address remoteToken) internal pure returns (uint256) {
-        return (uint256(remoteDomain) << 160) | uint160(remoteToken);
     }
 }
