@@ -163,6 +163,8 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
         );
         // We want to emit the EOA address that initiated the transaction as "sender",
         // so we use `tx.origin` instead of `msg.sender`.
+        // Note: this is done for analytics only, and should NOT be used by off-chain actors
+        // for security purposes.
         // solhint-disable avoid-tx-origin
         emit CircleRequestSent(
             chainId,
