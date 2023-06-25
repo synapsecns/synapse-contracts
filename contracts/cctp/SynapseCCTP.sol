@@ -57,10 +57,11 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
     // (Circle token => liquidity pool with the token)
     mapping(address => address) public circleTokenPool;
 
-    constructor(ITokenMessenger tokenMessenger_) {
+    constructor(ITokenMessenger tokenMessenger_, address owner_) {
         tokenMessenger = tokenMessenger_;
         messageTransmitter = IMessageTransmitter(tokenMessenger_.localMessageTransmitter());
         localDomain = messageTransmitter.localDomain();
+        _transferOwnership(owner_);
     }
 
     // ═════════════════════════════════════════════ SET CONFIG LOGIC ══════════════════════════════════════════════════

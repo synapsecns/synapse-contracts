@@ -12,7 +12,7 @@ import {
     RemoteCCTPDeploymentNotSet,
     IncorrectRequestLength
 } from "../../contracts/cctp/libs/Errors.sol";
-import {BaseCCTPTest, RequestLib} from "./BaseCCTP.t.sol";
+import {BaseCCTPTest, RequestLib, SynapseCCTP} from "./BaseCCTP.t.sol";
 
 import {MockRouter} from "./mocks/MockRouter.sol";
 
@@ -26,6 +26,11 @@ contract SynapseCCTPTest is BaseCCTPTest {
         bytes32 destinationCaller;
         bytes32 destinationTokenMessenger;
         bytes message;
+    }
+
+    function testConstructorSetsOwner() public {
+        SynapseCCTP cctp = new SynapseCCTP(cctpSetups[DOMAIN_ETH].tokenMessenger, owner);
+        assertEq(address(cctp.owner()), owner);
     }
 
     function testSendCircleTokenBaseRequest() public {
