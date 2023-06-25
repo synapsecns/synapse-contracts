@@ -38,6 +38,215 @@ contract SynapseCCTPRouterTest is BaseCCTPTest {
         cctpRouters[domain] = new SynapseCCTPRouter(address(synapseCCTPs[domain]));
     }
 
+    // ═════════════════════════════════════════ TESTS: BRIDGE USING CCTP ══════════════════════════════════════════════
+
+    function testBridgeFromUSDCToUSDC() public {
+        address usdcOrigin = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        address usdcDest = address(cctpSetups[DOMAIN_AVAX].mintBurnToken);
+        uint256 amountIn = 100 * 10**6;
+        SwapQuery memory originQuery = getOriginQuery(DOMAIN_ETH, usdcOrigin, amountIn);
+        SwapQuery memory destQuery = getDestQuery(DOMAIN_AVAX, usdcDest, originQuery.minAmountOut);
+        cctpSetups[DOMAIN_ETH].mintBurnToken.mintPublic(user, amountIn);
+        vm.prank(user);
+        cctpSetups[DOMAIN_ETH].mintBurnToken.approve(address(cctpRouters[DOMAIN_ETH]), amountIn);
+        expectCircleRequestSent({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            destChainId: CHAINID_AVAX,
+            amount: originQuery.minAmountOut,
+            destQuery: destQuery
+        });
+        // Prank both msg.sender and tx.origin
+        vm.prank(user, user);
+        cctpRouters[DOMAIN_ETH].bridge({
+            recipient: recipient,
+            chainId: CHAINID_AVAX,
+            token: usdcOrigin,
+            amount: amountIn,
+            originQuery: originQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function testBridgeFromUSDCToPoolStable() public {
+        address usdcOrigin = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        address usdtDest = address(poolSetups[DOMAIN_AVAX].token);
+        uint256 amountIn = 100 * 10**6;
+        SwapQuery memory originQuery = getOriginQuery(DOMAIN_ETH, usdcOrigin, amountIn);
+        SwapQuery memory destQuery = getDestQuery(DOMAIN_AVAX, usdtDest, originQuery.minAmountOut);
+        cctpSetups[DOMAIN_ETH].mintBurnToken.mintPublic(user, amountIn);
+        vm.prank(user);
+        cctpSetups[DOMAIN_ETH].mintBurnToken.approve(address(cctpRouters[DOMAIN_ETH]), amountIn);
+        expectCircleRequestSent({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            destChainId: CHAINID_AVAX,
+            amount: originQuery.minAmountOut,
+            destQuery: destQuery
+        });
+        // Prank both msg.sender and tx.origin
+        vm.prank(user, user);
+        cctpRouters[DOMAIN_ETH].bridge({
+            recipient: recipient,
+            chainId: CHAINID_AVAX,
+            token: usdcOrigin,
+            amount: amountIn,
+            originQuery: originQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function testBridgeFromPoolStableToUSDC() public {
+        address usdtOrigin = address(poolSetups[DOMAIN_ETH].token);
+        address usdcDest = address(cctpSetups[DOMAIN_AVAX].mintBurnToken);
+        uint256 amountIn = 100 * 10**6;
+        SwapQuery memory originQuery = getOriginQuery(DOMAIN_ETH, usdtOrigin, amountIn);
+        SwapQuery memory destQuery = getDestQuery(DOMAIN_AVAX, usdcDest, originQuery.minAmountOut);
+        poolSetups[DOMAIN_ETH].token.mint(user, amountIn);
+        vm.prank(user);
+        poolSetups[DOMAIN_ETH].token.approve(address(cctpRouters[DOMAIN_ETH]), amountIn);
+        expectCircleRequestSent({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            destChainId: CHAINID_AVAX,
+            amount: originQuery.minAmountOut,
+            destQuery: destQuery
+        });
+        // Prank both msg.sender and tx.origin
+        vm.prank(user, user);
+        cctpRouters[DOMAIN_ETH].bridge({
+            recipient: recipient,
+            chainId: CHAINID_AVAX,
+            token: usdtOrigin,
+            amount: amountIn,
+            originQuery: originQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function testBridgeFromPoolStableToPoolStable() public {
+        address usdtOrigin = address(poolSetups[DOMAIN_ETH].token);
+        address usdtDest = address(poolSetups[DOMAIN_AVAX].token);
+        uint256 amountIn = 100 * 10**6;
+        SwapQuery memory originQuery = getOriginQuery(DOMAIN_ETH, usdtOrigin, amountIn);
+        SwapQuery memory destQuery = getDestQuery(DOMAIN_AVAX, usdtDest, originQuery.minAmountOut);
+        poolSetups[DOMAIN_ETH].token.mint(user, amountIn);
+        vm.prank(user);
+        poolSetups[DOMAIN_ETH].token.approve(address(cctpRouters[DOMAIN_ETH]), amountIn);
+        expectCircleRequestSent({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            destChainId: CHAINID_AVAX,
+            amount: originQuery.minAmountOut,
+            destQuery: destQuery
+        });
+        // Prank both msg.sender and tx.origin
+        vm.prank(user, user);
+        cctpRouters[DOMAIN_ETH].bridge({
+            recipient: recipient,
+            chainId: CHAINID_AVAX,
+            token: usdtOrigin,
+            amount: amountIn,
+            originQuery: originQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function getOriginQuery(
+        uint32 domain,
+        address tokenIn,
+        uint256 amountIn
+    ) public view returns (SwapQuery memory) {
+        string[] memory symbols = new string[](1);
+        symbols[0] = SYMBOL_USDC;
+        SwapQuery[] memory queries = cctpRouters[domain].getOriginAmountOut(tokenIn, symbols, amountIn);
+        return queries[0];
+    }
+
+    function getDestQuery(
+        uint32 domain,
+        address tokenOut,
+        uint256 amountIn
+    ) public view returns (SwapQuery memory) {
+        DestRequest[] memory requests = new DestRequest[](1);
+        requests[0].symbol = SYMBOL_USDC;
+        requests[0].amountIn = amountIn;
+        SwapQuery[] memory queries = cctpRouters[domain].getDestinationAmountOut(requests, tokenOut);
+        return queries[0];
+    }
+
+    function expectCircleRequestSent(
+        uint32 originDomain,
+        uint32 destinationDomain,
+        uint256 destChainId,
+        uint256 amount,
+        SwapQuery memory destQuery
+    ) public {
+        uint64 nonce = cctpSetups[originDomain].messageTransmitter.nextAvailableNonce();
+        (uint32 requestVersion, bytes memory formattedRequest, bytes32 requestID) = getExpectedRequest(
+            originDomain,
+            destinationDomain,
+            nonce,
+            amount,
+            destQuery
+        );
+        vm.expectEmit();
+        emit CircleRequestSent({
+            chainId: destChainId,
+            sender: user,
+            nonce: nonce,
+            token: address(cctpSetups[originDomain].mintBurnToken),
+            amount: amount,
+            requestVersion: requestVersion,
+            formattedRequest: formattedRequest,
+            requestID: requestID
+        });
+    }
+
+    function getExpectedRequest(
+        uint32 originDomain,
+        uint32 destinationDomain,
+        uint64 nonce,
+        uint256 amount,
+        SwapQuery memory destQuery
+    )
+        public
+        view
+        returns (
+            uint32 requestVersion,
+            bytes memory formattedRequest,
+            bytes32 requestID
+        )
+    {
+        bytes memory swapParams = "";
+        if (destQuery.hasAdapter()) {
+            requestVersion = RequestLib.REQUEST_SWAP;
+            DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
+            swapParams = RequestLib.formatSwapParams({
+                tokenIndexFrom: params.tokenIndexFrom,
+                tokenIndexTo: params.tokenIndexTo,
+                deadline: destQuery.deadline,
+                minAmountOut: destQuery.minAmountOut
+            });
+        } else {
+            requestVersion = RequestLib.REQUEST_BASE;
+        }
+        formattedRequest = RequestLib.formatRequest({
+            requestVersion: requestVersion,
+            baseRequest: RequestLib.formatBaseRequest({
+                originDomain: originDomain,
+                nonce: nonce,
+                originBurnToken: address(cctpSetups[originDomain].mintBurnToken),
+                amount: amount,
+                recipient: recipient
+            }),
+            swapParams: swapParams
+        });
+        bytes32 requestHash = keccak256(formattedRequest);
+        uint256 prefix = uint256(destinationDomain) * 2**32 + requestVersion;
+        requestID = keccak256(abi.encodePacked(prefix, requestHash));
+    }
+
     // ════════════════════════════════════════ TESTS: GET CONNECTED TOKENS ════════════════════════════════════════════
 
     function testGetConnectedBridgeTokensForUSDC() public {
