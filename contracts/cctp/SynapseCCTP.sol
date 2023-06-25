@@ -15,7 +15,6 @@ import {
 } from "./libs/Errors.sol";
 import {SynapseCCTPEvents} from "./events/SynapseCCTPEvents.sol";
 import {EnumerableSet, SynapseCCTPFees} from "./fees/SynapseCCTPFees.sol";
-import {IDefaultPool} from "./interfaces/IDefaultPool.sol";
 import {IMessageTransmitter} from "./interfaces/IMessageTransmitter.sol";
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
 import {ITokenMinter} from "./interfaces/ITokenMinter.sol";
@@ -23,6 +22,8 @@ import {ITokenMessenger} from "./interfaces/ITokenMessenger.sol";
 import {RequestLib} from "./libs/Request.sol";
 import {MinimalForwarderLib} from "./libs/MinimalForwarder.sol";
 import {TypeCasts} from "./libs/TypeCasts.sol";
+
+import {IDefaultPool} from "../router/interfaces/IDefaultPool.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 import {Pausable} from "@openzeppelin/contracts-4.5.0/security/Pausable.sol";

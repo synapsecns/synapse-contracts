@@ -6,8 +6,8 @@ import {MockMintBurnToken} from "./mocks/MockMintBurnToken.sol";
 import {MockTokenMessenger} from "./mocks/MockTokenMessenger.sol";
 import {MockTokenMinter} from "./mocks/MockTokenMinter.sol";
 
-import {MockERC20} from "./mocks/MockERC20.sol";
-import {MockDefaultPool} from "./mocks/MockDefaultPool.sol";
+import {MockERC20} from "../router/mocks/MockERC20.sol";
+import {MockDefaultPool} from "../router/mocks/MockDefaultPool.sol";
 
 import {MessageTransmitterEvents} from "../../contracts/cctp/events/MessageTransmitterEvents.sol";
 import {TokenMessengerEvents} from "../../contracts/cctp/events/TokenMessengerEvents.sol";

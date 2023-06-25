@@ -13,8 +13,8 @@ import {
     CCTPTokenAlreadyAdded,
     CCTPTokenNotFound
 } from "../libs/Errors.sol";
-import {BridgeToken} from "../libs/Structs.sol";
 import {TypeCasts} from "../libs/TypeCasts.sol";
+import {BridgeToken} from "../../router/libs/Structs.sol";
 
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableSet.sol";
