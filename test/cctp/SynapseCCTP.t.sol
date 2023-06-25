@@ -70,6 +70,22 @@ contract SynapseCCTPTest is BaseCCTPTest {
         assertEq(cctpSetups[DOMAIN_ETH].mintBurnToken.balanceOf(user), 0);
     }
 
+    function testSendCircleTokenBaseRequestRevertsWhenPaused() public {
+        pauseSending(DOMAIN_ETH);
+        uint256 amount = 10**8;
+        prepareUser(DOMAIN_ETH, amount);
+        vm.expectRevert("Pausable: paused");
+        vm.prank(user);
+        synapseCCTPs[DOMAIN_ETH].sendCircleToken({
+            recipient: recipient,
+            chainId: CHAINID_AVAX,
+            burnToken: address(cctpSetups[DOMAIN_ETH].mintBurnToken),
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+    }
+
     function testSendCircleTokenSwapRequest() public {
         uint256 amount = 10**8;
         prepareUser(DOMAIN_ETH, amount);
@@ -87,6 +103,28 @@ contract SynapseCCTPTest is BaseCCTPTest {
             swapParams: swapParams
         });
         assertEq(cctpSetups[DOMAIN_ETH].mintBurnToken.balanceOf(user), 0);
+    }
+
+    function testSendCircleTokenSwapRequestRevertsWhenPaused() public {
+        pauseSending(DOMAIN_ETH);
+        uint256 amount = 10**8;
+        prepareUser(DOMAIN_ETH, amount);
+        bytes memory swapParams = RequestLib.formatSwapParams({
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            deadline: 4321,
+            minAmountOut: 9876543210
+        });
+        vm.expectRevert("Pausable: paused");
+        vm.prank(user);
+        synapseCCTPs[DOMAIN_ETH].sendCircleToken({
+            recipient: recipient,
+            chainId: CHAINID_AVAX,
+            burnToken: address(cctpSetups[DOMAIN_ETH].mintBurnToken),
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_SWAP,
+            swapParams: swapParams
+        });
     }
 
     function testSendCircleTokenRevertsWhenRemoteDeploymentNotSet() public {
