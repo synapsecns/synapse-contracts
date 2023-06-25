@@ -194,6 +194,25 @@ contract SynapseCCTPTest is BaseCCTPTest {
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), expectedAmountOut);
     }
 
+    function testReceiveCircleTokenBaseRequestSucceedsWhenPaused() public {
+        // Pause both sides just in case
+        pauseSending(DOMAIN_AVAX);
+        pauseSending(DOMAIN_ETH);
+        uint256 amount = 10**8;
+        uint256 baseFeeAmount = 10**6;
+        uint256 expectedAmountOut = amount - baseFeeAmount;
+        checkRequestFulfilled({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amountIn: amount,
+            expectedFeeAmount: baseFeeAmount,
+            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
+            expectedAmountOut: expectedAmountOut,
+            swapParams: ""
+        });
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), expectedAmountOut);
+    }
+
     function testReceiveCircleTokenBaseRequestRevertTransmitterReturnsFalse() public {
         disableGasAirdrops();
         uint256 amount = 10**8;
@@ -336,6 +355,32 @@ contract SynapseCCTPTest is BaseCCTPTest {
     // ═════════════════════════════════════ TESTS: RECEIVE WITH SWAP REQUEST ══════════════════════════════════════════
 
     function testReceiveCircleTokenSwapRequest() public {
+        uint256 amount = 10**8;
+        uint256 swapFeeAmount = 2 * 10**6;
+        address tokenOut = address(poolSetups[DOMAIN_AVAX].token);
+        uint256 expectedAmountOut = poolSetups[DOMAIN_AVAX].pool.calculateSwap(0, 1, amount - swapFeeAmount);
+        bytes memory swapParams = RequestLib.formatSwapParams({
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            deadline: block.timestamp,
+            minAmountOut: expectedAmountOut
+        });
+        checkRequestFulfilled({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amountIn: amount,
+            expectedFeeAmount: swapFeeAmount,
+            expectedTokenOut: tokenOut,
+            expectedAmountOut: expectedAmountOut,
+            swapParams: swapParams
+        });
+        assertEq(poolSetups[DOMAIN_AVAX].token.balanceOf(recipient), expectedAmountOut);
+    }
+
+    function testReceiveCircleTokenSwapRequestSucceedsWhenPaused() public {
+        // Pause both sides just in case
+        pauseSending(DOMAIN_AVAX);
+        pauseSending(DOMAIN_ETH);
         uint256 amount = 10**8;
         uint256 swapFeeAmount = 2 * 10**6;
         address tokenOut = address(poolSetups[DOMAIN_AVAX].token);
