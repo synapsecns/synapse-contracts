@@ -15,7 +15,6 @@ import {
 } from "./libs/Errors.sol";
 import {SynapseCCTPEvents} from "./events/SynapseCCTPEvents.sol";
 import {EnumerableSet, SynapseCCTPFees} from "./fees/SynapseCCTPFees.sol";
-import {IDefaultPool} from "./interfaces/IDefaultPool.sol";
 import {IMessageTransmitter} from "./interfaces/IMessageTransmitter.sol";
 import {ISynapseCCTP} from "./interfaces/ISynapseCCTP.sol";
 import {ITokenMinter} from "./interfaces/ITokenMinter.sol";
@@ -23,6 +22,8 @@ import {ITokenMessenger} from "./interfaces/ITokenMessenger.sol";
 import {RequestLib} from "./libs/Request.sol";
 import {MinimalForwarderLib} from "./libs/MinimalForwarder.sol";
 import {TypeCasts} from "./libs/TypeCasts.sol";
+
+import {IDefaultPool} from "../router/interfaces/IDefaultPool.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 import {Pausable} from "@openzeppelin/contracts-4.5.0/security/Pausable.sol";
@@ -56,10 +57,11 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
     // (Circle token => liquidity pool with the token)
     mapping(address => address) public circleTokenPool;
 
-    constructor(ITokenMessenger tokenMessenger_) {
+    constructor(ITokenMessenger tokenMessenger_, address owner_) {
         tokenMessenger = tokenMessenger_;
         messageTransmitter = IMessageTransmitter(tokenMessenger_.localMessageTransmitter());
         localDomain = messageTransmitter.localDomain();
+        _transferOwnership(owner_);
     }
 
     // ═════════════════════════════════════════════ SET CONFIG LOGIC ══════════════════════════════════════════════════
@@ -159,10 +161,23 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
             burnToken,
             _destinationCaller(dstSynapseCCTP.bytes32ToAddress(), requestID)
         );
-        emit CircleRequestSent(chainId, nonce, burnToken, amount, requestVersion, formattedRequest, requestID);
+        // We want to emit the EOA address that initiated the transaction as "sender",
+        // so we use `tx.origin` instead of `msg.sender`.
+        // Note: this is done for analytics only, and should NOT be used by off-chain actors
+        // for security purposes.
+        // solhint-disable avoid-tx-origin
+        emit CircleRequestSent(
+            chainId,
+            tx.origin,
+            nonce,
+            burnToken,
+            amount,
+            requestVersion,
+            formattedRequest,
+            requestID
+        );
     }
 
-    // TODO: guard this to be only callable by the validators?
     /// @inheritdoc ISynapseCCTP
     function receiveCircleToken(
         bytes calldata message,
@@ -191,7 +206,7 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
         (address tokenOut, uint256 amountOut) = _fulfillRequest(recipient, token, amount, swapParams);
         // Perform the gas airdrop and emit corresponding event if gas airdrop is enabled
         if (msg.value > 0) _transferMsgValue(recipient);
-        emit CircleRequestFulfilled(recipient, token, fee, tokenOut, amountOut, requestID);
+        emit CircleRequestFulfilled(originDomain, recipient, token, fee, tokenOut, amountOut, requestID);
     }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════

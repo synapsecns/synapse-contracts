@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import {ITokenMessenger, SynapseCCTP} from "../../../contracts/cctp/SynapseCCTP.sol";
 
 contract SynapseCCTPHarness is SynapseCCTP {
-    constructor(address tokenMessenger_) SynapseCCTP(ITokenMessenger(tokenMessenger_)) {}
+    constructor(address tokenMessenger_, address owner_) SynapseCCTP(ITokenMessenger(tokenMessenger_), owner_) {}
 
     function mintCircleToken(
         bytes calldata message,

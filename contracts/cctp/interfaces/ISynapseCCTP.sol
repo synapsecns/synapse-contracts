@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {ITokenMessenger} from "./ITokenMessenger.sol";
+
 interface ISynapseCCTP {
     /// @notice Send a Circle token supported by CCTP to a given chain
     /// with the request for the action to take on the destination chain.
@@ -37,4 +39,13 @@ interface ISynapseCCTP {
         uint32 requestVersion,
         bytes memory formattedRequest
     ) external payable;
+
+    // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
+
+    /// @notice Returns the whitelisted liquidity pool for a given Circle token.
+    /// @dev Returns address(0) if the token bridge+swap is not supported.
+    function circleTokenPool(address token) external view returns (address pool);
+
+    /// @notice Returns the address of Circle's TokenMessenger contract used for bridging Circle tokens.
+    function tokenMessenger() external view returns (ITokenMessenger);
 }

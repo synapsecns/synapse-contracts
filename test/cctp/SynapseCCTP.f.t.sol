@@ -52,8 +52,8 @@ contract SynapseCCTPFuzzTest is Test {
     function setUp() public {
         messageTransmitter = new FakeMessageTransmitter(1);
         tokenMessenger = new FakeTokenMessenger(address(messageTransmitter));
-        synapseCCTP = new SynapseCCTPHarness(address(tokenMessenger));
-        remoteSynapseCCTP = new SynapseCCTPHarness(address(tokenMessenger));
+        synapseCCTP = new SynapseCCTPHarness(address(tokenMessenger), address(this));
+        remoteSynapseCCTP = new SynapseCCTPHarness(address(tokenMessenger), address(this));
     }
 
     function testRequestID(
