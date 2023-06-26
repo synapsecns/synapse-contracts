@@ -257,6 +257,17 @@ contract SynapseCCTPRouterTest is BaseCCTPTest {
         assertEq(tokens[0].symbol, SYMBOL_USDC);
     }
 
+    function testGetConnectedBridgeTokensForUSDCAfterPoolRemoved() public {
+        // USDC is always connected to USDC
+        address usdc = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setCircleTokenPool(usdc, address(0));
+        BridgeToken[] memory tokens = cctpRouters[DOMAIN_ETH].getConnectedBridgeTokens(usdc);
+        assertEq(tokens.length, 1);
+        assertEq(tokens[0].token, usdc);
+        assertEq(tokens[0].symbol, SYMBOL_USDC);
+    }
+
     function testGetConnectedBridgeTokensForPoolStable() public {
         address usdc = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
         address usdt = address(poolSetups[DOMAIN_ETH].token);
@@ -264,6 +275,21 @@ contract SynapseCCTPRouterTest is BaseCCTPTest {
         assertEq(tokens.length, 1);
         assertEq(tokens[0].token, usdc);
         assertEq(tokens[0].symbol, SYMBOL_USDC);
+    }
+
+    function testGetConnectedBridgeTokensForPoolStableAfterPoolRemoved() public {
+        address usdc = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        address usdt = address(poolSetups[DOMAIN_ETH].token);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setCircleTokenPool(usdc, address(0));
+        BridgeToken[] memory tokens = cctpRouters[DOMAIN_ETH].getConnectedBridgeTokens(usdt);
+        assertEq(tokens.length, 0);
+    }
+
+    function testGetConnectedBridgeTokensForUnknownToken() public {
+        address unknownToken = makeAddr("Unknown");
+        BridgeToken[] memory tokens = cctpRouters[DOMAIN_ETH].getConnectedBridgeTokens(unknownToken);
+        assertEq(tokens.length, 0);
     }
 
     // ═══════════════════════════════════════ TESTS: GET ORIGIN AMOUNT OUT ════════════════════════════════════════════
