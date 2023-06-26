@@ -247,6 +247,49 @@ contract SynapseCCTPRouterTest is BaseCCTPTest {
         requestID = keccak256(abi.encodePacked(prefix, requestHash));
     }
 
+    // ═════════════════════════════════════════════ TESTS: FEE VIEWS ══════════════════════════════════════════════════
+
+    function testCalculateFeeAmount() public {
+        address usdc = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        // Base fee: 0.01%, min fee 1 USDC, max fee 100 USDC
+        assertEq(cctpRouters[DOMAIN_ETH].calculateFeeAmount(usdc, 10**4, false), 10**6);
+        assertEq(cctpRouters[DOMAIN_ETH].calculateFeeAmount(usdc, 10**8, false), 10**6);
+        assertEq(cctpRouters[DOMAIN_ETH].calculateFeeAmount(usdc, 10**11, false), 10**7);
+        assertEq(cctpRouters[DOMAIN_ETH].calculateFeeAmount(usdc, 10**20, false), 10**8);
+        // Swap fee: 0.01%, min fee 2 USDC, max fee 100 USDC
+        assertEq(cctpRouters[DOMAIN_ETH].calculateFeeAmount(usdc, 10**4, true), 2 * 10**6);
+        assertEq(cctpRouters[DOMAIN_ETH].calculateFeeAmount(usdc, 10**8, true), 2 * 10**6);
+        assertEq(cctpRouters[DOMAIN_ETH].calculateFeeAmount(usdc, 10**11, true), 10**7);
+        assertEq(cctpRouters[DOMAIN_ETH].calculateFeeAmount(usdc, 10**20, true), 10**8);
+    }
+
+    function testCalculateFeeAmountReturnsZeroForUnknownToken() public {
+        address unknownToken = makeAddr("Unknown");
+        assertEq(cctpRouters[DOMAIN_ETH].calculateFeeAmount(unknownToken, 10**18, false), 0);
+        assertEq(cctpRouters[DOMAIN_ETH].calculateFeeAmount(unknownToken, 10**18, true), 0);
+    }
+
+    function testFeeStructures() public {
+        address usdc = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        // 0.01%, min base fee 1 USDC, min swap fee 2 USDC, max fee 100 USDC
+        (uint256 relayerFee, uint256 minBaseFee, uint256 minSwapFee, uint256 maxFee) = cctpRouters[DOMAIN_ETH]
+            .feeStructures(usdc);
+        assertEq(relayerFee, 10**6);
+        assertEq(minBaseFee, 10**6);
+        assertEq(minSwapFee, 2 * 10**6);
+        assertEq(maxFee, 10**8);
+    }
+
+    function testFeeStructuresReturnsZeroesForUnknownToken() public {
+        address unknownToken = makeAddr("Unknown");
+        (uint256 relayerFee, uint256 minBaseFee, uint256 minSwapFee, uint256 maxFee) = cctpRouters[DOMAIN_ETH]
+            .feeStructures(unknownToken);
+        assertEq(relayerFee, 0);
+        assertEq(minBaseFee, 0);
+        assertEq(minSwapFee, 0);
+        assertEq(maxFee, 0);
+    }
+
     // ════════════════════════════════════════ TESTS: GET CONNECTED TOKENS ════════════════════════════════════════════
 
     function testGetConnectedBridgeTokensForUSDC() public {

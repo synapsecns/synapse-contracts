@@ -61,6 +61,29 @@ contract SynapseCCTPRouter is DefaultRouter, ISynapseCCTPRouter {
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
 
     /// @inheritdoc ISynapseCCTPRouter
+    function calculateFeeAmount(
+        address token,
+        uint256 amount,
+        bool isSwap
+    ) external view returns (uint256 fee) {
+        return ISynapseCCTPFees(synapseCCTP).calculateFeeAmount(token, amount, isSwap);
+    }
+
+    /// @inheritdoc ISynapseCCTPRouter
+    function feeStructures(address token)
+        external
+        view
+        returns (
+            uint40 relayerFee,
+            uint72 minBaseFee,
+            uint72 minSwapFee,
+            uint72 maxFee
+        )
+    {
+        return ISynapseCCTPFees(synapseCCTP).feeStructures(token);
+    }
+
+    /// @inheritdoc ISynapseCCTPRouter
     function getConnectedBridgeTokens(address tokenOut) external view returns (BridgeToken[] memory tokens) {
         BridgeToken[] memory cctpTokens = ISynapseCCTPFees(synapseCCTP).getBridgeTokens();
         uint256 length = cctpTokens.length;

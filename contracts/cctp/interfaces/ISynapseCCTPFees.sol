@@ -16,6 +16,23 @@ interface ISynapseCCTPFees {
         bool isSwap
     ) external view returns (uint256 fee);
 
+    /// @notice Gets the fee structure for bridging a token to this chain.
+    /// @dev Will return 0 for all fields if the token is not supported.
+    /// @param token        Address of the Circle token
+    /// @return relayerFee  Fee % for bridging a token to this chain, multiplied by `FEE_DENOMINATOR`
+    /// @return minBaseFee  Minimum fee for bridging a token to this chain using a base request
+    /// @return minSwapFee  Minimum fee for bridging a token to this chain using a swap request
+    /// @return maxFee      Maximum fee for bridging a token to this chain
+    function feeStructures(address token)
+        external
+        view
+        returns (
+            uint40 relayerFee,
+            uint72 minBaseFee,
+            uint72 minSwapFee,
+            uint72 maxFee
+        );
+
     /// @notice Returns the list of all supported bridge tokens and their symbols.
     function getBridgeTokens() external view returns (BridgeToken[] memory bridgeTokens);
 
