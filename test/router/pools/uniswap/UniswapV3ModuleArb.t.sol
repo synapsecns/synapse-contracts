@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import {Test} from "forge-std/Test.sol";
 
 import {LinkedPool} from "../../../../contracts/router/LinkedPool.sol";
-import {UniswapV3Module} from "../../../../contracts/router/pools/uniswap/UniswapV3Module.sol";
+import {IndexedToken, UniswapV3Module} from "../../../../contracts/router/pools/uniswap/UniswapV3Module.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
@@ -107,6 +107,16 @@ contract UniswapV3ModuleArbTestFork is Test {
         assertEq(amountOut, expectedAmountOut);
         assertEq(IERC20(USDC_E).balanceOf(user), 0);
         assertEq(IERC20(USDC).balanceOf(user), amountOut);
+    }
+
+    function testPoolSwapRevertsWhenDirectCall() public {
+        vm.expectRevert("Not a delegate call");
+        uniswapV3Module.poolSwap({
+            pool: UNI_V3_USDC_POOL,
+            tokenFrom: IndexedToken({index: 0, token: USDC}),
+            tokenTo: IndexedToken({index: 1, token: USDC_E}),
+            amountIn: 100 * 10**6
+        });
     }
 
     function prepareUser(address token, uint256 amount) public {

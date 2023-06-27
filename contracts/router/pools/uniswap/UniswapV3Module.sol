@@ -5,12 +5,13 @@ import {IndexedToken, IPoolModule} from "../../interfaces/IPoolModule.sol";
 import {IUniswapV3Pair} from "../interfaces/IUniswapV3Pair.sol";
 import {IUniswapV3Router} from "../interfaces/IUniswapV3Router.sol";
 import {IUniswapV3StaticQuoter} from "../interfaces/IUniswapV3StaticQuoter.sol";
+import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 
 import {ExactInputSingleParams, QuoteExactInputSingleParams} from "./UniswapV3Structs.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
-contract UniswapV3Module is IPoolModule {
+contract UniswapV3Module is OnlyDelegateCall, IPoolModule {
     using SafeERC20 for IERC20;
 
     IUniswapV3Router public immutable uniswapV3Router;
@@ -28,6 +29,8 @@ contract UniswapV3Module is IPoolModule {
         IndexedToken memory tokenTo,
         uint256 amountIn
     ) external returns (uint256 amountOut) {
+        // This function should be only called via delegatecall
+        assertDelegateCall();
         address tokenIn = tokenFrom.token;
         IERC20(tokenIn).safeApprove(address(uniswapV3Router), amountIn);
 
