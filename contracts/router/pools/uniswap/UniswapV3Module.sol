@@ -54,5 +54,9 @@ contract UniswapV3Module is IPoolModule {
     ) external view returns (uint256 amountOut) {}
 
     /// @inheritdoc IPoolModule
-    function getPoolTokens(address pool) external view returns (address[] memory tokens) {}
+    function getPoolTokens(address pool) external view returns (address[] memory tokens) {
+        tokens = new address[](2);
+        tokens[0] = IUniswapV3Pair(pool).token0();
+        tokens[1] = IUniswapV3Pair(pool).token1();
+    }
 }
