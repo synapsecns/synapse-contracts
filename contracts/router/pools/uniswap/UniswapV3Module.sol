@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import {IndexedToken, IPoolModule} from "../../interfaces/IPoolModule.sol";
 import {IUniswapV3Pair} from "../interfaces/IUniswapV3Pair.sol";
 import {IUniswapV3Router} from "../interfaces/IUniswapV3Router.sol";
+import {IUniswapV3StaticQuoter} from "../interfaces/IUniswapV3StaticQuoter.sol";
 
 import {ExactInputSingleParams, QuoteExactInputSingleParams} from "./UniswapV3Structs.sol";
 
@@ -13,9 +14,11 @@ contract UniswapV3Module is IPoolModule {
     using SafeERC20 for IERC20;
 
     IUniswapV3Router public immutable uniswapV3Router;
+    IUniswapV3StaticQuoter public immutable uniswapV3StaticQuoter;
 
-    constructor(address _uniswapV3Router) {
-        uniswapV3Router = IUniswapV3Router(_uniswapV3Router);
+    constructor(address uniswapV3Router_, address uniswapV3StaticQuoter_) {
+        uniswapV3Router = IUniswapV3Router(uniswapV3Router_);
+        uniswapV3StaticQuoter = IUniswapV3StaticQuoter(uniswapV3StaticQuoter_);
     }
 
     /// @inheritdoc IPoolModule
@@ -50,8 +53,18 @@ contract UniswapV3Module is IPoolModule {
         IndexedToken memory tokenFrom,
         IndexedToken memory tokenTo,
         uint256 amountIn,
-        bool probePaused
-    ) external view returns (uint256 amountOut) {}
+        bool // probePaused
+    ) external view returns (uint256 amountOut) {
+        // We are ignoring the probePaused flag because Uniswap pools cannot be paused
+        QuoteExactInputSingleParams memory params = QuoteExactInputSingleParams({
+            tokenIn: tokenFrom.token,
+            tokenOut: tokenTo.token,
+            amountIn: amountIn,
+            fee: IUniswapV3Pair(pool).fee(),
+            sqrtPriceLimitX96: 0
+        });
+        amountOut = uniswapV3StaticQuoter.quoteExactInputSingle(params);
+    }
 
     /// @inheritdoc IPoolModule
     function getPoolTokens(address pool) external view returns (address[] memory tokens) {

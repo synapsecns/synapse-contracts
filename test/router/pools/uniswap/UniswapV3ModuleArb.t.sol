@@ -18,6 +18,9 @@ contract UniswapV3ModuleArbTestFork is Test {
     // Uniswap V3 Router on Arbitrum
     address public constant UNI_V3_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
+    // Eden's Uniswap V3 Static Quoter on Arbitrum
+    address public constant UNI_V3_STATIC_QUOTER = 0xc80f61d1bdAbD8f5285117e1558fDDf8C64870FE;
+
     // Uniswap V3 USDC/USDC.e pool on Arbitrum
     address public constant UNI_V3_USDC_POOL = 0x8e295789c9465487074a65b1ae9Ce0351172393f;
 
@@ -33,9 +36,15 @@ contract UniswapV3ModuleArbTestFork is Test {
         string memory arbRPC = vm.envString("ARBITRUM_API");
         vm.createSelectFork(arbRPC, ARB_BLOCK_NUMBER);
 
-        uniswapV3Module = new UniswapV3Module(UNI_V3_ROUTER);
+        uniswapV3Module = new UniswapV3Module(UNI_V3_ROUTER, UNI_V3_STATIC_QUOTER);
         linkedPool = new LinkedPool(USDC);
         user = makeAddr("User");
+
+        vm.label(UNI_V3_ROUTER, "UniswapV3Router");
+        vm.label(UNI_V3_STATIC_QUOTER, "UniswapV3StaticQuoter");
+        vm.label(UNI_V3_USDC_POOL, "UniswapV3USDCPool");
+        vm.label(USDC_E, "USDC.e");
+        vm.label(USDC, "USDC");
     }
 
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
@@ -80,8 +89,10 @@ contract UniswapV3ModuleArbTestFork is Test {
         addPool();
         uint256 amount = 100 * 10**6;
         prepareUser(USDC, amount);
+        uint256 expectedAmountOut = linkedPool.calculateSwap({nodeIndexFrom: 0, nodeIndexTo: 1, dx: amount});
         uint256 amountOut = swap({tokenIndexFrom: 0, tokenIndexTo: 1, amount: amount});
         assertGt(amountOut, 0);
+        assertEq(amountOut, expectedAmountOut);
         assertEq(IERC20(USDC).balanceOf(user), 0);
         assertEq(IERC20(USDC_E).balanceOf(user), amountOut);
     }
@@ -90,8 +101,10 @@ contract UniswapV3ModuleArbTestFork is Test {
         addPool();
         uint256 amount = 100 * 10**6;
         prepareUser(USDC_E, amount);
+        uint256 expectedAmountOut = linkedPool.calculateSwap({nodeIndexFrom: 1, nodeIndexTo: 0, dx: amount});
         uint256 amountOut = swap({tokenIndexFrom: 1, tokenIndexTo: 0, amount: amount});
         assertGt(amountOut, 0);
+        assertEq(amountOut, expectedAmountOut);
         assertEq(IERC20(USDC_E).balanceOf(user), 0);
         assertEq(IERC20(USDC).balanceOf(user), amountOut);
     }
