@@ -59,14 +59,14 @@ struct DestRequest {
 
 /// @notice Struct representing a swap request for SynapseRouter.
 /// @dev tokenIn is supplied separately.
-/// @param swapAdapter      Adapter address that will perform the swap. Address(0) specifies a "no swap" query.
+/// @param routerAdapter    Contract that will perform the swap for the Router. Address(0) specifies a "no swap" query.
 /// @param tokenOut         Token address to swap to.
 /// @param minAmountOut     Minimum amount of tokens to receive after the swap, or tx will be reverted.
 /// @param deadline         Latest timestamp for when the transaction needs to be executed, or tx will be reverted.
-/// @param rawParams        ABI-encoded params for the swap that will be passed to `swapAdapter`.
+/// @param rawParams        ABI-encoded params for the swap that will be passed to `routerAdapter`.
 ///                         Should be DefaultParams for swaps via DefaultAdapter.
 struct SwapQuery {
-    address swapAdapter;
+    address routerAdapter;
     address tokenOut;
     uint256 minAmountOut;
     uint256 deadline;
