@@ -23,6 +23,7 @@ import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils
 /// > USDC token, but via different paths from nUSD, the bridge token.
 /// In addition to the standard IDefaultPool interface, LinkedPool also implements getters to observe the internal
 /// tree, as well as the best path finder between any two tokens in the tree.
+/// Note: LinkedPool assumes that the added pool tokens have no transfer fees enabled.
 contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     using SafeERC20 for IERC20;
 
@@ -64,12 +65,10 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
             nodeIndexFrom < totalTokens && nodeIndexTo < totalTokens && nodeIndexFrom != nodeIndexTo,
             "Swap not supported"
         );
-        // Pull initial token from the user
+        // Pull initial token from the user. LinkedPool assumes that the tokens have no transfer fees enabled,
+        // thus the balance checks are omitted.
         address tokenIn = _nodes[nodeIndexFrom].token;
-        uint256 balanceBefore = IERC20(tokenIn).balanceOf(address(this));
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), dx);
-        // transfer in tokens and update dx (in case of transfer fees)
-        dx = IERC20(tokenIn).balanceOf(address(this)) - balanceBefore;
         amountOut = _multiSwap(nodeIndexFrom, nodeIndexTo, dx).amountOut;
         require(amountOut >= minDy, "Swap didn't result in min tokens");
         // Transfer the tokens to the user
