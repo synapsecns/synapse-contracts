@@ -120,6 +120,7 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         if (tokenOutNodes == 0) {
             return isConnected;
         }
+        // tokenOut is root only if the first entry in `_tokenNodes[tokenOut]` is ZERO (root node index)
         bool isTokenOutRoot = _tokenNodes[tokenOut][0] == 0;
         for (uint256 i = 0; i < numTokens; ++i) {
             LimitedToken memory token = tokensIn[i];
@@ -244,6 +245,7 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
             if (allowance != 0) {
                 IERC20(token).safeApprove(spender, 0);
             }
+            // We can issue the infinite approval here, as LinkedPool is not supposed to hold any tokens.
             IERC20(token).safeApprove(spender, type(uint256).max);
         }
     }
@@ -271,6 +273,9 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
                 deadline: type(uint256).max
             });
         } else {
+            // Here we pass both token address and its index to the pool module, so it doesn't need to store
+            // index<>token mapping. This allows Pool Module to be implemented in a stateless way, as some
+            // pools require token index for interactions, while others require token address.
             // poolSwap(pool, tokenFrom, tokenTo, amountIn)
             bytes memory payload = abi.encodeWithSelector(
                 IPoolModule.poolSwap.selector,
@@ -283,6 +288,7 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
             // Note that poolModule address is set by the contract owner, so it's safe to delegatecall it.
             (bool success, bytes memory result) = poolModule.delegatecall(payload);
             require(success, "Swap failed");
+            // Pool Modules are whitelisted, so we can trust the returned amountOut value.
             amountOut = abi.decode(result, (uint256));
         }
     }
@@ -327,6 +333,9 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
             // Ask Pool Module to calculate the quote
             address tokenFrom = _nodes[nodeIndexFrom].token;
             address tokenTo = _nodes[nodeIndexTo].token;
+            // Here we pass both token address and its index to the pool module, so it doesn't need to store
+            // index<>token mapping. This allows Pool Module to be implemented in a stateless way, as some
+            // pools require token index for interactions, while others require token address.
             try
                 IPoolModule(poolModule).getPoolQuote(
                     pool,
@@ -361,6 +370,8 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
             }
         } else {
             // Ask Pool Module to return the tokens
+            // Note: this will revert if pool is not supported by the module, enforcing the invariant
+            // that the added pools are supported by their specified module.
             tokens = IPoolModule(poolModule).getPoolTokens(pool, tokensAmount);
         }
     }
