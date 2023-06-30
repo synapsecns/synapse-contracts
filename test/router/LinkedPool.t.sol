@@ -237,6 +237,25 @@ contract LinkedPoolTest is Test {
         swap.addPool(0, address(0), address(0), 3);
     }
 
+    function test_addPool_revert_tooManyPools() public {
+        simpleSetup();
+        // Add 255 pools with [BT, T0] - should be working just fine
+        address[] memory tokens = new address[](2);
+        tokens[0] = address(bridgeToken);
+        tokens[1] = address(token0);
+        MockDefaultPool pool;
+        for (uint256 i = 0; i < 255; ++i) {
+            pool = new MockDefaultPool(tokens);
+            vm.prank(owner);
+            swap.addPool(0, address(pool), address(0), 2);
+        }
+        // 256th pool should cause a revert as its index would not fit into uint8 (pool indexes start from 1)
+        pool = new MockDefaultPool(tokens);
+        vm.expectRevert("Too many pools");
+        vm.prank(owner);
+        swap.addPool(0, address(pool), address(0), 2);
+    }
+
     function test_addPool_revert_alreadyAttached() public {
         complexSetup();
         // [BT, T0, T1] was already attached to the root node (0)
