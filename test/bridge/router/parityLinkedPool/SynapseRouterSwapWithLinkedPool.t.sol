@@ -9,10 +9,9 @@ contract SynapseRouterSwapWithLinkedPoolTest is LinkedPoolSetup, SynapseRouterSw
     function addSwapPool(
         SwapQuoter swapQuoter,
         address bridgeToken,
-        address pool,
-        uint256 tokensAmount
+        address pool
     ) public override {
-        deployLinkedPool(bridgeToken, pool, tokensAmount);
+        deployLinkedPool(bridgeToken, pool);
         addLinkedPool(swapQuoter, bridgeToken);
     }
 }

@@ -63,8 +63,8 @@ contract SynapseRouterViewsTest is Utilities06 {
         router = new SynapseRouter(address(bridge), address(this));
         quoter = new SwapQuoter(address(router), address(weth), address(this));
 
-        addSwapPool(quoter, address(neth), nEthPool, 2);
-        addSwapPool(quoter, address(nusd), nUsdPool, 2);
+        addSwapPool(quoter, address(neth), nEthPool);
+        addSwapPool(quoter, address(nusd), nUsdPool);
         // Nexus pool is used for add/remove liquidity bridge operations and does not require LinkedPool
         quoter.addPool(nexusPool);
 
@@ -77,8 +77,7 @@ contract SynapseRouterViewsTest is Utilities06 {
     function addSwapPool(
         SwapQuoter swapQuoter,
         address, // bridgeToken
-        address pool,
-        uint256 // bridgeTokens
+        address pool
     ) public virtual {
         swapQuoter.addPool(pool);
     }

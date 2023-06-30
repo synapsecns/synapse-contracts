@@ -119,13 +119,9 @@ contract LinkedPoolTest is Test {
         assertEq(swap.tokenNodesAmount(), 1);
     }
 
-    function addPool(
-        uint256 nodeIndex,
-        address poolAddress,
-        uint256 tokensAmount
-    ) public {
+    function addPool(uint256 nodeIndex, address poolAddress) public {
         vm.prank(owner);
-        swap.addPool(nodeIndex, poolAddress, poolModule, tokensAmount);
+        swap.addPool(nodeIndex, poolAddress, poolModule);
         attachedPools[nodeIndex].push(poolAddress);
     }
 
@@ -133,15 +129,15 @@ contract LinkedPoolTest is Test {
         // 0: BT
         simpleSetup();
         // 0: BT + (1: T0, 2: T1)
-        addPool(0, address(poolB01), 3);
+        addPool(0, address(poolB01));
         // 1: TO + (3: T1)
-        addPool(1, address(pool01), 2);
+        addPool(1, address(pool01));
         // 1: T0 + (4: T2)
-        addPool(1, address(pool02), 2);
+        addPool(1, address(pool02));
         // 0: BT + (5: T2)
-        addPool(0, address(poolB2), 2);
+        addPool(0, address(poolB2));
         // 5: T2 + (6: T1, 7: T3)
-        addPool(5, address(pool123), 3);
+        addPool(5, address(pool123));
     }
 
     function test_complexSetup() public {
@@ -166,7 +162,7 @@ contract LinkedPoolTest is Test {
     function duplicatedPoolSetup() public {
         complexSetup();
         // 4: T2 + (8: T1, 9: T3)
-        addPool(4, address(pool123), 3);
+        addPool(4, address(pool123));
     }
 
     function test_duplicatedPoolSetup() public {
@@ -181,7 +177,7 @@ contract LinkedPoolTest is Test {
         complexSetup();
         // Should not add the bridge token to the tree more than once
         // 4: T2 + ([BT: ignored], 8: T0, 9: T1)
-        addPool(4, address(poolB012), 4);
+        addPool(4, address(poolB012));
     }
 
     function test_bridgeTokenPoolAttachedSetup() public {
@@ -195,9 +191,9 @@ contract LinkedPoolTest is Test {
         // 0: BT
         simpleSetup();
         // 0: BT + (1: T2)
-        addPool(0, address(poolB2), 2);
+        addPool(0, address(poolB2));
         // 1: T2 + (2: T0)
-        addPool(1, address(pool02), 2);
+        addPool(1, address(pool02));
     }
 
     function test_compactSetup() public {
@@ -215,7 +211,7 @@ contract LinkedPoolTest is Test {
         // 1 is T0, which is not in pool123
         vm.expectRevert("Node token not found in the pool");
         vm.prank(owner);
-        swap.addPool(1, address(pool123), address(0), 3);
+        swap.addPool(1, address(pool123), address(0));
     }
 
     function test_addPool_revert_callerNotOwner(address caller) public {
@@ -223,7 +219,7 @@ contract LinkedPoolTest is Test {
         vm.assume(caller != owner);
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(caller);
-        swap.addPool(0, address(0), address(0), 0);
+        swap.addPool(0, address(0), address(0));
     }
 
     function test_addPool_revert_nodeIndexOutOfRange() public {
@@ -231,14 +227,14 @@ contract LinkedPoolTest is Test {
         uint256 tokensAmount = swap.tokenNodesAmount();
         vm.expectRevert("Out of range");
         vm.prank(owner);
-        swap.addPool(tokensAmount, address(pool123), address(0), 3);
+        swap.addPool(tokensAmount, address(pool123), address(0));
     }
 
     function test_addPool_revert_emptyPoolAddress() public {
         complexSetup();
         vm.expectRevert("Pool address can't be zero");
         vm.prank(owner);
-        swap.addPool(0, address(0), address(0), 3);
+        swap.addPool(0, address(0), address(0));
     }
 
     function test_addPool_revert_tooManyPools() public {
@@ -251,13 +247,13 @@ contract LinkedPoolTest is Test {
         for (uint256 i = 0; i < 255; ++i) {
             pool = new MockDefaultPool(tokens);
             vm.prank(owner);
-            swap.addPool(0, address(pool), address(0), 2);
+            swap.addPool(0, address(pool), address(0));
         }
         // 256th pool should cause a revert as its index would not fit into uint8 (pool indexes start from 1)
         pool = new MockDefaultPool(tokens);
         vm.expectRevert("Too many pools");
         vm.prank(owner);
-        swap.addPool(0, address(pool), address(0), 2);
+        swap.addPool(0, address(pool), address(0));
     }
 
     function test_addPool_revert_alreadyAttached() public {
@@ -265,11 +261,11 @@ contract LinkedPoolTest is Test {
         // [BT, T0, T1] was already attached to the root node (0)
         vm.expectRevert("Pool already attached");
         vm.prank(owner);
-        swap.addPool(0, address(poolB01), address(0), 3);
+        swap.addPool(0, address(poolB01), address(0));
         // [T1, T2, T3] was already attached to node with index 5
         vm.expectRevert("Pool already attached");
         vm.prank(owner);
-        swap.addPool(5, address(pool123), address(0), 3);
+        swap.addPool(5, address(pool123), address(0));
     }
 
     function test_addPool_revert_parentPool() public {
@@ -277,10 +273,10 @@ contract LinkedPoolTest is Test {
         // [T1, T2, T3] was already used to add node with indexes 6 and 7
         vm.expectRevert("Pool already on path to root");
         vm.prank(owner);
-        swap.addPool(6, address(pool123), address(0), 3);
+        swap.addPool(6, address(pool123), address(0));
         vm.expectRevert("Pool already on path to root");
         vm.prank(owner);
-        swap.addPool(7, address(pool123), address(0), 3);
+        swap.addPool(7, address(pool123), address(0));
     }
 
     function test_addPool_revert_poolUsedOnRootPath() public {
@@ -289,7 +285,7 @@ contract LinkedPoolTest is Test {
         vm.expectRevert("Pool already on path to root");
         // Node 3 was added using pool01, but poolB01 is present on the root path
         vm.prank(owner);
-        swap.addPool(3, address(poolB01), address(0), 3);
+        swap.addPool(3, address(poolB01), address(0));
     }
 
     function test_calculateSwap_returns0_tokenIdentical() public {

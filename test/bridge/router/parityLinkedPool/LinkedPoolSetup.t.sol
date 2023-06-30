@@ -10,8 +10,7 @@ interface ILinkedPool {
     function addPool(
         uint256 nodeIndex,
         address pool,
-        address poolModule,
-        uint256 tokensAmount
+        address poolModule
     ) external;
 }
 
@@ -19,16 +18,12 @@ interface ILinkedPool {
 abstract contract LinkedPoolSetup is Test {
     mapping(address => address) internal tokenToLinkedPool;
 
-    function deployLinkedPool(
-        address bridgeToken,
-        address pool,
-        uint256 tokensAmount
-    ) public returns (address linkedPool) {
+    function deployLinkedPool(address bridgeToken, address pool) public returns (address linkedPool) {
         // Deploy 0.8 LinkedPool contract: new LinkedPool(bridgeToken)
         linkedPool = deployCode("LinkedPool.sol", abi.encode(bridgeToken));
         vm.label(linkedPool, "LinkedPool");
         // Add pool to LinkedPool
-        ILinkedPool(linkedPool).addPool(0, pool, address(0), tokensAmount);
+        ILinkedPool(linkedPool).addPool(0, pool, address(0));
         // Save LinkedPool address for later use
         tokenToLinkedPool[bridgeToken] = linkedPool;
     }

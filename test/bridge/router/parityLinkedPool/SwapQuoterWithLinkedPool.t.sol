@@ -8,8 +8,8 @@ import {SwapQuoterTest} from "../SwapQuoter.t.sol";
 contract SwapQuoterWithLinkedPoolTest is LinkedPoolSetup, SwapQuoterTest {
     function setUp() public override {
         super.setUp();
-        deployLinkedPool(address(neth), address(nEthPool), 2);
-        deployLinkedPool(address(nusd), address(nUsdPool), 4);
+        deployLinkedPool(address(neth), address(nEthPool));
+        deployLinkedPool(address(nusd), address(nUsdPool));
     }
 
     function addPool(

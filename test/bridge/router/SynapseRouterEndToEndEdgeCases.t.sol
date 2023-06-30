@@ -25,8 +25,8 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
         // Deploy nUSD pool: nUSD + USDC
         chain.nUsdPool = deployPool(chain, castToArray(chain.nusd, chain.usdc), 10_000);
         // Set up Swap Quoter
-        addSwapPool(chain, address(chain.neth), chain.nEthPool, 2);
-        addSwapPool(chain, address(chain.nusd), chain.nUsdPool, 2);
+        addSwapPool(chain, address(chain.neth), chain.nEthPool);
+        addSwapPool(chain, address(chain.nusd), chain.nUsdPool);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -133,7 +133,7 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
 
         // Step 4: only nUSD are available as intermediate token
         // Add back nUSD pool on Klaytn, this will route tx through nUSD
-        addSwapPool(destination, address(destination.nusd), destination.nUsdPool, 2);
+        addSwapPool(destination, address(destination.nusd), destination.nUsdPool);
         ethereumToKlaytn_outUSDC({tokenIn: tokenIn, checkUSDC: false, checkNUSD: true});
     }
 

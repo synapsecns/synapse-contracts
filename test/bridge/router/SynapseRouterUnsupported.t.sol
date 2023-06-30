@@ -46,7 +46,7 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
         router = new SynapseRouter(address(bridge), address(this));
         quoter = new SwapQuoter(address(router), address(weth), address(this));
 
-        addSwapPool(quoter, address(neth), nEthPool, 2);
+        addSwapPool(quoter, address(neth), nEthPool);
         router.setSwapQuoter(quoter);
 
         _dealAndApprove(address(weth));
@@ -57,8 +57,7 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
     function addSwapPool(
         SwapQuoter swapQuoter,
         address, // bridgeToken
-        address pool,
-        uint256 // bridgeTokens
+        address pool
     ) public virtual {
         swapQuoter.addPool(pool);
     }

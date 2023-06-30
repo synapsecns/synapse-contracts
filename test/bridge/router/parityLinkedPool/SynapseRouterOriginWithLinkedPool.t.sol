@@ -9,10 +9,9 @@ contract SynapseRouterOriginWithLinkedPoolTest is LinkedPoolSetup, SynapseRouter
     function addSwapPool(
         ChainSetup memory chain,
         address bridgeToken,
-        address pool,
-        uint256 tokensAmount
+        address pool
     ) public override {
-        deployLinkedPool(bridgeToken, pool, tokensAmount);
+        deployLinkedPool(bridgeToken, pool);
         addLinkedPool(chain.quoter, bridgeToken);
     }
 }

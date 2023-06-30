@@ -42,9 +42,17 @@ contract MockPoolModule is IPoolModule {
         amountOut = IDefaultPool(pool).calculateSwap(tokenFrom.index, tokenTo.index, amountIn);
     }
 
-    function getPoolTokens(address pool, uint256 tokensAmount) external view returns (address[] memory tokens) {
-        tokens = new address[](tokensAmount);
-        for (uint8 i = 0; i < tokensAmount; ++i) {
+    function getPoolTokens(address pool) external view returns (address[] memory tokens) {
+        uint256 numTokens = 0;
+        while (true) {
+            try IDefaultPool(pool).getToken(uint8(numTokens)) returns (address) {
+                ++numTokens;
+            } catch {
+                break;
+            }
+        }
+        tokens = new address[](numTokens);
+        for (uint8 i = 0; i < numTokens; ++i) {
             tokens[i] = IDefaultPool(pool).getToken(i);
         }
     }
