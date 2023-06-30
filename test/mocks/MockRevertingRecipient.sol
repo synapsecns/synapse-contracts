@@ -1,0 +1,8 @@
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.17;
+
+contract MockRevertingRecipient {
+    receive() external payable {
+        revert("I don't like ETH much");
+    }
+}

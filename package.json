@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "test": "hardhat test --parallel",
-    "build": "hardhat compile && npm run build-go",
-    "build-go": "sol-merger \"./contracts/bridge/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/wrappers/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/bridge/testing/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/amm/meta/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/messaging/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin && sol-merger \"./contracts/messaging/apps/*.sol\" ./build --export-plugin SPDXLicenseRemovePlugin",
-    "post-install": "build-go",
+    "build": "hardhat compile && npm run build:go",
+    "build:go": "script/sh/flatten.sh contracts/bridge/*.sol contracts/bridge/wrappers/*.sol contracts/bridge/testing/*.sol contracts/amm/*.sol contracts/messaging/*.sol contracts/messaging/apps/*.sol contracts/cctp/*.sol contracts/cctp/events/*.sol",
+    "post-install": "build:go",
     "test:coverage": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" hardhat coverage",
     "prepublishOnly": "npm run build",
     "lint": "npm run prettier && solhint --fix -c .solhint.json --ignore-path .prettierignore contracts/**/*.sol test/**/*.sol",
