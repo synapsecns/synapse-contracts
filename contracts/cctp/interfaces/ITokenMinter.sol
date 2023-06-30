@@ -38,4 +38,7 @@ interface ITokenMinter {
      * @return local token address
      */
     function getLocalToken(uint32 remoteDomain, bytes32 remoteToken) external view returns (address);
+
+    // local token (address) => maximum burn amounts per message
+    function burnLimitsPerMessage(address token) external view returns (uint256);
 }

@@ -7,6 +7,7 @@ import {IMintBurnToken} from "../../../contracts/cctp/interfaces/IMintBurnToken.
 contract MockTokenMinter is ITokenMinter {
     mapping(uint32 => mapping(bytes32 => address)) internal localTokens;
     address public localTokenMessenger;
+    mapping(address => uint256) public burnLimitsPerMessage;
 
     constructor(address localTokenMessenger_) {
         localTokenMessenger = localTokenMessenger_;
@@ -18,6 +19,10 @@ contract MockTokenMinter is ITokenMinter {
         address localToken
     ) external {
         localTokens[remoteDomain][remoteToken] = localToken;
+    }
+
+    function setBurnLimitPerMessage(address token, uint256 limit) external {
+        burnLimitsPerMessage[token] = limit;
     }
 
     function mint(
