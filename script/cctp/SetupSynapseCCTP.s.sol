@@ -38,10 +38,17 @@ contract SetupCCTPScript is DeployScript {
     /// @notice Logic for executing the script
     function execute(bool isBroadcasted_) public override {
         synapseCCTP = SynapseCCTP(loadDeployment(SYNAPSE_CCTP));
+        if (synapseCCTP.owner() != broadcasterAddress) {
+            console.log("Error: SynapseCCTP owner is not the broadcaster");
+            console.log("      Owner: %s", synapseCCTP.owner());
+            console.log("Broadcaster: %s", broadcasterAddress);
+            return;
+        }
         startBroadcast(isBroadcasted_);
         setupTokensCCTP();
         setupRemoteDeployments();
         setupGasAirdrop();
+        transferOwnership();
         stopBroadcast();
     }
 
@@ -143,5 +150,15 @@ contract SetupCCTPScript is DeployScript {
         }
         synapseCCTP.setChainGasAmount(gasAirdrop);
         console.log("       Updated");
+    }
+
+    function transferOwnership() public {
+        console.log("Transferring ownership");
+        address newOwner = loadDeployment("DevMultisig");
+        console.log("   Old owner: %s", synapseCCTP.owner());
+        console.log("   New owner: %s", newOwner);
+        synapseCCTP.transferOwnership(newOwner);
+        require(synapseCCTP.owner() == newOwner, "Failed to transfer ownership");
+        require(newOwner.code.length > 0, "newOwner is not a contract");
     }
 }
