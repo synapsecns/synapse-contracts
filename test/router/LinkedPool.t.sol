@@ -36,6 +36,7 @@ contract LinkedPoolTest is Test {
     mapping(uint256 => address[]) public attachedPools;
 
     LinkedPool public swap;
+    address public owner;
 
     address public user;
 
@@ -44,6 +45,7 @@ contract LinkedPoolTest is Test {
 
     function setUp() public virtual {
         user = makeAddr("User");
+        owner = makeAddr("Owner");
 
         bridgeToken = setupERC20("BT", 18);
         token0 = setupERC20("T0", 18);
@@ -107,12 +109,13 @@ contract LinkedPoolTest is Test {
 
     function simpleSetup() public {
         swap = new LinkedPool(address(bridgeToken));
+        swap.transferOwnership(owner);
     }
 
     function test_simpleSetup() public {
         simpleSetup();
         assertEq(swap.getToken(0), address(bridgeToken));
-        assertEq(swap.owner(), address(this));
+        assertEq(swap.owner(), owner);
         assertEq(swap.tokenNodesAmount(), 1);
     }
 
@@ -121,6 +124,7 @@ contract LinkedPoolTest is Test {
         address poolAddress,
         uint256 tokensAmount
     ) public {
+        vm.prank(owner);
         swap.addPool(nodeIndex, poolAddress, poolModule, tokensAmount);
         attachedPools[nodeIndex].push(poolAddress);
     }
@@ -206,19 +210,30 @@ contract LinkedPoolTest is Test {
         complexSetup();
         // 1 is T0, which is not in pool123
         vm.expectRevert("Node token not found in the pool");
+        vm.prank(owner);
         swap.addPool(1, address(pool123), address(0), 3);
+    }
+
+    function test_addPool_revert_callerNotOwner(address caller) public {
+        simpleSetup();
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        swap.addPool(0, address(0), address(0), 0);
     }
 
     function test_addPool_revert_nodeIndexOutOfRange() public {
         complexSetup();
         uint256 tokensAmount = swap.tokenNodesAmount();
         vm.expectRevert("Out of range");
+        vm.prank(owner);
         swap.addPool(tokensAmount, address(pool123), address(0), 3);
     }
 
     function test_addPool_revert_emptyPoolAddress() public {
         complexSetup();
         vm.expectRevert("Pool address can't be zero");
+        vm.prank(owner);
         swap.addPool(0, address(0), address(0), 3);
     }
 
@@ -226,9 +241,11 @@ contract LinkedPoolTest is Test {
         complexSetup();
         // [BT, T0, T1] was already attached to the root node (0)
         vm.expectRevert("Pool already attached");
+        vm.prank(owner);
         swap.addPool(0, address(poolB01), address(0), 3);
         // [T1, T2, T3] was already attached to node with index 5
         vm.expectRevert("Pool already attached");
+        vm.prank(owner);
         swap.addPool(5, address(pool123), address(0), 3);
     }
 
@@ -236,8 +253,10 @@ contract LinkedPoolTest is Test {
         complexSetup();
         // [T1, T2, T3] was already used to add node with indexes 6 and 7
         vm.expectRevert("Pool already on path to root");
+        vm.prank(owner);
         swap.addPool(6, address(pool123), address(0), 3);
         vm.expectRevert("Pool already on path to root");
+        vm.prank(owner);
         swap.addPool(7, address(pool123), address(0), 3);
     }
 
@@ -246,6 +265,7 @@ contract LinkedPoolTest is Test {
         // [BT, T0, T1] was already used to add node with indexes 1 and 2
         vm.expectRevert("Pool already on path to root");
         // Node 3 was added using pool01, but poolB01 is present on the root path
+        vm.prank(owner);
         swap.addPool(3, address(poolB01), address(0), 3);
     }
 
