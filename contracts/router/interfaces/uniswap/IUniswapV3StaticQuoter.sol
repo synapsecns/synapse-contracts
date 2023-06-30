@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity 0.8.17;
 
-import {QuoteExactInputSingleParams} from "../uniswap/UniswapV3Structs.sol";
+import {QuoteExactInputSingleParams} from "./UniswapV3Structs.sol";
 
 // Eden's UniswapV3 static quoter interface
 interface IUniswapV3StaticQuoter {

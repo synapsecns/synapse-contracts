@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IndexedToken, IPoolModule} from "../../interfaces/IPoolModule.sol";
-import {IUniswapV3Pair} from "../interfaces/IUniswapV3Pair.sol";
-import {IUniswapV3Router} from "../interfaces/IUniswapV3Router.sol";
-import {IUniswapV3StaticQuoter} from "../interfaces/IUniswapV3StaticQuoter.sol";
+import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
+import {IUniswapV3Pair} from "../../../interfaces/uniswap/IUniswapV3Pair.sol";
+import {ExactInputSingleParams, IUniswapV3Router} from "../../../interfaces/uniswap/IUniswapV3Router.sol";
+// prettier-ignore
+import {
+    QuoteExactInputSingleParams, IUniswapV3StaticQuoter
+} from "../../../interfaces/uniswap/IUniswapV3StaticQuoter.sol";
 import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
-
-import {ExactInputSingleParams, QuoteExactInputSingleParams} from "./UniswapV3Structs.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
