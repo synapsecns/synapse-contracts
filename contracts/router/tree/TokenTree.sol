@@ -112,8 +112,9 @@ abstract contract TokenTree {
         if (poolModule == address(0)) poolModule = address(this);
         (bool wasAdded, uint8 poolIndex) = (false, _poolMap[pool].index);
         if (poolIndex == 0) {
+            require(_pools.length <= type(uint8).max, "Too many pools");
+            // Can do the unsafe cast here, as we just checked that pool index fits into uint8
             poolIndex = uint8(_pools.length);
-            require(poolIndex <= type(uint8).max, "Too many pools");
             _pools.push(pool);
             _poolMap[pool] = Pool({module: poolModule, index: poolIndex});
             wasAdded = true;
