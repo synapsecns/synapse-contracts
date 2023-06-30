@@ -1,0 +1,4 @@
+{
+  "address": "0x1d9Bfc24d9e7EeDa4119Ceca11EaF4c24E622E62",
+  "abi": [{"inputs":[{"internalType":"address","name":"_singleton","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"stateMutability":"payable","type":"fallback"}]
+}
