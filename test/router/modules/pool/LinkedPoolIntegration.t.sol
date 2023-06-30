@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {LinkedPool} from "../../../contracts/router/LinkedPool.sol";
+import {LinkedPool} from "../../../../contracts/router/LinkedPool.sol";
 
 import {console, Test} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";

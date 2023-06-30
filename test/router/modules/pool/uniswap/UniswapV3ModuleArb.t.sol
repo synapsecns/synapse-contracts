@@ -3,8 +3,8 @@ pragma solidity 0.8.17;
 
 import {Test} from "forge-std/Test.sol";
 
-import {LinkedPool} from "../../../../contracts/router/LinkedPool.sol";
-import {IndexedToken, UniswapV3Module} from "../../../../contracts/router/pools/uniswap/UniswapV3Module.sol";
+import {LinkedPool} from "../../../../../contracts/router/LinkedPool.sol";
+import {IndexedToken, UniswapV3Module} from "../../../../../contracts/router/modules/pool/uniswap/UniswapV3Module.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 

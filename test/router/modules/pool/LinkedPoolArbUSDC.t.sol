@@ -3,7 +3,7 @@ pragma solidity 0.8.17;
 
 import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.t.sol";
 
-import {UniswapV3Module} from "../../../contracts/router/pools/uniswap/UniswapV3Module.sol";
+import {UniswapV3Module} from "../../../../contracts/router/modules/pool/uniswap/UniswapV3Module.sol";
 
 contract LinkedPoolArbUSDCTestFork is LinkedPoolIntegrationTest {
     string private constant ARB_ENV_RPC = "ARBITRUM_API";
