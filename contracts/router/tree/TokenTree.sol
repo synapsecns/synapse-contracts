@@ -99,13 +99,12 @@ abstract contract TokenTree {
 
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
 
-    /// @dev Adds a pool with `N = tokensAmount` tokens to the tree by adding N-1 new nodes
+    /// @dev Adds a pool having `N` pool tokens to the tree by adding `N-1` new nodes
     /// as the children of the given node. Given node needs to represent a token from the pool.
     function _addPool(
         uint256 nodeIndex,
         address pool,
-        address poolModule,
-        uint256 tokensAmount
+        address poolModule
     ) internal {
         require(nodeIndex < _nodes.length, "Out of range");
         Node memory node = _nodes[nodeIndex];
@@ -125,12 +124,13 @@ abstract contract TokenTree {
         }
         // Remember that the pool is attached to the node
         _attachedPools[nodeIndex] |= 1 << poolIndex;
-        address[] memory tokens = _getPoolTokens(poolModule, pool, tokensAmount);
+        address[] memory tokens = _getPoolTokens(poolModule, pool);
+        uint256 numTokens = tokens.length;
         bool nodeFound = false;
         unchecked {
             uint8 childDepth = node.depth + 1;
             uint256 rootPathParent = _rootPath[nodeIndex];
-            for (uint256 i = 0; i < tokensAmount; ++i) {
+            for (uint256 i = 0; i < numTokens; ++i) {
                 address token = tokens[i];
                 // Save token indexes if this is a new pool
                 if (wasAdded) {
@@ -489,11 +489,7 @@ abstract contract TokenTree {
     // ════════════════════════════════════════ INTERNAL VIEWS: SINGLE POOL ════════════════════════════════════════════
 
     /// @dev Returns the tokens in the pool at the given address.
-    function _getPoolTokens(
-        address poolModule,
-        address pool,
-        uint256 tokensAmount
-    ) internal view virtual returns (address[] memory tokens);
+    function _getPoolTokens(address poolModule, address pool) internal view virtual returns (address[] memory tokens);
 
     /// @dev Returns the amount of tokens that will be received from a single swap.
     /// Will check if the pool is paused beforehand, if requested.

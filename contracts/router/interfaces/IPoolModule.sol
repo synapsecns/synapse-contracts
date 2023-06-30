@@ -45,7 +45,6 @@ interface IPoolModule {
     /// @dev Execution needs to be reverted, if pool tokens retrieval fails for any reason, e.g.
     /// if the given pool is not compatible with the Pool Module.
     /// @param pool         Address of the pool
-    /// @param tokensAmount Amount of tokens to return
     /// @return tokens      Array of tokens in the pool
-    function getPoolTokens(address pool, uint256 tokensAmount) external view returns (address[] memory tokens);
+    function getPoolTokens(address pool) external view returns (address[] memory tokens);
 }

@@ -32,22 +32,20 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
 
     // ═════════════════════════════════════════════════ EXTERNAL ══════════════════════════════════════════════════════
 
-    /// @notice Adds a pool with `N = tokensAmount` tokens to the tree by adding N-1 new nodes
+    /// @notice Adds a pool having `N` pool tokens to the tree by adding `N-1` new nodes
     /// as the children of the given node. Given node needs to represent a token from the pool.
     /// @dev `poolModule` should be set to address(this) if the pool conforms to IDefaultPool interface.
     /// Otherwise, it should be set to the address of the contract that implements the logic for pool handling.
     /// @param nodeIndex        The index of the node to which the pool will be added
     /// @param pool             The address of the pool
     /// @param poolModule       The address of the pool module
-    /// @param tokensAmount     The amount of tokens in the pool
     function addPool(
         uint256 nodeIndex,
         address pool,
-        address poolModule,
-        uint256 tokensAmount
+        address poolModule
     ) external onlyOwner {
         require(pool != address(0), "Pool address can't be zero");
-        _addPool(nodeIndex, pool, poolModule, tokensAmount);
+        _addPool(nodeIndex, pool, poolModule);
     }
 
     /// @inheritdoc ILinkedPool
@@ -353,15 +351,23 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     }
 
     /// @dev Returns the tokens in the pool at the given address.
-    function _getPoolTokens(
-        address poolModule,
-        address pool,
-        uint256 tokensAmount
-    ) internal view override returns (address[] memory tokens) {
+    function _getPoolTokens(address poolModule, address pool) internal view override returns (address[] memory tokens) {
         if (poolModule == address(this)) {
             // Pool conforms to IDefaultPool interface.
-            tokens = new address[](tokensAmount);
-            for (uint256 i = 0; i < tokensAmount; ) {
+            // First, figure out how many tokens there are in the pool
+            uint256 numTokens = 0;
+            while (true) {
+                try IDefaultPool(pool).getToken(uint8(numTokens)) returns (address) {
+                    unchecked {
+                        ++numTokens;
+                    }
+                } catch {
+                    break;
+                }
+            }
+            // Then allocate the memory, and get the tokens
+            tokens = new address[](numTokens);
+            for (uint256 i = 0; i < numTokens; ) {
                 tokens[i] = IDefaultPool(pool).getToken(uint8(i));
                 unchecked {
                     ++i;
@@ -371,7 +377,7 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
             // Ask Pool Module to return the tokens
             // Note: this will revert if pool is not supported by the module, enforcing the invariant
             // that the added pools are supported by their specified module.
-            tokens = IPoolModule(poolModule).getPoolTokens(pool, tokensAmount);
+            tokens = IPoolModule(poolModule).getPoolTokens(pool);
         }
     }
 }
