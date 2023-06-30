@@ -182,6 +182,10 @@ contract LinkedPoolTest is Test {
         // Should not add the bridge token to the tree more than once
         // 4: T2 + ([BT: ignored], 8: T0, 9: T1)
         addPool(4, address(poolB012), 4);
+    }
+
+    function test_bridgeTokenPoolAttachedSetup() public {
+        bridgeTokenPoolAttachedSetup();
         assertEq(swap.tokenNodesAmount(), 10);
         assertEq(swap.getToken(8), address(token0));
         assertEq(swap.getToken(9), address(token1));
