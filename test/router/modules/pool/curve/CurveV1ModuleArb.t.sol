@@ -21,8 +21,8 @@ contract CurveV1ModuleArbTestFork is Test {
     // Native USDT on Arbitrum
     address public constant USDT = 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9;
 
-    // Native USDC on Arbitrum
-    address public constant USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
+    // Bridged USDC on Arbitrum
+    address public constant USDC_E = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
 
     address public user;
 
@@ -31,12 +31,12 @@ contract CurveV1ModuleArbTestFork is Test {
         vm.createSelectFork(arbRPC, ARB_BLOCK_NUMBER);
 
         curveV1Module = new CurveV1Module();
-        linkedPool = new LinkedPool(USDC);
+        linkedPool = new LinkedPool(USDC_E);
         user = makeAddr("User");
 
         vm.label(CURVE_V1_2POOL, "CurveV12Pool");
         vm.label(USDT, "USDT");
-        vm.label(USDC, "USDC");
+        vm.label(USDC_E, "USDC.e");
     }
 
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
@@ -44,7 +44,7 @@ contract CurveV1ModuleArbTestFork is Test {
     function testGetPoolTokens() public {
         address[] memory tokens = curveV1Module.getPoolTokens(CURVE_V1_2POOL);
         assertEq(tokens.length, 2);
-        assertEq(tokens[0], USDC);
+        assertEq(tokens[0], USDC_E);
         assertEq(tokens[1], USDT);
     }
 
@@ -56,7 +56,7 @@ contract CurveV1ModuleArbTestFork is Test {
 
     function testAddPool() public {
         addPool();
-        assertEq(linkedPool.getToken(0), USDC);
+        assertEq(linkedPool.getToken(0), USDC_E);
         assertEq(linkedPool.getToken(1), USDT);
     }
 
@@ -80,12 +80,12 @@ contract CurveV1ModuleArbTestFork is Test {
     function testSwapFromUSDCtoUSDT() public {
         addPool();
         uint256 amount = 100 * 10**6;
-        prepareUser(USDC, amount);
+        prepareUser(USDC_E, amount);
         uint256 expectedAmountOut = linkedPool.calculateSwap({nodeIndexFrom: 0, nodeIndexTo: 1, dx: amount});
         uint256 amountOut = swap({tokenIndexFrom: 0, tokenIndexTo: 1, amount: amount});
         assertGt(amountOut, 0);
         assertEq(amountOut, expectedAmountOut);
-        assertEq(IERC20(USDC).balanceOf(user), 0);
+        assertEq(IERC20(USDC_E).balanceOf(user), 0);
         assertEq(IERC20(USDT).balanceOf(user), amountOut);
     }
 
@@ -98,7 +98,7 @@ contract CurveV1ModuleArbTestFork is Test {
         assertGt(amountOut, 0);
         assertEq(amountOut, expectedAmountOut);
         assertEq(IERC20(USDT).balanceOf(user), 0);
-        assertEq(IERC20(USDC).balanceOf(user), amountOut);
+        assertEq(IERC20(USDC_E).balanceOf(user), amountOut);
     }
 
     /* TODO: if require delegatecall
