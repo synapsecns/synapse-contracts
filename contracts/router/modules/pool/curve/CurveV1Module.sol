@@ -37,8 +37,21 @@ contract CurveV1Module is IPoolModule {
         amountOut = ICurveV1Pool(pool).get_dy(i, j, amountIn);
     }
 
+    /// @dev same logic as LinkedPool.sol::_getPoolTokens
+    function _numTokens(address pool) public view returns (uint256 numTokens) {
+        while (true) {
+            try ICurveV1Pool(pool).coins(numTokens) returns (address) {
+                unchecked {
+                    ++numTokens;
+                }
+            } catch {
+                break;
+            }
+        }
+    }
+
     function getPoolTokens(address pool) external view returns (address[] memory tokens) {
-        uint256 numTokens = uint256(uint128(ICurveV1Pool(pool).N_COINS()));
+        uint256 numTokens = _numTokens(pool);
         tokens = new address[](numTokens);
         for (uint256 i = 0; i < numTokens; i++) {
             tokens[i] = ICurveV1Pool(pool).coins(i);

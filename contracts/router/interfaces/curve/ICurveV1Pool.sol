@@ -2,8 +2,6 @@
 pragma solidity 0.8.17;
 
 interface ICurveV1Pool {
-    function N_COINS() external view returns (int128);
-
     function coins(uint256 i) external view returns (address);
 
     function get_dy(
