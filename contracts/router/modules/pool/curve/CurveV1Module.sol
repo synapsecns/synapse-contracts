@@ -17,7 +17,7 @@ contract CurveV1Module is IPoolModule {
         IndexedToken memory tokenTo,
         uint256 amountIn
     ) external returns (uint256 amountOut) {
-        // TODO: any checks expected on inputs?
+        // TODO: onlyDelegateCall?
         int128 i = int128(uint128(tokenFrom.index));
         int128 j = int128(uint128(tokenTo.index));
         IERC20(tokenFrom.token).safeApprove(pool, amountIn);
@@ -31,7 +31,6 @@ contract CurveV1Module is IPoolModule {
         uint256 amountIn,
         bool probePaused
     ) external view returns (uint256 amountOut) {
-        // TODO: any checks expected on inputs?
         int128 i = int128(uint128(tokenFrom.index));
         int128 j = int128(uint128(tokenTo.index));
         amountOut = ICurveV1Pool(pool).get_dy(i, j, amountIn);
