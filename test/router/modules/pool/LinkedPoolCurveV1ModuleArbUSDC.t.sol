@@ -18,8 +18,6 @@ contract LinkedPoolCurveV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
 
     // Bridged USDC (USDC.e) on Arbitrum
     address public constant USDC_E = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
-    // Native USDC on Arbitrum
-    address public constant USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
     // nUSD on Arbitrum
     address public constant NUSD = 0x2913E812Cf0dcCA30FB28E6Cac3d2DCFF4497688;
     // USDT on Arbitrum
@@ -36,13 +34,11 @@ contract LinkedPoolCurveV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
     function addExpectedTokens() public override {
         // Expected order of tokens:
         // 0: USDC.e
-        // 1: USDC
+        // 1: USDT
         // 2: nUSD
-        // 3: USDT
         addExpectedToken(USDC_E, "USDC.e");
-        addExpectedToken(USDC, "USDC");
-        addExpectedToken(NUSD, "nUSD");
         addExpectedToken(USDT, "USDT");
+        addExpectedToken(NUSD, "nUSD");
     }
 
     function addPools() public override {
