@@ -9,13 +9,13 @@ import {IBalancerV2Vault} from "../../../interfaces/balancer/IBalancerV2Vault.so
 /// @notice PoolModule for Balancer V2 pools
 contract BalancerV2Module is IPoolModule {
     using SafeERC20 for IERC20;
-    
+
     IBalancerV2Vault public immutable vault;
-    
+
     constructor(address _vault) {
         vault = IBalancerV2Vault(_vault);
     }
-    
+
     // TODO: pool address to bytes32 poolId
 
     function poolSwap(

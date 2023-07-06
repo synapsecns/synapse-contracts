@@ -20,7 +20,10 @@ interface IBalancerV2Vault {
         bytes userData;
     }
 
-    enum SwapKind { GIVEN_IN, GIVEN_OUT }
+    enum SwapKind {
+        GIVEN_IN,
+        GIVEN_OUT
+    }
 
     struct FundManagement {
         address sender;
