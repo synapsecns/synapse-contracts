@@ -4,6 +4,15 @@ pragma solidity 0.8.17;
 import {IBalancerV2Asset} from "./IBalancerV2Asset.sol";
 
 interface IBalancerV2Vault {
+    function getPoolTokens(bytes32 poolId)
+        external
+        view
+        returns (
+            address[] memory tokens,
+            uint256[] memory balances,
+            uint256 lastChangeBlock
+        );
+
     function swap(
         SingleSwap memory singleSwap,
         FundManagement memory funds,

@@ -58,5 +58,8 @@ contract BalancerV2Module is IPoolModule {
         bool probePaused
     ) external view returns (uint256 amountOut) {}
 
-    function getPoolTokens(address pool) external view returns (address[] memory tokens) {}
+    function getPoolTokens(address pool) external view returns (address[] memory tokens) {
+        bytes32 poolId = _poolId(pool);
+        (tokens, , ) = vault.getPoolTokens(poolId); // TODO: check ok implicit cast from IERC20[] to address[]
+    }
 }
