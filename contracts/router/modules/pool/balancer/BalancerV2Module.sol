@@ -50,6 +50,7 @@ contract BalancerV2Module is IPoolModule {
         amountOut = vault.swap(singleSwap, funds, limit, deadline);
     }
 
+    // TODO: vault.queryBatchSwap() if ok with getPoolQuote as non-view
     function getPoolQuote(
         address pool,
         IndexedToken memory tokenFrom,
