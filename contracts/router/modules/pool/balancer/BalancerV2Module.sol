@@ -46,7 +46,7 @@ contract BalancerV2Module is IPoolModule {
         uint256 limit = 0;
         uint256 deadline = type(uint256).max;
 
-        IERC20(tokenFrom.token).safeApprove(pool, amountIn);
+        IERC20(tokenFrom.token).safeApprove(address(vault), amountIn);
         amountOut = vault.swap(singleSwap, funds, limit, deadline);
     }
 
