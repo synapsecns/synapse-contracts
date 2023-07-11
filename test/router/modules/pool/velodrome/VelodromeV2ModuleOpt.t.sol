@@ -30,8 +30,8 @@ contract VelodromeV2ModuleOptTestFork is Test {
     address public user;
 
     function setUp() public {
-        string memory arbRPC = vm.envString("OPTIMISM_API");
-        vm.createSelectFork(arbRPC, OPT_BLOCK_NUMBER);
+        string memory optRPC = vm.envString("OPTIMISM_API");
+        vm.createSelectFork(optRPC, OPT_BLOCK_NUMBER);
 
         velodromeV2Module = new VelodromeV2Module(VEL_V2_ROUTER);
         linkedPool = new LinkedPool(OP);
