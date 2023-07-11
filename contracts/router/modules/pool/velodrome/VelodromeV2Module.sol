@@ -25,6 +25,7 @@ contract VelodromeV2Module is IPoolModule {
         IndexedToken memory tokenTo,
         uint256 amountIn
     ) external returns (uint256 amountOut) {
+        // TODO: sanity checks on tokenFrom, tokenTo indices <= 1?
         address tokenIn = tokenFrom.token;
         IERC20(tokenIn).safeApprove(address(router), amountIn);
 
@@ -40,9 +41,7 @@ contract VelodromeV2Module is IPoolModule {
 
         uint256[] memory amounts = new uint256[](2);
         amounts = router.swapExactTokensForTokens(amountIn, 0, routes, address(this), block.timestamp);
-
-        // Q: sanity checks on tokenFrom, tokenTo indices <= 1?
-        amountOut = tokenTo.index == 0 ? amounts[0] : amounts[1];
+        amountOut = amounts[1];
     }
 
     /// @dev Careful with pool.getAmountOut as will return token1 as in if give invalid tokenIn address (token not in pool)
