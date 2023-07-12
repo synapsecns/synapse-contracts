@@ -28,6 +28,11 @@ contract GMXV1Module is IPoolModule {
     ) external returns (uint256 amountOut) {
         // TODO: onlyDelegateCall?
         require(pool == address(vault), "pool != vault");
+
+        address[] memory path = new address[](2);
+        path[0] = tokenFrom.token;
+        path[1] = tokenTo.token;
+        router.swap(path, amountIn, 0, address(this));
     }
 
     function getPoolQuote(
