@@ -15,7 +15,7 @@ contract GMXV1Module is IPoolModule {
     IGMXV1Router public immutable router;
     IGMXV1Vault public immutable vault;
 
-    constructor(address _router, address _vault) {
+    constructor(address _router) {
         router = IGMXV1Router(_router);
         vault = IGMXV1Vault(router.vault());
     }
@@ -28,11 +28,18 @@ contract GMXV1Module is IPoolModule {
     ) external returns (uint256 amountOut) {
         // TODO: onlyDelegateCall?
         require(pool == address(vault), "pool != vault");
+        address tokenIn = tokenFrom.token;
+        IERC20(tokenIn).safeApprove(address(router), amountIn);
+
+        address tokenOut = tokenTo.token;
+        uint256 balanceTo = IERC20(tokenOut).balanceOf(address(this));
 
         address[] memory path = new address[](2);
         path[0] = tokenFrom.token;
         path[1] = tokenTo.token;
         router.swap(path, amountIn, 0, address(this));
+
+        amountOut = IERC20(tokenOut).balanceOf(address(this)) - balanceTo;
     }
 
     function getPoolQuote(
@@ -43,6 +50,7 @@ contract GMXV1Module is IPoolModule {
         bool probePaused
     ) external view returns (uint256 amountOut) {
         require(pool == address(vault), "pool != vault");
+        // TODO: simulate like balancer module; would need to remove view
     }
 
     function getPoolTokens(address pool) external view returns (address[] memory tokens) {
