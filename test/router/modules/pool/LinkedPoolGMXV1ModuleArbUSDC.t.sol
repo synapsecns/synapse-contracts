@@ -75,6 +75,7 @@ contract LinkedPoolGMXV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
         addExpectedToken(DAI, "DAI");
         addExpectedToken(USDC, "USDC");
         addExpectedToken(NUSD, "nUSD");
+        addExpectedToken(USDT, "USDT");
     }
 
     function addPools() public override {
