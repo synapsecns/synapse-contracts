@@ -247,7 +247,7 @@ if (process.env.PRIVATE_KEYS) {
     "klaytn_testnet",
     "canto",
     "dogechain",
-    "zkevm"
+    "zkevm",
   ];
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {

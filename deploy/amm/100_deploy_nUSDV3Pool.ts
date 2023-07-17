@@ -96,6 +96,12 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       INITIAL_A = 400;
     }
 
+    if ((await getChainId()) === CHAIN_ID.ZKEVM) {
+      TOKEN_ADDRESSES = [(await get("nUSD")).address, (await get("USDC")).address];
+      TOKEN_DECIMALS = [18, 6];
+      INITIAL_A = 800;
+    }
+
     // if (await getChainId() === CHAIN_ID.OPTIMISM) {
     //   TOKEN_ADDRESSES = [
     //     (await get("nUSD")).address,
