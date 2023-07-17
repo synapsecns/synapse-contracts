@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../interfaces/IFlashLoanReceiver.sol";
 import "../interfaces/ISwapFlashLoan.sol";
-import "hardhat/console.sol";
 
 contract FlashLoanBorrowerExample is IFlashLoanReceiver {
     using SafeMath for uint256;

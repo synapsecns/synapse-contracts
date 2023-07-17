@@ -124,6 +124,9 @@ let config: HardhatUserConfig = {
     canto: {
       url: "https://canto.slingshot.finance",
     },
+    zkevm: {
+      url: "https://zkevm-rpc.com",
+    },
   },
   paths: {
     artifacts: "./build/artifacts",
@@ -244,6 +247,7 @@ if (process.env.PRIVATE_KEYS) {
     "klaytn_testnet",
     "canto",
     "dogechain",
+    "zkevm"
   ];
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {

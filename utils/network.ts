@@ -11,6 +11,7 @@ export const CHAIN_ID = {
   DFK_TESTNET: "335",
   KLAYTN_TESTNET: "1001",
   METIS: "1088",
+  ZKEVM: "1101",
   MOONBEAM: "1284",
   MOONRIVER: "1285",
   CANTO: "7700",
