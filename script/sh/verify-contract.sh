@@ -56,7 +56,7 @@ else
   args="--constructor-args $args"
 fi
 echo -e "${YELLOW}Verifying $2 on $1: $address${NC}"
-forge verify-contract --chain $chain_id --verifier-url $url $args --watch $address $2 $key
+forge verify-contract --chain $chain_id --verifier-url $url $args --watch -e $key $address $2
 if [ $? -ne 0 ]; then
   echo -e "${RED}Failed to verify $2 on $1${NC}"
 else
