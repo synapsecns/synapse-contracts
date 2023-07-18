@@ -25,7 +25,6 @@ contract VelodromeV2Module is IPoolModule {
         IndexedToken memory tokenTo,
         uint256 amountIn
     ) external returns (uint256 amountOut) {
-        // TODO: sanity checks on tokenFrom, tokenTo indices <= 1?
         address tokenIn = tokenFrom.token;
         IERC20(tokenIn).safeApprove(address(router), amountIn);
 
@@ -52,7 +51,12 @@ contract VelodromeV2Module is IPoolModule {
         uint256 amountIn,
         bool probePaused
     ) external view returns (uint256 amountOut) {
+        (address token0, address token1) = IVelodromeV2Pool(pool).tokens();
         address tokenIn = tokenFrom.token;
+        address tokenOut = tokenTo.token;
+        require(tokenIn == token0 || tokenIn == token1, "tokenFrom not token in pool");
+        require(tokenOut == token0 || tokenOut == token1, "tokenTo not token in pool");
+
         amountOut = IVelodromeV2Pool(pool).getAmountOut(amountIn, tokenIn);
     }
 
