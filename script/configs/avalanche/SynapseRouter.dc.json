@@ -11,7 +11,6 @@
     "GMX",
     "UST",
     "NEWO",
-    "fantOHM",
     "SDT",
     "JEWEL",
     "SFI",
@@ -121,15 +120,6 @@
       "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
       "minFee": "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
       "token": "0xE97097dE8d6A17Be3c39d53AE63347706dCf8f43",
-      "tokenType": 0
-    },
-    "fantOHM": {
-      "bridgeFee": 10000000,
-      "bridgeToken": "0x5aB7084CB9d270c2Cb052dd30dbecBCA42F8620c",
-      "decimals": 18,
-      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
-      "minFee": "0x0000000000000000000000000000000000000000000000003e73362871420000",
-      "token": "0x5aB7084CB9d270c2Cb052dd30dbecBCA42F8620c",
       "tokenType": 0
     },
     "gOHM": {

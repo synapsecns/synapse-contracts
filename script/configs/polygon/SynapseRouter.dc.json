@@ -7,7 +7,6 @@
     "NFD",
     "gOHM",
     "UST",
-    "fantOHM",
     "H2O",
     "MATIC"
   ],
@@ -67,15 +66,6 @@
       "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
       "minFee": "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
       "token": "0x565098CBa693b3325f9fe01D41b7A1cd792Abab1",
-      "tokenType": 0
-    },
-    "fantOHM": {
-      "bridgeFee": 10000000,
-      "bridgeToken": "0xfa1FBb8Ef55A4855E5688C0eE13aC3f202486286",
-      "decimals": 18,
-      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
-      "minFee": "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-      "token": "0xfa1FBb8Ef55A4855E5688C0eE13aC3f202486286",
       "tokenType": 0
     },
     "gOHM": {
