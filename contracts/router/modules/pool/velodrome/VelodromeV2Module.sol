@@ -8,9 +8,11 @@ import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
 import {IVelodromeV2Pool} from "../../../interfaces/velodrome/IVelodromeV2Pool.sol";
 import {IVelodromeV2Router} from "../../../interfaces/velodrome/IVelodromeV2Router.sol";
 
+import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
+
 /// @notice PoolModule for Velodrome V2 pools
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
-contract VelodromeV2Module is IPoolModule {
+contract VelodromeV2Module is OnlyDelegateCall, IPoolModule {
     using SafeERC20 for IERC20;
 
     IVelodromeV2Router public immutable router;
@@ -25,6 +27,7 @@ contract VelodromeV2Module is IPoolModule {
         IndexedToken memory tokenTo,
         uint256 amountIn
     ) external returns (uint256 amountOut) {
+        assertDelegateCall();
         address tokenIn = tokenFrom.token;
         IERC20(tokenIn).safeApprove(address(router), amountIn);
 
