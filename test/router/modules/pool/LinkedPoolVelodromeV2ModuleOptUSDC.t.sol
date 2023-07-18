@@ -36,21 +36,21 @@ contract LinkedPoolVelodromeV2ModuleArbUSDCTestFork is LinkedPoolIntegrationTest
 
     function addExpectedTokens() public override {
         // Expected order of tokens:
-        // 0: USDC
-        // 1: USDT
-        // 2: nUSD
+        // 0: nUSD
+        // 1: USDC
+        // 2: USDT
+        addExpectedToken(NUSD, "nUSD");
         addExpectedToken(USDC, "USDC");
         addExpectedToken(USDT, "USDT");
-        addExpectedToken(NUSD, "nUSD");
     }
 
     function addPools() public override {
+        addPool({poolName: "nUSD/USDC", nodeIndex: 0, pool: NUSD_POOL});
         addPool({
             poolName: "USDC/USDT",
-            nodeIndex: 0,
+            nodeIndex: 1,
             pool: VEL_V2_USDCUSDT_POOL,
             poolModule: address(velodromeV2Module)
         });
-        addPool({poolName: "nUSD/USDC", nodeIndex: 0, pool: NUSD_POOL}); // Q: why is this node index 0?
     }
 }
