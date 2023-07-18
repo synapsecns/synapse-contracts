@@ -7,7 +7,7 @@ import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
 import {ICurveV1Pool} from "../../../interfaces/curve/ICurveV1Pool.sol";
 
 /// @notice PoolModule for Curve V1 pools
-/// @dev Implements IPoolModule interface to be used with pools addeded to LinkedPool router
+/// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
 contract CurveV1Module is IPoolModule {
     using SafeERC20 for IERC20;
 

@@ -33,16 +33,18 @@ contract LinkedPoolCurveV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
 
     function addExpectedTokens() public override {
         // Expected order of tokens:
-        // 0: USDC.e
-        // 1: USDT
-        // 2: nUSD
+        // 0: nUSD
+        // 1: USDC.e
+        // 2: USDT
+        // 3: USDT
+        addExpectedToken(NUSD, "nUSD");
         addExpectedToken(USDC_E, "USDC.e");
         addExpectedToken(USDT, "USDT");
-        addExpectedToken(NUSD, "nUSD");
+        addExpectedToken(USDT, "USDT");
     }
 
     function addPools() public override {
-        addPool({poolName: "USDC.e/USDT", nodeIndex: 0, pool: CURVE_V1_2POOL, poolModule: address(curveV1Module)});
-        addPool({poolName: "nUSD/USDC.e/USDT", nodeIndex: 1, pool: NUSD_POOL});
+        addPool({poolName: "nUSD/USDC.e/USDT", nodeIndex: 0, pool: NUSD_POOL});
+        addPool({poolName: "USDC.e/USDT", nodeIndex: 1, pool: CURVE_V1_2POOL, poolModule: address(curveV1Module)});
     }
 }
