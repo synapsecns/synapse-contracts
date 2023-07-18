@@ -15,6 +15,7 @@ interface IBridge {
     function WETH_ADDRESS() external view returns (address);
 }
 
+// solhint-disable no-console
 contract SetupRouterScript is DeployScript {
     using Address for address;
     using stdJson for string;
@@ -51,6 +52,7 @@ contract SetupRouterScript is DeployScript {
         router = SynapseRouter(payable(loadDeployment(ROUTER)));
         quoter = SwapQuoter(loadDeployment(QUOTER));
         _setupRouter(config);
+        _removeRouterTokens(config);
         _setupQuoter(config);
         stopBroadcast();
     }
@@ -97,7 +99,7 @@ contract SetupRouterScript is DeployScript {
         }
     }
 
-    /*╔══════════════════════════════════════════════════════════════════════╗*\
+    /*╔═════════════════════════════════════════════════════════════════_removeRouterTokens═════╗*\
     ▏*║                           INTERNAL: ROUTER                           ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
@@ -166,6 +168,53 @@ contract SetupRouterScript is DeployScript {
         } else {
             _printSkipped("add tokens", ROUTER, owner);
             _printSkipped("set SwapQuoter", ROUTER, owner);
+        }
+    }
+
+    function _removeRouterTokens(string memory config) internal {
+        address[] memory tokens = router.bridgeTokens();
+        bool[] memory toRemove = new bool[](tokens.length);
+        uint256 toRemoveAmount = 0;
+
+        // Go though all tokens and mark the ones that are not in config to be removed
+        string[] memory ids = config.readStringArray(".ids");
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            bool found = false;
+            for (uint256 j = 0; j < ids.length; ++j) {
+                bytes memory rawConfig = config.parseRaw(_concat(".tokens.", ids[j]));
+                TokenConfig memory tokenConfig = abi.decode(rawConfig, (TokenConfig));
+                if (tokens[i] == tokenConfig.token) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                console.log("   Will be removing: %s", tokens[i]);
+                toRemove[i] = true;
+                ++toRemoveAmount;
+            }
+        }
+
+        if (toRemoveAmount == 0) {
+            console.log("No tokens to remove");
+            return;
+        }
+
+        address[] memory removedTokens = new address[](toRemoveAmount);
+        toRemoveAmount = 0;
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            if (toRemove[i]) {
+                removedTokens[toRemoveAmount++] = tokens[i];
+            }
+        }
+
+        // Check if broadcaster is the owner of SynapseRouter contract
+        address owner = router.owner();
+        if (owner == broadcasterAddress) {
+            console.log("Removing %s tokens", toRemoveAmount);
+            router.removeTokens(removedTokens);
+        } else {
+            _printSkipped("remove tokens", ROUTER, owner);
         }
     }
 
