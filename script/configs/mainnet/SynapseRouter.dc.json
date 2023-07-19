@@ -120,11 +120,11 @@
     },
     "UNIDX": {
       "bridgeFee": 4000000,
-      "bridgeToken": "0x95b3497bBcCcc46a8F45F5Cf54b0878b39f8D96C",
+      "bridgeToken": "0xf0655DcEE37E5C0b70Fffd70D85f88F8eDf0AfF6",
       "decimals": 18,
       "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
       "minFee": "0x00000000000000000000000000000000000000000000000029a2241af62c0000",
-      "token": "0x95b3497bBcCcc46a8F45F5Cf54b0878b39f8D96C",
+      "token": "0xf0655DcEE37E5C0b70Fffd70D85f88F8eDf0AfF6",
       "tokenType": 1
     },
     "USDC": {
