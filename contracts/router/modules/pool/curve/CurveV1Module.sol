@@ -13,6 +13,7 @@ import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 contract CurveV1Module is OnlyDelegateCall, IPoolModule {
     using SafeERC20 for IERC20;
 
+    /// @inheritdoc IPoolModule
     function poolSwap(
         address pool,
         IndexedToken memory tokenFrom,
@@ -26,6 +27,7 @@ contract CurveV1Module is OnlyDelegateCall, IPoolModule {
         amountOut = ICurveV1Pool(pool).exchange(i, j, amountIn, 0);
     }
 
+    /// @inheritdoc IPoolModule
     function getPoolQuote(
         address pool,
         IndexedToken memory tokenFrom,
@@ -51,6 +53,7 @@ contract CurveV1Module is OnlyDelegateCall, IPoolModule {
         }
     }
 
+    /// @inheritdoc IPoolModule
     function getPoolTokens(address pool) external view returns (address[] memory tokens) {
         uint256 numTokens = _numTokens(pool);
         tokens = new address[](numTokens);
