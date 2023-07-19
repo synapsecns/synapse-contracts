@@ -156,17 +156,15 @@ contract GMXV1ModuleArbTestFork is Test {
         assertEq(IERC20(WBTC).balanceOf(user), amountOut);
     }
 
-    /* TODO: if require delegatecall
     function testPoolSwapRevertsWhenDirectCall() public {
         vm.expectRevert("Not a delegate call");
-        uniswapV3Module.poolSwap({
-            pool: UNI_V3_USDC_POOL,
-            tokenFrom: IndexedToken({index: 0, token: USDC}),
-            tokenTo: IndexedToken({index: 1, token: USDC_E}),
-            amountIn: 100 * 10**6
+        gmxV1Module.poolSwap({
+            pool: GMX_V1_VAULT,
+            tokenFrom: IndexedToken({index: 0, token: WBTC}),
+            tokenTo: IndexedToken({index: 1, token: WETH}),
+            amountIn: 100 * 10**8
         });
     }
-    */
 
     function prepareUser(address token, uint256 amount) public {
         deal(token, user, amount);

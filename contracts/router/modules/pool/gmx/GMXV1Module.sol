@@ -7,9 +7,11 @@ import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
 import {IGMXV1Router} from "../../../interfaces/gmx/IGMXV1Router.sol";
 import {IGMXV1Vault} from "../../../interfaces/gmx/IGMXV1Vault.sol";
 
+import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
+
 /// @notice PoolModule for GMX V1 pools
 /// @dev Implements IPoolModule interface to be used with pools addeded to LinkedPool router
-contract GMXV1Module is IPoolModule {
+contract GMXV1Module is OnlyDelegateCall, IPoolModule {
     using SafeERC20 for IERC20;
 
     IGMXV1Router public immutable router;
@@ -20,13 +22,14 @@ contract GMXV1Module is IPoolModule {
         vault = IGMXV1Vault(router.vault());
     }
 
+    /// @inheritdoc IPoolModule
     function poolSwap(
         address pool,
         IndexedToken memory tokenFrom,
         IndexedToken memory tokenTo,
         uint256 amountIn
     ) external returns (uint256 amountOut) {
-        // TODO: onlyDelegateCall?
+        assertDelegateCall();
         require(pool == address(vault), "pool != vault");
         address tokenIn = tokenFrom.token;
         IERC20(tokenIn).safeApprove(address(router), amountIn);
@@ -42,6 +45,7 @@ contract GMXV1Module is IPoolModule {
         amountOut = IERC20(tokenOut).balanceOf(address(this)) - balanceTo;
     }
 
+    /// @inheritdoc IPoolModule
     function getPoolQuote(
         address pool,
         IndexedToken memory tokenFrom,
@@ -53,6 +57,7 @@ contract GMXV1Module is IPoolModule {
         // TODO: simulate like balancer module; would need to remove view
     }
 
+    /// @inheritdoc IPoolModule
     function getPoolTokens(address pool) external view returns (address[] memory tokens) {
         require(pool == address(vault), "pool != vault");
         uint256 numCoins = vault.whitelistedTokenCount();
