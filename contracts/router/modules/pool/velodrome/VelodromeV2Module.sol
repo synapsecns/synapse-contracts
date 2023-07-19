@@ -21,6 +21,7 @@ contract VelodromeV2Module is OnlyDelegateCall, IPoolModule {
         router = IVelodromeV2Router(_router);
     }
 
+    /// @inheritdoc IPoolModule
     function poolSwap(
         address pool,
         IndexedToken memory tokenFrom,
@@ -46,7 +47,7 @@ contract VelodromeV2Module is OnlyDelegateCall, IPoolModule {
         amountOut = amounts[1];
     }
 
-    /// @dev Careful with pool.getAmountOut as will return token1 as in if give invalid tokenIn address (token not in pool)
+    /// @inheritdoc IPoolModule
     function getPoolQuote(
         address pool,
         IndexedToken memory tokenFrom,
@@ -57,12 +58,14 @@ contract VelodromeV2Module is OnlyDelegateCall, IPoolModule {
         (address token0, address token1) = IVelodromeV2Pool(pool).tokens();
         address tokenIn = tokenFrom.token;
         address tokenOut = tokenTo.token;
-        require(tokenIn == token0 || tokenIn == token1, "tokenFrom not token in pool");
-        require(tokenOut == token0 || tokenOut == token1, "tokenTo not token in pool");
-
+        require(
+            (tokenIn == token0 && tokenOut == token1) || (tokenIn == token1 && tokenOut == token0),
+            "tokens not in pool"
+        );
         amountOut = IVelodromeV2Pool(pool).getAmountOut(amountIn, tokenIn);
     }
 
+    /// @inheritdoc IPoolModule
     function getPoolTokens(address pool) external view returns (address[] memory tokens) {
         (address token0, address token1) = IVelodromeV2Pool(pool).tokens();
         tokens = new address[](2);

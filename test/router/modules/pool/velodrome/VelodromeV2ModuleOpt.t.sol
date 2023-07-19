@@ -104,17 +104,15 @@ contract VelodromeV2ModuleOptTestFork is Test {
         assertEq(IERC20(OP).balanceOf(user), amountOut);
     }
 
-    /* TODO: if require delegatecall
     function testPoolSwapRevertsWhenDirectCall() public {
         vm.expectRevert("Not a delegate call");
-        uniswapV3Module.poolSwap({
-            pool: UNI_V3_USDC_POOL,
-            tokenFrom: IndexedToken({index: 0, token: USDC}),
-            tokenTo: IndexedToken({index: 1, token: USDC_E}),
-            amountIn: 100 * 10**6
+        velodromeV2Module.poolSwap({
+            pool: VEL_V2_OPUSDC_POOL,
+            tokenFrom: IndexedToken({index: 0, token: OP}),
+            tokenTo: IndexedToken({index: 1, token: USDC}),
+            amountIn: 100 * 10**18
         });
     }
-    */
 
     function prepareUser(address token, uint256 amount) public {
         deal(token, user, amount);
