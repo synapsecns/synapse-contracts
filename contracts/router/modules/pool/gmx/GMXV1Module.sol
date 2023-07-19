@@ -4,6 +4,8 @@ pragma solidity 0.8.17;
 import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
 import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
+
+import {IGMXV1Reader} from "../../../interfaces/gmx/IGMXV1Reader.sol";
 import {IGMXV1Router} from "../../../interfaces/gmx/IGMXV1Router.sol";
 import {IGMXV1Vault} from "../../../interfaces/gmx/IGMXV1Vault.sol";
 
@@ -16,10 +18,12 @@ contract GMXV1Module is OnlyDelegateCall, IPoolModule {
 
     IGMXV1Router public immutable router;
     IGMXV1Vault public immutable vault;
+    IGMXV1Reader public immutable reader;
 
-    constructor(address _router) {
+    constructor(address _router, address _reader) {
         router = IGMXV1Router(_router);
         vault = IGMXV1Vault(router.vault());
+        reader = IGMXV1Reader(_reader);
     }
 
     /// @inheritdoc IPoolModule
@@ -54,7 +58,9 @@ contract GMXV1Module is OnlyDelegateCall, IPoolModule {
         bool probePaused
     ) external view returns (uint256 amountOut) {
         require(pool == address(vault), "pool != vault");
-        // TODO: simulate like balancer module; would need to remove view
+        address tokenIn = tokenFrom.token;
+        address tokenOut = tokenTo.token;
+        (amountOut, ) = reader.getAmountOut(vault, tokenIn, tokenOut, amountIn);
     }
 
     /// @inheritdoc IPoolModule

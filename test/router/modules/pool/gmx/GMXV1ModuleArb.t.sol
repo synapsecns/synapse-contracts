@@ -21,6 +21,9 @@ contract GMXV1ModuleArbTestFork is Test {
     // GMX V1 vault pool on Arbitrum
     address public constant GMX_V1_VAULT = 0x489ee077994B6658eAfA855C308275EAd8097C4A;
 
+    // GMX V1 reader on Arbitrum
+    address public constant GMX_V1_READER = 0x22199a49A999c351eF7927602CFB187ec3cae489;
+
     // Native WBTC on Arbitrum
     address public constant WBTC = 0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f;
 
@@ -57,7 +60,7 @@ contract GMXV1ModuleArbTestFork is Test {
         string memory arbRPC = vm.envString("ARBITRUM_API");
         vm.createSelectFork(arbRPC, ARB_BLOCK_NUMBER);
 
-        gmxV1Module = new GMXV1Module(GMX_V1_ROUTER);
+        gmxV1Module = new GMXV1Module(GMX_V1_ROUTER, GMX_V1_READER);
         linkedPool = new LinkedPool(WBTC);
         user = makeAddr("User");
 

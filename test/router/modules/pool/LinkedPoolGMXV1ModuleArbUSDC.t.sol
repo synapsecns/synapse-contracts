@@ -16,6 +16,9 @@ contract LinkedPoolGMXV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
     // GMX V1 router on Arbitrum
     address public constant GMX_V1_ROUTER = 0xaBBc5F99639c9B6bCb58544ddf04EFA6802F4064;
 
+    // GMX V1 reader on Arbitrum
+    address public constant GMX_V1_READER = 0x22199a49A999c351eF7927602CFB187ec3cae489;
+
     // nUSD/USDC.e/USDT DefaultPool on Arbitrum
     address public constant NUSD_POOL = 0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40;
 
@@ -48,25 +51,28 @@ contract LinkedPoolGMXV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
     constructor() LinkedPoolIntegrationTest(ARB_ENV_RPC, ARB_BLOCK_NUMBER) {}
 
     function afterBlockchainForked() public override {
-        gmxV1Module = new GMXV1Module(GMX_V1_ROUTER);
+        gmxV1Module = new GMXV1Module(GMX_V1_ROUTER, GMX_V1_READER);
     }
 
     function addExpectedTokens() public override {
         // Expected order of tokens:
-        // 0: WBTC
-        // 1: WETH
-        // 2: USDC.e
-        // 3: LINK
-        // 4: UNI
-        // 5: USDT
-        // 6: MIM
-        // 7: FRAX
-        // 8: DAI
-        // 9: USDC
-        // 10: nUSD
+        // 0: nUSD
+        // 1: USD.e
+        // 2: USDT
+        // 3: WBTC
+        // 4: WETH
+        // 5: LINK
+        // 6: UNI
+        // 7: USDT
+        // 8: MIM
+        // 9: FRAX
+        // 10: DAI
+        // 11: USDC
+        addExpectedToken(NUSD, "nUSD");
+        addExpectedToken(USDC_E, "USDC.e");
+        addExpectedToken(USDT, "USDT");
         addExpectedToken(WBTC, "WBTC");
         addExpectedToken(WETH, "WETH");
-        addExpectedToken(USDC_E, "USDC.e");
         addExpectedToken(LINK, "LINK");
         addExpectedToken(UNI, "UNI");
         addExpectedToken(USDT, "USDT");
@@ -74,12 +80,10 @@ contract LinkedPoolGMXV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
         addExpectedToken(FRAX, "FRAX");
         addExpectedToken(DAI, "DAI");
         addExpectedToken(USDC, "USDC");
-        addExpectedToken(NUSD, "nUSD");
-        addExpectedToken(USDT, "USDT");
     }
 
     function addPools() public override {
-        addPool({poolName: "GMX", nodeIndex: 0, pool: GMX_V1_VAULT, poolModule: address(gmxV1Module)});
-        addPool({poolName: "nUSD/USDC.e/USDT", nodeIndex: 2, pool: NUSD_POOL});
+        addPool({poolName: "nUSD/USDC.e/USDT", nodeIndex: 0, pool: NUSD_POOL});
+        addPool({poolName: "GMX", nodeIndex: 1, pool: GMX_V1_VAULT, poolModule: address(gmxV1Module)});
     }
 }
