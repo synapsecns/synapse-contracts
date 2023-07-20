@@ -353,6 +353,72 @@ contract LinkedPoolTest is Test {
         swap.swap(0, 1, amountIn, amountOut + 1, type(uint256).max);
     }
 
+    // ═══════════════════════════════════════════════ QUOTES TESTS ════════════════════════════════════════════════════
+
+    // Quote for tree path: [0: BT] -> [1: T0] -> [3: T1]
+    function test_calculateSwap_treePathDown() public {
+        complexSetup();
+        uint256 amountIn = 10**18;
+        // [0: BT] -> [1: T0] (direction: down)
+        uint256 expectedAmountOut = poolB01.calculateSwap(0, 1, amountIn);
+        // [1: T0] -> [3: T1] (direction: down)
+        expectedAmountOut = pool01.calculateSwap(0, 1, expectedAmountOut);
+        uint256 amountOut = swap.calculateSwap(0, 3, amountIn);
+        assertEq(amountOut, expectedAmountOut);
+    }
+
+    // Quote for tree path: [6: T1] -> [5: T2] -> [0: BT]
+    function test_calculateSwap_treePathUp() public {
+        complexSetup();
+        uint256 amountIn = 10**18;
+        // [6: T1] -> [5: T2] (direction: up)
+        uint256 expectedAmountOut = pool123.calculateSwap(0, 1, amountIn);
+        // [5: T2] -> [0: BT] (direction: up)
+        expectedAmountOut = poolB2.calculateSwap(1, 0, expectedAmountOut);
+        uint256 amountOut = swap.calculateSwap(6, 0, amountIn);
+        assertEq(amountOut, expectedAmountOut);
+    }
+
+    // Quote for tree path: [3: T1] -> [1: T0] -> [2: T1]
+    function test_calculateSwap_treePathUpSibling() public {
+        complexSetup();
+        uint256 amountIn = 10**18;
+        // [3: T1] -> [1: T0] (direction: up)
+        uint256 expectedAmountOut = pool01.calculateSwap(1, 0, amountIn);
+        // [1: T0] -> [2: T1] (direction: sibling)
+        expectedAmountOut = poolB01.calculateSwap(1, 2, expectedAmountOut);
+        uint256 amountOut = swap.calculateSwap(3, 2, amountIn);
+        assertEq(amountOut, expectedAmountOut);
+    }
+
+    // Quote for tree path: [3: T1] -> [1: T0] -> [2: T1] -> [8: T2]
+    function test_calculateSwap_treePathUpSiblingDown() public {
+        complexSetup();
+        // 2: T1 + (8: T2, 9: T3)
+        addPool(2, address(pool123));
+        uint256 amountIn = 10**18;
+        // [3: T1] -> [1: T0] (direction: up)
+        uint256 expectedAmountOut = pool01.calculateSwap(1, 0, amountIn);
+        // [1: T0] -> [2: T1] (direction: sibling)
+        expectedAmountOut = poolB01.calculateSwap(1, 2, expectedAmountOut);
+        // [2: T1] -> [8: T2] (direction: down)
+        expectedAmountOut = pool123.calculateSwap(0, 1, expectedAmountOut);
+        uint256 amountOut = swap.calculateSwap(3, 8, amountIn);
+        assertEq(amountOut, expectedAmountOut);
+    }
+
+    // Quote for tree path: [2: T1] -> [1: T0] -> [4: T2]
+    function test_calculateSwap_treePathSiblingDown() public {
+        complexSetup();
+        uint256 amountIn = 10**18;
+        // [2: T1] -> [1: T0] (direction: sibling)
+        uint256 expectedAmountOut = poolB01.calculateSwap(2, 1, amountIn);
+        // [1: T0] -> [4: T2] (direction: down)
+        expectedAmountOut = pool02.calculateSwap(0, 1, expectedAmountOut);
+        uint256 amountOut = swap.calculateSwap(2, 4, amountIn);
+        assertEq(amountOut, expectedAmountOut);
+    }
+
     // ═══════════════════════════════════════════════ GETTERS TESTS ═══════════════════════════════════════════════════
 
     function test_getAttachedPools() public {
