@@ -1,0 +1,30 @@
+digraph G {
+    token0 [label = "0: USDC";];
+    token1 [label = "1: nUSD";];
+    token2 [label = "2: USDt";];
+    token3 [label = "3: DAI.e";];
+    token4 [label = "4: USDC.e";];
+    token5 [label = "5: USDT.e";];
+    token0 -> token1;
+    token0 -> token2;
+    subgraph cluster0 {
+        label = "DefaultPool 0xa196";
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token1 -> token2;
+        }
+    }
+    token1 -> token3;
+    token1 -> token4;
+    token1 -> token5;
+    subgraph cluster1 {
+        label = "DefaultPool 0xed2a";
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token3 -> token4;
+            token4 -> token5;
+        }
+    }
+}
