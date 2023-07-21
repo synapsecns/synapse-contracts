@@ -1,0 +1,15 @@
+{
+  "bridgeToken": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+  "pools": [
+    {
+      "nodeIndex": 0,
+      "pool": "0xA196a03653f6cc5cA0282A8BD7Ec60e93f620afc",
+      "poolModule": ""
+    },
+    {
+      "nodeIndex": 1,
+      "pool": "0xED2a7edd7413021d440b09D654f3b87712abAB66",
+      "poolModule": ""
+    }
+  ]
+}
