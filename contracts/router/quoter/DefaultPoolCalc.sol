@@ -30,9 +30,10 @@ contract DefaultPoolCalc is IDefaultPoolCalc {
 
     /// @inheritdoc IDefaultPoolCalc
     function calculateAddLiquidity(address pool, uint256[] memory amounts) external view returns (uint256 amountOut) {
+        // Get the provided number of tokens. We will later verify that it matches actual number of tokens in the pool.
         uint256 numTokens = amounts.length;
-        // Verify that `numTokens >= pool.tokens.length`
-        _verifyTokensAmount(pool, numTokens);
+        // (1) Verify that `pool.tokens.length <= numTokens`
+        _verifyTokensLengthCeiling(pool, numTokens);
         (, , , , uint256 swapFee, , address lpToken) = IDefaultExtendedPool(pool).swapStorage();
         // current state
         ManageLiquidityInfo memory v = ManageLiquidityInfo({
@@ -44,14 +45,14 @@ contract DefaultPoolCalc is IDefaultPoolCalc {
             multipliers: new uint256[](numTokens)
         });
         uint256[] memory newBalances = new uint256[](numTokens);
-        // If `numTokens < pool.tokens.length`, the loop will revert
+        // (2) If `pool.tokens.length < numTokens`, the loop will revert when reading token at index `numTokens - 1`.
         for (uint256 i = 0; i < numTokens; ++i) {
             address token = IDefaultExtendedPool(pool).getToken(uint8(i));
             v.balances[i] = IDefaultExtendedPool(pool).getTokenBalance(uint8(i));
             newBalances[i] = v.balances[i] + amounts[i];
             v.multipliers[i] = 10**(18 - IERC20Metadata(token).decimals());
         }
-        // At this point we verified that `numTokens == pool.tokens.length`
+        // (1) + (2) implies that `pool.tokens.length == numTokens`
         if (v.totalSupply != 0) {
             v.d0 = _getD(_xp(v.balances, v.multipliers), v.preciseA);
         } else {
@@ -78,12 +79,18 @@ contract DefaultPoolCalc is IDefaultPoolCalc {
         }
     }
 
-    /// @dev Verifies that the given pool has AT MOST `numTokens` tokens.
-    function _verifyTokensAmount(address pool, uint256 numTokens) internal view {
-        // Getting token with index == amount should always revert
+    /// @dev Verifies that `pool.tokens.length <= numTokens`. Reverts if `pool.tokens.length > numTokens`.
+    function _verifyTokensLengthCeiling(address pool, uint256 numTokens) internal view {
+        // We will attempt to read the token at index `numTokens`.
         try IDefaultExtendedPool(pool).getToken(uint8(numTokens)) returns (address) {
+            // If call succeeds, if means that `numTokens < pool.tokens.length`,
+            // which is the undesired outcome, so we revert.
             revert("Incorrect tokens amount");
-        } catch {} // solhint-disable-line no-empty-blocks
+        } catch {
+            // solhint-disable-previous-line no-empty-blocks
+            // If the call fails, it means that `numTokens >= pool.tokens.length`,
+            // which is the desired outcome, so we continue.
+        }
     }
 
     // ═════════════════════════════════════════════ STABLE SWAP MATH ══════════════════════════════════════════════════
