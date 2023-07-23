@@ -4,9 +4,77 @@ pragma solidity 0.8.17;
 import {PoolQuoterV1} from "./PoolQuoterV1.sol";
 import {ISwapQuoterV1, LimitedToken, SwapQuery, Pool} from "../interfaces/ISwapQuoterV1.sol";
 
-contract SwapQuoterV2 is PoolQuoterV1 {
+import {EnumerableSet} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableSet.sol";
+import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
+
+contract SwapQuoterV2 is PoolQuoterV1, Ownable {
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    /// @notice Defines the type of supported liquidity pool.
+    /// - Default: pool that implements the IDefaultPool interface, which is either the StableSwap pool
+    /// or a wrapper contract around the non-standard pool that conforms to the interface.
+    /// - Linked: LinkedPool contract, which is a wrapper for arbitrary amount of liquidity pools to
+    /// be used for multi-hop swaps.
+    enum PoolType {
+        Default,
+        Linked
+    }
+
+    /// @notice Struct that is used for storing the whitelisted liquidity pool for a bridge token.
+    /// @dev Occupies a single storage slot.
+    /// @param poolType     Type of the pool: Default or Linked.
+    /// @param pool         Address of the whitelisted pool.
+    struct TypedPool {
+        PoolType poolType;
+        address pool;
+    }
+
+    /// @notice Struct that is used as a argument/return value for pool management functions.
+    /// Therefore, it is not used internally and does not occupy any storage slots.
+    /// @dev `bridgeToken` can be set to zero, in which case struct defines a pool
+    /// that could be used for swaps on origin chain only.
+    /// @param bridgeToken  Address of the bridge token.
+    /// @param poolType     Type of the pool: Default or Linked.
+    /// @param pool         Address of the whitelisted pool.
+    struct BridgePool {
+        address bridgeToken;
+        PoolType poolType;
+        address pool;
+    }
+
+    /// @dev Set of Default Pools that could be used for swaps on origin chain only
+    EnumerableSet.AddressSet internal _defaultPools;
+    /// @dev Set of Linked Pools that could be used for swaps on origin chain only
+    EnumerableSet.AddressSet internal _linkedPools;
+
+    /// @dev Mapping from a bridge token into a whitelisted liquidity pool for the token.
+    /// Could be used for swaps on both origin and destination chains.
+    mapping(address => TypedPool) internal _bridgePools;
+    /// @dev Set of bridge tokens with whitelisted liquidity pools (keys for `_bridgePools` mapping)
+    EnumerableSet.AddressSet internal _bridgeTokens;
+
     // solhint-disable-next-line no-empty-blocks
     constructor(address defaultPoolCalc, address weth) PoolQuoterV1(defaultPoolCalc, weth) {}
+
+    // ══════════════════════════════════════════════ POOL MANAGEMENT ══════════════════════════════════════════════════
+
+    function addPools(BridgePool[] memory pools) external onlyOwner {
+        unchecked {
+            // unchecked: ++i never overflows uint256
+            for (uint256 i = 0; i < pools.length; ++i) {
+                _addPool(pools[i]);
+            }
+        }
+    }
+
+    function removePools(BridgePool[] memory pools) external onlyOwner {
+        unchecked {
+            // unchecked: ++i never overflows uint256
+            for (uint256 i = 0; i < pools.length; ++i) {
+                _removePool(pools[i]);
+            }
+        }
+    }
 
     // ═════════════════════════════════════════════ GENERAL QUOTES V1 ═════════════════════════════════════════════════
 
@@ -31,4 +99,38 @@ contract SwapQuoterV2 is PoolQuoterV1 {
 
     /// @inheritdoc ISwapQuoterV1
     function poolsAmount() external view returns (uint256 amtPools) {}
+
+    // ═════════════════════════════════════════ INTERNAL: POOL MANAGEMENT ═════════════════════════════════════════════
+
+    /// @dev Adds a pool to SwapQuoterV2.
+    /// - If bridgeToken is zero, the pool is added to the set of pools corresponding to the pool type.
+    /// - Otherwise, the pool is added to the set of bridge pools.
+    function _addPool(BridgePool memory pool) internal {
+        if (pool.bridgeToken == address(0)) {
+            if (pool.poolType == PoolType.Default) {
+                _defaultPools.add(pool.pool);
+            } else {
+                _linkedPools.add(pool.pool);
+            }
+        } else {
+            _bridgeTokens.add(pool.bridgeToken);
+            _bridgePools[pool.bridgeToken] = TypedPool({poolType: pool.poolType, pool: pool.pool});
+        }
+    }
+
+    /// @dev Removes a pool from SwapQuoterV2.
+    /// - If bridgeToken is zero, the pool is removed from the set of pools corresponding to the pool type.
+    /// - Otherwise, the pool is removed from the set of bridge pools.
+    function _removePool(BridgePool memory pool) internal {
+        if (pool.bridgeToken == address(0)) {
+            if (pool.poolType == PoolType.Default) {
+                _defaultPools.remove(pool.pool);
+            } else {
+                _linkedPools.remove(pool.pool);
+            }
+        } else {
+            _bridgeTokens.remove(pool.bridgeToken);
+            delete _bridgePools[pool.bridgeToken];
+        }
+    }
 }
