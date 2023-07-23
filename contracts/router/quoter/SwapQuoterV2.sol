@@ -95,10 +95,41 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     // ══════════════════════════════════════════════ POOL GETTERS V1 ══════════════════════════════════════════════════
 
     /// @inheritdoc ISwapQuoterV1
-    function allPools() external view returns (Pool[] memory pools) {}
+    function allPools() external view returns (Pool[] memory pools) {
+        // Combine Default, Linked, and Bridge pools into a single array
+        uint256 amtDefaultPools = _defaultPools.length();
+        uint256 amtLinkedPools = _linkedPools.length();
+        uint256 amtBridgePools = _bridgeTokens.length();
+        unchecked {
+            // unchecked: total amount of pools never overflows uint256
+            pools = new Pool[](amtDefaultPools + amtLinkedPools + amtBridgePools);
+            // unchecked: ++i never overflows uint256
+            for (uint256 i = 0; i < amtDefaultPools; ++i) {
+                pools[i] = _getPoolData(PoolType.Default, _defaultPools.at(i));
+            }
+            // unchecked: ++i never overflows uint256
+            for (uint256 i = 0; i < amtLinkedPools; ++i) {
+                // unchecked: amtDefaultPools + i < pools.length => never overflows
+                pools[amtDefaultPools + i] = _getPoolData(PoolType.Linked, _linkedPools.at(i));
+            }
+            // unchecked: ++i never overflows uint256
+            for (uint256 i = 0; i < amtBridgePools; ++i) {
+                address bridgeToken = _bridgeTokens.at(i);
+                TypedPool memory typedPool = _bridgePools[bridgeToken];
+                // unchecked: amtDefaultPools + amtLinkedPools + i < pools.length => never overflows uint256
+                pools[amtDefaultPools + amtLinkedPools + i] = _getPoolData(typedPool.poolType, typedPool.pool);
+            }
+        }
+    }
 
     /// @inheritdoc ISwapQuoterV1
-    function poolsAmount() external view returns (uint256 amtPools) {}
+    function poolsAmount() external view returns (uint256 amtPools) {
+        // Total amount of pools is the sum of pools in each pool type and bridge pools
+        unchecked {
+            // unchecked: total amount of pools never overflows uint256
+            return _defaultPools.length() + _linkedPools.length() + _bridgeTokens.length();
+        }
+    }
 
     // ═════════════════════════════════════════ INTERNAL: POOL MANAGEMENT ═════════════════════════════════════════════
 
@@ -132,5 +163,15 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             _bridgeTokens.remove(pool.bridgeToken);
             delete _bridgePools[pool.bridgeToken];
         }
+    }
+
+    // ═════════════════════════════════════════ INTERNAL: POOL INSPECTION ═════════════════════════════════════════════
+
+    /// @dev Returns the data for the given pool: pool address, LP token address (if applicable), and tokens.
+    function _getPoolData(PoolType poolType, address pool) internal view returns (Pool memory poolData) {
+        poolData.pool = pool;
+        // Populate LP token field only for default pools
+        if (poolType == PoolType.Default) poolData.lpToken = _lpToken(pool);
+        poolData.tokens = _getPoolTokens(pool);
     }
 }
