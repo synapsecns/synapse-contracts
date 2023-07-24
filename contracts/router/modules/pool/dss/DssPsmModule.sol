@@ -26,14 +26,16 @@ contract DssPsmModule is OnlyDelegateCall, IPoolModule {
     ) external returns (uint256 amountOut) {
         assertDelegateCall();
         amountOut = getPoolQuote(pool, tokenFrom, tokenTo, amountIn, false);
-        IERC20(tokenFrom.token).safeApprove(pool, amountIn);
 
         // in case of transfer fees
         address dai = IDssPsm(pool).dai();
         uint256 balanceTo = IERC20(tokenTo.token).balanceOf(address(this));
         if (tokenFrom.token == dai) {
+            IERC20(tokenFrom.token).safeApprove(pool, amountIn);
             IDssPsm(pool).buyGem(address(this), amountOut);
         } else {
+            address gemJoin = IDssPsm(pool).gemJoin();
+            IERC20(tokenFrom.token).safeApprove(gemJoin, amountIn);
             IDssPsm(pool).sellGem(address(this), amountIn);
         }
         amountOut = IERC20(tokenTo.token).balanceOf(address(this)) - balanceTo;
