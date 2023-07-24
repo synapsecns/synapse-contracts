@@ -31,11 +31,10 @@
 <ellipse fill="none" stroke="black" cx="189" cy="-117" rx="50.09" ry="18"/>
 <text text-anchor="middle" x="189" y="-113.3" font-family="Times,serif" font-size="14.00">1: nUSD</text>
 </g>
-<!-- token0&#45;&gt;token1 -->
+<!-- token0&#45;&#45;token1 -->
 <g id="edge1" class="edge">
-<title>token0&#45;&gt;token1</title>
-<path fill="none" stroke="black" d="M233.84,-174.44C226.35,-165.01 216.83,-153.02 208.48,-142.52"/>
-<polygon fill="black" stroke="black" points="211.07,-140.15 202.11,-134.5 205.59,-144.51 211.07,-140.15"/>
+<title>token0&#45;&#45;token1</title>
+<path fill="none" stroke="black" d="M233.84,-174.44C224.35,-162.49 211.59,-146.43 202.11,-134.5"/>
 </g>
 <!-- token2 -->
 <g id="node3" class="node">
@@ -43,24 +42,22 @@
 <ellipse fill="none" stroke="black" cx="305" cy="-117" rx="48.19" ry="18"/>
 <text text-anchor="middle" x="305" y="-113.3" font-family="Times,serif" font-size="14.00">2: USDt</text>
 </g>
-<!-- token0&#45;&gt;token2 -->
+<!-- token0&#45;&#45;token2 -->
 <g id="edge2" class="edge">
-<title>token0&#45;&gt;token2</title>
-<path fill="none" stroke="black" d="M260.16,-174.44C267.65,-165.01 277.17,-153.02 285.52,-142.52"/>
-<polygon fill="black" stroke="black" points="288.41,-144.51 291.89,-134.5 282.93,-140.15 288.41,-144.51"/>
+<title>token0&#45;&#45;token2</title>
+<path fill="none" stroke="black" d="M260.16,-174.44C269.65,-162.49 282.41,-146.43 291.89,-134.5"/>
 </g>
-<!-- token1&#45;&gt;token2 -->
+<!-- token1&#45;&#45;token2 -->
 <!-- token3 -->
 <g id="node4" class="node">
 <title>token3</title>
 <ellipse fill="none" stroke="black" cx="64" cy="-34" rx="48.19" ry="18"/>
 <text text-anchor="middle" x="64" y="-30.3" font-family="Times,serif" font-size="14.00">3: DAI.e</text>
 </g>
-<!-- token1&#45;&gt;token3 -->
+<!-- token1&#45;&#45;token3 -->
 <g id="edge4" class="edge">
-<title>token1&#45;&gt;token3</title>
-<path fill="none" stroke="black" d="M157.66,-102.77C145.82,-97.27 132.45,-90.43 121,-83 109.81,-75.73 98.39,-66.53 88.73,-58.14"/>
-<polygon fill="black" stroke="black" points="90.88,-55.36 81.08,-51.33 86.23,-60.59 90.88,-55.36"/>
+<title>token1&#45;&#45;token3</title>
+<path fill="none" stroke="black" d="M157.66,-102.77C145.82,-97.27 132.45,-90.43 121,-83 106.68,-73.7 91.97,-61.23 81.08,-51.33"/>
 </g>
 <!-- token4 -->
 <g id="node5" class="node">
@@ -68,11 +65,10 @@
 <ellipse fill="none" stroke="black" cx="189" cy="-34" rx="59.29" ry="18"/>
 <text text-anchor="middle" x="189" y="-30.3" font-family="Times,serif" font-size="14.00">4: USDC.e</text>
 </g>
-<!-- token1&#45;&gt;token4 -->
+<!-- token1&#45;&#45;token4 -->
 <g id="edge5" class="edge">
-<title>token1&#45;&gt;token4</title>
-<path fill="none" stroke="black" d="M189,-98.82C189,-88.19 189,-74.31 189,-62.2"/>
-<polygon fill="black" stroke="black" points="192.5,-62.15 189,-52.15 185.5,-62.15 192.5,-62.15"/>
+<title>token1&#45;&#45;token4</title>
+<path fill="none" stroke="black" d="M189,-98.82C189,-85.08 189,-65.89 189,-52.15"/>
 </g>
 <!-- token5 -->
 <g id="node6" class="node">
@@ -80,13 +76,12 @@
 <ellipse fill="none" stroke="black" cx="323" cy="-34" rx="57.39" ry="18"/>
 <text text-anchor="middle" x="323" y="-30.3" font-family="Times,serif" font-size="14.00">5: USDT.e</text>
 </g>
-<!-- token1&#45;&gt;token5 -->
+<!-- token1&#45;&#45;token5 -->
 <g id="edge6" class="edge">
-<title>token1&#45;&gt;token5</title>
-<path fill="none" stroke="black" d="M219.39,-102.66C231.36,-97.04 245.07,-90.16 257,-83 269.88,-75.28 283.4,-65.72 294.84,-57.17"/>
-<polygon fill="black" stroke="black" points="297.28,-59.72 303.12,-50.88 293.04,-54.14 297.28,-59.72"/>
+<title>token1&#45;&#45;token5</title>
+<path fill="none" stroke="black" d="M219.39,-102.66C231.36,-97.04 245.07,-90.16 257,-83 273.16,-73.31 290.34,-60.73 303.12,-50.88"/>
 </g>
-<!-- token3&#45;&gt;token4 -->
-<!-- token4&#45;&gt;token5 -->
+<!-- token3&#45;&#45;token4 -->
+<!-- token4&#45;&#45;token5 -->
 </g>
 </svg>

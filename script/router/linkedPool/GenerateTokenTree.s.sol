@@ -21,7 +21,7 @@ contract GenerateTokenTreeScript is SynapseScript {
         string poolModule;
     }
 
-    string public constant DIGRAPH_HEADER = "digraph G {";
+    string public constant GRAPH_HEADER = "graph G {";
     string public constant CLUSTER_HEADER = "subgraph cluster";
     string public constant SUBGRAPH_HEADER = "subgraph {";
     string public constant CLOSING_BRACKET = "}";
@@ -100,7 +100,7 @@ contract GenerateTokenTreeScript is SynapseScript {
     function printGraph(string memory config) public {
         // Clear file just in case
         vm.writeFile(graphFN, "");
-        printSubgraphHeader(DIGRAPH_HEADER);
+        printSubgraphHeader(GRAPH_HEADER);
         printNodes();
         printPools(config);
         closeSubgraph();
@@ -204,7 +204,7 @@ contract GenerateTokenTreeScript is SynapseScript {
 
     /// @notice Prints an edge between two nodes in the DOT file.
     function printEdge(uint256 indexFrom, uint256 indexTo) internal {
-        string memory line = _concat(getNodeName(indexFrom), " -> ", getNodeName(indexTo), ";");
+        string memory line = _concat(getNodeName(indexFrom), " -- ", getNodeName(indexTo), ";");
         printGraphLine(line);
     }
 

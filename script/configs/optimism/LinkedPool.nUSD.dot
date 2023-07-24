@@ -1,7 +1,7 @@
-digraph G {
+graph G {
     token0 [label = "0: nUSD";];
     token1 [label = "1: USDC";];
-    token0 -> token1;
+    token0 -- token1;
     subgraph cluster0 {
         label = "DefaultPool 0xf449";
         subgraph {
