@@ -1,0 +1,109 @@
+digraph {
+    sdk [label = "SDK";];
+    router [label = "SynapseRouterV2";shape = rect;];
+    quoter [label = "SwapQuoter";shape = rect;];
+    bridgeAdapters [label = "All Bridge Adapters";shape = rect;];
+    node [shape = none; fontname = "Arial";];
+    getConnectedBridgeTokens [label = <
+        <TABLE>
+        <TR>
+        <TD>Function</TD>
+        <TD>synapseRouterV2.getConnectedBridgeTokens</TD>
+        </TR>
+        <TR>
+        <TD>Parameters</TD>
+        <TD>tokenOut</TD>
+        </TR>
+        <TR>
+        <TD>Return</TD>
+        <TD>{symbol: string, token:address}[] bridgeTokens</TD>
+        </TR>
+        </TABLE>
+        >;];
+    getBridgeTokens [label = <
+        <TABLE>
+        <TR>
+        <TD>Function</TD>
+        <TD>bridgeAdapter.getBridgeTokens</TD>
+        </TR>
+        <TR>
+        <TD>Return</TD>
+        <TD>{symbol: string, token:address}[] bridgeTokens</TD>
+        </TR>
+        </TABLE>
+        >;];
+    findConnectedTokens [label = <
+        <TABLE>
+        <TR>
+        <TD>Function</TD>
+        <TD>swapQuoterV2.findConnectedTokens</TD>
+        </TR>
+        <TR>
+        <TD>Parameters</TD>
+        <TD>tokensIn[], tokenOut</TD>
+        </TR>
+        <TR>
+        <TD>Return</TD>
+        <TD>amountFound: uint256, isConnected: bool[]</TD>
+        </TR>
+        </TABLE>
+        >;];
+    getWhitelistedPool [label = <
+        <TABLE>
+        <TR>
+        <TD>Function</TD>
+        <TD>swapQuoterV2.getWhitelistedPool</TD>
+        </TR>
+        <TR>
+        <TD>Parameters</TD>
+        <TD>bridgeToken</TD>
+        </TR>
+        <TR>
+        <TD>Return</TD>
+        <TD>poolAddress: address</TD>
+        </TR>
+        </TABLE>
+        >;];
+    isConnected [label = <
+        <TABLE>
+        <TR>
+        <TD>Function</TD>
+        <TD>swapQuoterV2.isConnected</TD>
+        </TR>
+        <TR>
+        <TD>Parameters</TD>
+        <TD>pool, tokenIn, tokenOut</TD>
+        </TR>
+        <TR>
+        <TD>Return</TD>
+        <TD>isConnected: bool</TD>
+        </TR>
+        </TABLE>
+        >;];
+    
+    sdk -> router [label = "1. Call Router";];
+    sdk -> getConnectedBridgeTokens [label = "1. Call Router"; style = dashed;];
+    
+    router -> bridgeAdapters [label = "2. Call all Bridge Adapters";];
+    bridgeAdapters -> getBridgeTokens [label = "2. Call all Bridge Adapters"; style = dashed;];
+    getBridgeTokens -> router [label = "2. List of all bridge tokens";];
+    
+    router -> quoter [label = "3. Call Quoter";];
+    router -> findConnectedTokens [label = "3. Call Quoter"; style = dashed;];
+    
+    quoter -> getWhitelistedPool [label = "4. Get every whitelisted pool"; style = dashed;];
+    quoter -> isConnected [label = "4. Check every whitelisted pool"; style = dashed;];
+    quoter -> router [label = "4. List of all connected tokens";];
+    
+    subgraph {
+        rank = same;
+        edge [style = invis;];
+        getConnectedBridgeTokens -> router -> bridgeAdapters;
+    }
+    
+    subgraph {
+        rank = same;
+        edge [style = invis;];
+        findConnectedTokens -> quoter -> getBridgeTokens;
+    }
+}

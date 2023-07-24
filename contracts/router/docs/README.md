@@ -110,6 +110,8 @@ Pools from both categories must implement `IDefaultPool` interface, but their in
 3. `SwapQuoterV2` is called with this list and `tokenOut` to determine which tokens from the list are connected to `tokenOut` by the whitelisted pools.
 4. This is done by checking the whitelisted pool for every token from the list, and checking if the pool supports `tokenOut`.
 
+![Fetching the list of bridge symbols](./quote1.png)
+
 #### 2. Fetching the list of quotes for swaps from `tokenIn` to the bridge tokens (origin chain)
 
 1. SDK calls `synapseRouterV2.getOriginAmountOut()` method on the origin chain, supplying the list of symbols from step 1.
