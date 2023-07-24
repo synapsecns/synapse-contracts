@@ -1,0 +1,111 @@
+digraph {
+    user [label = "User EOA";];
+    router [label = "SynapseRouterV2";shape = rect;];
+    routerAdapter [label = "RouterAdapter";shape = rect;];
+    bridgeAdapter [label = "BridgeAdapter";shape = rect;];
+    bridge [label = "SynapseBridge | SynapseCCTP | ...";shape = rect;];
+    node [shape = none; fontname = "Arial";];
+    routerBridge [label = <
+        <TABLE>
+        <TR>
+        <TD>Function</TD>
+        <TD>synapseRouterV2.bridgeViaSynapse</TD>
+        </TR>
+        <TR>
+        <TD>Parameters</TD>
+        <TD>recipient, chainId, token, amount, tokenSymbol, originQuery, destQuery</TD>
+        </TR>
+        <TR>
+        <TD>Description</TD>
+        <TD>Peforms a swap, then bridges swapped token via a Synapse solution</TD>
+        </TR>
+        </TABLE>
+        >;];
+    adapterSwap [label = <
+        <TABLE>
+        <TR>
+        <TD>Function</TD>
+        <TD>originQuery.routerAdapter.adapterSwap</TD>
+        </TR>
+        <TR>
+        <TD>Parameters</TD>
+        <TD>SynapseRouterV2, token, amount, originQuery.tokenOut, originQuery.rawParams</TD>
+        </TR>
+        <TR>
+        <TD>Output</TD>
+        <TD>return amountOut;</TD>
+        </TR>
+        <TR>
+        <TD>Description</TD>
+        <TD>Performs an arbitrary swap on the origin chain</TD>
+        </TR>
+        </TABLE>
+        >;];
+    getBridgeAdapter [label = <
+        <TABLE>
+        <TR>
+        <TD>Function</TD>
+        <TD>synapseRouterV2.getBridgeAdapter</TD>
+        </TR>
+        <TR>
+        <TD>Parameters</TD>
+        <TD>tokenSymbol</TD>
+        </TR>
+        <TR>
+        <TD>Output</TD>
+        <TD>return bridgeAdapter;</TD>
+        </TR>
+        <TR>
+        <TD>Description</TD>
+        <TD>Fetches the bridge adapter for a given bridge token symbol</TD>
+        </TR>
+        </TABLE>
+        >;];
+    adapterBridge [label = <
+        <TABLE>
+        <TR>
+        <TD>Function</TD>
+        <TD>bridgeAdapter.adapterBridge</TD>
+        </TR>
+        <TR>
+        <TD>Parameters</TD>
+        <TD>recipient, chainId, tokenOut, amountOut, destQuery</TD>
+        </TR>
+        <TR>
+        <TD>Description</TD>
+        <TD>Performs a bridge operation to the destination chain</TD>
+        </TR>
+        </TABLE>
+        >;];
+    
+    user -> router [label = "1. Call Router";];
+    router -> routerBridge [label = "1. Call Router"; style = dashed;];
+    
+    router -> getBridgeAdapter [label = "2. Get Bridge Adapter"; style = dashed;];
+    
+    user -> routerAdapter [label = "3. Pull tokens";];
+    
+    router -> routerAdapter [label = "4. Swap using Adapter";];
+    routerAdapter -> adapterSwap [label = "4. Swap using Adapter"; style = dashed;];
+    
+    routerAdapter -> bridgeAdapter [label = "5. Transfer swapped tokens";];
+    router -> bridgeAdapter [label = "6. Bridge using Adapter";];
+    bridgeAdapter -> adapterBridge [label = "6. Bridge using Adapter"; style = dashed;];
+    
+    bridgeAdapter -> bridge [label = "7. Bridge to destination chain";];
+    
+    routerBridge -> getBridgeAdapter [style = invis;];
+    
+    subgraph {
+        rank = same;
+        router;
+        routerAdapter;
+        adapterSwap;
+    }
+    
+    subgraph {
+        rank = same;
+        bridgeAdapter;
+        adapterBridge;
+    }
+}
