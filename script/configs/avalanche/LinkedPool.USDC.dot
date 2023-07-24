@@ -5,21 +5,25 @@ graph G {
     token3 [label = "3: DAI.e";];
     token4 [label = "4: USDC.e";];
     token5 [label = "5: USDT.e";];
-    token0 -- token1;
-    token0 -- token2;
+    pool0 [label = "DefaultPool 0xa196";shape = rect;style = dashed;];
+    token0 -- pool0;
     subgraph cluster0 {
-        label = "DefaultPool 0xa196";
+        style = dotted;
+        pool0 -- token1;
+        pool0 -- token2;
         subgraph {
             rank = same;
             edge [style = invis;];
             token1 -- token2;
         }
     }
-    token1 -- token3;
-    token1 -- token4;
-    token1 -- token5;
+    pool1 [label = "DefaultPool 0xed2a";shape = rect;style = dashed;];
+    token1 -- pool1;
     subgraph cluster1 {
-        label = "DefaultPool 0xed2a";
+        style = dotted;
+        pool1 -- token3;
+        pool1 -- token4;
+        pool1 -- token5;
         subgraph {
             rank = same;
             edge [style = invis;];

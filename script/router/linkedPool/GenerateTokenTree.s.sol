@@ -151,13 +151,20 @@ contract GenerateTokenTreeScript is SynapseScript {
     function printPool(uint256 poolIndex, PoolParams memory params) internal {
         uint256[] memory addedNodes = poolToAddedNodes[poolIndex];
         require(addedNodes.length != 0, "No nodes added for pool");
-        // Print all the edges from the parent node
-        for (uint256 i = 0; i < addedNodes.length; ++i) {
-            printEdge(params.nodeIndex, addedNodes[i]);
-        }
+        // Example: "pool0 [label = "DefaultPool 0xabcd";shape = rect;style = dashed;];"
+        string memory line = _concat(getPoolName(poolIndex), " [", getPoolLabel(params), "];");
+        printGraphLine(line);
+        // Print edge from the parent node to the pool
+        printEdge(getNodeName(params.nodeIndex), getPoolName(poolIndex));
+        // Print subgraph for the pool: surround with a dotted line
         printSubgraphHeader(_concat(CLUSTER_HEADER, poolIndex.toString(), " {"));
-        printGraphLine(getPoolLabel(params));
+        printGraphLine("style = dotted;");
+        // Print all the edges from to the pool nodes
+        for (uint256 i = 0; i < addedNodes.length; ++i) {
+            printEdge(getPoolName(poolIndex), getNodeName(addedNodes[i]));
+        }
         {
+            // Print inner subgraph for the pool's tokens
             printSubgraphHeader(SUBGRAPH_HEADER);
             // We want the pool's tokens to be on the same height
             // So we draw invisible edges between them specifying equal rank
@@ -177,7 +184,7 @@ contract GenerateTokenTreeScript is SynapseScript {
             return;
         }
         for (uint256 i = 0; i < addedNodes.length - 1; ++i) {
-            printEdge(addedNodes[i], addedNodes[i + 1]);
+            printEdge(getNodeName(addedNodes[i]), getNodeName(addedNodes[i + 1]));
         }
     }
 
@@ -190,11 +197,11 @@ contract GenerateTokenTreeScript is SynapseScript {
 
     /// @notice Returns the label to be used for a pool in the DOT file.
     function getPoolLabel(PoolParams memory params) internal pure returns (string memory label) {
-        // Example: "label = "DefaultPool 0xabcd;"
+        // Example: "label = "DefaultPool 0xabcd;shape = rect;style = dashed;"
         string memory poolName = bytes(params.poolModule).length == 0 ? "DefaultPool" : params.poolModule;
         label = _concat("label = ", QUOTE_SYMBOL, poolName, " ");
         string memory shortenedAddress = uint256(uint160(params.pool) >> 144).toHexString();
-        label = _concat(label, shortenedAddress, QUOTE_SYMBOL, ";");
+        label = _concat(label, shortenedAddress, QUOTE_SYMBOL, ";shape = rect;style = dashed;");
     }
 
     /// @notice Returns the name of a token node in the DOT file.
@@ -202,9 +209,14 @@ contract GenerateTokenTreeScript is SynapseScript {
         return _concat("token", index.toString());
     }
 
+    /// @notice Returns the name of a pool node in the DOT file.
+    function getPoolName(uint256 index) internal pure returns (string memory) {
+        return _concat("pool", index.toString());
+    }
+
     /// @notice Prints an edge between two nodes in the DOT file.
-    function printEdge(uint256 indexFrom, uint256 indexTo) internal {
-        string memory line = _concat(getNodeName(indexFrom), " -- ", getNodeName(indexTo), ";");
+    function printEdge(string memory from, string memory to) internal {
+        string memory line = _concat(from, " -- ", to, ";");
         printGraphLine(line);
     }
 
