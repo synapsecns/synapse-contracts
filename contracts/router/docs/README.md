@@ -120,6 +120,8 @@ Pools from both categories must implement `IDefaultPool` interface, but their in
 4. `SwapQuoterV2` checks both "origin only" and "origin and destination" pools for the best quote.
 5. List of quotes for every token in the list is compiled in `SynapseRouterV2` and returned.
 
+![Fetching the list of origin quotes](./quote2.png)
+
 #### 3. Fetching the list of quotes for swaps from the bridge tokens to `tokenOut` (destination chain)
 
 1. SDK calls `synapseRouterV2.getDestinationAmountOut()` method on the destination chain, supplying the list of symbols from step 1, and the list of quotes (amounts in) from step 2.
