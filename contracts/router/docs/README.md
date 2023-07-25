@@ -126,6 +126,8 @@ Pools from both categories must implement `IDefaultPool` interface, but their in
 
 1. SDK calls `synapseRouterV2.getDestinationAmountOut()` method on the destination chain, supplying the list of symbols from step 1, and the list of quotes (amounts in) from step 2.
 2. For every bridge token symbol, `SynapseRouterV2` fetches the token address from the supported `BridgeAdapter` contracts, as well as the bridge fee for the given `amountIn`.
-3. For every token in the list that has `bridgeFee < amountIn`, `SwapQuoterV2` is called with `bridgeTokenIn` and `tokenOut` to determine the best quote for the swap from `bridgeTokenIn` to `tokenOut`. It is also given instructions that this is a quote for the destination swap. `amountIn - bridgeFee` is used as the initial token amount for the quote.
+3. For every token in the list that has `feeAmount < amountIn`, `SwapQuoterV2` is called with `bridgeTokenIn` and `tokenOut` to determine the best quote for the swap from `bridgeTokenIn` to `tokenOut`. It is also given instructions that this is a quote for the destination swap. `amountIn - feeAmount` is used as the initial token amount for the quote.
 4. `SwapQuoterV2` checks only "origin and destination" pools for the quote using a whitelisted pool for the given bridge token.
 5. List of quotes for every token in the list is compiled in `SynapseRouterV2` and returned.
+
+![Fetching the list of destination quotes](./quote3.png)
