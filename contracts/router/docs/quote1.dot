@@ -3,6 +3,8 @@ digraph {
     router [label = "SynapseRouterV2";shape = rect;];
     quoter [label = "SwapQuoter";shape = rect;];
     bridgeAdapters [label = "All Bridge Adapters";shape = rect;];
+    bridgeTokens [label = "All Bridge Tokens";shape = rect;style = dashed;];
+    connectedTokens [label = "Connected Bridge Tokens";shape = rect;style = dashed;];
     node [shape = none; fontname = "Arial";];
     getConnectedBridgeTokens [label = <
         <TABLE>
@@ -16,7 +18,7 @@ digraph {
         </TR>
         <TR>
         <TD>Return</TD>
-        <TD>{symbol: string, token:address}[] bridgeTokens</TD>
+        <TD>bridgeTokens: {symbol: string, token:address}[]</TD>
         </TR>
         </TABLE>
         >;];
@@ -28,7 +30,7 @@ digraph {
         </TR>
         <TR>
         <TD>Return</TD>
-        <TD>{symbol: string, token:address}[] bridgeTokens</TD>
+        <TD>bridgeTokens: {symbol: string, token:address}[]</TD>
         </TR>
         </TABLE>
         >;];
@@ -81,29 +83,25 @@ digraph {
         </TABLE>
         >;];
     
-    sdk -> router [label = "1. Call Router";];
-    sdk -> getConnectedBridgeTokens [label = "1. Call Router"; style = dashed;];
+    sdk -> router [label = "1a. Call Router";];
+    sdk -> getConnectedBridgeTokens [label = "1a. Call Router"; style = dashed;];
     
-    router -> bridgeAdapters [label = "2. Call all Bridge Adapters";];
-    bridgeAdapters -> getBridgeTokens [label = "2. Call all Bridge Adapters"; style = dashed;];
-    getBridgeTokens -> router [label = "2. List of all bridge tokens";];
+    router -> bridgeAdapters [label = "2a. Call every Bridge Adapter";];
+    bridgeAdapters -> getBridgeTokens [label = "2a. Call every Bridge Adapter"; style = dashed;];
+    getBridgeTokens -> router [label = "2b. Adapter's supported tokens";];
+    router -> bridgeTokens [label = "2c. Compile list of supported tokens";];
     
-    router -> quoter [label = "3. Call Quoter";];
-    router -> findConnectedTokens [label = "3. Call Quoter"; style = dashed;];
+    bridgeTokens -> quoter [label = "3a. Call Quoter";];
+    bridgeTokens -> findConnectedTokens [label = "3a. Call Quoter"; style = dashed;];
     
-    quoter -> getWhitelistedPool [label = "4. Get every whitelisted pool"; style = dashed;];
-    quoter -> isConnected [label = "4. Check every whitelisted pool"; style = dashed;];
-    quoter -> router [label = "4. List of all connected tokens";];
-    
-    subgraph {
-        rank = same;
-        edge [style = invis;];
-        getConnectedBridgeTokens -> router -> bridgeAdapters;
-    }
+    quoter -> getWhitelistedPool [label = "4a. Get every whitelisted pool"; style = dashed;];
+    quoter -> isConnected [label = "4a. Check every whitelisted pool"; style = dashed;];
+    bridgeTokens -> connectedTokens [label = "4b. Filter only connected tokens";];
+    connectedTokens -> sdk [xlabel = "4c. List of connected tokens";];
     
     subgraph {
         rank = same;
         edge [style = invis;];
-        findConnectedTokens -> quoter -> getBridgeTokens;
+        connectedTokens -> getConnectedBridgeTokens -> router;
     }
 }
