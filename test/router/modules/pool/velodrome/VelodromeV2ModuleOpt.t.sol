@@ -114,6 +114,35 @@ contract VelodromeV2ModuleOptTestFork is Test {
         });
     }
 
+    function testGetPoolQuoteRevertsWhenTokensNotInPool() public {
+        vm.expectRevert("tokens not in pool");
+        velodromeV2Module.getPoolQuote({
+            pool: VEL_V2_OPUSDC_POOL,
+            tokenFrom: IndexedToken({index: 0, token: address(0xA)}),
+            tokenTo: IndexedToken({index: 1, token: USDC}),
+            amountIn: 100 * 10**18,
+            probePaused: false
+        });
+
+        vm.expectRevert("tokens not in pool");
+        velodromeV2Module.getPoolQuote({
+            pool: VEL_V2_OPUSDC_POOL,
+            tokenFrom: IndexedToken({index: 0, token: OP}),
+            tokenTo: IndexedToken({index: 1, token: address(0xB)}),
+            amountIn: 100 * 10**18,
+            probePaused: false
+        });
+
+        vm.expectRevert("tokens not in pool");
+        velodromeV2Module.getPoolQuote({
+            pool: VEL_V2_OPUSDC_POOL,
+            tokenFrom: IndexedToken({index: 0, token: address(0xA)}),
+            tokenTo: IndexedToken({index: 1, token: address(0xB)}),
+            amountIn: 100 * 10**18,
+            probePaused: false
+        });
+    }
+
     function prepareUser(address token, uint256 amount) public {
         deal(token, user, amount);
         vm.prank(user);
