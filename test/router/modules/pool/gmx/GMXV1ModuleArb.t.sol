@@ -60,7 +60,8 @@ contract GMXV1ModuleArbTestFork is Test {
         string memory arbRPC = vm.envString("ARBITRUM_API");
         vm.createSelectFork(arbRPC, ARB_BLOCK_NUMBER);
 
-        gmxV1Module = new GMXV1Module(GMX_V1_ROUTER, GMX_V1_READER);
+        address[3] memory tokens = [WBTC, WETH, USDC_E];
+        gmxV1Module = new GMXV1Module(GMX_V1_ROUTER, GMX_V1_READER, tokens);
         linkedPool = new LinkedPool(WBTC);
         user = makeAddr("User");
 
@@ -83,18 +84,11 @@ contract GMXV1ModuleArbTestFork is Test {
 
     function testGetPoolTokens() public {
         address[] memory tokens = gmxV1Module.getPoolTokens(GMX_V1_VAULT);
-        assertEq(tokens.length, 10);
+        assertEq(tokens.length, 3);
 
         assertEq(tokens[0], WBTC);
         assertEq(tokens[1], WETH);
         assertEq(tokens[2], USDC_E);
-        assertEq(tokens[3], LINK);
-        assertEq(tokens[4], UNI);
-        assertEq(tokens[5], USDT);
-        assertEq(tokens[6], MIM);
-        assertEq(tokens[7], FRAX);
-        assertEq(tokens[8], DAI);
-        assertEq(tokens[9], USDC);
     }
 
     // ══════════════════════════════════════════════ TESTS: ADD POOL ══════════════════════════════════════════════════
@@ -109,13 +103,6 @@ contract GMXV1ModuleArbTestFork is Test {
         assertEq(linkedPool.getToken(0), WBTC);
         assertEq(linkedPool.getToken(1), WETH);
         assertEq(linkedPool.getToken(2), USDC_E);
-        assertEq(linkedPool.getToken(3), LINK);
-        assertEq(linkedPool.getToken(4), UNI);
-        assertEq(linkedPool.getToken(5), USDT);
-        assertEq(linkedPool.getToken(6), MIM);
-        assertEq(linkedPool.getToken(7), FRAX);
-        assertEq(linkedPool.getToken(8), DAI);
-        assertEq(linkedPool.getToken(9), USDC);
     }
 
     // ════════════════════════════════════════════════ TESTS: SWAP ════════════════════════════════════════════════════

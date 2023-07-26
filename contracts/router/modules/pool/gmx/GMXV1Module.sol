@@ -20,10 +20,33 @@ contract GMXV1Module is OnlyDelegateCall, IPoolModule {
     IGMXV1Vault public immutable vault;
     IGMXV1Reader public immutable reader;
 
-    constructor(address _router, address _reader) {
+    // filter whitelisted gmx tokens
+    address public immutable token0;
+    address public immutable token1;
+    address public immutable token2;
+
+    modifier supportedToken(address token) {
+        require(_isSupported(token), "token not supported");
+        _;
+    }
+
+    constructor(
+        address _router,
+        address _reader,
+        address[3] memory tokens
+    ) {
         router = IGMXV1Router(_router);
         vault = IGMXV1Vault(router.vault());
         reader = IGMXV1Reader(_reader);
+
+        token0 = tokens[0];
+        token1 = tokens[1];
+        token2 = tokens[2];
+    }
+
+    /// @notice whether token supported by this pool module
+    function _isSupported(address token) internal view returns (bool) {
+        return (token == token0 || token == token1 || token == token2);
     }
 
     /// @inheritdoc IPoolModule
@@ -32,7 +55,7 @@ contract GMXV1Module is OnlyDelegateCall, IPoolModule {
         IndexedToken memory tokenFrom,
         IndexedToken memory tokenTo,
         uint256 amountIn
-    ) external returns (uint256 amountOut) {
+    ) external supportedToken(tokenFrom.token) supportedToken(tokenTo.token) returns (uint256 amountOut) {
         assertDelegateCall();
         require(pool == address(vault), "pool != vault");
         address tokenIn = tokenFrom.token;
@@ -56,7 +79,7 @@ contract GMXV1Module is OnlyDelegateCall, IPoolModule {
         IndexedToken memory tokenTo,
         uint256 amountIn,
         bool probePaused
-    ) external view returns (uint256 amountOut) {
+    ) external view supportedToken(tokenFrom.token) supportedToken(tokenTo.token) returns (uint256 amountOut) {
         require(pool == address(vault), "pool != vault");
         address tokenIn = tokenFrom.token;
         address tokenOut = tokenTo.token;
@@ -68,9 +91,24 @@ contract GMXV1Module is OnlyDelegateCall, IPoolModule {
         require(pool == address(vault), "pool != vault");
         uint256 numCoins = vault.whitelistedTokenCount();
 
-        tokens = new address[](numCoins);
+        address[] memory tokensFiltered = new address[](numCoins);
+        uint256 count;
         for (uint256 i = 0; i < numCoins; i++) {
-            tokens[i] = vault.allWhitelistedTokens(i);
+            address token = vault.allWhitelistedTokens(i);
+            if (_isSupported(token)) {
+                tokensFiltered[i] = token;
+                count++;
+            }
+        }
+
+        tokens = new address[](count);
+        uint256 idx;
+        for (uint256 i = 0; i < numCoins; i++) {
+            address token = tokensFiltered[i];
+            if (token != address(0)) {
+                tokens[idx] = token;
+                idx++;
+            }
         }
     }
 }

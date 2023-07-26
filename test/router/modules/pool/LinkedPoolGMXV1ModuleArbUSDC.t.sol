@@ -51,7 +51,8 @@ contract LinkedPoolGMXV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
     constructor() LinkedPoolIntegrationTest(ARB_ENV_RPC, ARB_BLOCK_NUMBER) {}
 
     function afterBlockchainForked() public override {
-        gmxV1Module = new GMXV1Module(GMX_V1_ROUTER, GMX_V1_READER);
+        address[3] memory tokens = [WBTC, WETH, USDC_E];
+        gmxV1Module = new GMXV1Module(GMX_V1_ROUTER, GMX_V1_READER, tokens);
     }
 
     function addExpectedTokens() public override {
@@ -61,25 +62,11 @@ contract LinkedPoolGMXV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
         // 2: USDT
         // 3: WBTC
         // 4: WETH
-        // 5: LINK
-        // 6: UNI
-        // 7: USDT
-        // 8: MIM
-        // 9: FRAX
-        // 10: DAI
-        // 11: USDC
         addExpectedToken(NUSD, "nUSD");
         addExpectedToken(USDC_E, "USDC.e");
         addExpectedToken(USDT, "USDT");
         addExpectedToken(WBTC, "WBTC");
         addExpectedToken(WETH, "WETH");
-        addExpectedToken(LINK, "LINK");
-        addExpectedToken(UNI, "UNI");
-        addExpectedToken(USDT, "USDT");
-        addExpectedToken(MIM, "MIM");
-        addExpectedToken(FRAX, "FRAX");
-        addExpectedToken(DAI, "DAI");
-        addExpectedToken(USDC, "USDC");
     }
 
     function addPools() public override {
