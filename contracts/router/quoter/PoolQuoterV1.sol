@@ -189,6 +189,77 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         return false;
     }
 
+    /// @dev Gets a quote for `tokenIn -> tokenOut` via the given Default Pool, given the `actionMask` of
+    /// available actions for the token.
+    /// If the action is possible, the `query` will be updated, should the output amount be better than
+    /// the current best quote.
+    /// Note: only checks pool-related actions: Swap/AddLiquidity/RemoveLiquidity.
+    /// Note: this is not supposed to be used with LinkedPool contracts, as a single token can appear
+    /// multiple times in the LinkedPool's token tree.
+    function _checkDefaultPoolQuote(
+        uint256 actionMask,
+        address pool,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        SwapQuery memory query
+    ) internal view {
+        // Check if tokenIn and tokenOut are pool tokens
+        (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn, tokenOut);
+        unchecked {
+            if (indexIn > 0 && indexOut > 0) {
+                // tokenIn, tokenOut are pool tokens: Action.Swap is required
+                // unchecked: indexIn > 0 and indexOut > 0, so indexIn - 1 and indexOut - 1 never underflow
+                _checkSwapQuote(actionMask, pool, indexIn - 1, indexOut - 1, amountIn, query);
+                return;
+            }
+            address lpToken = _lpToken(pool);
+            if (indexIn > 0 && tokenOut == lpToken) {
+                // tokenIn is pool token, tokenOut is LP token: Action.AddLiquidity is required
+                // unchecked: indexIn > 0, so indexIn - 1 never underflows
+                _checkAddLiquidityQuote(actionMask, pool, indexIn - 1, amountIn, query);
+            } else if (tokenIn == lpToken && indexOut > 0) {
+                // tokenIn is LP token, tokenOut is pool token: Action.RemoveLiquidity is required
+                // unchecked: indexOut > 0, so indexOut - 1 never underflows
+                _checkRemoveLiquidityQuote(actionMask, pool, indexOut - 1, amountIn, query);
+            }
+        }
+    }
+
+    /// @dev Gets a quote for `tokenIn -> tokenOut` via the given Linked Pool, given the `actionMask` of
+    /// available actions for the token.
+    /// If the action is possible, the `query` will be updated, should the output amount be better than
+    /// the current best quote.
+    /// Note: only checks pool-related actions: Swap.
+    function _checkLinkedPoolQuote(
+        uint256 actionMask,
+        address pool,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        SwapQuery memory query
+    ) internal view {
+        // Only Swap action is supported for LinkedPools
+        if (Action.Swap.isIncluded(actionMask)) {
+            // Find the best quote that LinkedPool can offer
+            try ILinkedPool(pool).findBestPath(tokenIn, tokenOut, amountIn) returns (
+                uint8 tokenIndexFrom,
+                uint8 tokenIndexTo,
+                uint256 amountOut
+            ) {
+                // Update the current quote if the new quote is better
+                if (amountOut > query.minAmountOut) {
+                    query.minAmountOut = amountOut;
+                    // Encode params for swapping via the current pool: specify indexFrom and indexTo
+                    query.rawParams = abi.encode(DefaultParams(Action.Swap, pool, tokenIndexFrom, tokenIndexTo));
+                }
+            } catch {
+                // solhint-disable-previous-line no-empty-blocks
+                // Do nothing, if the quote fails
+            }
+        }
+    }
+
     // ════════════════════════════════════════ POOL INDEX -> INDEX QUOTES ═════════════════════════════════════════════
 
     /// @dev Checks a swap quote for the given pool,

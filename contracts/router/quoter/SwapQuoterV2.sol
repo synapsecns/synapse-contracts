@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Action, PoolQuoterV1} from "./PoolQuoterV1.sol";
+import {PoolQuoterV1} from "./PoolQuoterV1.sol";
 import {ISwapQuoterV1, LimitedToken, SwapQuery, Pool} from "../interfaces/ISwapQuoterV1.sol";
+import {Action, ActionLib} from "../libs/Structs.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableSet.sol";
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
@@ -42,6 +43,10 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         address pool;
     }
 
+    /// @notice Address of the SynapseRouter contract, which is used as "Router Adapter" for doing
+    /// swaps through Default Pools (or handling ETH).
+    address public immutable synapseRouter;
+
     /// @dev Set of Default Pools that could be used for swaps on origin chain only
     EnumerableSet.AddressSet internal _defaultPools;
     /// @dev Set of Linked Pools that could be used for swaps on origin chain only
@@ -53,8 +58,13 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     /// @dev Set of bridge tokens with whitelisted liquidity pools (keys for `_bridgePools` mapping)
     EnumerableSet.AddressSet internal _bridgeTokens;
 
-    // solhint-disable-next-line no-empty-blocks
-    constructor(address defaultPoolCalc, address weth) PoolQuoterV1(defaultPoolCalc, weth) {}
+    constructor(
+        address synapseRouter_,
+        address defaultPoolCalc,
+        address weth
+    ) PoolQuoterV1(defaultPoolCalc, weth) {
+        synapseRouter = synapseRouter_;
+    }
 
     // ══════════════════════════════════════════════ POOL MANAGEMENT ══════════════════════════════════════════════════
 
@@ -103,7 +113,20 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         LimitedToken memory tokenIn,
         address tokenOut,
         uint256 amountIn
-    ) external view returns (SwapQuery memory query) {}
+    ) external view returns (SwapQuery memory query) {
+        query = _getAmountOut(tokenIn.actionMask, tokenIn.token, tokenOut, amountIn);
+        // tokenOut filed should always be populated, even if a path wasn't found
+        query.tokenOut = tokenOut;
+        // Fill the remaining fields if a path was found
+        if (query.minAmountOut > 0) {
+            // SynapseRouter should be used as "Router Adapter" for doing a swap through Default pools (or handling ETH),
+            // as it inherits from DefaultAdapter.
+            if (query.rawParams.length > 0) query.routerAdapter = synapseRouter;
+            // Set default deadline to infinity. Not using the value of 0,
+            // which would lead to every swap to revert by default.
+            query.deadline = type(uint256).max;
+        }
+    }
 
     // ══════════════════════════════════════════════ POOL GETTERS V1 ══════════════════════════════════════════════════
 
@@ -212,6 +235,75 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         } else {
             // Check if Linked Pool could fulfill tokenIn -> tokenOut request.
             return _isConnectedViaLinkedPool(actionMask, bridgePool.pool, tokenIn, tokenOut);
+        }
+    }
+
+    /// @dev Returns the SwapQuery struct that could be used to fulfill `tokenIn -> tokenOut` request.
+    /// - Will check all liquidity pools, if `actionMask` is set to the full set of actions.
+    /// - Will only check the whitelisted pool for `tokenIn` otherwise.
+    /// > Only populates the `minAmountOut` and `rawParams` fields, unless no trade path is found between the tokens.
+    /// > Other fields are supposed to be populated in the caller function.
+    function _getAmountOut(
+        uint256 actionMask,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn
+    ) internal view returns (SwapQuery memory query) {
+        // If token addresses match, no action is required whatsoever.
+        if (tokenIn == tokenOut) {
+            query.minAmountOut = amountIn;
+            // query.rawParams is "", indicating that no further action is required
+            return query;
+        }
+        // Check if ETH <> WETH (Action.HandleEth) could fulfill tokenIn -> tokenOut request.
+        _checkHandleETHQuote(actionMask, tokenIn, tokenOut, amountIn, query);
+        // Check if this is a request for an origin swap.
+        // These are given with the tokenIn.actionMask set to the full set of actions.
+        if (actionMask != ActionLib.allActions()) {
+            // This is a request for a destination swap. Only whitelisted pool for `tokenIn` is considered.
+            TypedPool memory bridgePool = _bridgePools[tokenIn];
+            _checkPoolQuote(actionMask, bridgePool, tokenIn, tokenOut, amountIn, query);
+            return query;
+        }
+        unchecked {
+            // If this is a request for an origin swap, check all available pools
+            uint256 numPools = _defaultPools.length();
+            // unchecked: ++i never overflows uint256
+            for (uint256 i = 0; i < numPools; ++i) {
+                _checkDefaultPoolQuote(actionMask, _defaultPools.at(i), tokenIn, tokenOut, amountIn, query);
+            }
+            numPools = _linkedPools.length();
+            // unchecked: ++i never overflows uint256
+            for (uint256 i = 0; i < numPools; ++i) {
+                _checkLinkedPoolQuote(actionMask, _linkedPools.at(i), tokenIn, tokenOut, amountIn, query);
+            }
+            numPools = _bridgeTokens.length();
+            // unchecked: ++i never overflows uint256
+            for (uint256 i = 0; i < numPools; ++i) {
+                TypedPool memory bridgePool = _bridgePools[_bridgeTokens.at(i)];
+                _checkPoolQuote(actionMask, bridgePool, tokenIn, tokenOut, amountIn, query);
+            }
+        }
+    }
+
+    /// @dev Gets a quote for `tokenIn -> tokenOut` via the given Bridge Pool (either Default or Linked),
+    /// given the `actionMask` of available actions for the token.
+    /// If the action is possible, the `query` will be updated, should the output amount be better than
+    /// the current best quote.
+    function _checkPoolQuote(
+        uint256 actionMask,
+        TypedPool memory bridgePool,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        SwapQuery memory query
+    ) internal view {
+        // Don't do anything, if no whitelisted pool exists.
+        if (bridgePool.pool == address(0)) return;
+        if (bridgePool.poolType == PoolType.Default) {
+            _checkDefaultPoolQuote(actionMask, bridgePool.pool, tokenIn, tokenOut, amountIn, query);
+        } else {
+            _checkLinkedPoolQuote(actionMask, bridgePool.pool, tokenIn, tokenOut, amountIn, query);
         }
     }
 }
