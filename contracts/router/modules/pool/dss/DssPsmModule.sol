@@ -33,6 +33,10 @@ contract DssPsmModule is OnlyDelegateCall, IPoolModule {
         if (tokenFrom.token == dai) {
             IERC20(tokenFrom.token).safeApprove(pool, amountIn);
             IDssPsm(pool).buyGem(address(this), amountOut);
+
+            // clear allowance in case of dust
+            if (IERC20(tokenFrom.token).allowance(address(this), pool) > 0)
+                IERC20(tokenFrom.token).safeApprove(pool, 0);
         } else {
             address gemJoin = IDssPsm(pool).gemJoin();
             IERC20(tokenFrom.token).safeApprove(gemJoin, amountIn);

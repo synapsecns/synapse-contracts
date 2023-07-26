@@ -5,10 +5,13 @@ import {LinkedPool} from "../../../../contracts/router/LinkedPool.sol";
 
 import {console, Test} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts-4.5.0/token/ERC20/extensions/IERC20Metadata.sol";
 
 // solhint-disable no-console
 abstract contract LinkedPoolIntegrationTest is Test {
+    using SafeERC20 for IERC20;
+
     string private _envRPC;
     uint256 private _forkBlockNumber;
 
@@ -155,7 +158,8 @@ abstract contract LinkedPoolIntegrationTest is Test {
         address spender,
         uint256 amount
     ) public {
-        vm.prank(user);
-        IERC20(token).approve(spender, amount);
+        vm.startPrank(user);
+        IERC20(token).safeApprove(spender, amount);
+        vm.stopPrank();
     }
 }
