@@ -21,22 +21,27 @@ interface ISwapQuoterV1 {
 
     // ══════════════════════════════════════════════ GENERAL QUOTES ═══════════════════════════════════════════════════
 
-    /// @notice Checks if a swap is possible between every token in the given list
-    /// and tokenOut, using any of the supported pools.
-    /// @param tokensIn List of structs with following information:
-    ///                 - actionMask    Bitmask representing what actions are available for doing tokenIn -> tokenOut
-    ///                 - token         Token address to swap from
-    /// @param tokenOut Token address to swap to
+    /// @notice Checks if a swap is possible between every bridge token in the given list and tokenOut.
+    /// Only the bridge token's whitelisted pool is considered for every `tokenIn -> tokenOut` swap.
+    /// @param bridgeTokensIn   List of structs with following information:
+    ///                         - actionMask    Bitmask of available actions for doing tokenIn -> tokenOut
+    ///                         - token         Bridge token address to swap from
+    /// @param tokenOut         Token address to swap to
     /// @return amountFound     Amount of tokens from the list that are swappable to tokenOut
     /// @return isConnected     List of bool values, specifying whether a token from the list is swappable to tokenOut
-    function findConnectedTokens(LimitedToken[] memory tokensIn, address tokenOut)
+    function findConnectedTokens(LimitedToken[] memory bridgeTokensIn, address tokenOut)
         external
         view
         returns (uint256 amountFound, bool[] memory isConnected);
 
-    /// @notice Finds the best pool for a single tokenIn -> tokenOut swap from the list of supported pools.
-    /// Returns the `SwapQuery` struct, that can be used on SynapseRouter.
-    /// minAmountOut and deadline fields will need to be adjusted based on the swap settings.
+    /// @notice Finds the quote and the swap parameters for a tokenIn -> tokenOut swap from the list of supported pools.
+    /// - If this is a request for the swap to be performed immediately (or the "origin swap" in the bridge workflow),
+    /// `tokenIn.actionMask` needs to be set to bitmask of all possible actions (ActionLib.allActions()).
+    /// - If this is a request for the swap to be performed as the "destination swap" in the bridge workflow,
+    /// `tokenIn.actionMask` needs to be set to bitmask of possible actions for `tokenIn.token` as a bridge token,
+    /// e.g. Action.Swap for minted tokens, or Action.RemoveLiquidity | Action.HandleEth for withdrawn tokens.
+    /// > Returns the `SwapQuery` struct, that can be used on SynapseRouter.
+    /// > minAmountOut and deadline fields will need to be adjusted based on the swap settings.
     /// @dev If tokenIn or tokenOut is ETH_ADDRESS, only the pools having WETH as a pool token will be considered.
     /// Three potential outcomes are available:
     /// 1. `tokenIn` and `tokenOut` represent the same token address (identical tokens).
@@ -44,17 +49,17 @@ interface ISwapQuoterV1 {
     /// 3. `tokenIn` and `tokenOut` represent different addresses. Trade path from `tokenIn` to `tokenOut` is found.
     /// The exact composition of the returned struct for every case is documented in the return parameter documentation.
     /// @param tokenIn  Struct with following information:
-    ///                 - actionMask    Bitmask representing what actions are available for doing tokenIn -> tokenOut
+    ///                 - actionMask    Bitmask of available actions for doing tokenIn -> tokenOut
     ///                 - token         Token address to swap from
     /// @param tokenOut Token address to swap to
     /// @param amountIn Amount of tokens to swap from
     /// @return query   Struct representing trade path between tokenIn and tokenOut:
     ///                 - swapAdapter: adapter address that would handle the swap. Address(0) if no path is found,
-    ///                 or tokens are identical.
+    ///                 or tokens are identical. Address of SynapseRouter otherwise.
     ///                 - tokenOut: always equals to the provided `tokenOut`, even if no path if found.
     ///                 - minAmountOut: amount of `tokenOut`, if swap was completed now. 0, if no path is found.
     ///                 - deadline: 2**256-1 if path was found, or tokens are identical. 0, if no path is found.
-    ///                 - rawParams: ABI-encoded SynapseParams struct indicating the swap parameters. Empty string,
+    ///                 - rawParams: ABI-encoded DefaultParams struct indicating the swap parameters. Empty string,
     ///                 if no path is found, or tokens are identical.
     function getAmountOut(
         LimitedToken memory tokenIn,

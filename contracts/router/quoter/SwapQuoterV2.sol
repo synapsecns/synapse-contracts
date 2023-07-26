@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {PoolQuoterV1} from "./PoolQuoterV1.sol";
+import {Action, PoolQuoterV1} from "./PoolQuoterV1.sol";
 import {ISwapQuoterV1, LimitedToken, SwapQuery, Pool} from "../interfaces/ISwapQuoterV1.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableSet.sol";
@@ -79,11 +79,24 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     // ═════════════════════════════════════════════ GENERAL QUOTES V1 ═════════════════════════════════════════════════
 
     /// @inheritdoc ISwapQuoterV1
-    function findConnectedTokens(LimitedToken[] memory tokensIn, address tokenOut)
+    function findConnectedTokens(LimitedToken[] memory bridgeTokensIn, address tokenOut)
         external
         view
         returns (uint256 amountFound, bool[] memory isConnected)
-    {}
+    {
+        uint256 length = bridgeTokensIn.length;
+        isConnected = new bool[](length);
+        unchecked {
+            // unchecked: ++i never overflows uint256
+            for (uint256 i = 0; i < length; ++i) {
+                if (_isConnected(bridgeTokensIn[i].actionMask, bridgeTokensIn[i].token, tokenOut)) {
+                    isConnected[i] = true;
+                    // unchecked: ++amountFound never overflows uint256
+                    ++amountFound;
+                }
+            }
+        }
+    }
 
     /// @inheritdoc ISwapQuoterV1
     function getAmountOut(
@@ -173,5 +186,32 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         // Populate LP token field only for default pools
         if (poolType == PoolType.Default) poolData.lpToken = _lpToken(pool);
         poolData.tokens = _getPoolTokens(pool);
+    }
+
+    /// @dev Checks whether `tokenIn -> tokenOut` is possible given the `actionMask` of available actions for `tokenIn`.
+    /// Will only consider the whitelisted pool for `tokenIn`
+    function _isConnected(
+        uint256 actionMask,
+        address tokenIn,
+        address tokenOut
+    ) internal view returns (bool) {
+        // If token addresses match, no action is required whatsoever.
+        if (tokenIn == tokenOut) {
+            return true;
+        }
+        // Check if ETH <> WETH (Action.HandleEth) could fulfill tokenIn -> tokenOut request.
+        if (Action.HandleEth.isIncluded(actionMask) && _isEthAndWeth(tokenIn, tokenOut)) {
+            return true;
+        }
+        TypedPool memory bridgePool = _bridgePools[tokenIn];
+        // Do nothing, if tokenIn doesn't have a whitelisted pool
+        if (bridgePool.pool == address(0)) return false;
+        if (bridgePool.poolType == PoolType.Default) {
+            // Check if Default Pool could fulfill tokenIn -> tokenOut request.
+            return _isConnectedViaDefaultPool(actionMask, bridgePool.pool, tokenIn, tokenOut);
+        } else {
+            // Check if Linked Pool could fulfill tokenIn -> tokenOut request.
+            return _isConnectedViaLinkedPool(actionMask, bridgePool.pool, tokenIn, tokenOut);
+        }
     }
 }

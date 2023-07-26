@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 import {IDefaultPoolCalc} from "../interfaces/IDefaultPoolCalc.sol";
 import {IDefaultExtendedPool} from "../interfaces/IDefaultExtendedPool.sol";
+import {ILinkedPool} from "../interfaces/ILinkedPool.sol";
 import {ISwapQuoterV1, PoolToken, SwapQuery} from "../interfaces/ISwapQuoterV1.sol";
 import {Action, DefaultParams} from "../libs/Structs.sol";
 import {UniversalTokenLib} from "../libs/UniversalToken.sol";
@@ -116,7 +117,79 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         }
     }
 
-    // ════════════════════════════════════════════ POOL QUOTE CHECKERS ════════════════════════════════════════════════
+    /// @dev Returns pool indexes for the two given tokens plus 1.
+    /// - The default value of 0 means a token is not supported by the pool.
+    /// - If one of the pool tokens is WETH, ETH_ADDRESS is also considered as a pool token.
+    /// Note: this is not supposed to be used with LinkedPool contracts, as a single token can appear
+    /// multiple times in the LinkedPool's token tree.
+    function _getTokenIndexes(
+        address pool,
+        address tokenIn,
+        address tokenOut
+    ) internal view returns (uint8 indexIn, uint8 indexOut) {
+        uint256 numTokens = _numTokens(pool);
+        unchecked {
+            // unchecked: numTokens <= 255 => ++t never overflows uint8
+            for (uint8 t = 0; t < numTokens; ++t) {
+                address poolToken = IDefaultExtendedPool(pool).getToken(t);
+                if (_poolToken(tokenIn) == poolToken) {
+                    // unchecked: (t + 1) never overflows uint8 (see above)
+                    indexIn = t + 1;
+                }
+                if (_poolToken(tokenOut) == poolToken) {
+                    // unchecked: (t + 1) never overflows uint8 (see above)
+                    indexOut = t + 1;
+                }
+            }
+        }
+    }
+
+    // ════════════════════════════════════════ POOL TOKEN -> TOKEN QUOTES ═════════════════════════════════════════════
+
+    /// @dev Checks whether `tokenIn -> tokenOut` is possible via the given Default Pool, given the
+    /// `actionMask` of available actions for the token.
+    /// Note: only checks DefaultPool-related actions: Swap/AddLiquidity/RemoveLiquidity.
+    function _isConnectedViaDefaultPool(
+        uint256 actionMask,
+        address pool,
+        address tokenIn,
+        address tokenOut
+    ) internal view returns (bool) {
+        (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn, tokenOut);
+        // Check if Swap (tokenIn -> tokenOut) could fulfill tokenIn -> tokenOut request.
+        if (Action.Swap.isIncluded(actionMask) && indexIn > 0 && indexOut > 0) {
+            return true;
+        }
+        address lpToken = _lpToken(pool);
+        // Check if AddLiquidity (tokenIn -> lpToken) could fulfill tokenIn -> tokenOut request.
+        if (Action.AddLiquidity.isIncluded(actionMask) && indexIn > 0 && tokenOut == lpToken) {
+            return true;
+        }
+        // Check if RemoveLiquidity (lpToken -> tokenOut) could fulfill tokenIn -> tokenOut request.
+        if (Action.RemoveLiquidity.isIncluded(actionMask) && tokenIn == lpToken && indexOut > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    /// @dev Checks whether `tokenIn -> tokenOut` is possible via the given Linked Pool, given the
+    /// `actionMask` of available actions for the token.
+    /// Note: only checks LinkedPool-related actions: Swap.
+    function _isConnectedViaLinkedPool(
+        uint256 actionMask,
+        address pool,
+        address tokenIn,
+        address tokenOut
+    ) internal view returns (bool) {
+        // Check if Swap (tokenIn -> tokenOut) could fulfill tokenIn -> tokenOut request.
+        if (Action.Swap.isIncluded(actionMask)) {
+            // Check if tokenIn and tokenOut are connected via the LinkedPool.
+            return ILinkedPool(pool).areConnectedTokens(tokenIn, tokenOut);
+        }
+        return false;
+    }
+
+    // ════════════════════════════════════════ POOL INDEX -> INDEX QUOTES ═════════════════════════════════════════════
 
     /// @dev Checks a swap quote for the given pool, updates `query` if output amount is better.
     /// - tokenIn -> tokenOut swap will be considered.
@@ -212,13 +285,25 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
     ) internal view {
         // Don't do anything if we haven't specified HandleETH as possible action
         if (!Action.HandleEth.isIncluded(actionMask)) return;
-        if (
-            (tokenIn == UniversalTokenLib.ETH_ADDRESS && tokenOut == _weth) ||
-            (tokenIn == _weth && tokenOut == UniversalTokenLib.ETH_ADDRESS)
-        ) {
+        if (_isEthAndWeth(tokenIn, tokenOut)) {
             query.minAmountOut = amountIn;
             // Encode params for handling ETH: no pool is present, indexFrom and indexTo are 0xFF
             query.rawParams = abi.encode(DefaultParams(Action.HandleEth, address(0), type(uint8).max, type(uint8).max));
         }
+    }
+
+    // ═════════════════════════════════════════ INTERNAL UTILS: ETH, WETH ═════════════════════════════════════════════
+
+    /// @dev Checks that (tokenA, tokenB) is either (ETH, WETH) or (WETH, ETH).
+    function _isEthAndWeth(address tokenA, address tokenB) internal view returns (bool) {
+        return
+            (tokenA == UniversalTokenLib.ETH_ADDRESS && tokenB == _weth) ||
+            (tokenA == _weth && tokenB == UniversalTokenLib.ETH_ADDRESS);
+    }
+
+    /// @dev Returns token address used in the pool for the given token.
+    /// This is either the token itself, or WETH if the token is ETH.
+    function _poolToken(address token) internal view returns (address) {
+        return token == UniversalTokenLib.ETH_ADDRESS ? _weth : token;
     }
 }
