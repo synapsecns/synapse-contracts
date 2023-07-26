@@ -12,6 +12,14 @@ contract UniversalTokenLibHarness {
         UniversalTokenLib.universalTransfer(token, to, value);
     }
 
+    function universalApproveInfinity(
+        address token,
+        address spender,
+        uint256 amountToSpend
+    ) public {
+        UniversalTokenLib.universalApproveInfinity(token, spender, amountToSpend);
+    }
+
     function ethAddress() public pure returns (address) {
         return UniversalTokenLib.ETH_ADDRESS;
     }
