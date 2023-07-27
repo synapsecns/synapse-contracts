@@ -429,7 +429,7 @@ contract LinkedPoolTest is Test {
         }
     }
 
-    function test_getTokenNodes() public {
+    function test_getTokenIndexes() public {
         duplicatedPoolSetup();
         checkTokenNodes(address(bridgeToken));
         checkTokenNodes(address(token0));
@@ -438,7 +438,7 @@ contract LinkedPoolTest is Test {
         checkTokenNodes(address(token3));
     }
 
-    function test_getTokenNodes_returnsEmpty_unknownToken(address token) public {
+    function test_getTokenIndexes_returnsEmpty_unknownToken(address token) public {
         vm.assume(
             token != address(bridgeToken) &&
                 token != address(token0) &&
@@ -447,7 +447,7 @@ contract LinkedPoolTest is Test {
                 token != address(token3)
         );
         duplicatedPoolSetup();
-        assertEq(swap.getTokenNodes(token), new uint256[](0));
+        assertEq(swap.getTokenIndexes(token), new uint256[](0));
     }
 
     function checkTokenNodes(address token) public {
@@ -463,7 +463,7 @@ contract LinkedPoolTest is Test {
                 tokenNodes[nodesFound++] = i;
             }
         }
-        assertEq(swap.getTokenNodes(token), tokenNodes);
+        assertEq(swap.getTokenIndexes(token), tokenNodes);
     }
 
     function test_getConnectedTokens_endWithRootNode() public {

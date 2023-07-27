@@ -86,6 +86,16 @@ interface ILinkedPool {
     /// Note: pool that is connecting the node to its parent is not considered attached.
     function getAttachedPools(uint8 index) external view returns (address[] memory pools);
 
-    /// @notice Returns all nodes that represent the given token in the internal tree.
-    function getTokenNodes(address token) external view returns (uint256[] memory nodes);
+    /// @notice Returns the list of indexes that represent a given token in the tree.
+    /// @dev Will return empty array for tokens that are not added to the tree.
+    function getTokenIndexes(address token) external view returns (uint256[] memory indexes);
+
+    /// @notice Returns the pool module logic address, that is used to get swap quotes, token indexes and perform swaps.
+    /// @dev Will return address(0) for pools that are not added to the tree.
+    /// Will return address(this) for pools that conform to IDefaultPool interface.
+    function getPoolModule(address pool) external view returns (address poolModule);
+
+    /// @notice Returns the index of a parent node for the given node, as well as the pool that connects the two nodes.
+    /// @dev Will return zero values for the root node. Will revert if index is out of range.
+    function getNodeParent(uint256 nodeIndex) external view returns (uint256 parentIndex, address parentPool);
 }

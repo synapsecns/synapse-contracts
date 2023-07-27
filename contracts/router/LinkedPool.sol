@@ -223,8 +223,24 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     }
 
     /// @inheritdoc ILinkedPool
-    function getTokenNodes(address token) external view returns (uint256[] memory nodes) {
+    function getTokenIndexes(address token) external view returns (uint256[] memory nodes) {
         nodes = _tokenNodes[token];
+    }
+
+    /// @inheritdoc ILinkedPool
+    function getPoolModule(address pool) external view returns (address) {
+        return _poolMap[pool].module;
+    }
+
+    /// @inheritdoc ILinkedPool
+    function getNodeParent(uint256 nodeIndex) external view returns (uint256 parentIndex, address parentPool) {
+        require(nodeIndex < _nodes.length, "Out of range");
+        uint8 depth = _nodes[nodeIndex].depth;
+        // Check if node is root, in which case there is no parent
+        if (depth > 0) {
+            parentIndex = _extractNodeIndex(_rootPath[nodeIndex], depth - 1);
+            parentPool = _pools[_nodes[nodeIndex].poolIndex];
+        }
     }
 
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
