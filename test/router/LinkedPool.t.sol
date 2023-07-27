@@ -450,6 +450,55 @@ contract LinkedPoolTest is Test {
         assertEq(swap.getTokenIndexes(token), new uint256[](0));
     }
 
+    function test_getPoolModule() public {
+        complexSetup();
+        address expectedPoolModule = poolModule == address(0) ? address(swap) : poolModule;
+        assertEq(swap.getPoolModule(address(poolB01)), expectedPoolModule);
+        assertEq(swap.getPoolModule(address(pool01)), expectedPoolModule);
+        assertEq(swap.getPoolModule(address(pool02)), expectedPoolModule);
+        assertEq(swap.getPoolModule(address(poolB2)), expectedPoolModule);
+        assertEq(swap.getPoolModule(address(pool123)), expectedPoolModule);
+        // Should return address(0) for unknown pool
+        assertEq(swap.getPoolModule(address(poolB012)), address(0));
+    }
+
+    function test_getNodeParent() public {
+        complexSetup();
+        // 0: BT
+        checkNodeParent(0, 0, address(0));
+        // 1: T0, parent: [0: BT], pool: [0: BT, 1: T0, 2: T1]
+        checkNodeParent(1, 0, address(poolB01));
+        // 2: T1, parent: [0: BT], pool: [0: BT, 1: T0, 2: T1]
+        checkNodeParent(2, 0, address(poolB01));
+        // 3: T1, parent: [1: T0], pool: [1: T0, 3: T1]
+        checkNodeParent(3, 1, address(pool01));
+        // 4: T2, parent: [1: T0], pool: [1: T0, 4: T2]
+        checkNodeParent(4, 1, address(pool02));
+        // 5: T2, parent: [0: BT], pool: [0: BT, 5: T2]
+        checkNodeParent(5, 0, address(poolB2));
+        // 6: T1, parent: [5: T2], pool: [6: T1, 5: T2, 7: T3]
+        checkNodeParent(6, 5, address(pool123));
+        // 7: T3, parent: [5: T2], pool: [6: T1, 5: T2, 7: T3]
+        checkNodeParent(7, 5, address(pool123));
+    }
+
+    function test_getNodeParent_revert_indexOutOfRange() public {
+        complexSetup();
+        uint256 tokensAmount = swap.tokenNodesAmount();
+        vm.expectRevert("Out of range");
+        swap.getNodeParent(tokensAmount);
+    }
+
+    function checkNodeParent(
+        uint256 nodeIndex,
+        uint256 expectedParentIndex,
+        address expectedPoolAddress
+    ) public {
+        (uint256 parentIndex, address parentPool) = swap.getNodeParent(nodeIndex);
+        assertEq(parentIndex, expectedParentIndex);
+        assertEq(parentPool, expectedPoolAddress);
+    }
+
     function checkTokenNodes(address token) public {
         uint256 tokensAmount = swap.tokenNodesAmount();
         uint256 nodesFound = 0;
