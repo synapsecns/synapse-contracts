@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Action, LimitedToken, LinkedPool} from "../../contracts/router/LinkedPool.sol";
+import {Action, LinkedPool} from "../../contracts/router/LinkedPool.sol";
 
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockDefaultPool, MockDefaultPausablePool} from "../mocks/MockDefaultPausablePool.sol";
@@ -515,60 +515,75 @@ contract LinkedPoolTest is Test {
         assertEq(linkedPool.getTokenIndexes(token), tokenNodes);
     }
 
-    function test_getConnectedTokens_endWithRootNode() public {
-        // Setup where only BT, T0 and T2 are added
-        compactSetup();
-        bool[] memory isConnected = linkedPool.getConnectedTokens(createTokensIn(), address(bridgeToken));
-        assertEq(isConnected.length, 10);
-        // Only T0 and T2 with Action.Swap enabled should be true
-        assertFalse(isConnected[0], "isConnected[0]"); // Swap enabled, but tokenIn == tokenOut
-        assertFalse(isConnected[1], "isConnected[1]"); // Swap disabled
-        assertTrue(isConnected[2], "isConnected[2]"); // Swap enabled, T0 -> BT exists
-        assertFalse(isConnected[3], "isConnected[3]"); // Swap disabled
-        assertFalse(isConnected[4], "isConnected[4]"); // Swap enabled, T1 -> BT does not exist
-        assertFalse(isConnected[5], "isConnected[5]"); // Swap disabled
-        assertTrue(isConnected[6], "isConnected[6]"); // Swap enabled, T2 -> BT exists
-        assertFalse(isConnected[7], "isConnected[7]"); // Swap disabled
-        assertFalse(isConnected[8], "isConnected[8]"); // Swap enabled T3 -> BT does not exist
-        assertFalse(isConnected[9], "isConnected[9]"); // Swap disabled
+    function test_areConnectedTokens_rootTokenIn() public {
+        // Setup with [BT, T0, T1, T2, T3]
+        complexSetup();
+        assertTrue(linkedPool.areConnectedTokens(address(bridgeToken), address(token0)));
+        assertTrue(linkedPool.areConnectedTokens(address(bridgeToken), address(token1)));
+        assertTrue(linkedPool.areConnectedTokens(address(bridgeToken), address(token2)));
+        assertTrue(linkedPool.areConnectedTokens(address(bridgeToken), address(token3)));
     }
 
-    function test_getConnectedTokens_endWithNonRootNode() public {
-        // Setup where only BT, T0 and T2 are added
-        compactSetup();
-        bool[] memory isConnected = linkedPool.getConnectedTokens(createTokensIn(), address(token0));
-        assertEq(isConnected.length, 10);
-        // Only BT with Action.Swap enabled should be true
-        assertTrue(isConnected[0], "isConnected[0]"); // Swap enabled, T0 -> BT exists
-        // Rest should be false (either tokenIn or tokenOut ned to be root)
-        for (uint256 i = 1; i < 10; ++i) {
-            assertFalse(isConnected[i]);
-        }
+    function test_areConnectedTokens_rootTokenOut() public {
+        // Setup with [BT, T0, T1, T2, T3]
+        complexSetup();
+        assertTrue(linkedPool.areConnectedTokens(address(token0), address(bridgeToken)));
+        assertTrue(linkedPool.areConnectedTokens(address(token1), address(bridgeToken)));
+        assertTrue(linkedPool.areConnectedTokens(address(token2), address(bridgeToken)));
+        assertTrue(linkedPool.areConnectedTokens(address(token3), address(bridgeToken)));
     }
 
-    function test_getConnectedTokens_endWithNonAddedToken() public {
-        // Setup where only BT, T0 and T2 are added
-        compactSetup();
-        bool[] memory isConnected = linkedPool.getConnectedTokens(createTokensIn(), address(token1));
-        // Everything should be false
-        for (uint256 i = 0; i < 10; ++i) {
-            assertFalse(isConnected[i]);
-        }
+    function test_areConnectedTokens_nonRootTokens() public {
+        // Setup with [BT, T0, T1, T2, T3]
+        complexSetup();
+        // Non-root tokens are also considered connected
+        // T0 -> * checks
+        assertTrue(linkedPool.areConnectedTokens(address(token0), address(token1)));
+        assertTrue(linkedPool.areConnectedTokens(address(token0), address(token2)));
+        assertTrue(linkedPool.areConnectedTokens(address(token0), address(token3)));
+        // T1 -> * checks
+        assertTrue(linkedPool.areConnectedTokens(address(token1), address(token0)));
+        assertTrue(linkedPool.areConnectedTokens(address(token1), address(token2)));
+        assertTrue(linkedPool.areConnectedTokens(address(token1), address(token3)));
+        // T2 -> * checks
+        assertTrue(linkedPool.areConnectedTokens(address(token2), address(token0)));
+        assertTrue(linkedPool.areConnectedTokens(address(token2), address(token1)));
+        assertTrue(linkedPool.areConnectedTokens(address(token2), address(token3)));
+        // T3 -> * checks
+        assertTrue(linkedPool.areConnectedTokens(address(token3), address(token0)));
+        assertTrue(linkedPool.areConnectedTokens(address(token3), address(token1)));
+        assertTrue(linkedPool.areConnectedTokens(address(token3), address(token2)));
     }
 
-    function createTokensIn() public view returns (LimitedToken[] memory tokens) {
-        // Use every token twice: with `maskOnlySwap` and its counterpart
-        tokens = new LimitedToken[](10);
-        tokens[0] = LimitedToken({actionMask: maskOnlySwap, token: address(bridgeToken)});
-        tokens[1] = LimitedToken({actionMask: maskNoSwaps, token: address(bridgeToken)});
-        tokens[2] = LimitedToken({actionMask: maskOnlySwap, token: address(token0)});
-        tokens[3] = LimitedToken({actionMask: maskNoSwaps, token: address(token0)});
-        tokens[4] = LimitedToken({actionMask: maskOnlySwap, token: address(token1)});
-        tokens[5] = LimitedToken({actionMask: maskNoSwaps, token: address(token1)});
-        tokens[6] = LimitedToken({actionMask: maskOnlySwap, token: address(token2)});
-        tokens[7] = LimitedToken({actionMask: maskNoSwaps, token: address(token2)});
-        tokens[8] = LimitedToken({actionMask: maskOnlySwap, token: address(token3)});
-        tokens[9] = LimitedToken({actionMask: maskNoSwaps, token: address(token3)});
+    function test_areConnectedTokens_sameTokens() public {
+        // Setup with [BT, T0, T1, T2, T3]
+        complexSetup();
+        // Same tokens are also considered connected
+        assertTrue(linkedPool.areConnectedTokens(address(bridgeToken), address(bridgeToken)));
+        assertTrue(linkedPool.areConnectedTokens(address(token0), address(token0)));
+        assertTrue(linkedPool.areConnectedTokens(address(token1), address(token1)));
+        assertTrue(linkedPool.areConnectedTokens(address(token2), address(token2)));
+        assertTrue(linkedPool.areConnectedTokens(address(token3), address(token3)));
+    }
+
+    function test_areConnectedTokens_tokenInNotPresent() public {
+        // Setup with [BT, T0, T2]
+        compactSetup();
+        // T1 is not present in the pool
+        assertFalse(linkedPool.areConnectedTokens(address(token1), address(bridgeToken)));
+        assertFalse(linkedPool.areConnectedTokens(address(token1), address(token0)));
+        assertFalse(linkedPool.areConnectedTokens(address(token1), address(token1)));
+        assertFalse(linkedPool.areConnectedTokens(address(token1), address(token2)));
+    }
+
+    function test_areConnectedTokens_tokenOutNotPresent() public {
+        // Setup with [BT, T0, T2]
+        compactSetup();
+        // T1 is not present in the pool
+        assertFalse(linkedPool.areConnectedTokens(address(bridgeToken), address(token1)));
+        assertFalse(linkedPool.areConnectedTokens(address(token0), address(token1)));
+        assertFalse(linkedPool.areConnectedTokens(address(token1), address(token1)));
+        assertFalse(linkedPool.areConnectedTokens(address(token2), address(token1)));
     }
 
     function test_findBestPath(
