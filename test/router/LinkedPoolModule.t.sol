@@ -20,12 +20,12 @@ contract LinkedPoolModuleTest is LinkedPoolTest {
         uint8 tokenTo = 7;
         uint256 amount = 100;
         // This goes through the paused pool
-        address tokenIn = swap.getToken(tokenFrom);
+        address tokenIn = linkedPool.getToken(tokenFrom);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
         prepareUser(tokenIn, amountIn);
         // Expect revert message for failed swap delegated to a pool module
         vm.expectRevert("Swap failed");
         vm.prank(user);
-        swap.swap(tokenFrom, tokenTo, amountIn, 0, type(uint256).max);
+        linkedPool.swap(tokenFrom, tokenTo, amountIn, 0, type(uint256).max);
     }
 }
