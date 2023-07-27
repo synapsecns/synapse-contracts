@@ -37,6 +37,22 @@ digraph {
         </TR>
         </TABLE>
         >;];
+    getMaximumBridgedAmount [label = <
+        <TABLE>
+        <TR>
+        <TD>Function</TD>
+        <TD>bridgeAdapter.getMaximumBridgedAmount</TD>
+        </TR>
+        <TR>
+        <TD>Parameters</TD>
+        <TD>token</TD>
+        </TR>
+        <TR>
+        <TD>Return</TD>
+        <TD>amount: uint256</TD>
+        </TR>
+        </TABLE>
+        >;];
     getAmountOut [label = <
         <TABLE>
         <TR>
@@ -85,10 +101,11 @@ digraph {
     sdk -> router [label = "1a. Call Router";];
     sdk -> getOriginAmountOut [label = "1a. Call Router"; style = dashed;];
     
-    router -> bridgeAdapters [label = "2a. Call every Bridge Adapter";];
+    router -> bridgeAdapters [label = "2ab. Call every Bridge Adapter";];
     bridgeAdapters -> symbolToToken [label = "2a. Call every Bridge Adapter"; style = dashed;];
-    symbolToToken -> router [label = "2b. Bridge token address";];
-    router -> bridgeTokens [label = "2c. Compile token addresses list";];
+    bridgeAdapters -> getMaximumBridgedAmount [label = "2b. Call every Bridge Adapter"; style = dashed;];
+    getMaximumBridgedAmount -> router [xlabel = "2ab. Bridge token address, max amount";];
+    router -> bridgeTokens [label = "2c. Compile token list";];
     
     bridgeTokens -> quoter [label = "3a. Call Quoter";];
     bridgeTokens -> getAmountOut [label = "3a. Call Quoter"; style = dashed;];
@@ -97,7 +114,7 @@ digraph {
     quoter -> checkPoolQuote [label = "4b. Check every pool quote"; style = dashed;];
     getAmountOut -> bridgeTokens [label = "4c. Return a quote";];
     
-    bridgeTokens -> sdk [label = "5. Compile list of SwapQuery quotes";];
+    bridgeTokens -> sdk [label = "5. Compile list of SwapQuery quotes, filter quotes exceeding max bridged amounts";];
     
     subgraph {
         rank = same;
@@ -108,6 +125,6 @@ digraph {
     subgraph {
         rank = same;
         edge [style = invis;];
-        quoter -> getAmountOut;
+        bridgeAdapters -> quoter -> getAmountOut;
     }
 }
