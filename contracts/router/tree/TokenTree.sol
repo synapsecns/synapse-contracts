@@ -170,6 +170,23 @@ abstract contract TokenTree {
         _rootPath.push((nodeIndex << (8 * depth)) | rootPathParent);
     }
 
+    /// @dev Updates the Pool Module for the given pool.
+    /// Will revert, if the pool was not previously added, or if the new pool module produces a different list of tokens.
+    function _updatePoolModule(address pool, address newPoolModule) internal {
+        // Check that pool was previously added
+        address oldPoolModule = _poolMap[pool].module;
+        require(oldPoolModule != address(0), "Pool not found");
+        // Sanity check that pool modules produce the same list of tokens
+        address[] memory oldTokens = _getPoolTokens(oldPoolModule, pool);
+        address[] memory newTokens = _getPoolTokens(newPoolModule, pool);
+        require(oldTokens.length == newTokens.length, "Different token lists");
+        for (uint256 i = 0; i < oldTokens.length; ++i) {
+            require(oldTokens[i] == newTokens[i], "Different token lists");
+        }
+        // Update the pool module
+        _poolMap[pool].module = newPoolModule;
+    }
+
     // ══════════════════════════════════════ INTERNAL LOGIC: MULTIPLE POOLS ═══════════════════════════════════════════
 
     /// @dev Performs a multi-hop swap by following the path from "tokenFrom" node to "tokenTo" node

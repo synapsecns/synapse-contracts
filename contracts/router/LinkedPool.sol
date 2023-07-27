@@ -48,6 +48,13 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         _addPool(nodeIndex, pool, poolModule);
     }
 
+    /// @notice Updates the pool module logic address for the given pool.
+    /// @dev Will revert if the pool is not present in the tree, or if the new pool module
+    /// produces a different token list for the pool.
+    function updatePoolModule(address pool, address newPoolModule) external onlyOwner {
+        _updatePoolModule(pool, newPoolModule);
+    }
+
     /// @inheritdoc ILinkedPool
     function swap(
         uint8 nodeIndexFrom,
