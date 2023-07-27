@@ -46,11 +46,54 @@ contract DefaultPoolCalcTestFork is Test {
         vm.label(USDT, "USDT");
     }
 
-    function testCalculateAddLiquidity(uint256[3] memory amounts_) public {
-        uint256[] memory amounts = castArray(amounts_);
-        boundTokenAmounts(amounts);
-        vm.assume(amounts[0] > 0 || amounts[1] > 0 || amounts[2] > 0);
+    function testCalculateAddLiquidityNonZeroValues(uint256[3] memory amounts_) public {
+        uint256[] memory amounts = boundTokenAmounts(amounts_, MIN_ADD_AMOUNT, MAX_AMOUNT);
         checkAddLiquidityQuote(amounts);
+    }
+
+    function testCalculateAddLiquidityOneZeroValue(uint256[3] memory amounts_) public {
+        {
+            uint256[] memory amounts = boundTokenAmounts(amounts_, MIN_ADD_AMOUNT, MAX_AMOUNT);
+            amounts[0] = 0;
+            checkAddLiquidityQuote(amounts);
+        }
+        {
+            uint256[] memory amounts = boundTokenAmounts(amounts_, MIN_ADD_AMOUNT, MAX_AMOUNT);
+            amounts[1] = 0;
+            checkAddLiquidityQuote(amounts);
+        }
+        {
+            uint256[] memory amounts = boundTokenAmounts(amounts_, MIN_ADD_AMOUNT, MAX_AMOUNT);
+            amounts[2] = 0;
+            checkAddLiquidityQuote(amounts);
+        }
+    }
+
+    function testCalculateAddLiquidityOneNonZeroValue(uint256[3] memory amounts_) public {
+        {
+            uint256[] memory amounts = boundTokenAmounts(amounts_, MIN_ADD_AMOUNT, MAX_AMOUNT);
+            amounts[0] = 0;
+            amounts[1] = 0;
+            checkAddLiquidityQuote(amounts);
+        }
+        {
+            uint256[] memory amounts = boundTokenAmounts(amounts_, MIN_ADD_AMOUNT, MAX_AMOUNT);
+            amounts[0] = 0;
+            amounts[2] = 0;
+            checkAddLiquidityQuote(amounts);
+        }
+        {
+            uint256[] memory amounts = boundTokenAmounts(amounts_, MIN_ADD_AMOUNT, MAX_AMOUNT);
+            amounts[1] = 0;
+            amounts[2] = 0;
+            checkAddLiquidityQuote(amounts);
+        }
+    }
+
+    function testCalculateAddLiquidityRevertsWhenAllValuesZero() public {
+        uint256[] memory amounts = new uint256[](3);
+        vm.expectRevert("D should increase");
+        calc.calculateAddLiquidity(POOL, amounts);
     }
 
     function testCalculateAddLiquidityRevertsWhenArrayTooShort() public {
@@ -70,10 +113,7 @@ contract DefaultPoolCalcTestFork is Test {
         // limit the initial pool offset to 10% so that StableSwap Math converges
         uint256 amountMin = (amount * 9) / 10;
         uint256 amountMax = (amount * 11) / 10;
-        amounts_[0] = bound(amounts_[0], amountMin * 10**18, amountMax * 10**18);
-        amounts_[1] = bound(amounts_[1], amountMin * 10**6, amountMax * 10**6);
-        amounts_[2] = bound(amounts_[2], amountMin * 10**6, amountMax * 10**6);
-        uint256[] memory amounts = castArray(amounts_);
+        uint256[] memory amounts = boundTokenAmounts(amounts_, amountMin, amountMax);
         vm.createSelectFork(ethRPC, BLOCK_NUMBER_POOL_EMPTY);
         checkAddLiquidityQuote(amounts);
     }
@@ -93,11 +133,12 @@ contract DefaultPoolCalcTestFork is Test {
 
     function checkAddLiquidityQuote(uint256[] memory amounts) public {
         uint256 amountOut = calc.calculateAddLiquidity(POOL, amounts);
+        require(amountOut > 0, "Amount out is zero");
+        uint256 lpBalanceBefore = IERC20(LP_TOKEN).balanceOf(user);
         prepareTokens(amounts);
-        if (amountOut == 0) vm.expectRevert("LPToken: cannot mint 0");
         vm.prank(user);
         IDefaultExtendedPool(POOL).addLiquidity(amounts, 0, type(uint256).max);
-        assertEq(IERC20(LP_TOKEN).balanceOf(user), amountOut);
+        assertEq(IERC20(LP_TOKEN).balanceOf(user) - lpBalanceBefore, amountOut);
     }
 
     function prepareTokens(uint256[] memory amounts) public {
@@ -110,16 +151,23 @@ contract DefaultPoolCalcTestFork is Test {
         IERC20(USDT).safeApprove(POOL, amounts[2]);
     }
 
-    function boundTokenAmounts(uint256[] memory amounts) public pure {
-        amounts[0] = amounts[0] % (MAX_AMOUNT * 10**18);
-        amounts[1] = amounts[1] % (MAX_AMOUNT * 10**6);
-        amounts[2] = amounts[2] % (MAX_AMOUNT * 10**6);
+    function boundTokenAmounts(
+        uint256[3] memory amounts_,
+        uint256 amountMin,
+        uint256 amountMax
+    ) public view returns (uint256[] memory amounts) {
+        amounts = new uint256[](3);
+        amounts[0] = boundTokenAmount(amounts_[0], amountMin, amountMax, 18);
+        amounts[1] = boundTokenAmount(amounts_[1], amountMin, amountMax, 6);
+        amounts[2] = boundTokenAmount(amounts_[2], amountMin, amountMax, 6);
     }
 
-    function castArray(uint256[3] memory amounts) public pure returns (uint256[] memory casted) {
-        casted = new uint256[](3);
-        casted[0] = amounts[0];
-        casted[1] = amounts[1];
-        casted[2] = amounts[2];
+    function boundTokenAmount(
+        uint256 amount,
+        uint256 amountMin,
+        uint256 amountMax,
+        uint256 decimals
+    ) public view returns (uint256) {
+        return bound(amount, amountMin * 10**decimals, amountMax * 10**decimals);
     }
 }
