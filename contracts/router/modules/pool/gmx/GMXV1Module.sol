@@ -13,41 +13,26 @@ import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 
 /// @notice PoolModule for GMX V1 pools
 /// @dev Implements IPoolModule interface to be used with pools addeded to LinkedPool router
-contract GMXV1Module is OnlyDelegateCall, IPoolModule {
+abstract contract GMXV1Module is OnlyDelegateCall, IPoolModule {
     using SafeERC20 for IERC20;
 
     IGMXV1Router public immutable router;
     IGMXV1Vault public immutable vault;
     IGMXV1Reader public immutable reader;
 
-    // filter whitelisted gmx tokens
-    address public immutable token0;
-    address public immutable token1;
-    address public immutable token2;
-
     modifier supportedToken(address token) {
         require(_isSupported(token), "token not supported");
         _;
     }
 
-    constructor(
-        address _router,
-        address _reader,
-        address[3] memory tokens
-    ) {
+    constructor(address _router, address _reader) {
         router = IGMXV1Router(_router);
         vault = IGMXV1Vault(router.vault());
         reader = IGMXV1Reader(_reader);
-
-        token0 = tokens[0];
-        token1 = tokens[1];
-        token2 = tokens[2];
     }
 
     /// @notice whether token supported by this pool module
-    function _isSupported(address token) internal view returns (bool) {
-        return (token == token0 || token == token1 || token == token2);
-    }
+    function _isSupported(address token) internal view virtual returns (bool);
 
     /// @inheritdoc IPoolModule
     function poolSwap(

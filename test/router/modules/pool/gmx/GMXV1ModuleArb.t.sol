@@ -4,16 +4,17 @@ pragma solidity 0.8.17;
 import {Test} from "forge-std/Test.sol";
 
 import {LinkedPool} from "../../../../../contracts/router/LinkedPool.sol";
-import {IndexedToken, GMXV1Module} from "../../../../../contracts/router/modules/pool/gmx/GMXV1Module.sol";
+import {IndexedToken} from "../../../../../contracts/router/modules/pool/gmx/GMXV1Module.sol";
+import {GMXV1StableArbitrumModule} from "../../../../../contracts/router/modules/pool/gmx/GMXV1StableArbitrumModule.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 contract GMXV1ModuleArbTestFork is Test {
     LinkedPool public linkedPool;
-    GMXV1Module public gmxV1Module;
+    GMXV1StableArbitrumModule public gmxV1Module;
 
     // 2023-07-03
-    uint256 public constant ARB_BLOCK_NUMBER = 107596120;
+    uint256 public constant ARB_BLOCK_NUMBER = 115816525;
 
     // GMX V1 router on Arbitrum
     address public constant GMX_V1_ROUTER = 0xaBBc5F99639c9B6bCb58544ddf04EFA6802F4064;
@@ -60,9 +61,8 @@ contract GMXV1ModuleArbTestFork is Test {
         string memory arbRPC = vm.envString("ARBITRUM_API");
         vm.createSelectFork(arbRPC, ARB_BLOCK_NUMBER);
 
-        address[3] memory tokens = [WBTC, WETH, USDC_E];
-        gmxV1Module = new GMXV1Module(GMX_V1_ROUTER, GMX_V1_READER, tokens);
-        linkedPool = new LinkedPool(WBTC);
+        gmxV1Module = new GMXV1StableArbitrumModule(GMX_V1_ROUTER, GMX_V1_READER);
+        linkedPool = new LinkedPool(USDC_E);
         user = makeAddr("User");
 
         vm.label(GMX_V1_ROUTER, "GMXV1Router");
@@ -84,11 +84,13 @@ contract GMXV1ModuleArbTestFork is Test {
 
     function testGetPoolTokens() public {
         address[] memory tokens = gmxV1Module.getPoolTokens(GMX_V1_VAULT);
-        assertEq(tokens.length, 3);
+        assertEq(tokens.length, 5);
 
-        assertEq(tokens[0], WBTC);
-        assertEq(tokens[1], WETH);
-        assertEq(tokens[2], USDC_E);
+        assertEq(tokens[0], USDC_E);
+        assertEq(tokens[1], USDT);
+        assertEq(tokens[2], FRAX);
+        assertEq(tokens[3], DAI);
+        assertEq(tokens[4], USDC);
     }
 
     // ══════════════════════════════════════════════ TESTS: ADD POOL ══════════════════════════════════════════════════
@@ -100,9 +102,11 @@ contract GMXV1ModuleArbTestFork is Test {
     function testAddPool() public {
         addPool();
 
-        assertEq(linkedPool.getToken(0), WBTC);
-        assertEq(linkedPool.getToken(1), WETH);
-        assertEq(linkedPool.getToken(2), USDC_E);
+        assertEq(linkedPool.getToken(0), USDC_E);
+        assertEq(linkedPool.getToken(1), USDT);
+        assertEq(linkedPool.getToken(2), FRAX);
+        assertEq(linkedPool.getToken(3), DAI);
+        assertEq(linkedPool.getToken(4), USDC);
     }
 
     // ════════════════════════════════════════════════ TESTS: SWAP ════════════════════════════════════════════════════
@@ -122,37 +126,37 @@ contract GMXV1ModuleArbTestFork is Test {
         });
     }
 
-    function testSwapFromWBTCtoWETH() public {
+    function testSwapFromUSDCetoUSDT() public {
         addPool();
-        uint256 amount = 10 * 10**8;
-        prepareUser(WBTC, amount);
+        uint256 amount = 10 * 10**6;
+        prepareUser(USDC_E, amount);
         uint256 expectedAmountOut = linkedPool.calculateSwap({nodeIndexFrom: 0, nodeIndexTo: 1, dx: amount});
         uint256 amountOut = swap({tokenIndexFrom: 0, tokenIndexTo: 1, amount: amount});
         assertGt(amountOut, 0);
         assertEq(amountOut, expectedAmountOut);
-        assertEq(IERC20(WBTC).balanceOf(user), 0);
-        assertEq(IERC20(WETH).balanceOf(user), amountOut);
+        assertEq(IERC20(USDC_E).balanceOf(user), 0);
+        assertEq(IERC20(USDT).balanceOf(user), amountOut);
     }
 
-    function testSwapFromWETHtoWBTC() public {
+    function testSwapFromUSDTtoUSDCe() public {
         addPool();
-        uint256 amount = 100 * 10**18;
-        prepareUser(WETH, amount);
+        uint256 amount = 100 * 10**6;
+        prepareUser(USDT, amount);
         uint256 expectedAmountOut = linkedPool.calculateSwap({nodeIndexFrom: 1, nodeIndexTo: 0, dx: amount});
         uint256 amountOut = swap({tokenIndexFrom: 1, tokenIndexTo: 0, amount: amount});
         assertGt(amountOut, 0);
         assertEq(amountOut, expectedAmountOut);
-        assertEq(IERC20(WETH).balanceOf(user), 0);
-        assertEq(IERC20(WBTC).balanceOf(user), amountOut);
+        assertEq(IERC20(USDT).balanceOf(user), 0);
+        assertEq(IERC20(USDC_E).balanceOf(user), amountOut);
     }
 
     function testPoolSwapRevertsWhenDirectCall() public {
         vm.expectRevert("Not a delegate call");
         gmxV1Module.poolSwap({
             pool: GMX_V1_VAULT,
-            tokenFrom: IndexedToken({index: 0, token: WBTC}),
-            tokenTo: IndexedToken({index: 1, token: WETH}),
-            amountIn: 100 * 10**8
+            tokenFrom: IndexedToken({index: 0, token: USDC_E}),
+            tokenTo: IndexedToken({index: 1, token: USDT}),
+            amountIn: 100 * 10**6
         });
     }
 

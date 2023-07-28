@@ -3,12 +3,12 @@ pragma solidity 0.8.17;
 
 import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.t.sol";
 
-import {GMXV1Module} from "../../../../contracts/router/modules/pool/gmx/GMXV1Module.sol";
+import {GMXV1StableArbitrumModule} from "../../../../contracts/router/modules/pool/gmx/GMXV1StableArbitrumModule.sol";
 
 contract LinkedPoolGMXV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
     string private constant ARB_ENV_RPC = "ARBITRUM_API";
-    // 2023-07-03
-    uint256 public constant ARB_BLOCK_NUMBER = 107596120;
+    // 2023-07-28
+    uint256 public constant ARB_BLOCK_NUMBER = 115816525;
 
     // GMX V1 vault pool on Arbitrum
     address public constant GMX_V1_VAULT = 0x489ee077994B6658eAfA855C308275EAd8097C4A;
@@ -46,13 +46,12 @@ contract LinkedPoolGMXV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
     // Native USDC on Arbitrum
     address public constant USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
 
-    GMXV1Module public gmxV1Module;
+    GMXV1StableArbitrumModule public gmxV1Module;
 
     constructor() LinkedPoolIntegrationTest(ARB_ENV_RPC, ARB_BLOCK_NUMBER) {}
 
     function afterBlockchainForked() public override {
-        address[3] memory tokens = [WBTC, WETH, USDC_E];
-        gmxV1Module = new GMXV1Module(GMX_V1_ROUTER, GMX_V1_READER, tokens);
+        gmxV1Module = new GMXV1StableArbitrumModule(GMX_V1_ROUTER, GMX_V1_READER);
     }
 
     function addExpectedTokens() public override {
@@ -60,13 +59,17 @@ contract LinkedPoolGMXV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
         // 0: nUSD
         // 1: USD.e
         // 2: USDT
-        // 3: WBTC
-        // 4: WETH
+        // 3: USDT
+        // 4: FRAX
+        // 5: DAI
+        // 6: USDC
         addExpectedToken(NUSD, "nUSD");
         addExpectedToken(USDC_E, "USDC.e");
         addExpectedToken(USDT, "USDT");
-        addExpectedToken(WBTC, "WBTC");
-        addExpectedToken(WETH, "WETH");
+        addExpectedToken(USDT, "USDT");
+        addExpectedToken(FRAX, "FRAX");
+        addExpectedToken(DAI, "DAI");
+        addExpectedToken(USDC, "USDC");
     }
 
     function addPools() public override {
