@@ -16,6 +16,18 @@ Bridging is exposed using `SynapseRouterV2.bridgeViaSynapse()` method. User can 
 | originQuery | SwapQuery | Information about the optional swap on the origin chain      |
 | destQuery   | SwapQuery | Information about the optional swap on the destination chain |
 
+- `tokenSymbol`, `originQuery`, and `destQuery` could be obtained by interacting with `SynapseRouterV2` contracts on both origin and destination chains, which is covered in the [Quoting the bridge transaction](#quoting-the-bridge-transaction) section.
+- `tokenSymbol`, `originQuery`, and `destQuery` are also returned by `routerSDK.bridgeQuote()` function, which abstracts the bridging workflow from the SDK consumer.
+
+### Bridging workflow (high-level)
+
+1. Swap from `token` into a bridge token represented by `tokenSymbol` is performed on the origin chain, according to the parameters encoded in `originQuery`.
+   > This step will be omitted, if `token` is already a bridge token represented by `tokenSymbol` on origin chain.
+2. Token represented by `tokenSymbol` is bridged to the destination chain.
+3. Swap from token represented by `tokenSymbol` into the end token is performed on the destination chain, according to the parameters encoded in `destQuery`.
+   > This step will be omitted, if the bridge token represented by `tokenSymbol` on destination chain is already the end token.
+4. End token is transferred to the `recipient` address on the destination chain.
+
 ### `SwapQuery` structure
 
 | Parameter     | Type    | Description                                                          |
@@ -26,16 +38,19 @@ Bridging is exposed using `SynapseRouterV2.bridgeViaSynapse()` method. User can 
 | deadline      | uint256 | Deadline for the swap, or tx will revert                             |
 | rawParams     | bytes   | Raw bytes parameters that will be passed to the router adapter       |
 
-> For swaps using Default Pools `routerAdapter` is set to `synapseRouterV2` address, which inherits from `DefaultAdapter`. These are whitelisted pools that allow swaps between correlated tokens.
->
-> - Alternative adapters can be used to perform complex swaps, but only on the origin chain.
-> - Only whitelisted pools are allowed for destination swaps, therefore only `synapseRouterV2` can be used as `routerAdapter` on the destination chain.
-> - `routerAdapter` for both `originQuery` and `destQuery` can be set to `address(0)`, which will skip the swap on the given chain.
+`SwapQuery` structure is used to encode the parameters for the swap that will be performed on the given chain. It is used for both origin and destination chain swaps. While these structs could be constructed manually, it is recommended to use `routerSDK.bridgeQuote()` function to obtain them. Alternatively, one could interact with `SynapseRouterV2` contracts directly.
 
-> Note: `minAmountOut` and `deadline` are used to prevent front-running attacks.
->
-> - If swap on origin chain fails, the whole transaction will revert, and no bridging happens.
-> - If swap on destination chain fails, user receives the bridged token on destination chain instead of `tokenOut`.
+- A separate contract `routerAdapter` is used to perform the swap.
+  > For swaps using Default Pools `routerAdapter` is set to `synapseRouterV2` address, which inherits from `DefaultAdapter`. These are whitelisted pools that allow swaps between correlated tokens.
+  >
+  > - Alternative adapters can be used to perform complex swaps, but only on the origin chain.
+  > - Only whitelisted pools are allowed for destination swaps, therefore only `synapseRouterV2` can be used as `routerAdapter` on the destination chain.
+  > - `routerAdapter` for both `originQuery` and `destQuery` can be set to `address(0)`, which will skip the swap on the given chain. This might be necessary if user wishes to start from the bridge token on origin chain, or end with the bridge token on destination chain.
+- `minAmountOut` and `deadline` are used to prevent front-running attacks.
+  > - If swap on origin chain fails, the whole transaction will revert, and no bridging happens.
+  > - If swap on destination chain fails, user receives the bridged token on destination chain instead of `tokenOut`.
+- `rawParams` is used to pass the information about how exactly the swap needs to be performed to the `routerAdapter`.
+  > Different adapters will implement different encoding for the `rawParams`.
 
 ### Bridging workflow
 
