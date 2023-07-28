@@ -96,24 +96,26 @@ which include `SwapQuery` structs. This is covered by the `routerSDK.bridgeQuote
 
 ### `SwapQuoterV2` overview
 
-`SwapQuoterV2` is a periphery contract for `SynapseRouterV2`, which contains the information about the pools that are used for bridging (and quoting). This contracts tracks two categories of pools:
+`SwapQuoterV2` is a periphery contract for `SynapseRouterV2`, which contains the information about the pools that are used for bridging (and quoting). `SwapQuoterV2` functions are exposed in the `SynapseRouterV2` contract, so for the end user there is no need to interact with `SwapQuoterV2` directly. The following documentation describes how Router and Quoter contracts interact with one another, which is abstracted away when one interacts with `SynapseRouterV2` contract or the SDK.
+
+`SwapQuoterV2` tracks two categories of pools:
 
 1. Pools that could be used for swaps on origin chain only.
 2. Pools that could be used for swaps on both origin and destination chains. These pools are mapped to a bridge token, therefore a given bridge token could only have one whitelisted pool.
 
-Pools from both categories must implement `IDefaultPool` interface, but their internal logic might be more complex. For example, `LinkedPool` contracts implement this interface, but under the hood they aggregate a collection of pools into one big pool.
+> Pools from both categories must implement `IDefaultPool` interface, but their internal logic might be more complex. For example, `LinkedPool` contracts implement this interface, but under the hood they aggregate a collection of pools into one big pool.
 
 ### High-level bridge quote workflow
 
-1. `destChain.SynapseRouterV2` is called to fetch the list of bridge symbols that could be used to receive `tokenOut` on the destination chain.
-2. `originChain.SynapseRouterV2` is called to fetch the list of quotes for swaps from `tokenIn` to the bridge tokens denoted by the symbols from step 1. Only pre-configured pools are used for this step.
-3. `destChain.SynapseRouterV2` is called to fetch the list of quotes for swaps from the bridge tokens to `tokenOut`, assuming quotes from step 2 are bridged to the destination chain. Only whitelisted pools are used for this step.
+1. `SynapseRouterV2` on destination chain needs to be called to fetch the list of bridge token symbols that could fullfil `tokenIn -> tokenOut` cross-chain swap.
+2. `SynapseRouterV2` on origin chain is called to fetch the list of `SwapQuery` quotes for swaps on origin chain that could fullfil `tokenIn -> tokenOut` cross-chain swap.
+3. `SynapseRouterV2` on destination chain is called to fetch the list of `SwapQuery` quotes for swaps on destination chain that could fullfil `tokenIn -> tokenOut` cross-chain swap.
    > The returned quote will include the bridging fee that will be taken by the protocol.
-4. The best overall quote is selected, and corresponding `SwapQuery` structs from steps 2 and 3 are returned.
+4. The best overall quote is selected, and corresponding `SwapQuery` structs from steps 2 and 3 are returned, as well as the bridge token symbol.
 
 > Note: to include the alternative Adapters in the quoting process, following steps need to be taken before going to step 3:
 >
-> - `adapterSDK.quoteSwap()` is called to fetch the list of quotes for swaps from `tokenIn` to the bridge tokens denoted by the symbols from step 1. All the trade paths supported by the given adapter could be used for this step. Note that every Adapter might have a different API for fetching the quotes.
+> - `adapterSDK.quoteSwap()` is called to fetch the list of alternative `SwapQuery` quotes for swaps on origin chain using this alternative adapter.
 > - Quotes from step 2 are replaced with the better quotes from the adapter.
 
 ### Low-level bridge quote workflow
