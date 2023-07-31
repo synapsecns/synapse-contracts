@@ -70,6 +70,14 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
 
     // ══════════════════════════════════════════════ POOL MANAGEMENT ══════════════════════════════════════════════════
 
+    /// @notice Allows to add a list of pools to SwapQuoterV2.
+    /// - If bridgeToken is zero, the pool is added to the set of "origin pools" corresponding to the pool type:
+    /// Default Pools for PoolType.Default, Linked Pools for PoolType.Linked.
+    /// - Otherwise, the pool is added as the whitelisted pool for the bridge token. The pool could be used for swaps
+    /// on both origin and destination chains.
+    /// > Note: to update the whitelisted pool for the bridge token, supply the new pool with the same bridge token.
+    /// > It is not required to remove the old pool first.
+    /// @dev Will revert, if the pool is already added.
     function addPools(BridgePool[] memory pools) external onlyOwner {
         unchecked {
             // unchecked: ++i never overflows uint256
@@ -79,6 +87,11 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         }
     }
 
+    /// @notice Allows to remove a list of pools from SwapQuoterV2.
+    /// - If bridgeToken is zero, the pool is removed from the set of "origin pools" corresponding to the pool type:
+    /// Default Pools for PoolType.Default, Linked Pools for PoolType.Linked.
+    /// - Otherwise, the pool is removed as the whitelisted pool for the bridge token.
+    /// @dev Will revert, if the pool is not added.
     function removePools(BridgePool[] memory pools) external onlyOwner {
         unchecked {
             // unchecked: ++i never overflows uint256
@@ -204,32 +217,49 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     /// - If bridgeToken is zero, the pool is added to the set of pools corresponding to the pool type.
     /// - Otherwise, the pool is added to the set of bridge pools.
     function _addPool(BridgePool memory pool) internal {
+        bool wasAdded = false;
         if (pool.bridgeToken == address(0)) {
+            // No bridge token was supplied, so we add the pool to the corresponding set of "origin pools".
+            // We also check that the pool has not been added yet.
             if (pool.poolType == PoolType.Default) {
-                _defaultPools.add(pool.pool);
+                wasAdded = _defaultPools.add(pool.pool);
             } else {
-                _linkedPools.add(pool.pool);
+                wasAdded = _linkedPools.add(pool.pool);
             }
         } else {
-            _bridgeTokens.add(pool.bridgeToken);
-            _bridgePools[pool.bridgeToken] = TypedPool({poolType: pool.poolType, pool: pool.pool});
+            address bridgeToken = pool.bridgeToken;
+            // Bridge token was supplied, so we set the pool as the whitelisted pool for the bridge token.
+            // We check that the old whitelisted pool is not the same as the new one.
+            wasAdded = _bridgePools[bridgeToken].pool != pool.pool;
+            // Add bridgeToken to the list of keys, if it wasn't added before
+            _bridgeTokens.add(bridgeToken);
+            _bridgePools[bridgeToken] = TypedPool({poolType: pool.poolType, pool: pool.pool});
         }
+        require(wasAdded, "Pool has been added before");
     }
 
     /// @dev Removes a pool from SwapQuoterV2.
     /// - If bridgeToken is zero, the pool is removed from the set of pools corresponding to the pool type.
     /// - Otherwise, the pool is removed from the set of bridge pools.
     function _removePool(BridgePool memory pool) internal {
+        bool wasRemoved = false;
         if (pool.bridgeToken == address(0)) {
+            // No bridge token was supplied, so we remove the pool from the corresponding set of "origin pools".
+            // We also check that the pool has been added before.
             if (pool.poolType == PoolType.Default) {
-                _defaultPools.remove(pool.pool);
+                wasRemoved = _defaultPools.remove(pool.pool);
             } else {
-                _linkedPools.remove(pool.pool);
+                wasRemoved = _linkedPools.remove(pool.pool);
             }
         } else {
-            _bridgeTokens.remove(pool.bridgeToken);
+            address bridgeToken = pool.bridgeToken;
+            // Bridge token was supplied, so we remove the pool as the whitelisted pool for the bridge token.
+            // We check that the old whitelisted pool is the same as the one we want to remove.
+            // Note: we remove both the pool (value) and the bridge token (key).
+            wasRemoved = _bridgeTokens.remove(bridgeToken) && _bridgePools[bridgeToken].pool == pool.pool;
             delete _bridgePools[pool.bridgeToken];
         }
+        require(wasRemoved, "Unknown pool");
     }
 
     // ═════════════════════════════════════════ INTERNAL: POOL INSPECTION ═════════════════════════════════════════════
