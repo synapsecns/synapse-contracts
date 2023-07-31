@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import {IDefaultPoolCalc} from "../interfaces/IDefaultPoolCalc.sol";
 import {IDefaultExtendedPool} from "../interfaces/IDefaultExtendedPool.sol";
 import {ILinkedPool} from "../interfaces/ILinkedPool.sol";
+import {IPausable} from "../interfaces/IPausable.sol";
 import {ISwapQuoterV1, PoolToken, SwapQuery} from "../interfaces/ISwapQuoterV1.sol";
 import {Action, DefaultParams} from "../libs/Structs.sol";
 import {UniversalTokenLib} from "../libs/UniversalToken.sol";
@@ -144,6 +145,16 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         }
     }
 
+    /// @dev Checks if a pool conforms to IPausable interface, and if so, returns its paused state.
+    /// Returns false if pool does not conform to IPausable interface.
+    function _isPoolPaused(address pool) internal view returns (bool) {
+        // We issue a static call in case the pool does not conform to IPausable interface.
+        (bool success, bytes memory returnData) = pool.staticcall(abi.encodeWithSelector(IPausable.paused.selector));
+        // Pool is paused if the call was successful and returned true.
+        // We check the return data length to ensure abi.decode won't revert.
+        return success && returnData.length == 32 && abi.decode(returnData, (bool));
+    }
+
     // ════════════════════════════════════════ POOL TOKEN -> TOKEN QUOTES ═════════════════════════════════════════════
 
     /// @dev Checks whether `tokenIn -> tokenOut` is possible via the given Default Pool, given the
@@ -155,6 +166,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         address tokenIn,
         address tokenOut
     ) internal view returns (bool) {
+        // We don't check for paused pools here, as we only need to know if a connection exists.
         (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn, tokenOut);
         // Check if Swap (tokenIn -> tokenOut) could fulfill tokenIn -> tokenOut request.
         if (Action.Swap.isIncluded(actionMask) && indexIn > 0 && indexOut > 0) {
@@ -204,6 +216,8 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         uint256 amountIn,
         SwapQuery memory query
     ) internal view {
+        // Skip paused pools
+        if (_isPoolPaused(pool)) return;
         // Check if tokenIn and tokenOut are pool tokens
         (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn, tokenOut);
         unchecked {
