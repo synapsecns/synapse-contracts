@@ -45,7 +45,7 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
 
     /// @notice Address of the SynapseRouter contract, which is used as "Router Adapter" for doing
     /// swaps through Default Pools (or handling ETH).
-    address public immutable synapseRouter;
+    address public synapseRouter;
 
     /// @dev Set of Default Pools that could be used for swaps on origin chain only
     EnumerableSet.AddressSet internal _defaultPools;
@@ -68,7 +68,7 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         transferOwnership(owner_);
     }
 
-    // ══════════════════════════════════════════════ POOL MANAGEMENT ══════════════════════════════════════════════════
+    // ═══════════════════════════════════════════ QUOTER V2 MANAGEMENT ════════════════════════════════════════════════
 
     /// @notice Allows to add a list of pools to SwapQuoterV2.
     /// - If bridgeToken is zero, the pool is added to the set of "origin pools" corresponding to the pool type:
@@ -100,6 +100,16 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             }
         }
     }
+
+    /// @notice Allows to set the SynapseRouter contract, which is used as "Router Adapter" for doing
+    /// swaps through Default Pools (or handling ETH).
+    /// Note: this will not affect the old SynapseRouter contract which still uses this Quoter, as the old SynapseRouter
+    /// could handle the requests with the new SynapseRouter as external "Router Adapter".
+    function setSynapseRouter(address synapseRouter_) external onlyOwner {
+        synapseRouter = synapseRouter_;
+    }
+
+    // ══════════════════════════════════════════════ QUOTER V2 VIEWS ══════════════════════════════════════════════════
 
     /// @notice Returns the list of Default Pools that could be used for swaps on origin chain only.
     function getDefaultPools() external view returns (address[] memory defaultPools) {
