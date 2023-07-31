@@ -30,7 +30,7 @@ contract SwapQuoterTest is Utilities06 {
         // Deploy ETH tokens
         neth = deployERC20("nETH", 18);
         weth = deployERC20("WETH", 18);
-        quoter = new SwapQuoter(ROUTER_MOCK, address(weth), OWNER);
+        quoter = SwapQuoter(deploySwapQuoter(ROUTER_MOCK, address(weth), OWNER));
         // Deploy USD tokens
         nusd = deployERC20("nUSD", 18);
         dai = deployERC20("DAI", 18);
@@ -59,6 +59,14 @@ contract SwapQuoterTest is Utilities06 {
             nUsdPool = deployPoolWithLiquidity(nUsdTokens, amounts);
             vm.label(nUsdPool, "nUSD Pool");
         }
+    }
+
+    function deploySwapQuoter(
+        address router_,
+        address weth_,
+        address owner
+    ) internal virtual returns (address) {
+        return address(new SwapQuoter(router_, weth_, owner));
     }
 
     function test_setUp() public {
@@ -104,7 +112,7 @@ contract SwapQuoterTest is Utilities06 {
         _checkAddedPools();
     }
 
-    function test_addPools() public {
+    function test_addPools() public virtual {
         address[] memory pools = new address[](2);
         pools[0] = addedEthPool();
         pools[1] = addedUsdPool();
@@ -113,14 +121,14 @@ contract SwapQuoterTest is Utilities06 {
         _checkAddedPools();
     }
 
-    function test_addPool_revert_onlyOwner(address caller) public {
+    function test_addPool_revert_onlyOwner(address caller) public virtual {
         vm.assume(caller != OWNER);
         expectOnlyOwnerRevert();
         vm.prank(caller);
         quoter.addPool(address(0));
     }
 
-    function test_addPools_revert_onlyOwner(address caller) public {
+    function test_addPools_revert_onlyOwner(address caller) public virtual {
         vm.assume(caller != OWNER);
         expectOnlyOwnerRevert();
         vm.prank(caller);
@@ -144,7 +152,7 @@ contract SwapQuoterTest is Utilities06 {
         _checkEmptyQuery(UniversalToken.ETH_ADDRESS, address(neth), 10**18, allActions);
     }
 
-    function test_removePool_revert_onlyOwner(address caller) public {
+    function test_removePool_revert_onlyOwner(address caller) public virtual {
         vm.assume(caller != OWNER);
         expectOnlyOwnerRevert();
         vm.prank(caller);
@@ -155,7 +163,7 @@ contract SwapQuoterTest is Utilities06 {
     ▏*║                         TESTS: CHECK QUOTES                          ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function test_getAmountOut_swap(uint256 actionMask) public {
+    function test_getAmountOut_swap(uint256 actionMask) public virtual {
         test_addPools();
         // Check swap quotes with ETH
         nEthTokens[1] = IERC20(UniversalToken.ETH_ADDRESS);

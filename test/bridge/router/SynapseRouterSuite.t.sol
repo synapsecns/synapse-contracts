@@ -196,7 +196,7 @@ abstract contract SynapseRouterSuite is SynapseRouterExpectations {
     function deployChainRouter(ChainSetup memory chain) public virtual {
         // We're using this contract as owner for testing suite deployments
         chain.router = new SynapseRouter(address(chain.bridge), address(this));
-        chain.quoter = new SwapQuoter(address(chain.router), address(chain.wgas), address(this));
+        chain.quoter = SwapQuoter(deploySwapQuoter(address(chain.router), address(chain.wgas), address(this)));
         chain.router.setSwapQuoter(chain.quoter);
 
         vm.label(address(chain.bridge), concat(chain.name, " Bridge"));
@@ -210,16 +210,25 @@ abstract contract SynapseRouterSuite is SynapseRouterExpectations {
         }
     }
 
+    /// @notice Child contract can override this to test another version of SwapQuoter
+    function deploySwapQuoter(
+        address router_,
+        address weth_,
+        address owner
+    ) internal virtual returns (address) {
+        return address(new SwapQuoter(router_, weth_, owner));
+    }
+
     function deployTestEthereum() public virtual returns (ChainSetup memory chain) {
         deployChainBasics({chain: chain, name: "ETH", gasName: "ETH", chainId: ETH_CHAINID});
         deployChainBridge(chain);
         deployChainRouter(chain);
         chain.nUsdPool = deployPool(chain, castToArray(chain.dai, chain.usdc, chain.usdt), 1_000_000);
-        // Set up Swap Quoter and fetch nUSD address
-        chain.quoter.addPool(chain.nUsdPool);
-        (, address nexusLpToken) = chain.quoter.poolInfo(chain.nUsdPool);
+        (, , , , , , address nexusLpToken) = ISwap(chain.nUsdPool).swapStorage();
         vm.label(nexusLpToken, "ETH nUSD");
         chain.nusd = IERC20(nexusLpToken);
+        // Set up Swap Quoter and fetch nUSD address
+        addDefaultPool(chain, address(chain.nusd), chain.nUsdPool);
         // Setup bridge tokens for Mainnet
         _addDepositToken(chain, SYMBOL_NETH, address(chain.weth));
         _addDepositToken(chain, SYMBOL_NUSD, address(chain.nusd));
@@ -304,6 +313,24 @@ abstract contract SynapseRouterSuite is SynapseRouterExpectations {
         address pool
     ) public virtual {
         // Remove pool from Swap Quoter
+        chain.quoter.removePool(pool);
+    }
+
+    function addDefaultPool(
+        ChainSetup memory chain,
+        address, // bridgeToken
+        address pool
+    ) public virtual {
+        // Nexus pool is used for add/remove liquidity bridge operations and does not require LinkedPool
+        chain.quoter.addPool(pool);
+    }
+
+    function removeDefaultPool(
+        ChainSetup memory chain,
+        address, // bridgeToken
+        address pool
+    ) public virtual {
+        // Nexus pool is used for add/remove liquidity bridge operations and does not require LinkedPool
         chain.quoter.removePool(pool);
     }
 
