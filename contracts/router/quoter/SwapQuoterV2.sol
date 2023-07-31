@@ -88,6 +88,35 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         }
     }
 
+    /// @notice Returns the list of Default Pools that could be used for swaps on origin chain only.
+    function getDefaultPools() external view returns (address[] memory defaultPools) {
+        return _defaultPools.values();
+    }
+
+    /// @notice Returns the list of Linked Pools that could be used for swaps on origin chain only.
+    function getLinkedPools() external view returns (address[] memory linkedPools) {
+        return _linkedPools.values();
+    }
+
+    /// @notice Returns the list of bridge tokens with whitelisted liquidity pools.
+    /// The pools could be used for swaps on both origin and destination chains.
+    function getBridgePools() external view returns (BridgePool[] memory bridgePools) {
+        uint256 amtBridgePools = _bridgeTokens.length();
+        bridgePools = new BridgePool[](amtBridgePools);
+        unchecked {
+            // unchecked: ++i never overflows uint256
+            for (uint256 i = 0; i < amtBridgePools; ++i) {
+                address bridgeToken = _bridgeTokens.at(i);
+                TypedPool memory typedPool = _bridgePools[bridgeToken];
+                bridgePools[i] = BridgePool({
+                    bridgeToken: bridgeToken,
+                    poolType: typedPool.poolType,
+                    pool: typedPool.pool
+                });
+            }
+        }
+    }
+
     // ═════════════════════════════════════════════ GENERAL QUOTES V1 ═════════════════════════════════════════════════
 
     /// @inheritdoc ISwapQuoterV1
