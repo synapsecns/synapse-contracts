@@ -191,7 +191,8 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
 
     // ════════════════════════════════════════ POOL INDEX -> INDEX QUOTES ═════════════════════════════════════════════
 
-    /// @dev Checks a swap quote for the given pool, updates `query` if output amount is better.
+    /// @dev Checks a swap quote for the given pool,
+    /// and updates `query` if the expected output amount is better than the current one.
     /// - tokenIn -> tokenOut swap will be considered.
     /// - Won't do anything if Action.Swap is not included in `actionMask`.
     function _checkSwapQuote(
@@ -218,7 +219,8 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         }
     }
 
-    /// @dev Checks a quote for adding liquidity to the given pool, and updates `query` if output amount is better.
+    /// @dev Checks a quote for adding liquidity to the given pool,
+    /// and updates `query` if the expected output amount is better than the current one.
     /// - This is the equivalent of tokenIn -> LPToken swap.
     /// - Won't do anything if Action.AddLiquidity is not included in `actionMask`.
     function _checkAddLiquidityQuote(
@@ -245,7 +247,8 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         }
     }
 
-    /// @dev Checks a quote for removing liquidity from the given pool, and updates `query` if output amount is better.
+    /// @dev Checks a quote for removing liquidity from the given pool,
+    /// and updates `query` if the expected output amount is better than the current one.
     /// - This is the equivalent of LPToken -> tokenOut swap.
     /// - Won't do anything if Action.RemoveLiquidity is not included in `actionMask`.
     function _checkRemoveLiquidityQuote(
@@ -273,10 +276,11 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         }
     }
 
-    /// @dev Checks if a "handle ETH" operation is possible between two given tokens.
+    /// @dev Checks if a "handle ETH" operation is possible between two given tokens,
+    /// and updates `query` if the expected output amount is better than the current one.
     /// - That would be either unwrapping WETH into native ETH, or wrapping ETH into WETH.
     /// - Won't do anything if Action.HandleEth is not included in `actionMask`.
-    function _checkHandleETH(
+    function _checkHandleETHQuote(
         uint256 actionMask,
         address tokenIn,
         address tokenOut,
@@ -285,7 +289,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
     ) internal view {
         // Don't do anything if we haven't specified HandleETH as possible action
         if (!Action.HandleEth.isIncluded(actionMask)) return;
-        if (_isEthAndWeth(tokenIn, tokenOut)) {
+        if (_isEthAndWeth(tokenIn, tokenOut) && amountIn > query.minAmountOut) {
             query.minAmountOut = amountIn;
             // Encode params for handling ETH: no pool is present, indexFrom and indexTo are 0xFF
             query.rawParams = abi.encode(DefaultParams(Action.HandleEth, address(0), type(uint8).max, type(uint8).max));
