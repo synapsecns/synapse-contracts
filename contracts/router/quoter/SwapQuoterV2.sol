@@ -61,9 +61,11 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     constructor(
         address synapseRouter_,
         address defaultPoolCalc,
-        address weth
+        address weth,
+        address owner_
     ) PoolQuoterV1(defaultPoolCalc, weth) {
         synapseRouter = synapseRouter_;
+        transferOwnership(owner_);
     }
 
     // ══════════════════════════════════════════════ POOL MANAGEMENT ══════════════════════════════════════════════════
