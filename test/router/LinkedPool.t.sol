@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Action, LimitedToken, LinkedPool} from "../../contracts/router/LinkedPool.sol";
+import {Action, LinkedPool} from "../../contracts/router/LinkedPool.sol";
 
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockDefaultPool, MockDefaultPausablePool} from "../mocks/MockDefaultPausablePool.sol";
@@ -35,7 +35,7 @@ contract LinkedPoolTest is Test {
 
     mapping(uint256 => address[]) public attachedPools;
 
-    LinkedPool public swap;
+    LinkedPool public linkedPool;
     address public owner;
 
     address public user;
@@ -108,20 +108,20 @@ contract LinkedPoolTest is Test {
     }
 
     function simpleSetup() public {
-        swap = new LinkedPool(address(bridgeToken));
-        swap.transferOwnership(owner);
+        linkedPool = new LinkedPool(address(bridgeToken));
+        linkedPool.transferOwnership(owner);
     }
 
     function test_simpleSetup() public {
         simpleSetup();
-        assertEq(swap.getToken(0), address(bridgeToken));
-        assertEq(swap.owner(), owner);
-        assertEq(swap.tokenNodesAmount(), 1);
+        assertEq(linkedPool.getToken(0), address(bridgeToken));
+        assertEq(linkedPool.owner(), owner);
+        assertEq(linkedPool.tokenNodesAmount(), 1);
     }
 
     function addPool(uint256 nodeIndex, address poolAddress) public {
         vm.prank(owner);
-        swap.addPool(nodeIndex, poolAddress, poolModule);
+        linkedPool.addPool(nodeIndex, poolAddress, poolModule);
         attachedPools[nodeIndex].push(poolAddress);
     }
 
@@ -142,21 +142,21 @@ contract LinkedPoolTest is Test {
 
     function test_complexSetup() public {
         complexSetup();
-        assertEq(swap.tokenNodesAmount(), 8);
+        assertEq(linkedPool.tokenNodesAmount(), 8);
         // Initial setup:
-        assertEq(swap.getToken(0), address(bridgeToken));
+        assertEq(linkedPool.getToken(0), address(bridgeToken));
         // First pool: poolB01
-        assertEq(swap.getToken(1), address(token0));
-        assertEq(swap.getToken(2), address(token1));
+        assertEq(linkedPool.getToken(1), address(token0));
+        assertEq(linkedPool.getToken(2), address(token1));
         // Second pool: pool01
-        assertEq(swap.getToken(3), address(token1));
+        assertEq(linkedPool.getToken(3), address(token1));
         // Third pool: pool02
-        assertEq(swap.getToken(4), address(token2));
+        assertEq(linkedPool.getToken(4), address(token2));
         // Fourth pool: poolB2
-        assertEq(swap.getToken(5), address(token2));
+        assertEq(linkedPool.getToken(5), address(token2));
         // Fifth pool: pool123
-        assertEq(swap.getToken(6), address(token1));
-        assertEq(swap.getToken(7), address(token3));
+        assertEq(linkedPool.getToken(6), address(token1));
+        assertEq(linkedPool.getToken(7), address(token3));
     }
 
     function duplicatedPoolSetup() public {
@@ -167,9 +167,9 @@ contract LinkedPoolTest is Test {
 
     function test_duplicatedPoolSetup() public {
         duplicatedPoolSetup();
-        assertEq(swap.tokenNodesAmount(), 10);
-        assertEq(swap.getToken(8), address(token1));
-        assertEq(swap.getToken(9), address(token3));
+        assertEq(linkedPool.tokenNodesAmount(), 10);
+        assertEq(linkedPool.getToken(8), address(token1));
+        assertEq(linkedPool.getToken(9), address(token3));
     }
 
     // Setup where pool with a bridge token is attached to a non-root node
@@ -182,9 +182,9 @@ contract LinkedPoolTest is Test {
 
     function test_bridgeTokenPoolAttachedSetup() public {
         bridgeTokenPoolAttachedSetup();
-        assertEq(swap.tokenNodesAmount(), 10);
-        assertEq(swap.getToken(8), address(token0));
-        assertEq(swap.getToken(9), address(token1));
+        assertEq(linkedPool.tokenNodesAmount(), 10);
+        assertEq(linkedPool.getToken(8), address(token0));
+        assertEq(linkedPool.getToken(9), address(token1));
     }
 
     function compactSetup() public {
@@ -198,10 +198,10 @@ contract LinkedPoolTest is Test {
 
     function test_compactSetup() public {
         compactSetup();
-        assertEq(swap.tokenNodesAmount(), 3);
-        assertEq(swap.getToken(0), address(bridgeToken));
-        assertEq(swap.getToken(1), address(token2));
-        assertEq(swap.getToken(2), address(token0));
+        assertEq(linkedPool.tokenNodesAmount(), 3);
+        assertEq(linkedPool.getToken(0), address(bridgeToken));
+        assertEq(linkedPool.getToken(1), address(token2));
+        assertEq(linkedPool.getToken(2), address(token0));
     }
 
     // ═══════════════════════════════════════════════ REVERT TESTS ════════════════════════════════════════════════════
@@ -211,7 +211,7 @@ contract LinkedPoolTest is Test {
         // 1 is T0, which is not in pool123
         vm.expectRevert("Node token not found in the pool");
         vm.prank(owner);
-        swap.addPool(1, address(pool123), address(0));
+        linkedPool.addPool(1, address(pool123), address(0));
     }
 
     function test_addPool_revert_callerNotOwner(address caller) public {
@@ -219,22 +219,22 @@ contract LinkedPoolTest is Test {
         vm.assume(caller != owner);
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(caller);
-        swap.addPool(0, address(0), address(0));
+        linkedPool.addPool(0, address(0), address(0));
     }
 
     function test_addPool_revert_nodeIndexOutOfRange() public {
         complexSetup();
-        uint256 tokensAmount = swap.tokenNodesAmount();
+        uint256 tokensAmount = linkedPool.tokenNodesAmount();
         vm.expectRevert("Out of range");
         vm.prank(owner);
-        swap.addPool(tokensAmount, address(pool123), address(0));
+        linkedPool.addPool(tokensAmount, address(pool123), address(0));
     }
 
     function test_addPool_revert_emptyPoolAddress() public {
         complexSetup();
         vm.expectRevert("Pool address can't be zero");
         vm.prank(owner);
-        swap.addPool(0, address(0), address(0));
+        linkedPool.addPool(0, address(0), address(0));
     }
 
     function test_addPool_revert_tooManyPools() public {
@@ -247,13 +247,13 @@ contract LinkedPoolTest is Test {
         for (uint256 i = 0; i < 255; ++i) {
             pool = new MockDefaultPool(tokens);
             vm.prank(owner);
-            swap.addPool(0, address(pool), address(0));
+            linkedPool.addPool(0, address(pool), address(0));
         }
         // 256th pool should cause a revert as its index would not fit into uint8 (pool indexes start from 1)
         pool = new MockDefaultPool(tokens);
         vm.expectRevert("Too many pools");
         vm.prank(owner);
-        swap.addPool(0, address(pool), address(0));
+        linkedPool.addPool(0, address(pool), address(0));
     }
 
     function test_addPool_revert_alreadyAttached() public {
@@ -261,11 +261,11 @@ contract LinkedPoolTest is Test {
         // [BT, T0, T1] was already attached to the root node (0)
         vm.expectRevert("Pool already attached");
         vm.prank(owner);
-        swap.addPool(0, address(poolB01), address(0));
+        linkedPool.addPool(0, address(poolB01), address(0));
         // [T1, T2, T3] was already attached to node with index 5
         vm.expectRevert("Pool already attached");
         vm.prank(owner);
-        swap.addPool(5, address(pool123), address(0));
+        linkedPool.addPool(5, address(pool123), address(0));
     }
 
     function test_addPool_revert_parentPool() public {
@@ -273,10 +273,10 @@ contract LinkedPoolTest is Test {
         // [T1, T2, T3] was already used to add node with indexes 6 and 7
         vm.expectRevert("Pool already on path to root");
         vm.prank(owner);
-        swap.addPool(6, address(pool123), address(0));
+        linkedPool.addPool(6, address(pool123), address(0));
         vm.expectRevert("Pool already on path to root");
         vm.prank(owner);
-        swap.addPool(7, address(pool123), address(0));
+        linkedPool.addPool(7, address(pool123), address(0));
     }
 
     function test_addPool_revert_poolUsedOnRootPath() public {
@@ -285,50 +285,50 @@ contract LinkedPoolTest is Test {
         vm.expectRevert("Pool already on path to root");
         // Node 3 was added using pool01, but poolB01 is present on the root path
         vm.prank(owner);
-        swap.addPool(3, address(poolB01), address(0));
+        linkedPool.addPool(3, address(poolB01), address(0));
     }
 
     function test_calculateSwap_returns0_tokenIdentical() public {
         complexSetup();
-        uint256 tokensAmount = swap.tokenNodesAmount();
+        uint256 tokensAmount = linkedPool.tokenNodesAmount();
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            assertEq(swap.calculateSwap(i, i, 10**18), 0);
+            assertEq(linkedPool.calculateSwap(i, i, 10**18), 0);
         }
     }
 
     function test_calculateSwap_returns0_tokenOutOfRange() public {
         complexSetup();
-        uint8 tokensAmount = uint8(swap.tokenNodesAmount());
+        uint8 tokensAmount = uint8(linkedPool.tokenNodesAmount());
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            assertEq(swap.calculateSwap(i, tokensAmount, 10**18), 0);
-            assertEq(swap.calculateSwap(tokensAmount, i, 10**18), 0);
+            assertEq(linkedPool.calculateSwap(i, tokensAmount, 10**18), 0);
+            assertEq(linkedPool.calculateSwap(tokensAmount, i, 10**18), 0);
         }
     }
 
     function test_getToken_revert_tokenOutOfRange() public {
         complexSetup();
-        uint8 tokensAmount = uint8(swap.tokenNodesAmount());
+        uint8 tokensAmount = uint8(linkedPool.tokenNodesAmount());
         vm.expectRevert("Out of range");
-        swap.getToken(tokensAmount);
+        linkedPool.getToken(tokensAmount);
     }
 
     function test_swap_revert_tokenIdentical() public {
         complexSetup();
-        uint256 tokensAmount = swap.tokenNodesAmount();
+        uint256 tokensAmount = linkedPool.tokenNodesAmount();
         for (uint8 i = 0; i < tokensAmount; ++i) {
             vm.expectRevert("Swap not supported");
-            swap.swap(i, i, 10**18, 0, type(uint256).max);
+            linkedPool.swap(i, i, 10**18, 0, type(uint256).max);
         }
     }
 
     function test_swap_revert_tokenOutOfRange() public {
         complexSetup();
-        uint8 tokensAmount = uint8(swap.tokenNodesAmount());
+        uint8 tokensAmount = uint8(linkedPool.tokenNodesAmount());
         for (uint8 i = 0; i < tokensAmount; ++i) {
             vm.expectRevert("Swap not supported");
-            swap.swap(i, tokensAmount, 10**18, 0, type(uint256).max);
+            linkedPool.swap(i, tokensAmount, 10**18, 0, type(uint256).max);
             vm.expectRevert("Swap not supported");
-            swap.swap(tokensAmount, i, 10**18, 0, type(uint256).max);
+            linkedPool.swap(tokensAmount, i, 10**18, 0, type(uint256).max);
         }
     }
 
@@ -336,34 +336,100 @@ contract LinkedPoolTest is Test {
         uint256 currentTime = 1234567890;
         vm.warp(currentTime);
         complexSetup();
-        uint8 tokensAmount = uint8(swap.tokenNodesAmount());
+        uint8 tokensAmount = uint8(linkedPool.tokenNodesAmount());
         for (uint8 i = 0; i < tokensAmount; ++i) {
             vm.expectRevert("Deadline not met");
-            swap.swap(i, (i + 1) % tokensAmount, 10**18, 0, currentTime - 1);
+            linkedPool.swap(i, (i + 1) % tokensAmount, 10**18, 0, currentTime - 1);
         }
     }
 
     function test_swap_revert_minDyNotMet() public {
         complexSetup();
         uint256 amountIn = 10**18;
-        uint256 amountOut = swap.calculateSwap(0, 1, amountIn);
+        uint256 amountOut = linkedPool.calculateSwap(0, 1, amountIn);
         prepareUser(address(bridgeToken), amountIn);
         vm.expectRevert("Swap didn't result in min tokens");
         vm.prank(user);
-        swap.swap(0, 1, amountIn, amountOut + 1, type(uint256).max);
+        linkedPool.swap(0, 1, amountIn, amountOut + 1, type(uint256).max);
+    }
+
+    // ═══════════════════════════════════════════════ QUOTES TESTS ════════════════════════════════════════════════════
+
+    // Quote for tree path: [0: BT] -> [1: T0] -> [3: T1]
+    function test_calculateSwap_treePathDown() public {
+        complexSetup();
+        uint256 amountIn = 10**18;
+        // [0: BT] -> [1: T0] (direction: down)
+        uint256 expectedAmountOut = poolB01.calculateSwap(0, 1, amountIn);
+        // [1: T0] -> [3: T1] (direction: down)
+        expectedAmountOut = pool01.calculateSwap(0, 1, expectedAmountOut);
+        uint256 amountOut = linkedPool.calculateSwap(0, 3, amountIn);
+        assertEq(amountOut, expectedAmountOut);
+    }
+
+    // Quote for tree path: [6: T1] -> [5: T2] -> [0: BT]
+    function test_calculateSwap_treePathUp() public {
+        complexSetup();
+        uint256 amountIn = 10**18;
+        // [6: T1] -> [5: T2] (direction: up)
+        uint256 expectedAmountOut = pool123.calculateSwap(0, 1, amountIn);
+        // [5: T2] -> [0: BT] (direction: up)
+        expectedAmountOut = poolB2.calculateSwap(1, 0, expectedAmountOut);
+        uint256 amountOut = linkedPool.calculateSwap(6, 0, amountIn);
+        assertEq(amountOut, expectedAmountOut);
+    }
+
+    // Quote for tree path: [3: T1] -> [1: T0] -> [2: T1]
+    function test_calculateSwap_treePathUpSibling() public {
+        complexSetup();
+        uint256 amountIn = 10**18;
+        // [3: T1] -> [1: T0] (direction: up)
+        uint256 expectedAmountOut = pool01.calculateSwap(1, 0, amountIn);
+        // [1: T0] -> [2: T1] (direction: sibling)
+        expectedAmountOut = poolB01.calculateSwap(1, 2, expectedAmountOut);
+        uint256 amountOut = linkedPool.calculateSwap(3, 2, amountIn);
+        assertEq(amountOut, expectedAmountOut);
+    }
+
+    // Quote for tree path: [3: T1] -> [1: T0] -> [2: T1] -> [8: T2]
+    function test_calculateSwap_treePathUpSiblingDown() public {
+        complexSetup();
+        // 2: T1 + (8: T2, 9: T3)
+        addPool(2, address(pool123));
+        uint256 amountIn = 10**18;
+        // [3: T1] -> [1: T0] (direction: up)
+        uint256 expectedAmountOut = pool01.calculateSwap(1, 0, amountIn);
+        // [1: T0] -> [2: T1] (direction: sibling)
+        expectedAmountOut = poolB01.calculateSwap(1, 2, expectedAmountOut);
+        // [2: T1] -> [8: T2] (direction: down)
+        expectedAmountOut = pool123.calculateSwap(0, 1, expectedAmountOut);
+        uint256 amountOut = linkedPool.calculateSwap(3, 8, amountIn);
+        assertEq(amountOut, expectedAmountOut);
+    }
+
+    // Quote for tree path: [2: T1] -> [1: T0] -> [4: T2]
+    function test_calculateSwap_treePathSiblingDown() public {
+        complexSetup();
+        uint256 amountIn = 10**18;
+        // [2: T1] -> [1: T0] (direction: sibling)
+        uint256 expectedAmountOut = poolB01.calculateSwap(2, 1, amountIn);
+        // [1: T0] -> [4: T2] (direction: down)
+        expectedAmountOut = pool02.calculateSwap(0, 1, expectedAmountOut);
+        uint256 amountOut = linkedPool.calculateSwap(2, 4, amountIn);
+        assertEq(amountOut, expectedAmountOut);
     }
 
     // ═══════════════════════════════════════════════ GETTERS TESTS ═══════════════════════════════════════════════════
 
     function test_getAttachedPools() public {
         duplicatedPoolSetup();
-        uint256 tokensAmount = swap.tokenNodesAmount();
+        uint256 tokensAmount = linkedPool.tokenNodesAmount();
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            assertEq(swap.getAttachedPools(i), attachedPools[i]);
+            assertEq(linkedPool.getAttachedPools(i), attachedPools[i]);
         }
     }
 
-    function test_getTokenNodes() public {
+    function test_getTokenIndexes() public {
         duplicatedPoolSetup();
         checkTokenNodes(address(bridgeToken));
         checkTokenNodes(address(token0));
@@ -372,7 +438,7 @@ contract LinkedPoolTest is Test {
         checkTokenNodes(address(token3));
     }
 
-    function test_getTokenNodes_returnsEmpty_unknownToken(address token) public {
+    function test_getTokenIndexes_returnsEmpty_unknownToken(address token) public {
         vm.assume(
             token != address(bridgeToken) &&
                 token != address(token0) &&
@@ -381,79 +447,143 @@ contract LinkedPoolTest is Test {
                 token != address(token3)
         );
         duplicatedPoolSetup();
-        assertEq(swap.getTokenNodes(token), new uint256[](0));
+        assertEq(linkedPool.getTokenIndexes(token), new uint256[](0));
+    }
+
+    function test_getPoolModule() public {
+        complexSetup();
+        address expectedPoolModule = poolModule == address(0) ? address(linkedPool) : poolModule;
+        assertEq(linkedPool.getPoolModule(address(poolB01)), expectedPoolModule);
+        assertEq(linkedPool.getPoolModule(address(pool01)), expectedPoolModule);
+        assertEq(linkedPool.getPoolModule(address(pool02)), expectedPoolModule);
+        assertEq(linkedPool.getPoolModule(address(poolB2)), expectedPoolModule);
+        assertEq(linkedPool.getPoolModule(address(pool123)), expectedPoolModule);
+        // Should return address(0) for unknown pool
+        assertEq(linkedPool.getPoolModule(address(poolB012)), address(0));
+    }
+
+    function test_getNodeParent() public {
+        complexSetup();
+        // 0: BT
+        checkNodeParent(0, 0, address(0));
+        // 1: T0, parent: [0: BT], pool: [0: BT, 1: T0, 2: T1]
+        checkNodeParent(1, 0, address(poolB01));
+        // 2: T1, parent: [0: BT], pool: [0: BT, 1: T0, 2: T1]
+        checkNodeParent(2, 0, address(poolB01));
+        // 3: T1, parent: [1: T0], pool: [1: T0, 3: T1]
+        checkNodeParent(3, 1, address(pool01));
+        // 4: T2, parent: [1: T0], pool: [1: T0, 4: T2]
+        checkNodeParent(4, 1, address(pool02));
+        // 5: T2, parent: [0: BT], pool: [0: BT, 5: T2]
+        checkNodeParent(5, 0, address(poolB2));
+        // 6: T1, parent: [5: T2], pool: [6: T1, 5: T2, 7: T3]
+        checkNodeParent(6, 5, address(pool123));
+        // 7: T3, parent: [5: T2], pool: [6: T1, 5: T2, 7: T3]
+        checkNodeParent(7, 5, address(pool123));
+    }
+
+    function test_getNodeParent_revert_indexOutOfRange() public {
+        complexSetup();
+        uint256 tokensAmount = linkedPool.tokenNodesAmount();
+        vm.expectRevert("Out of range");
+        linkedPool.getNodeParent(tokensAmount);
+    }
+
+    function checkNodeParent(
+        uint256 nodeIndex,
+        uint256 expectedParentIndex,
+        address expectedPoolAddress
+    ) public {
+        (uint256 parentIndex, address parentPool) = linkedPool.getNodeParent(nodeIndex);
+        assertEq(parentIndex, expectedParentIndex);
+        assertEq(parentPool, expectedPoolAddress);
     }
 
     function checkTokenNodes(address token) public {
-        uint256 tokensAmount = swap.tokenNodesAmount();
+        uint256 tokensAmount = linkedPool.tokenNodesAmount();
         uint256 nodesFound = 0;
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            if (swap.getToken(i) == token) ++nodesFound;
+            if (linkedPool.getToken(i) == token) ++nodesFound;
         }
         uint256[] memory tokenNodes = new uint256[](nodesFound);
         nodesFound = 0;
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            if (swap.getToken(i) == token) {
+            if (linkedPool.getToken(i) == token) {
                 tokenNodes[nodesFound++] = i;
             }
         }
-        assertEq(swap.getTokenNodes(token), tokenNodes);
+        assertEq(linkedPool.getTokenIndexes(token), tokenNodes);
     }
 
-    function test_getConnectedTokens_endWithRootNode() public {
-        // Setup where only BT, T0 and T2 are added
+    function test_areConnectedTokens_rootTokenIn() public {
+        // Setup with [BT, T0, T1, T2, T3]
+        complexSetup();
+        assertTrue(linkedPool.areConnectedTokens(address(bridgeToken), address(token0)));
+        assertTrue(linkedPool.areConnectedTokens(address(bridgeToken), address(token1)));
+        assertTrue(linkedPool.areConnectedTokens(address(bridgeToken), address(token2)));
+        assertTrue(linkedPool.areConnectedTokens(address(bridgeToken), address(token3)));
+    }
+
+    function test_areConnectedTokens_rootTokenOut() public {
+        // Setup with [BT, T0, T1, T2, T3]
+        complexSetup();
+        assertTrue(linkedPool.areConnectedTokens(address(token0), address(bridgeToken)));
+        assertTrue(linkedPool.areConnectedTokens(address(token1), address(bridgeToken)));
+        assertTrue(linkedPool.areConnectedTokens(address(token2), address(bridgeToken)));
+        assertTrue(linkedPool.areConnectedTokens(address(token3), address(bridgeToken)));
+    }
+
+    function test_areConnectedTokens_nonRootTokens() public {
+        // Setup with [BT, T0, T1, T2, T3]
+        complexSetup();
+        // Non-root tokens are also considered connected
+        // T0 -> * checks
+        assertTrue(linkedPool.areConnectedTokens(address(token0), address(token1)));
+        assertTrue(linkedPool.areConnectedTokens(address(token0), address(token2)));
+        assertTrue(linkedPool.areConnectedTokens(address(token0), address(token3)));
+        // T1 -> * checks
+        assertTrue(linkedPool.areConnectedTokens(address(token1), address(token0)));
+        assertTrue(linkedPool.areConnectedTokens(address(token1), address(token2)));
+        assertTrue(linkedPool.areConnectedTokens(address(token1), address(token3)));
+        // T2 -> * checks
+        assertTrue(linkedPool.areConnectedTokens(address(token2), address(token0)));
+        assertTrue(linkedPool.areConnectedTokens(address(token2), address(token1)));
+        assertTrue(linkedPool.areConnectedTokens(address(token2), address(token3)));
+        // T3 -> * checks
+        assertTrue(linkedPool.areConnectedTokens(address(token3), address(token0)));
+        assertTrue(linkedPool.areConnectedTokens(address(token3), address(token1)));
+        assertTrue(linkedPool.areConnectedTokens(address(token3), address(token2)));
+    }
+
+    function test_areConnectedTokens_sameTokens() public {
+        // Setup with [BT, T0, T1, T2, T3]
+        complexSetup();
+        // Same tokens are also considered connected
+        assertTrue(linkedPool.areConnectedTokens(address(bridgeToken), address(bridgeToken)));
+        assertTrue(linkedPool.areConnectedTokens(address(token0), address(token0)));
+        assertTrue(linkedPool.areConnectedTokens(address(token1), address(token1)));
+        assertTrue(linkedPool.areConnectedTokens(address(token2), address(token2)));
+        assertTrue(linkedPool.areConnectedTokens(address(token3), address(token3)));
+    }
+
+    function test_areConnectedTokens_tokenInNotPresent() public {
+        // Setup with [BT, T0, T2]
         compactSetup();
-        bool[] memory isConnected = swap.getConnectedTokens(createTokensIn(), address(bridgeToken));
-        assertEq(isConnected.length, 10);
-        // Only T0 and T2 with Action.Swap enabled should be true
-        assertFalse(isConnected[0], "isConnected[0]"); // Swap enabled, but tokenIn == tokenOut
-        assertFalse(isConnected[1], "isConnected[1]"); // Swap disabled
-        assertTrue(isConnected[2], "isConnected[2]"); // Swap enabled, T0 -> BT exists
-        assertFalse(isConnected[3], "isConnected[3]"); // Swap disabled
-        assertFalse(isConnected[4], "isConnected[4]"); // Swap enabled, T1 -> BT does not exist
-        assertFalse(isConnected[5], "isConnected[5]"); // Swap disabled
-        assertTrue(isConnected[6], "isConnected[6]"); // Swap enabled, T2 -> BT exists
-        assertFalse(isConnected[7], "isConnected[7]"); // Swap disabled
-        assertFalse(isConnected[8], "isConnected[8]"); // Swap enabled T3 -> BT does not exist
-        assertFalse(isConnected[9], "isConnected[9]"); // Swap disabled
+        // T1 is not present in the pool
+        assertFalse(linkedPool.areConnectedTokens(address(token1), address(bridgeToken)));
+        assertFalse(linkedPool.areConnectedTokens(address(token1), address(token0)));
+        assertFalse(linkedPool.areConnectedTokens(address(token1), address(token1)));
+        assertFalse(linkedPool.areConnectedTokens(address(token1), address(token2)));
     }
 
-    function test_getConnectedTokens_endWithNonRootNode() public {
-        // Setup where only BT, T0 and T2 are added
+    function test_areConnectedTokens_tokenOutNotPresent() public {
+        // Setup with [BT, T0, T2]
         compactSetup();
-        bool[] memory isConnected = swap.getConnectedTokens(createTokensIn(), address(token0));
-        assertEq(isConnected.length, 10);
-        // Only BT with Action.Swap enabled should be true
-        assertTrue(isConnected[0], "isConnected[0]"); // Swap enabled, T0 -> BT exists
-        // Rest should be false (either tokenIn or tokenOut ned to be root)
-        for (uint256 i = 1; i < 10; ++i) {
-            assertFalse(isConnected[i]);
-        }
-    }
-
-    function test_getConnectedTokens_endWithNonAddedToken() public {
-        // Setup where only BT, T0 and T2 are added
-        compactSetup();
-        bool[] memory isConnected = swap.getConnectedTokens(createTokensIn(), address(token1));
-        // Everything should be false
-        for (uint256 i = 0; i < 10; ++i) {
-            assertFalse(isConnected[i]);
-        }
-    }
-
-    function createTokensIn() public view returns (LimitedToken[] memory tokens) {
-        // Use every token twice: with `maskOnlySwap` and its counterpart
-        tokens = new LimitedToken[](10);
-        tokens[0] = LimitedToken({actionMask: maskOnlySwap, token: address(bridgeToken)});
-        tokens[1] = LimitedToken({actionMask: maskNoSwaps, token: address(bridgeToken)});
-        tokens[2] = LimitedToken({actionMask: maskOnlySwap, token: address(token0)});
-        tokens[3] = LimitedToken({actionMask: maskNoSwaps, token: address(token0)});
-        tokens[4] = LimitedToken({actionMask: maskOnlySwap, token: address(token1)});
-        tokens[5] = LimitedToken({actionMask: maskNoSwaps, token: address(token1)});
-        tokens[6] = LimitedToken({actionMask: maskOnlySwap, token: address(token2)});
-        tokens[7] = LimitedToken({actionMask: maskNoSwaps, token: address(token2)});
-        tokens[8] = LimitedToken({actionMask: maskOnlySwap, token: address(token3)});
-        tokens[9] = LimitedToken({actionMask: maskNoSwaps, token: address(token3)});
+        // T1 is not present in the pool
+        assertFalse(linkedPool.areConnectedTokens(address(bridgeToken), address(token1)));
+        assertFalse(linkedPool.areConnectedTokens(address(token0), address(token1)));
+        assertFalse(linkedPool.areConnectedTokens(address(token1), address(token1)));
+        assertFalse(linkedPool.areConnectedTokens(address(token2), address(token1)));
     }
 
     function test_findBestPath(
@@ -466,21 +596,25 @@ contract LinkedPoolTest is Test {
         tokenTo = tokenTo % tokensAmount;
         amount = 1 + (amount % 1000);
         duplicatedPoolSetup();
-        require(swap.tokenNodesAmount() == tokensAmount, "Setup failed");
-        address tokenIn = swap.getToken(tokenFrom);
-        address tokenOut = swap.getToken(tokenTo);
+        require(linkedPool.tokenNodesAmount() == tokensAmount, "Setup failed");
+        address tokenIn = linkedPool.getToken(tokenFrom);
+        address tokenOut = linkedPool.getToken(tokenTo);
         vm.assume(tokenIn != tokenOut);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
-        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(tokenIn, tokenOut, amountIn);
-        assertEq(swap.getToken(tokenIndexFrom), tokenIn);
-        assertEq(swap.getToken(tokenIndexTo), tokenOut);
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = linkedPool.findBestPath(
+            tokenIn,
+            tokenOut,
+            amountIn
+        );
+        assertEq(linkedPool.getToken(tokenIndexFrom), tokenIn);
+        assertEq(linkedPool.getToken(tokenIndexTo), tokenOut);
         // Check all possible paths between tokenIn and tokenOut
         uint256 amountOutBest = 0;
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            if (swap.getToken(i) != tokenIn) continue;
+            if (linkedPool.getToken(i) != tokenIn) continue;
             for (uint8 j = 0; j < tokensAmount; ++j) {
-                if (swap.getToken(j) != tokenOut) continue;
-                uint256 amountOutQuote = swap.calculateSwap(i, j, amountIn);
+                if (linkedPool.getToken(j) != tokenOut) continue;
+                uint256 amountOutQuote = linkedPool.calculateSwap(i, j, amountIn);
                 if (amountOutQuote > amountOutBest) {
                     amountOutBest = amountOutQuote;
                 }
@@ -491,13 +625,13 @@ contract LinkedPoolTest is Test {
 
     function test_findBestPath_returns0_identicalTokens() public {
         duplicatedPoolSetup();
-        uint256 tokensAmount = swap.tokenNodesAmount();
+        uint256 tokensAmount = linkedPool.tokenNodesAmount();
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            address tokenIn = swap.getToken(i);
+            address tokenIn = linkedPool.getToken(i);
             for (uint8 j = 0; j < tokensAmount; ++j) {
-                address tokenOut = swap.getToken(j);
+                address tokenOut = linkedPool.getToken(j);
                 if (tokenIn != tokenOut) continue;
-                (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(
+                (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = linkedPool.findBestPath(
                     tokenIn,
                     tokenOut,
                     10**18
@@ -518,10 +652,10 @@ contract LinkedPoolTest is Test {
                 token != address(token3)
         );
         duplicatedPoolSetup();
-        uint256 tokensAmount = swap.tokenNodesAmount();
+        uint256 tokensAmount = linkedPool.tokenNodesAmount();
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            address existingToken = swap.getToken(i);
-            (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(
+            address existingToken = linkedPool.getToken(i);
+            (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = linkedPool.findBestPath(
                 existingToken,
                 token,
                 10**18
@@ -529,7 +663,7 @@ contract LinkedPoolTest is Test {
             assertEq(tokenIndexFrom, 0);
             assertEq(tokenIndexTo, 0);
             assertEq(amountOut, 0);
-            (tokenIndexFrom, tokenIndexTo, amountOut) = swap.findBestPath(token, existingToken, 10**18);
+            (tokenIndexFrom, tokenIndexTo, amountOut) = linkedPool.findBestPath(token, existingToken, 10**18);
             assertEq(tokenIndexFrom, 0);
             assertEq(tokenIndexTo, 0);
             assertEq(amountOut, 0);
@@ -538,13 +672,17 @@ contract LinkedPoolTest is Test {
 
     function test_findBestPath_returns0_amountInZero() public {
         duplicatedPoolSetup();
-        uint256 tokensAmount = swap.tokenNodesAmount();
+        uint256 tokensAmount = linkedPool.tokenNodesAmount();
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            address tokenIn = swap.getToken(i);
+            address tokenIn = linkedPool.getToken(i);
             for (uint8 j = 0; j < tokensAmount; ++j) {
-                address tokenOut = swap.getToken(j);
+                address tokenOut = linkedPool.getToken(j);
                 if (tokenIn == tokenOut) continue;
-                (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(tokenIn, tokenOut, 0);
+                (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = linkedPool.findBestPath(
+                    tokenIn,
+                    tokenOut,
+                    0
+                );
                 assertEq(tokenIndexFrom, 0);
                 assertEq(tokenIndexTo, 0);
                 assertEq(amountOut, 0);
@@ -561,18 +699,18 @@ contract LinkedPoolTest is Test {
         );
         complexSetup();
         // This goes through the pool that is going to revert
-        uint256 amountOut = swap.calculateSwap(3, 7, 10**18);
+        uint256 amountOut = linkedPool.calculateSwap(3, 7, 10**18);
         assertEq(amountOut, 0);
     }
 
     function test_calculateSwap_returnsNonZero_whenPoolPaused() public {
         complexSetup();
         // This goes through the pool that is going to be paused
-        uint256 amountOutQuote = swap.calculateSwap(3, 7, 10**18);
+        uint256 amountOutQuote = linkedPool.calculateSwap(3, 7, 10**18);
         // Pause poolB01
         poolB01.setPaused(true);
         // Should return the same quote (ignoring the fact that pool is paused)
-        assertEq(swap.calculateSwap(3, 7, 10**18), amountOutQuote);
+        assertEq(linkedPool.calculateSwap(3, 7, 10**18), amountOutQuote);
     }
 
     function test_findBestPath_returns0_whenOnlyPathReverts() public {
@@ -584,7 +722,7 @@ contract LinkedPoolTest is Test {
         );
         complexSetup();
         // All paths to/from T3 go through the reverting pool
-        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = linkedPool.findBestPath(
             address(token1),
             address(token3),
             10**18
@@ -592,7 +730,7 @@ contract LinkedPoolTest is Test {
         assertEq(tokenIndexFrom, 0);
         assertEq(tokenIndexTo, 0);
         assertEq(amountOut, 0);
-        (tokenIndexFrom, tokenIndexTo, amountOut) = swap.findBestPath(address(token3), address(token2), 10**18);
+        (tokenIndexFrom, tokenIndexTo, amountOut) = linkedPool.findBestPath(address(token3), address(token2), 10**18);
         assertEq(tokenIndexFrom, 0);
         assertEq(tokenIndexTo, 0);
         assertEq(amountOut, 0);
@@ -603,7 +741,7 @@ contract LinkedPoolTest is Test {
         // Pause pool123
         pool123.setPaused(true);
         // All paths to/from T3 go through the paused pool
-        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = linkedPool.findBestPath(
             address(token1),
             address(token3),
             10**18
@@ -611,7 +749,7 @@ contract LinkedPoolTest is Test {
         assertEq(tokenIndexFrom, 0);
         assertEq(tokenIndexTo, 0);
         assertEq(amountOut, 0);
-        (tokenIndexFrom, tokenIndexTo, amountOut) = swap.findBestPath(address(token3), address(token2), 10**18);
+        (tokenIndexFrom, tokenIndexTo, amountOut) = linkedPool.findBestPath(address(token3), address(token2), 10**18);
         assertEq(tokenIndexFrom, 0);
         assertEq(tokenIndexTo, 0);
         assertEq(amountOut, 0);
@@ -626,7 +764,7 @@ contract LinkedPoolTest is Test {
         );
         complexSetup();
         // The only remaining path between BT and T1 is BT -> T2 -> T1 via poolB2 and pool123
-        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = linkedPool.findBestPath(
             address(bridgeToken),
             address(token1),
             10**18
@@ -645,7 +783,7 @@ contract LinkedPoolTest is Test {
         // Pause poolB01
         poolB01.setPaused(true);
         // The only remaining path between BT and T1 is BT -> T2 -> T1 via poolB2 and pool123
-        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = linkedPool.findBestPath(
             address(bridgeToken),
             address(token1),
             10**18
@@ -673,14 +811,14 @@ contract LinkedPoolTest is Test {
         vm.assume(tokenFrom != tokenTo);
         vm.assume(amount > 0);
         complexSetup();
-        require(swap.tokenNodesAmount() == tokensAmount, "Setup failed");
-        address tokenIn = swap.getToken(tokenFrom);
+        require(linkedPool.tokenNodesAmount() == tokensAmount, "Setup failed");
+        address tokenIn = linkedPool.getToken(tokenFrom);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
         prepareUser(tokenIn, amountIn);
-        address tokenOut = swap.getToken(tokenTo);
-        uint256 amountOut = swap.calculateSwap(tokenFrom, tokenTo, amountIn);
+        address tokenOut = linkedPool.getToken(tokenTo);
+        uint256 amountOut = linkedPool.calculateSwap(tokenFrom, tokenTo, amountIn);
         vm.prank(user);
-        swap.swap(tokenFrom, tokenTo, amountIn, amountOut, block.timestamp);
+        linkedPool.swap(tokenFrom, tokenTo, amountIn, amountOut, block.timestamp);
         if (tokenIn != tokenOut) assertEq(MockERC20(tokenIn).balanceOf(user), 0);
         assertEq(MockERC20(tokenOut).balanceOf(user), amountOut);
     }
@@ -693,13 +831,13 @@ contract LinkedPoolTest is Test {
         uint8 tokenTo = 7;
         uint256 amount = 100;
         // This goes through the paused pool
-        address tokenIn = swap.getToken(tokenFrom);
+        address tokenIn = linkedPool.getToken(tokenFrom);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
         prepareUser(tokenIn, amountIn);
         // Expect mock-specific revert message
         vm.expectRevert("Siesta time");
         vm.prank(user);
-        swap.swap(tokenFrom, tokenTo, amountIn, 0, type(uint256).max);
+        linkedPool.swap(tokenFrom, tokenTo, amountIn, 0, type(uint256).max);
     }
 
     function test_calculateSwap_samePoolTwice(
@@ -714,10 +852,10 @@ contract LinkedPoolTest is Test {
         vm.assume(tokenFrom != tokenTo);
         vm.assume(amount > 0);
         duplicatedPoolSetup();
-        require(swap.tokenNodesAmount() == tokensAmount, "Setup failed");
-        address tokenIn = swap.getToken(tokenFrom);
+        require(linkedPool.tokenNodesAmount() == tokensAmount, "Setup failed");
+        address tokenIn = linkedPool.getToken(tokenFrom);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
-        uint256 amountOut = swap.calculateSwap(tokenFrom, tokenTo, amountIn);
+        uint256 amountOut = linkedPool.calculateSwap(tokenFrom, tokenTo, amountIn);
         // Swaps betweens nodes [6..7] and [8..9] contain pool123 twice, so quote should be zero
         if (tokenFrom >= 6 && tokenFrom <= 7 && tokenTo >= 8 && tokenTo <= 9) {
             assertEq(amountOut, 0);
@@ -741,15 +879,15 @@ contract LinkedPoolTest is Test {
         vm.assume(tokenFrom != tokenTo);
         vm.assume(amount > 0);
         duplicatedPoolSetup();
-        require(swap.tokenNodesAmount() == tokensAmount, "Setup failed");
-        address tokenIn = swap.getToken(tokenFrom);
+        require(linkedPool.tokenNodesAmount() == tokensAmount, "Setup failed");
+        address tokenIn = linkedPool.getToken(tokenFrom);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
         prepareUser(tokenIn, amountIn);
-        address tokenOut = swap.getToken(tokenTo);
-        uint256 amountOut = swap.calculateSwap(tokenFrom, tokenTo, amountIn);
+        address tokenOut = linkedPool.getToken(tokenTo);
+        uint256 amountOut = linkedPool.calculateSwap(tokenFrom, tokenTo, amountIn);
         vm.prank(user);
         if (amountOut == 0) vm.expectRevert("Can't use same pool twice");
-        swap.swap(tokenFrom, tokenTo, amountIn, amountOut, block.timestamp);
+        linkedPool.swap(tokenFrom, tokenTo, amountIn, amountOut, block.timestamp);
         if (amountOut > 0) {
             if (tokenIn != tokenOut) assertEq(MockERC20(tokenIn).balanceOf(user), 0);
             assertEq(MockERC20(tokenOut).balanceOf(user), amountOut);
@@ -766,16 +904,20 @@ contract LinkedPoolTest is Test {
         tokenTo = tokenTo % tokensAmount;
         amount = 1 + (amount % 1000);
         duplicatedPoolSetup();
-        require(swap.tokenNodesAmount() == tokensAmount, "Setup failed");
-        address tokenIn = swap.getToken(tokenFrom);
-        address tokenOut = swap.getToken(tokenTo);
+        require(linkedPool.tokenNodesAmount() == tokensAmount, "Setup failed");
+        address tokenIn = linkedPool.getToken(tokenFrom);
+        address tokenOut = linkedPool.getToken(tokenTo);
         vm.assume(tokenIn != tokenOut);
         uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
-        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = swap.findBestPath(tokenIn, tokenOut, amountIn);
+        (uint8 tokenIndexFrom, uint8 tokenIndexTo, uint256 amountOut) = linkedPool.findBestPath(
+            tokenIn,
+            tokenOut,
+            amountIn
+        );
         require(amountOut > 0, "No path found when should've");
         prepareUser(tokenIn, amountIn);
         vm.prank(user);
-        swap.swap(tokenIndexFrom, tokenIndexTo, amountIn, amountOut, block.timestamp);
+        linkedPool.swap(tokenIndexFrom, tokenIndexTo, amountIn, amountOut, block.timestamp);
         assertEq(MockERC20(tokenIn).balanceOf(user), 0);
         assertEq(MockERC20(tokenOut).balanceOf(user), amountOut);
     }
@@ -783,7 +925,7 @@ contract LinkedPoolTest is Test {
     function prepareUser(address token, uint256 amount) public {
         MockERC20(token).mint(user, amount);
         vm.prank(user);
-        MockERC20(token).approve(address(swap), amount);
+        MockERC20(token).approve(address(linkedPool), amount);
     }
 
     function setupERC20(string memory name, uint8 decimals) public returns (MockERC20 token) {

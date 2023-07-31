@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {LimitedToken} from "../libs/Structs.sol";
-
 interface ILinkedPool {
     /// @notice Wrapper for IDefaultPool.swap()
     /// @param tokenIndexFrom    the token the user wants to swap from
@@ -38,20 +36,15 @@ interface ILinkedPool {
     /// @return token    address of the token at given index
     function getToken(uint8 index) external view returns (address token);
 
-    /// @notice Checks if a it is possible to start from any of the tokens in the given list
-    /// and finish with tokenOut, using any of the supported pools. Only checks the paths that start or end
-    /// with a root node (the bridge token).
-    /// @dev This is used by SwapQuoterV2 to find bridge tokens that could fulfill the cross-chain swap request on
-    /// either origin or destination chain, meaning either `tokensIn` or `tokenOut` should be a bridge token.
-    /// @param tokensIn List of structs with following information:
-    ///                 - actionMask    Bitmask representing what actions are available for doing tokenIn -> tokenOut
-    ///                 - token         Token address to begin from
-    /// @param tokenOut Token address to end up with
-    /// @return isConnected List of bool values, specifying whether a token from the list is swappable to tokenOut
-    function getConnectedTokens(LimitedToken[] memory tokensIn, address tokenOut)
-        external
-        view
-        returns (bool[] memory isConnected);
+    /// @notice Checks if a path exists between the two tokens, using any of the supported pools.
+    /// @dev This is used by SwapQuoterV2 to check if a path exists between two tokens using the LinkedPool.
+    /// Note: this only checks if both tokens are present in the tree, but doesn't check if any of the pools
+    /// connecting the two tokens are paused. This is done to enable caching of the result, the paused/duplicated
+    /// pools will be discarded, when `findBestPath` is called to fetch the quote.
+    /// @param tokenIn          Token address to begin from
+    /// @param tokenOut         Token address to end up with
+    /// @return areConnected    True if a path exists between the two tokens, false otherwise
+    function areConnectedTokens(address tokenIn, address tokenOut) external view returns (bool areConnected);
 
     /// @notice Returns the best path for swapping the given amount of tokens. All possible paths
     /// present in the internal tree are considered, if any of the tokens are present in the tree more than once.
@@ -86,6 +79,16 @@ interface ILinkedPool {
     /// Note: pool that is connecting the node to its parent is not considered attached.
     function getAttachedPools(uint8 index) external view returns (address[] memory pools);
 
-    /// @notice Returns all nodes that represent the given token in the internal tree.
-    function getTokenNodes(address token) external view returns (uint256[] memory nodes);
+    /// @notice Returns the list of indexes that represent a given token in the tree.
+    /// @dev Will return empty array for tokens that are not added to the tree.
+    function getTokenIndexes(address token) external view returns (uint256[] memory indexes);
+
+    /// @notice Returns the pool module logic address, that is used to get swap quotes, token indexes and perform swaps.
+    /// @dev Will return address(0) for pools that are not added to the tree.
+    /// Will return address(this) for pools that conform to IDefaultPool interface.
+    function getPoolModule(address pool) external view returns (address poolModule);
+
+    /// @notice Returns the index of a parent node for the given node, as well as the pool that connects the two nodes.
+    /// @dev Will return zero values for the root node. Will revert if index is out of range.
+    function getNodeParent(uint256 nodeIndex) external view returns (uint256 parentIndex, address parentPool);
 }

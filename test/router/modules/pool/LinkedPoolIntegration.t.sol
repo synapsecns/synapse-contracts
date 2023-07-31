@@ -126,8 +126,16 @@ abstract contract LinkedPoolIntegrationTest is Test {
             deadline: block.timestamp
         });
         assertEq(amountOut, expectedAmountOut, "Failed to get exact quote");
-        assertEq(IERC20(tokenFrom).balanceOf(user), balanceFromBefore - amount, "Failed to spend tokenFrom");
-        assertEq(IERC20(tokenTo).balanceOf(user), balanceToBefore + amountOut, "Failed to receive tokenTo");
+        assertEq(
+            IERC20(tokenFrom).balanceOf(user),
+            tokenFrom != tokenTo ? balanceFromBefore - amount : balanceFromBefore - amount + amountOut,
+            "Failed to spend tokenFrom"
+        );
+        assertEq(
+            IERC20(tokenTo).balanceOf(user),
+            tokenFrom != tokenTo ? balanceToBefore + amountOut : balanceToBefore + amountOut - amount,
+            "Failed to receive tokenTo"
+        );
     }
 
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════

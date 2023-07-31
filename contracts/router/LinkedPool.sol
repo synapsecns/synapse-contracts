@@ -3,7 +3,7 @@ pragma solidity 0.8.17;
 
 import {IPausable} from "./interfaces/IPausable.sol";
 import {IndexedToken, IPoolModule} from "./interfaces/IPoolModule.sol";
-import {ILinkedPool, LimitedToken} from "./interfaces/ILinkedPool.sol";
+import {ILinkedPool} from "./interfaces/ILinkedPool.sol";
 import {IDefaultPool} from "./interfaces/IDefaultPool.sol";
 import {Action} from "./libs/Structs.sol";
 import {TokenTree} from "./tree/TokenTree.sol";
@@ -46,6 +46,13 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     ) external onlyOwner {
         require(pool != address(0), "Pool address can't be zero");
         _addPool(nodeIndex, pool, poolModule);
+    }
+
+    /// @notice Updates the pool module logic address for the given pool.
+    /// @dev Will revert if the pool is not present in the tree, or if the new pool module
+    /// produces a different token list for the pool.
+    function updatePoolModule(address pool, address newPoolModule) external onlyOwner {
+        _updatePoolModule(pool, newPoolModule);
     }
 
     /// @inheritdoc ILinkedPool
@@ -105,39 +112,9 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     }
 
     /// @inheritdoc ILinkedPool
-    function getConnectedTokens(LimitedToken[] memory tokensIn, address tokenOut)
-        external
-        view
-        returns (bool[] memory isConnected)
-    {
-        uint256 numTokens = tokensIn.length;
-        isConnected = new bool[](numTokens);
-        uint256 tokenOutNodes = _tokenNodes[tokenOut].length;
-        // Check if `tokenOut` is in the tree
-        if (tokenOutNodes == 0) {
-            return isConnected;
-        }
-        // tokenOut is root only if the first entry in `_tokenNodes[tokenOut]` is ZERO (root node index)
-        bool isTokenOutRoot = _tokenNodes[tokenOut][0] == 0;
-        for (uint256 i = 0; i < numTokens; ++i) {
-            LimitedToken memory token = tokensIn[i];
-            // `tokenIn` should be swappable
-            if (!Action.Swap.isIncluded(token.actionMask)) {
-                continue;
-            }
-            // `tokenIn` should differ from `tokenOut`
-            if (token.token == tokenOut) {
-                continue;
-            }
-            uint256 tokenInNodes = _tokenNodes[token.token].length;
-            // Check if `tokenIn` is in the tree
-            if (tokenInNodes == 0) {
-                continue;
-            }
-            // We only consider paths where either of the tokens is the bridge(root) token,
-            // as this is either "swap into bridge token" or "swap from bridge token" case.
-            isConnected[i] = isTokenOutRoot || _tokenNodes[token.token][0] == 0;
-        }
+    function areConnectedTokens(address tokenIn, address tokenOut) external view returns (bool areConnected) {
+        // Tokens are considered connected, if they are both present in the tree
+        return _tokenNodes[tokenIn].length > 0 && _tokenNodes[tokenOut].length > 0;
     }
 
     /// Note: this could be potentially a gas expensive operation. This is used by SwapQuoterV2 to get the best quote
@@ -223,8 +200,24 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     }
 
     /// @inheritdoc ILinkedPool
-    function getTokenNodes(address token) external view returns (uint256[] memory nodes) {
+    function getTokenIndexes(address token) external view returns (uint256[] memory nodes) {
         nodes = _tokenNodes[token];
+    }
+
+    /// @inheritdoc ILinkedPool
+    function getPoolModule(address pool) external view returns (address) {
+        return _poolMap[pool].module;
+    }
+
+    /// @inheritdoc ILinkedPool
+    function getNodeParent(uint256 nodeIndex) external view returns (uint256 parentIndex, address parentPool) {
+        require(nodeIndex < _nodes.length, "Out of range");
+        uint8 depth = _nodes[nodeIndex].depth;
+        // Check if node is root, in which case there is no parent
+        if (depth > 0) {
+            parentIndex = _extractNodeIndex(_rootPath[nodeIndex], depth - 1);
+            parentPool = _pools[_nodes[nodeIndex].poolIndex];
+        }
     }
 
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
