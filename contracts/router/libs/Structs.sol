@@ -73,6 +73,28 @@ struct SwapQuery {
     bytes rawParams;
 }
 
+using SwapQueryLib for SwapQuery global;
+
+library SwapQueryLib {
+    /// @notice Checks whether the router adapter was specified in the query.
+    /// Query without a router adapter specifies that no action needs to be taken.
+    function hasAdapter(SwapQuery memory query) internal pure returns (bool) {
+        return query.routerAdapter != address(0);
+    }
+
+    /// @notice Fills `routerAdapter` and `deadline` fields in query, if it specifies one of the supported Actions,
+    /// and if a path for this action was found.
+    function fillAdapterAndDeadline(SwapQuery memory query, address routerAdapter) internal pure {
+        // Fill the fields only if some path was found.
+        if (query.minAmountOut == 0) return;
+        // Empty params indicates no action needs to be done, thus no adapter is needed.
+        query.routerAdapter = query.rawParams.length == 0 ? address(0) : routerAdapter;
+        // Set default deadline to infinity. Not using the value of 0,
+        // which would lead to every swap to revert by default.
+        query.deadline = type(uint256).max;
+    }
+}
+
 // ════════════════════════════════════════════════ ADAPTER STRUCTS ════════════════════════════════════════════════════
 
 /// @notice Struct representing parameters for swapping via DefaultAdapter.
