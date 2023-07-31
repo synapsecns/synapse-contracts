@@ -19,6 +19,10 @@ interface IDefaultExtendedPool is IDefaultPool {
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
 
+    function getAPrecise() external view returns (uint256);
+
+    function getTokenBalance(uint8 index) external view returns (uint256);
+
     function swapStorage()
         external
         view
