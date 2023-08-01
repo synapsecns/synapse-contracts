@@ -141,8 +141,8 @@ abstract contract LinkedPoolIntegrationTest is Test {
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
 
     function getTestAmount(address token) public view virtual returns (uint256) {
-        // 100 units in the token decimals
-        return 100 * 10**IERC20Metadata(token).decimals();
+        // 0.01 units in the token decimals
+        return 10**uint256(IERC20Metadata(token).decimals() - 2);
     }
 
     // Could be overridden if `deal` does not work with the token
