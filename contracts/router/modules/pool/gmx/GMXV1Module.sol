@@ -49,6 +49,9 @@ abstract contract GMXV1Module is OnlyDelegateCall, IPoolModule {
         address tokenOut = tokenTo.token;
         uint256 balanceTo = IERC20(tokenOut).balanceOf(address(this));
 
+        uint256 maxAmountIn = reader.getMaxAmountIn(vault, tokenIn, tokenOut);
+        require(amountIn <= maxAmountIn, "amountIn > maxAmountIn");
+
         address[] memory path = new address[](2);
         path[0] = tokenFrom.token;
         path[1] = tokenTo.token;
@@ -68,6 +71,10 @@ abstract contract GMXV1Module is OnlyDelegateCall, IPoolModule {
         require(pool == address(vault), "pool != vault");
         address tokenIn = tokenFrom.token;
         address tokenOut = tokenTo.token;
+
+        uint256 maxAmountIn = reader.getMaxAmountIn(vault, tokenIn, tokenOut);
+        require(amountIn <= maxAmountIn, "amountIn > maxAmountIn");
+
         (amountOut, ) = reader.getAmountOut(vault, tokenIn, tokenOut, amountIn);
     }
 

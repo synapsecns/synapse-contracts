@@ -10,4 +10,10 @@ interface IGMXV1Reader {
         address _tokenOut,
         uint256 _amountIn
     ) external view returns (uint256 amountOutAfterFees, uint256 feeAmount);
+
+    function getMaxAmountIn(
+        IGMXV1Vault _vault,
+        address _tokenIn,
+        address _tokenOut
+    ) external view returns (uint256);
 }
