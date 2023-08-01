@@ -8,11 +8,7 @@ import "./interfaces/ISwapV2.sol";
 import "./interfaces/IMetaSwapV1.sol";
 
 contract SwapDeployerV2 is Ownable {
-    event NewSwapPool(
-        address indexed deployer,
-        address swapAddress,
-        IERC20[] pooledTokens
-    );
+    event NewSwapPool(address indexed deployer, address swapAddress, IERC20[] pooledTokens);
     event NewClone(address indexed target, address cloneAddress);
 
     constructor() public Ownable() {}

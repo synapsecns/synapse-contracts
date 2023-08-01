@@ -11,10 +11,7 @@ import "@openzeppelin/contracts-upgradeable-4.7.3/security/PausableUpgradeable.s
  * contract without a delay.
  * @dev Only methods using the provided modifiers will be paused.
  */
-abstract contract OwnerPausableUpgradeableV1 is
-    OwnableUpgradeable,
-    PausableUpgradeable
-{
+abstract contract OwnerPausableUpgradeableV1 is OwnableUpgradeable, PausableUpgradeable {
     function __OwnerPausable_init() internal onlyInitializing {
         __Context_init_unchained();
         __Ownable_init_unchained();

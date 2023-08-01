@@ -41,20 +41,14 @@ interface IMetaSwapV1 {
         uint256 dx
     ) external view returns (uint256);
 
-    function calculateTokenAmount(uint256[] calldata amounts, bool deposit)
+    function calculateTokenAmount(uint256[] calldata amounts, bool deposit) external view returns (uint256);
+
+    function calculateRemoveLiquidity(uint256 amount) external view returns (uint256[] memory);
+
+    function calculateRemoveLiquidityOneToken(uint256 tokenAmount, uint8 tokenIndex)
         external
         view
-        returns (uint256);
-
-    function calculateRemoveLiquidity(uint256 amount)
-        external
-        view
-        returns (uint256[] memory);
-
-    function calculateRemoveLiquidityOneToken(
-        uint256 tokenAmount,
-        uint8 tokenIndex
-    ) external view returns (uint256 availableTokenAmount);
+        returns (uint256 availableTokenAmount);
 
     // state modifying functions
     function initialize(
