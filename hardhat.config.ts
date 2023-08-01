@@ -63,7 +63,7 @@ let config: HardhatUserConfig = {
       gasPrice: 6 * 1000000000,
     },
     base: {
-      url: "https://developer-access-mainnet.base.org",
+      url: "https://mainnet.base.org",
     },
     avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",

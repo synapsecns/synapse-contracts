@@ -11,10 +11,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   let ETHPool = await getOrNull("ETHPool");
   if (ETHPool) {
     log(`reusing "ETHPool" at ${ETHPool.address}`);
-  } else if (
-    (await getChainId()) != CHAIN_ID.BASE &&
-    (await getChainId()) != CHAIN_ID.HARDHAT
-  ) {
+  } else if ((await getChainId()) != CHAIN_ID.BASE && (await getChainId()) != CHAIN_ID.HARDHAT) {
     log(`Not Base or Hardhat`);
   } else {
     // Constructor arguments
