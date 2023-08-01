@@ -63,7 +63,7 @@ let config: HardhatUserConfig = {
       gasPrice: 6 * 1000000000,
     },
     base: {
-      url: "https://developer-access-mainnet.base.org"
+      url: "https://developer-access-mainnet.base.org",
     },
     avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
@@ -247,7 +247,7 @@ if (process.env.PRIVATE_KEYS) {
     "klaytn_testnet",
     "canto",
     "dogechain",
-    "base"
+    "base",
   ];
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
