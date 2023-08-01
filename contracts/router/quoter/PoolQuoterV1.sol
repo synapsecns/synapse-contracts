@@ -11,12 +11,12 @@ import {UniversalTokenLib} from "../libs/UniversalToken.sol";
 
 /// @notice Stateless abstraction to calculate exact quotes for any DefaultPool instances.
 abstract contract PoolQuoterV1 is ISwapQuoterV1 {
-    IDefaultPoolCalc internal immutable _defaultPoolCalc;
-    address internal immutable _weth;
+    address public immutable defaultPoolCalc;
+    address public immutable weth;
 
-    constructor(address defaultPoolCalc, address weth) {
-        _defaultPoolCalc = IDefaultPoolCalc(defaultPoolCalc);
-        _weth = weth;
+    constructor(address defaultPoolCalc_, address weth_) {
+        defaultPoolCalc = defaultPoolCalc_;
+        weth = weth_;
     }
 
     // ═══════════════════════════════════════════ SPECIFIC POOL QUOTES ════════════════════════════════════════════════
@@ -24,7 +24,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
     /// @inheritdoc ISwapQuoterV1
     function calculateAddLiquidity(address pool, uint256[] memory amounts) external view returns (uint256 amountOut) {
         // Forward the only getter that is not properly implemented in the StableSwap contract (DefaultPool).
-        return _defaultPoolCalc.calculateAddLiquidity(pool, amounts);
+        return IDefaultPoolCalc(defaultPoolCalc).calculateAddLiquidity(pool, amounts);
     }
 
     /// @inheritdoc ISwapQuoterV1
@@ -113,7 +113,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
             // unchecked: ++i never overflows uint256
             for (uint256 i = 0; i < numTokens; ++i) {
                 address token = IDefaultExtendedPool(pool).getToken(uint8(i));
-                tokens[i] = PoolToken({isWeth: token == _weth, token: token});
+                tokens[i] = PoolToken({isWeth: token == weth, token: token});
             }
         }
     }
@@ -320,7 +320,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         uint256[] memory amounts = new uint256[](_numTokens(pool));
         amounts[tokenIndexFrom] = amountIn;
         // Use DefaultPool Calc as we need the exact quote here
-        try _defaultPoolCalc.calculateAddLiquidity(pool, amounts) returns (uint256 amountOut) {
+        try IDefaultPoolCalc(defaultPoolCalc).calculateAddLiquidity(pool, amounts) returns (uint256 amountOut) {
             if (amountOut > query.minAmountOut) {
                 query.minAmountOut = amountOut;
                 // Encode params for adding liquidity via the current pool: specify indexFrom (indexTo = 0xFF)
@@ -386,13 +386,13 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
     /// @dev Checks that (tokenA, tokenB) is either (ETH, WETH) or (WETH, ETH).
     function _isEthAndWeth(address tokenA, address tokenB) internal view returns (bool) {
         return
-            (tokenA == UniversalTokenLib.ETH_ADDRESS && tokenB == _weth) ||
-            (tokenA == _weth && tokenB == UniversalTokenLib.ETH_ADDRESS);
+            (tokenA == UniversalTokenLib.ETH_ADDRESS && tokenB == weth) ||
+            (tokenA == weth && tokenB == UniversalTokenLib.ETH_ADDRESS);
     }
 
     /// @dev Returns token address used in the pool for the given token.
     /// This is either the token itself, or WETH if the token is ETH.
     function _poolToken(address token) internal view returns (address) {
-        return token == UniversalTokenLib.ETH_ADDRESS ? _weth : token;
+        return token == UniversalTokenLib.ETH_ADDRESS ? weth : token;
     }
 }
