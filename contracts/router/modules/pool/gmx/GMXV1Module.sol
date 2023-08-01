@@ -12,7 +12,7 @@ import {IGMXV1Vault} from "../../../interfaces/gmx/IGMXV1Vault.sol";
 import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 
 /// @notice PoolModule for GMX V1 pools
-/// @dev Implements IPoolModule interface to be used with pools addeded to LinkedPool router
+/// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
 abstract contract GMXV1Module is OnlyDelegateCall, IPoolModule {
     using SafeERC20 for IERC20;
 
