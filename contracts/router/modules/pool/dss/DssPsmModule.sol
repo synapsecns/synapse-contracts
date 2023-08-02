@@ -59,6 +59,10 @@ contract DssPsmModule is OnlyDelegateCall, IPoolModule {
             (tokenFrom.token == dai && tokenTo.token == gem) || (tokenFrom.token == gem && tokenTo.token == dai),
             "tokens not in pool"
         );
+        
+        IndexedToken memory tokenDai = tokenFrom.token == dai ? tokenFrom : tokenTo;
+        IndexedToken memory tokenGem = tokenTo.token == gem ? tokenTo : tokenFrom;
+        require(tokenDai.index == 0 && tokenGem.index == 1, "token indices not valid");
 
         uint256 gemDec = IDssGemJoin(IDssPsm(pool).gemJoin()).dec();
         if (tokenFrom.token == dai) {
