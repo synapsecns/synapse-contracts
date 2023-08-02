@@ -197,7 +197,8 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         // Check if Swap (tokenIn -> tokenOut) could fulfill tokenIn -> tokenOut request.
         if (Action.Swap.isIncluded(actionMask)) {
             // Check if tokenIn and tokenOut are connected via the LinkedPool.
-            return ILinkedPool(pool).areConnectedTokens(tokenIn, tokenOut);
+            // We are converting ETH -> WETH here, as LinkedPool is unaware of ETH.
+            return ILinkedPool(pool).areConnectedTokens(_poolToken(tokenIn), _poolToken(tokenOut));
         }
         return false;
     }
@@ -252,7 +253,8 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         // Only Swap action is supported for LinkedPools
         if (Action.Swap.isIncluded(actionMask)) {
             // Find the best quote that LinkedPool can offer
-            try ILinkedPool(pool).findBestPath(tokenIn, tokenOut, amountIn) returns (
+            // We are converting ETH -> WETH here, as LinkedPool is unaware of ETH.
+            try ILinkedPool(pool).findBestPath(_poolToken(tokenIn), _poolToken(tokenOut), amountIn) returns (
                 uint8 tokenIndexFrom,
                 uint8 tokenIndexTo,
                 uint256 amountOut
