@@ -111,6 +111,64 @@ contract DssPsmModuleEthTestFork is Test {
         });
     }
 
+    function testGetPoolQuoteRevertsWhenTokensNotInPool() public {
+        vm.expectRevert("tokens not in pool");
+        dssPsmModule.getPoolQuote({
+            pool: DSS_PSM,
+            tokenFrom: IndexedToken({index: 0, token: address(0xA)}),
+            tokenTo: IndexedToken({index: 1, token: USDC}),
+            amountIn: 100 * 10**18,
+            probePaused: false
+        });
+
+        vm.expectRevert("tokens not in pool");
+        dssPsmModule.getPoolQuote({
+            pool: DSS_PSM,
+            tokenFrom: IndexedToken({index: 0, token: DAI}),
+            tokenTo: IndexedToken({index: 1, token: address(0xA)}),
+            amountIn: 100 * 10**18,
+            probePaused: false
+        });
+
+        vm.expectRevert("tokens not in pool");
+        dssPsmModule.getPoolQuote({
+            pool: DSS_PSM,
+            tokenFrom: IndexedToken({index: 0, token: address(0xA)}),
+            tokenTo: IndexedToken({index: 1, token: address(0xB)}),
+            amountIn: 100 * 10**18,
+            probePaused: false
+        });
+    }
+
+    function testGetPoolQuoteRevertsWhenTokenIndicesNotValid() public {
+        vm.expectRevert("token indices not valid");
+        dssPsmModule.getPoolQuote({
+            pool: DSS_PSM,
+            tokenFrom: IndexedToken({index: 0, token: DAI}),
+            tokenTo: IndexedToken({index: 2, token: USDC}),
+            amountIn: 100 * 10**18,
+            probePaused: false
+        });
+
+        vm.expectRevert("token indices not valid");
+        dssPsmModule.getPoolQuote({
+            pool: DSS_PSM,
+            tokenFrom: IndexedToken({index: 2, token: DAI}),
+            tokenTo: IndexedToken({index: 1, token: USDC}),
+            amountIn: 100 * 10**18,
+            probePaused: false
+        });
+
+        vm.expectRevert("token indices not valid");
+        dssPsmModule.getPoolQuote({
+            pool: DSS_PSM,
+            tokenFrom: IndexedToken({index: 2, token: DAI}),
+            tokenTo: IndexedToken({index: 3, token: USDC}),
+            amountIn: 100 * 10**18,
+            probePaused: false
+        });
+    }
+
     function prepareUser(address token, uint256 amount) public {
         deal(token, user, amount);
         vm.prank(user);
