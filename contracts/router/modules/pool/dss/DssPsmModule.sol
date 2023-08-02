@@ -28,9 +28,8 @@ contract DssPsmModule is OnlyDelegateCall, IPoolModule {
         amountOut = getPoolQuote(pool, tokenFrom, tokenTo, amountIn, false);
 
         // in case of transfer fees
-        address dai = IDssPsm(pool).dai();
         uint256 balanceTo = IERC20(tokenTo.token).balanceOf(address(this));
-        if (tokenFrom.token == dai) {
+        if (tokenFrom.index == 0) {
             IERC20(tokenFrom.token).safeApprove(pool, amountIn);
             IDssPsm(pool).buyGem(address(this), amountOut);
 

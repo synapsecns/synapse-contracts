@@ -35,14 +35,14 @@ contract LinkedPoolDssPsmModuleEthUSDCTestFork is LinkedPoolIntegrationTest {
 
     function addExpectedTokens() public override {
         // Expected order of tokens:
-        // 0: DAI
-        // 1: USDC
-        // 2: USDT
-        // 3: USDC
+        // 0: USDC
+        // 1: USDT
+        // 2: DAI
+        // 3: DAI
+        addExpectedToken(USDC, "USDC");
         addExpectedToken(DAI, "DAI");
-        addExpectedToken(USDC, "USDC");
         addExpectedToken(USDT, "USDT");
-        addExpectedToken(USDC, "USDC");
+        addExpectedToken(DAI, "DAI");
     }
 
     function addPools() public override {
