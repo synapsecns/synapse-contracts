@@ -4,6 +4,9 @@ pragma solidity 0.8.17;
 import {LPTokenV2, SwapV2, ISwapV2} from "../../contracts/amm08/SwapV2.sol";
 import {SwapDeployerV2, IERC20} from "../../contracts/amm08/SwapDeployerV2.sol";
 
+import {SwapQuoterV2} from "../../contracts/router/quoter/SwapQuoterV2.sol";
+import {IDefaultExtendedPool} from "../../contracts/router/interfaces/IDefaultExtendedPool.sol";
+
 import {LinkedPool} from "../../contracts/router/LinkedPool.sol";
 
 import {IERC20Metadata} from "@openzeppelin/contracts-4.5.0/token/ERC20/extensions/IERC20Metadata.sol";
@@ -14,6 +17,7 @@ contract PoolUtils08 is Test {
     address private _lpTokenV2Master;
 
     SwapDeployerV2 public swapDeployerV2;
+    mapping(address => address[]) public poolTokens;
 
     function setUp() public virtual {
         _swapV2Master = address(new SwapV2());
@@ -50,6 +54,9 @@ contract PoolUtils08 is Test {
             _lpTokenV2Master
         );
         vm.label(pool, poolName);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            poolTokens[pool].push(tokens[i]);
+        }
 
         (, , , , , , address lpToken) = ISwapV2(pool).swapStorage();
         vm.label(lpToken, lpTokenName);
@@ -79,15 +86,98 @@ contract PoolUtils08 is Test {
     /// @notice Mints tokens using a provided callback function, and adds liquidity to a pool.
     function addLiquidity(
         address pool,
-        address[] memory tokens,
         uint256[] memory amounts,
         function(address, address, uint256) internal mint
     ) internal {
+        address[] memory tokens = poolTokens[pool];
         for (uint256 i = 0; i < tokens.length; i++) {
             mint(tokens[i], address(this), amounts[i]);
             IERC20(tokens[i]).approve(pool, amounts[i]);
         }
         ISwapV2(pool).addLiquidity(amounts, 0, block.timestamp);
+    }
+
+    function getLpToken(address pool) internal view returns (address lpToken) {
+        (, , , , , , lpToken) = IDefaultExtendedPool(pool).swapStorage();
+    }
+
+    // ════════════════════════════════════════════════ ARRAY UTILS ════════════════════════════════════════════════════
+
+    function toArray(address token0, address token1) internal pure returns (address[] memory tokens) {
+        tokens = new address[](2);
+        tokens[0] = token0;
+        tokens[1] = token1;
+    }
+
+    function toArray(
+        address token0,
+        address token1,
+        address token2
+    ) internal pure returns (address[] memory tokens) {
+        tokens = new address[](3);
+        tokens[0] = token0;
+        tokens[1] = token1;
+        tokens[2] = token2;
+    }
+
+    function toArray(uint256 amount0, uint256 amount1) internal pure returns (uint256[] memory amounts) {
+        amounts = new uint256[](2);
+        amounts[0] = amount0;
+        amounts[1] = amount1;
+    }
+
+    function toArray(
+        uint256 amount0,
+        uint256 amount1,
+        uint256 amount2
+    ) internal pure returns (uint256[] memory amounts) {
+        amounts = new uint256[](3);
+        amounts[0] = amount0;
+        amounts[1] = amount1;
+        amounts[2] = amount2;
+    }
+
+    function toArray(SwapQuoterV2.BridgePool memory pool0)
+        internal
+        pure
+        returns (SwapQuoterV2.BridgePool[] memory pools)
+    {
+        pools = new SwapQuoterV2.BridgePool[](1);
+        pools[0] = pool0;
+    }
+
+    function toArray(SwapQuoterV2.BridgePool memory pool0, SwapQuoterV2.BridgePool memory pool1)
+        internal
+        pure
+        returns (SwapQuoterV2.BridgePool[] memory pools)
+    {
+        pools = new SwapQuoterV2.BridgePool[](2);
+        pools[0] = pool0;
+        pools[1] = pool1;
+    }
+
+    function toArray(
+        SwapQuoterV2.BridgePool memory pool0,
+        SwapQuoterV2.BridgePool memory pool1,
+        SwapQuoterV2.BridgePool memory pool2
+    ) internal pure returns (SwapQuoterV2.BridgePool[] memory pools) {
+        pools = new SwapQuoterV2.BridgePool[](3);
+        pools[0] = pool0;
+        pools[1] = pool1;
+        pools[2] = pool2;
+    }
+
+    function toArray(
+        SwapQuoterV2.BridgePool memory pool0,
+        SwapQuoterV2.BridgePool memory pool1,
+        SwapQuoterV2.BridgePool memory pool2,
+        SwapQuoterV2.BridgePool memory pool3
+    ) internal pure returns (SwapQuoterV2.BridgePool[] memory pools) {
+        pools = new SwapQuoterV2.BridgePool[](4);
+        pools[0] = pool0;
+        pools[1] = pool1;
+        pools[2] = pool2;
+        pools[3] = pool3;
     }
 
     // ═════════════════════════════════════════════ LINKED POOL UTILS ═════════════════════════════════════════════════
