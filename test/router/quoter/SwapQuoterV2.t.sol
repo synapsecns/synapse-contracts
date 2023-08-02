@@ -104,12 +104,36 @@ contract SwapQuoterV2Test is PoolUtils08 {
         addLiquidity(nexusPoolDaiUsdcUsdt, toArray(100000 * 10**18, 100000 * 10**6, 100000 * 10**6), mintTestTokens);
     }
 
+    function addL1Pool() public {
+        // nexus pool: [nexusDai,nexusUsdc,nexusUsdt]
+        SwapQuoterV2.BridgePool[] memory pools = toArray(getBridgeNexusPool());
+        vm.prank(owner);
+        quoter.addPools(pools);
+    }
+
+    function addL2Pools() public {
+        // bridge pool for nETH: [nETH,WETH]
+        // bridge pool for nUSD: LinkedPool with [nUSD,USDC.e,USDT]
+        // origin-only pool: LinkedPool with [USDC,USDC.e]
+        // origin-only pool: [USDC.e,USDT]
+        SwapQuoterV2.BridgePool[] memory pools = toArray(
+            getBridgeDefaultPool(),
+            getBridgeLinkedPool(),
+            getOriginLinkedPool(),
+            getOriginDefaultPool()
+        );
+        vm.prank(owner);
+        quoter.addPools(pools);
+    }
+
     function testSetup() public {
         assertEq(quoter.synapseRouter(), synapseRouter);
         assertEq(quoter.defaultPoolCalc(), defaultPoolCalc);
         assertEq(quoter.weth(), weth);
         assertEq(quoter.owner(), owner);
     }
+
+    // ═════════════════════════════════════════ TESTS: SET SYNAPSE ROUTER ═════════════════════════════════════════════
 
     function testSetSynapseRouterUpdatesSynapseRouter() public {
         address newSynapseRouter = makeAddr("NewSynapseRouter");
@@ -123,6 +147,110 @@ contract SwapQuoterV2Test is PoolUtils08 {
         vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(caller);
         quoter.setSynapseRouter(address(1));
+    }
+
+    // ═════════════════════════════════════════════ TESTS: ADD POOLS ══════════════════════════════════════════════════
+
+    function testAddPoolsAddsOriginDefaultPools() public {
+        addL2Pools();
+        // Should return origin-only Default Pools
+        address[] memory defaultPools = quoter.getDefaultPools();
+        assertEq(defaultPools.length, 1);
+        assertEq(defaultPools[0], poolUsdcEUsdt);
+    }
+
+    function testAddPoolsAddsOriginLinkedPools() public {
+        addL2Pools();
+        // Should return origin-only Linked Pools
+        address[] memory linkedPools = quoter.getLinkedPools();
+        assertEq(linkedPools.length, 1);
+        assertEq(linkedPools[0], linkedPoolUsdc);
+    }
+
+    function testAddPoolsAddsBridgePools() public {
+        addL2Pools();
+        // Should return bridge pools
+        SwapQuoterV2.BridgePool[] memory bridgePools = quoter.getBridgePools();
+        assertEq(bridgePools.length, 2);
+        assertEqual(bridgePools[0], getBridgeDefaultPool());
+        assertEqual(bridgePools[1], getBridgeLinkedPool());
+    }
+
+    function testAddPoolsAddsAllPools() public {
+        addL2Pools();
+        // Should return all pools
+        Pool[] memory pools = quoter.allPools();
+        assertEq(pools.length, 4);
+        assertEq(quoter.poolsAmount(), 4);
+        // Order of pools: origin-only Default Pools, origin-only Linked Pools, bridge pools
+        checkPoolData(pools[0], poolUsdcEUsdt);
+        checkPoolData(pools[1], linkedPoolUsdc);
+        checkPoolData(pools[2], poolNethWeth);
+        checkPoolData(pools[3], linkedPoolNusd);
+    }
+
+    function testAddPoolsRevertsWhenCallerNotOwner(address caller) public {
+        vm.assume(caller != owner);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(caller);
+        quoter.addPools(new SwapQuoterV2.BridgePool[](0));
+    }
+
+    // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
+
+    function assertEqual(SwapQuoterV2.BridgePool memory pool, SwapQuoterV2.BridgePool memory expected) internal {
+        assertEq(pool.bridgeToken, expected.bridgeToken);
+        assertEq(uint8(pool.poolType), uint8(expected.poolType));
+        assertEq(pool.pool, expected.pool);
+    }
+
+    function checkPoolData(Pool memory poolData, address expectedPool) internal {
+        address pool = poolData.pool;
+        assertEq(pool, expectedPool);
+        assertEq(poolData.lpToken, poolLpToken[expectedPool]);
+        address[] memory tokens = poolTokens[expectedPool];
+        assertEq(poolData.tokens.length, tokens.length);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            assertEq(poolData.tokens[i].token, tokens[i]);
+            assertEq(poolData.tokens[i].isWeth, tokens[i] == weth);
+        }
+    }
+
+    function getBridgeDefaultPool() internal view returns (SwapQuoterV2.BridgePool memory) {
+        return
+            SwapQuoterV2.BridgePool({bridgeToken: neth, poolType: SwapQuoterV2.PoolType.Default, pool: poolNethWeth});
+    }
+
+    function getBridgeLinkedPool() internal view returns (SwapQuoterV2.BridgePool memory) {
+        return
+            SwapQuoterV2.BridgePool({bridgeToken: nusd, poolType: SwapQuoterV2.PoolType.Linked, pool: linkedPoolNusd});
+    }
+
+    function getOriginDefaultPool() internal view returns (SwapQuoterV2.BridgePool memory) {
+        return
+            SwapQuoterV2.BridgePool({
+                bridgeToken: address(0),
+                poolType: SwapQuoterV2.PoolType.Default,
+                pool: poolUsdcEUsdt
+            });
+    }
+
+    function getOriginLinkedPool() internal view returns (SwapQuoterV2.BridgePool memory) {
+        return
+            SwapQuoterV2.BridgePool({
+                bridgeToken: address(0),
+                poolType: SwapQuoterV2.PoolType.Linked,
+                pool: linkedPoolUsdc
+            });
+    }
+
+    function getBridgeNexusPool() internal view returns (SwapQuoterV2.BridgePool memory) {
+        return
+            SwapQuoterV2.BridgePool({
+                bridgeToken: nexusNusd,
+                poolType: SwapQuoterV2.PoolType.Default,
+                pool: nexusPoolDaiUsdcUsdt
+            });
     }
 
     function mintTestTokens(

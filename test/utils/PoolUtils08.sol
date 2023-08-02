@@ -18,6 +18,7 @@ contract PoolUtils08 is Test {
 
     SwapDeployerV2 public swapDeployerV2;
     mapping(address => address[]) public poolTokens;
+    mapping(address => address) public poolLpToken;
 
     function setUp() public virtual {
         _swapV2Master = address(new SwapV2());
@@ -58,7 +59,8 @@ contract PoolUtils08 is Test {
             poolTokens[pool].push(tokens[i]);
         }
 
-        (, , , , , , address lpToken) = ISwapV2(pool).swapStorage();
+        address lpToken = getLpToken(pool);
+        poolLpToken[pool] = lpToken;
         vm.label(lpToken, lpTokenName);
     }
 
@@ -197,5 +199,10 @@ contract PoolUtils08 is Test {
         linkedPool_.addPool(0, pool, poolModule);
         linkedPool = address(linkedPool_);
         vm.label(linkedPool, string.concat("LinkedPool [", IERC20Metadata(bridgeToken).symbol(), "]"));
+        // Save tokens from the pool
+        address[] memory tokens = poolTokens[pool];
+        for (uint256 i = 0; i < tokens.length; i++) {
+            poolTokens[linkedPool].push(tokens[i]);
+        }
     }
 }
