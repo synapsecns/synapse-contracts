@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import {LPTokenV2, SwapV2, ISwapV2} from "../../contracts/amm08/SwapV2.sol";
 import {SwapDeployerV2, IERC20} from "../../contracts/amm08/SwapDeployerV2.sol";
 
-import {SwapQuoterV2} from "../../contracts/router/quoter/SwapQuoterV2.sol";
+import {SwapQuoterV2, LimitedToken} from "../../contracts/router/quoter/SwapQuoterV2.sol";
 import {IDefaultExtendedPool} from "../../contracts/router/interfaces/IDefaultExtendedPool.sol";
 
 import {LinkedPool} from "../../contracts/router/LinkedPool.sol";
@@ -122,6 +122,11 @@ contract PoolUtils08 is Test {
         tokens[2] = token2;
     }
 
+    function toArray(uint256 amount0) internal pure returns (uint256[] memory amounts) {
+        amounts = new uint256[](1);
+        amounts[0] = amount0;
+    }
+
     function toArray(uint256 amount0, uint256 amount1) internal pure returns (uint256[] memory amounts) {
         amounts = new uint256[](2);
         amounts[0] = amount0;
@@ -180,6 +185,60 @@ contract PoolUtils08 is Test {
         pools[1] = pool1;
         pools[2] = pool2;
         pools[3] = pool3;
+    }
+
+    function toArray(LimitedToken memory token0) internal pure returns (LimitedToken[] memory tokens) {
+        tokens = new LimitedToken[](1);
+        tokens[0] = token0;
+    }
+
+    function toArray(LimitedToken memory token0, LimitedToken memory token1)
+        internal
+        pure
+        returns (LimitedToken[] memory tokens)
+    {
+        tokens = new LimitedToken[](2);
+        tokens[0] = token0;
+        tokens[1] = token1;
+    }
+
+    function toArray(
+        LimitedToken memory token0,
+        LimitedToken memory token1,
+        LimitedToken memory token2
+    ) internal pure returns (LimitedToken[] memory tokens) {
+        tokens = new LimitedToken[](3);
+        tokens[0] = token0;
+        tokens[1] = token1;
+        tokens[2] = token2;
+    }
+
+    function toArray(
+        LimitedToken memory token0,
+        LimitedToken memory token1,
+        LimitedToken memory token2,
+        LimitedToken memory token3
+    ) internal pure returns (LimitedToken[] memory tokens) {
+        tokens = new LimitedToken[](4);
+        tokens[0] = token0;
+        tokens[1] = token1;
+        tokens[2] = token2;
+        tokens[3] = token3;
+    }
+
+    function toArray(
+        LimitedToken memory token0,
+        LimitedToken memory token1,
+        LimitedToken memory token2,
+        LimitedToken memory token3,
+        LimitedToken memory token4
+    ) internal pure returns (LimitedToken[] memory tokens) {
+        tokens = new LimitedToken[](5);
+        tokens[0] = token0;
+        tokens[1] = token1;
+        tokens[2] = token2;
+        tokens[3] = token3;
+        tokens[4] = token4;
     }
 
     // ═════════════════════════════════════════════ LINKED POOL UTILS ═════════════════════════════════════════════════
