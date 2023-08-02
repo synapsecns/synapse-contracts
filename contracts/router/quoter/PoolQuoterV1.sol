@@ -11,6 +11,10 @@ import {UniversalTokenLib} from "../libs/UniversalToken.sol";
 
 /// @notice Stateless abstraction to calculate exact quotes for any DefaultPool instances.
 abstract contract PoolQuoterV1 is ISwapQuoterV1 {
+    /// @dev Returned index value for a token that is not found in the pool.
+    /// We reasonably assume that no pool will ever hold 256 tokens, so this value is safe to use.
+    uint8 private constant NOT_FOUND = 0xFF;
+
     address public immutable defaultPoolCalc;
     address public immutable weth;
 
@@ -119,7 +123,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
     }
 
     /// @dev Returns pool indexes for the two given tokens plus 1.
-    /// - The default value of 0 means a token is not supported by the pool.
+    /// - The return value NOT_FOUND (0xFF) means a token is not supported by the pool.
     /// - If one of the pool tokens is WETH, ETH_ADDRESS is also considered as a pool token.
     /// Note: this is not supposed to be used with LinkedPool contracts, as a single token can appear
     /// multiple times in the LinkedPool's token tree.
@@ -129,18 +133,15 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         address tokenOut
     ) internal view returns (uint8 indexIn, uint8 indexOut) {
         uint256 numTokens = _numTokens(pool);
+        // Assign NOT_FOUND to both indexes by default. This value will be overwritten if the token is found.
+        indexIn = NOT_FOUND;
+        indexOut = NOT_FOUND;
         unchecked {
             // unchecked: numTokens <= 255 => ++t never overflows uint8
             for (uint8 t = 0; t < numTokens; ++t) {
                 address poolToken = IDefaultExtendedPool(pool).getToken(t);
-                if (_poolToken(tokenIn) == poolToken) {
-                    // unchecked: (t + 1) never overflows uint8 (see above)
-                    indexIn = t + 1;
-                }
-                if (_poolToken(tokenOut) == poolToken) {
-                    // unchecked: (t + 1) never overflows uint8 (see above)
-                    indexOut = t + 1;
-                }
+                if (_poolToken(tokenIn) == poolToken) indexIn = t;
+                if (_poolToken(tokenOut) == poolToken) indexOut = t;
             }
         }
     }
@@ -169,16 +170,16 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         // We don't check for paused pools here, as we only need to know if a connection exists.
         (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn, tokenOut);
         // Check if Swap (tokenIn -> tokenOut) could fulfill tokenIn -> tokenOut request.
-        if (Action.Swap.isIncluded(actionMask) && indexIn > 0 && indexOut > 0) {
+        if (Action.Swap.isIncluded(actionMask) && indexIn != NOT_FOUND && indexOut != NOT_FOUND) {
             return true;
         }
         address lpToken = _lpToken(pool);
         // Check if AddLiquidity (tokenIn -> lpToken) could fulfill tokenIn -> tokenOut request.
-        if (Action.AddLiquidity.isIncluded(actionMask) && indexIn > 0 && tokenOut == lpToken) {
+        if (Action.AddLiquidity.isIncluded(actionMask) && indexIn != NOT_FOUND && tokenOut == lpToken) {
             return true;
         }
         // Check if RemoveLiquidity (lpToken -> tokenOut) could fulfill tokenIn -> tokenOut request.
-        if (Action.RemoveLiquidity.isIncluded(actionMask) && tokenIn == lpToken && indexOut > 0) {
+        if (Action.RemoveLiquidity.isIncluded(actionMask) && tokenIn == lpToken && indexOut != NOT_FOUND) {
             return true;
         }
         return false;
@@ -220,23 +221,18 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         if (_isPoolPaused(pool)) return;
         // Check if tokenIn and tokenOut are pool tokens
         (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn, tokenOut);
-        unchecked {
-            if (indexIn > 0 && indexOut > 0) {
-                // tokenIn, tokenOut are pool tokens: Action.Swap is required
-                // unchecked: indexIn > 0 and indexOut > 0, so indexIn - 1 and indexOut - 1 never underflow
-                _checkSwapQuote(actionMask, pool, indexIn - 1, indexOut - 1, amountIn, query);
-                return;
-            }
-            address lpToken = _lpToken(pool);
-            if (indexIn > 0 && tokenOut == lpToken) {
-                // tokenIn is pool token, tokenOut is LP token: Action.AddLiquidity is required
-                // unchecked: indexIn > 0, so indexIn - 1 never underflows
-                _checkAddLiquidityQuote(actionMask, pool, indexIn - 1, amountIn, query);
-            } else if (tokenIn == lpToken && indexOut > 0) {
-                // tokenIn is LP token, tokenOut is pool token: Action.RemoveLiquidity is required
-                // unchecked: indexOut > 0, so indexOut - 1 never underflows
-                _checkRemoveLiquidityQuote(actionMask, pool, indexOut - 1, amountIn, query);
-            }
+        if (indexIn != NOT_FOUND && indexOut != NOT_FOUND) {
+            // tokenIn, tokenOut are pool tokens: Action.Swap is required
+            _checkSwapQuote(actionMask, pool, indexIn, indexOut, amountIn, query);
+            return;
+        }
+        address lpToken = _lpToken(pool);
+        if (indexIn != NOT_FOUND && tokenOut == lpToken) {
+            // tokenIn is pool token, tokenOut is LP token: Action.AddLiquidity is required
+            _checkAddLiquidityQuote(actionMask, pool, indexIn, amountIn, query);
+        } else if (tokenIn == lpToken && indexOut != NOT_FOUND) {
+            // tokenIn is LP token, tokenOut is pool token: Action.RemoveLiquidity is required
+            _checkRemoveLiquidityQuote(actionMask, pool, indexOut, amountIn, query);
         }
     }
 
