@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {SwapQuoterV2} from "../../../contracts/router/quoter/SwapQuoterV2.sol";
+import {Action, DefaultParams, SwapQuery} from "../../../contracts/router/libs/Structs.sol";
 import {DefaultPoolCalc} from "../../../contracts/router/quoter/DefaultPoolCalc.sol";
 
 import {MockERC20} from "../mocks/MockERC20.sol";
@@ -228,5 +229,68 @@ abstract contract BasicSwapQuoterV2Test is PoolUtils08 {
         } else {
             MockERC20(token).mint(to, amount);
         }
+    }
+
+    // ═════════════════════════════════════════════ SWAP QUERY CHECKS ═════════════════════════════════════════════════
+
+    function assertNoPathSwapQuery(SwapQuery memory query, address tokenOut) internal {
+        // tokenOut is set even for empty queries
+        assertEq(query.tokenOut, tokenOut);
+        // other fields should be empty
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.minAmountOut, 0);
+        assertEq(query.deadline, 0);
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    function assertSameTokenSwapQuery(
+        SwapQuery memory query,
+        address tokenIn,
+        uint256 amountIn
+    ) internal {
+        assertEq(query.tokenOut, tokenIn);
+        // routerAdapter should be empty
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.minAmountOut, amountIn);
+        assertEq(query.deadline, type(uint256).max);
+        // Params should be empty
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    function assertPathFoundSwapQuery(
+        SwapQuery memory query,
+        address tokenOut,
+        uint256 expectedAmountOut,
+        bytes memory expectedParams
+    ) internal {
+        assertEq(query.tokenOut, tokenOut);
+        // routerAdapter should SynapseRouter
+        assertEq(query.routerAdapter, synapseRouter);
+        assertEq(query.minAmountOut, expectedAmountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, expectedParams);
+    }
+
+    function getSwapParams(
+        address pool,
+        uint8 indexFrom,
+        uint8 indexTo
+    ) internal pure returns (bytes memory) {
+        return abi.encode(DefaultParams(Action.Swap, pool, indexFrom, indexTo));
+    }
+
+    function getAddLiquidityParams(address pool, uint8 indexFrom) internal pure returns (bytes memory) {
+        // indexTo is set to 0xFF
+        return abi.encode(DefaultParams(Action.AddLiquidity, pool, indexFrom, 0xFF));
+    }
+
+    function getRemoveLiquidityParams(address pool, uint8 indexTo) internal pure returns (bytes memory) {
+        // indexFrom is set to 0xFF
+        return abi.encode(DefaultParams(Action.RemoveLiquidity, pool, 0xFF, indexTo));
+    }
+
+    function getHandleEthParams() internal pure returns (bytes memory) {
+        // pool address is zero; indexFrom and indexTo are set to 0xFF
+        return abi.encode(DefaultParams(Action.HandleEth, address(0), 0xFF, 0xFF));
     }
 }
