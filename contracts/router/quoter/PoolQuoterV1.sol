@@ -204,10 +204,10 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         return false;
     }
 
-    /// @dev Gets a quote for `tokenIn -> tokenOut` via the given Default Pool, given the `actionMask` of
-    /// available actions for the token.
-    /// If the action is possible, the `query` will be updated, should the output amount be better than
-    /// the current best quote.
+    /// @dev Compares `curBestQuery` (representing query with the best quote found so far) with the quote for
+    /// `tokenIn -> tokenOut` via the given Default Pool, given the `actionMask` of available actions for the token.
+    /// If the action is possible, and the found quote is better, the `curBestQuote` is overwritten with
+    /// the struct describing the new best quote.
     /// Note: only checks pool-related actions: Swap/AddLiquidity/RemoveLiquidity.
     /// Note: this is not supposed to be used with LinkedPool contracts, as a single token can appear
     /// multiple times in the LinkedPool's token tree.
@@ -217,7 +217,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         address tokenIn,
         address tokenOut,
         uint256 amountIn,
-        SwapQuery memory query
+        SwapQuery memory curBestQuery
     ) internal view {
         // Skip paused pools
         if (_isPoolPaused(pool)) return;
@@ -225,23 +225,23 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         (uint8 indexIn, uint8 indexOut) = _getTokenIndexes(pool, tokenIn, tokenOut);
         if (indexIn != NOT_FOUND && indexOut != NOT_FOUND) {
             // tokenIn, tokenOut are pool tokens: Action.Swap is required
-            _checkSwapQuote(actionMask, pool, indexIn, indexOut, amountIn, query);
+            _checkSwapQuote(actionMask, pool, indexIn, indexOut, amountIn, curBestQuery);
             return;
         }
         address lpToken = _lpToken(pool);
         if (indexIn != NOT_FOUND && tokenOut == lpToken) {
             // tokenIn is pool token, tokenOut is LP token: Action.AddLiquidity is required
-            _checkAddLiquidityQuote(actionMask, pool, indexIn, amountIn, query);
+            _checkAddLiquidityQuote(actionMask, pool, indexIn, amountIn, curBestQuery);
         } else if (tokenIn == lpToken && indexOut != NOT_FOUND) {
             // tokenIn is LP token, tokenOut is pool token: Action.RemoveLiquidity is required
-            _checkRemoveLiquidityQuote(actionMask, pool, indexOut, amountIn, query);
+            _checkRemoveLiquidityQuote(actionMask, pool, indexOut, amountIn, curBestQuery);
         }
     }
 
-    /// @dev Gets a quote for `tokenIn -> tokenOut` via the given Linked Pool, given the `actionMask` of
-    /// available actions for the token.
-    /// If the action is possible, the `query` will be updated, should the output amount be better than
-    /// the current best quote.
+    /// @dev Compares `curBestQuery` (representing query with the best quote found so far) with the quote for
+    /// `tokenIn -> tokenOut` via the given Linked Pool, given the `actionMask` of available actions for the token.
+    /// If the action is possible, and the found quote is better, the `curBestQuote` is overwritten with
+    /// the struct describing the new best quote.
     /// Note: only checks pool-related actions: Swap.
     function _checkLinkedPoolQuote(
         uint256 actionMask,
@@ -249,7 +249,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         address tokenIn,
         address tokenOut,
         uint256 amountIn,
-        SwapQuery memory query
+        SwapQuery memory curBestQuery
     ) internal view {
         // Only Swap action is supported for LinkedPools
         if (Action.Swap.isIncluded(actionMask)) {
@@ -261,10 +261,10 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
                 uint256 amountOut
             ) {
                 // Update the current quote if the new quote is better
-                if (amountOut > query.minAmountOut) {
-                    query.minAmountOut = amountOut;
+                if (amountOut > curBestQuery.minAmountOut) {
+                    curBestQuery.minAmountOut = amountOut;
                     // Encode params for swapping via the current pool: specify indexFrom and indexTo
-                    query.rawParams = abi.encode(DefaultParams(Action.Swap, pool, tokenIndexFrom, tokenIndexTo));
+                    curBestQuery.rawParams = abi.encode(DefaultParams(Action.Swap, pool, tokenIndexFrom, tokenIndexTo));
                 }
             } catch {
                 // solhint-disable-previous-line no-empty-blocks
@@ -275,8 +275,10 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
 
     // ════════════════════════════════════════ POOL INDEX -> INDEX QUOTES ═════════════════════════════════════════════
 
-    /// @dev Checks a swap quote for the given pool,
-    /// and updates `query` if the expected output amount is better than the current one.
+    /// @dev Compares `curBestQuery` (representing query with the best quote found so far) with the quote for
+    /// `tokenIn -> tokenOut` via the given Default Pool, only considering Swap action.
+    /// If the action is possible, and the found quote is better, the `curBestQuote` is overwritten with
+    /// the struct describing the new best quote.
     /// - tokenIn -> tokenOut swap will be considered.
     /// - Won't do anything if Action.Swap is not included in `actionMask`.
     function _checkSwapQuote(
@@ -285,17 +287,17 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         uint8 tokenIndexFrom,
         uint8 tokenIndexTo,
         uint256 amountIn,
-        SwapQuery memory query
+        SwapQuery memory curBestQuery
     ) internal view {
         // Don't do anything if we haven't specified Swap as possible action
         if (!Action.Swap.isIncluded(actionMask)) return;
         try IDefaultExtendedPool(pool).calculateSwap(tokenIndexFrom, tokenIndexTo, amountIn) returns (
             uint256 amountOut
         ) {
-            if (amountOut > query.minAmountOut) {
-                query.minAmountOut = amountOut;
+            if (amountOut > curBestQuery.minAmountOut) {
+                curBestQuery.minAmountOut = amountOut;
                 // Encode params for swapping via the current pool: specify indexFrom and indexTo
-                query.rawParams = abi.encode(DefaultParams(Action.Swap, pool, tokenIndexFrom, tokenIndexTo));
+                curBestQuery.rawParams = abi.encode(DefaultParams(Action.Swap, pool, tokenIndexFrom, tokenIndexTo));
             }
         } catch {
             // solhint-disable-previous-line no-empty-blocks
@@ -303,8 +305,10 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         }
     }
 
-    /// @dev Checks a quote for adding liquidity to the given pool,
-    /// and updates `query` if the expected output amount is better than the current one.
+    /// @dev Compares `curBestQuery` (representing query with the best quote found so far) with the quote for
+    /// `tokenIn -> tokenOut` via the given Default Pool, only considering AddLiquidity action.
+    /// If the action is possible, and the found quote is better, the `curBestQuote` is overwritten with
+    /// the struct describing the new best quote.
     /// - This is the equivalent of tokenIn -> LPToken swap.
     /// - Won't do anything if Action.AddLiquidity is not included in `actionMask`.
     function _checkAddLiquidityQuote(
@@ -312,7 +316,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         address pool,
         uint8 tokenIndexFrom,
         uint256 amountIn,
-        SwapQuery memory query
+        SwapQuery memory curBestQuery
     ) internal view {
         // Don't do anything if we haven't specified AddLiquidity as possible action
         if (!Action.AddLiquidity.isIncluded(actionMask)) return;
@@ -320,10 +324,12 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         amounts[tokenIndexFrom] = amountIn;
         // Use DefaultPool Calc as we need the exact quote here
         try IDefaultPoolCalc(defaultPoolCalc).calculateAddLiquidity(pool, amounts) returns (uint256 amountOut) {
-            if (amountOut > query.minAmountOut) {
-                query.minAmountOut = amountOut;
+            if (amountOut > curBestQuery.minAmountOut) {
+                curBestQuery.minAmountOut = amountOut;
                 // Encode params for adding liquidity via the current pool: specify indexFrom (indexTo = 0xFF)
-                query.rawParams = abi.encode(DefaultParams(Action.AddLiquidity, pool, tokenIndexFrom, type(uint8).max));
+                curBestQuery.rawParams = abi.encode(
+                    DefaultParams(Action.AddLiquidity, pool, tokenIndexFrom, type(uint8).max)
+                );
             }
         } catch {
             // solhint-disable-previous-line no-empty-blocks
@@ -331,8 +337,10 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         }
     }
 
-    /// @dev Checks a quote for removing liquidity from the given pool,
-    /// and updates `query` if the expected output amount is better than the current one.
+    /// @dev Compares `curBestQuery` (representing query with the best quote found so far) with the quote for
+    /// `tokenIn -> tokenOut` via the given Default Pool, only considering RemoveLiquidity action.
+    /// If the action is possible, and the found quote is better, the `curBestQuote` is overwritten with
+    /// the struct describing the new best quote.
     /// - This is the equivalent of LPToken -> tokenOut swap.
     /// - Won't do anything if Action.RemoveLiquidity is not included in `actionMask`.
     function _checkRemoveLiquidityQuote(
@@ -340,17 +348,17 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         address pool,
         uint8 tokenIndexTo,
         uint256 amountIn,
-        SwapQuery memory query
+        SwapQuery memory curBestQuery
     ) internal view {
         // Don't do anything if we haven't specified RemoveLiquidity as possible action
         if (!Action.RemoveLiquidity.isIncluded(actionMask)) return;
         try IDefaultExtendedPool(pool).calculateRemoveLiquidityOneToken(amountIn, tokenIndexTo) returns (
             uint256 amountOut
         ) {
-            if (amountOut > query.minAmountOut) {
-                query.minAmountOut = amountOut;
+            if (amountOut > curBestQuery.minAmountOut) {
+                curBestQuery.minAmountOut = amountOut;
                 // Encode params for removing liquidity via the current pool: specify indexTo (indexFrom = 0xFF)
-                query.rawParams = abi.encode(
+                curBestQuery.rawParams = abi.encode(
                     DefaultParams(Action.RemoveLiquidity, pool, type(uint8).max, tokenIndexTo)
                 );
             }
@@ -360,8 +368,10 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         }
     }
 
-    /// @dev Checks if a "handle ETH" operation is possible between two given tokens,
-    /// and updates `query` if the expected output amount is better than the current one.
+    /// @dev Compares `curBestQuery` (representing query with the best quote found so far) with the quote for
+    /// `tokenIn -> tokenOut` only considering HandleEth action.
+    /// If the action is possible, and the found quote is better, the `curBestQuote` is overwritten with
+    /// the struct describing the new best quote.
     /// - That would be either unwrapping WETH into native ETH, or wrapping ETH into WETH.
     /// - Won't do anything if Action.HandleEth is not included in `actionMask`.
     function _checkHandleETHQuote(
@@ -369,14 +379,16 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         address tokenIn,
         address tokenOut,
         uint256 amountIn,
-        SwapQuery memory query
+        SwapQuery memory curBestQuery
     ) internal view {
         // Don't do anything if we haven't specified HandleETH as possible action
         if (!Action.HandleEth.isIncluded(actionMask)) return;
-        if (_isEthAndWeth(tokenIn, tokenOut) && amountIn > query.minAmountOut) {
-            query.minAmountOut = amountIn;
+        if (_isEthAndWeth(tokenIn, tokenOut) && amountIn > curBestQuery.minAmountOut) {
+            curBestQuery.minAmountOut = amountIn;
             // Encode params for handling ETH: no pool is present, indexFrom and indexTo are 0xFF
-            query.rawParams = abi.encode(DefaultParams(Action.HandleEth, address(0), type(uint8).max, type(uint8).max));
+            curBestQuery.rawParams = abi.encode(
+                DefaultParams(Action.HandleEth, address(0), type(uint8).max, type(uint8).max)
+            );
         }
     }
 
