@@ -54,6 +54,7 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
 
     /// @dev Mapping from a bridge token into a whitelisted liquidity pool for the token.
     /// Could be used for swaps on both origin and destination chains.
+    /// For swaps on destination chains, this is the only pool that could be used for swaps for the given token.
     mapping(address => TypedPool) internal _bridgePools;
     /// @dev Set of bridge tokens with whitelisted liquidity pools (keys for `_bridgePools` mapping)
     EnumerableSet.AddressSet internal _bridgeTokens;
@@ -326,6 +327,8 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             // query.rawParams is "", indicating that no further action is required
             return query;
         }
+        // Note: we will be passing `quote` as a memory reference to the internal functions,
+        // where it will be populated with the best quote found so far.
         // Check if ETH <> WETH (Action.HandleEth) could fulfill tokenIn -> tokenOut request.
         _checkHandleETHQuote(actionMask, tokenIn, tokenOut, amountIn, query);
         // Check if this is a request for an origin swap.
@@ -357,24 +360,29 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         }
     }
 
-    /// @dev Gets a quote for `tokenIn -> tokenOut` via the given Bridge Pool (either Default or Linked),
-    /// given the `actionMask` of available actions for the token.
-    /// If the action is possible, the `query` will be updated, should the output amount be better than
-    /// the current best quote.
+    /// @dev Compares `curBestQuery` (representing query with the best quote found so far) with the quote for
+    /// `tokenIn -> tokenOut` via the given Pool, given the `actionMask` of available actions for the token.
+    /// If the action is possible, and the found quote is better, the `curBestQuote` is overwritten with
+    /// the struct describing the new best quote.
+    /// Note: `bridgePool` is a whitelisted liquidity pool for `tokenIn`, meaning that this is the only pool
+    /// that could be used for "destination swaps" when bridging `tokenIn` to this chain.
+    /// Note: only checks pool-related actions:
+    /// - Default Pool: Swap/AddLiquidity/RemoveLiquidity
+    /// - Linked Pool: Swap
     function _checkPoolQuote(
         uint256 actionMask,
         TypedPool memory bridgePool,
         address tokenIn,
         address tokenOut,
         uint256 amountIn,
-        SwapQuery memory query
+        SwapQuery memory curBestQuery
     ) internal view {
         // Don't do anything, if no whitelisted pool exists.
         if (bridgePool.pool == address(0)) return;
         if (bridgePool.poolType == PoolType.Default) {
-            _checkDefaultPoolQuote(actionMask, bridgePool.pool, tokenIn, tokenOut, amountIn, query);
+            _checkDefaultPoolQuote(actionMask, bridgePool.pool, tokenIn, tokenOut, amountIn, curBestQuery);
         } else {
-            _checkLinkedPoolQuote(actionMask, bridgePool.pool, tokenIn, tokenOut, amountIn, query);
+            _checkLinkedPoolQuote(actionMask, bridgePool.pool, tokenIn, tokenOut, amountIn, curBestQuery);
         }
     }
 }
