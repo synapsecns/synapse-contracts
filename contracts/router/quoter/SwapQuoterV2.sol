@@ -48,9 +48,9 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     address public synapseRouter;
 
     /// @dev Set of Default Pools that could be used for swaps on origin chain only
-    EnumerableSet.AddressSet internal _defaultPools;
+    EnumerableSet.AddressSet internal _originDefaultPools;
     /// @dev Set of Linked Pools that could be used for swaps on origin chain only
-    EnumerableSet.AddressSet internal _linkedPools;
+    EnumerableSet.AddressSet internal _originLinkedPools;
 
     /// @dev Mapping from a bridge token into a whitelisted liquidity pool for the token.
     /// Could be used for swaps on both origin and destination chains.
@@ -113,13 +113,13 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     // ══════════════════════════════════════════════ QUOTER V2 VIEWS ══════════════════════════════════════════════════
 
     /// @notice Returns the list of Default Pools that could be used for swaps on origin chain only.
-    function getDefaultPools() external view returns (address[] memory defaultPools) {
-        return _defaultPools.values();
+    function getOriginDefaultPools() external view returns (address[] memory originDefaultPools) {
+        return _originDefaultPools.values();
     }
 
     /// @notice Returns the list of Linked Pools that could be used for swaps on origin chain only.
-    function getLinkedPools() external view returns (address[] memory linkedPools) {
-        return _linkedPools.values();
+    function getOriginLinkedPools() external view returns (address[] memory originLinkedPools) {
+        return _originLinkedPools.values();
     }
 
     /// @notice Returns the list of bridge tokens with whitelisted liquidity pools.
@@ -188,27 +188,30 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     /// @inheritdoc ISwapQuoterV1
     function allPools() external view returns (Pool[] memory pools) {
         // Combine Default, Linked, and Bridge pools into a single array
-        uint256 amtDefaultPools = _defaultPools.length();
-        uint256 amtLinkedPools = _linkedPools.length();
+        uint256 amtOriginDefaultPools = _originDefaultPools.length();
+        uint256 amtOriginLinkedPools = _originLinkedPools.length();
         uint256 amtBridgePools = _bridgeTokens.length();
         unchecked {
             // unchecked: total amount of pools never overflows uint256
-            pools = new Pool[](amtDefaultPools + amtLinkedPools + amtBridgePools);
+            pools = new Pool[](amtOriginDefaultPools + amtOriginLinkedPools + amtBridgePools);
             // unchecked: ++i never overflows uint256
-            for (uint256 i = 0; i < amtDefaultPools; ++i) {
-                pools[i] = _getPoolData(PoolType.Default, _defaultPools.at(i));
+            for (uint256 i = 0; i < amtOriginDefaultPools; ++i) {
+                pools[i] = _getPoolData(PoolType.Default, _originDefaultPools.at(i));
             }
             // unchecked: ++i never overflows uint256
-            for (uint256 i = 0; i < amtLinkedPools; ++i) {
-                // unchecked: amtDefaultPools + i < pools.length => never overflows
-                pools[amtDefaultPools + i] = _getPoolData(PoolType.Linked, _linkedPools.at(i));
+            for (uint256 i = 0; i < amtOriginLinkedPools; ++i) {
+                // unchecked: amtOriginDefaultPools + i < pools.length => never overflows
+                pools[amtOriginDefaultPools + i] = _getPoolData(PoolType.Linked, _originLinkedPools.at(i));
             }
             // unchecked: ++i never overflows uint256
             for (uint256 i = 0; i < amtBridgePools; ++i) {
                 address bridgeToken = _bridgeTokens.at(i);
                 TypedPool memory typedPool = _bridgePools[bridgeToken];
-                // unchecked: amtDefaultPools + amtLinkedPools + i < pools.length => never overflows uint256
-                pools[amtDefaultPools + amtLinkedPools + i] = _getPoolData(typedPool.poolType, typedPool.pool);
+                // unchecked: amtOriginDefaultPools + amtOriginLinkedPools + i < pools.length => never overflows uint256
+                pools[amtOriginDefaultPools + amtOriginLinkedPools + i] = _getPoolData(
+                    typedPool.poolType,
+                    typedPool.pool
+                );
             }
         }
     }
@@ -218,7 +221,7 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         // Total amount of pools is the sum of pools in each pool type and bridge pools
         unchecked {
             // unchecked: total amount of pools never overflows uint256
-            return _defaultPools.length() + _linkedPools.length() + _bridgeTokens.length();
+            return _originDefaultPools.length() + _originLinkedPools.length() + _bridgeTokens.length();
         }
     }
 
@@ -233,9 +236,9 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             // No bridge token was supplied, so we add the pool to the corresponding set of "origin pools".
             // We also check that the pool has not been added yet.
             if (pool.poolType == PoolType.Default) {
-                wasAdded = _defaultPools.add(pool.pool);
+                wasAdded = _originDefaultPools.add(pool.pool);
             } else {
-                wasAdded = _linkedPools.add(pool.pool);
+                wasAdded = _originLinkedPools.add(pool.pool);
             }
         } else {
             address bridgeToken = pool.bridgeToken;
@@ -258,9 +261,9 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             // No bridge token was supplied, so we remove the pool from the corresponding set of "origin pools".
             // We also check that the pool has been added before.
             if (pool.poolType == PoolType.Default) {
-                wasRemoved = _defaultPools.remove(pool.pool);
+                wasRemoved = _originDefaultPools.remove(pool.pool);
             } else {
-                wasRemoved = _linkedPools.remove(pool.pool);
+                wasRemoved = _originLinkedPools.remove(pool.pool);
             }
         } else {
             address bridgeToken = pool.bridgeToken;
@@ -340,17 +343,18 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             return query;
         }
         unchecked {
-            // If this is a request for an origin swap, check all available pools
-            uint256 numPools = _defaultPools.length();
+            // If this is a request for an origin swap, check all available origin-only pools
+            uint256 numPools = _originDefaultPools.length();
             // unchecked: ++i never overflows uint256
             for (uint256 i = 0; i < numPools; ++i) {
-                _checkDefaultPoolQuote(actionMask, _defaultPools.at(i), tokenIn, tokenOut, amountIn, query);
+                _checkDefaultPoolQuote(actionMask, _originDefaultPools.at(i), tokenIn, tokenOut, amountIn, query);
             }
-            numPools = _linkedPools.length();
+            numPools = _originLinkedPools.length();
             // unchecked: ++i never overflows uint256
             for (uint256 i = 0; i < numPools; ++i) {
-                _checkLinkedPoolQuote(actionMask, _linkedPools.at(i), tokenIn, tokenOut, amountIn, query);
+                _checkLinkedPoolQuote(actionMask, _originLinkedPools.at(i), tokenIn, tokenOut, amountIn, query);
             }
+            // Also check all whitelisted pools for destination swaps, as these could be used for origin swaps as well
             numPools = _bridgeTokens.length();
             // unchecked: ++i never overflows uint256
             for (uint256 i = 0; i < numPools; ++i) {

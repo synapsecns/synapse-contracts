@@ -35,7 +35,7 @@ contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
     function testAddPoolsAddsOriginDefaultPools() public {
         addL2Pools();
         // Should return origin-only Default Pools
-        address[] memory defaultPools = quoter.getDefaultPools();
+        address[] memory defaultPools = quoter.getOriginDefaultPools();
         assertEq(defaultPools.length, 1);
         assertEq(defaultPools[0], poolUsdcEUsdt);
     }
@@ -43,7 +43,7 @@ contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
     function testAddPoolsAddsOriginLinkedPools() public {
         addL2Pools();
         // Should return origin-only Linked Pools
-        address[] memory linkedPools = quoter.getLinkedPools();
+        address[] memory linkedPools = quoter.getOriginLinkedPools();
         assertEq(linkedPools.length, 1);
         assertEq(linkedPools[0], linkedPoolUsdc);
     }
@@ -132,7 +132,7 @@ contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
         vm.prank(owner);
         quoter.removePools(toArray(getOriginDefaultPool()));
         // Should return no origin-only Default Pools
-        address[] memory defaultPools = quoter.getDefaultPools();
+        address[] memory defaultPools = quoter.getOriginDefaultPools();
         assertEq(defaultPools.length, 0);
         // Should return all pools except origin-only Default Pools
         Pool[] memory pools = quoter.allPools();
@@ -150,7 +150,7 @@ contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
         vm.prank(owner);
         quoter.removePools(toArray(getOriginLinkedPool()));
         // Should return no origin-only Linked Pools
-        address[] memory linkedPools = quoter.getLinkedPools();
+        address[] memory linkedPools = quoter.getOriginLinkedPools();
         assertEq(linkedPools.length, 0);
         // Should return all pools except origin-only Linked Pools
         Pool[] memory pools = quoter.allPools();
