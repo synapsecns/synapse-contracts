@@ -122,9 +122,10 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         }
     }
 
-    /// @dev Returns pool indexes for the two given tokens plus 1.
+    /// @dev Returns pool indexes for the two given tokens.
     /// - The return value NOT_FOUND (0xFF) means a token is not supported by the pool.
-    /// - If one of the pool tokens is WETH, ETH_ADDRESS is also considered as a pool token.
+    /// - If one of the pool tokens is WETH, ETH_ADDRESS is also considered as a pool token: a valid index
+    /// representing WETH in returned.
     /// Note: this is not supposed to be used with LinkedPool contracts, as a single token can appear
     /// multiple times in the LinkedPool's token tree.
     function _getTokenIndexes(
