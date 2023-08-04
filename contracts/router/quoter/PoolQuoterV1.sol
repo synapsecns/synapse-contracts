@@ -15,7 +15,11 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
     /// We reasonably assume that no pool will ever hold 256 tokens, so this value is safe to use.
     uint8 private constant NOT_FOUND = 0xFF;
 
+    /// @notice Address of deployed calculator contract for DefaultPool, which is able to calculate
+    /// EXACT quotes for AddLiquidity action (something that DefaultPool contract itself is unable to do).
     address public immutable defaultPoolCalc;
+    /// @notice Address of WETH token used in the pools. Represents wrapped version of chain's native currency,
+    /// e.g. WETH on Ethereum, WBNB on BSC, etc.
     address public immutable weth;
 
     constructor(address defaultPoolCalc_, address weth_) {
@@ -322,7 +326,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
         if (!Action.AddLiquidity.isIncluded(actionMask)) return;
         uint256[] memory amounts = new uint256[](_numTokens(pool));
         amounts[tokenIndexFrom] = amountIn;
-        // Use DefaultPool Calc as we need the exact quote here
+        // Use DefaultPool Calc as we need the EXACT quote here
         try IDefaultPoolCalc(defaultPoolCalc).calculateAddLiquidity(pool, amounts) returns (uint256 amountOut) {
             if (amountOut > curBestQuery.minAmountOut) {
                 curBestQuery.minAmountOut = amountOut;
@@ -401,7 +405,7 @@ abstract contract PoolQuoterV1 is ISwapQuoterV1 {
             (tokenA == weth && tokenB == UniversalTokenLib.ETH_ADDRESS);
     }
 
-    /// @dev Returns token address used in the pool for the given token.
+    /// @dev Returns token address used in the pool for the given "underlying token".
     /// This is either the token itself, or WETH if the token is ETH.
     function _poolToken(address token) internal view returns (address) {
         return token == UniversalTokenLib.ETH_ADDRESS ? weth : token;

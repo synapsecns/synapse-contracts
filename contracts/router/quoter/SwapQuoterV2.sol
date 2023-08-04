@@ -287,7 +287,7 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     }
 
     /// @dev Checks whether `tokenIn -> tokenOut` is possible given the `actionMask` of available actions for `tokenIn`.
-    /// Will only consider the whitelisted pool for `tokenIn`
+    /// Will only consider the whitelisted pool for `tokenIn`, if Swap/AddLiquidity/RemoveLiquidity are required.
     function _isConnected(
         uint256 actionMask,
         address tokenIn,
