@@ -145,6 +145,26 @@ abstract contract BasicSwapQuoterV2Test is PoolUtils08 {
         quoter.addPools(newPools);
     }
 
+    // Changes configuration of nUSD-USDC.e-USDT pool in SwapQuoterV2
+    function adjustNusdPool(bool makeOnlyOrigin, bool makeLinked) internal returns (address pool) {
+        // Remove existing pool first
+        vm.prank(owner);
+        quoter.removePools(toArray(getBridgeLinkedPool()));
+        // Configure new pool
+        SwapQuoterV2.PoolType poolType = SwapQuoterV2.PoolType.Default;
+        pool = poolNusdUsdcEUsdt;
+        if (makeLinked) {
+            poolType = SwapQuoterV2.PoolType.Linked;
+            pool = linkedPoolNusd;
+        }
+        address bridgeToken = makeOnlyOrigin ? address(0) : nusd;
+        SwapQuoterV2.BridgePool[] memory newPools = toArray(
+            SwapQuoterV2.BridgePool({bridgeToken: bridgeToken, poolType: poolType, pool: pool})
+        );
+        vm.prank(owner);
+        quoter.addPools(newPools);
+    }
+
     // Changes configuration of Nexus Nusd pool in SwapQuoterV2
     function adjustNexusNusdPool(bool makeOnlyOrigin, bool makeLinked) internal returns (address pool) {
         // Remove existing pool first
@@ -153,12 +173,13 @@ abstract contract BasicSwapQuoterV2Test is PoolUtils08 {
         // Configure new pool
         SwapQuoterV2.PoolType poolType = SwapQuoterV2.PoolType.Default;
         pool = nexusPoolDaiUsdcUsdt;
+        address bridgeToken = makeOnlyOrigin ? address(0) : nexusNusd;
         // Linked Pool does not support Add/Remove liquidity, so we use USDC as "bridge token"
         if (makeLinked) {
             poolType = SwapQuoterV2.PoolType.Linked;
             pool = deployLinkedPool(nexusUsdc, pool);
+            bridgeToken = nexusUsdc;
         }
-        address bridgeToken = makeOnlyOrigin ? address(0) : nexusUsdc;
         SwapQuoterV2.BridgePool[] memory newPools = toArray(
             SwapQuoterV2.BridgePool({bridgeToken: bridgeToken, poolType: poolType, pool: pool})
         );
