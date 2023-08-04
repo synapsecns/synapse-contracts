@@ -8,7 +8,6 @@ import {UniversalTokenLib} from "../../../contracts/router/libs/UniversalToken.s
 
 import {BasicSwapQuoterV2Test} from "./BasicSwapQuoterV2.t.sol";
 
-// solhint-disable max-states-count
 contract SwapQuoterV2FindConnectedTokensTest is BasicSwapQuoterV2Test {
     function testFindConnectedTokensDefaultPoolActionSwap() public {
         addL2Pools();

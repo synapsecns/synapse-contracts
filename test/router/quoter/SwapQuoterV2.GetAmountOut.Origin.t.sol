@@ -8,7 +8,6 @@ import {DefaultPoolCalc} from "../../../contracts/router/quoter/DefaultPoolCalc.
 
 import {BasicSwapQuoterV2Test} from "./BasicSwapQuoterV2.t.sol";
 
-// solhint-disable max-states-count
 contract SwapQuoterV2GetAmountOutOriginTest is BasicSwapQuoterV2Test {
     // In origin requests actionMask is set to ActionLib.allActions()
 

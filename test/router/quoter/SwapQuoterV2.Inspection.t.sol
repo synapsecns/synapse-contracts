@@ -10,7 +10,6 @@ import {MockWETH} from "../mocks/MockWETH.sol";
 
 import {BasicSwapQuoterV2Test} from "./BasicSwapQuoterV2.t.sol";
 
-// solhint-disable max-states-count
 contract SwapQuoterV2InspectionTest is BasicSwapQuoterV2Test {
     // Note: no pools are added, Quoter is supposed inspect arbitrary pools
 
