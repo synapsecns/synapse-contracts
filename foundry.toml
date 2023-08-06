@@ -20,45 +20,47 @@ verbosity = 4
 # See more config options https://github.com/gakonst/foundry/tree/master/config
 
 [rpc_endpoints]
-arbitrum = "${rpc_arbitrum}"
-aurora = "${rpc_aurora}"
-avalanche = "${rpc_avalanche}"
-base = "${rpc_base}"
-boba = "${rpc_boba}"
-bsc = "${rpc_bsc}"
-canto = "${rpc_canto}"
-cronos = "${rpc_cronos}"
-dfk = "${rpc_dfk}"
-dogechain = "${rpc_dogechain}"
-fantom = "${rpc_fantom}"
-harmony = "${rpc_harmony}"
-klatyn = "${rpc_klatyn}"
-mainnet = "${rpc_mainnet}"
-metis = "${rpc_metis}"
-moonbeam = "${rpc_moonbeam}"
-moonriver = "${rpc_moonriver}"
-optimism = "${rpc_optimism}"
-polygon = "${rpc_polygon}"
-zkevm = "${rpc_zkevm}"
+arbitrum = "${ARBITRUM_API}"
+aurora = "${AURORA_API}"
+avalanche = "${AVALANCHE_API}"
+base = "${BASE_API}"
+boba = "${BOBA_API}"
+bsc = "${BSC_API}"
+canto = "${CANTO_API}"
+cronos = "${CRONOS_API}"
+dfk = "${DFK_API}"
+dogechain = "${DOGECHAIN_API}"
+fantom = "${FANTOM_API}"
+harmony = "${HARMONY_API}"
+klatyn = "${KLATYN_API}"
+mainnet = "${MAINNET_API}"
+metis = "${METIS_API}"
+moonbeam = "${MOONBEAM_API}"
+moonriver = "${MOONRIVER_API}"
+optimism = "${OPTIMISM_API}"
+polygon = "${POLYGON_API}"
+zkevm = "${ZKEVM_API}"
 
 [etherscan]
-arbitrum = { key = "${etherscan_arbitrum_key}" }
-# aurora = { key = "${etherscan_aurora_key}", url = "https://explorer.mainnet.aurora.dev/api" }
-avalanche = { key = "${etherscan_avalanche_key}" }
-base = { key = "${etherscan_base_key}", url = "https://api.basescan.org/api" }
-boba = { key = "${etherscan_boba_key}", url = "https://api.bobascan.com/api" }
-bsc = { key = "${etherscan_bsc_key}" }
-# canto = { key = "${etherscan_canto_key}", url = "https://evm.explorer.canto.io/api" }
-cronos = { key = "${etherscan_cronos_key}" }
-# dfk = { key = "${etherscan_dfk_key}" }
-# dogechain = { key = "${etherscan_dogechain_key}", url = "https://explorer.dogechain.dog/api" }
-fantom = { key = "${etherscan_fantom_key}" }
-# harmony = { key = "${etherscan_harmony_key}" }
-# klatyn = { key = "${etherscan_klatyn_key}" }
-mainnet = { key = "${etherscan_mainnet_key}" }
-# metis = { key = "${etherscan_metis_key}" }
-moonbeam = { key = "${etherscan_moonbeam_key}" }
-moonriver = { key = "${etherscan_moonriver_key}" }
-optimism = { key = "${etherscan_optimism_key}" }
-polygon = { key = "${etherscan_polygon_key}" }
-zkevm = { key = "${etherscan_zkevm_key}", url = "https://api-zkevm.polygonscan.com/api" }
+arbitrum = { key = "${ARBITRUM_ETHERSCAN_KEY}", url = "${ARBITRUM_ETHERSCAN_URL}" }
+# TODO: find out if this is correct
+aurora = { key = "", url = "${AURORA_BLOCKSCOUT_URL}" }
+avalanche = { key = "${AVALANCHE_ETHERSCAN_KEY}", url = "${AVALANCHE_ETHERSCAN_URL}" }
+base = { key = "${BASE_ETHERSCAN_KEY}", url = "${BASE_ETHERSCAN_URL}" }
+boba = { key = "${BOBA_ETHERSCAN_KEY}", url = "${BOBA_ETHERSCAN_URL}" }
+bsc = { key = "${BSC_ETHERSCAN_KEY}", url = "${BSC_ETHERSCAN_URL}" }
+canto = { key = "", url = "${CANTO_BLOCKSCOUT_URL}" }
+cronos = { key = "${CRONOS_ETHERSCAN_KEY}", url = "${CRONOS_ETHERSCAN_URL}" }
+# DFK is using Sourcify for verification
+dogechain = { key = "", url = "${DOGECHAIN_BLOCKSCOUT_URL}" }
+fantom = { key = "${FANTOM_ETHERSCAN_KEY}", url = "${FANTOM_ETHERSCAN_URL}" }
+# Harmony doesn't have an endpoint for verification, and Sourcify does not support Harmony
+# Klaytn doesn't have an endpoint for verification, and doesn't support Sourcify yet
+mainnet = { key = "${MAINNET_ETHERSCAN_KEY}", url = "${MAINNET_ETHERSCAN_URL}" }
+metis = { key = "", url = "${METIS_BLOCKSCOUT_URL}" }
+moonbeam = { key = "${MOONBEAM_ETHERSCAN_KEY}", url = "${MOONBEAM_ETHERSCAN_URL}" }
+moonriver = { key = "${MOONRIVER_ETHERSCAN_KEY}", url = "${MOONRIVER_ETHERSCAN_URL}" }
+optimism = { key = "${OPTIMISM_ETHERSCAN_KEY}", url = "${OPTIMISM_ETHERSCAN_URL}" }
+polygon = { key = "${POLYGON_ETHERSCAN_KEY}", url = "${POLYGON_ETHERSCAN_URL}" }
+zkevm = { key = "${ZKEVM_ETHERSCAN_KEY}", url = "${ZKEVM_ETHERSCAN_URL}" }
+
