@@ -7,12 +7,9 @@
     "veSOLAR",
     "MOVR",
     "UST",
-    "fantOHM",
     "H2O"
   ],
-  "pools": [
-    "0x0000000000000000000000000000000000000000"
-  ],
+  "pools": [],
   "tokens": {
     "H2O": {
       "bridgeFee": 10000000,
@@ -48,15 +45,6 @@
       "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
       "minFee": "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
       "token": "0xa9D0C0E124F53f4bE1439EBc35A9C73c0e8275fB",
-      "tokenType": 0
-    },
-    "fantOHM": {
-      "bridgeFee": 10000000,
-      "bridgeToken": "0x3E193c39626BaFb41eBe8BDd11ec7ccA9b3eC0b2",
-      "decimals": 18,
-      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
-      "minFee": "0x0000000000000000000000000000000000000000000000000de0b6b3a7640000",
-      "token": "0x3E193c39626BaFb41eBe8BDd11ec7ccA9b3eC0b2",
       "tokenType": 0
     },
     "gOHM": {

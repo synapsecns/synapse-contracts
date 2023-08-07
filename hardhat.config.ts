@@ -44,7 +44,7 @@ let config: HardhatUserConfig = {
       gasPrice: 2 * 1000000000,
     },
     fantom: {
-      url: "https://rpc.ftm.tools/",
+      url: "https://rpc3.fantom.network",
     },
     polygonprodtest: {
       url: "https://polygon-mainnet.infura.io/v3/ce8ef4b53e0c45c899ef862be05afd55",
@@ -61,6 +61,9 @@ let config: HardhatUserConfig = {
     bsc: {
       url: "https://bsc-dataseed1.defibit.io",
       gasPrice: 6 * 1000000000,
+    },
+    base: {
+      url: "https://mainnet.base.org",
     },
     avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
@@ -123,6 +126,9 @@ let config: HardhatUserConfig = {
     },
     canto: {
       url: "https://canto.slingshot.finance",
+    },
+    zkevm: {
+      url: "https://zkevm-rpc.com",
     },
   },
   paths: {
@@ -244,6 +250,8 @@ if (process.env.PRIVATE_KEYS) {
     "klaytn_testnet",
     "canto",
     "dogechain",
+    "base",
+    "zkevm",
   ];
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {

@@ -11,7 +11,6 @@
     "gOHM",
     "UST",
     "NEWO",
-    "fantOHM",
     "SDT",
     "VSTA",
     "SFI",
@@ -121,11 +120,11 @@
     },
     "UNIDX": {
       "bridgeFee": 4000000,
-      "bridgeToken": "0x95b3497bBcCcc46a8F45F5Cf54b0878b39f8D96C",
+      "bridgeToken": "0xf0655DcEE37E5C0b70Fffd70D85f88F8eDf0AfF6",
       "decimals": 18,
       "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
       "minFee": "0x00000000000000000000000000000000000000000000000029a2241af62c0000",
-      "token": "0x95b3497bBcCcc46a8F45F5Cf54b0878b39f8D96C",
+      "token": "0xf0655DcEE37E5C0b70Fffd70D85f88F8eDf0AfF6",
       "tokenType": 1
     },
     "USDC": {
@@ -181,15 +180,6 @@
       "minFee": "0x000000000000000000000000000000000000000000000000a688906bd8b00000",
       "token": "0x1a7e4e63778B4f12a199C062f3eFdD288afCBce8",
       "tokenType": 1
-    },
-    "fantOHM": {
-      "bridgeFee": 10000000,
-      "bridgeToken": "0x02B5453D92B730F29a86A0D5ef6e930c4Cf8860B",
-      "decimals": 18,
-      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
-      "minFee": "0x0000000000000000000000000000000000000000000000022b1c8c1227a00000",
-      "token": "0x02B5453D92B730F29a86A0D5ef6e930c4Cf8860B",
-      "tokenType": 0
     },
     "gOHM": {
       "bridgeFee": 5000000,
