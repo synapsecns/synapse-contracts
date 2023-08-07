@@ -29,6 +29,23 @@ library UniversalTokenLib {
         }
     }
 
+    /// @notice Issues an infinite allowance to the spender, if the current allowance is insufficient
+    /// to spend the given amount.
+    function universalApproveInfinity(
+        address token,
+        address spender,
+        uint256 amountToSpend
+    ) internal {
+        // ETH Chad doesn't require your approval
+        if (token == ETH_ADDRESS) return;
+        // No-op if allowance is already sufficient
+        uint256 allowance = IERC20(token).allowance(address(this), spender);
+        if (allowance >= amountToSpend) return;
+        // Otherwise, reset approval to 0 and set to max allowance
+        if (allowance > 0) IERC20(token).safeApprove(spender, 0);
+        IERC20(token).safeApprove(spender, type(uint256).max);
+    }
+
     /// @notice Returns the balance of the given token (or native ETH) for the given account.
     function universalBalanceOf(address token, address account) internal view returns (uint256) {
         if (token == ETH_ADDRESS) {

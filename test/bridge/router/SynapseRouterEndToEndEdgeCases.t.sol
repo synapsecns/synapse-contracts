@@ -25,8 +25,8 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
         // Deploy nUSD pool: nUSD + USDC
         chain.nUsdPool = deployPool(chain, castToArray(chain.nusd, chain.usdc), 10_000);
         // Set up Swap Quoter
-        chain.quoter.addPool(chain.nEthPool);
-        chain.quoter.addPool(chain.nUsdPool);
+        addSwapPool(chain, address(chain.neth), chain.nEthPool);
+        addSwapPool(chain, address(chain.nusd), chain.nUsdPool);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -56,13 +56,13 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
         ethereumToKlaytn_outDAI(tokenIn);
 
         // Step 2: remove nUSD pool on origin. This will cause next test to fail unless tokenIn is DAI
-        origin.quoter.removePool(origin.nUsdPool);
+        removeDefaultPool(origin, address(origin.nusd), origin.nUsdPool);
         if (tokenIn != origin.dai) vm.expectRevert("No path found on origin");
         // Doing an external call to catch the revert from the test suite
         this.ethereumToKlaytn_outDAI(tokenIn);
 
         // Step 3: add back the pool, remove DAI from bridge tokens on origin. Next test is going to fail
-        origin.quoter.addPool(origin.nUsdPool);
+        addDefaultPool(origin, address(origin.nusd), origin.nUsdPool);
         origin.router.removeToken(address(origin.dai));
         vm.expectRevert("No path found on origin");
         // Doing an external call to catch the revert from the test suite
@@ -121,7 +121,7 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
 
         // Step 2: only USDC are available as intermediate token
         // Remove nUSD pool on Klaytn, this will make the transaction go through USDC
-        destination.quoter.removePool(destination.nUsdPool);
+        removeSwapPool(destination, address(destination.nusd), destination.nUsdPool);
         ethereumToKlaytn_outUSDC({tokenIn: tokenIn, checkUSDC: true, checkNUSD: false});
 
         // Step 3: no options are available for bridging
@@ -133,7 +133,7 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
 
         // Step 4: only nUSD are available as intermediate token
         // Add back nUSD pool on Klaytn, this will route tx through nUSD
-        destination.quoter.addPool(destination.nUsdPool);
+        addDefaultPool(destination, address(destination.nusd), destination.nUsdPool);
         ethereumToKlaytn_outUSDC({tokenIn: tokenIn, checkUSDC: false, checkNUSD: true});
     }
 
@@ -242,27 +242,27 @@ contract SynapseRouterEndToEndEdgeCasesTest is SynapseRouterSuite {
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function test_klaytnToEthereum_inNUSD_outUSDC() public {
-        ChainSetup memory origin = chains[ETH_CHAINID];
-        ChainSetup memory destination = chains[KLAY_CHAINID];
+        ChainSetup memory origin = chains[KLAY_CHAINID];
+        ChainSetup memory destination = chains[ETH_CHAINID];
 
         // Step 1: both nUSD and USDC are available as intermediate token
         klaytnToEthereum_inNUSD_outUSDC({checkNUSD: false, checkUSDC: false});
 
         // Step 2: only USDC is available  as intermediate token
-        // Remove nUSD pool on origin from the list of pools
-        origin.quoter.removePool(origin.nUsdPool);
+        // Remove nUSD pool on ETH from the list of pools
+        removeDefaultPool(destination, address(destination.nusd), destination.nUsdPool);
         klaytnToEthereum_inNUSD_outUSDC({checkNUSD: false, checkUSDC: true});
 
         // Step 3: no tokens are available
-        // Remove USDC as bridge asset from destination router
-        destination.router.removeToken(address(destination.usdc));
+        // Remove USDC as bridge asset from Klaytn router
+        origin.router.removeToken(address(origin.usdc));
         vm.expectRevert("No path found on origin");
         // Doing an external call to catch the revert from the test suite
         this.klaytnToEthereum_inNUSD_outUSDC({checkNUSD: false, checkUSDC: false});
 
         // Step 4: only nUSD is available  as intermediate token
-        // Add nUSD pool on origin back to the list of pools
-        origin.quoter.addPool(origin.nUsdPool);
+        // Add nUSD pool on ETH back to the list of pools
+        addDefaultPool(destination, address(destination.nusd), destination.nUsdPool);
         klaytnToEthereum_inNUSD_outUSDC({checkNUSD: true, checkUSDC: false});
     }
 

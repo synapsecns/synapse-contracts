@@ -24,13 +24,13 @@ contract SwapQuoterTest is Utilities06 {
     ERC20 internal usdc;
     ERC20 internal usdt;
 
-    function setUp() public override {
+    function setUp() public virtual override {
         super.setUp();
 
         // Deploy ETH tokens
         neth = deployERC20("nETH", 18);
         weth = deployERC20("WETH", 18);
-        quoter = new SwapQuoter(ROUTER_MOCK, address(weth), OWNER);
+        quoter = SwapQuoter(deploySwapQuoter(ROUTER_MOCK, address(weth), OWNER));
         // Deploy USD tokens
         nusd = deployERC20("nUSD", 18);
         dai = deployERC20("DAI", 18);
@@ -61,6 +61,14 @@ contract SwapQuoterTest is Utilities06 {
         }
     }
 
+    function deploySwapQuoter(
+        address router_,
+        address weth_,
+        address owner
+    ) internal virtual returns (address) {
+        return address(new SwapQuoter(router_, weth_, owner));
+    }
+
     function test_setUp() public {
         assertEq(quoter.owner(), OWNER, "!owner");
 
@@ -73,35 +81,54 @@ contract SwapQuoterTest is Utilities06 {
         assertEq(address(ISwap(nUsdPool).getToken(3)), address(usdt), "!usdt");
     }
 
+    function addPool(
+        address, // bridgeToken
+        address pool
+    ) public virtual {
+        vm.prank(OWNER);
+        quoter.addPool(pool);
+    }
+
+    function removePool(address, address pool) public virtual {
+        vm.prank(OWNER);
+        quoter.removePool(pool);
+    }
+
+    function addedEthPool() public view virtual returns (address) {
+        return nEthPool;
+    }
+
+    function addedUsdPool() public view virtual returns (address) {
+        return nUsdPool;
+    }
+
     /*╔══════════════════════════════════════════════════════════════════════╗*\
     ▏*║                           TESTS: ADD POOL                            ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
     function test_addPool() public {
-        vm.prank(OWNER);
-        quoter.addPool(nEthPool);
-        vm.prank(OWNER);
-        quoter.addPool(nUsdPool);
+        addPool(address(neth), nEthPool);
+        addPool(address(nusd), nUsdPool);
         _checkAddedPools();
     }
 
-    function test_addPools() public {
+    function test_addPools() public virtual {
         address[] memory pools = new address[](2);
-        pools[0] = nEthPool;
-        pools[1] = nUsdPool;
+        pools[0] = addedEthPool();
+        pools[1] = addedUsdPool();
         vm.prank(OWNER);
         quoter.addPools(pools);
         _checkAddedPools();
     }
 
-    function test_addPool_revert_onlyOwner(address caller) public {
+    function test_addPool_revert_onlyOwner(address caller) public virtual {
         vm.assume(caller != OWNER);
         expectOnlyOwnerRevert();
         vm.prank(caller);
         quoter.addPool(address(0));
     }
 
-    function test_addPools_revert_onlyOwner(address caller) public {
+    function test_addPools_revert_onlyOwner(address caller) public virtual {
         vm.assume(caller != OWNER);
         expectOnlyOwnerRevert();
         vm.prank(caller);
@@ -114,11 +141,10 @@ contract SwapQuoterTest is Utilities06 {
 
     function test_removePool() public {
         test_addPool();
-        vm.prank(OWNER);
-        quoter.removePool(nEthPool);
+        removePool(address(neth), nEthPool);
         // Usd quotes should remain intact
         uint256 allActions = type(uint256).max;
-        _testSwap(nUsdPool, nUsdTokens, allActions);
+        _testSwap(addedUsdPool(), nUsdTokens, allActions);
         // Eth quotes should disappear
         _checkEmptyQuery(address(neth), address(weth), 10**18, allActions);
         _checkEmptyQuery(address(neth), UniversalToken.ETH_ADDRESS, 10**18, allActions);
@@ -126,7 +152,7 @@ contract SwapQuoterTest is Utilities06 {
         _checkEmptyQuery(UniversalToken.ETH_ADDRESS, address(neth), 10**18, allActions);
     }
 
-    function test_removePool_revert_onlyOwner(address caller) public {
+    function test_removePool_revert_onlyOwner(address caller) public virtual {
         vm.assume(caller != OWNER);
         expectOnlyOwnerRevert();
         vm.prank(caller);
@@ -137,16 +163,16 @@ contract SwapQuoterTest is Utilities06 {
     ▏*║                         TESTS: CHECK QUOTES                          ║*▕
     \*╚══════════════════════════════════════════════════════════════════════╝*/
 
-    function test_getAmountOut_swap(uint256 actionMask) public {
+    function test_getAmountOut_swap(uint256 actionMask) public virtual {
         test_addPools();
         // Check swap quotes with ETH
         nEthTokens[1] = IERC20(UniversalToken.ETH_ADDRESS);
-        _testSwap(nEthPool, nEthTokens, actionMask);
+        _testSwap(addedEthPool(), nEthTokens, actionMask);
         // Check swap quotes with WETH
         nEthTokens[1] = weth;
-        _testSwap(nEthPool, nEthTokens, actionMask);
+        _testSwap(addedEthPool(), nEthTokens, actionMask);
         // Check swap quotes for USD tokens
-        _testSwap(nUsdPool, nUsdTokens, actionMask);
+        _testSwap(addedUsdPool(), nUsdTokens, actionMask);
     }
 
     function test_getAmountOut_handleETH_noPools(uint256 actionMask) public {
@@ -245,11 +271,11 @@ contract SwapQuoterTest is Utilities06 {
         // Check: allPools()
         Pool[] memory pools = quoter.allPools();
         assertEq(pools.length, 2, "!pools.length");
-        assertEq(pools[0].pool, nEthPool, "!pools[0]");
-        assertEq(pools[1].pool, nUsdPool, "!pools[1]");
+        assertEq(pools[0].pool, addedEthPool(), "!pools[0]");
+        assertEq(pools[1].pool, addedUsdPool(), "!pools[1]");
         // Check: poolTokens(nEthPool)
         {
-            PoolToken[] memory tokens = quoter.poolTokens(nEthPool);
+            PoolToken[] memory tokens = quoter.poolTokens(addedEthPool());
             assertEq(tokens.length, 2, "!poolTokens(neth).length");
             assertEq(tokens[0].token, address(neth), "!poolTokens(neth)[0]");
             assertEq(tokens[1].token, address(weth), "!poolTokens(neth)[1]");
@@ -258,7 +284,7 @@ contract SwapQuoterTest is Utilities06 {
         }
         // Check: poolTokens(nUsdPool)
         {
-            PoolToken[] memory tokens = quoter.poolTokens(nUsdPool);
+            PoolToken[] memory tokens = quoter.poolTokens(addedUsdPool());
             assertEq(tokens.length, 4, "!poolTokens(nusd).length");
             assertEq(tokens[0].token, address(nusd), "!poolTokens(nusd)[0]");
             assertEq(tokens[1].token, address(dai), "!poolTokens(nusd)[1]");

@@ -44,14 +44,30 @@ contract SynapseRouterUnsupportedTest is Utilities06 {
         bridge = deployBridge();
         // We're using this contract as owner for testing suite deployments
         router = new SynapseRouter(address(bridge), address(this));
-        quoter = new SwapQuoter(address(router), address(weth), address(this));
+        quoter = SwapQuoter(deploySwapQuoter(address(router), address(weth), address(this)));
 
-        quoter.addPool(nEthPool);
+        addSwapPool(quoter, address(neth), nEthPool);
         router.setSwapQuoter(quoter);
 
         _dealAndApprove(address(weth));
         _dealAndApprove(address(neth));
         // Don't deal ETH: unwrap WETH for ETH tests to make sure WETH is not being used
+    }
+
+    function deploySwapQuoter(
+        address router_,
+        address weth_,
+        address owner
+    ) internal virtual returns (address) {
+        return address(new SwapQuoter(router_, weth_, owner));
+    }
+
+    function addSwapPool(
+        SwapQuoter swapQuoter,
+        address, // bridgeToken
+        address pool
+    ) public virtual {
+        swapQuoter.addPool(pool);
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

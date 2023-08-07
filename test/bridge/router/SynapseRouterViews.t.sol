@@ -61,16 +61,45 @@ contract SynapseRouterViewsTest is Utilities06 {
         bridge = deployBridge();
         // We're using this contract as owner for testing suite deployments
         router = new SynapseRouter(address(bridge), address(this));
-        quoter = new SwapQuoter(address(router), address(weth), address(this));
+        quoter = SwapQuoter(deploySwapQuoter(address(router), address(weth), address(this)));
 
-        quoter.addPool(nEthPool);
-        quoter.addPool(nUsdPool);
-        quoter.addPool(nexusPool);
+        addSwapPool(quoter, address(neth), nEthPool);
+        addSwapPool(quoter, address(nusd), nUsdPool);
+        addNexusPool();
 
         router.setSwapQuoter(quoter);
         _addRedeemToken("nETH", address(neth));
         _addRedeemToken("nUSD", address(nusd));
         _addDepositToken("Nexus nUSD", address(nexusNusd));
+    }
+
+    function deploySwapQuoter(
+        address router_,
+        address weth_,
+        address owner
+    ) internal virtual returns (address) {
+        return address(new SwapQuoter(router_, weth_, owner));
+    }
+
+    function addSwapPool(
+        SwapQuoter swapQuoter,
+        address, // bridgeToken
+        address pool
+    ) public virtual {
+        swapQuoter.addPool(pool);
+    }
+
+    function addNexusPool() public virtual {
+        // Nexus pool is used for add/remove liquidity bridge operations and does not require LinkedPool
+        quoter.addPool(nexusPool);
+    }
+
+    function addedEthPool() public view virtual returns (address) {
+        return nEthPool;
+    }
+
+    function addedUsdPool() public view virtual returns (address) {
+        return nUsdPool;
     }
 
     function test_getters() public {
@@ -90,15 +119,15 @@ contract SynapseRouterViewsTest is Utilities06 {
     function test_pools() public {
         Pool[] memory pools = router.allPools();
         assertEq(pools.length, 3, "!allPools.length");
-        _checkPool(pools[0], nEthPool, _getLpToken(nEthPool), nEthTokens);
-        _checkPool(pools[1], nUsdPool, _getLpToken(nUsdPool), nUsdTokens);
+        _checkPool(pools[0], addedEthPool(), _getLpToken(nEthPool), nEthTokens);
+        _checkPool(pools[1], addedUsdPool(), _getLpToken(nUsdPool), nUsdTokens);
         _checkPool(pools[2], nexusPool, address(nexusNusd), nexusTokens);
         assertEq(router.poolsAmount(), 3, "!poolsAmounts");
     }
 
     function test_poolInfo() public {
-        _checkPoolInfo(nEthPool, _getLpToken(nEthPool), nEthTokens);
-        _checkPoolInfo(nUsdPool, _getLpToken(nUsdPool), nUsdTokens);
+        _checkPoolInfo(addedEthPool(), _getLpToken(nEthPool), nEthTokens);
+        _checkPoolInfo(addedUsdPool(), _getLpToken(nUsdPool), nUsdTokens);
         _checkPoolInfo(nexusPool, address(nexusNusd), nexusTokens);
     }
 
@@ -129,7 +158,7 @@ contract SynapseRouterViewsTest is Utilities06 {
         }
     }
 
-    function _getLpToken(address pool) internal view returns (address) {
+    function _getLpToken(address pool) internal view virtual returns (address) {
         (, , , , , , address _lpToken) = ISwap(pool).swapStorage();
         return _lpToken;
     }
