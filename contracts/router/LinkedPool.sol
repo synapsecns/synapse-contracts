@@ -27,6 +27,7 @@ import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils
 /// Note: LinkedPool assumes that the added pool tokens have no transfer fees enabled.
 contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     using SafeERC20 for IERC20;
+    using UniversalTokenLib for address;
 
     // solhint-disable-next-line no-empty-blocks
     constructor(address bridgeToken) TokenTree(bridgeToken) {}
@@ -236,7 +237,7 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         address tokenTo = _nodes[nodeIndexTo].token;
         // Approve pool to spend the token, if needed
         if (poolModule == address(this)) {
-            UniversalTokenLib.universalApproveInfinity({token: tokenFrom, spender: pool, amountToSpend: amountIn});
+            tokenFrom.universalApproveInfinity(pool, amountIn);
             // Pool conforms to IDefaultPool interface. Note: we check minDy and deadline outside of this function.
             amountOut = IDefaultPool(pool).swap({
                 tokenIndexFrom: tokenIndexes[pool][tokenFrom],
