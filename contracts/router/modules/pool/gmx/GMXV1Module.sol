@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
 import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
 import {UniversalTokenLib} from "../../../libs/UniversalToken.sol";
@@ -15,7 +15,6 @@ import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 /// @notice PoolModule for GMX V1 pools
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
 abstract contract GMXV1Module is OnlyDelegateCall, IPoolModule {
-    using SafeERC20 for IERC20;
     using UniversalTokenLib for address;
 
     IGMXV1Router public immutable router;

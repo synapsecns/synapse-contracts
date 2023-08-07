@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
-
 import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
 import {ICurveV1Pool} from "../../../interfaces/curve/ICurveV1Pool.sol";
 import {UniversalTokenLib} from "../../../libs/UniversalToken.sol";
@@ -12,7 +10,6 @@ import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 /// @notice PoolModule for Curve V1 pools
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
 contract CurveV1Module is OnlyDelegateCall, IPoolModule {
-    using SafeERC20 for IERC20;
     using UniversalTokenLib for address;
 
     /// @inheritdoc IPoolModule

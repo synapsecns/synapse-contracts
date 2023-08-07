@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts-4.8.0/token/ERC20/IERC20.sol";
 import {Math} from "@openzeppelin/contracts-4.8.0/utils/math/Math.sol";
 
 import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
@@ -14,7 +14,6 @@ import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 /// @notice PoolModule for MakerDAO Dai PSM modules
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
 contract DssPsmModule is OnlyDelegateCall, IPoolModule {
-    using SafeERC20 for IERC20;
     using UniversalTokenLib for address;
 
     uint256 private constant wad = 1e18;

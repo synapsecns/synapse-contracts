@@ -11,10 +11,7 @@ import {
 import {UniversalTokenLib} from "../../../libs/UniversalToken.sol";
 import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 
-import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
-
 contract UniswapV3Module is OnlyDelegateCall, IPoolModule {
-    using SafeERC20 for IERC20;
     using UniversalTokenLib for address;
 
     /// These need to be immutable in order to be accessed via delegatecall
