@@ -7,6 +7,7 @@ import {Math} from "@openzeppelin/contracts-4.8.0/utils/math/Math.sol";
 import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
 import {IDssPsm} from "../../../interfaces/dss/IDssPsm.sol";
 import {IDssGemJoin} from "../../../interfaces/dss/IDssGemJoin.sol";
+import {UniversalTokenLib} from "../../../libs/UniversalToken.sol";
 
 import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 
@@ -14,6 +15,7 @@ import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
 contract DssPsmModule is OnlyDelegateCall, IPoolModule {
     using SafeERC20 for IERC20;
+    using UniversalTokenLib for address;
 
     uint256 private constant wad = 1e18;
 
@@ -30,15 +32,15 @@ contract DssPsmModule is OnlyDelegateCall, IPoolModule {
         // in case of transfer fees
         uint256 balanceTo = IERC20(tokenTo.token).balanceOf(address(this));
         if (tokenFrom.index == 0) {
-            IERC20(tokenFrom.token).safeApprove(pool, amountIn);
+            tokenFrom.token.universalApproveInfinity(pool, amountIn);
             IDssPsm(pool).buyGem(address(this), amountOut);
 
             // clear allowance in case of dust
-            if (IERC20(tokenFrom.token).allowance(address(this), pool) > 0)
-                IERC20(tokenFrom.token).safeApprove(pool, 0);
+            uint256 allowance = IERC20(tokenFrom.token).allowance(address(this), pool);
+            if (allowance > 0 && allowance < type(uint256).max) IERC20(tokenFrom.token).safeApprove(pool, 0);
         } else {
             address gemJoin = IDssPsm(pool).gemJoin();
-            IERC20(tokenFrom.token).safeApprove(gemJoin, amountIn);
+            tokenFrom.token.universalApproveInfinity(gemJoin, amountIn);
             IDssPsm(pool).sellGem(address(this), amountIn);
         }
         amountOut = IERC20(tokenTo.token).balanceOf(address(this)) - balanceTo;

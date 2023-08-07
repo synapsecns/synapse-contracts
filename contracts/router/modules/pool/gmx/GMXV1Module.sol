@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
 import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
+import {UniversalTokenLib} from "../../../libs/UniversalToken.sol";
 
 import {IGMXV1Reader} from "../../../interfaces/gmx/IGMXV1Reader.sol";
 import {IGMXV1Router} from "../../../interfaces/gmx/IGMXV1Router.sol";
@@ -15,6 +16,7 @@ import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
 abstract contract GMXV1Module is OnlyDelegateCall, IPoolModule {
     using SafeERC20 for IERC20;
+    using UniversalTokenLib for address;
 
     IGMXV1Router public immutable router;
     IGMXV1Vault public immutable vault;
@@ -44,7 +46,7 @@ abstract contract GMXV1Module is OnlyDelegateCall, IPoolModule {
         assertDelegateCall();
         require(pool == address(vault), "pool != vault");
         address tokenIn = tokenFrom.token;
-        IERC20(tokenIn).safeApprove(address(router), amountIn);
+        tokenIn.universalApproveInfinity(address(router), amountIn);
 
         address tokenOut = tokenTo.token;
         uint256 balanceTo = IERC20(tokenOut).balanceOf(address(this));
