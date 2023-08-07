@@ -67,10 +67,6 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
         }
         fullConfig.serialize("ids", ids);
         fullConfig.serialize("tokens", tokensConfig);
-        if (pools.length == 0) {
-            // Temp fix until foundry can read empty arrays from JSON files
-            pools = new address[](1);
-        }
         fullConfig = fullConfig.serialize("pools", pools);
 
         saveDeployConfig(ROUTER, fullConfig);
