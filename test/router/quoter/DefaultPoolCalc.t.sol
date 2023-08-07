@@ -149,6 +149,7 @@ contract DefaultPoolCalcTestFork is Test {
         IERC20(DAI).safeApprove(POOL, amounts[0]);
         IERC20(USDC).safeApprove(POOL, amounts[1]);
         IERC20(USDT).safeApprove(POOL, amounts[2]);
+        vm.stopPrank();
     }
 
     function boundTokenAmounts(
