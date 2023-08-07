@@ -94,6 +94,15 @@ library StringUtils {
         return string(abi.encodePacked(a, b, c, d, e, f));
     }
 
+    /// @notice Duplicates a string a given number of times.
+    /// Example: duplicate("abc", 3) = "abcabcabc"
+    function duplicate(string memory str, uint256 times) internal pure returns (string memory duplicateStr) {
+        duplicateStr = "";
+        for (uint256 i = 0; i < times; i++) {
+            duplicateStr = concat(duplicateStr, str);
+        }
+    }
+
     // ════════════════════════════════════════════════ COMPARISON ═════════════════════════════════════════════════════
 
     /// @notice Checks if two strings are equal

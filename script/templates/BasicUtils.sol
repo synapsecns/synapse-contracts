@@ -3,12 +3,11 @@ pragma solidity >=0.6.12;
 
 import {StringUtils} from "./StringUtils.sol";
 
-// solhint-disable no-console
-import {console2, stdJson} from "forge-std/Script.sol";
+import {stdJson} from "forge-std/Script.sol";
 import {CommonBase} from "forge-std/Base.sol";
 
 /// @notice A collection of basic stateless utility functions used by Synapse scripts.
-contract BasicUtils is CommonBase {
+abstract contract BasicUtils is CommonBase {
     using StringUtils for string;
     using stdJson for string;
 
@@ -16,6 +15,9 @@ contract BasicUtils is CommonBase {
     string internal constant FRESH_DEPLOYMENTS = ".deployments/";
     string internal constant DEPLOYMENTS = "deployments/";
     string internal constant DEPLOY_CONFIGS = "script/configs/";
+
+    /// @notice Child contract should override this function to print logs.
+    function printLog(string memory message) internal virtual;
 
     // ══════════════════════════════════════════════ DATA GENERATION ══════════════════════════════════════════════════
 
@@ -42,7 +44,7 @@ contract BasicUtils is CommonBase {
         string memory path,
         string memory data
     ) internal {
-        console2.log(descriptionLog);
+        printLog(descriptionLog);
         data.write(path);
     }
 
