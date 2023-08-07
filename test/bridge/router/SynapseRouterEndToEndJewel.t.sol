@@ -37,7 +37,7 @@ contract SynapseRouterEndToEndJewelTest is SynapseRouterSuite {
             SynapseERC20 _harJewel = SynapseERC20(address(harJewel));
             _harJewel.grantRole(_harJewel.MINTER_ROLE(), address(harmonyJewelSwap));
         }
-        chain.quoter.addPool(address(harmonyJewelSwap));
+        addDefaultPool(chain, address(harJewel), address(harmonyJewelSwap));
         // Setup initial Legacy Jewel balance for JewelBridgeSwap
         mintInitialTestTokens(chain, address(harmonyJewelSwap), address(harLegacyJewel), 10**24);
     }
