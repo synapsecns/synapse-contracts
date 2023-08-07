@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import {IERC20} from "@openzeppelin/contracts-4.8.0/token/ERC20/IERC20.sol";
 import {Math} from "@openzeppelin/contracts-4.8.0/utils/math/Math.sol";
 
 import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
 import {IDssPsm} from "../../../interfaces/dss/IDssPsm.sol";
 import {IDssGemJoin} from "../../../interfaces/dss/IDssGemJoin.sol";
+import {UniversalTokenLib} from "../../../libs/UniversalToken.sol";
 
 import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 
 /// @notice PoolModule for MakerDAO Dai PSM modules
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
 contract DssPsmModule is OnlyDelegateCall, IPoolModule {
-    using SafeERC20 for IERC20;
+    using UniversalTokenLib for address;
 
     uint256 private constant wad = 1e18;
 
@@ -30,15 +31,11 @@ contract DssPsmModule is OnlyDelegateCall, IPoolModule {
         // in case of transfer fees
         uint256 balanceTo = IERC20(tokenTo.token).balanceOf(address(this));
         if (tokenFrom.index == 0) {
-            IERC20(tokenFrom.token).safeApprove(pool, amountIn);
+            tokenFrom.token.universalApproveInfinity(pool, amountIn);
             IDssPsm(pool).buyGem(address(this), amountOut);
-
-            // clear allowance in case of dust
-            if (IERC20(tokenFrom.token).allowance(address(this), pool) > 0)
-                IERC20(tokenFrom.token).safeApprove(pool, 0);
         } else {
             address gemJoin = IDssPsm(pool).gemJoin();
-            IERC20(tokenFrom.token).safeApprove(gemJoin, amountIn);
+            tokenFrom.token.universalApproveInfinity(gemJoin, amountIn);
             IDssPsm(pool).sellGem(address(this), amountIn);
         }
         amountOut = IERC20(tokenTo.token).balanceOf(address(this)) - balanceTo;

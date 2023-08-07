@@ -6,6 +6,7 @@ import {IndexedToken, IPoolModule} from "./interfaces/IPoolModule.sol";
 import {ILinkedPool} from "./interfaces/ILinkedPool.sol";
 import {IDefaultPool} from "./interfaces/IDefaultPool.sol";
 import {Action} from "./libs/Structs.sol";
+import {UniversalTokenLib} from "./libs/UniversalToken.sol";
 import {TokenTree} from "./tree/TokenTree.sol";
 
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
@@ -26,6 +27,7 @@ import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils
 /// Note: LinkedPool assumes that the added pool tokens have no transfer fees enabled.
 contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     using SafeERC20 for IERC20;
+    using UniversalTokenLib for address;
 
     // solhint-disable-next-line no-empty-blocks
     constructor(address bridgeToken) TokenTree(bridgeToken) {}
@@ -222,24 +224,6 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
 
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
 
-    /// @dev Approves the given spender to spend the given token indefinitely, if the current allowance is not enough.
-    /// Note: doesn't do anything if the spender already has infinite allowance.
-    function _approveToken(
-        address token,
-        address spender,
-        uint256 minAllowance
-    ) internal {
-        uint256 allowance = IERC20(token).allowance(address(this), spender);
-        if (allowance < minAllowance) {
-            // if allowance is neither zero nor infinity, reset if first
-            if (allowance != 0) {
-                IERC20(token).safeApprove(spender, 0);
-            }
-            // We can issue the infinite approval here, as LinkedPool is not supposed to hold any tokens.
-            IERC20(token).safeApprove(spender, type(uint256).max);
-        }
-    }
-
     /// @dev Performs a single swap between two nodes using the given pool.
     /// Assumes that the initial token is already in this contract.
     function _poolSwap(
@@ -253,7 +237,7 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         address tokenTo = _nodes[nodeIndexTo].token;
         // Approve pool to spend the token, if needed
         if (poolModule == address(this)) {
-            _approveToken({token: tokenFrom, spender: pool, minAllowance: amountIn});
+            tokenFrom.universalApproveInfinity(pool, amountIn);
             // Pool conforms to IDefaultPool interface. Note: we check minDy and deadline outside of this function.
             amountOut = IDefaultPool(pool).swap({
                 tokenIndexFrom: tokenIndexes[pool][tokenFrom],

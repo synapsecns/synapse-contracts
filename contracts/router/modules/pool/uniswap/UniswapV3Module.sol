@@ -8,12 +8,11 @@ import {ExactInputSingleParams, IUniswapV3Router} from "../../../interfaces/unis
 import {
     QuoteExactInputSingleParams, IUniswapV3StaticQuoter
 } from "../../../interfaces/uniswap/IUniswapV3StaticQuoter.sol";
+import {UniversalTokenLib} from "../../../libs/UniversalToken.sol";
 import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 
-import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
-
 contract UniswapV3Module is OnlyDelegateCall, IPoolModule {
-    using SafeERC20 for IERC20;
+    using UniversalTokenLib for address;
 
     /// These need to be immutable in order to be accessed via delegatecall
     IUniswapV3Router public immutable uniswapV3Router;
@@ -34,7 +33,7 @@ contract UniswapV3Module is OnlyDelegateCall, IPoolModule {
         // This function should be only called via delegatecall
         assertDelegateCall();
         address tokenIn = tokenFrom.token;
-        IERC20(tokenIn).safeApprove(address(uniswapV3Router), amountIn);
+        tokenIn.universalApproveInfinity(address(uniswapV3Router), amountIn);
         // Prepare Uniswap Router params for the swap, see for reference:
         // https://docs.uniswap.org/contracts/v3/guides/swaps/single-swaps#swap-input-parameters
         // We set `amountOutMinimum` to 0, as the slippage checks are done outside of Pool Module
