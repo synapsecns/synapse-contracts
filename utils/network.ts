@@ -16,6 +16,7 @@ export const CHAIN_ID = {
   CANTO: "7700",
   DOGECHAIN: "2000",
   KLATYN: "8217",
+  BASE: "8453",
   HARDHAT: "31337",
   FUJI: "43113",
   AVALANCHE: "43114",
