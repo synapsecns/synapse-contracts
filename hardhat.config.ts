@@ -62,6 +62,9 @@ let config: HardhatUserConfig = {
       url: "https://bsc-dataseed1.defibit.io",
       gasPrice: 6 * 1000000000,
     },
+    base: {
+      url: "https://mainnet.base.org",
+    },
     avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
       // gasPrice: 200 * 1000000000,
@@ -247,6 +250,7 @@ if (process.env.PRIVATE_KEYS) {
     "klaytn_testnet",
     "canto",
     "dogechain",
+    "base",
     "zkevm",
   ];
   Object.keys(config.networks).forEach((network) => {
