@@ -1,0 +1,12 @@
+{
+  "forgeOptions": {
+    "aurora": "--legacy",
+    "boba": "--legacy --skip-simulation",
+    "canto": "--legacy",
+    "dfk": "--legacy",
+    "dogechain": "--legacy",
+    "harmony": "--legacy",
+    "klatyn": "--skip-simulation",
+    "metis": "--legacy"
+  }
+}

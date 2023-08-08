@@ -28,7 +28,7 @@ if [ -z "$SCRIPT_PATH" ] || [ -z "$CHAIN_NAME" ] || [ -z "$WALLET_ENV_NAME" ]; t
 fi
 # Shift the arguments to pass the rest to `forge script`
 shift 3
-FORGE_ARGS=$@
+FORGE_OPTIONS=$@
 
 # Fetch the RPC URL for the chain from .env
 source .env
@@ -39,7 +39,20 @@ if [ -z "$CHAIN_RPC_URL" ]; then
     exit 1
 fi
 
-# TODO: fetch the chain-specific options
+# Fetch the chain-specific options from "./script/networks.json"
+# Check if json file exists
+NETWORKS_JSON="./script/networks.json"
+if [ ! -f "$NETWORKS_JSON" ]; then
+    echo -e "${RED}Error: $NETWORKS_JSON not found${NC}"
+    exit 1
+fi
+# Options are stored in the "forgeOptions" field for the chain
+# TODO: more chains need --slow option
+CHAIN_OPTIONS=$(jq -r ".forgeOptions.$CHAIN_NAME" $NETWORKS_JSON)
+# Use empty string if no options are found
+if [ "$CHAIN_OPTIONS" == "null" ]; then
+    CHAIN_OPTIONS=""
+fi
 
 # Fetch the wallet options
 WALLET_OPTIONS=""
@@ -92,4 +105,5 @@ mkdir -p ".deployments/$CHAIN_NAME"
 bash -x -c "forge script $SCRIPT_PATH \
     -f $CHAIN_NAME \
     $WALLET_OPTIONS \
-    $FORGE_ARGS"
+    $CHAIN_OPTIONS \
+    $FORGE_OPTIONS"
