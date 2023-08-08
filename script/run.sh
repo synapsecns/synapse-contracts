@@ -85,8 +85,8 @@ elif [ "$WALLET_TYPE" == "ledger" ] || [ "$WALLET_TYPE" == "trezor" ]; then
     # TODO: check that no more options are required
     WALLET_OPTIONS="--$WALLET_TYPE --sender $WALLET_ADDR"
 else
-    echo -e "${RED}Error: unsupported wallet type $WALLET_TYPE${NC}"
-    exit 1
+    # Use interactive prompt for private key as the last resort
+    WALLET_OPTIONS="-i 1 --sender $WALLET_ADDR"
 fi
 
 # Print information about the signer address
