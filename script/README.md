@@ -6,6 +6,11 @@
 2. Replace `PasteYourOwnKeyPlease` with your own etherscan-clone API key for the chains you want to deploy verified contracts.
 3. Feel free to replace some of the RPC urls, if the default ones are not working for you.
 4. Define wallets as per the example in the file.
+   > Available options:
+   >
+   > - Keystore files, currently foundry only supports keystore files saved by `cast wallet new <path>` command, keystores exported from other sources will not work.
+   > - Ledger and Trezor wallets.
+   > - Interactive prompt for entering the private key.
 5. Make sure you have enough ETH in the wallets to pay for the gas fees.
 
 ## Available chains for deployment.
@@ -89,6 +94,11 @@ Some of the contracts have parameters that are the same for all chains. These ar
    > - These functions require providing a callback function for deployment, check out the corresponding docs.
    > - These functions will save the deployment artifacts in `.deployments` folder, which is ignored by git.
    > - Note: these functions are no-ops, if the contract artifact is already present in `deployments`.
+
+### Existing examples of deployment scripts
+
+- <a href="./router/quoter/DefaultPoolCalc.s.sol">DefaultPoolCalc.s.sol</a>: create2 deployment of DefaultPoolCalc.
+- <a href="./router/quoter/DefaultPoolCalcExample.s.sol">DefaultPoolCalcExample.s.sol</a>: usual deployment of DefaultPoolCalc (for demonstration only)</a>.
 
 ## Deploying contracts.
 
