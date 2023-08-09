@@ -1,3 +1,11 @@
+# Old scripts deprecation notice
+
+Some of the scripts (and files used by them) in this folder are deprecated and will be moved/reworked in the future. These are:
+
+- `networks-eip-1559` and `networks-legacy` files.
+- Script templates from `utils` folder, and scripts using them.
+- Scripts from `sh` folder.
+
 # Usage of the test script templates.
 
 In this repo we have two types of Foundry test files (`*.t.sol`)
