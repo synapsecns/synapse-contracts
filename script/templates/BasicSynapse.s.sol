@@ -2,7 +2,7 @@
 pragma solidity >=0.6.12;
 
 import {BasicUtils, StringUtils} from "./BasicUtils.sol";
-import {IImmutableCreate2Factory} from "./interfaces/IImmutableCreate2Factory.sol";
+import {IImmutableCreate2Factory} from "../interfaces/IImmutableCreate2Factory.sol";
 
 // solhint-disable no-console
 import {console2, VmSafe} from "forge-std/Script.sol";
