@@ -1,6 +1,6 @@
 {
   "address": "0xC3C996aF7F7a9245685722E73B6f18F3bb22dB3d",
-  "constructorArgs": "000000000000000000000000a062ae8a9c5e11aaa026fc2670b0d65ccc8b2858",
+  "constructorArgs": "0x000000000000000000000000a062ae8a9c5e11aaa026fc2670b0d65ccc8b2858",
   "abi": [
     {
       "inputs": [
