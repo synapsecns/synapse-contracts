@@ -202,6 +202,23 @@ contract BasicSynapseScript is BasicUtils {
         return getDeployConfig({chain: activeChain, contractName: contractName});
     }
 
+    // ══════════════════════════════════════ ACTIVE CHAIN: FILE PATH GETTERS ══════════════════════════════════════════
+
+    /// @notice Returns the path to the SAVED deployment JSON for a contract on the active chain.
+    function deploymentPath(string memory contractName) internal view returns (string memory path) {
+        return deploymentPath({chain: activeChain, contractName: contractName});
+    }
+
+    /// @notice Returns the path to the FRESH deployment JSON for a contract on the active chain.
+    function freshDeploymentPath(string memory contractName) internal view returns (string memory path) {
+        return freshDeploymentPath({chain: activeChain, contractName: contractName});
+    }
+
+    /// @notice Returns the path to the contract deployment config JSON for a contract on the active chain.
+    function chainDeployConfigPath(string memory contractName) internal view returns (string memory path) {
+        return chainDeployConfigPath({chain: activeChain, contractName: contractName});
+    }
+
     // ══════════════════════════════════════════════ CHAIN ID UTILS ═══════════════════════════════════════════════════
 
     /// @notice Sets active chain to the one matching block.chainid value.
