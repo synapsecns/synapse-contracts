@@ -97,8 +97,8 @@ Some of the contracts have parameters that are the same for all chains. These ar
 
 ### Existing examples of deployment scripts
 
-- <a href="./router/quoter/DefaultPoolCalc.s.sol">DefaultPoolCalc.s.sol</a>: create2 deployment of DefaultPoolCalc.
-- <a href="./router/quoter/DefaultPoolCalcExample.s.sol">DefaultPoolCalcExample.s.sol</a>: usual deployment of DefaultPoolCalc (for demonstration only)</a>.
+- <a href="./router/quoter/DeployDefaultPoolCalc.s.sol">DeployDefaultPoolCalc.s.sol</a>: create2 deployment of DefaultPoolCalc.
+- <a href="./router/quoter/DeployDefaultPoolCalcExample.s.sol">DeployDefaultPoolCalcExample.s.sol</a>: usual deployment of DefaultPoolCalc (for demonstration only)</a>.
 
 ## Deploying contracts.
 
