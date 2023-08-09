@@ -1,0 +1,18 @@
+{
+  "ids": [
+    "nUSD",
+    "nETH"
+  ],
+  "pools": {
+    "nETH": {
+      "isLinked": false,
+      "pool": "0xa067668661C84476aFcDc6fA5D758C4c01C34352",
+      "token": "0x3ea9B0ab55F34Fb188824Ee288CeaEfC63cf908e"
+    },
+    "nUSD": {
+      "isLinked": false,
+      "pool": "0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40",
+      "token": "0x2913E812Cf0dcCA30FB28E6Cac3d2DCFF4497688"
+    }
+  }
+}
