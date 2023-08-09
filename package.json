@@ -6,7 +6,7 @@
   "scripts": {
     "test": "hardhat test --parallel",
     "build": "hardhat compile && npm run build:go",
-    "build:go": "script/sh/flatten.sh contracts/bridge/*.sol contracts/bridge/wrappers/*.sol contracts/bridge/testing/*.sol contracts/amm/*.sol contracts/messaging/*.sol contracts/messaging/apps/*.sol contracts/cctp/*.sol contracts/cctp/events/*.sol",
+    "build:go": "script/flatten.sh contracts/bridge/*.sol contracts/bridge/wrappers/*.sol contracts/bridge/testing/*.sol contracts/amm/*.sol contracts/messaging/*.sol contracts/messaging/apps/*.sol contracts/cctp/*.sol contracts/cctp/events/*.sol",
     "post-install": "build:go",
     "test:coverage": "cross-env NODE_OPTIONS=\"--max-old-space-size=8192\" hardhat coverage",
     "prepublishOnly": "npm run build",
