@@ -1,0 +1,30 @@
+{
+  "bridgeToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+  "pools": [
+    {
+      "nodeIndex": 0,
+      "pool": "0x8e295789c9465487074a65b1ae9Ce0351172393f",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0xbe3ad6a5669dc0b8b12febc03608860c31e2eef6",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0x489ee077994b6658eafa855c308275ead8097c4a",
+      "poolModule": "GMXV1StableArbitrum"
+    },
+    {
+      "nodeIndex": 1,
+      "pool": "0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40",
+      "poolModule": ""
+    },
+    {
+      "nodeIndex": 2,
+      "pool": "0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40",
+      "poolModule": ""
+    }
+  ]
+}
