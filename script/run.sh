@@ -28,7 +28,9 @@ if [ -z "$SCRIPT_PATH" ] || [ -z "$CHAIN_NAME" ] || [ -z "$WALLET_ENV_NAME" ]; t
 fi
 # Shift the arguments to pass the rest to `forge script`
 shift 3
-FORGE_OPTIONS=$@
+# Preserve the quotes in the options, useful for --sig "function(arguments)"
+# https://stackoverflow.com/questions/10835933/how-can-i-preserve-quotes-in-printing-a-bash-scripts-arguments
+FORGE_OPTIONS=${*@Q}
 
 # Fetch the RPC URL for the chain from .env
 source .env
