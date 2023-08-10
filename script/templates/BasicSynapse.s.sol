@@ -3,6 +3,7 @@ pragma solidity >=0.6.12;
 
 import {BasicUtils, StringUtils} from "./BasicUtils.sol";
 import {IImmutableCreate2Factory} from "../interfaces/IImmutableCreate2Factory.sol";
+import {IOwnable} from "../interfaces/IOwnable.sol";
 
 // solhint-disable no-console
 import {console2, VmSafe} from "forge-std/Script.sol";
@@ -33,6 +34,18 @@ contract BasicSynapseScript is BasicUtils {
         loadActiveChain();
     }
 
+    /// @notice Checks that the broadcaster is the owner of the contract.
+    /// Note: vm.startBroadcast() should be called before this function.
+    function checkOwner(address ownable) internal view returns (bool isOwner) {
+        address owner = IOwnable(ownable).owner();
+        isOwner = owner == msg.sender;
+        if (!isOwner) {
+            console2.log("Sender is not the owner");
+            console2.log("   Owner: %s", owner);
+            console2.log("  Sender: %s", msg.sender);
+        }
+    }
+
     // ══════════════════════════════════════════════════ LOGGING ══════════════════════════════════════════════════════
 
     /// @notice Prints the log message with the current indent level.
@@ -44,6 +57,16 @@ contract BasicSynapseScript is BasicUtils {
     /// Note: logString should contain a %s placeholder for the address.
     function printLog(string memory logString, address addr) internal virtual {
         console2.log(addIndent(logString), addr);
+    }
+
+    /// @notice Prints the log message and two addresses with the current indent level.
+    /// Note: logString should contain a %s placeholder for every address.
+    function printLog(
+        string memory logString,
+        address a,
+        address b
+    ) internal virtual {
+        console2.log(addIndent(logString), a, b);
     }
 
     /// @notice Adds the current indent level to the log message.
