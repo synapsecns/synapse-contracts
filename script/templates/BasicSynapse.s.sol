@@ -103,25 +103,27 @@ contract BasicSynapseScript is BasicUtils {
     }
 
     /// @notice Deploys a contract and saves the deployment JSON, if the contract hasn't been deployed yet.
-    /// See `deployAndSaveAs` for more details.
+    /// See `deployAndSaveAs` below for more details.
     function deployAndSave(
         string memory contractName,
         bytes memory constructorArgs,
-        function(string memory, bytes memory) internal returns (address) deployFn
+        function(string memory, bytes memory) internal returns (address) deployCode
     ) internal returns (address deployedAt) {
         // Use contractName as contractAlias by default
-        return deployAndSaveAs(contractName, contractName, constructorArgs, deployFn);
+        return deployAndSaveAs(contractName, contractName, constructorArgs, deployCode);
     }
 
     /// @notice Deploys a contract and saves the deployment JSON, if the contract hasn't been deployed yet.
-    /// Needs to be passed a function that deploys the contract, that follows this signature:
-    /// deployFn(string memory contractName, bytes memory constructorArgs) internal returns (address deployedAt);
-    /// Note: contract should be configured outside of deployFn.
+    /// Needs to be passed a generic function that deploys the contract, that follows this signature:
+    /// deployCode(string memory contractName, bytes memory constructorArgs) internal returns (address deployedAt);
+    /// - Example: deploy() and deployCreate2() could be used here, as they follow the signature. Or anything
+    /// else that could deploy raw bytecode of any contract, most likely using assembly/factory approach.
+    /// - Note: contract should be configured outside of `deployCode`.
     function deployAndSaveAs(
         string memory contractName,
         string memory contractAlias,
         bytes memory constructorArgs,
-        function(string memory, bytes memory) internal returns (address) deployFn
+        function(string memory, bytes memory) internal returns (address) deployCode
     ) internal returns (address deployedAt) {
         printLog(
             contractName.equals(contractAlias)
@@ -135,7 +137,49 @@ contract BasicSynapseScript is BasicUtils {
             printLog("Skipping: already deployed at %s", deployedAt);
         } else {
             // Trigger callback to deploy the contract
-            deployedAt = deployFn(contractName, constructorArgs);
+            deployedAt = deployCode(contractName, constructorArgs);
+            printLog("Deployed at %s", deployedAt);
+            // Save the deployment JSON
+            saveDeployment(contractName, contractAlias, deployedAt, constructorArgs);
+        }
+        decreaseIndent();
+    }
+
+    /// @notice Deploys a contract and saves the deployment JSON, if the contract hasn't been deployed yet.
+    /// See `deployAndSaveAs` below for more details.
+    function deployAndSave(
+        string memory contractName,
+        function() internal returns (address, bytes memory) deployContract
+    ) internal returns (address deployedAt) {
+        // Use contractName as contractAlias by default
+        return deployAndSaveAs(contractName, contractName, deployContract);
+    }
+
+    /// @notice Deploys a contract and saves the deployment JSON, if the contract hasn't been deployed yet.
+    /// Needs to be passed a contract-specific function that deploys the contract, that follows this signature:
+    /// deployContract() internal returns (address deployedAt, bytes memory constructorArgs);
+    /// - Example: deployDefaultPoolCalc() could be used here if defined in the deployment script. Or anything
+    /// else that deploys a specific contract, most likely using `new Contract(...);` approach.
+    /// - Note: contract should be configured outside of `deployContract`.
+    function deployAndSaveAs(
+        string memory contractName,
+        string memory contractAlias,
+        function() internal returns (address, bytes memory) deployContract
+    ) internal returns (address deployedAt) {
+        printLog(
+            contractName.equals(contractAlias)
+                ? StringUtils.concat("Deploying: ", contractName)
+                : StringUtils.concat("Deploying: ", contractName, " as ", contractAlias)
+        );
+        increaseIndent();
+        // Check if the contract is already deployed
+        deployedAt = tryGetDeploymentAddress(contractName);
+        if (deployedAt != address(0)) {
+            printLog("Skipping: already deployed at %s", deployedAt);
+        } else {
+            // Trigger callback to deploy the specific contract
+            bytes memory constructorArgs;
+            (deployedAt, constructorArgs) = deployContract();
             printLog("Deployed at %s", deployedAt);
             // Save the deployment JSON
             saveDeployment(contractName, contractAlias, deployedAt, constructorArgs);
