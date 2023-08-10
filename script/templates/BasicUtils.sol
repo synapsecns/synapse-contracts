@@ -78,16 +78,20 @@ abstract contract BasicUtils is CommonBase {
     ) internal {
         saveJson(
             StringUtils.concat("Saving deploy config for ", contractName, " on ", chain),
-            chainDeployConfigPath(chain, contractName),
+            deployConfigPath(chain, contractName),
             data
         );
     }
 
-    /// @notice Saves the deploy config that is shared across all chains.
-    function saveGlobalConfig(string memory globalName, string memory data) internal {
+    /// @notice Saves the global config that is shared across all chains for a contract.
+    function saveGlobalConfig(
+        string memory contractName,
+        string memory globalProperty,
+        string memory data
+    ) internal {
         saveJson(
-            StringUtils.concat("Saving global deploy config for ", globalName),
-            globalDeployConfigPath(globalName),
+            StringUtils.concat("Saving global config for ", contractName, ": ", globalProperty),
+            globalConfigPath(contractName, globalProperty),
             data
         );
     }
@@ -159,12 +163,16 @@ abstract contract BasicUtils is CommonBase {
         view
         returns (string memory deployConfigJson)
     {
-        return vm.readFile(chainDeployConfigPath(chain, contractName));
+        return vm.readFile(deployConfigPath(chain, contractName));
     }
 
-    /// @notice Returns the deploy config that is shared across all chains.
-    function getGlobalDeployConfig(string memory globalName) internal view returns (string memory deployConfigJson) {
-        return vm.readFile(globalDeployConfigPath(globalName));
+    /// @notice Returns the global config that is shared across all chains for a contract.
+    function getGlobalConfig(string memory contractName, string memory globalProperty)
+        internal
+        view
+        returns (string memory globalConfigJson)
+    {
+        return vm.readFile(globalConfigPath(contractName, globalProperty));
     }
 
     // ═════════════════════════════════════════════ FILE PATH GETTERS ═════════════════════════════════════════════════
@@ -198,19 +206,23 @@ abstract contract BasicUtils is CommonBase {
     }
 
     /// @notice Returns the path to the contract deployment config JSON for a contract on a given chain.
-    /// Example: "script/configs/mainnet/SynapseRouter.json"
-    function chainDeployConfigPath(string memory chain, string memory contractName)
+    /// Example: "script/configs/mainnet/SynapseRouter.dc.json"
+    function deployConfigPath(string memory chain, string memory contractName)
         internal
         pure
         returns (string memory path)
     {
-        return DEPLOY_CONFIGS.concat(chain, "/", contractName, ".json");
+        return DEPLOY_CONFIGS.concat(chain, "/", contractName, ".dc.json");
     }
 
-    /// @notice Returns the path to the contract deployment config JSON that is shared across all chains.
+    /// @notice Returns the path to the global config JSON that is shared across all chains for a contract.
     /// Example: "script/configs/SynapseCCTP.chains.json"
-    function globalDeployConfigPath(string memory globalName) internal pure returns (string memory path) {
-        return DEPLOY_CONFIGS.concat(globalName, ".json");
+    function globalConfigPath(string memory contractName, string memory globalProperty)
+        internal
+        pure
+        returns (string memory path)
+    {
+        return DEPLOY_CONFIGS.concat(contractName, ".", globalProperty, ".json");
     }
 
     // ════════════════════════════════════════════════ FILE UTILS ═════════════════════════════════════════════════════

@@ -259,8 +259,8 @@ contract BasicSynapseScript is BasicUtils {
     }
 
     /// @notice Returns the path to the contract deployment config JSON for a contract on the active chain.
-    function chainDeployConfigPath(string memory contractName) internal view returns (string memory path) {
-        return chainDeployConfigPath({chain: activeChain, contractName: contractName});
+    function deployConfigPath(string memory contractName) internal view returns (string memory path) {
+        return deployConfigPath({chain: activeChain, contractName: contractName});
     }
 
     // ══════════════════════════════════════════════ CHAIN ID UTILS ═══════════════════════════════════════════════════

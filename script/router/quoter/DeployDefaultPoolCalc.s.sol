@@ -28,7 +28,7 @@ contract DeployDefaultPoolCalc is BasicSynapseScript {
         setUp();
         // Get the salt for the deployment associated with the given init code hash
         bytes32 initCodeHash = keccak256(type(DefaultPoolCalc).creationCode);
-        string memory saltsJson = getGlobalDeployConfig(DEFAULT_POOL_CALC.concat(".salts"));
+        string memory saltsJson = getGlobalConfig(DEFAULT_POOL_CALC, "salts");
         SaltEntry[] memory salts = abi.decode(saltsJson.parseRaw(".entries"), (SaltEntry[]));
         bool found = false;
         address predictedAddress;
