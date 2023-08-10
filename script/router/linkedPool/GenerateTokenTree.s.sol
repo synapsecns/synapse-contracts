@@ -3,15 +3,15 @@ pragma solidity 0.8.17;
 
 import {LinkedPool} from "../../../contracts/router/LinkedPool.sol";
 
-import {SynapseScript} from "../../utils/SynapseScript.sol";
+import {BasicSynapseScript, StringUtils} from "../../templates/BasicSynapse.s.sol";
 
-import {console, stdJson} from "forge-std/Script.sol";
+import {stdJson} from "forge-std/Script.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts-4.5.0/token/ERC20/extensions/IERC20Metadata.sol";
 import {Strings} from "@openzeppelin/contracts-4.5.0/utils/Strings.sol";
 
-// solhint-disable no-console
-contract GenerateTokenTreeScript is SynapseScript {
+contract GenerateTokenTree is BasicSynapseScript {
     using stdJson for string;
+    using StringUtils for string;
     using Strings for uint256;
 
     // enforce alphabetical order to match the JSON order
@@ -27,11 +27,9 @@ contract GenerateTokenTreeScript is SynapseScript {
     string public constant CLOSING_BRACKET = "}";
     // prettier-ignore
     string public constant QUOTE_SYMBOL = "\"";
-    string public constant TAB = "    ";
 
+    string public config;
     LinkedPool public linkedPool;
-
-    uint256 public tabCount;
 
     string public graphFN;
     string public graphSVG;
@@ -40,30 +38,30 @@ contract GenerateTokenTreeScript is SynapseScript {
     mapping(uint256 => uint256[]) public poolToAddedNodes;
 
     function run(string memory bridgeSymbol) external {
-        // Load chain name that block.chainid refers to
-        loadChain();
-        string memory configName = _concat("LinkedPool.", bridgeSymbol);
-        string memory config = loadDeployConfig(configName);
-        graphFN = _concat(DEPLOY_CONFIGS, chain, "/", configName, ".dot");
-        graphSVG = _concat(DEPLOY_CONFIGS, chain, "/", configName, ".svg");
+        // Setup the BasicSynapseScript
+        setUp();
+        string memory configName = StringUtils.concat("LinkedPool.", bridgeSymbol);
+        config = getDeployConfig(configName);
+        graphFN = genericConfigPath({fileName: configName.concat(".dot")});
+        graphSVG = genericConfigPath({fileName: configName.concat(".svg")});
         // Deploy new Linked Pool in a forked environment
-        deployLinkedPool(config);
-        addPoolsToTokenTree(config);
+        deployLinkedPool();
+        addPoolsToTokenTree();
         // Inspect the Linked Pool and generate the graph image file
-        printGraph(config);
+        printGraph();
         generateSVG();
     }
 
     // ═════════════════════════════════════════════ LINKED POOL SETUP ═════════════════════════════════════════════════
 
     /// @notice Deploys a new Linked Pool contract.
-    function deployLinkedPool(string memory config) internal {
+    function deployLinkedPool() internal {
         address bridgeToken = config.readAddress(".bridgeToken");
         linkedPool = new LinkedPool(bridgeToken);
     }
 
     /// @notice Adds pools to the Linked Pool contract.
-    function addPoolsToTokenTree(string memory config) internal {
+    function addPoolsToTokenTree() internal {
         bytes memory encodedPools = config.parseRaw(".pools");
         PoolParams[] memory poolParamsList = abi.decode(encodedPools, (PoolParams[]));
         for (uint256 i = 0; i < poolParamsList.length; ++i) {
@@ -73,7 +71,9 @@ contract GenerateTokenTreeScript is SynapseScript {
 
     /// @notice Adds a pool to the Linked Pool contract.
     function addPoolToTokenTree(uint256 poolIndex, PoolParams memory params) internal {
-        address poolModule = bytes(params.poolModule).length == 0 ? address(0) : loadDeployment(params.poolModule);
+        address poolModule = bytes(params.poolModule).length == 0
+            ? address(0)
+            : getDeploymentAddress(params.poolModule.concat("Module"));
         uint256 numNodes = linkedPool.tokenNodesAmount();
         linkedPool.addPool(params.nodeIndex, params.pool, poolModule);
         // Save newly added nodes for later
@@ -97,12 +97,12 @@ contract GenerateTokenTreeScript is SynapseScript {
     }
 
     /// @notice Prints the DOT file describing the token tree.
-    function printGraph(string memory config) public {
+    function printGraph() public {
         // Clear file just in case
         vm.writeFile(graphFN, "");
         printSubgraphHeader(GRAPH_HEADER);
         printNodes();
-        printPools(config);
+        printPools();
         closeSubgraph();
         vm.closeFile(graphFN);
     }
@@ -110,12 +110,12 @@ contract GenerateTokenTreeScript is SynapseScript {
     /// @notice Prints the header of the subgraph, and increases the tab count for formatting.
     function printSubgraphHeader(string memory header) internal {
         printGraphLine(header);
-        ++tabCount;
+        increaseIndent();
     }
 
     /// @notice Decreases the tab count for formatting, and prints the closing bracket.
     function closeSubgraph() internal {
-        --tabCount;
+        decreaseIndent();
         printGraphLine(CLOSING_BRACKET);
     }
 
@@ -130,7 +130,7 @@ contract GenerateTokenTreeScript is SynapseScript {
     }
 
     /// @notice Prints descriptions for all pools in the Linked Pool's token tree.
-    function printPools(string memory config) internal {
+    function printPools() internal {
         bytes memory encodedPools = config.parseRaw(".pools");
         PoolParams[] memory poolParamsList = abi.decode(encodedPools, (PoolParams[]));
         for (uint256 i = 0; i < poolParamsList.length; ++i) {
@@ -141,7 +141,7 @@ contract GenerateTokenTreeScript is SynapseScript {
     /// @notice Prints a description for a token node in the Linked Pool's token tree.
     function printNode(uint256 index, string memory symbol) internal {
         // Example: "token0 [label = "0: USDC"];"
-        string memory line = _concat(getNodeName(index), " [", getTokenLabel(index, symbol), "];");
+        string memory line = getNodeName(index).concat(" [", getTokenLabel(index, symbol), "];");
         printGraphLine(line);
     }
 
@@ -152,12 +152,12 @@ contract GenerateTokenTreeScript is SynapseScript {
         uint256[] memory addedNodes = poolToAddedNodes[poolIndex];
         require(addedNodes.length != 0, "No nodes added for pool");
         // Example: "pool0 [label = "DefaultPool 0xabcd";shape = rect;style = dashed;];"
-        string memory line = _concat(getPoolName(poolIndex), " [", getPoolLabel(params), "];");
+        string memory line = getPoolName(poolIndex).concat(" [", getPoolLabel(params), "];");
         printGraphLine(line);
         // Print edge from the parent node to the pool
         printEdge(getNodeName(params.nodeIndex), getPoolName(poolIndex));
         // Print subgraph for the pool: surround with a dotted line
-        printSubgraphHeader(_concat(CLUSTER_HEADER, poolIndex.toString(), " {"));
+        printSubgraphHeader(CLUSTER_HEADER.concat(poolIndex.toString(), " {"));
         printGraphLine("style = dotted;");
         // Print all the edges from to the pool nodes
         for (uint256 i = 0; i < addedNodes.length; ++i) {
@@ -180,7 +180,7 @@ contract GenerateTokenTreeScript is SynapseScript {
     /// @notice Prints the edges between the pool's tokens.
     function printInnerEdges(uint256[] memory addedNodes) internal {
         if (addedNodes.length == 1) {
-            printGraphLine(_concat(getNodeName(addedNodes[0]), ";"));
+            printGraphLine(getNodeName(addedNodes[0]).concat(";"));
             return;
         }
         for (uint256 i = 0; i < addedNodes.length - 1; ++i) {
@@ -191,45 +191,37 @@ contract GenerateTokenTreeScript is SynapseScript {
     /// @notice Returns the label to be used for a token node in the DOT file.
     function getTokenLabel(uint256 index, string memory symbol) internal pure returns (string memory label) {
         // Example: "label = "0: USDC";"
-        label = _concat("label = ", QUOTE_SYMBOL, index.toString(), ": ");
-        label = _concat(label, symbol, QUOTE_SYMBOL, ";");
+        label = StringUtils.concat("label = ", QUOTE_SYMBOL, index.toString(), ": ");
+        label = label.concat(symbol, QUOTE_SYMBOL, ";");
     }
 
     /// @notice Returns the label to be used for a pool in the DOT file.
     function getPoolLabel(PoolParams memory params) internal pure returns (string memory label) {
         // Example: "label = "DefaultPool 0xabcd;shape = rect;style = dashed;"
         string memory poolName = bytes(params.poolModule).length == 0 ? "DefaultPool" : params.poolModule;
-        label = _concat("label = ", QUOTE_SYMBOL, poolName, " ");
+        label = StringUtils.concat("label = ", QUOTE_SYMBOL, poolName, " ");
         string memory shortenedAddress = uint256(uint160(params.pool) >> 144).toHexString();
-        label = _concat(label, shortenedAddress, QUOTE_SYMBOL, ";shape = rect;style = dashed;");
+        label = label.concat(shortenedAddress, QUOTE_SYMBOL, ";shape = rect;style = dashed;");
     }
 
     /// @notice Returns the name of a token node in the DOT file.
     function getNodeName(uint256 index) internal pure returns (string memory) {
-        return _concat("token", index.toString());
+        return StringUtils.concat("token", index.toString());
     }
 
     /// @notice Returns the name of a pool node in the DOT file.
     function getPoolName(uint256 index) internal pure returns (string memory) {
-        return _concat("pool", index.toString());
+        return StringUtils.concat("pool", index.toString());
     }
 
     /// @notice Prints an edge between two nodes in the DOT file.
     function printEdge(string memory from, string memory to) internal {
-        string memory line = _concat(from, " -- ", to, ";");
+        string memory line = from.concat(" -- ", to, ";");
         printGraphLine(line);
     }
 
     /// @notice Prints an arbitrary line to the DOT file.
     function printGraphLine(string memory line) internal {
-        vm.writeLine(graphFN, _concat(createTabs(tabCount), line));
-    }
-
-    /// @notice Creates a string with the specified number of tabs to be used for indentation.
-    function createTabs(uint256 tabs) internal pure returns (string memory result) {
-        result = "";
-        for (uint256 i = 0; i < tabs; ++i) {
-            result = _concat(result, TAB);
-        }
+        vm.writeLine(graphFN, currentIndent().concat(line));
     }
 }

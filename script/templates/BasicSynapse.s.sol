@@ -71,7 +71,12 @@ contract BasicSynapseScript is BasicUtils {
 
     /// @notice Adds the current indent level to the log message.
     function addIndent(string memory logString) internal view returns (string memory) {
-        return TAB.duplicate(currentIndentLevel).concat(logString);
+        return currentIndent().concat(logString);
+    }
+
+    /// @notice Returns the current indent string.
+    function currentIndent() internal view returns (string memory) {
+        return TAB.duplicate(currentIndentLevel);
     }
 
     /// @notice Increases the indent level for all log messages.
@@ -284,6 +289,11 @@ contract BasicSynapseScript is BasicUtils {
     /// @notice Returns the path to the contract deployment config JSON for a contract on the active chain.
     function deployConfigPath(string memory contractName) internal view returns (string memory path) {
         return deployConfigPath({chain: activeChain, contractName: contractName});
+    }
+
+    /// @notice Returns the path to the generic contract config file for a contract on the active chain.
+    function genericConfigPath(string memory fileName) internal view returns (string memory path) {
+        return genericConfigPath({chain: activeChain, fileName: fileName});
     }
 
     // ══════════════════════════════════════════════ CHAIN ID UTILS ═══════════════════════════════════════════════════
