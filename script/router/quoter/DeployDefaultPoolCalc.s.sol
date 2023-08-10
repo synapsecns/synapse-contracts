@@ -49,7 +49,7 @@ contract DeployDefaultPoolCalc is BasicSynapseScript {
         address deployedAt = deployAndSave({
             contractName: DEFAULT_POOL_CALC,
             constructorArgs: "",
-            deployFn: deployCreate2
+            deployCode: deployCreate2
         });
         require(deployedAt == predictedAddress, "Predicted address incorrect");
         vm.stopBroadcast();
