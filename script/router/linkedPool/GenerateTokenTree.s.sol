@@ -21,6 +21,12 @@ contract GenerateTokenTree is BasicSynapseScript {
         string poolModule;
     }
 
+    // enforce alphabetical order to match the JSON order
+    struct OverridenToken {
+        address tokenAddress;
+        string tokenSymbol;
+    }
+
     string public constant GRAPH_HEADER = "graph G {";
     string public constant CLUSTER_HEADER = "subgraph cluster";
     string public constant SUBGRAPH_HEADER = "subgraph {";
@@ -121,10 +127,23 @@ contract GenerateTokenTree is BasicSynapseScript {
 
     /// @notice Prints descriptions for all token nodes in the Linked Pool's token tree.
     function printNodes() internal {
+        string memory symbolOverrides = getGlobalConfig("TokenSymbols", "overrides");
+        bytes memory encodedOverrides = symbolOverrides.parseRaw(StringUtils.concat(".", activeChain));
+        OverridenToken[] memory overrides = new OverridenToken[](0);
+        if (encodedOverrides.length != 0) {
+            overrides = abi.decode(encodedOverrides, (OverridenToken[]));
+        }
         uint256 numTokens = linkedPool.tokenNodesAmount();
         for (uint256 i = 0; i < numTokens; ++i) {
             address token = linkedPool.getToken(uint8(i));
             string memory symbol = IERC20Metadata(token).symbol();
+            // Check if we need to override the symbol
+            for (uint256 j = 0; j < overrides.length; ++j) {
+                if (overrides[j].tokenAddress == token) {
+                    symbol = overrides[j].tokenSymbol;
+                    break;
+                }
+            }
             printNode(i, symbol);
         }
     }
