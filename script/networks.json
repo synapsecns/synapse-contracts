@@ -1,0 +1,13 @@
+{
+  "forgeOptions": {
+    "arbitrum": "--with-gas-price 100000000",
+    "aurora": "--legacy",
+    "boba": "--legacy --skip-simulation",
+    "canto": "--legacy",
+    "dfk": "--legacy",
+    "dogechain": "--legacy",
+    "harmony": "--legacy",
+    "klatyn": "--skip-simulation",
+    "metis": "--legacy"
+  }
+}

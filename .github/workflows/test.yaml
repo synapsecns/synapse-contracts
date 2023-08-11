@@ -72,4 +72,4 @@ jobs:
           version: nightly
 
       - name: Run tests
-        run: ./scripts/foundry-base.sh
+        run: ./script/foundry-base.sh
