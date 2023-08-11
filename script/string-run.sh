@@ -2,6 +2,7 @@
 # This script executes a Forge script, using the specified wallet for private keys management.
 # Forge script is supposed to expose a `function run(string memory arg) external` for the execution.
 # Usage: ./script/string-run.sh <stringArg> <path/to/script.s.sol> <chainName> <walletName> [<options...>]
+# - <stringArg> is the string argument to pass to the script `run(string)` function
 # - <path/to/script.s.sol> is the path to the script file to execute
 # - <chainName> is the name of the chain, must match the name in foundry.toml AND deployments/<chainName>
 # - <walletName> is the name of the wallet in .env file. Following env vars must exist:
@@ -14,7 +15,6 @@
 
 # Colors
 RED="\033[0;31m"
-GREEN="\033[0;32m"
 NC="\033[0m" # No Color
 
 # Check that at least four arguments are passed
@@ -25,7 +25,7 @@ fi
 
 # Fetch the string arg
 STRING_ARG=$1
-# Fetch the rush.sh args
+# Fetch the run.sh args
 shift 1
 RUN_ARGS="$@ --sig ""run(string)"" $STRING_ARG"
 
