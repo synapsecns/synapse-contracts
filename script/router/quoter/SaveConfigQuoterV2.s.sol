@@ -102,7 +102,7 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         json = "json.pools";
         uint256 poolsFound = 0;
         for (uint256 i = 0; i < pools.length; ++i) {
-            if (!isIgnoredPool[pools[i].poolAddress]) continue;
+            if (isIgnoredPool[pools[i].poolAddress]) continue;
             ++poolsFound;
             string memory jsonPool = "local";
             jsonPool.serialize("isLinked", isLinkedPool(pools[i].poolAddress));

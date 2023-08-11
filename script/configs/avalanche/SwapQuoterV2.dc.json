@@ -4,15 +4,15 @@
     "nETH"
   ],
   "pools": {
-    "SYN": {
-      "isLinked": true,
-      "pool": "0x0000000000000000000000000000000000000000",
-      "token": "0x1f1E7c893855525b303f99bDF5c3c05Be09ca251"
+    "nETH": {
+      "isLinked": false,
+      "pool": "0xdd60483Ace9B215a7c019A44Be2F22Aa9982652E",
+      "token": "0x19E1ae0eE35c0404f835521146206595d37981ae"
     },
-    "wsOHM": {
-      "isLinked": true,
-      "pool": "0x0000000000000000000000000000000000000000",
-      "token": "0x240E332Cd26AaE10622B24160D23425A17256F5d"
+    "nUSD": {
+      "isLinked": false,
+      "pool": "0xED2a7edd7413021d440b09D654f3b87712abAB66",
+      "token": "0xCFc37A6AB183dd4aED08C204D1c2773c0b1BDf46"
     }
   }
 }
