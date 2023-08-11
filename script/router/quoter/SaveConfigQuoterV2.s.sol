@@ -19,6 +19,7 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
     string public constant QUOTER_V2 = "SwapQuoterV2";
 
     string public config;
+    mapping(address => bool) public isIgnoredPool;
 
     function run() external {
         // Setup the BasicSynapseScript
@@ -42,6 +43,9 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         ) = getChainConfig(chainId);
         // Switch back to the original chain
         vm.selectFork(forkId);
+        // Get a list of pools that should be ignored by the quoter
+        loadIgnoredPools();
+        // Serialize the config
         config = "config";
         serializePoolIDs(tokenIDs, pools);
         serializePools(tokenIDs, tokens, pools);
@@ -49,18 +53,32 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         config.write(configFN);
     }
 
+    function loadIgnoredPools() internal {
+        string memory ignoredJson = getGlobalConfig(QUOTER_V2, "ignored");
+        string[] memory ignoredContractNames = ignoredJson.readStringArray(".contractNames");
+        // Add existing deployments to the ignored list
+        for (uint256 i = 0; i < ignoredContractNames.length; ++i) {
+            address ignoredPool = tryGetDeploymentAddress(ignoredContractNames[i]);
+            if (ignoredPool != address(0)) {
+                isIgnoredPool[ignoredPool] = true;
+            }
+        }
+        // Add the zero address to the ignored list to simplify the logic
+        isIgnoredPool[address(0)] = true;
+    }
+
     function serializePoolIDs(string[] memory tokenIDs, IBridgeConfigV3.Pool[] memory pools) internal {
-        // Filter out pools that don't exist
+        // Filter out pools that don't exist or ignored
         uint256 poolsLength = 0;
         for (uint256 i = 0; i < pools.length; ++i) {
-            if (pools[i].poolAddress != address(0)) {
+            if (!isIgnoredPool[pools[i].poolAddress]) {
                 ++poolsLength;
             }
         }
         string[] memory poolIDs = new string[](poolsLength);
         poolsLength = 0;
         for (uint256 i = 0; i < pools.length; ++i) {
-            if (pools[i].poolAddress != address(0)) {
+            if (!isIgnoredPool[pools[i].poolAddress]) {
                 console2.log("Token ID: %s", tokenIDs[i]);
                 console2.log("Pool address: %s", pools[i].poolAddress);
                 poolIDs[poolsLength++] = tokenIDs[i];
@@ -77,14 +95,14 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         // Find out how many pools exist
         uint256 poolsLength = 0;
         for (uint256 i = 0; i < pools.length; ++i) {
-            if (pools[i].poolAddress != address(0)) {
+            if (!isIgnoredPool[pools[i].poolAddress]) {
                 ++poolsLength;
             }
         }
         json = "json.pools";
         uint256 poolsFound = 0;
         for (uint256 i = 0; i < pools.length; ++i) {
-            if (pools[i].poolAddress == address(0)) continue;
+            if (!isIgnoredPool[pools[i].poolAddress]) continue;
             ++poolsFound;
             string memory jsonPool = "local";
             jsonPool.serialize("isLinked", isLinkedPool(pools[i].poolAddress));
