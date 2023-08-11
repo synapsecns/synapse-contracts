@@ -10,6 +10,8 @@ import {Test} from "forge-std/Test.sol";
 
 // solhint-disable func-name-mixedcase
 contract LinkedPoolTest is Test {
+    event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
+
     uint256 public maskOnlySwap = Action.Swap.mask();
     uint256 public maskNoSwaps = type(uint256).max ^ Action.Swap.mask();
 
@@ -817,6 +819,9 @@ contract LinkedPoolTest is Test {
         prepareUser(tokenIn, amountIn);
         address tokenOut = linkedPool.getToken(tokenTo);
         uint256 amountOut = linkedPool.calculateSwap(tokenFrom, tokenTo, amountIn);
+        // Expect a TokenSwap event
+        vm.expectEmit();
+        emit TokenSwap(user, amountIn, amountOut, tokenFrom, tokenTo);
         vm.prank(user);
         linkedPool.swap(tokenFrom, tokenTo, amountIn, amountOut, block.timestamp);
         if (tokenIn != tokenOut) assertEq(MockERC20(tokenIn).balanceOf(user), 0);
