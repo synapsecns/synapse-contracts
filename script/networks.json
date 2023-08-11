@@ -1,5 +1,6 @@
 {
   "forgeOptions": {
+    "arbitrum": "--with-gas-price 100000000",
     "aurora": "--legacy",
     "boba": "--legacy --skip-simulation",
     "canto": "--legacy",
