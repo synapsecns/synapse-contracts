@@ -29,6 +29,9 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     using SafeERC20 for IERC20;
     using UniversalTokenLib for address;
 
+    /// @notice Replicates signature of `TokenSwap` event from Default Pools.
+    event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
+
     // solhint-disable-next-line no-empty-blocks
     constructor(address bridgeToken) TokenTree(bridgeToken) {}
 
@@ -80,6 +83,8 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         require(amountOut >= minDy, "Swap didn't result in min tokens");
         // Transfer the tokens to the user
         IERC20(_nodes[nodeIndexTo].token).safeTransfer(msg.sender, amountOut);
+        // Emit the event
+        emit TokenSwap(msg.sender, dx, amountOut, nodeIndexFrom, nodeIndexTo);
     }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
