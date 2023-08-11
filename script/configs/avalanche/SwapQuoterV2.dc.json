@@ -1,9 +1,17 @@
 {
   "ids": [
     "nUSD",
-    "nETH"
+    "nETH",
+    "CCTP.USDC"
   ],
   "pools": {
+    "CCTP": {
+      "USDC": {
+        "isLinked": true,
+        "pool": "0x7366f949a383278acb4783694554D8d83d84D02e",
+        "token": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"
+      }
+    },
     "nETH": {
       "isLinked": false,
       "pool": "0xdd60483Ace9B215a7c019A44Be2F22Aa9982652E",
