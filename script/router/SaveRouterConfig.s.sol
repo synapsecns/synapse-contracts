@@ -39,7 +39,7 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
 
         // Save current chainId before switching to Mainnet
         uint256 chainId = _chainId();
-        string memory ethRPC = vm.envString("ALCHEMY_API");
+        string memory ethRPC = vm.envString("MAINNET_API");
         vm.createSelectFork(ethRPC);
         (LocalBridgeConfig.BridgeTokenConfig[] memory tokens, address[] memory pools) = getChainConfig(chainId);
 
