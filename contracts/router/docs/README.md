@@ -52,21 +52,24 @@ Bridging is exposed using `SynapseRouterV2.bridgeViaSynapse()` method. User can 
 - `rawParams` is used to pass the information about how exactly the swap needs to be performed to the `routerAdapter`.
   > Different adapters will implement different encoding for the `rawParams`.
 
-### Bridging workflow
+### Bridging: calls flow
 
 1. User calls `SynapseRouterV2.bridgeViaSynapse()` method on the origin chain.
    > User needs to approve `SynapseRouterV2` for spending `token` before calling this method.
-2. Based on the `tokenSymbol` the address of the Bridge Adapter supporting given symbol is determined.
-   > - `originQuery.tokenOut` needs to match `tokenSymbol`, or the transaction will revert.
-   > - Transaction will also revert, if `tokenSymbol` is not supported by any Bridge Adapter.
-3. `(token, amount)` is pulled from the user, and transferred to the `originQuery.routerAdapter`.
-4. `originQuery.routerAdapter` is called to perform a swap on the origin chain.
-   > - Swap from `token` to `originQuery.tokenOut` will be performed.
-5. The Router Adapter performs a swap, and transfers `tokenOut` to the `BridgeAdapter` contract.
-   > - Note: if `originQuery.routerAdapter` is empty, steps 3-5 are skipped, and `(token, amount)` is pulled from user to the `BridgeAdapter` contract instead.
-6. `BridgeAdapter` is called to initiate the bridging to destination chain.
+2. Router Adapter method `adapterSwap()` is called based on `originQuery` parameters provided by the user.
+3. One of bridge modules is used to bridge the swapped token to the destination chain. This is achieved by doing a delegate call to the `BridgeModule` contract, which implements the bridging logic.
+   > - `BridgeModule` contract is determined based on the `tokenSymbol` provided by the user.
+   > - `destQuery` parameters provided by the user are are used to request the specific swap on the destination chain.
 
-![Bridging workflow](./bridge.png)
+![Bridging calls flow](./bridge_calls.svg)
+
+### Bridging: token flow
+
+1. Input tokens are pulled from user to `RouterAdapter` contract prior to calling `adapterSwap()` method.
+2. After the swap is performed, the swapped tokens are transferred to `SynapseRouterV2` contract.
+3. During the initiation of bridging the swapped tokens are pulled from `SynapseRouterV2` contract to the bridge contract (e.g. `SynapseBridge`), then bridged to the destination chain.
+
+![Bridging token flow](./bridge_tokens.svg)
 
 ## Quoting the bridge transaction
 
