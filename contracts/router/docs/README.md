@@ -126,11 +126,15 @@ which include `SwapQuery` structs. This is covered by the `routerSDK.bridgeQuote
 #### 1. Fetching the list of bridge symbols (destination chain)
 
 1. SDK calls `synapseRouterV2.getConnectedBridgeTokens()` method on the destination chain.
-2. `SynapseRouterV2` fetches the list of supported bridge symbols (and corresponding bridge token addresses) and the from every supported `BridgeAdapter` contract.
-3. `SwapQuoterV2` is called with this list and `tokenOut` to determine which tokens from the list are connected to `tokenOut` by the whitelisted pools.
-4. This is done by checking the whitelisted pool for every token from the list, and checking if the pool supports `tokenOut`.
+   > This passes `tokenOut` as a parameter to `SynapseRouterV2` contract.
+2. `SynapseRouterV2` calls every supported `BridgeModule` to get a list of all module's bridge tokens and their symbols.
+   > All lists are then merged into one list of bridge tokens/symbols.
+3. `SwapQuoterV2` is called to determine which tokens from the list are connected to `tokenOut` by the whitelisted pools.
+4. List of connected bridge tokens and their symbols is returned.
 
-![Fetching the list of bridge symbols](./quote1.png)
+![Fetching the list of bridge symbols: calls](./quote1_calls.svg)
+
+![Fetching the list of bridge symbols: data flow](./quote1_data.svg)
 
 #### 2. Fetching the list of quotes for swaps from `tokenIn` to the bridge tokens (origin chain)
 
