@@ -140,7 +140,8 @@ _Below are the diagrams for the function and data flows for this step._
 
 #### 2. Fetching the list of quotes for swaps from `tokenIn` to the bridge tokens (origin chain)
 
-1. SDK calls `synapseRouterV2.getOriginAmountOut()` method on the origin chain, supplying the list of symbols from step 1.
+1. SDK calls `synapseRouterV2.getOriginAmountOut()` method on the origin chain.
+   > This passes list of symbols from step 1, as well as `tokenIn` and `amountIn` to `SynapseRouterV2`.
 2. `SynapseRouterV2` fetches the token addresses and maximum bridgeable amounts from the supported `BridgeModule` contracts.
 3. `SwapQuoterV2` is called with to determine the best quote between `tokenIn` and every bridge token in the list.
    > `SwapQuoterV2` checks both "origin only" and "origin and destination" pools for the best quote.
@@ -155,10 +156,17 @@ _Below are the diagrams for the function and data flows for this step._
 
 #### 3. Fetching the list of quotes for swaps from the bridge tokens to `tokenOut` (destination chain)
 
-1. SDK calls `synapseRouterV2.getDestinationAmountOut()` method on the destination chain, supplying the list of symbols from step 1, and the list of quotes (amounts in) from step 2.
-2. For every bridge token symbol, `SynapseRouterV2` fetches the token address from the supported `BridgeAdapter` contracts, as well as the bridge fee for the given `amountIn`.
-3. For every token in the list that has `feeAmount < amountIn`, `SwapQuoterV2` is called with `bridgeTokenIn` and `tokenOut` to determine the best quote for the swap from `bridgeTokenIn` to `tokenOut`. It is also given instructions that this is a quote for the destination swap. `amountIn - feeAmount` is used as the initial token amount for the quote.
-4. `SwapQuoterV2` checks only "origin and destination" pools for the quote using a whitelisted pool for the given bridge token.
-5. List of quotes for every token in the list is compiled in `SynapseRouterV2` and returned.
+1. SDK calls `synapseRouterV2.getDestinationAmountOut()` method on the destination chain.
+   > This passes list of symbols from step 1, list of amounts in from step 2, and `tokenOut` to `SynapseRouterV2`.
+2. `SynapseRouterV2` fetches the token addresses and respective fee amounts from the supported `BridgeModule` contracts.
+3. `SwapQuoterV2` is called with to determine the best quote between every bridge token in the list and `tokenOut`.
+   > - `SwapQuoterV2` checks only bridge token's "whitelisted destination pool" for the best quote.
+   > - Amount after the bridge fee is used as the initial token amount for the quote.
+4. List of quotes for every token in the list is compiled in `SynapseRouterV2` and returned.
+   > The quotes with initial amount less than the bridge fee are filtered out.
 
-![Fetching the list of destination quotes](./quote3.png)
+_Below are the diagrams for the function and data flows for this step._
+
+![Fetching the list of destination quotes: calls](./quote3_calls.svg)
+
+![Fetching the list of destination quotes: data flow](./quote3_data.svg)

@@ -1,0 +1,27 @@
+digraph {
+    compound = true;
+    
+    sdk [label = "SDK";];
+    router [label = "Destination Chain\nRouterV2";shape = rect;];
+    swapQuoteInclFee [label = <<I>3. Quote for swap<br></br>including bridge fee:<br></br>bridgeToken &#10142; tokenOut</I>>;shape = none;];
+    quoter [label = "QuoterV2";shape = rect;];
+    
+    rankdir = "LR";
+    sdk -> router [label = <<I>4. List of quotes for swaps:<br></br>symbols &#10142; tokenOut</I>>; style = dashed; dir = back;];
+    
+    subgraph cluster1 {
+        node [shape = rect; style = dashed;];
+        module1 [label = "Bridge Module (Synapse Bridge)";];
+        module2 [label = "Bridge Module (Synapse CCTP)";];
+        module3 [label = "Bridge Module (Synapse <...>)";];
+    }
+    
+    subgraph {
+        rank = same;
+        router -> swapQuoteInclFee [style = dashed; dir = back;];
+        swapQuoteInclFee -> quoter [style = dashed; dir = none;];
+    }
+    
+    router -> module1 [label = <<I>2a. Bridge symbol's token address</I>>; lhead = cluster1; style = dashed; dir = back; weight = 10;];
+    router:se -> module2 [label = <<I>2b. Fee amount for bridging<br></br>token to this chain</I>>; lhead = cluster1; style = dashed; dir = back;];
+}
