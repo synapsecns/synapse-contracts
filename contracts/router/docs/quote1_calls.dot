@@ -2,7 +2,7 @@ digraph {
     compound = true;
     
     sdk [label = "SDK";];
-    router [label = "RouterV2";shape = rect;];
+    router [label = "Destination Chain\nRouterV2";shape = rect;];
     findConnectedTokens [label = <<I>3. findConnectedTokens<br></br>(bridgeTokens, tokenOut)</I>>;shape = none;];
     quoter [label = "QuoterV2";shape = rect;];
     

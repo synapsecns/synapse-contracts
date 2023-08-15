@@ -132,6 +132,8 @@ which include `SwapQuery` structs. This is covered by the `routerSDK.bridgeQuote
 3. `SwapQuoterV2` is called to determine which tokens from the list are connected to `tokenOut` by the whitelisted pools.
 4. List of connected bridge tokens and their symbols is returned.
 
+_Below are the diagrams for the function and data flows for this step._
+
 ![Fetching the list of bridge symbols: calls](./quote1_calls.svg)
 
 ![Fetching the list of bridge symbols: data flow](./quote1_data.svg)
