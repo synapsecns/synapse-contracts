@@ -141,12 +141,17 @@ _Below are the diagrams for the function and data flows for this step._
 #### 2. Fetching the list of quotes for swaps from `tokenIn` to the bridge tokens (origin chain)
 
 1. SDK calls `synapseRouterV2.getOriginAmountOut()` method on the origin chain, supplying the list of symbols from step 1.
-2. For every token in the list `SynapseRouterV2` fetches the token address from the supported `BridgeAdapter` contracts. It also fetches the maximum amount of the token that could be bridged to the destination chain.
-3. `SwapQuoterV2` is called with `tokenIn` and `bridgeTokenOut` to determine the best quote for the swap from `tokenIn` to `bridgeTokenOut`. It is also given instructions that this is a quote for the origin swap.
-4. `SwapQuoterV2` checks both "origin only" and "origin and destination" pools for the best quote.
-5. List of quotes for every token in the list is compiled in `SynapseRouterV2` and returned. The quotes that exceed the maximum amount of the token that could be bridged are filtered out.
+2. `SynapseRouterV2` fetches the token addresses and maximum bridgeable amounts from the supported `BridgeModule` contracts.
+3. `SwapQuoterV2` is called with to determine the best quote between `tokenIn` and every bridge token in the list.
+   > `SwapQuoterV2` checks both "origin only" and "origin and destination" pools for the best quote.
+4. List of quotes for every token in the list is compiled in `SynapseRouterV2` and returned.
+   > The quotes that exceed the maximum amount of the token that could be bridged are filtered out.
 
-![Fetching the list of origin quotes](./quote2.png)
+_Below are the diagrams for the function and data flows for this step._
+
+![Fetching the list of origin quotes: calls](./quote2_calls.svg)
+
+![Fetching the list of origin quotes: data flow](./quote2_data.svg)
 
 #### 3. Fetching the list of quotes for swaps from the bridge tokens to `tokenOut` (destination chain)
 
