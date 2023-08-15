@@ -160,7 +160,7 @@ contract BasicSynapseScript is BasicUtils {
         );
         increaseIndent();
         // Check if the contract is already deployed
-        deployedAt = tryGetDeploymentAddress(contractName);
+        deployedAt = tryGetDeploymentAddress(contractAlias);
         if (deployedAt != address(0)) {
             printLog("Skipping: already deployed at %s", deployedAt);
         } else {
@@ -201,7 +201,7 @@ contract BasicSynapseScript is BasicUtils {
         );
         increaseIndent();
         // Check if the contract is already deployed
-        deployedAt = tryGetDeploymentAddress(contractName);
+        deployedAt = tryGetDeploymentAddress(contractAlias);
         if (deployedAt != address(0)) {
             printLog("Skipping: already deployed at %s", deployedAt);
         } else {
