@@ -31,7 +31,7 @@ interface IRouterV2 {
     /// @param amount        Amount of the initial tokens for the bridge transaction
     /// @param originQuery   Origin swap query. Empty struct indicates no swap is required
     /// @param destQuery     Destination swap query. Empty struct indicates no swap is required
-    function bridge(
+    function bridgeViaSynapse(
         address to,
         uint256 chainId,
         address token,
