@@ -10,14 +10,12 @@ interface IBridgeModule {
     /// @param chainId       Destination chain id
     /// @param token         Initial token for the bridge transaction to be pulled from the user
     /// @param amount        Amount of the initial tokens for the bridge transaction
-    /// @param originQuery   Origin swap query. Empty struct indicates no swap is required
     /// @param destQuery     Destination swap query. Empty struct indicates no swap is required
-    function bridge(
+    function delegateBridge(
         address to,
         uint256 chainId,
         address token,
         uint256 amount,
-        SwapQuery memory originQuery,
         SwapQuery memory destQuery
     ) external payable;
 
