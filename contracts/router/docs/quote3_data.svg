@@ -68,11 +68,25 @@
 </g>
 <!-- router&#45;&gt;module2 -->
 <g id="edge5" class="edge">
-<title>router:se&#45;&gt;module2</title>
-<path fill="none" stroke="black" stroke-dasharray="5,2" d="M470.79,-151.44C519.94,-116.92 656.01,-113.07 760.4,-115.81"/>
-<polygon fill="black" stroke="black" points="468.35,-148.92 462.89,-158 472.82,-154.3 468.35,-148.92"/>
-<text text-anchor="start" x="525.89" y="-152.8" font-family="Times,serif" font-style="italic" font-size="14.00">2b. Fee amount for bridging</text>
-<text text-anchor="start" x="560.39" y="-138.8" font-family="Times,serif" font-style="italic" font-size="14.00">token to this chain</text>
+<title>router:se&#45;&gt;module2:w</title>
+<path fill="none" stroke="black" stroke-dasharray="5,2" d="M471.25,-151.74C504.72,-132.14 596.65,-123.38 760.4,-123.01"/>
+<polygon fill="black" stroke="black" points="468.8,-149.2 462.89,-158 473,-154.8 468.8,-149.2"/>
+<text text-anchor="start" x="525.89" y="-156.8" font-family="Times,serif" font-style="italic" font-size="14.00">2b. Fee amount for bridging</text>
+<text text-anchor="start" x="560.39" y="-142.8" font-family="Times,serif" font-style="italic" font-size="14.00">token to this chain</text>
+</g>
+<!-- module3 -->
+<g id="node7" class="node">
+<title>module3</title>
+<polygon fill="none" stroke="black" stroke-dasharray="5,2" points="1012.89,-87 773.89,-87 773.89,-51 1012.89,-51 1012.89,-87"/>
+<text text-anchor="middle" x="893.39" y="-65.3" font-family="Times,serif" font-size="14.00">Bridge Module (Synapse &lt;...&gt;)</text>
+</g>
+<!-- router&#45;&gt;module3 -->
+<g id="edge6" class="edge">
+<title>router:se&#45;&gt;module3:nw</title>
+<path fill="none" stroke="black" stroke-dasharray="5,2" d="M470.27,-150.61C475.99,-144.77 479.31,-140.73 485.39,-131 495.73,-114.47 487.1,-101.71 503.39,-91 514.44,-83.74 707.44,-94.41 760.4,-89.78"/>
+<polygon fill="black" stroke="black" points="467.48,-148.45 462.89,-158 472.44,-153.4 467.48,-148.45"/>
+<text text-anchor="start" x="513.89" y="-108.8" font-family="Times,serif" font-style="italic" font-size="14.00">2c. Possible post&#45;bridge actions</text>
+<text text-anchor="start" x="554.89" y="-94.8" font-family="Times,serif" font-style="italic" font-size="14.00">for the bridge token</text>
 </g>
 <!-- quoter -->
 <g id="node4" class="node">
@@ -84,12 +98,6 @@
 <g id="edge3" class="edge">
 <title>swapQuoteInclFee&#45;&gt;quoter</title>
 <path fill="none" stroke="black" stroke-dasharray="5,2" d="M388.89,-71.83C388.89,-59.95 388.89,-48.08 388.89,-36.21"/>
-</g>
-<!-- module3 -->
-<g id="node7" class="node">
-<title>module3</title>
-<polygon fill="none" stroke="black" stroke-dasharray="5,2" points="1012.89,-87 773.89,-87 773.89,-51 1012.89,-51 1012.89,-87"/>
-<text text-anchor="middle" x="893.39" y="-65.3" font-family="Times,serif" font-size="14.00">Bridge Module (Synapse &lt;...&gt;)</text>
 </g>
 </g>
 </svg>

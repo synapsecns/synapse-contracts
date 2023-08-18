@@ -68,11 +68,25 @@
 </g>
 <!-- router&#45;&gt;module2 -->
 <g id="edge5" class="edge">
-<title>router:se&#45;&gt;module2</title>
-<path fill="none" stroke="black" d="M473.39,-158C533.81,-97.58 629.89,-89.27 710.19,-95.84"/>
-<polygon fill="black" stroke="black" points="710.12,-99.35 720.4,-96.76 710.75,-92.38 710.12,-99.35"/>
+<title>router:se&#45;&gt;module2:w</title>
+<path fill="none" stroke="black" d="M473.39,-158C514.54,-116.85 494.86,-122.59 710.3,-122.98"/>
+<polygon fill="black" stroke="black" points="710.39,-126.48 720.4,-122.99 710.4,-119.48 710.39,-126.48"/>
 <text text-anchor="start" x="525.39" y="-144.8" font-family="Times,serif" font-style="italic" font-size="14.00">2b. calculateFeeAmount</text>
 <text text-anchor="start" x="525.39" y="-130.8" font-family="Times,serif" font-style="italic" font-size="14.00">(bridgeToken,amountIn)</text>
+</g>
+<!-- module3 -->
+<g id="node7" class="node">
+<title>module3</title>
+<polygon fill="none" stroke="black" stroke-dasharray="5,2" points="972.89,-87 733.89,-87 733.89,-51 972.89,-51 972.89,-87"/>
+<text text-anchor="middle" x="853.39" y="-65.3" font-family="Times,serif" font-size="14.00">Bridge Module (Synapse &lt;...&gt;)</text>
+</g>
+<!-- router&#45;&gt;module3 -->
+<g id="edge6" class="edge">
+<title>router:se&#45;&gt;module3:nw</title>
+<path fill="none" stroke="black" d="M473.39,-158C484.14,-147.25 486.61,-144.06 494.39,-131 504.58,-113.9 495.81,-100.99 512.39,-90 516.52,-87.27 654.58,-89.81 710.39,-88.63"/>
+<polygon fill="black" stroke="black" points="710.5,-92.13 720.4,-88.34 710.3,-85.13 710.5,-92.13"/>
+<text text-anchor="start" x="520.89" y="-107.8" font-family="Times,serif" font-style="italic" font-size="14.00">2c. getBridgeActionMask</text>
+<text text-anchor="start" x="561.39" y="-93.8" font-family="Times,serif" font-style="italic" font-size="14.00">(bridgeToken)</text>
 </g>
 <!-- quoter -->
 <g id="node4" class="node">
@@ -85,12 +99,6 @@
 <title>getAmountOut&#45;&gt;quoter</title>
 <path fill="none" stroke="black" d="M399.39,-71.83C399.39,-63.29 399.39,-54.76 399.39,-46.23"/>
 <polygon fill="black" stroke="black" points="402.89,-46.21 399.39,-36.21 395.89,-46.21 402.89,-46.21"/>
-</g>
-<!-- module3 -->
-<g id="node7" class="node">
-<title>module3</title>
-<polygon fill="none" stroke="black" stroke-dasharray="5,2" points="972.89,-87 733.89,-87 733.89,-51 972.89,-51 972.89,-87"/>
-<text text-anchor="middle" x="853.39" y="-65.3" font-family="Times,serif" font-size="14.00">Bridge Module (Synapse &lt;...&gt;)</text>
 </g>
 </g>
 </svg>

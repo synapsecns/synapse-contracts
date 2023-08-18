@@ -23,5 +23,6 @@ digraph {
     }
     
     router -> module1 [label = <<I>2a. Bridge symbol's token address</I>>; lhead = cluster1; style = dashed; dir = back; weight = 10;];
-    router:se -> module2 [label = <<I>2b. Fee amount for bridging<br></br>token to this chain</I>>; lhead = cluster1; style = dashed; dir = back;];
+    router:se -> module2:w [label = <<I>2b. Fee amount for bridging<br></br>token to this chain</I>>; lhead = cluster1; style = dashed; dir = back;];
+    router:se -> module3:nw [label = <<I>2c. Possible post-bridge actions<br></br>for the bridge token</I>>; lhead = cluster1; style = dashed; dir = back;];
 }

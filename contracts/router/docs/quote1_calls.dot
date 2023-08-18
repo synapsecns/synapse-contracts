@@ -22,5 +22,6 @@ digraph {
         findConnectedTokens -> quoter;
     }
     
-    router -> module1 [label = <<I>2. getBridgeTokens()</I>>; lhead = cluster1;];
+    router -> module1 [label = <<I>2a. getBridgeTokens()</I>>; lhead = cluster1; weight = 10;];
+    router:se -> module2:w [label = <<I>2b. getBridgeActionMask<br></br>(bridgeToken)</I>>; lhead = cluster1;];
 }

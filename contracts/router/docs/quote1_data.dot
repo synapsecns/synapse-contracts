@@ -22,5 +22,6 @@ digraph {
         allConnectedTokens -> quoter [style = dashed; dir = none;];
     }
     
-    router -> module1 [label = <<I>2. All bridge tokens/symbols</I>>; lhead = cluster1; style = dashed; dir = back;];
+    router -> module1 [label = <<I>2a. All bridge tokens/symbols</I>>; lhead = cluster1; style = dashed; dir = back; weight = 10;];
+    router:se -> module2:w [label = <<I>2b. Possible post-bridge actions<br></br> for the bridge token</I>>; lhead = cluster1; style = dashed; dir = back;];
 }

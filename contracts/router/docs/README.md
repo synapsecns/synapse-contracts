@@ -127,9 +127,9 @@ which include `SwapQuery` structs. This is covered by the `routerSDK.bridgeQuote
 
 1. SDK calls `synapseRouterV2.getConnectedBridgeTokens()` method on the destination chain.
    > This passes `tokenOut` as a parameter to `SynapseRouterV2` contract.
-2. `SynapseRouterV2` calls every supported `BridgeModule` to get a list of all module's bridge tokens and their symbols.
-   > All lists are then merged into one list of bridge tokens/symbols.
-3. `SwapQuoterV2` is called to determine which tokens from the list are connected to `tokenOut` by the whitelisted pools.
+2. `SynapseRouterV2` calls every supported `BridgeModule` to get a list of all module's bridge tokens and their symbols. It also gets the list of actions for every bridge token, that could be performed atomically after the bridging to the destination chain.
+   > For example, the only possible post-bridge action for `nUSD` token on Ethereum Mainnet is "Remove Liquidity", while for `nUSD` token on other chains it is "Swap".
+3. `SwapQuoterV2` is called to determine which tokens from the combined list are connected to `tokenOut` by the whitelisted pools.
 4. List of connected bridge tokens and their symbols is returned.
 
 _Below are the diagrams for the function and data flows for this step._
@@ -158,7 +158,8 @@ _Below are the diagrams for the function and data flows for this step._
 
 1. SDK calls `synapseRouterV2.getDestinationAmountOut()` method on the destination chain.
    > This passes list of symbols from step 1, list of amounts in from step 2, and `tokenOut` to `SynapseRouterV2`.
-2. `SynapseRouterV2` fetches the token addresses and respective fee amounts from the supported `BridgeModule` contracts.
+2. `SynapseRouterV2` fetches the token addresses and respective fee amounts from the supported `BridgeModule` contracts. It also gets the list of actions for every bridge token, that could be performed atomically after the bridging to the destination chain.
+   > For example, the only possible post-bridge action for `nUSD` token on Ethereum Mainnet is "Remove Liquidity", while for `nUSD` token on other chains it is "Swap".
 3. `SwapQuoterV2` is called with to determine the best quote between every bridge token in the list and `tokenOut`.
    > - `SwapQuoterV2` checks only bridge token's "whitelisted destination pool" for the best quote.
    > - Amount after the bridge fee is used as the initial token amount for the quote.

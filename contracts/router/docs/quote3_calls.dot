@@ -23,5 +23,6 @@ digraph {
     }
     
     router -> module1 [label = <<I>2a. symbolToToken(symbol)</I>>; lhead = cluster1; weight = 10;];
-    router:se -> module2 [label = <<I>2b. calculateFeeAmount<br></br>(bridgeToken,amountIn)</I>>; lhead = cluster1;];
+    router:se -> module2:w [label = <<I>2b. calculateFeeAmount<br></br>(bridgeToken,amountIn)</I>>; lhead = cluster1;];
+    router:se -> module3:nw [label = <<I>2c. getBridgeActionMask<br></br>(bridgeToken)</I>>; lhead = cluster1;];
 }
