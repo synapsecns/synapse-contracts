@@ -1,9 +1,17 @@
 {
   "ids": [
     "nUSD",
-    "nETH"
+    "nETH",
+    "origin.nUSD"
   ],
   "pools": {
+    "origin": {
+      "nUSD": {
+        "isLinked": true,
+        "pool": "0x99CE2054220695C84d8F359D28Df9939699DD06b",
+        "token": "0x0000000000000000000000000000000000000000"
+      }
+    },
     "nETH": {
       "isLinked": false,
       "pool": "0xE27BFf97CE92C3e1Ff7AA9f86781FDd6D48F5eE9",
