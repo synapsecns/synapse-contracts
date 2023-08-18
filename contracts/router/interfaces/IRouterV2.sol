@@ -61,10 +61,22 @@ interface IRouterV2 {
     /// @notice Gets the list of all bridge tokens (and their symbols), such that destination swap
     /// from a bridge token to `tokenOut` is possible.
     /// @param tokenOut  Token address to swap to on destination chain
-    /// @return tokens   List of structs with following information:
+    /// @return destTokens List of structs with following information:
     ///                  - symbol: unique token ID consistent among all chains
     ///                  - token: bridge token address
-    function getConnectedBridgeTokens(address tokenOut) external view returns (BridgeToken[] memory tokens);
+    function getDestinationBridgeTokens(address tokenOut) external view returns (BridgeToken[] memory destTokens);
+
+    /// @notice Gets the list of all bridge tokens (and their symbols), such that origin swap
+    /// from `tokenIn` to a bridge token is possible.
+    /// @param tokenIn  Token address to swap from on origin chain
+    /// @return originTokens List of structs with following information:
+    ///                  - symbol: unique token ID consistent among all chains
+    ///                  - token: bridge token address
+    function getOriginBridgeTokens(address tokenIn) external view returns (BridgeToken[] memory originTokens);
+
+    /// @notice Gets the list of all tokens that can be swapped into bridge tokens on this chain.
+    /// @return supportedTokens Supported token addresses that can be swapped for bridge tokens
+    function getSupportedTokens() external view returns (address[] memory supportedTokens);
 
     /// @notice Finds the best path between every supported bridge token from the given list and `tokenOut`,
     /// treating the swap as "destination swap", limiting possible actions to those available for every bridge token.
