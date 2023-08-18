@@ -4,16 +4,17 @@ pragma solidity 0.8.17;
 import {OnlyDelegateCall} from "../pool/OnlyDelegateCall.sol";
 import {IBridgeModule} from "../../interfaces/IBridgeModule.sol";
 import {ILocalBridgeConfig} from "../../interfaces/ILocalBridgeConfig.sol";
-import {Action, BridgeToken, SwapQuery} from "../../libs/Structs.sol";
+import {ISynapseBridge} from "../../interfaces/ISynapseBridge.sol";
+import {Action, BridgeToken, DefaultParams, SwapQuery} from "../../libs/Structs.sol";
 
 contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
     /// These need to be immutable in order to be accessed via delegatecall
     ILocalBridgeConfig public immutable localBridgeConfig;
-    address public immutable synapseBridge;
+    ISynapseBridge public immutable synapseBridge;
 
     constructor(address localBridgeConfig_, address synapseBridge_) {
         localBridgeConfig = ILocalBridgeConfig(localBridgeConfig_);
-        synapseBridge = synapseBridge_;
+        synapseBridge = ISynapseBridge(synapseBridge_);
     }
 
     /// @inheritdoc IBridgeModule
@@ -25,6 +26,16 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
         SwapQuery memory destQuery
     ) external payable {
         assertDelegateCall();
+        ILocalBridgeConfig.TokenType tokenType;
+        // Use config.bridgeToken as the token address for the bridging purposes
+        (tokenType, token) = localBridgeConfig.config(token);
+        require(token != address(0), "Token not supported");
+        // Use separate logic for redeemed and deposited tokens
+        if (tokenType == ILocalBridgeConfig.TokenType.Redeem) {
+            _bridgeRedeemToken(to, chainId, token, amount, destQuery);
+        } else {
+            _bridgeDepositToken(to, chainId, token, amount, destQuery);
+        }
     }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
@@ -87,4 +98,52 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
             return Action.RemoveLiquidity.mask(Action.HandleEth);
         }
     }
+
+    // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
+
+    /// @dev Initiates a bridging transaction for a token that requires a deposit on this chain.
+    function _bridgeDepositToken(
+        address to,
+        uint256 chainId,
+        address token,
+        uint256 amount,
+        SwapQuery memory destQuery
+    ) internal {
+        if (destQuery.routerAdapter == address(0)) {
+            // If no Router Adapter is set, no action is required on destination chain => `deposit()`
+            synapseBridge.deposit(to, chainId, token, amount);
+            return;
+        }
+        // Decode the params for the destination chain otherwise
+        DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
+        // Token is deposited on THIS chain => it is minted on the destination chain.
+        // Minting of token is done by calling destination synapseBridge:
+        // - mint(): no Action is taken
+        // - mintAndSwap(): Action.Swap is taken
+        // Therefore, the only available action is Swap
+        if (params.action == Action.Swap) {
+            // Give instructions for swap on destination chain => `depositAndSwap()`
+            synapseBridge.depositAndSwap({
+                to: to,
+                chainId: chainId,
+                token: token,
+                amount: amount,
+                tokenIndexFrom: params.tokenIndexFrom,
+                tokenIndexTo: params.tokenIndexTo,
+                minDy: destQuery.minAmountOut,
+                deadline: destQuery.deadline
+            });
+        } else {
+            revert("Unsupported dest action");
+        }
+    }
+
+    /// @dev Initiates a bridging transaction for a token that requires a redeem on this chain.
+    function _bridgeRedeemToken(
+        address to,
+        uint256 chainId,
+        address token,
+        uint256 amount,
+        SwapQuery memory destQuery
+    ) internal {}
 }
