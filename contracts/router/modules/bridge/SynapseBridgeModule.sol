@@ -145,5 +145,51 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
         address token,
         uint256 amount,
         SwapQuery memory destQuery
-    ) internal {}
+    ) internal {
+        if (destQuery.routerAdapter == address(0)) {
+            // If no Router Adapter is set, no action is required on destination chain => `redeem()`
+            synapseBridge.redeem(to, chainId, token, amount);
+            return;
+        }
+        // Decode the params for the destination chain otherwise
+        DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
+        // Token is redeemed on THIS chain => it could be either minted and withdrawn on the destination chain.
+        // Minting of token is done by calling destination synapseBridge:
+        // - mint(): no Action is taken
+        // - mintAndSwap(): Action.Swap is taken
+        // Withdrawing of token is done by calling destination synapseBridge:
+        // - withdraw(): no Action is taken
+        // - withdrawAndRemove(): Action.RemoveLiquidity is taken
+        // Also, if WETH is withdrawn, it gets unwrapped to ETH by the bridge.
+        // Therefore, the available actions are Swap, RemoveLiquidity and HandleEth
+        if (params.action == Action.Swap) {
+            // Give instructions for swap on destination chain => `redeemAndSwap()`
+            synapseBridge.redeemAndSwap({
+                to: to,
+                chainId: chainId,
+                token: token,
+                amount: amount,
+                tokenIndexFrom: params.tokenIndexFrom,
+                tokenIndexTo: params.tokenIndexTo,
+                minDy: destQuery.minAmountOut,
+                deadline: destQuery.deadline
+            });
+        } else if (params.action == Action.RemoveLiquidity) {
+            // Give instructions for removing liquidity on destination chain => `redeemAndRemove()`
+            synapseBridge.redeemAndRemove({
+                to: to,
+                chainId: chainId,
+                token: token,
+                amount: amount,
+                liqTokenIndex: params.tokenIndexTo,
+                liqMinAmount: destQuery.minAmountOut,
+                liqDeadline: destQuery.deadline
+            });
+        } else if (params.action == Action.HandleEth) {
+            // Handle ETH on destination chain is done natively by SynapseBridge => `redeem()`
+            synapseBridge.redeem(to, chainId, token, amount);
+        } else {
+            revert("Unsupported dest action");
+        }
+    }
 }
