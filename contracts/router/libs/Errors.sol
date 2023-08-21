@@ -11,4 +11,4 @@ error TokenNotContract();
 error TokenNotETH();
 error TokensIdentical();
 
-error ModuleConnected();
+error ModuleIdExists();
