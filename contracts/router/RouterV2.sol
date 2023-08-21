@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
 import {DefaultRouter} from "./DefaultRouter.sol";
-import {BridgeFailed, ModuleExists, ModuleNotExists} from "./libs/Errors.sol";
+import {BridgeFailed, ModuleExists, ModuleNotExists, QueryEmpty} from "./libs/Errors.sol";
 import {BridgeToken, DestRequest, SwapQuery} from "./libs/Structs.sol";
 import {IBridgeModule} from "./interfaces/IBridgeModule.sol";
 import {IRouterV2} from "./interfaces/IRouterV2.sol";
@@ -23,6 +23,13 @@ contract RouterV2 is IRouterV2, DefaultRouter, Ownable {
         bytes32 moduleId,
         address indexed token,
         uint256 amount
+    );
+    event TokenSwap(
+        address indexed buyer,
+        uint256 tokensSold,
+        uint256 tokensBought,
+        address indexed tokenIn,
+        address indexed tokenOut
     );
 
     /// @inheritdoc IRouterV2
@@ -67,11 +74,18 @@ contract RouterV2 is IRouterV2, DefaultRouter, Ownable {
         address token,
         uint256 amount,
         SwapQuery memory query
-    ) external payable returns (uint256 amountOut) {}
+    ) external payable returns (uint256 amountOut) {
+        if (!_hasAdapter(query)) revert QueryEmpty();
+
+        address tokenOut;
+        (tokenOut, amountOut) = _doSwap(to, token, amount, query);
+        emit TokenSwap(msg.sender, amount, amountOut, token, tokenOut);
+    }
 
     /// @inheritdoc IRouterV2
     function connectBridgeModule(bytes32 moduleId, address bridgeModule) external onlyOwner {
         if (idToModule[moduleId] != address(0)) revert ModuleExists();
+
         idToModule[moduleId] = bridgeModule;
         moduleToId[bridgeModule] = moduleId;
         emit ModuleConnected(moduleId, bridgeModule);
