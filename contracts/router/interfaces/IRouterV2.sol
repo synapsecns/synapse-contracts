@@ -42,6 +42,25 @@ interface IRouterV2 {
         SwapQuery memory destQuery
     ) external payable;
 
+    /// @notice Perform a swap using the supplied parameters.
+    /// @dev Note that method is payable.
+    /// If token is ETH_ADDRESS, this method should be invoked with `msg.value = amountIn`.
+    /// If token is ERC20, the tokens will be pulled from msg.sender (use `msg.value = 0`).
+    /// Make sure to approve this contract for spending `token` beforehand.
+    /// If query.tokenOut is ETH_ADDRESS, native ETH will be sent to the recipient (be aware of potential reentrancy).
+    /// If query.tokenOut is ERC20, the tokens will be transferred to the recipient.
+    /// @param to            Address to receive swapped tokens
+    /// @param token         Token to swap
+    /// @param amount        Amount of tokens to swap
+    /// @param query         Query with the swap parameters (see BridgeStructs.sol)
+    /// @return amountOut    Amount of swapped tokens received by the user
+    function swap(
+        address to,
+        address token,
+        uint256 amount,
+        SwapQuery memory query
+    ) external payable returns (uint256 amountOut);
+
     /// @notice Whitelists a new bridge module for users to route through
     /// @dev Reverts if not router owner
     /// @param moduleId Unique bridge module ID

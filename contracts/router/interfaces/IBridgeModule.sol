@@ -5,7 +5,7 @@ import {BridgeToken, SwapQuery} from "../libs/Structs.sol";
 
 interface IBridgeModule {
     /// @notice Performs a bridging transaction on behalf of the sender, assuming `token` is already in the contract.
-    /// @dev This will be used via delegatecall from SynapseRotuerV2, which will have custody over the initial tokens.
+    /// @dev This will be used via delegatecall from SynapseRouterV2, which will have custody over the initial tokens.
     /// @param to            Address to receive tokens on destination chain
     /// @param chainId       Destination chain id
     /// @param token         Initial token for the bridge transaction to be pulled from the user
