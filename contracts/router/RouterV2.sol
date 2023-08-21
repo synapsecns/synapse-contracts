@@ -4,10 +4,17 @@ pragma solidity 0.8.17;
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
 import {DefaultRouter} from "./DefaultRouter.sol";
+import {ModuleConnected} from "./libs/Errors.sol";
 import {BridgeToken, DestRequest, SwapQuery} from "./libs/Structs.sol";
 import {IRouterV2} from "./interfaces/IRouterV2.sol";
 
 contract RouterV2 is IRouterV2, DefaultRouter, Ownable {
+    /// @inheritdoc IRouterV2
+    mapping(bytes32 => address) public idToModule;
+
+    /// @inheritdoc IRouterV2
+    mapping(address => bytes32) public moduleToId;
+
     /// @inheritdoc IRouterV2
     function bridgeViaSynapse(
         address to,
@@ -28,13 +35,11 @@ contract RouterV2 is IRouterV2, DefaultRouter, Ownable {
     ) external payable returns (uint256 amountOut) {}
 
     /// @inheritdoc IRouterV2
-    function connectBridgeModule(bytes32 moduleId, address bridgeModule) external onlyOwner {}
-
-    /// @inheritdoc IRouterV2
-    function idToModule(bytes32 moduleId) external view returns (address bridgeModule) {}
-
-    /// @inheritdoc IRouterV2
-    function moduleToId(address bridgeModule) external view returns (bytes32 moduleId) {}
+    function connectBridgeModule(bytes32 moduleId, address bridgeModule) external onlyOwner {
+        if (idToModule[moduleId] != address(0)) revert ModuleConnected();
+        idToModule[moduleId] = bridgeModule;
+        moduleToId[bridgeModule] = moduleId;
+    }
 
     /// @inheritdoc IRouterV2
     function getDestinationBridgeTokens(address tokenOut) external view returns (BridgeToken[] memory destTokens) {}

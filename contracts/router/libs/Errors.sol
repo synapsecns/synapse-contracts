@@ -10,3 +10,5 @@ error TokenAddressMismatch();
 error TokenNotContract();
 error TokenNotETH();
 error TokensIdentical();
+
+error ModuleConnected();
