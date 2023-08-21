@@ -11,4 +11,6 @@ error TokenNotContract();
 error TokenNotETH();
 error TokensIdentical();
 
-error ModuleIdExists();
+error BridgeFailed();
+error ModuleExists();
+error ModuleNotExists();
