@@ -11,6 +11,12 @@ import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    /// @notice Error when trying to add a pool that has been added already.
+    error SwapQuoterV2__DuplicatedPool(address pool);
+
+    /// @notice Error when trying to remove a pool that has not been added.
+    error SwapQuoterV2__UnknownPool(address pool);
+
     /// @notice Emitted when a pool is added to SwapQuoterV2.
     event PoolAdded(address bridgeToken, PoolType poolType, address pool);
 
@@ -261,7 +267,7 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             _bridgeTokens.add(bridgeToken);
             _bridgePools[bridgeToken] = TypedPool({poolType: pool.poolType, pool: pool.pool});
         }
-        require(wasAdded, "Pool has been added before");
+        if (!wasAdded) revert SwapQuoterV2__DuplicatedPool(pool.pool);
         emit PoolAdded(pool.bridgeToken, pool.poolType, pool.pool);
     }
 
@@ -286,7 +292,7 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             wasRemoved = _bridgeTokens.remove(bridgeToken) && _bridgePools[bridgeToken].pool == pool.pool;
             delete _bridgePools[pool.bridgeToken];
         }
-        require(wasRemoved, "Unknown pool");
+        if (!wasRemoved) revert SwapQuoterV2__UnknownPool(pool.pool);
         emit PoolRemoved(pool.bridgeToken, pool.poolType, pool.pool);
     }
 
