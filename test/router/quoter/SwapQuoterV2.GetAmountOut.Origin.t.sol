@@ -8,6 +8,7 @@ import {DefaultPoolCalc} from "../../../contracts/router/quoter/DefaultPoolCalc.
 
 import {BasicSwapQuoterV2Test} from "./BasicSwapQuoterV2.t.sol";
 
+/// @notice As `getAmountOut()` and `areConnectedTokens()` follow the same convention, we test them together.
 contract SwapQuoterV2GetAmountOutOriginTest is BasicSwapQuoterV2Test {
     // In origin requests actionMask is set to ActionLib.allActions()
 
@@ -23,6 +24,7 @@ contract SwapQuoterV2GetAmountOutOriginTest is BasicSwapQuoterV2Test {
         LimitedToken memory tokenIn_ = LimitedToken({actionMask: ActionLib.allActions(), token: tokenIn});
         address tokenOut = tokenIn;
         SwapQuery memory query = quoter.getAmountOut(tokenIn_, tokenOut, amount);
+        assertTrue(quoter.areConnectedTokens(tokenIn_, tokenOut));
         assertSameTokenSwapQuery(query, tokenOut, amount);
     }
 
@@ -33,6 +35,7 @@ contract SwapQuoterV2GetAmountOutOriginTest is BasicSwapQuoterV2Test {
     ) public {
         LimitedToken memory tokenIn_ = LimitedToken({actionMask: ActionLib.allActions(), token: tokenIn});
         SwapQuery memory query = quoter.getAmountOut(tokenIn_, tokenOut, amountIn);
+        assertFalse(quoter.areConnectedTokens(tokenIn_, tokenOut));
         assertNoPathSwapQuery(query, tokenOut);
     }
 
@@ -45,6 +48,7 @@ contract SwapQuoterV2GetAmountOutOriginTest is BasicSwapQuoterV2Test {
     ) public {
         LimitedToken memory tokenIn_ = LimitedToken({actionMask: ActionLib.allActions(), token: tokenIn});
         SwapQuery memory query = quoter.getAmountOut(tokenIn_, tokenOut, amountIn);
+        assertTrue(quoter.areConnectedTokens(tokenIn_, tokenOut));
         assertPathFoundSwapQuery(query, tokenOut, expectedAmountOut, expectedParams);
     }
 
