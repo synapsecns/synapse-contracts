@@ -139,7 +139,17 @@ contract RouterV2 is IRouterV2, DefaultRouter, Ownable {
         external
         view
         returns (SwapQuery[] memory destQueries)
-    {}
+    {
+        destQueries = new SwapQuery[](requests.length);
+        for (uint256 i = 0; i < requests.length; ++i) {
+            DestRequest memory request = requests[i];
+            address token = _getTokenFromSymbol(request.symbol);
+
+            // query the quoter
+            LimitedToken memory tokenIn = LimitedToken({actionMask: uint256(Action.Swap), token: token});
+            destQueries[i] = swapQuoter.getAmountOut(tokenIn, tokenOut, request.amountIn);
+        }
+    }
 
     /// @inheritdoc IRouterV2
     function getOriginAmountOut(
@@ -152,5 +162,14 @@ contract RouterV2 is IRouterV2, DefaultRouter, Ownable {
     /// Query without a router adapter specifies that no action needs to be taken.
     function _hasAdapter(SwapQuery memory query) internal pure returns (bool) {
         return query.routerAdapter != address(0);
+    }
+
+    /// @notice Searches all bridge modules to get the token address from the unique bridge symbol
+    /// @param symbol Symbol of the supported bridge token
+    function _getTokenFromSymbol(string memory symbol) internal view returns (address token) {
+        for (uint256 i = 0; i < _bridgeModules.length; ++i) {
+            token = IBridgeModule(_bridgeModules[i]).symbolToToken(symbol);
+            if (token != address(0)) break;
+        }
     }
 }
