@@ -11,7 +11,7 @@ import {ISwapQuoterV1} from "./interfaces/ISwapQuoterV1.sol";
 import {IBridgeModule} from "./interfaces/IBridgeModule.sol";
 import {IRouterV2} from "./interfaces/IRouterV2.sol";
 
-contract RouterV2 is IRouterV2, DefaultRouter, Ownable {
+contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     /// @notice swap quoter
     ISwapQuoterV1 public immutable swapQuoter;
 
