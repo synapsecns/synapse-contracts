@@ -5,7 +5,7 @@ import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
 import {DefaultRouter} from "./DefaultRouter.sol";
 import {BridgeFailed, ModuleExists, ModuleNotExists, QueryEmpty} from "./libs/Errors.sol";
-import {Action, BridgeToken, DestRequest, LimitedToken, SwapQuery} from "./libs/Structs.sol";
+import {Action, BridgeToken, DestRequest, LimitedToken, Module, SwapQuery} from "./libs/Structs.sol";
 
 import {ISwapQuoterV1} from "./interfaces/ISwapQuoterV1.sol";
 import {IBridgeModule} from "./interfaces/IBridgeModule.sol";
@@ -16,18 +16,23 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     ISwapQuoterV1 public immutable swapQuoter;
 
     /// @notice List of all connected bridge modules
-    address[] internal _bridgeModules;
+    Module[] internal _bridgeModules;
 
-    /// @inheritdoc IRouterV2
-    mapping(bytes32 => address) public idToModule;
+    /// @notice Mapping from unique bridge module ID to index in bridge modules array
+    mapping(bytes32 => uint256) private _idToModulesIndex;
 
-    /// @inheritdoc IRouterV2
-    mapping(address => bytes32) public moduleToId;
+    /// @notice Mapping from bridge module address to index in bridge modules array
+    mapping(address => uint256) private _moduleToModulesIndex;
 
-    event ModuleConnected(bytes32 moduleId, address indexed bridgeModule);
+    event ModuleConnected(bytes32 indexed moduleId, address bridgeModule);
+    event ModuleUpdated(bytes32 indexed moduleId, address oldBridgeModule, address newBridgeModule);
+    event ModuleDisconnected(bytes32 indexed moduleId);
 
     constructor(address _swapQuoter) {
         swapQuoter = ISwapQuoterV1(_swapQuoter);
+
+        // start at idx=1 so idx=0 can be used for zero element
+        _bridgeModules.push();
     }
 
     /// @inheritdoc IRouterV2
@@ -40,7 +45,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         SwapQuery memory originQuery,
         SwapQuery memory destQuery
     ) external payable {
-        address bridgeModule = idToModule[moduleId];
+        address bridgeModule = idToModule(moduleId);
         if (bridgeModule == address(0)) revert ModuleNotExists();
 
         // pull (and possibly swap) token into router
@@ -79,13 +84,52 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
     /// @inheritdoc IRouterV2
     function connectBridgeModule(bytes32 moduleId, address bridgeModule) external onlyOwner {
-        if (idToModule[moduleId] != address(0)) revert ModuleExists();
+        if (_hasModule(moduleId)) revert ModuleExists();
 
-        _bridgeModules.push(bridgeModule);
-        idToModule[moduleId] = bridgeModule;
-        moduleToId[bridgeModule] = moduleId;
+        uint256 idx = _bridgeModules.length;
+        _bridgeModules.push(Module({id: moduleId, module: bridgeModule}));
+
+        _idToModulesIndex[moduleId] = idx;
+        _moduleToModulesIndex[bridgeModule] = idx;
 
         emit ModuleConnected(moduleId, bridgeModule);
+    }
+
+    /// @inheritdoc IRouterV2
+    function updateBridgeModule(bytes32 moduleId, address bridgeModule) external onlyOwner {
+        if (!_hasModule(moduleId)) revert ModuleNotExists();
+        uint256 idx = _idToModulesIndex[moduleId];
+
+        address module = _bridgeModules[idx].module;
+        _bridgeModules[idx].module = bridgeModule;
+        _moduleToModulesIndex[module] = 0;
+        _moduleToModulesIndex[bridgeModule] = idx;
+
+        emit ModuleUpdated(moduleId, module, bridgeModule);
+    }
+
+    /// @inheritdoc IRouterV2
+    function disconnectBridgeModule(bytes32 moduleId) external onlyOwner {
+        if (!_hasModule(moduleId)) revert ModuleNotExists();
+        uint256 idx = _idToModulesIndex[moduleId];
+
+        address module = _bridgeModules[idx].module;
+        _bridgeModules[idx].module = address(0);
+        _moduleToModulesIndex[module] = 0;
+
+        emit ModuleDisconnected(moduleId);
+    }
+
+    /// @inheritdoc IRouterV2
+    function idToModule(bytes32 moduleId) public view returns (address bridgeModule) {
+        uint256 idx = _idToModulesIndex[moduleId];
+        bridgeModule = _bridgeModules[idx].module;
+    }
+
+    /// @inheritdoc IRouterV2
+    function moduleToId(address bridgeModule) public view returns (bytes32 moduleId) {
+        uint256 idx = _moduleToModulesIndex[bridgeModule];
+        moduleId = _bridgeModules[idx].id;
     }
 
     /// @inheritdoc IRouterV2
@@ -94,7 +138,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         uint256 destTokensLength;
 
         for (uint256 i = 0; i < _bridgeModules.length; ++i) {
-            BridgeToken[] memory bridgeTokens = IBridgeModule(_bridgeModules[i]).getBridgeTokens();
+            BridgeToken[] memory bridgeTokens = IBridgeModule(_bridgeModules[i].module).getBridgeTokens();
 
             // assemble limited token format for quoter call
             LimitedToken[] memory bridgeTokensIn = new LimitedToken[](bridgeTokens.length);
@@ -164,11 +208,16 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         return query.routerAdapter != address(0);
     }
 
+    /// @notice Checks whether module ID has already been connected to router
+    function _hasModule(bytes32 moduleId) internal view returns (bool) {
+        return _idToModulesIndex[moduleId] > 0;
+    }
+
     /// @notice Searches all bridge modules to get the token address from the unique bridge symbol
     /// @param symbol Symbol of the supported bridge token
     function _getTokenFromSymbol(string memory symbol) internal view returns (address token) {
         for (uint256 i = 0; i < _bridgeModules.length; ++i) {
-            token = IBridgeModule(_bridgeModules[i]).symbolToToken(symbol);
+            token = IBridgeModule(_bridgeModules[i].module).symbolToToken(symbol);
             if (token != address(0)) break;
         }
     }

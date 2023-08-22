@@ -67,6 +67,17 @@ interface IRouterV2 {
     /// @param bridgeModule Bridge module address
     function connectBridgeModule(bytes32 moduleId, address bridgeModule) external;
 
+    /// @notice Updates a whitelisted bridge module
+    /// @dev Reverts if not router owner
+    /// @param moduleId Unique bridge module ID
+    /// @param bridgeModule New bridge module address to update to
+    function updateBridgeModule(bytes32 moduleId, address bridgeModule) external;
+
+    /// @notice Disconnects a whitelisted bridge module
+    /// @dev Reverts if not router owner
+    /// @param moduleId Unique bridge module ID
+    function disconnectBridgeModule(bytes32 moduleId) external;
+
     /// @notice Gets the address associated with the given bridge module ID
     /// @param moduleId Unique bridge module ID
     /// @return bridgeModule Bridge module address
