@@ -5,11 +5,19 @@ import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
 import {DefaultRouter} from "./DefaultRouter.sol";
 import {BridgeFailed, ModuleExists, ModuleNotExists, QueryEmpty} from "./libs/Errors.sol";
-import {BridgeToken, DestRequest, SwapQuery} from "./libs/Structs.sol";
+import {Action, BridgeToken, DestRequest, LimitedToken, SwapQuery} from "./libs/Structs.sol";
+
+import {ISwapQuoterV1} from "./interfaces/ISwapQuoterV1.sol";
 import {IBridgeModule} from "./interfaces/IBridgeModule.sol";
 import {IRouterV2} from "./interfaces/IRouterV2.sol";
 
 contract RouterV2 is IRouterV2, DefaultRouter, Ownable {
+    /// @notice swap quoter
+    ISwapQuoterV1 public immutable swapQuoter;
+
+    /// @notice List of all connected bridge modules
+    address[] internal _bridgeModules;
+
     /// @inheritdoc IRouterV2
     mapping(bytes32 => address) public idToModule;
 
@@ -17,20 +25,10 @@ contract RouterV2 is IRouterV2, DefaultRouter, Ownable {
     mapping(address => bytes32) public moduleToId;
 
     event ModuleConnected(bytes32 moduleId, address indexed bridgeModule);
-    event SynapseBridged(
-        address indexed to,
-        uint256 indexed chainId,
-        bytes32 moduleId,
-        address indexed token,
-        uint256 amount
-    );
-    event TokenSwap(
-        address indexed buyer,
-        uint256 tokensSold,
-        uint256 tokensBought,
-        address indexed tokenIn,
-        address indexed tokenOut
-    );
+
+    constructor(address _swapQuoter) {
+        swapQuoter = ISwapQuoterV1(_swapQuoter);
+    }
 
     /// @inheritdoc IRouterV2
     function bridgeViaSynapse(
@@ -62,10 +60,8 @@ contract RouterV2 is IRouterV2, DefaultRouter, Ownable {
             amount,
             destQuery
         );
-        (bool success, bytes memory result) = bridgeModule.delegatecall(payload);
+        (bool success, ) = bridgeModule.delegatecall(payload);
         if (!success) revert BridgeFailed();
-
-        emit SynapseBridged(to, chainId, moduleId, token, amount);
     }
 
     /// @inheritdoc IRouterV2
@@ -79,20 +75,58 @@ contract RouterV2 is IRouterV2, DefaultRouter, Ownable {
 
         address tokenOut;
         (tokenOut, amountOut) = _doSwap(to, token, amount, query);
-        emit TokenSwap(msg.sender, amount, amountOut, token, tokenOut);
     }
 
     /// @inheritdoc IRouterV2
     function connectBridgeModule(bytes32 moduleId, address bridgeModule) external onlyOwner {
         if (idToModule[moduleId] != address(0)) revert ModuleExists();
 
+        _bridgeModules.push(bridgeModule);
         idToModule[moduleId] = bridgeModule;
         moduleToId[bridgeModule] = moduleId;
+
         emit ModuleConnected(moduleId, bridgeModule);
     }
 
     /// @inheritdoc IRouterV2
-    function getDestinationBridgeTokens(address tokenOut) external view returns (BridgeToken[] memory destTokens) {}
+    function getDestinationBridgeTokens(address tokenOut) external view returns (BridgeToken[] memory destTokens) {
+        BridgeToken[][] memory unflattenedDestTokens = new BridgeToken[][](_bridgeModules.length);
+        uint256 destTokensLength;
+
+        for (uint256 i = 0; i < _bridgeModules.length; ++i) {
+            BridgeToken[] memory bridgeTokens = IBridgeModule(_bridgeModules[i]).getBridgeTokens();
+
+            // assemble limited token format for quoter call
+            LimitedToken[] memory bridgeTokensIn = new LimitedToken[](bridgeTokens.length);
+            for (uint256 j = 0; j < bridgeTokens.length; ++j) {
+                bridgeTokensIn[j] = LimitedToken({actionMask: uint256(Action.Swap), token: bridgeTokens[j].token});
+            }
+
+            // push to dest tokens if connected to tokenOut
+            // TODO: test bridgeTokens.length == isConnected.length
+            (uint256 amountFound, bool[] memory isConnected) = swapQuoter.findConnectedTokens(bridgeTokensIn, tokenOut);
+            unflattenedDestTokens[i] = new BridgeToken[](amountFound);
+            destTokensLength += amountFound;
+
+            uint256 k;
+            for (uint256 j = 0; j < bridgeTokens.length; ++j) {
+                if (isConnected[j]) {
+                    unflattenedDestTokens[i][k] = bridgeTokens[j];
+                    k++;
+                }
+            }
+        }
+
+        // flatten into dest tokens
+        destTokens = new BridgeToken[](destTokensLength);
+        uint256 m;
+        for (uint256 i = 0; i < unflattenedDestTokens.length; ++i) {
+            for (uint256 j = 0; j < unflattenedDestTokens[i].length; ++j) {
+                destTokens[m] = unflattenedDestTokens[i][j];
+                m++;
+            }
+        }
+    }
 
     /// @inheritdoc IRouterV2
     function getOriginBridgeTokens(address tokenIn) external view returns (BridgeToken[] memory originTokens) {}
