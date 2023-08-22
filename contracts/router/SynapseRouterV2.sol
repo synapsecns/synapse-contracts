@@ -84,7 +84,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
     /// @inheritdoc IRouterV2
     function connectBridgeModule(bytes32 moduleId, address bridgeModule) external onlyOwner {
-        if (moduleId == bytes32(0)) revert ModuleInvalid();
+        if (moduleId == bytes32(0) || bridgeModule == address(0)) revert ModuleInvalid();
         if (_hasModule(moduleId)) revert ModuleExists();
 
         uint256 idx = _bridgeModules.length;
@@ -139,7 +139,10 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         uint256 destTokensLength;
 
         for (uint256 i = 0; i < _bridgeModules.length; ++i) {
-            BridgeToken[] memory bridgeTokens = IBridgeModule(_bridgeModules[i].module).getBridgeTokens();
+            address bridgeModule = _bridgeModules[i].module;
+            if (bridgeModule == address(0)) continue;
+
+            BridgeToken[] memory bridgeTokens = IBridgeModule(bridgeModule).getBridgeTokens();
 
             // assemble limited token format for quoter call
             LimitedToken[] memory bridgeTokensIn = new LimitedToken[](bridgeTokens.length);
@@ -218,7 +221,10 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     /// @param symbol Symbol of the supported bridge token
     function _getTokenFromSymbol(string memory symbol) internal view returns (address token) {
         for (uint256 i = 0; i < _bridgeModules.length; ++i) {
-            token = IBridgeModule(_bridgeModules[i].module).symbolToToken(symbol);
+            address bridgeModule = _bridgeModules[i].module;
+            if (bridgeModule == address(0)) continue;
+
+            token = IBridgeModule(bridgeModule).symbolToToken(symbol);
             if (token != address(0)) break;
         }
     }
