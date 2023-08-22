@@ -25,6 +25,16 @@
       "nodeIndex": 2,
       "pool": "0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40",
       "poolModule": ""
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0xcb59E861939999786bDe28c04ADd2460fDAb83a9",
+      "poolModule": ""
+    },
+    {
+      "nodeIndex": 11,
+      "pool": "0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40",
+      "poolModule": ""
     }
   ]
 }
