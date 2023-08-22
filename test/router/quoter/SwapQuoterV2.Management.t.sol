@@ -7,6 +7,15 @@ import {Pool} from "../../../contracts/router/libs/Structs.sol";
 import {BasicSwapQuoterV2Test} from "./BasicSwapQuoterV2.t.sol";
 
 contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
+    /// @notice Emitted when a pool is added to SwapQuoterV2.
+    event PoolAdded(address bridgeToken, SwapQuoterV2.PoolType poolType, address pool);
+
+    /// @notice Emitted when a pool is removed from SwapQuoterV2.
+    event PoolRemoved(address bridgeToken, SwapQuoterV2.PoolType poolType, address pool);
+
+    /// @notice Emitted when the SynapseRouter contract is updated.
+    event SynapseRouterUpdated(address synapseRouter);
+
     function testSetup() public {
         assertEq(quoter.synapseRouter(), synapseRouter);
         assertEq(quoter.defaultPoolCalc(), defaultPoolCalc);
@@ -23,6 +32,14 @@ contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
         assertEq(quoter.synapseRouter(), newSynapseRouter);
     }
 
+    function testSetSynapseRouterEmitsEvent() public {
+        address newSynapseRouter = makeAddr("NewSynapseRouter");
+        vm.expectEmit();
+        emit SynapseRouterUpdated(newSynapseRouter);
+        vm.prank(owner);
+        quoter.setSynapseRouter(newSynapseRouter);
+    }
+
     function testSetSynapseRouterRevertsWhenCallerNotOwner(address caller) public {
         vm.assume(caller != owner);
         vm.expectRevert("Ownable: caller is not the owner");
@@ -31,6 +48,28 @@ contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
     }
 
     // ═════════════════════════════════════════════ TESTS: ADD POOLS ══════════════════════════════════════════════════
+
+    function testAddPoolsEmitsEvents() public {
+        SwapQuoterV2.BridgePool[] memory pools = toArray(
+            getBridgeDefaultPool(),
+            getOriginLinkedPool(),
+            getBridgeLinkedPool(),
+            getOriginDefaultPool()
+        );
+        vm.expectEmit();
+        emit PoolAdded(neth, SwapQuoterV2.PoolType.Default, poolNethWeth);
+        vm.expectEmit();
+        emit PoolAdded(address(0), SwapQuoterV2.PoolType.Linked, linkedPoolUsdc);
+        vm.expectEmit();
+        emit PoolAdded(nusd, SwapQuoterV2.PoolType.Linked, linkedPoolNusd);
+        vm.expectEmit();
+        emit PoolAdded(address(0), SwapQuoterV2.PoolType.Default, poolUsdcEUsdt);
+        vm.recordLogs();
+        vm.prank(owner);
+        quoter.addPools(pools);
+        // Should be exactly 4 events
+        assertEq(vm.getRecordedLogs().length, 4);
+    }
 
     function testAddPoolsAddsOriginDefaultPools() public {
         addL2Pools();
@@ -124,7 +163,41 @@ contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
         checkPoolData(pools[3], poolNusdUsdcEUsdt);
     }
 
+    function testAddPoolsEmitsEventWhenReplaces() public {
+        addL2Pools();
+        // Replace nUSD Linked Pool with Default Pool
+        vm.expectEmit();
+        emit PoolAdded(nusd, SwapQuoterV2.PoolType.Default, poolNusdUsdcEUsdt);
+        vm.recordLogs();
+        replaceBridgePool();
+        // Should be exactly 1 event
+        assertEq(vm.getRecordedLogs().length, 1);
+    }
+
     // ════════════════════════════════════════════ TESTS: REMOVE POOLS ════════════════════════════════════════════════
+
+    function testRemovePoolsEmitsEvents() public {
+        addL2Pools();
+        SwapQuoterV2.BridgePool[] memory pools = toArray(
+            getOriginLinkedPool(),
+            getBridgeDefaultPool(),
+            getOriginDefaultPool(),
+            getBridgeLinkedPool()
+        );
+        vm.expectEmit();
+        emit PoolRemoved(address(0), SwapQuoterV2.PoolType.Linked, linkedPoolUsdc);
+        vm.expectEmit();
+        emit PoolRemoved(neth, SwapQuoterV2.PoolType.Default, poolNethWeth);
+        vm.expectEmit();
+        emit PoolRemoved(address(0), SwapQuoterV2.PoolType.Default, poolUsdcEUsdt);
+        vm.expectEmit();
+        emit PoolRemoved(nusd, SwapQuoterV2.PoolType.Linked, linkedPoolNusd);
+        vm.recordLogs();
+        vm.prank(owner);
+        quoter.removePools(pools);
+        // Should be exactly 4 events
+        assertEq(vm.getRecordedLogs().length, 4);
+    }
 
     function testRemovePoolsRemovesOriginDefaultPools() public {
         addL2Pools();
