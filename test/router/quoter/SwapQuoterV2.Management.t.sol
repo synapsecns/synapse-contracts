@@ -118,28 +118,28 @@ contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
 
     function testAddPoolsRevertsWhenOriginDefaultPoolAlreadyAdded() public {
         addL2Pools();
-        vm.expectRevert("Pool has been added before");
+        vm.expectRevert(abi.encodeWithSelector(SwapQuoterV2.SwapQuoterV2__DuplicatedPool.selector, poolUsdcEUsdt));
         vm.prank(owner);
         quoter.addPools(toArray(getOriginDefaultPool()));
     }
 
     function testAddPoolsRevertsWhenOriginLinkedPoolAlreadyAdded() public {
         addL2Pools();
-        vm.expectRevert("Pool has been added before");
+        vm.expectRevert(abi.encodeWithSelector(SwapQuoterV2.SwapQuoterV2__DuplicatedPool.selector, linkedPoolUsdc));
         vm.prank(owner);
         quoter.addPools(toArray(getOriginLinkedPool()));
     }
 
     function testAddPoolsRevertsWhenBridgeDefaultPoolAlreadyAdded() public {
         addL2Pools();
-        vm.expectRevert("Pool has been added before");
+        vm.expectRevert(abi.encodeWithSelector(SwapQuoterV2.SwapQuoterV2__DuplicatedPool.selector, poolNethWeth));
         vm.prank(owner);
         quoter.addPools(toArray(getBridgeDefaultPool()));
     }
 
     function testAddPoolsRevertsWhenBridgeLinkedPoolAlreadyAdded() public {
         addL2Pools();
-        vm.expectRevert("Pool has been added before");
+        vm.expectRevert(abi.encodeWithSelector(SwapQuoterV2.SwapQuoterV2__DuplicatedPool.selector, linkedPoolNusd));
         vm.prank(owner);
         quoter.addPools(toArray(getBridgeLinkedPool()));
     }
@@ -294,7 +294,7 @@ contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
         addL2Pools();
         vm.prank(owner);
         quoter.removePools(toArray(getOriginDefaultPool()));
-        vm.expectRevert("Unknown pool");
+        vm.expectRevert(abi.encodeWithSelector(SwapQuoterV2.SwapQuoterV2__UnknownPool.selector, poolUsdcEUsdt));
         vm.prank(owner);
         quoter.removePools(toArray(getOriginDefaultPool()));
     }
@@ -303,7 +303,7 @@ contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
         addL2Pools();
         vm.prank(owner);
         quoter.removePools(toArray(getOriginLinkedPool()));
-        vm.expectRevert("Unknown pool");
+        vm.expectRevert(abi.encodeWithSelector(SwapQuoterV2.SwapQuoterV2__UnknownPool.selector, linkedPoolUsdc));
         vm.prank(owner);
         quoter.removePools(toArray(getOriginLinkedPool()));
     }
@@ -312,7 +312,7 @@ contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
         addL2Pools();
         vm.prank(owner);
         quoter.removePools(toArray(getBridgeDefaultPool()));
-        vm.expectRevert("Unknown pool");
+        vm.expectRevert(abi.encodeWithSelector(SwapQuoterV2.SwapQuoterV2__UnknownPool.selector, poolNethWeth));
         vm.prank(owner);
         quoter.removePools(toArray(getBridgeDefaultPool()));
     }
@@ -321,7 +321,7 @@ contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
         addL2Pools();
         vm.prank(owner);
         quoter.removePools(toArray(getBridgeLinkedPool()));
-        vm.expectRevert("Unknown pool");
+        vm.expectRevert(abi.encodeWithSelector(SwapQuoterV2.SwapQuoterV2__UnknownPool.selector, linkedPoolNusd));
         vm.prank(owner);
         quoter.removePools(toArray(getBridgeLinkedPool()));
     }
@@ -330,7 +330,7 @@ contract SwapQuoterV2ManagementTest is BasicSwapQuoterV2Test {
         addL2Pools();
         // Replace nUSD Linked Pool with Default Pool
         replaceBridgePool();
-        vm.expectRevert("Unknown pool");
+        vm.expectRevert(abi.encodeWithSelector(SwapQuoterV2.SwapQuoterV2__UnknownPool.selector, linkedPoolNusd));
         vm.prank(owner);
         quoter.removePools(toArray(getBridgeLinkedPool()));
     }
