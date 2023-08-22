@@ -4,7 +4,7 @@ pragma solidity 0.8.17;
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
 import {DefaultRouter} from "./DefaultRouter.sol";
-import {BridgeFailed, ModuleExists, ModuleNotExists, QueryEmpty} from "./libs/Errors.sol";
+import {BridgeFailed, ModuleExists, ModuleNotExists, ModuleInvalid, QueryEmpty} from "./libs/Errors.sol";
 import {Action, BridgeToken, DestRequest, LimitedToken, Module, SwapQuery} from "./libs/Structs.sol";
 
 import {ISwapQuoterV1} from "./interfaces/ISwapQuoterV1.sol";
@@ -84,6 +84,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
     /// @inheritdoc IRouterV2
     function connectBridgeModule(bytes32 moduleId, address bridgeModule) external onlyOwner {
+        if (moduleId == bytes32(0)) revert ModuleInvalid();
         if (_hasModule(moduleId)) revert ModuleExists();
 
         uint256 idx = _bridgeModules.length;

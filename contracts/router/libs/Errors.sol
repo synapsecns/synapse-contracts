@@ -14,4 +14,5 @@ error TokensIdentical();
 error BridgeFailed();
 error ModuleExists();
 error ModuleNotExists();
+error ModuleInvalid();
 error QueryEmpty();
