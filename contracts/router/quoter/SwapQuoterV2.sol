@@ -301,6 +301,17 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         if (Action.HandleEth.isIncluded(actionMask) && _isEthAndWeth(tokenIn, tokenOut)) {
             return true;
         }
+        return _isDestinationSwapPossible(actionMask, tokenIn, tokenOut);
+    }
+
+    /// @dev Checks whether destination swap `tokenIn -> tokenOut` is possible:
+    /// - Only whitelisted pool for `tokenIn` is considered.
+    /// - Only pool-related actions (Swap/AddLiquidity/RemoveLiquidity) included in `actionMask` are considered.
+    function _isDestinationSwapPossible(
+        uint256 actionMask,
+        address tokenIn,
+        address tokenOut
+    ) internal view returns (bool) {
         TypedPool memory bridgePool = _bridgePools[tokenIn];
         // Do nothing, if tokenIn doesn't have a whitelisted pool
         if (bridgePool.pool == address(0)) return false;
