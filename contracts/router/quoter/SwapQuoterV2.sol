@@ -3,12 +3,13 @@ pragma solidity 0.8.17;
 
 import {PoolQuoterV1} from "./PoolQuoterV1.sol";
 import {ISwapQuoterV1, LimitedToken, SwapQuery, Pool} from "../interfaces/ISwapQuoterV1.sol";
+import {ISwapQuoterV2} from "../interfaces/ISwapQuoterV2.sol";
 import {Action, ActionLib} from "../libs/Structs.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableSet.sol";
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
-contract SwapQuoterV2 is PoolQuoterV1, Ownable {
+contract SwapQuoterV2 is PoolQuoterV1, Ownable, ISwapQuoterV2 {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     /// @notice Defines the type of supported liquidity pool.
@@ -154,7 +155,14 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         unchecked {
             // unchecked: ++i never overflows uint256
             for (uint256 i = 0; i < length; ++i) {
-                if (_isConnected(bridgeTokensIn[i].actionMask, bridgeTokensIn[i].token, tokenOut)) {
+                if (
+                    _isConnected({
+                        isOriginSwap: false,
+                        actionMask: bridgeTokensIn[i].actionMask,
+                        tokenIn: bridgeTokensIn[i].token,
+                        tokenOut: tokenOut
+                    })
+                ) {
                     isConnected[i] = true;
                     // unchecked: ++amountFound never overflows uint256
                     ++amountFound;
@@ -181,6 +189,16 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             // which would lead to every swap to revert by default.
             query.deadline = type(uint256).max;
         }
+    }
+
+    // ═════════════════════════════════════════════ GENERAL QUOTES V2 ═════════════════════════════════════════════════
+
+    /// @inheritdoc ISwapQuoterV2
+    function areConnectedTokens(LimitedToken memory tokenIn, address tokenOut) external view returns (bool) {
+        // Check if this is a request for an origin swap.
+        // These are given with the tokenIn.actionMask set to the full set of actions.
+        bool isOriginSwap = tokenIn.actionMask == ActionLib.allActions();
+        return _isConnected(isOriginSwap, tokenIn.actionMask, tokenIn.token, tokenOut);
     }
 
     // ══════════════════════════════════════════════ POOL GETTERS V1 ══════════════════════════════════════════════════
@@ -289,6 +307,7 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     /// @dev Checks whether `tokenIn -> tokenOut` is possible given the `actionMask` of available actions for `tokenIn`.
     /// Will only consider the whitelisted pool for `tokenIn`, if Swap/AddLiquidity/RemoveLiquidity are required.
     function _isConnected(
+        bool isOriginSwap,
         uint256 actionMask,
         address tokenIn,
         address tokenOut
@@ -301,7 +320,11 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         if (Action.HandleEth.isIncluded(actionMask) && _isEthAndWeth(tokenIn, tokenOut)) {
             return true;
         }
-        return _isDestinationSwapPossible(actionMask, tokenIn, tokenOut);
+        if (isOriginSwap) {
+            return _isOriginSwapPossible(actionMask, tokenIn, tokenOut);
+        } else {
+            return _isDestinationSwapPossible(actionMask, tokenIn, tokenOut);
+        }
     }
 
     /// @dev Checks whether destination swap `tokenIn -> tokenOut` is possible:
