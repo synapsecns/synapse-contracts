@@ -18,18 +18,44 @@ contract SwapQuoterV2GetAmountOutMintedTest is BasicSwapQuoterV2Test {
     /// 2. `tokenIn` and `tokenOut` represent different addresses. No trade path from `tokenIn` to `tokenOut` is found.
     /// 3. `tokenIn` and `tokenOut` represent different addresses. Trade path from `tokenIn` to `tokenOut` is found.
 
+    // ═════════════════════════════════ GENERIC DESTINATION CHECKS: MINTED TOKENS ═════════════════════════════════════
+
+    function checkMintedSameToken(address tokenIn) public {
+        uint256 amount = 10**18;
+        LimitedToken memory tokenIn_ = LimitedToken({actionMask: maskMintedToken, token: tokenIn});
+        address tokenOut = tokenIn;
+        SwapQuery memory query = quoter.getAmountOut(tokenIn_, tokenOut, amount);
+        assertSameTokenSwapQuery(query, tokenOut, amount);
+    }
+
+    function checkMintedNoTradePathExists(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn
+    ) public {
+        LimitedToken memory tokenIn_ = LimitedToken({actionMask: maskMintedToken, token: tokenIn});
+        SwapQuery memory query = quoter.getAmountOut(tokenIn_, tokenOut, amountIn);
+        assertNoPathSwapQuery(query, tokenOut);
+    }
+
+    function checkMintedTradePathFound(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 expectedAmountOut,
+        bytes memory expectedParams
+    ) public {
+        LimitedToken memory tokenIn_ = LimitedToken({actionMask: maskMintedToken, token: tokenIn});
+        SwapQuery memory query = quoter.getAmountOut(tokenIn_, tokenOut, amountIn);
+        assertPathFoundSwapQuery(query, tokenOut, expectedAmountOut, expectedParams);
+    }
+
     // ══════════════════════════════════════════════ (1) SAME TOKENS ══════════════════════════════════════════════════
 
     function testGetAmountOutMintedSameBridgeToken() public {
         addL2Pools();
         // nETH -> nETH
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: neth}),
-            neth,
-            amount
-        );
-        assertSameTokenSwapQuery(query, neth, amount);
+        checkMintedSameToken(neth);
     }
 
     // ═════════════════════════════════════════════ (2) NO SWAP FOUND ═════════════════════════════════════════════════
@@ -37,51 +63,27 @@ contract SwapQuoterV2GetAmountOutMintedTest is BasicSwapQuoterV2Test {
     function testGetAmountOutMintedNoTradePath() public {
         addL2Pools();
         // nUSD -> USDC is not supported (USDC.e is the correct destination token)
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: nusd}),
-            usdc,
-            amount
-        );
-        assertNoPathSwapQuery(query, usdc);
+        checkMintedNoTradePathExists(nusd, usdc, 10**18);
     }
 
     function testGetAmountOutMintedNoTradePathToETH() public {
         addL2Pools();
         // nUSD -> ETH is not supported
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: nusd}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertNoPathSwapQuery(query, UniversalTokenLib.ETH_ADDRESS);
+        checkMintedNoTradePathExists(nusd, UniversalTokenLib.ETH_ADDRESS, 10**18);
     }
 
     function testGetAmountOutMintedNoWhitelistedPool() public {
         addL2Pools();
         adjustNethPool({makeOnlyOrigin: true, makeLinked: false});
         // nETH -> WETH is possible, but not whitelisted
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: neth}),
-            weth,
-            amount
-        );
-        assertNoPathSwapQuery(query, weth);
+        checkMintedNoTradePathExists(neth, weth, 10**18);
     }
 
     function testGetAmountOutMintedNoWhitelistedPoolToETH() public {
         addL2Pools();
         adjustNethPool({makeOnlyOrigin: true, makeLinked: true});
         // nETH -> WETH -> ETH is possible, but not whitelisted
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: neth}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertNoPathSwapQuery(query, UniversalTokenLib.ETH_ADDRESS);
+        checkMintedNoTradePathExists(neth, UniversalTokenLib.ETH_ADDRESS, 10**18);
     }
 
     // ══════════════════════════════ (3A) SWAP FOUND USING ORIGIN-ONLY DEFAULT POOL ═══════════════════════════════════
@@ -92,26 +94,14 @@ contract SwapQuoterV2GetAmountOutMintedTest is BasicSwapQuoterV2Test {
         addL2Pools();
         adjustNusdPool({makeOnlyOrigin: true, makeLinked: false});
         // nUSD -> USDT is possible, but only via origin-only pool
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: nusd}),
-            usdt,
-            amount
-        );
-        assertNoPathSwapQuery(query, usdt);
+        checkMintedNoTradePathExists(nusd, usdt, 10**18);
     }
 
     function testGetAmountOutMintedSwapFoundOriginOnlyDefaultPoolToETH() public {
         addL2Pools();
         adjustNethPool({makeOnlyOrigin: true, makeLinked: false});
         // nETH -> ETH is possible, but only via origin-only pool
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: neth}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertNoPathSwapQuery(query, UniversalTokenLib.ETH_ADDRESS);
+        checkMintedNoTradePathExists(neth, UniversalTokenLib.ETH_ADDRESS, 10**18);
     }
 
     // ═══════════════════════════════ (3B) SWAP FOUND USING ORIGIN-ONLY LINKED POOL ═══════════════════════════════════
@@ -122,26 +112,14 @@ contract SwapQuoterV2GetAmountOutMintedTest is BasicSwapQuoterV2Test {
         addL2Pools();
         adjustNusdPool({makeOnlyOrigin: true, makeLinked: true});
         // nUSD -> USDT is possible, but only via origin-only pool
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: nusd}),
-            usdt,
-            amount
-        );
-        assertNoPathSwapQuery(query, usdt);
+        checkMintedNoTradePathExists(nusd, usdt, 10**18);
     }
 
     function testGetAmountOutMintedSwapFoundOriginOnlyLinkedPoolToETH() public {
         addL2Pools();
         adjustNethPool({makeOnlyOrigin: true, makeLinked: true});
         // nETH -> ETH is possible, but only via origin-only pool
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: neth}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertNoPathSwapQuery(query, UniversalTokenLib.ETH_ADDRESS);
+        checkMintedNoTradePathExists(neth, UniversalTokenLib.ETH_ADDRESS, 10**18);
     }
 
     // ═════════════════════════════════ (3C) SWAP FOUND USING BRIDGE DEFAULT POOL ═════════════════════════════════════
@@ -151,32 +129,27 @@ contract SwapQuoterV2GetAmountOutMintedTest is BasicSwapQuoterV2Test {
     function testGetAmountOutMintedSwapFoundBridgeDefaultPool() public {
         addL2Pools();
         // nETH(0) -> WETH (1)
-        uint256 amount = 10**18;
-        uint256 expectedAmountOut = IDefaultExtendedPool(poolNethWeth).calculateSwap(0, 1, amount);
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: neth}),
-            weth,
-            amount
-        );
-        assertPathFoundSwapQuery(query, weth, expectedAmountOut, getSwapParams(poolNethWeth, 0, 1));
+        uint256 amountIn = 10**18;
+        checkMintedTradePathFound({
+            tokenIn: neth,
+            tokenOut: weth,
+            amountIn: amountIn,
+            expectedAmountOut: IDefaultExtendedPool(poolNethWeth).calculateSwap(0, 1, amountIn),
+            expectedParams: getSwapParams(poolNethWeth, 0, 1)
+        });
     }
 
     function testGetAmountOutMintedSwapFoundBridgeDefaultPoolToETH() public {
         addL2Pools();
         // nETH(0) -> ETH (1)
-        uint256 amount = 10**18;
-        uint256 expectedAmountOut = IDefaultExtendedPool(poolNethWeth).calculateSwap(0, 1, amount);
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: neth}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertPathFoundSwapQuery(
-            query,
-            UniversalTokenLib.ETH_ADDRESS,
-            expectedAmountOut,
-            getSwapParams(poolNethWeth, 0, 1)
-        );
+        uint256 amountIn = 10**18;
+        checkMintedTradePathFound({
+            tokenIn: neth,
+            tokenOut: UniversalTokenLib.ETH_ADDRESS,
+            amountIn: amountIn,
+            expectedAmountOut: IDefaultExtendedPool(poolNethWeth).calculateSwap(0, 1, amountIn),
+            expectedParams: getSwapParams(poolNethWeth, 0, 1)
+        });
     }
 
     // ═════════════════════════════════ (3D) SWAP FOUND USING BRIDGE LINKED POOL ══════════════════════════════════════
@@ -186,28 +159,28 @@ contract SwapQuoterV2GetAmountOutMintedTest is BasicSwapQuoterV2Test {
     function testGetAmountOutMintedSwapFoundBridgeLinkedPool() public {
         addL2Pools();
         // nUSD(0) -> USDC.e (1)
-        uint256 amount = 10**18;
-        uint256 expectedAmountOut = IDefaultExtendedPool(poolNusdUsdcEUsdt).calculateSwap(0, 1, amount);
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: nusd}),
-            usdcE,
-            amount
-        );
-        assertPathFoundSwapQuery(query, usdcE, expectedAmountOut, getSwapParams(linkedPoolNusd, 0, 1));
+        uint256 amountIn = 10**18;
+        checkMintedTradePathFound({
+            tokenIn: nusd,
+            tokenOut: usdcE,
+            amountIn: amountIn,
+            expectedAmountOut: IDefaultExtendedPool(poolNusdUsdcEUsdt).calculateSwap(0, 1, amountIn),
+            expectedParams: getSwapParams(linkedPoolNusd, 0, 1)
+        });
     }
 
     function testGetAmountOutMintedSwapFoundBridgeLinkedPoolToETH() public {
         addL2Pools();
-        address pool = adjustNethPool({makeOnlyOrigin: false, makeLinked: true});
+        address linkedPool = adjustNethPool({makeOnlyOrigin: false, makeLinked: true});
         // nETH(0) -> ETH (1)
-        uint256 amount = 10**18;
-        uint256 expectedAmountOut = IDefaultExtendedPool(poolNethWeth).calculateSwap(0, 1, amount);
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: neth}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertPathFoundSwapQuery(query, UniversalTokenLib.ETH_ADDRESS, expectedAmountOut, getSwapParams(pool, 0, 1));
+        uint256 amountIn = 10**18;
+        checkMintedTradePathFound({
+            tokenIn: neth,
+            tokenOut: UniversalTokenLib.ETH_ADDRESS,
+            amountIn: amountIn,
+            expectedAmountOut: IDefaultExtendedPool(poolNethWeth).calculateSwap(0, 1, amountIn),
+            expectedParams: getSwapParams(linkedPool, 0, 1)
+        });
     }
 
     // ════════════════════════════════════════════ (3E) ADD LIQUIDITY ═════════════════════════════════════════════════
@@ -218,13 +191,7 @@ contract SwapQuoterV2GetAmountOutMintedTest is BasicSwapQuoterV2Test {
         addL1Pool();
         adjustNexusNusdPool({makeOnlyOrigin: true, makeLinked: false});
         // Nexus pool: USDC -> nUSD
-        uint256 amount = 10**6;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: nexusUsdc}),
-            nexusNusd,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusNusd);
+        checkMintedNoTradePathExists(nexusUsdc, nexusNusd, 10**6);
     }
 
     function testGetAmountOutMintedAddLiquidityFoundBridgeDefaultPool() public {
@@ -240,13 +207,7 @@ contract SwapQuoterV2GetAmountOutMintedTest is BasicSwapQuoterV2Test {
         vm.prank(owner);
         quoter.addPools(newPools);
         // Nexus pool: USDC -> nUSD
-        uint256 amount = 10**6;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: nexusUsdc}),
-            nexusNusd,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusNusd);
+        checkMintedNoTradePathExists(nexusUsdc, nexusNusd, 10**6);
     }
 
     // LinkedPools don't support Add Liquidity
@@ -256,26 +217,14 @@ contract SwapQuoterV2GetAmountOutMintedTest is BasicSwapQuoterV2Test {
         // Linked Nexus pool is whitelisted for USDC in the next call
         adjustNexusNusdPool({makeOnlyOrigin: true, makeLinked: true});
         // Nexus pool: USDC -> nUSD
-        uint256 amount = 10**6;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: nexusUsdc}),
-            nexusNusd,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusNusd);
+        checkMintedNoTradePathExists(nexusUsdc, nexusNusd, 10**6);
     }
 
     function testGetAmountOutMintedAddLiquidityNotFoundBridgeLinkedPool() public {
         addL1Pool();
         adjustNexusNusdPool({makeOnlyOrigin: false, makeLinked: true});
         // Nexus pool: USDC -> nUSD
-        uint256 amount = 10**6;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: nexusUsdc}),
-            nexusNusd,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusNusd);
+        checkMintedNoTradePathExists(nexusUsdc, nexusNusd, 10**6);
     }
 
     // ═══════════════════════════════════════════ (3F) REMOVE LIQUIDITY ═══════════════════════════════════════════════
@@ -286,25 +235,13 @@ contract SwapQuoterV2GetAmountOutMintedTest is BasicSwapQuoterV2Test {
         addL1Pool();
         adjustNexusNusdPool({makeOnlyOrigin: true, makeLinked: false});
         // Nexus pool: nUSD -> USDT
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: nexusNusd}),
-            nexusUsdt,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusUsdt);
+        checkMintedNoTradePathExists(nexusNusd, nexusUsdt, 10**18);
     }
 
     function testGetAmountOutMintedRemoveLiquidityFoundBridgeDefaultPool() public {
         addL1Pool();
         // Nexus pool: nUSD -> USDT
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: nexusNusd}),
-            nexusUsdt,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusUsdt);
+        checkMintedNoTradePathExists(nexusNusd, nexusUsdt, 10**18);
     }
 
     // LinkedPools don't support Remove Liquidity
@@ -313,26 +250,14 @@ contract SwapQuoterV2GetAmountOutMintedTest is BasicSwapQuoterV2Test {
         addL1Pool();
         adjustNexusNusdPool({makeOnlyOrigin: true, makeLinked: true});
         // Nexus pool: nUSD -> USDT
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: nexusNusd}),
-            nexusUsdt,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusUsdt);
+        checkMintedNoTradePathExists(nexusNusd, nexusUsdt, 10**18);
     }
 
     function testGetAmountOutMintedRemoveLiquidityNotFoundBridgeLinkedPool() public {
         addL1Pool();
         adjustNexusNusdPool({makeOnlyOrigin: false, makeLinked: true});
         // Nexus pool: nUSD -> USDT
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: nexusNusd}),
-            nexusUsdt,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusUsdt);
+        checkMintedNoTradePathExists(nexusNusd, nexusUsdt, 10**18);
     }
 
     // ══════════════════════════════════════════════ (3G) HANDLE ETH ══════════════════════════════════════════════════
@@ -342,12 +267,6 @@ contract SwapQuoterV2GetAmountOutMintedTest is BasicSwapQuoterV2Test {
     function testGetAmountOutMintedHandleEthFoundToETH() public {
         addL2Pools();
         // WETH -> ETH
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskMintedToken, token: weth}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertNoPathSwapQuery(query, UniversalTokenLib.ETH_ADDRESS);
+        checkMintedNoTradePathExists(weth, UniversalTokenLib.ETH_ADDRESS, 10**18);
     }
 }

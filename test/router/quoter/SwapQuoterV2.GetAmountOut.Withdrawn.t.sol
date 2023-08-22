@@ -18,18 +18,44 @@ contract SwapQuoterV2GetAmountOutWithdrawnTest is BasicSwapQuoterV2Test {
     /// 2. `tokenIn` and `tokenOut` represent different addresses. No trade path from `tokenIn` to `tokenOut` is found.
     /// 3. `tokenIn` and `tokenOut` represent different addresses. Trade path from `tokenIn` to `tokenOut` is found.
 
+    // ═══════════════════════════════ GENERIC DESTINATION CHECKS: WITHDRAWN TOKENS ════════════════════════════════════
+
+    function checkWithdrawnSameToken(address tokenIn) public {
+        uint256 amount = 10**18;
+        LimitedToken memory tokenIn_ = LimitedToken({actionMask: maskWithdrawnToken, token: tokenIn});
+        address tokenOut = tokenIn;
+        SwapQuery memory query = quoter.getAmountOut(tokenIn_, tokenOut, amount);
+        assertSameTokenSwapQuery(query, tokenOut, amount);
+    }
+
+    function checkWithdrawnNoTradePathExists(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn
+    ) public {
+        LimitedToken memory tokenIn_ = LimitedToken({actionMask: maskWithdrawnToken, token: tokenIn});
+        SwapQuery memory query = quoter.getAmountOut(tokenIn_, tokenOut, amountIn);
+        assertNoPathSwapQuery(query, tokenOut);
+    }
+
+    function checkWithdrawnTradePathFound(
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 expectedAmountOut,
+        bytes memory expectedParams
+    ) public {
+        LimitedToken memory tokenIn_ = LimitedToken({actionMask: maskWithdrawnToken, token: tokenIn});
+        SwapQuery memory query = quoter.getAmountOut(tokenIn_, tokenOut, amountIn);
+        assertPathFoundSwapQuery(query, tokenOut, expectedAmountOut, expectedParams);
+    }
+
     // ══════════════════════════════════════════════ (1) SAME TOKENS ══════════════════════════════════════════════════
 
     function testGetAmountOutWithdrawnSameBridgeToken() public {
         addL1Pool();
         // nexusNusd -> nexusNusd
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nexusNusd}),
-            nexusNusd,
-            amount
-        );
-        assertSameTokenSwapQuery(query, nexusNusd, amount);
+        checkWithdrawnSameToken(nexusNusd);
     }
 
     // ═════════════════════════════════════════════ (2) NO SWAP FOUND ═════════════════════════════════════════════════
@@ -37,51 +63,27 @@ contract SwapQuoterV2GetAmountOutWithdrawnTest is BasicSwapQuoterV2Test {
     function testGetAmountOutWithdrawnNoTradePath() public {
         addL1Pool();
         // nexusNusd -> USDC is not supported (nexusUSDC is the correct destination token)
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nexusNusd}),
-            usdc,
-            amount
-        );
-        assertNoPathSwapQuery(query, usdc);
+        checkWithdrawnNoTradePathExists(nexusNusd, usdc, 10**18);
     }
 
     function testGetAmountOutWithdrawnNoTradePathToETH() public {
         addL1Pool();
         // nexusNusd -> ETH is not supported
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nexusNusd}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertNoPathSwapQuery(query, UniversalTokenLib.ETH_ADDRESS);
+        checkWithdrawnNoTradePathExists(nexusNusd, UniversalTokenLib.ETH_ADDRESS, 10**18);
     }
 
     function testGetAmountOutWithdrawnNoWhitelistedPool() public {
         addL1Pool();
         adjustNexusNusdPool({makeOnlyOrigin: true, makeLinked: false});
         // nexusNusd -> nexusUSDC is possible, but not whitelisted
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nexusNusd}),
-            nexusUsdc,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusUsdc);
+        checkWithdrawnNoTradePathExists(nexusNusd, nexusUsdc, 10**18);
     }
 
     function testGetAmountOutWithdrawnNoWhitelistedPoolToETH() public {
         addL1Pool();
         adjustNexusNusdPool({makeOnlyOrigin: true, makeLinked: false});
         // nexusNusd -> ETH is not supported, and no whitelisted pool exist
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nexusNusd}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertNoPathSwapQuery(query, UniversalTokenLib.ETH_ADDRESS);
+        checkWithdrawnNoTradePathExists(nexusNusd, UniversalTokenLib.ETH_ADDRESS, 10**18);
     }
 
     // ══════════════════════════════ (3A) SWAP FOUND USING ORIGIN-ONLY DEFAULT POOL ═══════════════════════════════════
@@ -92,26 +94,14 @@ contract SwapQuoterV2GetAmountOutWithdrawnTest is BasicSwapQuoterV2Test {
         addL2Pools();
         adjustNusdPool({makeOnlyOrigin: true, makeLinked: false});
         // nUSD -> USDT is possible, but swap is not supported for withdrawn tokens
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nusd}),
-            usdt,
-            amount
-        );
-        assertNoPathSwapQuery(query, usdt);
+        checkWithdrawnNoTradePathExists(nusd, usdt, 10**18);
     }
 
     function testGetAmountOutWithdrawnSwapFoundOriginOnlyDefaultPoolToETH() public {
         addL2Pools();
         adjustNethPool({makeOnlyOrigin: true, makeLinked: false});
         // nETH -> ETH is possible, but swap is not supported for withdrawn tokens
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: neth}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertNoPathSwapQuery(query, UniversalTokenLib.ETH_ADDRESS);
+        checkWithdrawnNoTradePathExists(neth, UniversalTokenLib.ETH_ADDRESS, 10**18);
     }
 
     // ═══════════════════════════════ (3B) SWAP FOUND USING ORIGIN-ONLY LINKED POOL ═══════════════════════════════════
@@ -122,26 +112,14 @@ contract SwapQuoterV2GetAmountOutWithdrawnTest is BasicSwapQuoterV2Test {
         addL2Pools();
         adjustNusdPool({makeOnlyOrigin: true, makeLinked: true});
         // nUSD -> USDT is possible, but swap is not supported for withdrawn tokens
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nusd}),
-            usdt,
-            amount
-        );
-        assertNoPathSwapQuery(query, usdt);
+        checkWithdrawnNoTradePathExists(nusd, usdt, 10**18);
     }
 
     function testGetAmountOutWithdrawnSwapFoundOriginOnlyLinkedPoolToETH() public {
         addL2Pools();
         adjustNethPool({makeOnlyOrigin: true, makeLinked: true});
         // nETH -> ETH is possible, but swap is not supported for withdrawn tokens
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: neth}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertNoPathSwapQuery(query, UniversalTokenLib.ETH_ADDRESS);
+        checkWithdrawnNoTradePathExists(neth, UniversalTokenLib.ETH_ADDRESS, 10**18);
     }
 
     // ═════════════════════════════════ (3C) SWAP FOUND USING BRIDGE DEFAULT POOL ═════════════════════════════════════
@@ -151,25 +129,13 @@ contract SwapQuoterV2GetAmountOutWithdrawnTest is BasicSwapQuoterV2Test {
     function testGetAmountOutWithdrawnSwapFoundBridgeDefaultPool() public {
         addL2Pools();
         // nETH -> WETH is possible, but swap is not supported for withdrawn tokens
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: neth}),
-            weth,
-            amount
-        );
-        assertNoPathSwapQuery(query, weth);
+        checkWithdrawnNoTradePathExists(neth, weth, 10**18);
     }
 
     function testGetAmountOutWithdrawnSwapFoundBridgeDefaultPoolToETH() public {
         addL2Pools();
         // nETH -> ETH is possible, but swap is not supported for withdrawn tokens
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: neth}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertNoPathSwapQuery(query, UniversalTokenLib.ETH_ADDRESS);
+        checkWithdrawnNoTradePathExists(neth, UniversalTokenLib.ETH_ADDRESS, 10**18);
     }
 
     // ═════════════════════════════════ (3D) SWAP FOUND USING BRIDGE LINKED POOL ══════════════════════════════════════
@@ -179,26 +145,14 @@ contract SwapQuoterV2GetAmountOutWithdrawnTest is BasicSwapQuoterV2Test {
     function testGetAmountOutWithdrawnSwapFoundBridgeLinkedPool() public {
         addL2Pools();
         // nUSD -> USDC.e is possible, but swap is not supported for withdrawn tokens
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nusd}),
-            usdcE,
-            amount
-        );
-        assertNoPathSwapQuery(query, usdcE);
+        checkWithdrawnNoTradePathExists(nusd, usdcE, 10**18);
     }
 
     function testGetAmountOutWithdrawnSwapFoundBridgeLinkedPoolToETH() public {
         addL2Pools();
         adjustNethPool({makeOnlyOrigin: false, makeLinked: true});
         // nETH -> ETH is possible, but swap is not supported for withdrawn tokens
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: neth}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertNoPathSwapQuery(query, UniversalTokenLib.ETH_ADDRESS);
+        checkWithdrawnNoTradePathExists(neth, UniversalTokenLib.ETH_ADDRESS, 10**18);
     }
 
     // ════════════════════════════════════════════ (3E) ADD LIQUIDITY ═════════════════════════════════════════════════
@@ -209,25 +163,13 @@ contract SwapQuoterV2GetAmountOutWithdrawnTest is BasicSwapQuoterV2Test {
         addL1Pool();
         adjustNexusNusdPool({makeOnlyOrigin: true, makeLinked: false});
         // nexusUsdc -> nexusNusd is only possible for origin requests
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nexusUsdc}),
-            nexusNusd,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusNusd);
+        checkWithdrawnNoTradePathExists(nexusUsdc, nexusNusd, 10**6);
     }
 
     function testGetAmountOutWithdrawnAddLiquidityFoundBridgeDefaultPool() public {
         addL1Pool();
         // nexusUsdc -> nexusNusd is only possible for origin requests
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nexusUsdc}),
-            nexusNusd,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusNusd);
+        checkWithdrawnNoTradePathExists(nexusUsdc, nexusNusd, 10**6);
     }
 
     // LinkedPools don't support Add Liquidity
@@ -236,26 +178,14 @@ contract SwapQuoterV2GetAmountOutWithdrawnTest is BasicSwapQuoterV2Test {
         addL1Pool();
         adjustNexusNusdPool({makeOnlyOrigin: true, makeLinked: true});
         // Nexus pool: USDT (2) -> nUSD
-        uint256 amount = 10**6;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nexusUsdt}),
-            nexusNusd,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusNusd);
+        checkWithdrawnNoTradePathExists(nexusUsdt, nexusNusd, 10**6);
     }
 
     function testGetAmountOutWithdrawnAddLiquidityNotFoundBridgeLinkedPool() public {
         addL1Pool();
         adjustNexusNusdPool({makeOnlyOrigin: false, makeLinked: true});
         // Nexus pool: DAI (0) -> nUSD
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nexusDai}),
-            nexusNusd,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusNusd);
+        checkWithdrawnNoTradePathExists(nexusDai, nexusNusd, 10**18);
     }
 
     // ═══════════════════════════════════════════ (3F) REMOVE LIQUIDITY ═══════════════════════════════════════════════
@@ -263,22 +193,14 @@ contract SwapQuoterV2GetAmountOutWithdrawnTest is BasicSwapQuoterV2Test {
     function testGetAmountOutWithdrawnRemoveLiquidityFoundBridgeDefaultPool() public {
         addL1Pool();
         // Nexus pool: nUSD -> USDC (1)
-        uint256 amount = 10**18;
-        uint256 expectedAmountOut = IDefaultExtendedPool(nexusPoolDaiUsdcUsdt).calculateRemoveLiquidityOneToken(
-            amount,
-            1
-        );
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nexusNusd}),
-            nexusUsdc,
-            amount
-        );
-        assertPathFoundSwapQuery(
-            query,
-            nexusUsdc,
-            expectedAmountOut,
-            getRemoveLiquidityParams(nexusPoolDaiUsdcUsdt, 1)
-        );
+        uint256 amountIn = 10**18;
+        checkWithdrawnTradePathFound({
+            tokenIn: nexusNusd,
+            tokenOut: nexusUsdc,
+            amountIn: amountIn,
+            expectedAmountOut: IDefaultExtendedPool(nexusPoolDaiUsdcUsdt).calculateRemoveLiquidityOneToken(amountIn, 1),
+            expectedParams: getRemoveLiquidityParams(nexusPoolDaiUsdcUsdt, 1)
+        });
     }
 
     // Empty SwapQuery, as origin-only pools are not supported for destination requests
@@ -286,13 +208,7 @@ contract SwapQuoterV2GetAmountOutWithdrawnTest is BasicSwapQuoterV2Test {
         addL1Pool();
         adjustNexusNusdPool({makeOnlyOrigin: true, makeLinked: false});
         // Nexus pool: nUSD -> USDC (1)
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nexusNusd}),
-            nexusUsdc,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusUsdc);
+        checkWithdrawnNoTradePathExists(nexusNusd, nexusUsdc, 10**18);
     }
 
     // LinkedPools don't support Remove Liquidity
@@ -301,26 +217,14 @@ contract SwapQuoterV2GetAmountOutWithdrawnTest is BasicSwapQuoterV2Test {
         addL1Pool();
         adjustNexusNusdPool({makeOnlyOrigin: true, makeLinked: true});
         // Nexus pool: nUSD -> USDT
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nexusNusd}),
-            nexusUsdt,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusUsdt);
+        checkWithdrawnNoTradePathExists(nexusNusd, nexusUsdt, 10**18);
     }
 
     function testGetAmountOutWithdrawnRemoveLiquidityNotFoundBridgeLinkedPool() public {
         addL1Pool();
         adjustNexusNusdPool({makeOnlyOrigin: false, makeLinked: true});
         // Nexus pool: nUSD -> USDT
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: nexusNusd}),
-            nexusUsdt,
-            amount
-        );
-        assertNoPathSwapQuery(query, nexusUsdt);
+        checkWithdrawnNoTradePathExists(nexusNusd, nexusUsdt, 10**18);
     }
 
     // ══════════════════════════════════════════════ (3G) HANDLE ETH ══════════════════════════════════════════════════
@@ -328,12 +232,13 @@ contract SwapQuoterV2GetAmountOutWithdrawnTest is BasicSwapQuoterV2Test {
     function testGetAmountOutWithdrawnHandleEthFoundToETH() public {
         addL2Pools();
         // WETH -> ETH
-        uint256 amount = 10**18;
-        SwapQuery memory query = quoter.getAmountOut(
-            LimitedToken({actionMask: maskWithdrawnToken, token: weth}),
-            UniversalTokenLib.ETH_ADDRESS,
-            amount
-        );
-        assertPathFoundSwapQuery(query, UniversalTokenLib.ETH_ADDRESS, amount, getHandleEthParams());
+        uint256 amountIn = 10**18;
+        checkWithdrawnTradePathFound({
+            tokenIn: weth,
+            tokenOut: UniversalTokenLib.ETH_ADDRESS,
+            amountIn: amountIn,
+            expectedAmountOut: amountIn,
+            expectedParams: getHandleEthParams()
+        });
     }
 }
