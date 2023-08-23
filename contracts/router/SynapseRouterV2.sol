@@ -87,6 +87,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
     /// @inheritdoc IRouterV2
     function updateBridgeModule(bytes32 moduleId, address bridgeModule) external onlyOwner {
+        if (bridgeModule == address(0)) revert ModuleInvalid();
         if (!_hasModule(moduleId)) revert ModuleNotExists();
 
         address module = _bridgeModules.get(uint256(moduleId));
