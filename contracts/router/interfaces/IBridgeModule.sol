@@ -45,4 +45,9 @@ interface IBridgeModule {
     /// @param token        Address of the bridging token
     /// @return symbol      Symbol of the supported bridging token
     function tokenToSymbol(address token) external view returns (string memory symbol);
+
+    /// @notice Returns the action mask associated with the given bridging token
+    /// @param token        Address of the bridging token
+    /// @return actionMask  Action mask for the bridging token
+    function tokenToActionMask(address token) external view returns (uint256 actionMask);
 }
