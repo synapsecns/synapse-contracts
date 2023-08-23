@@ -37,6 +37,100 @@ interface ILocalBridgeConfig {
         uint112 maxFee;
     }
 
+    /**
+     * @notice Struct defining a supported bridge token. This is not supposed to be stored on-chain,
+     * so this is not optimized in terms of storage words.
+     * @param id            ID for token used in BridgeConfigV3
+     * @param token         "End" token, supported by SynapseBridge. This is the token user is receiving/sending.
+     * @param decimals      Amount ot decimals used for `token`
+     * @param tokenType     Method of bridging used for the token: Redeem or Deposit.
+     * @param bridgeToken   Actual token used for bridging `token`. This is the token bridge is burning/locking.
+     *                      Might differ from `token`, if `token` does not conform to bridge-supported interface.
+     * @param bridgeFee     Fee % for bridging a token to this chain, multiplied by `FEE_DENOMINATOR`
+     * @param minFee        Minimum fee for bridging a token to this chain, in token decimals
+     * @param maxFee        Maximum fee for bridging a token to this chain, in token decimals
+     */
+    struct BridgeTokenConfig {
+        string id;
+        address token;
+        uint256 decimals;
+        TokenType tokenType;
+        address bridgeToken;
+        uint256 bridgeFee;
+        uint256 minFee;
+        uint256 maxFee;
+    }
+
+    // ══════════════════════════════════════════════ STORAGE WRITES ═══════════════════════════════════════════════════
+
+    /**
+     * @notice Adds a bridge token and its fee structure to the local config, if it was not added before.
+     * @param token         "End" token, supported by SynapseBridge. This is the token user is receiving/sending.
+     * @param tokenType     Method of bridging used for the token: Redeem or Deposit.
+     * @param bridgeToken   Actual token used for bridging `token`. This is the token bridge is burning/locking.
+     *                      Might differ from `token`, if `token` does not conform to bridge-supported interface.
+     * @param bridgeFee     Fee % for bridging a token to this chain, multiplied by `FEE_DENOMINATOR`
+     * @param minFee        Minimum fee for bridging a token to this chain, in token decimals
+     * @param maxFee        Maximum fee for bridging a token to this chain, in token decimals
+     * @return wasAdded     True, if token was added to the config
+     */
+    function addToken(
+        string memory symbol,
+        address token,
+        TokenType tokenType,
+        address bridgeToken,
+        uint256 bridgeFee,
+        uint256 minFee,
+        uint256 maxFee
+    ) external returns (bool wasAdded);
+
+    /// @notice Adds a bunch of bridge tokens and their fee structure to the local config, if it was not added before.
+    function addTokens(BridgeTokenConfig[] memory tokens) external;
+
+    /**
+     * @notice Updates the bridge config for an already added bridge token.
+     * @dev Will revert if token was not added before.
+     * @param token         "End" token, supported by SynapseBridge. This is the token user is receiving/sending.
+     * @param tokenType     Method of bridging used for the token: Redeem or Deposit.
+     * @param bridgeToken   Actual token used for bridging `token`. This is the token bridge is burning/locking.
+     *                      Might differ from `token`, if `token` does not conform to bridge-supported interface.
+     */
+    function setTokenConfig(
+        address token,
+        TokenType tokenType,
+        address bridgeToken
+    ) external;
+
+    /**
+     * @notice Updates the fee structure for an already added bridge token.
+     * @dev Will revert if token was not added before.
+     * @param token         "End" token, supported by SynapseBridge. This is the token user is receiving/sending.
+     * @param bridgeFee     Fee % for bridging a token to this chain, multiplied by `FEE_DENOMINATOR`
+     * @param minFee        Minimum fee for bridging a token to this chain, in token decimals
+     * @param maxFee        Maximum fee for bridging a token to this chain, in token decimals
+     */
+    function setTokenFee(
+        address token,
+        uint256 bridgeFee,
+        uint256 minFee,
+        uint256 maxFee
+    ) external;
+
+    /**
+     * @notice Removes tokens from the local config, and deletes the associated bridge fee structure.
+     * @dev If a token requires a bridge wrapper token, use the underlying token address for removing.
+     * @param token         "End" token, supported by SynapseBridge. This is the token user is receiving/sending.
+     * @return wasRemoved   True, if token was removed from the config
+     */
+    function removeToken(address token) external returns (bool wasRemoved);
+
+    /**
+     * @notice Removes a list of tokens from the local config, and deletes their associated bridge fee structure.
+     * @dev If a token requires a bridge wrapper token, use the underlying token address for removing.
+     * @param tokens    List of "end" tokens, supported by SynapseBridge. These are the tokens user is receiving/sending.
+     */
+    function removeTokens(address[] calldata tokens) external;
+
     // ═══════════════════════════════════════════════ STORAGE VIEWS ═══════════════════════════════════════════════════
 
     /// @notice Config for each supported token.
