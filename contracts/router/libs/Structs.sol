@@ -57,15 +57,6 @@ struct DestRequest {
     uint256 amountIn;
 }
 
-/// @notice Struct representing a bridge module to delegate bridge through.
-/// Used in SynapseRouterV2::bridgeViaSynapse
-/// @param id        Unique ID for the bridge module
-/// @param module    Address of the bridge module
-struct Module {
-    bytes32 id;
-    address module;
-}
-
 /// @notice Struct representing a swap request for SynapseRouter.
 /// @dev tokenIn is supplied separately.
 /// @param routerAdapter    Contract that will perform the swap for the Router. Address(0) specifies a "no swap" query.
