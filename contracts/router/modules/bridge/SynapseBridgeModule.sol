@@ -8,6 +8,10 @@ import {ISynapseBridge} from "../../interfaces/ISynapseBridge.sol";
 import {Action, BridgeToken, DefaultParams, SwapQuery} from "../../libs/Structs.sol";
 
 contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
+    error SynapseBridgeModule__UnsupportedDepositAction(Action action);
+    error SynapseBridgeModule__UnsupportedRedeemAction(Action action);
+    error SynapseBridgeModule__UnsupportedToken(address token);
+
     /// These need to be immutable in order to be accessed via delegatecall
     ILocalBridgeConfig public immutable localBridgeConfig;
     ISynapseBridge public immutable synapseBridge;
@@ -26,16 +30,15 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
         SwapQuery memory destQuery
     ) external payable {
         assertDelegateCall();
-        ILocalBridgeConfig.TokenType tokenType;
+        (ILocalBridgeConfig.TokenType tokenType, address bridgeToken) = localBridgeConfig.config(token);
         // Use config.bridgeToken as the token address for the bridging purposes
-        (tokenType, token) = localBridgeConfig.config(token);
-        require(token != address(0), "Token not supported");
+        if (bridgeToken == address(0)) revert SynapseBridgeModule__UnsupportedToken(token);
         if (destQuery.routerAdapter == address(0)) {
             // If no Router Adapter is set, no action is required on destination chain, use `deposit()` or `redeem()`
             (tokenType == ILocalBridgeConfig.TokenType.Redeem ? synapseBridge.redeem : synapseBridge.deposit)(
                 to,
                 chainId,
-                token,
+                bridgeToken,
                 amount
             );
         } else {
@@ -43,7 +46,7 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
             (tokenType == ILocalBridgeConfig.TokenType.Redeem ? _redeemTokenWithAction : _depositTokenWithAction)(
                 to,
                 chainId,
-                token,
+                bridgeToken,
                 amount,
                 destQuery
             );
@@ -142,7 +145,7 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
                 deadline: destQuery.deadline
             });
         } else {
-            revert("Unsupported dest action");
+            revert SynapseBridgeModule__UnsupportedDepositAction(params.action);
         }
     }
 
@@ -193,7 +196,7 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
             // Handle ETH on destination chain is done natively by SynapseBridge => `redeem()`
             synapseBridge.redeem(to, chainId, token, amount);
         } else {
-            revert("Unsupported dest action");
+            revert SynapseBridgeModule__UnsupportedRedeemAction(params.action);
         }
     }
 }
