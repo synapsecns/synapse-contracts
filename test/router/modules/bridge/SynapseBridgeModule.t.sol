@@ -185,6 +185,33 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
         verifyRedeemTokenBalance();
     }
 
+    // HandleEth is done natively by SynapseBridge on dest chain, so just redeem() should be called
+    function testDelegateBridgeRedeemHandleEth() public {
+        addTokens();
+        MockERC20(redeemToken).mint(address(delegateCaller), AMOUNT);
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(delegateCaller),
+            tokenOut: TOKEN_OUT,
+            minAmountOut: MIN_AMOUNT_OUT,
+            deadline: DEADLINE,
+            rawParams: abi.encode(
+                DefaultParams({action: Action.HandleEth, pool: address(0), tokenIndexFrom: 0xFF, tokenIndexTo: 0xFF})
+            )
+        });
+        bytes memory payload = abi.encodeWithSelector(
+            module.delegateBridge.selector,
+            TO,
+            CHAIN_ID,
+            redeemToken,
+            AMOUNT,
+            destQuery
+        );
+        vm.expectEmit(synapseBridge);
+        emit TokenRedeem(TO, CHAIN_ID, getBridgeToken(redeemToken), AMOUNT);
+        delegateCaller.performDelegateCall(address(module), payload);
+        verifyRedeemTokenBalance();
+    }
+
     function testDelegateBridgeDeposit() public {
         addTokens();
         MockERC20(depositToken).mint(address(delegateCaller), AMOUNT);
