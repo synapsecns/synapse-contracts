@@ -5,6 +5,16 @@ import {LimitedToken, SwapQuery, Pool, PoolToken} from "../libs/Structs.sol";
 
 /// @notice Interface for the SwapQuoterV1 version with updated pragma and enriched docs.
 interface ISwapQuoterV1 {
+    // ════════════════════════════════════════════════ IMMUTABLES ════════════════════════════════════════════════════
+
+    /// @notice Address of deployed calculator contract for DefaultPool, which is able to calculate
+    /// EXACT quotes for AddLiquidity action (something that DefaultPool contract itself is unable to do).
+    function defaultPoolCalc() external view returns (address);
+
+    /// @notice Address of WETH token used in the pools. Represents wrapped version of chain's native currency,
+    /// e.g. WETH on Ethereum, WBNB on BSC, etc.
+    function weth() external view returns (address);
+
     // ═══════════════════════════════════════════════ POOL GETTERS ════════════════════════════════════════════════════
 
     /// @notice Returns a list of all supported pools.

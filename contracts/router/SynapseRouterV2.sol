@@ -6,7 +6,8 @@ import {EnumerableMap} from "@openzeppelin/contracts-4.5.0/utils/structs/Enumera
 
 import {DefaultRouter} from "./DefaultRouter.sol";
 import {BridgeFailed, ModuleExists, ModuleNotExists, ModuleInvalid, QueryEmpty} from "./libs/Errors.sol";
-import {Action, ActionLib, BridgeToken, DestRequest, LimitedToken, SwapQuery} from "./libs/Structs.sol";
+import {ActionLib, BridgeToken, DestRequest, LimitedToken, SwapQuery} from "./libs/Structs.sol";
+import {UniversalTokenLib} from "./libs/UniversalToken.sol";
 
 import {ISwapQuoterV2} from "./interfaces/ISwapQuoterV2.sol";
 import {IBridgeModule} from "./interfaces/IBridgeModule.sol";
@@ -231,7 +232,8 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
             if (token == address(0)) continue;
 
             // account for bridge fees in amountIn
-            bool isSwap = ActionLib.isIncluded(Action.Swap, actionMask);
+            bool isSwap = !(token == tokenOut ||
+                (tokenOut == UniversalTokenLib.ETH_ADDRESS && token == swapQuoter.weth()));
             uint256 amountIn = _calculateBridgeAmountIn(bridgeModule, token, request.amountIn, isSwap);
             if (amountIn == 0) continue;
 
