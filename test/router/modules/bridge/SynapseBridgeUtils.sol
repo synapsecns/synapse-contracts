@@ -7,6 +7,41 @@ import {ILocalBridgeConfig} from "../../../../contracts/router/interfaces/ILocal
 import {Test} from "forge-std/Test.sol";
 
 abstract contract SynapseBridgeUtils is Test {
+    event TokenDeposit(address indexed to, uint256 chainId, address token, uint256 amount);
+    event TokenDepositAndSwap(
+        address indexed to,
+        uint256 chainId,
+        address token,
+        uint256 amount,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline
+    );
+
+    event TokenRedeem(address indexed to, uint256 chainId, address token, uint256 amount);
+    event TokenRedeemAndSwap(
+        address indexed to,
+        uint256 chainId,
+        address token,
+        uint256 amount,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline
+    );
+    event TokenRedeemAndRemove(
+        address indexed to,
+        uint256 chainId,
+        address token,
+        uint256 amount,
+        uint8 swapTokenIndex,
+        uint256 swapMinAmount,
+        uint256 swapDeadline
+    );
+
+    event TokenRedeemV2(bytes32 indexed to, uint256 chainId, address token, uint256 amount);
+
     // Default fee is 10 bps
     uint256 public constant DEFAULT_BRIDGE_FEE = 10**7;
     // Default min fee 0.0001

@@ -42,7 +42,7 @@ contract MockSynapseBridge is ISynapseBridge {
         uint256 swapDeadline
     );
 
-    event TokenRedeemV2(bytes32 indexed to, uint256 chainId, IERC20 token, uint256 amount);
+    event TokenRedeemV2(bytes32 indexed to, uint256 chainId, address token, uint256 amount);
 
     function deposit(
         address to,
@@ -85,7 +85,7 @@ contract MockSynapseBridge is ISynapseBridge {
         uint256 amount
     ) external {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
-        emit TokenRedeemV2(to, chainId, IERC20(token), amount);
+        emit TokenRedeemV2(to, chainId, token, amount);
     }
 
     function redeemAndSwap(
