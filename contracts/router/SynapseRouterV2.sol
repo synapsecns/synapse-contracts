@@ -6,7 +6,7 @@ import {EnumerableMap} from "@openzeppelin/contracts-4.5.0/utils/structs/Enumera
 
 import {DefaultRouter} from "./DefaultRouter.sol";
 import {BridgeFailed, ModuleExists, ModuleNotExists, ModuleInvalid, QueryEmpty} from "./libs/Errors.sol";
-import {Action, BridgeToken, DestRequest, LimitedToken, SwapQuery} from "./libs/Structs.sol";
+import {ActionLib, BridgeToken, DestRequest, LimitedToken, SwapQuery} from "./libs/Structs.sol";
 
 import {ISwapQuoterV2} from "./interfaces/ISwapQuoterV2.sol";
 import {IBridgeModule} from "./interfaces/IBridgeModule.sol";
@@ -183,11 +183,18 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         destQueries = new SwapQuery[](requests.length);
         for (uint256 i = 0; i < requests.length; ++i) {
             DestRequest memory request = requests[i];
-            (address token, uint256 actionMask) = _getTokenAndActionMaskFromSymbol(request.symbol);
+            (address token, uint256 actionMask, address bridgeModule) = _getTokenAndActionMaskFromSymbol(
+                request.symbol
+            );
+            if (token == address(0)) continue;
+
+            // account for bridge fees in amountIn
+            uint256 amountIn = _calculateBridgeAmountIn(bridgeModule, token, request.amountIn);
+            if (amountIn == 0) continue;
 
             // query the quoter
             LimitedToken memory tokenIn = LimitedToken({actionMask: actionMask, token: token});
-            destQueries[i] = swapQuoter.getAmountOut(tokenIn, tokenOut, request.amountIn);
+            destQueries[i] = swapQuoter.getAmountOut(tokenIn, tokenOut, amountIn);
         }
     }
 
@@ -199,11 +206,12 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     ) external view returns (SwapQuery[] memory originQueries) {
         originQueries = new SwapQuery[](tokenSymbols.length);
         for (uint256 i = 0; i < tokenSymbols.length; ++i) {
-            (address tokenOut, uint256 actionMask) = _getTokenAndActionMaskFromSymbol(tokenSymbols[i]);
+            (address tokenOut, , ) = _getTokenAndActionMaskFromSymbol(tokenSymbols[i]);
+            if (tokenOut == address(0)) continue;
 
             // query the quoter
-            LimitedToken memory limitedTokenIn = LimitedToken({actionMask: actionMask, token: tokenIn});
-            originQueries[i] = swapQuoter.getAmountOut(limitedTokenIn, tokenOut, amountIn);
+            LimitedToken memory _tokenIn = LimitedToken({actionMask: ActionLib.allActions(), token: tokenIn});
+            originQueries[i] = swapQuoter.getAmountOut(_tokenIn, tokenOut, amountIn);
         }
     }
 
@@ -223,16 +231,33 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     function _getTokenAndActionMaskFromSymbol(string memory symbol)
         internal
         view
-        returns (address token, uint256 actionMask)
+        returns (
+            address token,
+            uint256 actionMask,
+            address bridgeModule
+        )
     {
         uint256 len = _bridgeModules.length();
         for (uint256 i = 0; i < len; ++i) {
-            (, address bridgeModule) = _bridgeModules.at(i);
-            token = IBridgeModule(bridgeModule).symbolToToken(symbol);
+            (, address _bridgeModule) = _bridgeModules.at(i);
+            token = IBridgeModule(_bridgeModule).symbolToToken(symbol);
             if (token != address(0)) {
-                actionMask = IBridgeModule(bridgeModule).tokenToActionMask(token);
+                actionMask = IBridgeModule(_bridgeModule).tokenToActionMask(token);
+                bridgeModule = _bridgeModule;
                 break;
             }
         }
+    }
+
+    /// @notice Calculates amount of bridge token in accounting for bridge fees
+    /// @param token    Address of the bridging token
+    /// @param amount   Amount in before fees
+    function _calculateBridgeAmountIn(
+        address bridgeModule,
+        address token,
+        uint256 amount
+    ) internal view returns (uint256 amount_) {
+        uint256 feeAmount = IBridgeModule(bridgeModule).calculateFeeAmount(token, amount);
+        if (feeAmount < amount) amount_ = amount - feeAmount;
     }
 }
