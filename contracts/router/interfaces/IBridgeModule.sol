@@ -8,8 +8,8 @@ interface IBridgeModule {
     /// @dev This will be used via delegatecall from SynapseRouterV2, which will have custody over the initial tokens.
     /// @param to            Address to receive tokens on destination chain
     /// @param chainId       Destination chain id
-    /// @param token         Initial token for the bridge transaction to be pulled from the user
-    /// @param amount        Amount of the initial tokens for the bridge transaction
+    /// @param token         Address of the bridge token
+    /// @param amount        Amount of the tokens for the bridge transaction
     /// @param destQuery     Destination swap query. Empty struct indicates no swap is required
     function delegateBridge(
         address to,
@@ -20,12 +20,12 @@ interface IBridgeModule {
     ) external payable;
 
     /// @notice Gets the maximum amount of tokens user can bridge
-    /// @param token        Address of the bridging token
+    /// @param token        Address of the bridge token
     /// @return amount      Max amount of tokens user can bridge
     function getMaxBridgedAmount(address token) external view returns (uint256 amount);
 
     /// @notice Calculates the fee amount for bridging a token to this chain.
-    /// @param token        Address of the bridging token
+    /// @param token        Address of the bridge token
     /// @param amount       Amount of tokens to be bridged
     /// @param isSwap       Whether the user provided swap details for converting the bridge token
     ///                     to the final token on this chain
@@ -42,18 +42,18 @@ interface IBridgeModule {
 
     /// @notice Returns the address of the bridge token for a given symbol.
     /// @dev Will return address(0) if the token is not supported.
-    /// @param symbol       Symbol of the supported bridging token
-    /// @return token       Address of the bridging token
+    /// @param symbol       Symbol of the supported bridge token
+    /// @return token       Address of the bridge token
     function symbolToToken(string memory symbol) external view returns (address token);
 
     /// @notice Returns the symbol of a given bridge token.
     /// @dev Will return empty string if the token is not supported.
-    /// @param token        Address of the bridging token
-    /// @return symbol      Symbol of the supported bridging token
+    /// @param token        Address of the bridge token
+    /// @return symbol      Symbol of the supported bridge token
     function tokenToSymbol(address token) external view returns (string memory symbol);
 
-    /// @notice Returns the action mask associated with the given bridging token
-    /// @param token        Address of the bridging token
-    /// @return actionMask  Action mask for the bridging token
+    /// @notice Returns the action mask associated with the given bridge token
+    /// @param token        Address of the bridge token
+    /// @return actionMask  Action mask for the bridge token
     function tokenToActionMask(address token) external view returns (uint256 actionMask);
 }
