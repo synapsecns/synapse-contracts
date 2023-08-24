@@ -5,6 +5,8 @@ pragma solidity 0.8.17;
 import {
     Action,
     BridgeToken,
+    DefaultParams,
+    SwapQuery,
     SynapseBridgeModule
 } from "../../../../contracts/router/modules/bridge/SynapseBridgeModule.sol";
 
@@ -14,6 +16,19 @@ import {DelegateCaller} from "./DelegateCaller.sol";
 import {SynapseBridgeUtils} from "./SynapseBridgeUtils.sol";
 
 contract SynapseBridgeModuleTest is SynapseBridgeUtils {
+    // Fake different values for bridging
+    address public constant TO = address(10);
+    uint256 public constant CHAIN_ID = 20;
+    uint256 public constant AMOUNT = 1 ether;
+    // Fake values for SwapQuery
+    address public constant TOKEN_OUT = address(30);
+    uint256 public constant MIN_AMOUNT_OUT = 40;
+    uint256 public constant DEADLINE = 50;
+    // Fake values for DefaultParams
+    address public constant POOL = address(60);
+    uint8 public constant TOKEN_INDEX_FROM = 70;
+    uint8 public constant TOKEN_INDEX_TO = 80;
+
     SynapseBridgeModule public module;
     DelegateCaller public delegateCaller;
 
@@ -31,6 +46,8 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
         depositToken = address(new MockERC20("DT", 18));
         redeemToken = address(new MockERC20("RT", 18));
         unknownToken = address(new MockERC20("UT", 18));
+        vm.label(depositToken, "DT");
+        vm.label(redeemToken, "RT");
     }
 
     function testConstructor() public {
@@ -41,6 +58,189 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
     function addTokens() public virtual {
         addDepositToken("DT", depositToken);
         addRedeemToken("RT", redeemToken, DEFAULT_BRIDGE_FEE / 10, DEFAULT_MIN_FEE, DEFAULT_MAX_FEE);
+    }
+
+    // ══════════════════════════════════════════════ TESTS: BRIDGING ══════════════════════════════════════════════════
+
+    function testDelegateBridgeRevertsWhenDirectCall() public {
+        SwapQuery memory emptyQuery;
+        vm.expectRevert("Not a delegate call");
+        module.delegateBridge(address(0), 0, address(0), 0, emptyQuery);
+    }
+
+    // Wrapper test should override this function
+    function getBridgeToken(address token) public virtual returns (address) {
+        return token;
+    }
+
+    function verifyDepositTokenBalance() public virtual {
+        assertEq(MockERC20(depositToken).balanceOf(address(delegateCaller)), 0);
+        assertEq(MockERC20(depositToken).balanceOf(address(synapseBridge)), AMOUNT);
+    }
+
+    function verifyRedeemTokenBalance() public virtual {
+        assertEq(MockERC20(redeemToken).balanceOf(address(delegateCaller)), 0);
+        assertEq(MockERC20(redeemToken).balanceOf(address(synapseBridge)), 0);
+    }
+
+    // Flow for all delegateBridge tests:
+    // - Tokens are minted to `delegateCaller` contract, which is mock for SynapseRouterV2
+    // - `delegateCaller` issues a delegate call to `module.delegateBridge()` which should initiate the bridging
+    // module.delegateBridge(address to, uint256 chainId, address token, uint256 AMOUNT, SwapQuery memory destQuery)
+
+    function testDelegateBridgeRedeem() public {
+        addTokens();
+        MockERC20(redeemToken).mint(address(delegateCaller), AMOUNT);
+        SwapQuery memory emptyQuery;
+        bytes memory payload = abi.encodeWithSelector(
+            module.delegateBridge.selector,
+            TO,
+            CHAIN_ID,
+            redeemToken,
+            AMOUNT,
+            emptyQuery
+        );
+        vm.expectEmit(synapseBridge);
+        emit TokenRedeem(TO, CHAIN_ID, getBridgeToken(redeemToken), AMOUNT);
+        delegateCaller.performDelegateCall(address(module), payload);
+        verifyRedeemTokenBalance();
+    }
+
+    function testDelegateBridgeRedeemAndSwap() public {
+        addTokens();
+        MockERC20(redeemToken).mint(address(delegateCaller), AMOUNT);
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(delegateCaller),
+            tokenOut: TOKEN_OUT,
+            minAmountOut: MIN_AMOUNT_OUT,
+            deadline: DEADLINE,
+            rawParams: abi.encode(
+                DefaultParams({
+                    action: Action.Swap,
+                    pool: POOL,
+                    tokenIndexFrom: TOKEN_INDEX_FROM,
+                    tokenIndexTo: TOKEN_INDEX_TO
+                })
+            )
+        });
+        bytes memory payload = abi.encodeWithSelector(
+            module.delegateBridge.selector,
+            TO,
+            CHAIN_ID,
+            redeemToken,
+            AMOUNT,
+            destQuery
+        );
+        vm.expectEmit(synapseBridge);
+        emit TokenRedeemAndSwap({
+            to: TO,
+            chainId: CHAIN_ID,
+            token: getBridgeToken(redeemToken),
+            amount: AMOUNT,
+            tokenIndexFrom: TOKEN_INDEX_FROM,
+            tokenIndexTo: TOKEN_INDEX_TO,
+            minDy: MIN_AMOUNT_OUT,
+            deadline: DEADLINE
+        });
+        delegateCaller.performDelegateCall(address(module), payload);
+        verifyRedeemTokenBalance();
+    }
+
+    function testDelegateBridgeRedeemAndRemove() public {
+        addTokens();
+        MockERC20(redeemToken).mint(address(delegateCaller), AMOUNT);
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(delegateCaller),
+            tokenOut: TOKEN_OUT,
+            minAmountOut: MIN_AMOUNT_OUT,
+            deadline: DEADLINE,
+            rawParams: abi.encode(
+                DefaultParams({
+                    action: Action.RemoveLiquidity,
+                    pool: POOL,
+                    tokenIndexFrom: 0xFF,
+                    tokenIndexTo: TOKEN_INDEX_TO
+                })
+            )
+        });
+        bytes memory payload = abi.encodeWithSelector(
+            module.delegateBridge.selector,
+            TO,
+            CHAIN_ID,
+            redeemToken,
+            AMOUNT,
+            destQuery
+        );
+        vm.expectEmit(synapseBridge);
+        emit TokenRedeemAndRemove({
+            to: TO,
+            chainId: CHAIN_ID,
+            token: getBridgeToken(redeemToken),
+            amount: AMOUNT,
+            swapTokenIndex: TOKEN_INDEX_TO,
+            swapMinAmount: MIN_AMOUNT_OUT,
+            swapDeadline: DEADLINE
+        });
+        delegateCaller.performDelegateCall(address(module), payload);
+        verifyRedeemTokenBalance();
+    }
+
+    function testDelegateBridgeDeposit() public {
+        addTokens();
+        MockERC20(depositToken).mint(address(delegateCaller), AMOUNT);
+        SwapQuery memory emptyQuery;
+        bytes memory payload = abi.encodeWithSelector(
+            module.delegateBridge.selector,
+            TO,
+            CHAIN_ID,
+            depositToken,
+            AMOUNT,
+            emptyQuery
+        );
+        vm.expectEmit(synapseBridge);
+        emit TokenDeposit(TO, CHAIN_ID, getBridgeToken(depositToken), AMOUNT);
+        delegateCaller.performDelegateCall(address(module), payload);
+        verifyDepositTokenBalance();
+    }
+
+    function testDelegateBridgeDepositAndSwap() public {
+        addTokens();
+        MockERC20(depositToken).mint(address(delegateCaller), AMOUNT);
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(delegateCaller),
+            tokenOut: TOKEN_OUT,
+            minAmountOut: MIN_AMOUNT_OUT,
+            deadline: DEADLINE,
+            rawParams: abi.encode(
+                DefaultParams({
+                    action: Action.Swap,
+                    pool: POOL,
+                    tokenIndexFrom: TOKEN_INDEX_FROM,
+                    tokenIndexTo: TOKEN_INDEX_TO
+                })
+            )
+        });
+        bytes memory payload = abi.encodeWithSelector(
+            module.delegateBridge.selector,
+            TO,
+            CHAIN_ID,
+            depositToken,
+            AMOUNT,
+            destQuery
+        );
+        vm.expectEmit(synapseBridge);
+        emit TokenDepositAndSwap({
+            to: TO,
+            chainId: CHAIN_ID,
+            token: getBridgeToken(depositToken),
+            amount: AMOUNT,
+            tokenIndexFrom: TOKEN_INDEX_FROM,
+            tokenIndexTo: TOKEN_INDEX_TO,
+            minDy: MIN_AMOUNT_OUT,
+            deadline: DEADLINE
+        });
+        delegateCaller.performDelegateCall(address(module), payload);
+        verifyDepositTokenBalance();
     }
 
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
