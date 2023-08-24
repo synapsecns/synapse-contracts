@@ -8,7 +8,7 @@ import {DefaultRouter} from "./DefaultRouter.sol";
 import {BridgeFailed, ModuleExists, ModuleNotExists, ModuleInvalid, QueryEmpty} from "./libs/Errors.sol";
 import {Action, BridgeToken, DestRequest, LimitedToken, SwapQuery} from "./libs/Structs.sol";
 
-import {ISwapQuoterV1} from "./interfaces/ISwapQuoterV1.sol";
+import {ISwapQuoterV2} from "./interfaces/ISwapQuoterV2.sol";
 import {IBridgeModule} from "./interfaces/IBridgeModule.sol";
 import {IRouterV2} from "./interfaces/IRouterV2.sol";
 
@@ -16,7 +16,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     using EnumerableMap for EnumerableMap.UintToAddressMap;
 
     /// @notice swap quoter
-    ISwapQuoterV1 public immutable swapQuoter;
+    ISwapQuoterV2 public immutable swapQuoter;
 
     /// @notice Enumerable map of all connected bridge modules
     EnumerableMap.UintToAddressMap internal _bridgeModules;
@@ -26,7 +26,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     event ModuleDisconnected(bytes32 indexed moduleId);
 
     constructor(address _swapQuoter) {
-        swapQuoter = ISwapQuoterV1(_swapQuoter);
+        swapQuoter = ISwapQuoterV2(_swapQuoter);
     }
 
     /// @inheritdoc IRouterV2
@@ -133,14 +133,15 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
             // assemble limited token format for quoter call
             // TODO: fix for action mask
-            LimitedToken[] memory bridgeTokensIn = new LimitedToken[](bridgeTokens.length);
+            uint256 amountFound;
+            bool[] memory isConnected = new bool[](bridgeTokens.length);
             for (uint256 j = 0; j < bridgeTokens.length; ++j) {
-                bridgeTokensIn[j] = LimitedToken({actionMask: uint256(Action.Swap), token: bridgeTokens[j].token});
+                LimitedToken memory bridgeTokenIn = LimitedToken({actionMask: uint256(Action.Swap), token: bridgeTokens[j].token});
+                isConnected[j] = swapQuoter.areConnectedTokens(bridgeTokenIn, tokenOut);
+                if (isConnected[j]) amountFound++;
             }
 
             // push to dest tokens if connected to tokenOut
-            // TODO: test bridgeTokens.length == isConnected.length
-            (uint256 amountFound, bool[] memory isConnected) = swapQuoter.findConnectedTokens(bridgeTokensIn, tokenOut);
             unflattenedDestTokens[i] = new BridgeToken[](amountFound);
             destTokensLength += amountFound;
 
