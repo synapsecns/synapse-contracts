@@ -6,7 +6,7 @@ import {EnumerableMap} from "@openzeppelin/contracts-4.5.0/utils/structs/Enumera
 
 import {DefaultRouter} from "./DefaultRouter.sol";
 import {BridgeFailed, ModuleExists, ModuleNotExists, ModuleInvalid, QueryEmpty} from "./libs/Errors.sol";
-import {ActionLib, BridgeToken, DestRequest, LimitedToken, SwapQuery} from "./libs/Structs.sol";
+import {ActionLib, BridgeToken, DestRequest, LimitedToken, Pool, SwapQuery} from "./libs/Structs.sol";
 import {UniversalTokenLib} from "./libs/UniversalToken.sol";
 
 import {ISwapQuoterV2} from "./interfaces/ISwapQuoterV2.sol";
@@ -215,7 +215,30 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     }
 
     /// @inheritdoc IRouterV2
-    function getSupportedTokens() external view returns (address[] memory supportedTokens) {}
+    function getSupportedTokens() external view returns (address[] memory supportedTokens) {
+        Pool[] memory pools = swapQuoter.allPools();
+        address[][] memory unflattenedSupportedTokens = new address[][](pools.length);
+
+        uint256 supportedTokensLength;
+        for (uint256 i = 0; i < pools.length; ++i) {
+            Pool memory pool = pools[i];
+            unflattenedSupportedTokens[i] = new address[](pool.tokens.length);
+            for (uint256 j = 0; j < pool.tokens.length; ++j) {
+                unflattenedSupportedTokens[i][j] = pool.tokens[j].token;
+                supportedTokensLength++;
+            }
+        }
+
+        // flatten into supported tokens
+        supportedTokens = new address[](supportedTokensLength);
+        uint256 k;
+        for (uint256 i = 0; i < unflattenedSupportedTokens.length; ++i) {
+            for (uint256 j = 0; j < unflattenedSupportedTokens[i].length; ++j) {
+                supportedTokens[k] = unflattenedSupportedTokens[i][j];
+                k++;
+            }
+        }
+    }
 
     /// @inheritdoc IRouterV2
     function getDestinationAmountOut(DestRequest[] memory requests, address tokenOut)
