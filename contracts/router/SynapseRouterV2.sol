@@ -132,7 +132,6 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
             BridgeToken[] memory bridgeTokens = IBridgeModule(bridgeModule).getBridgeTokens();
 
             // assemble limited token format for quoter call
-            // TODO: fix for action mask
             uint256 amountFound;
             bool[] memory isConnected = new bool[](bridgeTokens.length);
             for (uint256 j = 0; j < bridgeTokens.length; ++j) {
@@ -197,7 +196,16 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         address tokenIn,
         string[] memory tokenSymbols,
         uint256 amountIn
-    ) external view returns (SwapQuery[] memory originQueries) {}
+    ) external view returns (SwapQuery[] memory originQueries) {
+        originQueries = new SwapQuery[](tokenSymbols.length);
+        for (uint256 i = 0; i < tokenSymbols.length; ++i) {
+            (address tokenOut, uint256 actionMask) = _getTokenAndActionMaskFromSymbol(tokenSymbols[i]);
+
+            // query the quoter
+            LimitedToken memory limitedTokenIn = LimitedToken({actionMask: actionMask, token: tokenIn});
+            originQueries[i] = swapQuoter.getAmountOut(limitedTokenIn, tokenOut, amountIn);
+        }
+    }
 
     /// @notice Checks whether the router adapter was specified in the query.
     /// Query without a router adapter specifies that no action needs to be taken.
