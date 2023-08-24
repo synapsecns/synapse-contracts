@@ -136,7 +136,11 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
             uint256 amountFound;
             bool[] memory isConnected = new bool[](bridgeTokens.length);
             for (uint256 j = 0; j < bridgeTokens.length; ++j) {
-                LimitedToken memory bridgeTokenIn = LimitedToken({actionMask: uint256(Action.Swap), token: bridgeTokens[j].token});
+                uint256 actionMask = IBridgeModule(bridgeModule).tokenToActionMask(bridgeTokens[j].token);
+                LimitedToken memory bridgeTokenIn = LimitedToken({
+                    actionMask: actionMask,
+                    token: bridgeTokens[j].token
+                });
                 isConnected[j] = swapQuoter.areConnectedTokens(bridgeTokenIn, tokenOut);
                 if (isConnected[j]) amountFound++;
             }
@@ -180,10 +184,10 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         destQueries = new SwapQuery[](requests.length);
         for (uint256 i = 0; i < requests.length; ++i) {
             DestRequest memory request = requests[i];
-            address token = _getTokenFromSymbol(request.symbol);
+            (address token, uint256 actionMask) = _getTokenAndActionMaskFromSymbol(request.symbol);
 
             // query the quoter
-            LimitedToken memory tokenIn = LimitedToken({actionMask: uint256(Action.Swap), token: token});
+            LimitedToken memory tokenIn = LimitedToken({actionMask: actionMask, token: token});
             destQueries[i] = swapQuoter.getAmountOut(tokenIn, tokenOut, request.amountIn);
         }
     }
@@ -208,12 +212,19 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
     /// @notice Searches all bridge modules to get the token address from the unique bridge symbol
     /// @param symbol Symbol of the supported bridge token
-    function _getTokenFromSymbol(string memory symbol) internal view returns (address token) {
+    function _getTokenAndActionMaskFromSymbol(string memory symbol)
+        internal
+        view
+        returns (address token, uint256 actionMask)
+    {
         uint256 len = _bridgeModules.length();
         for (uint256 i = 0; i < len; ++i) {
             (, address bridgeModule) = _bridgeModules.at(i);
             token = IBridgeModule(bridgeModule).symbolToToken(symbol);
-            if (token != address(0)) break;
+            if (token != address(0)) {
+                actionMask = IBridgeModule(bridgeModule).tokenToActionMask(token);
+                break;
+            }
         }
     }
 }
