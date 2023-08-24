@@ -6,7 +6,7 @@ import {EnumerableMap} from "@openzeppelin/contracts-4.5.0/utils/structs/Enumera
 
 import {DefaultRouter} from "./DefaultRouter.sol";
 import {BridgeFailed, ModuleExists, ModuleNotExists, ModuleInvalid, QueryEmpty} from "./libs/Errors.sol";
-import {ActionLib, BridgeToken, DestRequest, LimitedToken, SwapQuery} from "./libs/Structs.sol";
+import {Action, ActionLib, BridgeToken, DestRequest, LimitedToken, SwapQuery} from "./libs/Structs.sol";
 
 import {ISwapQuoterV2} from "./interfaces/ISwapQuoterV2.sol";
 import {IBridgeModule} from "./interfaces/IBridgeModule.sol";
@@ -231,7 +231,8 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
             if (token == address(0)) continue;
 
             // account for bridge fees in amountIn
-            uint256 amountIn = _calculateBridgeAmountIn(bridgeModule, token, request.amountIn);
+            bool isSwap = ActionLib.isIncluded(Action.Swap, actionMask);
+            uint256 amountIn = _calculateBridgeAmountIn(bridgeModule, token, request.amountIn, isSwap);
             if (amountIn == 0) continue;
 
             // query the quoter
@@ -301,12 +302,15 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     /// @notice Calculates amount of bridge token in accounting for bridge fees
     /// @param token    Address of the bridging token
     /// @param amount   Amount in before fees
+    /// @param isSwap   Whether the user provided swap details for converting the bridge token
+    ///                 to the final token on this chain
     function _calculateBridgeAmountIn(
         address bridgeModule,
         address token,
-        uint256 amount
+        uint256 amount,
+        bool isSwap
     ) internal view returns (uint256 amount_) {
-        uint256 feeAmount = IBridgeModule(bridgeModule).calculateFeeAmount(token, amount);
+        uint256 feeAmount = IBridgeModule(bridgeModule).calculateFeeAmount(token, amount, isSwap);
         if (feeAmount < amount) amount_ = amount - feeAmount;
     }
 }
