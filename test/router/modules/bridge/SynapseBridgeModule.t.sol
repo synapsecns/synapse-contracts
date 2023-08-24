@@ -20,6 +20,7 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
     address public constant TO = address(10);
     uint256 public constant CHAIN_ID = 20;
     uint256 public constant AMOUNT = 1 ether;
+    uint256 public constant MSG_VALUE = 2 ether;
     // Fake values for SwapQuery
     address public constant TOKEN_OUT = address(30);
     uint256 public constant MIN_AMOUNT_OUT = 40;
@@ -36,6 +37,8 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
     address public redeemToken;
     address public unknownToken;
 
+    bool public attachEther;
+
     function setUp() public virtual override {
         super.setUp();
         delegateCaller = new DelegateCaller();
@@ -48,6 +51,7 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
         unknownToken = address(new MockERC20("UT", 18));
         vm.label(depositToken, "DT");
         vm.label(redeemToken, "RT");
+        deal(address(this), MSG_VALUE);
     }
 
     function testConstructor() public {
@@ -83,6 +87,14 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
         assertEq(MockERC20(redeemToken).balanceOf(address(synapseBridge)), 0);
     }
 
+    function performDelegateCall(bytes memory payload) public {
+        if (attachEther) {
+            delegateCaller.performDelegateCall{value: MSG_VALUE}(address(module), payload);
+        } else {
+            delegateCaller.performDelegateCall(address(module), payload);
+        }
+    }
+
     // Flow for all delegateBridge tests:
     // - Tokens are minted to `delegateCaller` contract, which is mock for SynapseRouterV2
     // - `delegateCaller` issues a delegate call to `module.delegateBridge()` which should initiate the bridging
@@ -102,7 +114,7 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
         );
         vm.expectEmit(synapseBridge);
         emit TokenRedeem(TO, CHAIN_ID, getBridgeToken(redeemToken), AMOUNT);
-        delegateCaller.performDelegateCall(address(module), payload);
+        performDelegateCall(payload);
         verifyRedeemTokenBalance();
     }
 
@@ -142,7 +154,7 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
             minDy: MIN_AMOUNT_OUT,
             deadline: DEADLINE
         });
-        delegateCaller.performDelegateCall(address(module), payload);
+        performDelegateCall(payload);
         verifyRedeemTokenBalance();
     }
 
@@ -181,7 +193,7 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
             swapMinAmount: MIN_AMOUNT_OUT,
             swapDeadline: DEADLINE
         });
-        delegateCaller.performDelegateCall(address(module), payload);
+        performDelegateCall(payload);
         verifyRedeemTokenBalance();
     }
 
@@ -208,7 +220,7 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
         );
         vm.expectEmit(synapseBridge);
         emit TokenRedeem(TO, CHAIN_ID, getBridgeToken(redeemToken), AMOUNT);
-        delegateCaller.performDelegateCall(address(module), payload);
+        performDelegateCall(payload);
         verifyRedeemTokenBalance();
     }
 
@@ -226,7 +238,7 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
         );
         vm.expectEmit(synapseBridge);
         emit TokenDeposit(TO, CHAIN_ID, getBridgeToken(depositToken), AMOUNT);
-        delegateCaller.performDelegateCall(address(module), payload);
+        performDelegateCall(payload);
         verifyDepositTokenBalance();
     }
 
@@ -266,8 +278,40 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
             minDy: MIN_AMOUNT_OUT,
             deadline: DEADLINE
         });
-        delegateCaller.performDelegateCall(address(module), payload);
+        performDelegateCall(payload);
         verifyDepositTokenBalance();
+    }
+
+    // ═══════════════════════════════════ TESTS: BRIDGING (WITH ETHER ATTACHED) ═══════════════════════════════════════
+
+    function testDelegateBridgeMsgValueRedeem() public {
+        attachEther = true;
+        testDelegateBridgeRedeem();
+    }
+
+    function testDelegateBridgeMsgValueRedeemAndSwap() public {
+        attachEther = true;
+        testDelegateBridgeRedeemAndSwap();
+    }
+
+    function testDelegateBridgeMsgValueRedeemAndRemove() public {
+        attachEther = true;
+        testDelegateBridgeRedeemAndRemove();
+    }
+
+    function testDelegateBridgeMsgValueRedeemHandleEth() public {
+        attachEther = true;
+        testDelegateBridgeRedeemHandleEth();
+    }
+
+    function testDelegateBridgeMsgValueDeposit() public {
+        attachEther = true;
+        testDelegateBridgeDeposit();
+    }
+
+    function testDelegateBridgeMsgValueDepositAndSwap() public {
+        attachEther = true;
+        testDelegateBridgeDepositAndSwap();
     }
 
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
