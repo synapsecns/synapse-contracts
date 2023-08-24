@@ -54,9 +54,13 @@ contract SynapseBridgeModuleWrappersTest is SynapseBridgeModuleTest {
         addTokens();
         // Revert happens in LocalBridgeConfig.sol
         vm.expectRevert("Token not supported");
-        module.calculateFeeAmount(depositWrapperToken, 0);
+        module.calculateFeeAmount(depositWrapperToken, 0, false);
         vm.expectRevert("Token not supported");
-        module.calculateFeeAmount(redeemWrapperToken, 0);
+        module.calculateFeeAmount(depositWrapperToken, 0, true);
+        vm.expectRevert("Token not supported");
+        module.calculateFeeAmount(redeemWrapperToken, 0, false);
+        vm.expectRevert("Token not supported");
+        module.calculateFeeAmount(redeemWrapperToken, 0, true);
     }
 
     function testSymbolToTokenReturnsZeroForWrapperSymbol() public {

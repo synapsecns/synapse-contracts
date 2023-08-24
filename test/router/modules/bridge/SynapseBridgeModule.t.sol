@@ -479,19 +479,30 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
     }
 
     // uint128 to prevent multiplication overflow in tests
-    function testCalculateFeeAmount(uint128 amount) public {
+    function testCalculateFeeAmountWhenSwap(uint128 amount) public {
         addTokens();
         uint256 expectedDepositTokenFee = localBridgeConfig.calculateBridgeFee(depositToken, amount);
         uint256 expectedRedeemTokenFee = localBridgeConfig.calculateBridgeFee(redeemToken, amount);
-        assertEq(module.calculateFeeAmount(depositToken, amount), expectedDepositTokenFee);
-        assertEq(module.calculateFeeAmount(redeemToken, amount), expectedRedeemTokenFee);
+        assertEq(module.calculateFeeAmount(depositToken, amount, true), expectedDepositTokenFee);
+        assertEq(module.calculateFeeAmount(redeemToken, amount, true), expectedRedeemTokenFee);
+    }
+
+    // uint128 to prevent multiplication overflow in tests
+    function testCalculateFeeAmountWhenNoSwap(uint128 amount) public {
+        addTokens();
+        uint256 expectedDepositTokenFee = localBridgeConfig.calculateBridgeFee(depositToken, amount);
+        uint256 expectedRedeemTokenFee = localBridgeConfig.calculateBridgeFee(redeemToken, amount);
+        assertEq(module.calculateFeeAmount(depositToken, amount, false), expectedDepositTokenFee);
+        assertEq(module.calculateFeeAmount(redeemToken, amount, false), expectedRedeemTokenFee);
     }
 
     function testCalculateFeeAmountRevertsForUnsupportedToken() public {
         addTokens();
         // Revert happens in LocalBridgeConfig.sol
         vm.expectRevert("Token not supported");
-        module.calculateFeeAmount(unknownToken, 0);
+        module.calculateFeeAmount(unknownToken, 0, false);
+        vm.expectRevert("Token not supported");
+        module.calculateFeeAmount(unknownToken, 0, true);
     }
 
     function testGetBridgeTokens() public {
