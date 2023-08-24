@@ -12,6 +12,21 @@ import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 contract SwapQuoterV2 is PoolQuoterV1, Ownable, ISwapQuoterV2 {
     using EnumerableSet for EnumerableSet.AddressSet;
 
+    /// @notice Error when trying to add a pool that has been added already.
+    error SwapQuoterV2__DuplicatedPool(address pool);
+
+    /// @notice Error when trying to remove a pool that has not been added.
+    error SwapQuoterV2__UnknownPool(address pool);
+
+    /// @notice Emitted when a pool is added to SwapQuoterV2.
+    event PoolAdded(address bridgeToken, PoolType poolType, address pool);
+
+    /// @notice Emitted when a pool is removed from SwapQuoterV2.
+    event PoolRemoved(address bridgeToken, PoolType poolType, address pool);
+
+    /// @notice Emitted when the SynapseRouter contract is updated.
+    event SynapseRouterUpdated(address synapseRouter);
+
     /// @notice Defines the type of supported liquidity pool.
     /// - Default: pool that implements the IDefaultPool interface, which is either the StableSwap pool
     /// or a wrapper contract around the non-standard pool that conforms to the interface.
@@ -44,6 +59,8 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable, ISwapQuoterV2 {
         address pool;
     }
 
+    // ══════════════════════════════════════════════════ STORAGE ══════════════════════════════════════════════════════
+
     /// @notice Address of the SynapseRouter contract, which is used as "Router Adapter" for doing
     /// swaps through Default Pools (or handling ETH).
     address public synapseRouter;
@@ -66,7 +83,7 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable, ISwapQuoterV2 {
         address weth_,
         address owner_
     ) PoolQuoterV1(defaultPoolCalc_, weth_) {
-        synapseRouter = synapseRouter_;
+        setSynapseRouter(synapseRouter_);
         transferOwnership(owner_);
     }
 
@@ -107,8 +124,9 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable, ISwapQuoterV2 {
     /// swaps through Default Pools (or handling ETH).
     /// Note: this will not affect the old SynapseRouter contract which still uses this Quoter, as the old SynapseRouter
     /// could handle the requests with the new SynapseRouter as external "Router Adapter".
-    function setSynapseRouter(address synapseRouter_) external onlyOwner {
+    function setSynapseRouter(address synapseRouter_) public onlyOwner {
         synapseRouter = synapseRouter_;
+        emit SynapseRouterUpdated(synapseRouter_);
     }
 
     // ══════════════════════════════════════════════ QUOTER V2 VIEWS ══════════════════════════════════════════════════
@@ -267,7 +285,8 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable, ISwapQuoterV2 {
             _bridgeTokens.add(bridgeToken);
             _bridgePools[bridgeToken] = TypedPool({poolType: pool.poolType, pool: pool.pool});
         }
-        require(wasAdded, "Pool has been added before");
+        if (!wasAdded) revert SwapQuoterV2__DuplicatedPool(pool.pool);
+        emit PoolAdded(pool.bridgeToken, pool.poolType, pool.pool);
     }
 
     /// @dev Removes a pool from SwapQuoterV2.
@@ -291,7 +310,8 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable, ISwapQuoterV2 {
             wasRemoved = _bridgeTokens.remove(bridgeToken) && _bridgePools[bridgeToken].pool == pool.pool;
             delete _bridgePools[pool.bridgeToken];
         }
-        require(wasRemoved, "Unknown pool");
+        if (!wasRemoved) revert SwapQuoterV2__UnknownPool(pool.pool);
+        emit PoolRemoved(pool.bridgeToken, pool.poolType, pool.pool);
     }
 
     // ═════════════════════════════════════════ INTERNAL: POOL INSPECTION ═════════════════════════════════════════════
