@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {MockERC20, SynapseBridgeModuleTest} from "./SynapseBridgeModule.t.sol";
+import {SynapseBridgeModuleTest} from "./SynapseBridgeModule.t.sol";
+import {MockWrapperToken} from "../../mocks/MockWrapperToken.sol";
 
 /// @notice Tests for SynapseBridge tokens that require a wrapper token
 /// e.g. GMX on Avalanche
@@ -11,8 +12,10 @@ contract SynapseBridgeModuleWrappersTest is SynapseBridgeModuleTest {
 
     function setUp() public virtual override {
         super.setUp();
-        depositWrapperToken = address(new MockERC20("DWT", 18));
-        redeemWrapperToken = address(new MockERC20("RWT", 18));
+        depositWrapperToken = address(new MockWrapperToken(depositToken));
+        redeemWrapperToken = address(new MockWrapperToken(redeemToken));
+        vm.label(depositWrapperToken, "DWT");
+        vm.label(redeemWrapperToken, "RWT");
     }
 
     function addTokens() public virtual override {
@@ -26,6 +29,13 @@ contract SynapseBridgeModuleWrappersTest is SynapseBridgeModuleTest {
             DEFAULT_MIN_FEE,
             DEFAULT_MAX_FEE
         );
+    }
+
+    // Wrapper test should override this function
+    function getBridgeToken(address token) public view virtual override returns (address) {
+        if (token == depositToken) return depositWrapperToken;
+        if (token == redeemToken) return redeemWrapperToken;
+        revert("Token not supported");
     }
 
     // The tests are inherited from SynapseBridgeModuleTest, plus the ones below
