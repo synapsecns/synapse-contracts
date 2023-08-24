@@ -36,20 +36,26 @@ interface IBridgeModule {
         bool isSwap
     ) external view returns (uint256 fee);
 
-    /// @notice Returns the list of all supported bridge tokens and their symbols.
-    /// @return bridgeTokens Supported bridge tokens and their symbols
+    /// @notice Returns the list of all supported bridge tokens and their bridge symbols.
+    /// - Bridge symbol is consistent across all chains for a given token and their bridge.
+    /// - Bridge symbol doesn't have to be the same as the token symbol on this chain.
+    /// @return bridgeTokens Supported bridge tokens and their bridge symbols
     function getBridgeTokens() external view returns (BridgeToken[] memory bridgeTokens);
 
-    /// @notice Returns the address of the bridge token for a given symbol.
+    /// @notice Returns the address of the bridge token for a given bridge symbol.
+    /// - Bridge symbol is consistent across all chains for a given token and their bridge.
+    /// - Bridge symbol doesn't have to be the same as the token symbol on this chain.
     /// @dev Will return address(0) if the token is not supported.
-    /// @param symbol       Symbol of the supported bridge token
+    /// @param symbol       Symbol of the supported bridge token used by the token's bridge
     /// @return token       Address of the bridge token
     function symbolToToken(string memory symbol) external view returns (address token);
 
-    /// @notice Returns the symbol of a given bridge token.
+    /// @notice Returns the bridge symbol of a given bridge token.
+    /// - Bridge symbol is consistent across all chains for a given token and their bridge.
+    /// - Bridge symbol doesn't have to be the same as the token symbol on this chain.
     /// @dev Will return empty string if the token is not supported.
     /// @param token        Address of the bridge token
-    /// @return symbol      Symbol of the supported bridge token
+    /// @return symbol      Symbol of the supported bridge token used by the token's bridge
     function tokenToSymbol(address token) external view returns (string memory symbol);
 
     /// @notice Returns the action mask associated with the given bridge token
