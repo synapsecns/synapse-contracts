@@ -206,12 +206,19 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     ) external view returns (SwapQuery[] memory originQueries) {
         originQueries = new SwapQuery[](tokenSymbols.length);
         for (uint256 i = 0; i < tokenSymbols.length; ++i) {
-            (address tokenOut, , ) = _getTokenAndActionMaskFromSymbol(tokenSymbols[i]);
+            (address tokenOut, , address bridgeModule) = _getTokenAndActionMaskFromSymbol(tokenSymbols[i]);
             if (tokenOut == address(0)) continue;
 
             // query the quoter
             LimitedToken memory _tokenIn = LimitedToken({actionMask: ActionLib.allActions(), token: tokenIn});
-            originQueries[i] = swapQuoter.getAmountOut(_tokenIn, tokenOut, amountIn);
+            SwapQuery memory query = swapQuoter.getAmountOut(_tokenIn, tokenOut, amountIn);
+
+            // check max amount can bridge
+            uint256 maxAmountOut = IBridgeModule(bridgeModule).getMaxBridgedAmount(tokenOut);
+            if (query.minAmountOut > maxAmountOut) continue;
+
+            // set in return array
+            originQueries[i] = query;
         }
     }
 
