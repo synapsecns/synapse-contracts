@@ -65,6 +65,13 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
         assertEq(module.calculateFeeAmount(redeemToken, amount), expectedRedeemTokenFee);
     }
 
+    function testCalculateFeeAmountRevertsForUnsupportedToken() public {
+        addTokens();
+        // Revert happens in LocalBridgeConfig.sol
+        vm.expectRevert("Token not supported");
+        module.calculateFeeAmount(unknownToken, 0);
+    }
+
     function testGetBridgeTokens() public {
         addTokens();
         BridgeToken[] memory bridgeTokens = module.getBridgeTokens();

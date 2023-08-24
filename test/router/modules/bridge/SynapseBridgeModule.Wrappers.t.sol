@@ -40,6 +40,15 @@ contract SynapseBridgeModuleWrappersTest is SynapseBridgeModuleTest {
         assertEq(module.getMaxBridgedAmount(redeemWrapperToken), 0);
     }
 
+    function testCalculateFeeAmountRevertsForWrapperToken() public {
+        addTokens();
+        // Revert happens in LocalBridgeConfig.sol
+        vm.expectRevert("Token not supported");
+        module.calculateFeeAmount(depositWrapperToken, 0);
+        vm.expectRevert("Token not supported");
+        module.calculateFeeAmount(redeemWrapperToken, 0);
+    }
+
     function testSymbolToTokenReturnsZeroForWrapperSymbol() public {
         addTokens();
         assertEq(module.symbolToToken("DWT"), address(0));
