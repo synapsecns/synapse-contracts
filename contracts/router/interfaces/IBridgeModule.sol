@@ -27,8 +27,14 @@ interface IBridgeModule {
     /// @notice Calculates the fee amount for bridging a token to this chain.
     /// @param token        Address of the bridging token
     /// @param amount       Amount of tokens to be bridged
+    /// @param isSwap       Whether the user provided swap details for converting the bridge token
+    ///                     to the final token on this chain
     /// @return fee         Fee amount
-    function calculateFeeAmount(address token, uint256 amount) external view returns (uint256 fee);
+    function calculateFeeAmount(
+        address token,
+        uint256 amount,
+        bool isSwap
+    ) external view returns (uint256 fee);
 
     /// @notice Returns the list of all supported bridge tokens and their symbols.
     /// @return bridgeTokens Supported bridge tokens and their symbols
