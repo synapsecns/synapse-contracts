@@ -4,13 +4,18 @@ pragma solidity 0.8.17;
 import {OnlyDelegateCall} from "../pool/OnlyDelegateCall.sol";
 import {IBridgeModule} from "../../interfaces/IBridgeModule.sol";
 import {IPausable} from "../../interfaces/IPausable.sol";
-import {Action, BridgeToken, SwapQuery} from "../../libs/Structs.sol";
+import {Action, BridgeToken, DefaultParams, SwapQuery} from "../../libs/Structs.sol";
+import {UniversalTokenLib} from "../../libs/UniversalToken.sol";
 
+import {RequestLib} from "../../../cctp/libs/Request.sol";
 import {ISynapseCCTP} from "../../../cctp/interfaces/ISynapseCCTP.sol";
 import {ISynapseCCTPFees} from "../../../cctp/interfaces/ISynapseCCTPFees.sol";
 import {ITokenMinter} from "../../../cctp/interfaces/ITokenMinter.sol";
 
 contract SynapseCCTPModule is OnlyDelegateCall, IBridgeModule {
+    using UniversalTokenLib for address;
+
+    error SynapseCCTPModule__UnsupportedAction(Action action);
     error SynapseCCTPModule__UnsupportedToken(address token);
 
     /// These need to be immutable in order to be accessed via delegatecall
@@ -29,6 +34,19 @@ contract SynapseCCTPModule is OnlyDelegateCall, IBridgeModule {
         SwapQuery memory destQuery
     ) external payable {
         assertDelegateCall();
+        // Revert if the token is not supported
+        if (!_isSupported(token)) revert SynapseCCTPModule__UnsupportedToken(token);
+        (uint32 requestVersion, bytes memory swapParams) = _deriveCCTPSwapParams(destQuery);
+        // Approve SynapseCCTP to spend the token
+        token.universalApproveInfinity({spender: synapseCCTP, amountToSpend: amount});
+        ISynapseCCTP(synapseCCTP).sendCircleToken({
+            recipient: to,
+            chainId: chainId,
+            burnToken: token,
+            amount: amount,
+            requestVersion: requestVersion,
+            swapParams: swapParams
+        });
     }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
@@ -85,5 +103,28 @@ contract SynapseCCTPModule is OnlyDelegateCall, IBridgeModule {
     function _isSupported(address token) internal view returns (bool) {
         // Token is supported if the symbol is not empty
         return bytes(ISynapseCCTPFees(synapseCCTP).tokenToSymbol(token)).length > 0;
+    }
+
+    /// @dev Derives the `swapParams` for following interaction with SynapseCCTP contract.
+    function _deriveCCTPSwapParams(SwapQuery memory destQuery)
+        internal
+        pure
+        returns (uint32 requestVersion, bytes memory swapParams)
+    {
+        // Check if any action was specified in `destQuery`
+        if (destQuery.routerAdapter == address(0)) {
+            // No action was specified, so no swap is required
+            return (RequestLib.REQUEST_BASE, "");
+        }
+        DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
+        // Actions other than swap are not supported for Circle tokens on the destination chain
+        if (params.action != Action.Swap) revert SynapseCCTPModule__UnsupportedAction(params.action);
+        requestVersion = RequestLib.REQUEST_SWAP;
+        swapParams = RequestLib.formatSwapParams({
+            tokenIndexFrom: params.tokenIndexFrom,
+            tokenIndexTo: params.tokenIndexTo,
+            deadline: destQuery.deadline,
+            minAmountOut: destQuery.minAmountOut
+        });
     }
 }
