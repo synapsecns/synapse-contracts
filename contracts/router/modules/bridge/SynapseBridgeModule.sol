@@ -71,7 +71,13 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
     }
 
     /// @inheritdoc IBridgeModule
-    function calculateFeeAmount(address token, uint256 amount) external view returns (uint256 fee) {
+    function calculateFeeAmount(
+        address token,
+        uint256 amount,
+        bool
+    ) external view returns (uint256 fee) {
+        // We are ignoring the `isSwap` parameter because SynapseBridge doesn't have a
+        // separate fee tier for swaps yet.
         return localBridgeConfig.calculateBridgeFee(token, amount);
     }
 
