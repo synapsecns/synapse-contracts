@@ -169,7 +169,49 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     }
 
     /// @inheritdoc IRouterV2
-    function getOriginBridgeTokens(address tokenIn) external view returns (BridgeToken[] memory originTokens) {}
+    function getOriginBridgeTokens(address tokenIn) external view returns (BridgeToken[] memory originTokens) {
+        uint256 len = _bridgeModules.length();
+        BridgeToken[][] memory unflattenedOriginTokens = new BridgeToken[][](len);
+        uint256 originTokensLength;
+
+        // assemble limited token format for quoter calls
+        LimitedToken memory _tokenIn = LimitedToken({actionMask: ActionLib.allActions(), token: tokenIn});
+
+        for (uint256 i = 0; i < len; ++i) {
+            (, address bridgeModule) = _bridgeModules.at(i);
+            BridgeToken[] memory bridgeTokens = IBridgeModule(bridgeModule).getBridgeTokens();
+
+            // query quoter if bridge token connected to token in
+            uint256 amountFound;
+            bool[] memory isConnected = new bool[](bridgeTokens.length);
+            for (uint256 j = 0; j < bridgeTokens.length; ++j) {
+                isConnected[j] = swapQuoter.areConnectedTokens(_tokenIn, bridgeTokens[j].token);
+                if (isConnected[j]) amountFound++;
+            }
+
+            // push to origin tokens if connected to tokenIn
+            unflattenedOriginTokens[i] = new BridgeToken[](amountFound);
+            originTokensLength += amountFound;
+
+            uint256 k;
+            for (uint256 j = 0; j < bridgeTokens.length; ++j) {
+                if (isConnected[j]) {
+                    unflattenedOriginTokens[i][k] = bridgeTokens[j];
+                    k++;
+                }
+            }
+        }
+
+        // flatten into origin tokens
+        originTokens = new BridgeToken[](originTokensLength);
+        uint256 m;
+        for (uint256 i = 0; i < unflattenedOriginTokens.length; ++i) {
+            for (uint256 j = 0; j < unflattenedOriginTokens[i].length; ++j) {
+                originTokens[m] = unflattenedOriginTokens[i][j];
+                m++;
+            }
+        }
+    }
 
     /// @inheritdoc IRouterV2
     function getSupportedTokens() external view returns (address[] memory supportedTokens) {}
