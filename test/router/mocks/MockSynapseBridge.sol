@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {ISynapseBridge} from "../../../contracts/router/interfaces/ISynapseBridge.sol";
+import {MockERC20} from "./MockERC20.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
@@ -75,6 +76,7 @@ contract MockSynapseBridge is ISynapseBridge {
         uint256 amount
     ) external {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        MockERC20(token).burn(address(this), amount);
         emit TokenRedeem(to, chainId, token, amount);
     }
 
@@ -85,6 +87,7 @@ contract MockSynapseBridge is ISynapseBridge {
         uint256 amount
     ) external {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        MockERC20(token).burn(address(this), amount);
         emit TokenRedeemV2(to, chainId, token, amount);
     }
 
@@ -99,6 +102,7 @@ contract MockSynapseBridge is ISynapseBridge {
         uint256 deadline
     ) external {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        MockERC20(token).burn(address(this), amount);
         emit TokenRedeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
     }
 
@@ -112,6 +116,7 @@ contract MockSynapseBridge is ISynapseBridge {
         uint256 liqDeadline
     ) external {
         IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
+        MockERC20(token).burn(address(this), amount);
         emit TokenRedeemAndRemove(to, chainId, token, amount, liqTokenIndex, liqMinAmount, liqDeadline);
     }
 }
