@@ -6,8 +6,11 @@ import {IBridgeModule} from "../../interfaces/IBridgeModule.sol";
 import {ILocalBridgeConfig} from "../../interfaces/ILocalBridgeConfig.sol";
 import {ISynapseBridge} from "../../interfaces/ISynapseBridge.sol";
 import {Action, BridgeToken, DefaultParams, SwapQuery} from "../../libs/Structs.sol";
+import {UniversalTokenLib} from "../../libs/UniversalToken.sol";
 
 contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
+    using UniversalTokenLib for address;
+
     error SynapseBridgeModule__UnsupportedDepositAction(Action action);
     error SynapseBridgeModule__UnsupportedRedeemAction(Action action);
     error SynapseBridgeModule__UnsupportedToken(address token);
@@ -33,6 +36,8 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
         (ILocalBridgeConfig.TokenType tokenType, address bridgeToken) = localBridgeConfig.config(token);
         // Use config.bridgeToken as the token address for the bridging purposes
         if (bridgeToken == address(0)) revert SynapseBridgeModule__UnsupportedToken(token);
+        // Approve the bridge to spend the token
+        bridgeToken.universalApproveInfinity({spender: address(synapseBridge), amountToSpend: amount});
         if (destQuery.routerAdapter == address(0)) {
             // If no Router Adapter is set, no action is required on destination chain, use `deposit()` or `redeem()`
             (tokenType == ILocalBridgeConfig.TokenType.Redeem ? synapseBridge.redeem : synapseBridge.deposit)(
