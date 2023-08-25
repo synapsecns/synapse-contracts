@@ -368,6 +368,37 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
         delegateCaller.performDelegateCall(address(module), payload);
     }
 
+    function testDelegateBridgeRevertsWhenRedeemSwapEqualIndexes() public {
+        addTokens();
+        MockERC20(redeemToken).mint(address(delegateCaller), AMOUNT);
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(delegateCaller),
+            tokenOut: TOKEN_OUT,
+            minAmountOut: MIN_AMOUNT_OUT,
+            deadline: DEADLINE,
+            rawParams: abi.encode(
+                DefaultParams({
+                    action: Action.Swap,
+                    pool: POOL,
+                    tokenIndexFrom: TOKEN_INDEX_FROM,
+                    tokenIndexTo: TOKEN_INDEX_FROM
+                })
+            )
+        });
+        bytes memory payload = abi.encodeWithSelector(
+            module.delegateBridge.selector,
+            TO,
+            CHAIN_ID,
+            redeemToken,
+            AMOUNT,
+            destQuery
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(SynapseBridgeModule.SynapseBridgeModule__EqualSwapIndexes.selector, TOKEN_INDEX_FROM)
+        );
+        delegateCaller.performDelegateCall(address(module), payload);
+    }
+
     function testDelegateBridgeRevertsWhenDepositRemoveLiquidity() public {
         addTokens();
         MockERC20(depositToken).mint(address(delegateCaller), AMOUNT);
@@ -461,6 +492,37 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
                 SynapseBridgeModule.SynapseBridgeModule__UnsupportedDepositAction.selector,
                 Action.HandleEth
             )
+        );
+        delegateCaller.performDelegateCall(address(module), payload);
+    }
+
+    function testDelegateBridgeRevertsWhenDepositSwapEqualIndexes() public {
+        addTokens();
+        MockERC20(depositToken).mint(address(delegateCaller), AMOUNT);
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(delegateCaller),
+            tokenOut: TOKEN_OUT,
+            minAmountOut: MIN_AMOUNT_OUT,
+            deadline: DEADLINE,
+            rawParams: abi.encode(
+                DefaultParams({
+                    action: Action.Swap,
+                    pool: POOL,
+                    tokenIndexFrom: TOKEN_INDEX_FROM,
+                    tokenIndexTo: TOKEN_INDEX_FROM
+                })
+            )
+        });
+        bytes memory payload = abi.encodeWithSelector(
+            module.delegateBridge.selector,
+            TO,
+            CHAIN_ID,
+            depositToken,
+            AMOUNT,
+            destQuery
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(SynapseBridgeModule.SynapseBridgeModule__EqualSwapIndexes.selector, TOKEN_INDEX_FROM)
         );
         delegateCaller.performDelegateCall(address(module), payload);
     }

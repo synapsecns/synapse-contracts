@@ -11,6 +11,7 @@ import {UniversalTokenLib} from "../../libs/UniversalToken.sol";
 contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
     using UniversalTokenLib for address;
 
+    error SynapseBridgeModule__EqualSwapIndexes(uint8 index);
     error SynapseBridgeModule__UnsupportedDepositAction(Action action);
     error SynapseBridgeModule__UnsupportedRedeemAction(Action action);
     error SynapseBridgeModule__UnsupportedToken(address token);
