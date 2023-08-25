@@ -281,6 +281,13 @@ contract SynapseCCTPModuleTest is BaseCCTPTest {
         assertEq(module.getMaxBridgedAmount(token), MAX_BURN_AMOUNT);
     }
 
+    function testGetMaxBridgedAmountReturnsZeroWhenSendingPaused() public {
+        address cctpOwner = synapseCCTP.owner();
+        vm.prank(cctpOwner);
+        synapseCCTP.pauseSending();
+        assertEq(module.getMaxBridgedAmount(token), 0);
+    }
+
     function testGetMaxBridgedAmountReturnsZeroForUnsupportedToken() public {
         assertEq(module.getMaxBridgedAmount(unknownToken), 0);
     }
