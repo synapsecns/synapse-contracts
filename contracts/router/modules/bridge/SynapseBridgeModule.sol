@@ -145,6 +145,10 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
         // - mintAndSwap(): Action.Swap is taken
         // Therefore, the only available action is Swap
         if (params.action == Action.Swap) {
+            // Don't allow having the same token index for `tokenIndexFrom` and `tokenIndexTo`
+            if (params.tokenIndexFrom == params.tokenIndexTo) {
+                revert SynapseBridgeModule__EqualSwapIndexes(params.tokenIndexFrom);
+            }
             // Give instructions for swap on destination chain => `depositAndSwap()`
             synapseBridge.depositAndSwap({
                 to: to,
@@ -182,6 +186,10 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
         // Also, if WETH is withdrawn, it gets unwrapped to ETH by the bridge.
         // Therefore, the available actions are Swap, RemoveLiquidity and HandleEth
         if (params.action == Action.Swap) {
+            // Don't allow having the same token index for `tokenIndexFrom` and `tokenIndexTo`
+            if (params.tokenIndexFrom == params.tokenIndexTo) {
+                revert SynapseBridgeModule__EqualSwapIndexes(params.tokenIndexFrom);
+            }
             // Give instructions for swap on destination chain => `redeemAndSwap()`
             synapseBridge.redeemAndSwap({
                 to: to,
