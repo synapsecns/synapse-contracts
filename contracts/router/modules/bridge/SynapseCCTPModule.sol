@@ -120,6 +120,10 @@ contract SynapseCCTPModule is OnlyDelegateCall, IBridgeModule {
         DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
         // Actions other than swap are not supported for Circle tokens on the destination chain
         if (params.action != Action.Swap) revert SynapseCCTPModule__UnsupportedAction(params.action);
+        // Don't allow having the same token index for `tokenIndexFrom` and `tokenIndexTo`
+        if (params.tokenIndexFrom == params.tokenIndexTo) {
+            revert SynapseCCTPModule__EqualSwapIndexes(params.tokenIndexFrom);
+        }
         requestVersion = RequestLib.REQUEST_SWAP;
         swapParams = RequestLib.formatSwapParams({
             tokenIndexFrom: params.tokenIndexFrom,
