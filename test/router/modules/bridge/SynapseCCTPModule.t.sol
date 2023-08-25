@@ -111,7 +111,22 @@ contract SynapseCCTPModuleTest is BaseCCTPTest {
                 )
             });
         }
-        payload = abi.encodeWithSelector(module.delegateBridge.selector, TO, CHAINID_AVAX, token, AMOUNT, destQuery);
+        payload = getModulePayload({bridgeToken: token, destQuery: destQuery});
+    }
+
+    function getModulePayload(address bridgeToken, SwapQuery memory destQuery)
+        public
+        view
+        returns (bytes memory payload)
+    {
+        payload = abi.encodeWithSelector(
+            module.delegateBridge.selector,
+            TO,
+            CHAINID_AVAX,
+            bridgeToken,
+            AMOUNT,
+            destQuery
+        );
     }
 
     function expectSynapseCCTPEvent(bool isBaseRequest) public {
@@ -182,6 +197,82 @@ contract SynapseCCTPModuleTest is BaseCCTPTest {
     function testDelegateBridgeSwapRequestWithEther() public {
         attachEther = true;
         testDelegateBridgeSwapRequest();
+    }
+
+    // ═══════════════════════════════════ TESTS: BRIDGING WITH INVALID REQUESTS ═══════════════════════════════════════
+
+    function testDelegateBridgeRevertsWhenTokenNotSupported() public {
+        MockERC20(unknownToken).mint(address(delegateCaller), AMOUNT);
+        SwapQuery memory emptyQuery;
+        bytes memory payload = getModulePayload({bridgeToken: unknownToken, destQuery: emptyQuery});
+        vm.expectRevert(
+            abi.encodeWithSelector(SynapseCCTPModule.SynapseCCTPModule__UnsupportedToken.selector, unknownToken)
+        );
+        performDelegateCall(payload);
+    }
+
+    function testDelegateBridgeRevertsWhenAddLiquidity() public {
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(delegateCaller),
+            tokenOut: TOKEN_OUT,
+            minAmountOut: MIN_AMOUNT_OUT,
+            deadline: DEADLINE,
+            rawParams: abi.encode(
+                DefaultParams({
+                    action: Action.AddLiquidity,
+                    pool: POOL,
+                    tokenIndexFrom: TOKEN_INDEX_FROM,
+                    tokenIndexTo: 0xFF
+                })
+            )
+        });
+        bytes memory payload = getModulePayload({bridgeToken: token, destQuery: destQuery});
+        vm.expectRevert(
+            abi.encodeWithSelector(SynapseCCTPModule.SynapseCCTPModule__UnsupportedAction.selector, Action.AddLiquidity)
+        );
+        performDelegateCall(payload);
+    }
+
+    function testDelegateBridgeRevertsWhenRemoveLiquidity() public {
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(delegateCaller),
+            tokenOut: TOKEN_OUT,
+            minAmountOut: MIN_AMOUNT_OUT,
+            deadline: DEADLINE,
+            rawParams: abi.encode(
+                DefaultParams({
+                    action: Action.RemoveLiquidity,
+                    pool: POOL,
+                    tokenIndexFrom: 0xFF,
+                    tokenIndexTo: TOKEN_INDEX_TO
+                })
+            )
+        });
+        bytes memory payload = getModulePayload({bridgeToken: token, destQuery: destQuery});
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SynapseCCTPModule.SynapseCCTPModule__UnsupportedAction.selector,
+                Action.RemoveLiquidity
+            )
+        );
+        performDelegateCall(payload);
+    }
+
+    function testDelegateBridgeRevertsWhenHandleEth() public {
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(delegateCaller),
+            tokenOut: TOKEN_OUT,
+            minAmountOut: MIN_AMOUNT_OUT,
+            deadline: DEADLINE,
+            rawParams: abi.encode(
+                DefaultParams({action: Action.HandleEth, pool: address(0), tokenIndexFrom: 0xFF, tokenIndexTo: 0xFF})
+            )
+        });
+        bytes memory payload = getModulePayload({bridgeToken: token, destQuery: destQuery});
+        vm.expectRevert(
+            abi.encodeWithSelector(SynapseCCTPModule.SynapseCCTPModule__UnsupportedAction.selector, Action.HandleEth)
+        );
+        performDelegateCall(payload);
     }
 
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
