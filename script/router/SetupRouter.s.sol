@@ -256,34 +256,63 @@ contract SetupRouterScript is DeployScript {
     function _setupQuoter(string memory config) internal {
         address[] memory pools = config.readAddressArray(".pools");
         if (pools.length == 1 && pools[0] == address(0)) {
-            console.log("No pools on %s", chain);
-        } else {
-            Pool[] memory curPools = quoter.allPools();
-            bool[] memory poolExists = new bool[](pools.length);
-            uint256 newPoolsAmount = 0;
+            pools = new address[](0);
+        }
+        Pool[] memory curPools = quoter.allPools();
+        _addNewPools(curPools, pools);
+        _removeOldPools(curPools, pools);
+    }
+
+    // Add pools from `pools` that are not in `curPools`
+    function _addNewPools(Pool[] memory curPools, address[] memory pools) internal {
+        bool[] memory poolExists = new bool[](pools.length);
+        uint256 newPoolsAmount = 0;
+        for (uint256 i = 0; i < pools.length; ++i) {
+            for (uint256 j = 0; j < curPools.length; ++j) {
+                if (pools[i] == curPools[j].pool) {
+                    poolExists[i] = true;
+                    break;
+                }
+            }
+            if (!poolExists[i]) ++newPoolsAmount;
+        }
+        if (newPoolsAmount != 0) {
+            address[] memory newPools = new address[](newPoolsAmount);
+            // Will now track the amount of found new pools
+            newPoolsAmount = 0;
             for (uint256 i = 0; i < pools.length; ++i) {
-                for (uint256 j = 0; j < curPools.length; ++j) {
-                    if (pools[i] == curPools[j].pool) {
-                        poolExists[i] = true;
-                        break;
-                    }
+                if (!poolExists[i]) {
+                    newPools[newPoolsAmount++] = pools[i];
                 }
-                if (!poolExists[i]) ++newPoolsAmount;
             }
-            if (newPoolsAmount != 0) {
-                address[] memory newPools = new address[](newPoolsAmount);
-                // Will now track the amount of found new pools
-                newPoolsAmount = 0;
-                for (uint256 i = 0; i < pools.length; ++i) {
-                    if (!poolExists[i]) {
-                        newPools[newPoolsAmount++] = pools[i];
-                    }
+            quoter.addPools(newPools);
+            console.log("%s pools added", newPoolsAmount);
+        } else {
+            console.log("No pools to add");
+        }
+    }
+
+    // Remove pools from `curPools` that are not in `pools`
+    function _removeOldPools(Pool[] memory curPools, address[] memory pools) internal {
+        bool[] memory poolRemains = new bool[](curPools.length);
+        uint256 oldPoolsAmount = 0;
+        for (uint256 i = 0; i < curPools.length; ++i) {
+            for (uint256 j = 0; j < pools.length; ++j) {
+                if (curPools[i].pool == pools[j]) {
+                    poolRemains[i] = true;
+                    break;
                 }
-                quoter.addPools(newPools);
-                console.log("%s pools added", newPoolsAmount);
-            } else {
-                console.log("No pools to add");
             }
+            if (!poolRemains[i]) {
+                console.log("   Will be removing: %s", curPools[i].pool);
+                quoter.removePool(curPools[i].pool);
+                ++oldPoolsAmount;
+            }
+        }
+        if (oldPoolsAmount != 0) {
+            console.log("%s pools removed", oldPoolsAmount);
+        } else {
+            console.log("No pools to remove");
         }
     }
 
