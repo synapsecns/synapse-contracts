@@ -15,6 +15,7 @@ import {ITokenMinter} from "../../../cctp/interfaces/ITokenMinter.sol";
 contract SynapseCCTPModule is OnlyDelegateCall, IBridgeModule {
     using UniversalTokenLib for address;
 
+    error SynapseCCTPModule__EqualSwapIndexes(uint8 index);
     error SynapseCCTPModule__UnsupportedAction(Action action);
     error SynapseCCTPModule__UnsupportedToken(address token);
 

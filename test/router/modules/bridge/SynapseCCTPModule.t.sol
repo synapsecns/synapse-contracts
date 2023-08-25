@@ -275,6 +275,28 @@ contract SynapseCCTPModuleTest is BaseCCTPTest {
         performDelegateCall(payload);
     }
 
+    function testDelegateBridgeRevertsWhenSwapWithEqualIndexes() public {
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(delegateCaller),
+            tokenOut: TOKEN_OUT,
+            minAmountOut: MIN_AMOUNT_OUT,
+            deadline: DEADLINE,
+            rawParams: abi.encode(
+                DefaultParams({
+                    action: Action.Swap,
+                    pool: POOL,
+                    tokenIndexFrom: TOKEN_INDEX_FROM,
+                    tokenIndexTo: TOKEN_INDEX_FROM
+                })
+            )
+        });
+        bytes memory payload = getModulePayload({bridgeToken: token, destQuery: destQuery});
+        vm.expectRevert(
+            abi.encodeWithSelector(SynapseCCTPModule.SynapseCCTPModule__EqualSwapIndexes.selector, TOKEN_INDEX_FROM)
+        );
+        performDelegateCall(payload);
+    }
+
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
 
     function testGetMaxBridgedAmountReturnsMaxBurnAmountForSupportedToken() public {
