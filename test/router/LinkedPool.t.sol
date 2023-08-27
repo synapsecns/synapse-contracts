@@ -327,9 +327,9 @@ contract LinkedPoolTest is Test {
         complexSetup();
         uint8 tokensAmount = uint8(linkedPool.tokenNodesAmount());
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            vm.expectRevert("Swap not supported");
+            vm.expectRevert("Out of range");
             linkedPool.swap(i, tokensAmount, 10**18, 0, type(uint256).max);
-            vm.expectRevert("Swap not supported");
+            vm.expectRevert("Out of range");
             linkedPool.swap(tokensAmount, i, 10**18, 0, type(uint256).max);
         }
     }

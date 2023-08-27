@@ -52,6 +52,7 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         address poolModule
     ) external onlyOwner {
         require(pool != address(0), "Pool address can't be zero");
+        // This will revert if index is out of range, see TokenTree._addPool()
         _addPool(nodeIndex, pool, poolModule);
     }
 
@@ -69,14 +70,10 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         uint256 dx,
         uint256 minDy,
         uint256 deadline
-    ) external returns (uint256 amountOut) {
-        uint256 totalTokens = _nodes.length;
+    ) external checkIndex(nodeIndexFrom) checkIndex(nodeIndexTo) returns (uint256 amountOut) {
         // solhint-disable-next-line not-rely-on-time
         require(block.timestamp <= deadline, "Deadline not met");
-        require(
-            nodeIndexFrom < totalTokens && nodeIndexTo < totalTokens && nodeIndexFrom != nodeIndexTo,
-            "Swap not supported"
-        );
+        require(nodeIndexFrom != nodeIndexTo, "Swap not supported");
         // Pull initial token from the user. LinkedPool assumes that the tokens have no transfer fees enabled,
         // thus the balance checks are omitted.
         address tokenIn = _nodes[nodeIndexFrom].token;
@@ -176,8 +173,7 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     }
 
     /// @inheritdoc ILinkedPool
-    function getToken(uint8 index) external view returns (address token) {
-        require(index < _nodes.length, "Out of range");
+    function getToken(uint8 index) external view checkIndex(index) returns (address token) {
         return _nodes[index].token;
     }
 
@@ -187,8 +183,7 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     }
 
     /// @inheritdoc ILinkedPool
-    function getAttachedPools(uint8 index) external view returns (address[] memory pools) {
-        require(index < _nodes.length, "Out of range");
+    function getAttachedPools(uint8 index) external view checkIndex(index) returns (address[] memory pools) {
         pools = new address[](_pools.length);
         uint256 amountAttached = 0;
         uint256 poolsMask = _attachedPools[index];
@@ -219,8 +214,12 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     }
 
     /// @inheritdoc ILinkedPool
-    function getNodeParent(uint256 nodeIndex) external view returns (uint256 parentIndex, address parentPool) {
-        require(nodeIndex < _nodes.length, "Out of range");
+    function getNodeParent(uint256 nodeIndex)
+        external
+        view
+        checkIndex(nodeIndex)
+        returns (uint256 parentIndex, address parentPool)
+    {
         uint8 depth = _nodes[nodeIndex].depth;
         // Check if node is root, in which case there is no parent
         if (depth > 0) {

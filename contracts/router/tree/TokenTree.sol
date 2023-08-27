@@ -97,6 +97,11 @@ abstract contract TokenTree {
         _pools.push(address(0));
     }
 
+    modifier checkIndex(uint256 nodeIndex) {
+        require(nodeIndex < _nodes.length, "Out of range");
+        _;
+    }
+
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
 
     /// @dev Adds a pool having `N` pool tokens to the tree by adding `N-1` new nodes
@@ -105,8 +110,7 @@ abstract contract TokenTree {
         uint256 nodeIndex,
         address pool,
         address poolModule
-    ) internal {
-        require(nodeIndex < _nodes.length, "Out of range");
+    ) internal checkIndex(nodeIndex) {
         Node memory node = _nodes[nodeIndex];
         if (poolModule == address(0)) poolModule = address(this);
         (bool wasAdded, uint8 poolIndex) = (false, _poolMap[pool].index);
