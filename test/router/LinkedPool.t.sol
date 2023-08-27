@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Action, LinkedPool} from "../../contracts/router/LinkedPool.sol";
+import {Action, LinkedPool, TokenTree} from "../../contracts/router/LinkedPool.sol";
 
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockDefaultPool, MockDefaultPausablePool} from "../mocks/MockDefaultPausablePool.sol";
@@ -211,7 +211,7 @@ contract LinkedPoolTest is Test {
     function test_addPool_revert_nodeNotInPool() public {
         complexSetup();
         // 1 is T0, which is not in pool123
-        vm.expectRevert("Node token not found in the pool");
+        vm.expectRevert(TokenTree.TokenTree__NodeTokenNotInPool.selector);
         vm.prank(owner);
         linkedPool.addPool(1, address(pool123), address(0));
     }
@@ -227,7 +227,7 @@ contract LinkedPoolTest is Test {
     function test_addPool_revert_nodeIndexOutOfRange() public {
         complexSetup();
         uint256 tokensAmount = linkedPool.tokenNodesAmount();
-        vm.expectRevert("Out of range");
+        vm.expectRevert(abi.encodeWithSelector(TokenTree.TokenTree__IndexOutOfRange.selector, tokensAmount));
         vm.prank(owner);
         linkedPool.addPool(tokensAmount, address(pool123), address(0));
     }
@@ -253,7 +253,7 @@ contract LinkedPoolTest is Test {
         }
         // 256th pool should cause a revert as its index would not fit into uint8 (pool indexes start from 1)
         pool = new MockDefaultPool(tokens);
-        vm.expectRevert("Too many pools");
+        vm.expectRevert(TokenTree.TokenTree__TooManyPools.selector);
         vm.prank(owner);
         linkedPool.addPool(0, address(pool), address(0));
     }
@@ -261,11 +261,11 @@ contract LinkedPoolTest is Test {
     function test_addPool_revert_alreadyAttached() public {
         complexSetup();
         // [BT, T0, T1] was already attached to the root node (0)
-        vm.expectRevert("Pool already attached");
+        vm.expectRevert(TokenTree.TokenTree__PoolAlreadyAttached.selector);
         vm.prank(owner);
         linkedPool.addPool(0, address(poolB01), address(0));
         // [T1, T2, T3] was already attached to node with index 5
-        vm.expectRevert("Pool already attached");
+        vm.expectRevert(TokenTree.TokenTree__PoolAlreadyAttached.selector);
         vm.prank(owner);
         linkedPool.addPool(5, address(pool123), address(0));
     }
@@ -273,10 +273,10 @@ contract LinkedPoolTest is Test {
     function test_addPool_revert_parentPool() public {
         complexSetup();
         // [T1, T2, T3] was already used to add node with indexes 6 and 7
-        vm.expectRevert("Pool already on path to root");
+        vm.expectRevert(TokenTree.TokenTree__PoolAlreadyOnRootPath.selector);
         vm.prank(owner);
         linkedPool.addPool(6, address(pool123), address(0));
-        vm.expectRevert("Pool already on path to root");
+        vm.expectRevert(TokenTree.TokenTree__PoolAlreadyOnRootPath.selector);
         vm.prank(owner);
         linkedPool.addPool(7, address(pool123), address(0));
     }
@@ -284,7 +284,7 @@ contract LinkedPoolTest is Test {
     function test_addPool_revert_poolUsedOnRootPath() public {
         complexSetup();
         // [BT, T0, T1] was already used to add node with indexes 1 and 2
-        vm.expectRevert("Pool already on path to root");
+        vm.expectRevert(TokenTree.TokenTree__PoolAlreadyOnRootPath.selector);
         // Node 3 was added using pool01, but poolB01 is present on the root path
         vm.prank(owner);
         linkedPool.addPool(3, address(poolB01), address(0));
@@ -310,7 +310,7 @@ contract LinkedPoolTest is Test {
     function test_getToken_revert_tokenOutOfRange() public {
         complexSetup();
         uint8 tokensAmount = uint8(linkedPool.tokenNodesAmount());
-        vm.expectRevert("Out of range");
+        vm.expectRevert(abi.encodeWithSelector(TokenTree.TokenTree__IndexOutOfRange.selector, tokensAmount));
         linkedPool.getToken(tokensAmount);
     }
 
@@ -327,9 +327,9 @@ contract LinkedPoolTest is Test {
         complexSetup();
         uint8 tokensAmount = uint8(linkedPool.tokenNodesAmount());
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            vm.expectRevert("Out of range");
+            vm.expectRevert(abi.encodeWithSelector(TokenTree.TokenTree__IndexOutOfRange.selector, tokensAmount));
             linkedPool.swap(i, tokensAmount, 10**18, 0, type(uint256).max);
-            vm.expectRevert("Out of range");
+            vm.expectRevert(abi.encodeWithSelector(TokenTree.TokenTree__IndexOutOfRange.selector, tokensAmount));
             linkedPool.swap(tokensAmount, i, 10**18, 0, type(uint256).max);
         }
     }
@@ -487,7 +487,7 @@ contract LinkedPoolTest is Test {
     function test_getNodeParent_revert_indexOutOfRange() public {
         complexSetup();
         uint256 tokensAmount = linkedPool.tokenNodesAmount();
-        vm.expectRevert("Out of range");
+        vm.expectRevert(abi.encodeWithSelector(TokenTree.TokenTree__IndexOutOfRange.selector, tokensAmount));
         linkedPool.getNodeParent(tokensAmount);
     }
 
