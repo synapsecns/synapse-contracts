@@ -31,6 +31,11 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     using Address for address;
     using UniversalTokenLib for address;
 
+    error LinkedPool__DeadlineExceeded(uint256 timestamp, uint256 deadline);
+    error LinkedPool__EqualSwapIndexes(uint8 index);
+    error LinkedPool__MinDyNotMet(uint256 amountOut, uint256 minDy);
+    error LinkedPool__EmptyPoolAddress();
+
     /// @notice Replicates signature of `TokenSwap` event from Default Pools.
     event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
 
@@ -51,7 +56,7 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         address pool,
         address poolModule
     ) external onlyOwner checkIndex(nodeIndex) {
-        require(pool != address(0), "Pool address can't be zero");
+        if (pool == address(0)) revert LinkedPool__EmptyPoolAddress();
         _addPool(nodeIndex, pool, poolModule);
     }
 
@@ -71,14 +76,14 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         uint256 deadline
     ) external checkIndex(nodeIndexFrom) checkIndex(nodeIndexTo) returns (uint256 amountOut) {
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp <= deadline, "Deadline not met");
-        require(nodeIndexFrom != nodeIndexTo, "Swap not supported");
+        if (block.timestamp > deadline) revert LinkedPool__DeadlineExceeded(block.timestamp, deadline);
+        if (nodeIndexFrom == nodeIndexTo) revert LinkedPool__EqualSwapIndexes(nodeIndexFrom);
         // Pull initial token from the user. LinkedPool assumes that the tokens have no transfer fees enabled,
         // thus the balance checks are omitted.
         address tokenIn = _nodes[nodeIndexFrom].token;
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), dx);
         amountOut = _multiSwap(nodeIndexFrom, nodeIndexTo, dx).amountOut;
-        require(amountOut >= minDy, "Swap didn't result in min tokens");
+        if (amountOut < minDy) revert LinkedPool__MinDyNotMet(amountOut, minDy);
         // Transfer the tokens to the user
         IERC20(_nodes[nodeIndexTo].token).safeTransfer(msg.sender, amountOut);
         // Emit the event

@@ -234,7 +234,7 @@ contract LinkedPoolTest is Test {
 
     function test_addPool_revert_emptyPoolAddress() public {
         complexSetup();
-        vm.expectRevert("Pool address can't be zero");
+        vm.expectRevert(LinkedPool.LinkedPool__EmptyPoolAddress.selector);
         vm.prank(owner);
         linkedPool.addPool(0, address(0), address(0));
     }
@@ -318,7 +318,7 @@ contract LinkedPoolTest is Test {
         complexSetup();
         uint256 tokensAmount = linkedPool.tokenNodesAmount();
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            vm.expectRevert("Swap not supported");
+            vm.expectRevert(abi.encodeWithSelector(LinkedPool.LinkedPool__EqualSwapIndexes.selector, i));
             linkedPool.swap(i, i, 10**18, 0, type(uint256).max);
         }
     }
@@ -340,7 +340,9 @@ contract LinkedPoolTest is Test {
         complexSetup();
         uint8 tokensAmount = uint8(linkedPool.tokenNodesAmount());
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            vm.expectRevert("Deadline not met");
+            vm.expectRevert(
+                abi.encodeWithSelector(LinkedPool.LinkedPool__DeadlineExceeded.selector, currentTime, currentTime - 1)
+            );
             linkedPool.swap(i, (i + 1) % tokensAmount, 10**18, 0, currentTime - 1);
         }
     }
@@ -350,7 +352,7 @@ contract LinkedPoolTest is Test {
         uint256 amountIn = 10**18;
         uint256 amountOut = linkedPool.calculateSwap(0, 1, amountIn);
         prepareUser(address(bridgeToken), amountIn);
-        vm.expectRevert("Swap didn't result in min tokens");
+        vm.expectRevert(abi.encodeWithSelector(LinkedPool.LinkedPool__MinDyNotMet.selector, amountOut, amountOut + 1));
         vm.prank(user);
         linkedPool.swap(0, 1, amountIn, amountOut + 1, type(uint256).max);
     }
