@@ -115,11 +115,12 @@ abstract contract TokenTree {
 
     /// @dev Adds a pool having `N` pool tokens to the tree by adding `N-1` new nodes
     /// as the children of the given node. Given node needs to represent a token from the pool.
+    /// Note: assumes that nodeIndex is valid, and that pool is not a zero address.
     function _addPool(
         uint256 nodeIndex,
         address pool,
         address poolModule
-    ) internal checkIndex(nodeIndex) {
+    ) internal {
         Node memory node = _nodes[nodeIndex];
         if (poolModule == address(0)) poolModule = address(this);
         (bool wasAdded, uint8 poolIndex) = (false, _poolMap[pool].index);

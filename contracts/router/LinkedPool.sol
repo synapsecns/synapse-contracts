@@ -50,9 +50,8 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         uint256 nodeIndex,
         address pool,
         address poolModule
-    ) external onlyOwner {
+    ) external onlyOwner checkIndex(nodeIndex) {
         require(pool != address(0), "Pool address can't be zero");
-        // This will revert if index is out of range, see TokenTree._addPool()
         _addPool(nodeIndex, pool, poolModule);
     }
 
