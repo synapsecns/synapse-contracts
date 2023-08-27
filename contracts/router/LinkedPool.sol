@@ -9,6 +9,7 @@ import {Action} from "./libs/Structs.sol";
 import {UniversalTokenLib} from "./libs/UniversalToken.sol";
 import {TokenTree} from "./tree/TokenTree.sol";
 
+import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
@@ -27,6 +28,7 @@ import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils
 /// Note: LinkedPool assumes that the added pool tokens have no transfer fees enabled.
 contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     using SafeERC20 for IERC20;
+    using Address for address;
     using UniversalTokenLib for address;
 
     /// @notice Replicates signature of `TokenSwap` event from Default Pools.
@@ -265,8 +267,8 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
             );
             // Delegate swap logic to Pool Module. It should approve the pool to spend the token, if needed.
             // Note that poolModule address is set by the contract owner, so it's safe to delegatecall it.
-            (bool success, bytes memory result) = poolModule.delegatecall(payload);
-            require(success, "Swap failed");
+            // Using OZ library here to bubble up the revert reason if the call fails.
+            bytes memory result = poolModule.functionDelegateCall(payload);
             // Pool Modules are whitelisted, so we can trust the returned amountOut value.
             amountOut = abi.decode(result, (uint256));
         }
