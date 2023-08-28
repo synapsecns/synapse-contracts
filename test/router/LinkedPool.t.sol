@@ -1023,7 +1023,9 @@ contract LinkedPoolTest is Test {
         address tokenOut = linkedPool.getToken(tokenTo);
         uint256 amountOut = linkedPool.calculateSwap(tokenFrom, tokenTo, amountIn);
         vm.prank(user);
-        if (amountOut == 0) vm.expectRevert("Can't use same pool twice");
+        if (amountOut == 0) {
+            vm.expectRevert(abi.encodeWithSelector(TokenTree.TokenTree__SwapPoolUsedTwice.selector, pool123));
+        }
         linkedPool.swap(tokenFrom, tokenTo, amountIn, amountOut, block.timestamp);
         if (amountOut > 0) {
             if (tokenIn != tokenOut) assertEq(MockERC20(tokenIn).balanceOf(user), 0);

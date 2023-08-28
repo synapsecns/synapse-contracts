@@ -26,6 +26,7 @@ abstract contract TokenTree {
     error TokenTree__NodeTokenNotInPool();
     error TokenTree__PoolAlreadyAttached();
     error TokenTree__PoolAlreadyOnRootPath();
+    error TokenTree__SwapPoolUsedTwice(address pool);
     error TokenTree__TooManyNodes();
     error TokenTree__TooManyPools();
     error TokenTree__UnknownPool();
@@ -363,13 +364,11 @@ abstract contract TokenTree {
         uint256 nodeIndexTo,
         uint256 amountIn
     ) internal returns (uint256 visitedPoolsMask_, uint256 amountOut) {
-        if (visitedPoolsMask & (1 << poolIndex) != 0) {
-            // If we already used this pool on the path, we can't use it again.
-            revert("Can't use same pool twice");
-        }
+        address pool = _pools[poolIndex];
+        // If we already used this pool on the path, we can't use it again.
+        if (visitedPoolsMask & (1 << poolIndex) != 0) revert TokenTree__SwapPoolUsedTwice(pool);
         // Mark the pool as visited
         visitedPoolsMask_ = visitedPoolsMask | (1 << poolIndex);
-        address pool = _pools[poolIndex];
         amountOut = _poolSwap(_poolMap[pool].module, pool, nodeIndexFrom, nodeIndexTo, amountIn);
     }
 
