@@ -84,6 +84,7 @@ contract SynapseRouterV2Test is Test {
         vm.prank(owner);
         router.connectBridgeModule(moduleId, module);
         assertEq(router.idToModule(moduleId), module);
+        assertEq(router.moduleToId(module), moduleId);
     }
 
     function test_connectBridgeModule_emit_moduleConnected(bytes32 moduleId, address module) public {
@@ -121,6 +122,55 @@ contract SynapseRouterV2Test is Test {
         vm.expectRevert(ModuleExists.selector);
         vm.prank(owner);
         router.connectBridgeModule(moduleId, address(0xA));
+    }
+
+    function test_updateBridgeModule(
+        bytes32 moduleId,
+        address oldModule,
+        address newModule
+    ) public {
+        // connect first
+        vm.prank(owner);
+        router.connectBridgeModule(moduleId, oldModule);
+
+        vm.prank(owner);
+        router.updateBridgeModule(moduleId, newModule);
+        assertEq(router.idToModule(moduleId), newModule);
+        assertEq(router.moduleToId(newModule), moduleId);
+
+        if (oldModule != newModule) assertEq(router.moduleToId(oldModule), bytes32(0));
+    }
+
+    function test_updateBridgeModule_emit_moduleUpdated(
+        bytes32 moduleId,
+        address oldModule,
+        address newModule
+    ) public {
+        // connect first
+        vm.prank(owner);
+        router.connectBridgeModule(moduleId, oldModule);
+
+        vm.expectEmit();
+        emit ModuleUpdated(moduleId, oldModule, newModule);
+
+        vm.prank(owner);
+        router.updateBridgeModule(moduleId, newModule);
+    }
+
+    function test_updateBridgeModule_revert_moduleInvalid(bytes32 moduleId, address oldModule) public {
+        // connect first
+        vm.prank(owner);
+        router.connectBridgeModule(moduleId, oldModule);
+
+        vm.expectRevert(ModuleInvalid.selector);
+        vm.prank(owner);
+        router.updateBridgeModule(moduleId, address(0));
+    }
+
+    function test_updateBridgeModule_revert_moduleNotExists(bytes32 moduleId, address newModule) public {
+        vm.expectRevert(ModuleNotExists.selector);
+        vm.prank(owner);
+        router.updateBridgeModule(moduleId, newModule);
     }
 
     function setupERC20(string memory name, uint8 decimals) public returns (MockERC20 token) {
