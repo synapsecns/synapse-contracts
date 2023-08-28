@@ -9,6 +9,8 @@ import {MockPoolModule} from "../mocks/MockPoolModule.sol";
 contract LinkedPoolModuleTest is LinkedPoolTest {
     address public newPoolModule;
 
+    event PoolModuleUpdated(address pool, address oldPoolModule, address newPoolModule);
+
     function setUp() public virtual override {
         poolModule = address(new MockPoolModule());
         newPoolModule = address(new MockPoolModule());
@@ -26,6 +28,18 @@ contract LinkedPoolModuleTest is LinkedPoolTest {
         assertEq(linkedPool.getPoolModule(address(poolB2)), newPoolModule);
         // Check that pool02 has old pool module
         assertEq(linkedPool.getPoolModule(address(pool02)), poolModule);
+    }
+
+    function test_updatePoolModule_emitsEvent() public {
+        // Setup with two pools: poolB2 and pool02
+        compactSetup();
+        vm.expectEmit();
+        emit PoolModuleUpdated(address(poolB2), poolModule, newPoolModule);
+        vm.recordLogs();
+        vm.prank(owner);
+        linkedPool.updatePoolModule(address(poolB2), newPoolModule);
+        // Should be exactly one event
+        assertEq(vm.getRecordedLogs().length, 1);
     }
 
     function test_updatePoolModule_revert_callerNotOwner(address caller) public {
