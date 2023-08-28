@@ -12,6 +12,9 @@ import {Test} from "forge-std/Test.sol";
 contract LinkedPoolTest is Test {
     event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
 
+    event TokenNodeAdded(uint256 childIndex, address token, address parentPool);
+    event PoolAdded(uint256 parentIndex, address pool, address poolModule);
+
     uint256 public maskOnlySwap = Action.Swap.mask();
     uint256 public maskNoSwaps = type(uint256).max ^ Action.Swap.mask();
 
@@ -109,6 +112,10 @@ contract LinkedPoolTest is Test {
         }
     }
 
+    function getExpectedPoolModule() public view returns (address) {
+        return poolModule == address(0) ? address(linkedPool) : poolModule;
+    }
+
     function simpleSetup() public {
         linkedPool = new LinkedPool(address(bridgeToken));
         linkedPool.transferOwnership(owner);
@@ -204,6 +211,129 @@ contract LinkedPoolTest is Test {
         assertEq(linkedPool.getToken(0), address(bridgeToken));
         assertEq(linkedPool.getToken(1), address(token2));
         assertEq(linkedPool.getToken(2), address(token0));
+    }
+
+    // ════════════════════════════════════════════════ EVENT TESTS ════════════════════════════════════════════════════
+
+    function test_constructor_emitsTokenNodeAdded() public {
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 0, token: address(bridgeToken), parentPool: address(0)});
+        linkedPool = new LinkedPool(address(bridgeToken));
+    }
+
+    // Tests that add pool that wasn't previously added
+    // Should emit PoolAdded event for the pool
+    // Should emit TokenNodeAdded event for the NEW nodes
+
+    function test_addPool_emitsEvents_newPool_toRoot() public {
+        // 0: BT
+        simpleSetup();
+        address expectedPoolModule = getExpectedPoolModule();
+        // Add poolB01 to the root node
+        vm.expectEmit();
+        emit PoolAdded({parentIndex: 0, pool: address(poolB01), poolModule: expectedPoolModule});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 1, token: address(token0), parentPool: address(poolB01)});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 2, token: address(token1), parentPool: address(poolB01)});
+        vm.recordLogs();
+        // 0: BT + (1: T0, 2: T1)
+        addPool(0, address(poolB01));
+        // Should be exactly 3 events
+        assertEq(vm.getRecordedLogs().length, 3);
+    }
+
+    function test_addPool_emitsEvents_newPool_toNonRoot() public {
+        // 0: BT
+        // 0: BT + (1: T2)
+        // 1: T2 + (2: T0)
+        compactSetup();
+        address expectedPoolModule = getExpectedPoolModule();
+        // Add pool pool123 to node 1 (T2)
+        vm.expectEmit();
+        emit PoolAdded({parentIndex: 1, pool: address(pool123), poolModule: expectedPoolModule});
+        // Should only add T1 and T3 to the tree
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 3, token: address(token1), parentPool: address(pool123)});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 4, token: address(token3), parentPool: address(pool123)});
+        vm.recordLogs();
+        // 1: T2 + (3: T1, 4: T3)
+        addPool(1, address(pool123));
+        // Should be exactly 3 events
+        assertEq(vm.getRecordedLogs().length, 3);
+    }
+
+    function test_addPool_emitsEvents_newPool_toNonRoot_withBridgeToken() public {
+        // 0: BT
+        // 0: BT + (1: T2)
+        // 1: T2 + (2: T0)
+        compactSetup();
+        address expectedPoolModule = getExpectedPoolModule();
+        // Add pool poolB012 to node 1 (T2)
+        vm.expectEmit();
+        emit PoolAdded({parentIndex: 1, pool: address(poolB012), poolModule: expectedPoolModule});
+        // Should only add T0 and T1 to the tree
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 3, token: address(token0), parentPool: address(poolB012)});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 4, token: address(token1), parentPool: address(poolB012)});
+        vm.recordLogs();
+        // 1: T2 + (3: T0, 4: T1)
+        addPool(1, address(poolB012));
+        // Should be exactly 3 events
+        assertEq(vm.getRecordedLogs().length, 3);
+    }
+
+    // Tests that add pool that was previously added to another node
+    // Should emit NOT PoolAdded event for the pool
+    // Should emit TokenNodeAdded event for the NEW nodes
+
+    function test_addPool_emitsEvents_oldPool_toRoot() public {
+        // 0: BT
+        simpleSetup();
+        // 0: BT + (1: T2)
+        addPool(0, address(poolB2));
+        // 1: T2 + (2: T0, 3: T1)
+        addPool(1, address(poolB012));
+        // Adding poolB012 to the root node should not emit PoolAdded event
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 4, token: address(token0), parentPool: address(poolB012)});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 5, token: address(token1), parentPool: address(poolB012)});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 6, token: address(token2), parentPool: address(poolB012)});
+        vm.recordLogs();
+        // 0: BT + (4: T0, 5: T1, 6: T2)
+        addPool(0, address(poolB012));
+        // Should be exactly 3 events
+        assertEq(vm.getRecordedLogs().length, 3);
+    }
+
+    function test_addPool_emitsEvents_oldPool_toNonRoot() public {
+        complexSetup();
+        // Adding pool123 to node 4 (T2) should not emit PoolAdded event
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 8, token: address(token1), parentPool: address(pool123)});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 9, token: address(token3), parentPool: address(pool123)});
+        vm.recordLogs();
+        // 4: T2 + (8: T1, 9: T3)
+        addPool(4, address(pool123));
+        // Should be exactly 2 events
+        assertEq(vm.getRecordedLogs().length, 2);
+    }
+
+    function test_addPool_emitsEvents_oldPool_toNonRoot_withBridgeToken() public {
+        complexSetup();
+        // Adding poolB01 to node 6 (T1) should not emit PoolAdded event
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 8, token: address(token0), parentPool: address(poolB01)});
+        vm.recordLogs();
+        // 6: T1 + ([BT: ignored], 8: T0)
+        addPool(6, address(poolB01));
+        // Should be exactly 1 event
+        assertEq(vm.getRecordedLogs().length, 1);
     }
 
     // ═══════════════════════════════════════════════ REVERT TESTS ════════════════════════════════════════════════════
@@ -456,7 +586,7 @@ contract LinkedPoolTest is Test {
 
     function test_getPoolModule() public {
         complexSetup();
-        address expectedPoolModule = poolModule == address(0) ? address(linkedPool) : poolModule;
+        address expectedPoolModule = getExpectedPoolModule();
         assertEq(linkedPool.getPoolModule(address(poolB01)), expectedPoolModule);
         assertEq(linkedPool.getPoolModule(address(pool01)), expectedPoolModule);
         assertEq(linkedPool.getPoolModule(address(pool02)), expectedPoolModule);
