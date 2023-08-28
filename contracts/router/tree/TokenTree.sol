@@ -30,6 +30,10 @@ abstract contract TokenTree {
     error TokenTree__TooManyPools();
     error TokenTree__UnknownPool();
 
+    event TokenNodeAdded(uint256 childIndex, address token, address parentPool);
+    event PoolAdded(uint256 parentIndex, address pool, address poolModule);
+    event PoolModuleUpdated(address pool, address oldPoolModule, address newPoolModule);
+
     /// @notice Struct so store the tree nodes
     /// @param token        Address of the token represented by this node
     /// @param depth        Depth of the node in the tree
@@ -124,6 +128,7 @@ abstract contract TokenTree {
         Node memory node = _nodes[nodeIndex];
         if (poolModule == address(0)) poolModule = address(this);
         (bool wasAdded, uint8 poolIndex) = (false, _poolMap[pool].index);
+        // Save the pool and emit an event if it's not been added before
         if (poolIndex == 0) {
             if (_pools.length > type(uint8).max) revert TokenTree__TooManyPools();
             // Can do the unsafe cast here, as we just checked that pool index fits into uint8
@@ -131,6 +136,7 @@ abstract contract TokenTree {
             _pools.push(pool);
             _poolMap[pool] = Pool({module: poolModule, index: poolIndex});
             wasAdded = true;
+            emit PoolAdded(nodeIndex, pool, poolModule);
         } else {
             // Check if the existing pool could be added to the node. This enforces some sanity checks,
             // as well the invariant that any path from root to node doesn't contain the same pool twice.
@@ -182,6 +188,7 @@ abstract contract TokenTree {
         _tokenNodes[token].push(nodeIndex);
         // Push the root path for the new node. The root path is the inserted node index + the parent's root path.
         _rootPath.push((nodeIndex << (8 * depth)) | rootPathParent);
+        emit TokenNodeAdded(nodeIndex, token, _pools[poolIndex]);
     }
 
     /// @dev Updates the Pool Module for the given pool.
@@ -199,6 +206,7 @@ abstract contract TokenTree {
         }
         // Update the pool module
         _poolMap[pool].module = newPoolModule;
+        emit PoolModuleUpdated(pool, oldPoolModule, newPoolModule);
     }
 
     // ══════════════════════════════════════ INTERNAL LOGIC: MULTIPLE POOLS ═══════════════════════════════════════════
