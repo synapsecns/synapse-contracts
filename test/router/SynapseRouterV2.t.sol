@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {SynapseRouterV2} from "../../contracts/router/SynapseRouterV2.sol";
+import {BridgeFailed, ModuleExists, ModuleNotExists, ModuleInvalid, QueryEmpty} from "../../contracts/router/libs/Errors.sol";
 
 import {SwapQuoterV2} from "../../contracts/router/quoter/SwapQuoterV2.sol";
 import {DefaultPoolCalc} from "../../contracts/router/quoter/DefaultPoolCalc.sol";
@@ -63,17 +64,63 @@ contract SynapseRouterV2Test is Test {
         assertEq(address(router.swapQuoter()), address(quoter));
     }
 
+    function test_setSwapQuoter_emit_quoterSet() public {
+        vm.expectEmit();
+        emit QuoterSet(address(0), address(quoter));
+
+        vm.prank(owner);
+        router.setSwapQuoter(quoter);
+    }
+
     function test_setSwapQuoter_revert_callerNotOwner() public {
         vm.expectRevert("Ownable: caller is not the owner");
         router.setSwapQuoter(quoter);
     }
 
-    function test_setSwapQuoter_emit_QuoterSet() public {
-        vm.expectEmit(false, false, false, true);
-        emit QuoterSet(address(0), address(quoter));
+    function test_connectBridgeModule(bytes32 moduleId, address module) public {
+        vm.assume(moduleId != bytes32(0));
+        vm.assume(module != address(0));
 
         vm.prank(owner);
-        router.setSwapQuoter(quoter);
+        router.connectBridgeModule(moduleId, module);
+        assertEq(router.idToModule(moduleId), module);
+    }
+
+    function test_connectBridgeModule_emit_moduleConnected(bytes32 moduleId, address module) public {
+        vm.assume(moduleId != bytes32(0));
+        vm.assume(module != address(0));
+
+        vm.expectEmit();
+        emit ModuleConnected(moduleId, module);
+
+        vm.prank(owner);
+        router.connectBridgeModule(moduleId, module);
+    }
+
+    function test_connectBridgeModule_revert_callerNotOwner(bytes32 moduleId, address module) public {
+        vm.expectRevert("Ownable: caller is not the owner");
+        router.connectBridgeModule(moduleId, module);
+    }
+
+    function test_connectBridgeModule_revert_moduleInvalid(bytes32 moduleId, address module) public {
+        vm.expectRevert(ModuleInvalid.selector);
+        vm.prank(owner);
+        router.connectBridgeModule(bytes32(0), module);
+
+        vm.expectRevert(ModuleInvalid.selector);
+        vm.prank(owner);
+        router.connectBridgeModule(moduleId, address(0));
+    }
+
+    function test_connectBridgeModule_revert_moduleExists(bytes32 moduleId, address module) public {
+        // connect first
+        vm.prank(owner);
+        router.connectBridgeModule(moduleId, module);
+
+        // should fail if reuse moduleId
+        vm.expectRevert(ModuleExists.selector);
+        vm.prank(owner);
+        router.connectBridgeModule(moduleId, address(0xA));
     }
 
     function setupERC20(string memory name, uint8 decimals) public returns (MockERC20 token) {
