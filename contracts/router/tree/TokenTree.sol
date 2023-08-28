@@ -104,10 +104,10 @@ abstract contract TokenTree {
     // ════════════════════════════════════════════════ CONSTRUCTOR ════════════════════════════════════════════════════
 
     constructor(address bridgeToken) {
-        // The root node is always the bridge token
-        _addNode({token: bridgeToken, depth: 0, poolIndex: 0, rootPathParent: 0});
         // Push the empty pool so that `poolIndex` for non-root nodes is never 0
         _pools.push(address(0));
+        // The root node is always the bridge token
+        _addNode({token: bridgeToken, depth: 0, poolIndex: 0, rootPathParent: 0});
     }
 
     modifier checkIndex(uint256 nodeIndex) {
