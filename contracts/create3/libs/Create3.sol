@@ -60,5 +60,64 @@ pragma solidity ^0.8.0;
 /// - `0x0d..0x0c` - Push the memory position of the Proxy Deployer bytecode onto the stack.
 /// - `0x0f` - Return the Proxy Deployer bytecode.
 library Create3Lib {
+    error Create3__DeploymentAlreadyExists(address addr);
+    error Create3__DeploymentFailed();
+    error Create3__ProxyDeployerDeploymentFailed();
 
+    /// @notice Init code to deploy a proxy deployer contract.
+    bytes internal constant DEPLOYER_INIT_CODE = hex"67_36_3d_3d_37_36_3d_34_f0_3d_52_60_08_60_18_f3";
+
+    /// @notice Hash of the proxy deployer init code. Used to predict the address of the proxy deployer,
+    /// and the address of the contract deployed by the proxy deployer.
+    bytes32 internal constant DEPLOYER_INIT_CODE_HASH =
+        0x21c35dbe1b344a2488cf3321d6ce542f8e9f305544ff09e4993a62319a497c1f;
+
+    /// @notice Deploys a contract EIP-3171 style. The resulting contract address depends
+    /// solely on the provided salt and the address of the caller.
+    /// @param salt          Salt of the contract deployment.
+    /// @param creationCode  Creation code of the contract to deploy. This is usually the
+    ///                      bytecode of the contract, followed by the ABI-encoded constructor arguments.
+    /// @param value         Value to send with the contract creation transaction.
+    /// @return addr         Address of the deployed contract.
+    function create3(
+        bytes32 salt,
+        bytes memory creationCode,
+        uint256 value
+    ) internal returns (address addr) {
+        // First, check that the salt has not been used yet
+        addr = predictAddress(salt);
+        if (addr.code.length != 0) revert Create3__DeploymentAlreadyExists(addr);
+        // `bytes initCode` is stored in memory in the following way
+        // 1. First, uint256 initCode.length is stored. That requires 32 bytes (0x20).
+        // 2. Then, the initCode data is stored.
+        bytes memory initCode = DEPLOYER_INIT_CODE;
+        // Deploy the proxy deployer contract using `CREATE2` opcode
+        address proxy;
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            // Deploy the proxy deployer with our pre-made bytecode via CREATE2.
+            // We add 0x20 to get the location where the init code starts.
+            proxy := create2(0, add(initCode, 0x20), mload(initCode), salt)
+        }
+        // Check that the proxy deployer was deployed successfully
+        if (proxy == address(0)) revert Create3__ProxyDeployerDeploymentFailed();
+        // Call the proxy deployer with the creation code of the final contract
+        (bool success, ) = proxy.call{value: value}(creationCode);
+        // Check that the final contract was deployed successfully
+        if (!success || addr.code.length == 0) revert Create3__DeploymentFailed();
+    }
+
+    /// @notice Predicts the address of the final contract deployed using `create3`.
+    /// @param salt     Salt of the contract deployment.
+    /// @return Address of the contract deployed using `create3`.
+    function predictAddress(bytes32 salt) internal view returns (address) {
+        // Predict address of the proxy deployer contract
+        // https://eips.ethereum.org/EIPS/eip-1014#specification
+        address proxy = address(
+            uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), address(this), salt, DEPLOYER_INIT_CODE_HASH))))
+        );
+        // Predict address of the contract deployed by the proxy deployer
+        // https://github.com/transmissions11/solmate/blob/main/src/utils/CREATE3.sol
+        return address(uint160(uint256(keccak256(abi.encodePacked(hex"d6_94", proxy, hex"01")))));
+    }
 }
