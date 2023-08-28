@@ -99,11 +99,17 @@ contract SynapseRouterV2Test is Test {
     }
 
     function test_connectBridgeModule_revert_callerNotOwner(bytes32 moduleId, address module) public {
+        vm.assume(moduleId != bytes32(0));
+        vm.assume(module != address(0));
+
         vm.expectRevert("Ownable: caller is not the owner");
         router.connectBridgeModule(moduleId, module);
     }
 
     function test_connectBridgeModule_revert_moduleInvalid(bytes32 moduleId, address module) public {
+        vm.assume(moduleId != bytes32(0));
+        vm.assume(module != address(0));
+
         vm.expectRevert(ModuleInvalid.selector);
         vm.prank(owner);
         router.connectBridgeModule(bytes32(0), module);
@@ -114,6 +120,9 @@ contract SynapseRouterV2Test is Test {
     }
 
     function test_connectBridgeModule_revert_moduleExists(bytes32 moduleId, address module) public {
+        vm.assume(moduleId != bytes32(0));
+        vm.assume(module != address(0));
+
         // connect first
         vm.prank(owner);
         router.connectBridgeModule(moduleId, module);
@@ -129,6 +138,10 @@ contract SynapseRouterV2Test is Test {
         address oldModule,
         address newModule
     ) public {
+        vm.assume(moduleId != bytes32(0));
+        vm.assume(oldModule != address(0));
+        vm.assume(newModule != address(0));
+
         // connect first
         vm.prank(owner);
         router.connectBridgeModule(moduleId, oldModule);
@@ -146,6 +159,10 @@ contract SynapseRouterV2Test is Test {
         address oldModule,
         address newModule
     ) public {
+        vm.assume(moduleId != bytes32(0));
+        vm.assume(oldModule != address(0));
+        vm.assume(newModule != address(0));
+
         // connect first
         vm.prank(owner);
         router.connectBridgeModule(moduleId, oldModule);
@@ -157,7 +174,27 @@ contract SynapseRouterV2Test is Test {
         router.updateBridgeModule(moduleId, newModule);
     }
 
+    function test_updateBridgeModule_revert_callerNotOwner(
+        bytes32 moduleId,
+        address oldModule,
+        address newModule
+    ) public {
+        vm.assume(moduleId != bytes32(0));
+        vm.assume(oldModule != address(0));
+        vm.assume(newModule != address(0));
+
+        // connect first
+        vm.prank(owner);
+        router.connectBridgeModule(moduleId, oldModule);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        router.updateBridgeModule(moduleId, newModule);
+    }
+
     function test_updateBridgeModule_revert_moduleInvalid(bytes32 moduleId, address oldModule) public {
+        vm.assume(moduleId != bytes32(0));
+        vm.assume(oldModule != address(0));
+
         // connect first
         vm.prank(owner);
         router.connectBridgeModule(moduleId, oldModule);
@@ -168,9 +205,63 @@ contract SynapseRouterV2Test is Test {
     }
 
     function test_updateBridgeModule_revert_moduleNotExists(bytes32 moduleId, address newModule) public {
+        vm.assume(moduleId != bytes32(0));
+        vm.assume(newModule != address(0));
+
         vm.expectRevert(ModuleNotExists.selector);
         vm.prank(owner);
         router.updateBridgeModule(moduleId, newModule);
+    }
+
+    function test_disconnectBridgeModule(bytes32 moduleId, address module) public {
+        vm.assume(moduleId != bytes32(0));
+        vm.assume(module != address(0));
+
+        // connect first
+        vm.prank(owner);
+        router.connectBridgeModule(moduleId, module);
+
+        vm.prank(owner);
+        router.disconnectBridgeModule(moduleId);
+
+        // TODO: do we want this view to return bytes32(0) instead?
+        vm.expectRevert("EnumerableMap: nonexistent key");
+        router.idToModule(moduleId);
+
+        assertEq(router.moduleToId(module), bytes32(0));
+    }
+
+    function test_disconnectBridgeModule_emit_moduleDisconnected(bytes32 moduleId, address module) public {
+        vm.assume(moduleId != bytes32(0));
+        vm.assume(module != address(0));
+
+        // connect first
+        vm.prank(owner);
+        router.connectBridgeModule(moduleId, module);
+
+        vm.expectEmit();
+        emit ModuleDisconnected(moduleId);
+
+        vm.prank(owner);
+        router.disconnectBridgeModule(moduleId);
+    }
+
+    function test_disconnectBridgeModule_revert_callerNotOwner(bytes32 moduleId, address module) public {
+        vm.assume(moduleId != bytes32(0));
+        vm.assume(module != address(0));
+
+        // connect first
+        vm.prank(owner);
+        router.connectBridgeModule(moduleId, module);
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        router.disconnectBridgeModule(moduleId);
+    }
+
+    function test_disconnectBridgeModule_revert_moduleNotExists(bytes32 moduleId) public {
+        vm.expectRevert(ModuleNotExists.selector);
+        vm.prank(owner);
+        router.disconnectBridgeModule(moduleId);
     }
 
     function setupERC20(string memory name, uint8 decimals) public returns (MockERC20 token) {
