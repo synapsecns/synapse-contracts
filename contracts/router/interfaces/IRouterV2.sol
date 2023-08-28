@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {BridgeToken, DestRequest, SwapQuery} from "../libs/Structs.sol";
+import {ISwapQuoterV2} from "./ISwapQuoterV2.sol";
 
 interface IRouterV2 {
     /// @notice Initiate a bridge transaction with an optional swap on both origin and destination chains.
@@ -60,6 +61,10 @@ interface IRouterV2 {
         uint256 amount,
         SwapQuery memory query
     ) external payable returns (uint256 amountOut);
+
+    /// @notice Sets the Swap Quoter address to get the swap quotes from.
+    /// @param _swapQuoter Swap Quoter
+    function setSwapQuoter(ISwapQuoterV2 _swapQuoter) external;
 
     /// @notice Whitelists a new bridge module for users to route through
     /// @dev Reverts if not router owner

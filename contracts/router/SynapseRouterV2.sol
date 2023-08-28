@@ -17,18 +17,15 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     using EnumerableMap for EnumerableMap.UintToAddressMap;
 
     /// @notice swap quoter
-    ISwapQuoterV2 public immutable swapQuoter;
+    ISwapQuoterV2 public swapQuoter;
 
     /// @notice Enumerable map of all connected bridge modules
     EnumerableMap.UintToAddressMap internal _bridgeModules;
 
+    event QuoterSet(address oldSwapQuoter, address newSwapQuoter);
     event ModuleConnected(bytes32 indexed moduleId, address bridgeModule);
     event ModuleUpdated(bytes32 indexed moduleId, address oldBridgeModule, address newBridgeModule);
     event ModuleDisconnected(bytes32 indexed moduleId);
-
-    constructor(address _swapQuoter) {
-        swapQuoter = ISwapQuoterV2(_swapQuoter);
-    }
 
     /// @inheritdoc IRouterV2
     function bridgeViaSynapse(
@@ -75,6 +72,12 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
         address tokenOut;
         (tokenOut, amountOut) = _doSwap(to, token, amount, query);
+    }
+
+    /// @inheritdoc IRouterV2
+    function setSwapQuoter(ISwapQuoterV2 _swapQuoter) external onlyOwner {
+        emit QuoterSet(address(swapQuoter), address(_swapQuoter));
+        swapQuoter = _swapQuoter;
     }
 
     /// @inheritdoc IRouterV2
