@@ -9,6 +9,7 @@ import {Action} from "./libs/Structs.sol";
 import {UniversalTokenLib} from "./libs/UniversalToken.sol";
 import {TokenTree} from "./tree/TokenTree.sol";
 
+import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
@@ -27,7 +28,13 @@ import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils
 /// Note: LinkedPool assumes that the added pool tokens have no transfer fees enabled.
 contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     using SafeERC20 for IERC20;
+    using Address for address;
     using UniversalTokenLib for address;
+
+    error LinkedPool__DeadlineExceeded(uint256 timestamp, uint256 deadline);
+    error LinkedPool__EqualSwapIndexes(uint8 index);
+    error LinkedPool__MinDyNotMet(uint256 amountOut, uint256 minDy);
+    error LinkedPool__EmptyPoolAddress();
 
     /// @notice Replicates signature of `TokenSwap` event from Default Pools.
     event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
@@ -48,8 +55,8 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         uint256 nodeIndex,
         address pool,
         address poolModule
-    ) external onlyOwner {
-        require(pool != address(0), "Pool address can't be zero");
+    ) external onlyOwner checkIndex(nodeIndex) {
+        if (pool == address(0)) revert LinkedPool__EmptyPoolAddress();
         _addPool(nodeIndex, pool, poolModule);
     }
 
@@ -67,20 +74,16 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
         uint256 dx,
         uint256 minDy,
         uint256 deadline
-    ) external returns (uint256 amountOut) {
-        uint256 totalTokens = _nodes.length;
+    ) external checkIndex(nodeIndexFrom) checkIndex(nodeIndexTo) returns (uint256 amountOut) {
         // solhint-disable-next-line not-rely-on-time
-        require(block.timestamp <= deadline, "Deadline not met");
-        require(
-            nodeIndexFrom < totalTokens && nodeIndexTo < totalTokens && nodeIndexFrom != nodeIndexTo,
-            "Swap not supported"
-        );
+        if (block.timestamp > deadline) revert LinkedPool__DeadlineExceeded(block.timestamp, deadline);
+        if (nodeIndexFrom == nodeIndexTo) revert LinkedPool__EqualSwapIndexes(nodeIndexFrom);
         // Pull initial token from the user. LinkedPool assumes that the tokens have no transfer fees enabled,
         // thus the balance checks are omitted.
         address tokenIn = _nodes[nodeIndexFrom].token;
         IERC20(tokenIn).safeTransferFrom(msg.sender, address(this), dx);
         amountOut = _multiSwap(nodeIndexFrom, nodeIndexTo, dx).amountOut;
-        require(amountOut >= minDy, "Swap didn't result in min tokens");
+        if (amountOut < minDy) revert LinkedPool__MinDyNotMet(amountOut, minDy);
         // Transfer the tokens to the user
         IERC20(_nodes[nodeIndexTo].token).safeTransfer(msg.sender, amountOut);
         // Emit the event
@@ -174,8 +177,7 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     }
 
     /// @inheritdoc ILinkedPool
-    function getToken(uint8 index) external view returns (address token) {
-        require(index < _nodes.length, "Out of range");
+    function getToken(uint8 index) external view checkIndex(index) returns (address token) {
         return _nodes[index].token;
     }
 
@@ -185,8 +187,7 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     }
 
     /// @inheritdoc ILinkedPool
-    function getAttachedPools(uint8 index) external view returns (address[] memory pools) {
-        require(index < _nodes.length, "Out of range");
+    function getAttachedPools(uint8 index) external view checkIndex(index) returns (address[] memory pools) {
         pools = new address[](_pools.length);
         uint256 amountAttached = 0;
         uint256 poolsMask = _attachedPools[index];
@@ -217,8 +218,12 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     }
 
     /// @inheritdoc ILinkedPool
-    function getNodeParent(uint256 nodeIndex) external view returns (uint256 parentIndex, address parentPool) {
-        require(nodeIndex < _nodes.length, "Out of range");
+    function getNodeParent(uint256 nodeIndex)
+        external
+        view
+        checkIndex(nodeIndex)
+        returns (uint256 parentIndex, address parentPool)
+    {
         uint8 depth = _nodes[nodeIndex].depth;
         // Check if node is root, in which case there is no parent
         if (depth > 0) {
@@ -265,8 +270,8 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
             );
             // Delegate swap logic to Pool Module. It should approve the pool to spend the token, if needed.
             // Note that poolModule address is set by the contract owner, so it's safe to delegatecall it.
-            (bool success, bytes memory result) = poolModule.delegatecall(payload);
-            require(success, "Swap failed");
+            // Using OZ library here to bubble up the revert reason if the call fails.
+            bytes memory result = poolModule.functionDelegateCall(payload);
             // Pool Modules are whitelisted, so we can trust the returned amountOut value.
             amountOut = abi.decode(result, (uint256));
         }

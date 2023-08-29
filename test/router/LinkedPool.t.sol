@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Action, LinkedPool} from "../../contracts/router/LinkedPool.sol";
+import {Action, LinkedPool, TokenTree} from "../../contracts/router/LinkedPool.sol";
 
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockDefaultPool, MockDefaultPausablePool} from "../mocks/MockDefaultPausablePool.sol";
@@ -11,6 +11,9 @@ import {Test} from "forge-std/Test.sol";
 // solhint-disable func-name-mixedcase
 contract LinkedPoolTest is Test {
     event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
+
+    event TokenNodeAdded(uint256 childIndex, address token, address parentPool);
+    event PoolAdded(uint256 parentIndex, address pool, address poolModule);
 
     uint256 public maskOnlySwap = Action.Swap.mask();
     uint256 public maskNoSwaps = type(uint256).max ^ Action.Swap.mask();
@@ -107,6 +110,10 @@ contract LinkedPoolTest is Test {
             setupPool(poolB012, tokens, 20_000);
             vm.label(address(poolB012), "[BT, T0, T1, T2]");
         }
+    }
+
+    function getExpectedPoolModule() public view returns (address) {
+        return poolModule == address(0) ? address(linkedPool) : poolModule;
     }
 
     function simpleSetup() public {
@@ -206,12 +213,135 @@ contract LinkedPoolTest is Test {
         assertEq(linkedPool.getToken(2), address(token0));
     }
 
+    // ════════════════════════════════════════════════ EVENT TESTS ════════════════════════════════════════════════════
+
+    function test_constructor_emitsTokenNodeAdded() public {
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 0, token: address(bridgeToken), parentPool: address(0)});
+        linkedPool = new LinkedPool(address(bridgeToken));
+    }
+
+    // Tests that add pool that wasn't previously added
+    // Should emit PoolAdded event for the pool
+    // Should emit TokenNodeAdded event for the NEW nodes
+
+    function test_addPool_emitsEvents_newPool_toRoot() public {
+        // 0: BT
+        simpleSetup();
+        address expectedPoolModule = getExpectedPoolModule();
+        // Add poolB01 to the root node
+        vm.expectEmit();
+        emit PoolAdded({parentIndex: 0, pool: address(poolB01), poolModule: expectedPoolModule});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 1, token: address(token0), parentPool: address(poolB01)});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 2, token: address(token1), parentPool: address(poolB01)});
+        vm.recordLogs();
+        // 0: BT + (1: T0, 2: T1)
+        addPool(0, address(poolB01));
+        // Should be exactly 3 events
+        assertEq(vm.getRecordedLogs().length, 3);
+    }
+
+    function test_addPool_emitsEvents_newPool_toNonRoot() public {
+        // 0: BT
+        // 0: BT + (1: T2)
+        // 1: T2 + (2: T0)
+        compactSetup();
+        address expectedPoolModule = getExpectedPoolModule();
+        // Add pool pool123 to node 1 (T2)
+        vm.expectEmit();
+        emit PoolAdded({parentIndex: 1, pool: address(pool123), poolModule: expectedPoolModule});
+        // Should only add T1 and T3 to the tree
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 3, token: address(token1), parentPool: address(pool123)});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 4, token: address(token3), parentPool: address(pool123)});
+        vm.recordLogs();
+        // 1: T2 + (3: T1, 4: T3)
+        addPool(1, address(pool123));
+        // Should be exactly 3 events
+        assertEq(vm.getRecordedLogs().length, 3);
+    }
+
+    function test_addPool_emitsEvents_newPool_toNonRoot_withBridgeToken() public {
+        // 0: BT
+        // 0: BT + (1: T2)
+        // 1: T2 + (2: T0)
+        compactSetup();
+        address expectedPoolModule = getExpectedPoolModule();
+        // Add pool poolB012 to node 1 (T2)
+        vm.expectEmit();
+        emit PoolAdded({parentIndex: 1, pool: address(poolB012), poolModule: expectedPoolModule});
+        // Should only add T0 and T1 to the tree
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 3, token: address(token0), parentPool: address(poolB012)});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 4, token: address(token1), parentPool: address(poolB012)});
+        vm.recordLogs();
+        // 1: T2 + (3: T0, 4: T1)
+        addPool(1, address(poolB012));
+        // Should be exactly 3 events
+        assertEq(vm.getRecordedLogs().length, 3);
+    }
+
+    // Tests that add pool that was previously added to another node
+    // Should emit NOT PoolAdded event for the pool
+    // Should emit TokenNodeAdded event for the NEW nodes
+
+    function test_addPool_emitsEvents_oldPool_toRoot() public {
+        // 0: BT
+        simpleSetup();
+        // 0: BT + (1: T2)
+        addPool(0, address(poolB2));
+        // 1: T2 + (2: T0, 3: T1)
+        addPool(1, address(poolB012));
+        // Adding poolB012 to the root node should not emit PoolAdded event
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 4, token: address(token0), parentPool: address(poolB012)});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 5, token: address(token1), parentPool: address(poolB012)});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 6, token: address(token2), parentPool: address(poolB012)});
+        vm.recordLogs();
+        // 0: BT + (4: T0, 5: T1, 6: T2)
+        addPool(0, address(poolB012));
+        // Should be exactly 3 events
+        assertEq(vm.getRecordedLogs().length, 3);
+    }
+
+    function test_addPool_emitsEvents_oldPool_toNonRoot() public {
+        complexSetup();
+        // Adding pool123 to node 4 (T2) should not emit PoolAdded event
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 8, token: address(token1), parentPool: address(pool123)});
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 9, token: address(token3), parentPool: address(pool123)});
+        vm.recordLogs();
+        // 4: T2 + (8: T1, 9: T3)
+        addPool(4, address(pool123));
+        // Should be exactly 2 events
+        assertEq(vm.getRecordedLogs().length, 2);
+    }
+
+    function test_addPool_emitsEvents_oldPool_toNonRoot_withBridgeToken() public {
+        complexSetup();
+        // Adding poolB01 to node 6 (T1) should not emit PoolAdded event
+        vm.expectEmit();
+        emit TokenNodeAdded({childIndex: 8, token: address(token0), parentPool: address(poolB01)});
+        vm.recordLogs();
+        // 6: T1 + ([BT: ignored], 8: T0)
+        addPool(6, address(poolB01));
+        // Should be exactly 1 event
+        assertEq(vm.getRecordedLogs().length, 1);
+    }
+
     // ═══════════════════════════════════════════════ REVERT TESTS ════════════════════════════════════════════════════
 
     function test_addPool_revert_nodeNotInPool() public {
         complexSetup();
         // 1 is T0, which is not in pool123
-        vm.expectRevert("Node token not found in the pool");
+        vm.expectRevert(TokenTree.TokenTree__NodeTokenNotInPool.selector);
         vm.prank(owner);
         linkedPool.addPool(1, address(pool123), address(0));
     }
@@ -227,14 +357,14 @@ contract LinkedPoolTest is Test {
     function test_addPool_revert_nodeIndexOutOfRange() public {
         complexSetup();
         uint256 tokensAmount = linkedPool.tokenNodesAmount();
-        vm.expectRevert("Out of range");
+        vm.expectRevert(abi.encodeWithSelector(TokenTree.TokenTree__IndexOutOfRange.selector, tokensAmount));
         vm.prank(owner);
         linkedPool.addPool(tokensAmount, address(pool123), address(0));
     }
 
     function test_addPool_revert_emptyPoolAddress() public {
         complexSetup();
-        vm.expectRevert("Pool address can't be zero");
+        vm.expectRevert(LinkedPool.LinkedPool__EmptyPoolAddress.selector);
         vm.prank(owner);
         linkedPool.addPool(0, address(0), address(0));
     }
@@ -253,7 +383,7 @@ contract LinkedPoolTest is Test {
         }
         // 256th pool should cause a revert as its index would not fit into uint8 (pool indexes start from 1)
         pool = new MockDefaultPool(tokens);
-        vm.expectRevert("Too many pools");
+        vm.expectRevert(TokenTree.TokenTree__TooManyPools.selector);
         vm.prank(owner);
         linkedPool.addPool(0, address(pool), address(0));
     }
@@ -261,11 +391,11 @@ contract LinkedPoolTest is Test {
     function test_addPool_revert_alreadyAttached() public {
         complexSetup();
         // [BT, T0, T1] was already attached to the root node (0)
-        vm.expectRevert("Pool already attached");
+        vm.expectRevert(TokenTree.TokenTree__PoolAlreadyAttached.selector);
         vm.prank(owner);
         linkedPool.addPool(0, address(poolB01), address(0));
         // [T1, T2, T3] was already attached to node with index 5
-        vm.expectRevert("Pool already attached");
+        vm.expectRevert(TokenTree.TokenTree__PoolAlreadyAttached.selector);
         vm.prank(owner);
         linkedPool.addPool(5, address(pool123), address(0));
     }
@@ -273,10 +403,10 @@ contract LinkedPoolTest is Test {
     function test_addPool_revert_parentPool() public {
         complexSetup();
         // [T1, T2, T3] was already used to add node with indexes 6 and 7
-        vm.expectRevert("Pool already on path to root");
+        vm.expectRevert(TokenTree.TokenTree__PoolAlreadyOnRootPath.selector);
         vm.prank(owner);
         linkedPool.addPool(6, address(pool123), address(0));
-        vm.expectRevert("Pool already on path to root");
+        vm.expectRevert(TokenTree.TokenTree__PoolAlreadyOnRootPath.selector);
         vm.prank(owner);
         linkedPool.addPool(7, address(pool123), address(0));
     }
@@ -284,7 +414,7 @@ contract LinkedPoolTest is Test {
     function test_addPool_revert_poolUsedOnRootPath() public {
         complexSetup();
         // [BT, T0, T1] was already used to add node with indexes 1 and 2
-        vm.expectRevert("Pool already on path to root");
+        vm.expectRevert(TokenTree.TokenTree__PoolAlreadyOnRootPath.selector);
         // Node 3 was added using pool01, but poolB01 is present on the root path
         vm.prank(owner);
         linkedPool.addPool(3, address(poolB01), address(0));
@@ -310,7 +440,7 @@ contract LinkedPoolTest is Test {
     function test_getToken_revert_tokenOutOfRange() public {
         complexSetup();
         uint8 tokensAmount = uint8(linkedPool.tokenNodesAmount());
-        vm.expectRevert("Out of range");
+        vm.expectRevert(abi.encodeWithSelector(TokenTree.TokenTree__IndexOutOfRange.selector, tokensAmount));
         linkedPool.getToken(tokensAmount);
     }
 
@@ -318,7 +448,7 @@ contract LinkedPoolTest is Test {
         complexSetup();
         uint256 tokensAmount = linkedPool.tokenNodesAmount();
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            vm.expectRevert("Swap not supported");
+            vm.expectRevert(abi.encodeWithSelector(LinkedPool.LinkedPool__EqualSwapIndexes.selector, i));
             linkedPool.swap(i, i, 10**18, 0, type(uint256).max);
         }
     }
@@ -327,9 +457,9 @@ contract LinkedPoolTest is Test {
         complexSetup();
         uint8 tokensAmount = uint8(linkedPool.tokenNodesAmount());
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            vm.expectRevert("Swap not supported");
+            vm.expectRevert(abi.encodeWithSelector(TokenTree.TokenTree__IndexOutOfRange.selector, tokensAmount));
             linkedPool.swap(i, tokensAmount, 10**18, 0, type(uint256).max);
-            vm.expectRevert("Swap not supported");
+            vm.expectRevert(abi.encodeWithSelector(TokenTree.TokenTree__IndexOutOfRange.selector, tokensAmount));
             linkedPool.swap(tokensAmount, i, 10**18, 0, type(uint256).max);
         }
     }
@@ -340,7 +470,9 @@ contract LinkedPoolTest is Test {
         complexSetup();
         uint8 tokensAmount = uint8(linkedPool.tokenNodesAmount());
         for (uint8 i = 0; i < tokensAmount; ++i) {
-            vm.expectRevert("Deadline not met");
+            vm.expectRevert(
+                abi.encodeWithSelector(LinkedPool.LinkedPool__DeadlineExceeded.selector, currentTime, currentTime - 1)
+            );
             linkedPool.swap(i, (i + 1) % tokensAmount, 10**18, 0, currentTime - 1);
         }
     }
@@ -350,7 +482,7 @@ contract LinkedPoolTest is Test {
         uint256 amountIn = 10**18;
         uint256 amountOut = linkedPool.calculateSwap(0, 1, amountIn);
         prepareUser(address(bridgeToken), amountIn);
-        vm.expectRevert("Swap didn't result in min tokens");
+        vm.expectRevert(abi.encodeWithSelector(LinkedPool.LinkedPool__MinDyNotMet.selector, amountOut, amountOut + 1));
         vm.prank(user);
         linkedPool.swap(0, 1, amountIn, amountOut + 1, type(uint256).max);
     }
@@ -454,7 +586,7 @@ contract LinkedPoolTest is Test {
 
     function test_getPoolModule() public {
         complexSetup();
-        address expectedPoolModule = poolModule == address(0) ? address(linkedPool) : poolModule;
+        address expectedPoolModule = getExpectedPoolModule();
         assertEq(linkedPool.getPoolModule(address(poolB01)), expectedPoolModule);
         assertEq(linkedPool.getPoolModule(address(pool01)), expectedPoolModule);
         assertEq(linkedPool.getPoolModule(address(pool02)), expectedPoolModule);
@@ -487,7 +619,7 @@ contract LinkedPoolTest is Test {
     function test_getNodeParent_revert_indexOutOfRange() public {
         complexSetup();
         uint256 tokensAmount = linkedPool.tokenNodesAmount();
-        vm.expectRevert("Out of range");
+        vm.expectRevert(abi.encodeWithSelector(TokenTree.TokenTree__IndexOutOfRange.selector, tokensAmount));
         linkedPool.getNodeParent(tokensAmount);
     }
 
@@ -891,7 +1023,9 @@ contract LinkedPoolTest is Test {
         address tokenOut = linkedPool.getToken(tokenTo);
         uint256 amountOut = linkedPool.calculateSwap(tokenFrom, tokenTo, amountIn);
         vm.prank(user);
-        if (amountOut == 0) vm.expectRevert("Can't use same pool twice");
+        if (amountOut == 0) {
+            vm.expectRevert(abi.encodeWithSelector(TokenTree.TokenTree__SwapPoolUsedTwice.selector, pool123));
+        }
         linkedPool.swap(tokenFrom, tokenTo, amountIn, amountOut, block.timestamp);
         if (amountOut > 0) {
             if (tokenIn != tokenOut) assertEq(MockERC20(tokenIn).balanceOf(user), 0);
