@@ -67,7 +67,7 @@ contract KlaytnSynapseBridgeTestFork is Test {
     event TokenWithdraw(address indexed to, IERC20 token, uint256 amount, uint256 fee, bytes32 indexed kappa);
 
     function setUp() public {
-        string memory klayRPC = vm.envString("KLAY_API");
+        string memory klayRPC = vm.envString("KLATYN_API");
         // Fork Klaytn for Bridge tests
         vm.createSelectFork(klayRPC);
         utils = new Utilities();
