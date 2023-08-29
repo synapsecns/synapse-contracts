@@ -18,8 +18,8 @@ abstract contract QuoterV2WithLinkedPoolSetup is Test {
         if (tokenToLinkedPool[bridgeToken] != address(0)) {
             return tokenToLinkedPool[bridgeToken];
         }
-        // Deploy 0.8 LinkedPool contract: new LinkedPool(bridgeToken)
-        linkedPool = deployCode("LinkedPool.sol", abi.encode(bridgeToken));
+        // Deploy 0.8 LinkedPool contract: new LinkedPool(bridgeToken, address(this))
+        linkedPool = deployCode("LinkedPool.sol", abi.encode(bridgeToken, address(this)));
         string memory symbol = ERC20(bridgeToken).symbol();
         vm.label(linkedPool, string(abi.encodePacked("LinkedPool[", symbol, "]")));
         // Add pool to LinkedPool
