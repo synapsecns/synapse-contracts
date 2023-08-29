@@ -51,7 +51,7 @@ contract MockBridgeModule is IBridgeModule {
         SwapQuery memory destQuery
     ) external payable {
         // simple transfer in of token to bridge address
-        IERC20(token).safeTransfer(to, amount);
+        IERC20(token).safeTransfer(bridge, amount);
 
         bytes memory formattedQuery = abi.encode(
             destQuery.routerAdapter,
