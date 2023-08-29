@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 import {IBridgeModule} from "../../../contracts/router/interfaces/IBridgeModule.sol";
 import {BridgeToken, LimitedToken, SwapQuery} from "../../../contracts/router/libs/Structs.sol";
+import {MockBridge} from "./MockBridge.sol";
 
 import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
@@ -15,20 +16,14 @@ contract MockBridgeModule is IBridgeModule {
     mapping(address => uint256) internal _maxBridgedAmounts;
     mapping(address => uint256) internal _fees;
 
-    address public immutable bridge;
+    MockBridge public immutable bridge;
 
     mapping(string => address) public symbolToToken;
     mapping(address => string) public tokenToSymbol;
     mapping(address => uint256) public tokenToActionMask;
 
-    event Deposit(address recipient, uint256 chainId, address token, uint256 amount, bytes formattedQuery);
-
-    constructor(
-        address bridge_,
-        BridgeToken[] memory bridgeTokens_,
-        LimitedToken[] memory limitedTokens_
-    ) {
-        bridge = bridge_;
+    constructor(BridgeToken[] memory bridgeTokens_, LimitedToken[] memory limitedTokens_) {
+        bridge = new MockBridge();
 
         require(bridgeTokens_.length == limitedTokens_.length, "token arrays not same len");
         for (uint256 i = 0; i < bridgeTokens_.length; i++) {
@@ -50,17 +45,11 @@ contract MockBridgeModule is IBridgeModule {
         uint256 amount,
         SwapQuery memory destQuery
     ) external payable {
-        // simple transfer in of token to bridge address
-        IERC20(token).safeTransfer(bridge, amount);
+        bridge.deposit(to, chainId, token, amount, formatQuery(destQuery));
+    }
 
-        bytes memory formattedQuery = abi.encode(
-            destQuery.routerAdapter,
-            destQuery.tokenOut,
-            destQuery.minAmountOut,
-            destQuery.deadline,
-            destQuery.rawParams
-        );
-        emit Deposit(to, chainId, token, amount, formattedQuery);
+    function formatQuery(SwapQuery memory query) public view returns (bytes memory) {
+        return abi.encode(query.routerAdapter, query.tokenOut, query.minAmountOut, query.deadline, query.rawParams);
     }
 
     function getMaxBridgedAmount(address token) external view returns (uint256 amount) {
