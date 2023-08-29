@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 import {SynapseCreate3Factory} from "../../contracts/create3/SynapseCreate3Factory.sol";
 import {InitializableContract} from "./mocks/InitializableContract.sol";
+import {RevertingContract} from "./mocks/RevertingContract.sol";
 
 import {console, Test} from "forge-std/Test.sol";
 
@@ -11,6 +12,7 @@ contract SynapseCreate3FactoryTest is Test {
     address public deployer;
 
     address public initializableReference;
+    address public revertingReference;
 
     uint256 public msgValue;
     bytes public initData;
@@ -19,6 +21,7 @@ contract SynapseCreate3FactoryTest is Test {
         factory = new SynapseCreate3Factory();
         deployer = makeAddr("Deployer");
         initializableReference = address(new InitializableContract());
+        revertingReference = address(new RevertingContract());
     }
 
     function testSafeCreate3DeploysContract(bytes12 shortSalt) public returns (address deployedAddress) {
@@ -62,6 +65,41 @@ contract SynapseCreate3FactoryTest is Test {
         initData = abi.encodeWithSelector(InitializableContract.setValue.selector, argValue);
         address deployedAddress = testSafeCreate3DeploysContractWithEther(shortSalt, value);
         assertEq(InitializableContract(deployedAddress).value(), argValue);
+    }
+
+    // ══════════════════════════════════════════════ TESTS: REVERTS ═══════════════════════════════════════════════════
+
+    function testSafeCreate3RevertsBubbleErrorWhenInitCallRevertsWithCustomError() public {
+        bytes32 salt = constructSalt(deployer, 0);
+        initData = abi.encodeWithSelector(RevertingContract.revertWithNoArgError.selector);
+        vm.expectRevert(RevertingContract.NoArgError.selector);
+        vm.prank(deployer);
+        factory.safeCreate3(salt, type(RevertingContract).creationCode, initData);
+    }
+
+    function testSafeCreate3RevertsBubbleErrorWhenInitCallRevertsWithCustomErrorWithArgs() public {
+        bytes32 salt = constructSalt(deployer, 0);
+        uint256 argValue = 42;
+        initData = abi.encodeWithSelector(RevertingContract.revertWithOneArgError.selector, argValue);
+        vm.expectRevert(abi.encodeWithSelector(RevertingContract.OneArgError.selector, argValue));
+        vm.prank(deployer);
+        factory.safeCreate3(salt, type(RevertingContract).creationCode, initData);
+    }
+
+    function testSafeCreate3RevertsBubbleErrorWhenInitCallRevertsWithMessage() public {
+        bytes32 salt = constructSalt(deployer, 0);
+        initData = abi.encodeWithSelector(RevertingContract.revertWithMessage.selector);
+        vm.expectRevert("Revert: GM");
+        vm.prank(deployer);
+        factory.safeCreate3(salt, type(RevertingContract).creationCode, initData);
+    }
+
+    function testSafeCreate3RevertsWhenInitCallRevertsSilently() public {
+        bytes32 salt = constructSalt(deployer, 0);
+        initData = abi.encodeWithSelector(RevertingContract.revertNoReason.selector);
+        vm.expectRevert(SynapseCreate3Factory.SynapseCreate3Factory__InitCallFailed.selector);
+        vm.prank(deployer);
+        factory.safeCreate3(salt, type(RevertingContract).creationCode, initData);
     }
 
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
