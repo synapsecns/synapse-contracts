@@ -3,7 +3,7 @@ pragma solidity 0.8.17;
 
 import {Create3Lib, SynapseCreate3Factory} from "../../contracts/create3/SynapseCreate3Factory.sol";
 import {InitializableContract} from "./mocks/InitializableContract.sol";
-import {RevertingContract} from "./mocks/RevertingContract.sol";
+import {RevertingContract, RevertingConstructorContract} from "./mocks/RevertingContracts.sol";
 
 import {console, Test} from "forge-std/Test.sol";
 
@@ -127,6 +127,23 @@ contract SynapseCreate3FactoryTest is Test {
     }
 
     // ══════════════════════════════════════════════ TESTS: REVERTS ═══════════════════════════════════════════════════
+
+    function testSafeCreate3RevertsWhenConstructorRevertsSilently() public {
+        deal(deployer, 1);
+        bytes32 salt = constructSalt(deployer, 0);
+        vm.expectRevert(Create3Lib.Create3__DeploymentFailed.selector);
+        // Make the deployment fail y providing Ether to non-payable constructor
+        vm.prank(deployer);
+        factory.safeCreate3{value: 1}(salt, type(RevertingContract).creationCode, "");
+    }
+
+    // Revert message is NOT bubbled up
+    function testSafeCreate3RevertsWhenConstructorRevertsWithMessage() public {
+        bytes32 salt = constructSalt(deployer, 0);
+        vm.expectRevert(Create3Lib.Create3__DeploymentFailed.selector);
+        vm.prank(deployer);
+        factory.safeCreate3(salt, type(RevertingConstructorContract).creationCode, "");
+    }
 
     function testSafeCreate3RevertsBubbleErrorWhenInitCallRevertsWithCustomError() public {
         bytes32 salt = constructSalt(deployer, 0);

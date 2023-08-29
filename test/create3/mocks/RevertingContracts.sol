@@ -21,3 +21,9 @@ contract RevertingContract {
         revert OneArgError(arg);
     }
 }
+
+contract RevertingConstructorContract {
+    constructor() {
+        revert("Revert: GM");
+    }
+}
