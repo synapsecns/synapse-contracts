@@ -57,6 +57,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
             amount,
             destQuery
         );
+        // TODO: include with msg.value or convert to WETH?
         (bool success, ) = bridgeModule.delegatecall(payload);
         if (!success) revert BridgeFailed();
     }
