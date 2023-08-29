@@ -67,6 +67,42 @@ contract SynapseCreate3FactoryTest is Test {
         assertEq(InitializableContract(deployedAddress).value(), argValue);
     }
 
+    // ══════════════════════════════════════ TESTS: UNAUTHORIZED DEPLOYMENT ═══════════════════════════════════════════
+
+    function testSafeCreate3RevertsWhenSaltDoesNotContainCaller(bytes32 salt) public {
+        vm.assume(bytes20(salt) != bytes20(deployer));
+        // SynapseCreate3Factory__UnauthorizedDeployer(deployed, authorized)
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SynapseCreate3Factory.SynapseCreate3Factory__UnauthorizedDeployer.selector,
+                deployer,
+                address(bytes20(salt))
+            )
+        );
+        vm.prank(deployer);
+        factory.safeCreate3(salt, type(InitializableContract).creationCode, "");
+    }
+
+    function testSafeCreate3RevertsWhenSaltHasSingleBitSwitched(bytes12 shortSalt) public {
+        bytes32 correctSalt = constructSalt(deployer, shortSalt);
+        bytes32 one = bytes32(uint256(1));
+        // Iterate over all 160 highest bits of the salt
+        for (uint256 i = 0; i < 160; ++i) {
+            // Switch one bit at a time
+            bytes32 incorrectSalt = correctSalt ^ (one << (96 + i));
+            // SynapseCreate3Factory__UnauthorizedDeployer(deployed, authorized)
+            vm.expectRevert(
+                abi.encodeWithSelector(
+                    SynapseCreate3Factory.SynapseCreate3Factory__UnauthorizedDeployer.selector,
+                    deployer,
+                    address(bytes20(incorrectSalt))
+                )
+            );
+            vm.prank(deployer);
+            factory.safeCreate3(incorrectSalt, type(InitializableContract).creationCode, "");
+        }
+    }
+
     // ══════════════════════════════════════════════ TESTS: REVERTS ═══════════════════════════════════════════════════
 
     function testSafeCreate3RevertsBubbleErrorWhenInitCallRevertsWithCustomError() public {
