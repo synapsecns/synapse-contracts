@@ -3,11 +3,11 @@ pragma solidity 0.8.17;
 
 import {IBridgeModule} from "../../../contracts/router/interfaces/IBridgeModule.sol";
 import {BridgeToken, LimitedToken, SwapQuery} from "../../../contracts/router/libs/Structs.sol";
-import {MockBridge} from "./MockBridge.sol";
+import {MockFailedBridge} from "./MockFailedBridge.sol";
 
 import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
-contract MockBridgeModule is IBridgeModule {
+contract MockFailedBridgeModule is IBridgeModule {
     using SafeERC20 for IERC20;
 
     uint256 private constant FEE_DENOMINATOR = 10**10;
@@ -16,14 +16,14 @@ contract MockBridgeModule is IBridgeModule {
     mapping(address => uint256) internal _maxBridgedAmounts;
     mapping(address => uint256) internal _fees;
 
-    MockBridge public immutable bridge;
+    MockFailedBridge public immutable bridge;
 
     mapping(string => address) public symbolToToken;
     mapping(address => string) public tokenToSymbol;
     mapping(address => uint256) public tokenToActionMask;
 
     constructor(BridgeToken[] memory bridgeTokens_, LimitedToken[] memory limitedTokens_) {
-        bridge = new MockBridge();
+        bridge = new MockFailedBridge();
 
         require(bridgeTokens_.length == limitedTokens_.length, "token arrays not same len");
         for (uint256 i = 0; i < bridgeTokens_.length; i++) {

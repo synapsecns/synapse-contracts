@@ -6,5 +6,8 @@ import {BasicSynapseRouterV2Test} from "./BasicSynapseRouterV2.t.sol";
 // solhint-disable func-name-mixedcase
 contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
     // TODO: for different action mask
-    function testGetDestinationBridgeTokens() public {}
+    function testGetDestinationBridgeTokens() public {
+        addL1Pool();
+        addL2Pools();
+    }
 }

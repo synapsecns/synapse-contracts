@@ -38,7 +38,6 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         SwapQuery memory destQuery
     ) external payable {
         address bridgeModule = idToModule(moduleId);
-        if (bridgeModule == address(0)) revert ModuleNotExists();
 
         // pull (and possibly swap) token into router
         if (_hasAdapter(originQuery)) {
@@ -57,7 +56,6 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
             amount,
             destQuery
         );
-        // TODO: include with msg.value or convert to WETH?
         (bool success, ) = bridgeModule.delegatecall(payload);
         if (!success) revert BridgeFailed();
     }
@@ -111,6 +109,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
     /// @inheritdoc IRouterV2
     function idToModule(bytes32 moduleId) public view returns (address bridgeModule) {
+        if (!_hasModule(moduleId)) revert ModuleNotExists();
         bridgeModule = _bridgeModules.get(uint256(moduleId));
     }
 
