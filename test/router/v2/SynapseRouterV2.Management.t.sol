@@ -198,8 +198,7 @@ contract SynapseRouterV2ManagementTest is BasicSynapseRouterV2Test {
         vm.prank(owner);
         router.disconnectBridgeModule(moduleId);
 
-        // TODO: do we want this view to return bytes32(0) instead?
-        vm.expectRevert("EnumerableMap: nonexistent key");
+        vm.expectRevert(ModuleNotExists.selector);
         router.idToModule(moduleId);
 
         assertEq(router.moduleToId(module), bytes32(0));
