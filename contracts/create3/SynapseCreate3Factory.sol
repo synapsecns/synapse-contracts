@@ -12,6 +12,7 @@ import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 /// @notice This contract provides a way to deploy contracts to the deterministic address, which
 /// doesn't depend on the creation code (aka EIP-3171, aka "CREATE3").
 /// Every deployer has access to their unique address deployment space of 2**96 addresses.
+/// This is achieved by forcing the first 20 bytes of the deployment salt to be equal to the deployer's address.
 contract SynapseCreate3Factory is ISynapseCreate3Factory {
     using Address for address;
 
@@ -44,6 +45,8 @@ contract SynapseCreate3Factory is ISynapseCreate3Factory {
         deployedAt = Create3Lib.create3(salt, creationCode, msg.value);
         // Perform initialization call if needed
         if (initData.length != 0) {
+            // Using OZ library here to bubble up the revert reason, if it exists.
+            // If it does not, the error will be "SynapseCreate3Factory__InitCallFailed()"
             deployedAt.functionCall(initData, string(_INIT_CALL_FAILED_SELECTOR));
         }
     }

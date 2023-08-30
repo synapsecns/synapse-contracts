@@ -64,7 +64,7 @@ library Create3Lib {
     error Create3__DeploymentFailed();
     error Create3__ProxyDeployerDeploymentFailed();
 
-    /// @notice Init code to deploy a proxy deployer contract.
+    /// @notice Init code to deploy a proxy deployer contract (see Init Code Table above).
     bytes internal constant DEPLOYER_INIT_CODE = hex"67_36_3d_3d_37_36_3d_34_f0_3d_52_60_08_60_18_f3";
 
     /// @notice Hash of the proxy deployer init code. Used to predict the address of the proxy deployer,
@@ -73,7 +73,10 @@ library Create3Lib {
         0x21c35dbe1b344a2488cf3321d6ce542f8e9f305544ff09e4993a62319a497c1f;
 
     /// @notice Deploys a contract EIP-3171 style. The resulting contract address depends
-    /// solely on the provided salt and the address of the caller.
+    /// solely on the provided salt and the address of the factory that invokes this function.
+    /// @dev The resulting contract address does NOT depend on the creation code of the contract,
+    /// or the deployer EOA address. Make sure to both use a unique salt for each contract,
+    /// as well as provide a mechanism to prevent unauthorized deploys.
     /// @param salt          Salt of the contract deployment.
     /// @param creationCode  Creation code of the contract to deploy. This is usually the
     ///                      bytecode of the contract, followed by the ABI-encoded constructor arguments.
@@ -99,11 +102,14 @@ library Create3Lib {
             // We add 0x20 to get the location where the init code starts.
             proxy := create2(0, add(initCode, 0x20), mload(initCode), salt)
         }
-        // Check that the proxy deployer was deployed successfully
+        // Check that the proxy deployer was deployed successfully.
+        // create2 opcode does not return any error code on failure, but returns zero address instead.
         if (proxy == address(0)) revert Create3__ProxyDeployerDeploymentFailed();
         // Call the proxy deployer with the creation code of the final contract
         (bool success, ) = proxy.call{value: value}(creationCode);
-        // Check that the final contract was deployed successfully
+        // Check that the final contract was deployed successfully.
+        // Proxy Deployer is using create opcode, which does not return any error code on failure,
+        // so we check the code size of the predicted address to see if the contract was deployed.
         if (!success || addr.code.length == 0) revert Create3__DeploymentFailed();
     }
 
@@ -116,7 +122,8 @@ library Create3Lib {
         address proxy = address(
             uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), address(this), salt, DEPLOYER_INIT_CODE_HASH))))
         );
-        // Predict address of the contract deployed by the proxy deployer
+        // Predict address of the contract deployed by the proxy deployer.
+        // Fresh contracts have nonce = 1 (https://eips.ethereum.org/EIPS/eip-161#specification)
         // https://github.com/transmissions11/solmate/blob/main/src/utils/CREATE3.sol
         return address(uint160(uint256(keccak256(abi.encodePacked(hex"d6_94", proxy, hex"01")))));
     }

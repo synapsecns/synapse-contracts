@@ -10,6 +10,7 @@ interface ISynapseCreate3Factory {
     /// addresses for each deployer.
     /// - Function is payable and all value is forwarded to the contract constructor.
     /// - If `initData` is non-empty, it will be used to perform an initialization call to the deployed contract.
+    /// This could be used to call the contract initializer atomically with the deployment to prevent front-running.
     /// @dev The execution will be reverted in either of the following cases:
     /// - First 20 bytes of the salt are not equal to the deployer's address.
     /// - Salt has been used before (meaning the address associated with the salt is already occupied).
