@@ -112,6 +112,11 @@ contract SetupCCTPScript is BasicSynapseScript {
             }
             address remoteSynapseCCTP = getDeploymentAddress(remoteChain, SYNAPSE_CCTP);
             uint256 chainid = getChainId(remoteChain);
+            // (TODO: remove) Temporarily skip Ethereum and Arbitrum when on Optimism
+            if (blockChainId() == 10 && (chainid == 1 || chainid == 42161)) {
+                console.log("       Skip: preliminary setup");
+                continue;
+            }
             (uint32 domain_, address remoteSynapseCCTP_) = synapseCCTP.remoteDomainConfig(chainid);
             if (remoteSynapseCCTP == remoteSynapseCCTP_ && domain == domain_) {
                 console.log("       Skip: already configured");
@@ -140,6 +145,11 @@ contract SetupCCTPScript is BasicSynapseScript {
     }
 
     function transferOwnership() public {
+        // (TODO: remove) Skip transferring ownership on Optimism
+        if (blockChainId() == 10) {
+            console.log("Skipping ownership transfer on Optimism");
+            return;
+        }
         console.log("Transferring ownership");
         address newOwner = getDeploymentAddress("DevMultisig");
         console.log("   Old owner: %s", synapseCCTP.owner());
