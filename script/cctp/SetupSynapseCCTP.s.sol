@@ -3,13 +3,14 @@ pragma solidity 0.8.17;
 
 import {SynapseCCTP} from "../../contracts/cctp/SynapseCCTP.sol";
 
-import {DeployScript} from "../utils/DeployScript.sol";
+import {BasicSynapseScript, StringUtils} from "../templates/BasicSynapse.s.sol";
 import {console, stdJson} from "forge-std/Script.sol";
 
 import {IERC20Metadata} from "@openzeppelin/contracts-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
 
 // solhint-disable no-console
-contract SetupCCTPScript is DeployScript {
+contract SetupCCTPScript is BasicSynapseScript {
+    using StringUtils for *;
     using stdJson for string;
 
     // Alphabetical order should be enforced
@@ -29,37 +30,33 @@ contract SetupCCTPScript is DeployScript {
 
     SynapseCCTP public synapseCCTP;
 
-    constructor() {
-        setupPK("OWNER_PK");
-        // Load chain name that block.chainid refers to
-        loadChain();
-    }
-
-    /// @notice Logic for executing the script
-    function execute(bool isBroadcasted_) public override {
-        synapseCCTP = SynapseCCTP(loadDeployment(SYNAPSE_CCTP));
-        if (synapseCCTP.owner() != broadcasterAddress) {
+    function run() external {
+        // Setup the BasicSynapseScript
+        setUp();
+        synapseCCTP = SynapseCCTP(getDeploymentAddress(SYNAPSE_CCTP));
+        vm.startBroadcast();
+        if (synapseCCTP.owner() != msg.sender) {
             console.log("Error: SynapseCCTP owner is not the broadcaster");
             console.log("      Owner: %s", synapseCCTP.owner());
-            console.log("Broadcaster: %s", broadcasterAddress);
+            console.log("Broadcaster: %s", msg.sender);
+            vm.stopBroadcast();
             return;
         }
-        startBroadcast(isBroadcasted_);
         setupTokensCCTP();
         setupRemoteDeployments();
         setupGasAirdrop();
         transferOwnership();
-        stopBroadcast();
+        vm.stopBroadcast();
     }
 
     function setupTokensCCTP() internal {
-        string memory config = loadDeployConfig(SYNAPSE_CCTP);
+        string memory config = getDeployConfig(SYNAPSE_CCTP);
         // Get the list of symbols
         string[] memory symbols = config.readStringArray(".tokens.symbols");
         console.log("Setting up %s tokens", symbols.length);
         for (uint256 i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
-            CCTPToken memory token = abi.decode(config.parseRaw(_concat(".tokens.", symbol)), (CCTPToken));
+            CCTPToken memory token = abi.decode(config.parseRaw(string.concat(".tokens.", symbol)), (CCTPToken));
             console.log(
                 "   Setting up %s [name: %s] [symbol: %s]",
                 symbol,
@@ -74,23 +71,13 @@ contract SetupCCTPScript is DeployScript {
             uint8 decimals = IERC20Metadata(token.token).decimals();
             console.log("           token: %s", token.token);
             console.log("        decimals: %s", decimals);
-            console.log("      relayerFee: %s [%s %%]", token.relayerFee, _castToFloat(token.relayerFee / 10**6, 2));
-            console.log(
-                "      minBaseFee: %s [%s %s]",
-                token.minBaseFee,
-                _castToFloat(token.minBaseFee, decimals),
-                symbol
-            );
-            console.log(
-                "      minSwapFee: %s [%s %s]",
-                token.minSwapFee,
-                _castToFloat(token.minSwapFee, decimals),
-                symbol
-            );
-            console.log("          maxFee: %s [%s %s]", token.maxFee, _castToFloat(token.maxFee, decimals), symbol);
+            console.log("      relayerFee: %s [%s %%]", token.relayerFee, (token.relayerFee / 10**6).fromFloat(2));
+            console.log("      minBaseFee: %s [%s %s]", token.minBaseFee, token.minBaseFee.fromFloat(decimals), symbol);
+            console.log("      minSwapFee: %s [%s %s]", token.minSwapFee, token.minSwapFee.fromFloat(decimals), symbol);
+            console.log("          maxFee: %s [%s %s]", token.maxFee, token.maxFee.fromFloat(decimals), symbol);
             // Setup token
             SynapseCCTP(synapseCCTP).addToken({
-                symbol: _concat(SYMBOL_PREFIX, symbol),
+                symbol: SYMBOL_PREFIX.concat(symbol),
                 token: token.token,
                 relayerFee: token.relayerFee,
                 minBaseFee: token.minBaseFee,
@@ -109,22 +96,22 @@ contract SetupCCTPScript is DeployScript {
 
     function setupRemoteDeployments() public {
         console.log("Setting up remote deployments");
-        string memory config = loadGlobalConfig("SynapseCCTP.chains");
-        string[] memory chains = config.readStringArray(_concat(ENVIRONMENT, ".chains"));
+        string memory config = getGlobalConfig({contractName: SYNAPSE_CCTP, globalProperty: "chains"});
+        string[] memory chains = config.readStringArray(ENVIRONMENT.concat(".chains"));
         bool chainFound = false;
         for (uint256 i = 0; i < chains.length; ++i) {
             string memory remoteChain = chains[i];
             console.log("   Checking %s", remoteChain);
-            uint32 domain = uint32(config.readUint(_concat(ENVIRONMENT, ".domains.", remoteChain)));
+            uint32 domain = uint32(config.readUint(ENVIRONMENT.concat(".domains.", remoteChain)));
             // Check if the chain is the same as the current chain
-            if (keccak256(bytes(remoteChain)) == keccak256(bytes(chain))) {
+            if (keccak256(bytes(remoteChain)) == keccak256(bytes(activeChain))) {
                 require(synapseCCTP.localDomain() == domain, "Incorrect local domain");
                 console.log("       Skip: current chain");
                 chainFound = true;
                 continue;
             }
-            address remoteSynapseCCTP = loadRemoteDeployment(remoteChain, SYNAPSE_CCTP);
-            uint256 chainid = loadChainId(remoteChain);
+            address remoteSynapseCCTP = getDeploymentAddress(remoteChain, SYNAPSE_CCTP);
+            uint256 chainid = getChainId(remoteChain);
             (uint32 domain_, address remoteSynapseCCTP_) = synapseCCTP.remoteDomainConfig(chainid);
             if (remoteSynapseCCTP == remoteSynapseCCTP_ && domain == domain_) {
                 console.log("       Skip: already configured");
@@ -139,11 +126,11 @@ contract SetupCCTPScript is DeployScript {
 
     function setupGasAirdrop() public {
         console.log("Setting up gas airdrop");
-        string memory config = loadGlobalConfig("SynapseCCTP.chains");
-        uint256 gasAirdrop = config.readUint(_concat(ENVIRONMENT, ".gasAirdrop.", chain));
+        string memory config = getGlobalConfig({contractName: SYNAPSE_CCTP, globalProperty: "chains"});
+        uint256 gasAirdrop = config.readUint(ENVIRONMENT.concat(".gasAirdrop.", activeChain));
         uint256 oldGasAirdrop = synapseCCTP.chainGasAmount();
-        console.log("   Old gas airdrop: %s", _fromWei(oldGasAirdrop));
-        console.log("   New gas airdrop: %s", _fromWei(gasAirdrop));
+        console.log("   Old gas airdrop: %s", oldGasAirdrop.fromWei());
+        console.log("   New gas airdrop: %s", gasAirdrop.fromWei());
         if (gasAirdrop == oldGasAirdrop) {
             console.log("       Skip: already configured");
             return;
@@ -154,7 +141,7 @@ contract SetupCCTPScript is DeployScript {
 
     function transferOwnership() public {
         console.log("Transferring ownership");
-        address newOwner = loadDeployment("DevMultisig");
+        address newOwner = getDeploymentAddress("DevMultisig");
         console.log("   Old owner: %s", synapseCCTP.owner());
         console.log("   New owner: %s", newOwner);
         synapseCCTP.transferOwnership(newOwner);
