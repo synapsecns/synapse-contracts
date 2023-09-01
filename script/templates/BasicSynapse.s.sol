@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.6.12;
+pragma experimental ABIEncoderV2;
 
 import {BasicUtils, StringUtils} from "./BasicUtils.sol";
 import {IImmutableCreate2Factory} from "../interfaces/IImmutableCreate2Factory.sol";
@@ -11,6 +12,13 @@ import {console2, VmSafe} from "forge-std/Script.sol";
 contract BasicSynapseScript is BasicUtils {
     using StringUtils for string;
     using StringUtils for uint256;
+
+    // Order of the struct members must match the alphabetical order of the JSON keys
+    struct SaltEntry {
+        bytes32 initCodeHash;
+        address predictedAddress;
+        bytes32 salt;
+    }
 
     string internal constant TAB = "    ";
     /// @notice Deployed on lots of chains, could be deployed on more chains in a permissionless way
@@ -115,6 +123,10 @@ contract BasicSynapseScript is BasicUtils {
     {
         // Init code is the contract bytecode with constructor args appended
         bytes memory initCode = abi.encodePacked(getContractBytecode(contractName), constructorArgs);
+        // If no salt was provided, try reading it from the pre-saved list
+        if (nextDeploymentSalt == 0) {
+            nextDeploymentSalt = loadDeploymentSalt(initCode, contractName);
+        }
         deployedAt = factoryDeployCreate2(initCode, nextDeploymentSalt);
         // Erase the salt after the deployment
         nextDeploymentSalt = 0;
@@ -161,6 +173,26 @@ contract BasicSynapseScript is BasicUtils {
     /// @notice Sets the salt to be used for the next create2 deployment.
     function setDeploymentSalt(bytes32 salt) internal {
         nextDeploymentSalt = salt;
+    }
+
+    /// @notice Loads pre-saved deployment salt for a contract, if there is any.
+    /// Note: returns 0 if there is no pre-saved salt.
+    function loadDeploymentSalt(bytes memory initCode, string memory contractName)
+        internal
+        view
+        returns (bytes32 salt)
+    {
+        bytes32 initCodeHash = keccak256(initCode);
+        string memory allSalts = getGlobalConfig(MINIMAL_CREATE2_FACTORY, "salts");
+        // Try to read the salt from the JSON
+        try vm.parseJson(allSalts, StringUtils.concat(".", contractName)) returns (bytes memory encoded) {
+            SaltEntry memory entry = abi.decode(encoded, (SaltEntry));
+            require(entry.initCodeHash == initCodeHash, "Invalid init code hash");
+            return entry.salt;
+        } catch {
+            // No key is present in the JSON, return 0
+            return 0;
+        }
     }
 
     /// @notice Deploys a contract and saves the deployment JSON, if the contract hasn't been deployed yet.
