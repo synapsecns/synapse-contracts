@@ -15,6 +15,8 @@ contract BasicSynapseScript is BasicUtils {
     string internal constant TAB = "    ";
     /// @notice Deployed on lots of chains, could be deployed on more chains in a permissionless way
     address public constant IMMUTABLE_CREATE2_FACTORY = 0x0000000000FFe8B47B3e2130213B802212439497;
+    /// @notice Deployed on lots of chains, could be deployed on more chains using EOA
+    string public constant MINIMAL_CREATE2_FACTORY = "Create2Factory";
 
     /// @notice Name of the active chain, should match the name of the directory in deployments
     string public activeChain;
@@ -111,13 +113,29 @@ contract BasicSynapseScript is BasicUtils {
         internal
         returns (address deployedAt)
     {
-        // Check that ImmutableCreate2Factory is deployed
-        assertContractCodeExists("ImmutableCreate2Factory", IMMUTABLE_CREATE2_FACTORY);
         // Init code is the contract bytecode with constructor args appended
         bytes memory initCode = abi.encodePacked(getContractBytecode(contractName), constructorArgs);
-        deployedAt = IImmutableCreate2Factory(IMMUTABLE_CREATE2_FACTORY).safeCreate2(nextDeploymentSalt, initCode);
+        deployedAt = factoryDeployCreate2(initCode, nextDeploymentSalt);
         // Erase the salt after the deployment
         nextDeploymentSalt = 0;
+    }
+
+    /// @notice Creates a contract with the given init code.
+    /// Deployment is done in a deterministic way, using create2 and the given salt.
+    /// Note: does not save the deployment JSON.
+    function factoryDeployCreate2(bytes memory initCode, bytes32 salt) internal returns (address deployedAt) {
+        // Get address of the factory on the active chain
+        address factory = getDeploymentAddress(MINIMAL_CREATE2_FACTORY);
+        assertContractCodeExists(MINIMAL_CREATE2_FACTORY, factory);
+        // Payload is salt + initCode
+        bytes memory payload = abi.encodePacked(salt, initCode);
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returnData) = factory.call(payload);
+        require(success, "CREATE2 deployment failed");
+        // returnData is 20 bytes of address rather than ABI-encoded address
+        require(returnData.length == 20, "Invalid return data");
+        returnData = abi.encodePacked(bytes12(0), returnData);
+        deployedAt = abi.decode(returnData, (address));
     }
 
     /// @notice Sets the salt to be used for the next create2 deployment.
