@@ -65,7 +65,7 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
             assertEq(expectedToken.symbol, actualToken.symbol);
         }
     }
-    
+
     // TODO: test filtering of bridge token duplicates
 
     function testGetDestinationBridgeTokensL1Pool() public {
