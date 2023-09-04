@@ -19,8 +19,8 @@ abstract contract LinkedPoolSetup is Test {
     mapping(address => address) internal tokenToLinkedPool;
 
     function deployLinkedPool(address bridgeToken, address pool) public returns (address linkedPool) {
-        // Deploy 0.8 LinkedPool contract: new LinkedPool(bridgeToken)
-        linkedPool = deployCode("LinkedPool.sol", abi.encode(bridgeToken));
+        // Deploy 0.8 LinkedPool contract: new LinkedPool(bridgeToken, address(this))
+        linkedPool = deployCode("LinkedPool.sol", abi.encode(bridgeToken, address(this)));
         vm.label(linkedPool, "LinkedPool");
         // Add pool to LinkedPool
         ILinkedPool(linkedPool).addPool(0, pool, address(0));

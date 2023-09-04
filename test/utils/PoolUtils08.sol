@@ -254,7 +254,7 @@ contract PoolUtils08 is Test {
         address pool,
         address poolModule
     ) public returns (address linkedPool) {
-        LinkedPool linkedPool_ = new LinkedPool(bridgeToken);
+        LinkedPool linkedPool_ = new LinkedPool(bridgeToken, address(this));
         linkedPool_.addPool(0, pool, poolModule);
         linkedPool = address(linkedPool_);
         vm.label(linkedPool, string.concat("LinkedPool [", IERC20Metadata(bridgeToken).symbol(), "]"));
