@@ -112,7 +112,7 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         checkBridgeTokens(expectedTokens, actualTokens);
     }
 
-    function testGetOriginBridgeTokensL2Pool() public {
+    function testGetOriginBridgeTokensL2Pools() public {
         // L2 => L1
         addL2Pools();
         deployL2BridgeModule();
@@ -124,5 +124,51 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
 
         assertEq(expectedTokens.length, actualTokens.length);
         checkBridgeTokens(expectedTokens, actualTokens);
+    }
+
+    function checkSupportedTokens(address[] memory expectedTokens, address[] memory actualTokens) public {
+        for (uint256 i = 0; i < actualTokens.length; i++) {
+            address expectedToken = expectedTokens[i];
+            address actualToken = actualTokens[i];
+            assertEq(expectedToken, actualToken);
+        }
+    }
+
+    function testGetSupportedTokensL1Pool() public {
+        // L1
+        addL1Pool();
+        deployL1BridgeModule();
+
+        address[] memory expectedTokens = new address[](3);
+        expectedTokens[0] = nexusDai;
+        expectedTokens[1] = nexusUsdc;
+        expectedTokens[2] = nexusUsdt;
+
+        address[] memory actualTokens = router.getSupportedTokens();
+
+        assertEq(expectedTokens.length, actualTokens.length);
+        checkSupportedTokens(expectedTokens, actualTokens);
+    }
+
+    function testGetSupportedTokensL2Pools() public {
+        // L2
+        addL2Pools();
+        deployL2BridgeModule();
+
+        address[] memory expectedTokens = new address[](9);
+        expectedTokens[0] = usdcE;
+        expectedTokens[1] = usdt;
+        expectedTokens[2] = usdc;
+        expectedTokens[3] = usdcE;
+        expectedTokens[4] = neth;
+        expectedTokens[5] = weth;
+        expectedTokens[6] = nusd;
+        expectedTokens[7] = usdcE;
+        expectedTokens[8] = usdt;
+
+        address[] memory actualTokens = router.getSupportedTokens();
+
+        assertEq(expectedTokens.length, actualTokens.length);
+        checkSupportedTokens(expectedTokens, actualTokens);
     }
 }
