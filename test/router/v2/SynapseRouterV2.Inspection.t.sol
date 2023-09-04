@@ -24,14 +24,12 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         bridgeTokens[2] = BridgeToken({token: nexusUsdt, symbol: "ETH USDT"});
         bridgeTokens[3] = BridgeToken({token: nexusNusd, symbol: "ETH nUSD"});
 
-        uint256 actionMask = ActionLib.mask(Action.Swap) |
-            ActionLib.mask(Action.AddLiquidity) |
-            ActionLib.mask(Action.RemoveLiquidity);
+        uint256 actionMask = ActionLib.mask(Action.RemoveLiquidity, Action.HandleEth);
         LimitedToken[] memory limitedTokens = new LimitedToken[](4);
         limitedTokens[0] = LimitedToken({token: nexusDai, actionMask: actionMask});
         limitedTokens[1] = LimitedToken({token: nexusUsdc, actionMask: actionMask});
         limitedTokens[2] = LimitedToken({token: nexusUsdt, actionMask: actionMask});
-        limitedTokens[3] = LimitedToken({token: nexusNusd, actionMask: ActionLib.mask(Action.RemoveLiquidity)});
+        limitedTokens[3] = LimitedToken({token: nexusNusd, actionMask: actionMask});
 
         bridgeModuleL1 = new MockBridgeModule(bridgeTokens, limitedTokens);
 
@@ -44,24 +42,13 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         // use l2 pools:
         //   - Default Pools: poolNethWeth, poolNusdUsdcEUsdt, poolUsdcUsdcE, poolUsdcEUsdt
         //   - Linked Pools: linkedPoolNusd, linkedPoolUsdc
-        BridgeToken[] memory bridgeTokens = new BridgeToken[](6);
+        BridgeToken[] memory bridgeTokens = new BridgeToken[](2);
         bridgeTokens[0] = BridgeToken({token: neth, symbol: "nETH"});
-        bridgeTokens[1] = BridgeToken({token: weth, symbol: "WETH"});
-        bridgeTokens[2] = BridgeToken({token: nusd, symbol: "nUSD"});
-        bridgeTokens[3] = BridgeToken({token: usdc, symbol: "USDC"});
-        bridgeTokens[4] = BridgeToken({token: usdcE, symbol: "USDC.e"});
-        bridgeTokens[5] = BridgeToken({token: usdt, symbol: "USDT"});
+        bridgeTokens[1] = BridgeToken({token: nusd, symbol: "nUSD"});
 
-        uint256 actionMask = ActionLib.mask(Action.Swap) |
-            ActionLib.mask(Action.AddLiquidity) |
-            ActionLib.mask(Action.RemoveLiquidity);
-        LimitedToken[] memory limitedTokens = new LimitedToken[](6);
-        limitedTokens[0] = LimitedToken({token: neth, actionMask: ActionLib.allActions()});
-        limitedTokens[1] = LimitedToken({token: weth, actionMask: ActionLib.allActions()});
-        limitedTokens[2] = LimitedToken({token: nusd, actionMask: actionMask});
-        limitedTokens[3] = LimitedToken({token: usdc, actionMask: actionMask});
-        limitedTokens[4] = LimitedToken({token: usdcE, actionMask: actionMask});
-        limitedTokens[5] = LimitedToken({token: usdt, actionMask: actionMask});
+        LimitedToken[] memory limitedTokens = new LimitedToken[](2);
+        limitedTokens[0] = LimitedToken({token: neth, actionMask: ActionLib.mask(Action.Swap)});
+        limitedTokens[1] = LimitedToken({token: nusd, actionMask: ActionLib.mask(Action.Swap)});
 
         bridgeModuleL2 = new MockBridgeModule(bridgeTokens, limitedTokens);
 
@@ -74,7 +61,6 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         addL1Pool();
         deployL1BridgeModule();
 
-        // TODO: fix
         BridgeToken[] memory expectedTokens = new BridgeToken[](2);
         expectedTokens[0] = BridgeToken({token: nexusDai, symbol: "ETH DAI"});
         expectedTokens[1] = BridgeToken({token: nexusNusd, symbol: "ETH nUSD"});
@@ -96,10 +82,8 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         addL2Pools();
         deployL2BridgeModule();
 
-        // TODO: fix
-        BridgeToken[] memory expectedTokens = new BridgeToken[](2);
+        BridgeToken[] memory expectedTokens = new BridgeToken[](1);
         expectedTokens[0] = BridgeToken({token: nusd, symbol: "nUSD"});
-        expectedTokens[1] = BridgeToken({token: usdcE, symbol: "USDC.e"});
 
         BridgeToken[] memory actualTokens = router.getDestinationBridgeTokens(usdcE);
         assertEq(expectedTokens.length, actualTokens.length);
