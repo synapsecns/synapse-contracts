@@ -34,7 +34,7 @@ contract VelodromeV2ModuleOptTestFork is Test {
         vm.createSelectFork(optRPC, OPT_BLOCK_NUMBER);
 
         velodromeV2Module = new VelodromeV2Module(VEL_V2_ROUTER);
-        linkedPool = new LinkedPool(OP);
+        linkedPool = new LinkedPool(OP, address(this));
         user = makeAddr("User");
 
         vm.label(VEL_V2_OPUSDC_POOL, "VelodromeV2OPUSDCPool");

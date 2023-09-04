@@ -31,7 +31,7 @@ contract DssPsmModuleEthTestFork is Test {
         vm.createSelectFork(ethRPC, ETH_BLOCK_NUMBER);
 
         dssPsmModule = new DssPsmModule();
-        linkedPool = new LinkedPool(DAI);
+        linkedPool = new LinkedPool(DAI, address(this));
         user = makeAddr("User");
 
         vm.label(DSS_PSM, "DssPsm");

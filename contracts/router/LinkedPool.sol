@@ -39,8 +39,9 @@ contract LinkedPool is TokenTree, Ownable, ILinkedPool {
     /// @notice Replicates signature of `TokenSwap` event from Default Pools.
     event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
 
-    // solhint-disable-next-line no-empty-blocks
-    constructor(address bridgeToken) TokenTree(bridgeToken) {}
+    constructor(address bridgeToken, address owner_) TokenTree(bridgeToken) {
+        transferOwnership(owner_);
+    }
 
     // ═════════════════════════════════════════════════ EXTERNAL ══════════════════════════════════════════════════════
 

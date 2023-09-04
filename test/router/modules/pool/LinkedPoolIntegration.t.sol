@@ -57,7 +57,7 @@ abstract contract LinkedPoolIntegrationTest is Test {
 
     function deployLinkedPool() public virtual {
         require(expectedTokens.length > 0, "No tokens provided");
-        linkedPool = new LinkedPool(expectedTokens[0]);
+        linkedPool = new LinkedPool(expectedTokens[0], address(this));
     }
 
     function addPools() public virtual;

@@ -117,8 +117,7 @@ contract LinkedPoolTest is Test {
     }
 
     function simpleSetup() public {
-        linkedPool = new LinkedPool(address(bridgeToken));
-        linkedPool.transferOwnership(owner);
+        linkedPool = new LinkedPool(address(bridgeToken), owner);
     }
 
     function test_simpleSetup() public {
@@ -126,6 +125,11 @@ contract LinkedPoolTest is Test {
         assertEq(linkedPool.getToken(0), address(bridgeToken));
         assertEq(linkedPool.owner(), owner);
         assertEq(linkedPool.tokenNodesAmount(), 1);
+    }
+
+    function test_constructor_reverts_whenEmptyOwner() public {
+        vm.expectRevert("Ownable: new owner is the zero address");
+        linkedPool = new LinkedPool(address(bridgeToken), address(0));
     }
 
     function addPool(uint256 nodeIndex, address poolAddress) public {
@@ -218,7 +222,7 @@ contract LinkedPoolTest is Test {
     function test_constructor_emitsTokenNodeAdded() public {
         vm.expectEmit();
         emit TokenNodeAdded({childIndex: 0, token: address(bridgeToken), parentPool: address(0)});
-        linkedPool = new LinkedPool(address(bridgeToken));
+        linkedPool = new LinkedPool(address(bridgeToken), owner);
     }
 
     // Tests that add pool that wasn't previously added
