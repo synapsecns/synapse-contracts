@@ -56,6 +56,16 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         router.connectBridgeModule(moduleIdL2, address(bridgeModuleL2));
     }
 
+    function checkBridgeTokens(BridgeToken[] memory expectedTokens, BridgeToken[] memory actualTokens) public {
+        for (uint256 i = 0; i < actualTokens.length; i++) {
+            BridgeToken memory expectedToken = expectedTokens[i];
+            BridgeToken memory actualToken = actualTokens[i];
+
+            assertEq(expectedToken.token, actualToken.token);
+            assertEq(expectedToken.symbol, actualToken.symbol);
+        }
+    }
+
     function testGetDestinationBridgeTokensL1Pool() public {
         // L2 => L1
         addL1Pool();
@@ -66,15 +76,9 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         expectedTokens[1] = BridgeToken({token: nexusNusd, symbol: "ETH nUSD"});
 
         BridgeToken[] memory actualTokens = router.getDestinationBridgeTokens(nexusDai);
+
         assertEq(expectedTokens.length, actualTokens.length);
-
-        for (uint256 i = 0; i < actualTokens.length; i++) {
-            BridgeToken memory expectedToken = expectedTokens[i];
-            BridgeToken memory actualToken = actualTokens[i];
-
-            assertEq(expectedToken.token, actualToken.token);
-            assertEq(expectedToken.symbol, actualToken.symbol);
-        }
+        checkBridgeTokens(expectedTokens, actualTokens);
     }
 
     function testGetDestinationBridgeTokensL2Pools() public {
@@ -86,14 +90,39 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         expectedTokens[0] = BridgeToken({token: nusd, symbol: "nUSD"});
 
         BridgeToken[] memory actualTokens = router.getDestinationBridgeTokens(usdcE);
+
         assertEq(expectedTokens.length, actualTokens.length);
+        checkBridgeTokens(expectedTokens, actualTokens);
+    }
 
-        for (uint256 i = 0; i < actualTokens.length; i++) {
-            BridgeToken memory expectedToken = expectedTokens[i];
-            BridgeToken memory actualToken = actualTokens[i];
+    function testGetOriginBridgeTokensL1Pool() public {
+        // L1 => L2
+        addL1Pool();
+        deployL1BridgeModule();
 
-            assertEq(expectedToken.token, actualToken.token);
-            assertEq(expectedToken.symbol, actualToken.symbol);
-        }
+        BridgeToken[] memory expectedTokens = new BridgeToken[](4);
+        expectedTokens[0] = BridgeToken({token: nexusDai, symbol: "ETH DAI"});
+        expectedTokens[1] = BridgeToken({token: nexusUsdc, symbol: "ETH USDC"});
+        expectedTokens[2] = BridgeToken({token: nexusUsdt, symbol: "ETH USDT"});
+        expectedTokens[3] = BridgeToken({token: nexusNusd, symbol: "ETH nUSD"});
+
+        BridgeToken[] memory actualTokens = router.getOriginBridgeTokens(nexusDai);
+
+        assertEq(expectedTokens.length, actualTokens.length);
+        checkBridgeTokens(expectedTokens, actualTokens);
+    }
+
+    function testGetOriginBridgeTokensL2Pool() public {
+        // L2 => L1
+        addL2Pools();
+        deployL2BridgeModule();
+
+        BridgeToken[] memory expectedTokens = new BridgeToken[](1);
+        expectedTokens[0] = BridgeToken({token: nusd, symbol: "nUSD"});
+
+        BridgeToken[] memory actualTokens = router.getOriginBridgeTokens(usdcE);
+
+        assertEq(expectedTokens.length, actualTokens.length);
+        checkBridgeTokens(expectedTokens, actualTokens);
     }
 }
