@@ -64,26 +64,11 @@ contract SetupCCTPScript is BasicSynapseScript {
                 IERC20Metadata(token.token).symbol()
             );
             string memory curSymbol = SynapseCCTP(synapseCCTP).tokenToSymbol(token.token);
-            if (bytes(curSymbol).length > 0) {
-                console.log("       Skipping: already setup");
-                continue;
+            if (bytes(curSymbol).length == 0) {
+                addNewToken(token, symbol);
+            } else {
+                setupExistingToken(token, symbol);
             }
-            uint8 decimals = IERC20Metadata(token.token).decimals();
-            console.log("           token: %s", token.token);
-            console.log("        decimals: %s", decimals);
-            console.log("      relayerFee: %s [%s %%]", token.relayerFee, (token.relayerFee / 10**6).fromFloat(2));
-            console.log("      minBaseFee: %s [%s %s]", token.minBaseFee, token.minBaseFee.fromFloat(decimals), symbol);
-            console.log("      minSwapFee: %s [%s %s]", token.minSwapFee, token.minSwapFee.fromFloat(decimals), symbol);
-            console.log("          maxFee: %s [%s %s]", token.maxFee, token.maxFee.fromFloat(decimals), symbol);
-            // Setup token
-            SynapseCCTP(synapseCCTP).addToken({
-                symbol: SYMBOL_PREFIX.concat(symbol),
-                token: token.token,
-                relayerFee: token.relayerFee,
-                minBaseFee: token.minBaseFee,
-                minSwapFee: token.minSwapFee,
-                maxFee: token.maxFee
-            });
             // Setup token pool if needed
             if (token.pool != SynapseCCTP(synapseCCTP).circleTokenPool(token.token)) {
                 console.log("            pool: %s", token.pool);
@@ -92,6 +77,54 @@ contract SetupCCTPScript is BasicSynapseScript {
                 console.log("            pool: already setup [%s]", token.pool);
             }
         }
+    }
+
+    function logTokenInfo(CCTPToken memory token, string memory symbol) public view {
+        uint8 decimals = IERC20Metadata(token.token).decimals();
+        console.log("           token: %s", token.token);
+        console.log("        decimals: %s", decimals);
+        console.log("      relayerFee: %s [%s %%]", token.relayerFee, (token.relayerFee / 10**6).fromFloat(2));
+        console.log("      minBaseFee: %s [%s %s]", token.minBaseFee, token.minBaseFee.fromFloat(decimals), symbol);
+        console.log("      minSwapFee: %s [%s %s]", token.minSwapFee, token.minSwapFee.fromFloat(decimals), symbol);
+        console.log("          maxFee: %s [%s %s]", token.maxFee, token.maxFee.fromFloat(decimals), symbol);
+    }
+
+    function addNewToken(CCTPToken memory token, string memory symbol) public {
+        logTokenInfo(token, symbol);
+        // Add new token
+        SynapseCCTP(synapseCCTP).addToken({
+            symbol: SYMBOL_PREFIX.concat(symbol),
+            token: token.token,
+            relayerFee: token.relayerFee,
+            minBaseFee: token.minBaseFee,
+            minSwapFee: token.minSwapFee,
+            maxFee: token.maxFee
+        });
+    }
+
+    function setupExistingToken(CCTPToken memory token, string memory symbol) public {
+        (uint256 relayerFee, uint256 minBaseFee, uint256 minSwapFee, uint256 maxFee) = synapseCCTP.feeStructures(
+            token.token
+        );
+        // Do nothing, if all the values are the same
+        if (
+            relayerFee == token.relayerFee &&
+            minBaseFee == token.minBaseFee &&
+            minSwapFee == token.minSwapFee &&
+            maxFee == token.maxFee
+        ) {
+            console.log("       Skipping: already setup");
+            return;
+        }
+        // Otherwise, update the values
+        logTokenInfo(token, symbol);
+        SynapseCCTP(synapseCCTP).setTokenFee({
+            token: token.token,
+            relayerFee: token.relayerFee,
+            minBaseFee: token.minBaseFee,
+            minSwapFee: token.minSwapFee,
+            maxFee: token.maxFee
+        });
     }
 
     function setupRemoteDeployments() public {
@@ -112,11 +145,6 @@ contract SetupCCTPScript is BasicSynapseScript {
             }
             address remoteSynapseCCTP = getDeploymentAddress(remoteChain, SYNAPSE_CCTP);
             uint256 chainid = getChainId(remoteChain);
-            // (TODO: remove) Temporarily skip Ethereum and Arbitrum when on Optimism
-            if (blockChainId() == 10 && (chainid == 1 || chainid == 42161)) {
-                console.log("       Skip: preliminary setup");
-                continue;
-            }
             (uint32 domain_, address remoteSynapseCCTP_) = synapseCCTP.remoteDomainConfig(chainid);
             if (remoteSynapseCCTP == remoteSynapseCCTP_ && domain == domain_) {
                 console.log("       Skip: already configured");
@@ -145,11 +173,6 @@ contract SetupCCTPScript is BasicSynapseScript {
     }
 
     function transferOwnership() public {
-        // (TODO: remove) Skip transferring ownership on Optimism
-        if (blockChainId() == 10) {
-            console.log("Skipping ownership transfer on Optimism");
-            return;
-        }
         console.log("Transferring ownership");
         address newOwner = getDeploymentAddress("DevMultisig");
         console.log("   Old owner: %s", synapseCCTP.owner());

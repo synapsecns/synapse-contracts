@@ -11,7 +11,7 @@
       "arbitrum": 600000000000000,
       "avalanche": 25000000000000000,
       "mainnet": 0,
-      "optimism": 1337
+      "optimism": 300000000000000
     }
   },
   "testnet": {
