@@ -63,7 +63,7 @@ contract GenerateTokenTree is BasicSynapseScript {
     /// @notice Deploys a new Linked Pool contract.
     function deployLinkedPool() internal {
         address bridgeToken = config.readAddress(".bridgeToken");
-        linkedPool = new LinkedPool(bridgeToken);
+        linkedPool = new LinkedPool(bridgeToken, address(this));
     }
 
     /// @notice Adds pools to the Linked Pool contract.

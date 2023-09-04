@@ -30,7 +30,8 @@ contract DeployLinkedPool is BasicSynapseScript {
     /// `deployContract() internal returns (address deployedAt, bytes memory constructorArgs)`
     function deployLinkedPool() internal returns (address deployedAt, bytes memory constructorArgs) {
         address bridgeToken = config.readAddress(".bridgeToken");
-        deployedAt = address(new LinkedPool(bridgeToken));
-        constructorArgs = abi.encode(bridgeToken);
+        address owner = vm.envAddress("OWNER_ADDR");
+        deployedAt = address(new LinkedPool(bridgeToken, owner));
+        constructorArgs = abi.encode(bridgeToken, owner);
     }
 }
