@@ -162,14 +162,16 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         }
 
         // flatten into dest tokens
-        destTokens = new BridgeToken[](destTokensLength);
+        BridgeToken[] memory unfilteredDestTokens = new BridgeToken[](destTokensLength);
         uint256 m;
         for (uint256 i = 0; i < unflattenedDestTokens.length; ++i) {
             for (uint256 j = 0; j < unflattenedDestTokens[i].length; ++j) {
-                destTokens[m] = unflattenedDestTokens[i][j];
+                unfilteredDestTokens[m] = unflattenedDestTokens[i][j];
                 m++;
             }
         }
+
+        destTokens = _filterDuplicateBridgeTokens(unfilteredDestTokens);
     }
 
     /// @inheritdoc IRouterV2
@@ -207,14 +209,16 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         }
 
         // flatten into origin tokens
-        originTokens = new BridgeToken[](originTokensLength);
+        BridgeToken[] memory unfilteredOriginTokens = new BridgeToken[](originTokensLength);
         uint256 m;
         for (uint256 i = 0; i < unflattenedOriginTokens.length; ++i) {
             for (uint256 j = 0; j < unflattenedOriginTokens[i].length; ++j) {
-                originTokens[m] = unflattenedOriginTokens[i][j];
+                unfilteredOriginTokens[m] = unflattenedOriginTokens[i][j];
                 m++;
             }
         }
+
+        originTokens = _filterDuplicateBridgeTokens(unfilteredOriginTokens);
     }
 
     /// @inheritdoc IRouterV2
@@ -233,14 +237,16 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         }
 
         // flatten into supported tokens
-        supportedTokens = new address[](supportedTokensLength);
+        address[] memory unfilteredSupportedTokens = new address[](supportedTokensLength);
         uint256 k;
         for (uint256 i = 0; i < unflattenedSupportedTokens.length; ++i) {
             for (uint256 j = 0; j < unflattenedSupportedTokens[i].length; ++j) {
-                supportedTokens[k] = unflattenedSupportedTokens[i][j];
+                unfilteredSupportedTokens[k] = unflattenedSupportedTokens[i][j];
                 k++;
             }
         }
+
+        supportedTokens = _filterDuplicateAddresses(unfilteredSupportedTokens);
     }
 
     /// @inheritdoc IRouterV2
@@ -324,6 +330,68 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
                 bridgeModule = _bridgeModule;
                 break;
             }
+        }
+    }
+
+    /// @notice Filters out duplicate address entries in array
+    /// @param unfiltered The unfiltered list with potential duplicates
+    /// @return filtered The filtered list without duplicates
+    function _filterDuplicateAddresses(address[] memory unfiltered) internal view returns (address[] memory filtered) {
+        address[] memory intermediate = new address[](unfiltered.length);
+        uint256 count;
+        for (uint256 i = 0; i < unfiltered.length; ++i) {
+            address el = unfiltered[i];
+
+            // check whether el already in intermediate (unique elements)
+            bool contains;
+            for (uint256 j = 0; j < intermediate.length; ++j) {
+                contains = (el == intermediate[j]);
+                if (contains) break;
+            }
+
+            if (!contains) {
+                intermediate[count] = el;
+                count++;
+            }
+        }
+
+        // remove the zero elements at the end if any duplicates
+        filtered = new address[](count);
+        for (uint256 i = 0; i < count; i++) {
+            filtered[i] = intermediate[i];
+        }
+    }
+
+    /// @notice Filters out duplicate bridge token entries in array
+    /// @param unfiltered The unfiltered list with potential duplicates
+    /// @return filtered The filtered list without duplicates
+    function _filterDuplicateBridgeTokens(BridgeToken[] memory unfiltered)
+        internal
+        view
+        returns (BridgeToken[] memory filtered)
+    {
+        BridgeToken[] memory intermediate = new BridgeToken[](unfiltered.length);
+        uint256 count;
+        for (uint256 i = 0; i < unfiltered.length; ++i) {
+            BridgeToken memory el = unfiltered[i];
+
+            // check whether el already in intermediate (unique elements)
+            bool contains;
+            for (uint256 j = 0; j < intermediate.length; ++j) {
+                contains = (keccak256(abi.encode(el)) == keccak256(abi.encode(intermediate[j])));
+                if (contains) break;
+            }
+
+            if (!contains) {
+                intermediate[count] = el;
+                count++;
+            }
+        }
+
+        // remove the zero elements at the end if any duplicates
+        filtered = new BridgeToken[](count);
+        for (uint256 i = 0; i < count; i++) {
+            filtered[i] = intermediate[i];
         }
     }
 

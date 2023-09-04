@@ -65,6 +65,8 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
             assertEq(expectedToken.symbol, actualToken.symbol);
         }
     }
+    
+    // TODO: test filtering of bridge token duplicates
 
     function testGetDestinationBridgeTokensL1Pool() public {
         // L2 => L1
@@ -155,16 +157,13 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         addL2Pools();
         deployL2BridgeModule();
 
-        address[] memory expectedTokens = new address[](9);
+        address[] memory expectedTokens = new address[](6);
         expectedTokens[0] = usdcE;
         expectedTokens[1] = usdt;
         expectedTokens[2] = usdc;
-        expectedTokens[3] = usdcE;
-        expectedTokens[4] = neth;
-        expectedTokens[5] = weth;
-        expectedTokens[6] = nusd;
-        expectedTokens[7] = usdcE;
-        expectedTokens[8] = usdt;
+        expectedTokens[3] = neth;
+        expectedTokens[4] = weth;
+        expectedTokens[5] = nusd;
 
         address[] memory actualTokens = router.getSupportedTokens();
 
