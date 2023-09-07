@@ -54,7 +54,7 @@ abstract contract TraderJoeModule is OnlyDelegateCall, IPoolModule {
             tokenPath: tokenPath
         });
 
-        lbRouter.swapExactTokensForTokens({
+        amountOut = lbRouter.swapExactTokensForTokens({
             amountIn: amountIn,
             amountOutMin: 0,
             path: path,
