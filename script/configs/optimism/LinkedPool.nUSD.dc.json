@@ -35,6 +35,11 @@
       "nodeIndex": 1,
       "pool": "0x6d5BA400640226e24b50214d2bBb3D4Db8e6e15a",
       "poolModule": "VelodromeV2"
+    },
+    {
+      "nodeIndex": 1,
+      "pool": "0x2E2D190AD4e0d7BE9569BAeBD4d33298379b0502",
+      "poolModule": "UniswapV3"
     }
   ]
 }

@@ -8,6 +8,7 @@ graph G {
     token6 [label = "6: USDT";];
     token7 [label = "7: USDT";];
     token8 [label = "8: sUSD";];
+    token9 [label = "9: USDC";];
     pool0 [label = "DefaultPool 0xf449";shape = rect;style = dashed;];
     token0 -- pool0;
     subgraph cluster0 {
@@ -84,6 +85,17 @@ graph G {
             rank = same;
             edge [style = invis;];
             token8;
+        }
+    }
+    pool7 [label = "UniswapV3 0x2e2d";shape = rect;style = dashed;];
+    token1 -- pool7;
+    subgraph cluster7 {
+        style = dotted;
+        pool7 -- token9;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token9;
         }
     }
 }
