@@ -1,4 +1,40 @@
 {
   "bridgeToken": "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85",
-  "pools": []
+  "pools": [
+    {
+      "nodeIndex": 0,
+      "pool": "0x2E2D190AD4e0d7BE9569BAeBD4d33298379b0502",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 1,
+      "pool": "0xbf16ef186e715668AA29ceF57e2fD7f9D48AdFE6",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 1,
+      "pool": "0x19715771E30c93915A5bbDa134d782b81A820076",
+      "poolModule": "VelodromeV2"
+    },
+    {
+      "nodeIndex": 1,
+      "pool": "0x1337bedc9d22ecbe766df105c9623922a27963ec",
+      "poolModule": "CurveV1"
+    },
+    {
+      "nodeIndex": 1,
+      "pool": "0xF1F199342687A7d78bCC16fce79fa2665EF870E1",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 1,
+      "pool": "0x2B47C794c3789f499D8A54Ec12f949EeCCE8bA16",
+      "poolModule": "VelodromeV2"
+    },
+    {
+      "nodeIndex": 1,
+      "pool": "0x6d5BA400640226e24b50214d2bBb3D4Db8e6e15a",
+      "poolModule": "VelodromeV2"
+    }
+  ]
 }

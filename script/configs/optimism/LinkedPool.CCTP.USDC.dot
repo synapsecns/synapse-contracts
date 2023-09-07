@@ -1,3 +1,89 @@
 graph G {
     token0 [label = "0: USDC";];
+    token1 [label = "1: USDC.e";];
+    token2 [label = "2: DAI";];
+    token3 [label = "3: DAI";];
+    token4 [label = "4: DAI";];
+    token5 [label = "5: USDT";];
+    token6 [label = "6: USDT";];
+    token7 [label = "7: USDT";];
+    token8 [label = "8: sUSD";];
+    pool0 [label = "UniswapV3 0x2e2d";shape = rect;style = dashed;];
+    token0 -- pool0;
+    subgraph cluster0 {
+        style = dotted;
+        pool0 -- token1;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token1;
+        }
+    }
+    pool1 [label = "UniswapV3 0xbf16";shape = rect;style = dashed;];
+    token1 -- pool1;
+    subgraph cluster1 {
+        style = dotted;
+        pool1 -- token2;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token2;
+        }
+    }
+    pool2 [label = "VelodromeV2 0x1971";shape = rect;style = dashed;];
+    token1 -- pool2;
+    subgraph cluster2 {
+        style = dotted;
+        pool2 -- token3;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token3;
+        }
+    }
+    pool3 [label = "CurveV1 0x1337";shape = rect;style = dashed;];
+    token1 -- pool3;
+    subgraph cluster3 {
+        style = dotted;
+        pool3 -- token4;
+        pool3 -- token5;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token4 -- token5;
+        }
+    }
+    pool4 [label = "UniswapV3 0xf1f1";shape = rect;style = dashed;];
+    token1 -- pool4;
+    subgraph cluster4 {
+        style = dotted;
+        pool4 -- token6;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token6;
+        }
+    }
+    pool5 [label = "VelodromeV2 0x2b47";shape = rect;style = dashed;];
+    token1 -- pool5;
+    subgraph cluster5 {
+        style = dotted;
+        pool5 -- token7;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token7;
+        }
+    }
+    pool6 [label = "VelodromeV2 0x6d5b";shape = rect;style = dashed;];
+    token1 -- pool6;
+    subgraph cluster6 {
+        style = dotted;
+        pool6 -- token8;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token8;
+        }
+    }
 }
