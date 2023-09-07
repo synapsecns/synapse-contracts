@@ -57,8 +57,8 @@
 <!-- token1 -->
 <g id="node2" class="node">
 <title>token1</title>
-<ellipse fill="none" stroke="black" cx="597" cy="-178" rx="50.89" ry="18"/>
-<text text-anchor="middle" x="597" y="-174.3" font-family="Times,serif" font-size="14.00">1: USDC</text>
+<ellipse fill="none" stroke="black" cx="597" cy="-178" rx="59.29" ry="18"/>
+<text text-anchor="middle" x="597" y="-174.3" font-family="Times,serif" font-size="14.00">1: USDC.e</text>
 </g>
 <!-- pool1 -->
 <g id="node11" class="node">
@@ -69,7 +69,7 @@
 <!-- token1&#45;&#45;pool1 -->
 <g id="edge3" class="edge">
 <title>token1&#45;&#45;pool1</title>
-<path fill="none" stroke="black" d="M547.17,-174.36C468.54,-169.57 311.16,-157.52 180,-132 169.09,-129.88 157.56,-127.05 146.58,-124.05"/>
+<path fill="none" stroke="black" d="M539.21,-173.86C458.28,-168.77 306.87,-156.68 180,-132 169.09,-129.88 157.56,-127.05 146.58,-124.05"/>
 </g>
 <!-- pool2 -->
 <g id="node12" class="node">
@@ -80,7 +80,7 @@
 <!-- token1&#45;&#45;pool2 -->
 <g id="edge5" class="edge">
 <title>token1&#45;&#45;pool2</title>
-<path fill="none" stroke="black" d="M552.86,-168.95C507.38,-160.47 434.5,-146.38 372,-132 361.43,-129.57 350.24,-126.82 339.39,-124.06"/>
+<path fill="none" stroke="black" d="M547.67,-167.98C501.96,-159.42 432.17,-145.84 372,-132 361.43,-129.57 350.24,-126.82 339.39,-124.06"/>
 </g>
 <!-- pool3 -->
 <g id="node13" class="node">
@@ -91,7 +91,7 @@
 <!-- token1&#45;&#45;pool3 -->
 <g id="edge7" class="edge">
 <title>token1&#45;&#45;pool3</title>
-<path fill="none" stroke="black" d="M578.17,-161.12C565.06,-150.06 547.61,-135.34 534.21,-124.04"/>
+<path fill="none" stroke="black" d="M577.75,-160.76C564.72,-149.78 547.55,-135.29 534.3,-124.12"/>
 </g>
 <!-- pool4 -->
 <g id="node14" class="node">
@@ -102,7 +102,7 @@
 <!-- token1&#45;&#45;pool4 -->
 <g id="edge11" class="edge">
 <title>token1&#45;&#45;pool4</title>
-<path fill="none" stroke="black" d="M615.83,-161.12C628.94,-150.06 646.39,-135.34 659.79,-124.04"/>
+<path fill="none" stroke="black" d="M616.25,-160.76C629.28,-149.78 646.45,-135.29 659.7,-124.12"/>
 </g>
 <!-- pool5 -->
 <g id="node15" class="node">
@@ -113,7 +113,7 @@
 <!-- token1&#45;&#45;pool5 -->
 <g id="edge13" class="edge">
 <title>token1&#45;&#45;pool5</title>
-<path fill="none" stroke="black" d="M636.39,-166.6C678.85,-155.38 747.11,-137.35 797.44,-124.05"/>
+<path fill="none" stroke="black" d="M640.17,-165.6C682.85,-154.32 748.67,-136.94 797.54,-124.03"/>
 </g>
 <!-- pool6 -->
 <g id="node16" class="node">
@@ -124,7 +124,7 @@
 <!-- token1&#45;&#45;pool6 -->
 <g id="edge15" class="edge">
 <title>token1&#45;&#45;pool6</title>
-<path fill="none" stroke="black" d="M645.78,-172.96C715.45,-166.73 847.28,-153.22 958,-132 969.59,-129.78 981.85,-126.96 993.59,-124.01"/>
+<path fill="none" stroke="black" d="M653.32,-172.28C724.66,-165.77 851.15,-152.48 958,-132 969.59,-129.78 981.85,-126.96 993.59,-124.01"/>
 </g>
 <!-- token2 -->
 <g id="node3" class="node">

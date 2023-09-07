@@ -1,6 +1,6 @@
 graph G {
     token0 [label = "0: nUSD";];
-    token1 [label = "1: USDC";];
+    token1 [label = "1: USDC.e";];
     token2 [label = "2: DAI";];
     token3 [label = "3: DAI";];
     token4 [label = "4: DAI";];
