@@ -8,6 +8,7 @@
     "dogechain": "--legacy",
     "harmony": "--legacy",
     "klatyn": "--skip-simulation",
-    "metis": "--legacy"
+    "metis": "--legacy",
+    "optimism": "--with-gas-price 1337"
   }
 }
