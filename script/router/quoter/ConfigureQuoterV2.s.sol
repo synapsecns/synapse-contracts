@@ -79,18 +79,45 @@ contract ConfigureQuoterV2 is BasicRouterScript {
     }
 
     function setPools() internal {
-        // TODO: add support for origin-only pools
-        SwapQuoterV2.BridgePool[] memory bridgePools = quoterV2.getBridgePools();
+        SwapQuoterV2.BridgePool[] memory existingPools = getAllPools();
         // First, remove all bridge pools that are not in the config
-        removeMissingPools(bridgePools);
+        removeMissingPools(existingPools);
         // Then, add all pools from config that are not in the bridge pools
-        addMissingPools(bridgePools);
+        addMissingPools(existingPools);
     }
 
-    function removeMissingPools(SwapQuoterV2.BridgePool[] memory bridgePools) internal {
+    function getAllPools() internal view returns (SwapQuoterV2.BridgePool[] memory allPools) {
+        address[] memory originDefaultPools = quoterV2.getOriginDefaultPools();
+        address[] memory originLinkedPools = quoterV2.getOriginLinkedPools();
+        SwapQuoterV2.BridgePool[] memory bridgePools = quoterV2.getBridgePools();
+        // We need to add all origin pools to the bridge pools
+        // bridgeToken for origin pools is address(0)
+        uint256 totalPools = originDefaultPools.length + originLinkedPools.length + bridgePools.length;
+        allPools = new SwapQuoterV2.BridgePool[](totalPools);
+        uint256 index = 0;
+        for (uint256 i = 0; i < originDefaultPools.length; (++i, ++index)) {
+            allPools[index] = SwapQuoterV2.BridgePool({
+                bridgeToken: address(0),
+                poolType: SwapQuoterV2.PoolType.Default,
+                pool: originDefaultPools[i]
+            });
+        }
+        for (uint256 i = 0; i < originLinkedPools.length; (++i, ++index)) {
+            allPools[index] = SwapQuoterV2.BridgePool({
+                bridgeToken: address(0),
+                poolType: SwapQuoterV2.PoolType.Linked,
+                pool: originLinkedPools[i]
+            });
+        }
+        for (uint256 i = 0; i < bridgePools.length; (++i, ++index)) {
+            allPools[index] = bridgePools[i];
+        }
+    }
+
+    function removeMissingPools(SwapQuoterV2.BridgePool[] memory existingPools) internal {
         // We need to remove pools with a bridge token that is not in the config
         SwapQuoterV2.BridgePool[] memory missingPools = getMissingPools({
-            poolsToFilter: bridgePools,
+            poolsToFilter: existingPools,
             existingPools: configBridgePools,
             comparePools: equalBridgeToken
         });
@@ -106,11 +133,11 @@ contract ConfigureQuoterV2 is BasicRouterScript {
         decreaseIndent();
     }
 
-    function addMissingPools(SwapQuoterV2.BridgePool[] memory bridgePools) internal {
+    function addMissingPools(SwapQuoterV2.BridgePool[] memory existingPools) internal {
         // We need to add pools from the config that are not in the bridge pools (checking all fields)
         SwapQuoterV2.BridgePool[] memory missingPools = getMissingPools({
             poolsToFilter: configBridgePools,
-            existingPools: bridgePools,
+            existingPools: existingPools,
             comparePools: equalFully
         });
         printLog(StringUtils.concat("Adding ", missingPools.length.fromUint(), " pools"));
@@ -139,7 +166,8 @@ contract ConfigureQuoterV2 is BasicRouterScript {
         pure
         returns (bool)
     {
-        return pool0.bridgeToken == pool1.bridgeToken;
+        // For origin pools (bridgeToken == address(0)), we check the pool address instead
+        return pool0.bridgeToken == pool1.bridgeToken && (pool0.bridgeToken != address(0) || pool0.pool == pool1.pool);
     }
 
     /// @notice Checks if all fields in the two pools are equal.
