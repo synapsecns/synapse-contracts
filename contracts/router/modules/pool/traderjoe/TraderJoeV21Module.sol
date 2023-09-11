@@ -34,7 +34,10 @@ contract TraderJoeV21Module is TraderJoeModule {
         );
         bool swapForY = (tokenTo.token == tokens[1]);
         require(amountIn <= type(uint128).max, "amountIn > type(uint128).max");
-        (, amountOut, ) = lbRouter.getSwapOut(ILBPair(pool), uint128(amountIn), swapForY);
+
+        uint128 amountInLeft;
+        (amountInLeft, amountOut, ) = lbRouter.getSwapOut(ILBPair(pool), uint128(amountIn), swapForY);
+        if (amountInLeft > 0) amountOut = 0; // swap fails
     }
 
     /// @inheritdoc IPoolModule

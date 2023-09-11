@@ -147,6 +147,17 @@ contract TraderJoeV21ModuleAvaxTestFork is Test {
         });
     }
 
+    function testGetPoolQuoteReturnsZeroWhenAmountInLeft() public {
+        uint256 amountOut = traderJoeModule.getPoolQuote({
+            pool: LB_POOL,
+            tokenFrom: IndexedToken({index: 0, token: USDT}),
+            tokenTo: IndexedToken({index: 1, token: USDC}),
+            amountIn: 10**18,
+            probePaused: false
+        });
+        assertEq(amountOut, 0);
+    }
+
     function prepareUser(address token, uint256 amount) public {
         deal(token, user, amount);
         vm.prank(user);
