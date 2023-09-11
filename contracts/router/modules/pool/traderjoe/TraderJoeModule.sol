@@ -20,7 +20,7 @@ abstract contract TraderJoeModule is OnlyDelegateCall, IPoolModule {
         lbRouter = ILBRouter(_lbRouter);
     }
 
-    /// @notice Trader Joe LBPair version this module accomodates
+    /// @notice Trader Joe LBPair version this module accommodates
     function version() public view virtual returns (ILBRouter.Version);
 
     /// @notice Bin step for the given pool and version this module accomodates
@@ -37,7 +37,7 @@ abstract contract TraderJoeModule is OnlyDelegateCall, IPoolModule {
         address tokenIn = tokenFrom.token;
         tokenIn.universalApproveInfinity(address(lbRouter), amountIn);
 
-        // @dev https://docs.traderjoexyz.com/guides/swap-tokens#1-swap-10-usdc-for-usdt-using-swapexacttokensfortokens-with-no-intermediate-swap-paths
+        /// @dev https://docs.traderjoexyz.com/guides/swap-tokens#code-examples
         IERC20[] memory tokenPath = new IERC20[](2);
         tokenPath[0] = IERC20(tokenIn);
         tokenPath[1] = IERC20(tokenTo.token);
