@@ -27,6 +27,11 @@ contract TraderJoeV21Module is TraderJoeModule {
         bool probePaused
     ) public view override returns (uint256 amountOut) {
         address[] memory tokens = getPoolTokens(pool);
+        require(
+            (tokenFrom.token == tokens[0] && tokenTo.token == tokens[1]) ||
+                (tokenFrom.token == tokens[1] && tokenTo.token == tokens[0]),
+            "tokens not in pool"
+        );
         bool swapForY = (tokenTo.token == tokens[1]);
         require(amountIn <= type(uint128).max, "amountIn > type(uint128).max");
         (, amountOut, ) = lbRouter.getSwapOut(ILBPair(pool), uint128(amountIn), swapForY);
