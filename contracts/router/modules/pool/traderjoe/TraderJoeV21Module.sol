@@ -10,7 +10,7 @@ import {TraderJoeModule} from "./TraderJoeModule.sol";
 contract TraderJoeV21Module is TraderJoeModule {
     constructor(address _lbRouter) TraderJoeModule(_lbRouter) {}
 
-    function version() public view override returns (ILBRouter.Version) {
+    function version() public pure override returns (ILBRouter.Version) {
         return ILBRouter.Version.V2_1;
     }
 

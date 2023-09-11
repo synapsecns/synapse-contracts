@@ -21,7 +21,7 @@ abstract contract TraderJoeModule is OnlyDelegateCall, IPoolModule {
     }
 
     /// @notice Trader Joe LBPair version this module accommodates
-    function version() public view virtual returns (ILBRouter.Version);
+    function version() public pure virtual returns (ILBRouter.Version);
 
     /// @notice Bin step for the given pool and version this module accommodates
     function _binStep(address pool) internal view virtual returns (uint256);
