@@ -15,7 +15,7 @@ contract TraderJoeV21Module is TraderJoeModule {
     }
 
     function _binStep(address pool) internal view override returns (uint256) {
-        return uint256(ILBPair(pool).getBinStep());
+        return ILBPair(pool).getBinStep();
     }
 
     /// @inheritdoc IPoolModule
@@ -29,9 +29,7 @@ contract TraderJoeV21Module is TraderJoeModule {
         address[] memory tokens = getPoolTokens(pool);
         bool swapForY = (tokenTo.token == tokens[1]);
         require(amountIn <= type(uint128).max, "amountIn > type(uint128).max");
-
-        (, uint128 _amountOut, ) = lbRouter.getSwapOut(ILBPair(pool), uint128(amountIn), swapForY);
-        amountOut = uint256(_amountOut);
+        (, amountOut, ) = lbRouter.getSwapOut(ILBPair(pool), uint128(amountIn), swapForY);
     }
 
     /// @inheritdoc IPoolModule
