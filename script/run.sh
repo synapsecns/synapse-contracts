@@ -37,9 +37,15 @@ if [[ "$@" == *"--broadcast"* ]] && [[ "$@" != *"--verify"* ]] && [ "$IS_DEPLOYM
     echo -e "${YELLOW}Deploy script: adding --verify for the broadcasting${NC}"
     set -- "$@" "--verify"
 fi
-# Preserve the quotes in the options, useful for --sig "function(arguments)"
-# https://stackoverflow.com/questions/10835933/how-can-i-preserve-quotes-in-printing-a-bash-scripts-arguments
-FORGE_OPTIONS=${*@Q}
+# Wrap the options in quotes except ones starting with -
+FORGE_OPTIONS=""
+for arg in "$@"; do
+    if [[ "$arg" == "-"* ]]; then
+        FORGE_OPTIONS="$FORGE_OPTIONS $arg"
+    else
+        FORGE_OPTIONS="$FORGE_OPTIONS \"$arg\""
+    fi
+done
 
 # Fetch the RPC URL for the chain from .env
 source .env
