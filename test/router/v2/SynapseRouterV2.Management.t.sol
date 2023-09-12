@@ -125,7 +125,10 @@ contract SynapseRouterV2ManagementTest is BasicSynapseRouterV2Test {
         assertEq(router.idToModule(moduleId), newModule);
         assertEq(router.moduleToId(newModule), moduleId);
 
-        if (oldModule != newModule) assertEq(router.moduleToId(oldModule), bytes32(0));
+        if (oldModule != newModule) {
+            vm.expectRevert(ModuleNotExists.selector);
+            router.moduleToId(oldModule);
+        }
     }
 
     function test_updateBridgeModule_emit_moduleUpdated(
@@ -201,7 +204,8 @@ contract SynapseRouterV2ManagementTest is BasicSynapseRouterV2Test {
         vm.expectRevert(ModuleNotExists.selector);
         router.idToModule(moduleId);
 
-        assertEq(router.moduleToId(module), bytes32(0));
+        vm.expectRevert(ModuleNotExists.selector);
+        router.moduleToId(module);
     }
 
     function test_disconnectBridgeModule_emit_moduleDisconnected(bytes32 moduleId, address module) public {

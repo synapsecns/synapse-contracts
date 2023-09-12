@@ -45,7 +45,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         if (_hasAdapter(originQuery)) {
             (token, amount) = _doSwap(address(this), token, amount, originQuery);
         } else {
-            _pullToken(address(this), token, amount);
+            amount = _pullToken(address(this), token, amount); // TODO: test w transfer fees
         }
 
         // delegate bridge call to module
@@ -124,6 +124,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
                 break;
             }
         }
+        if (moduleId == bytes32(0)) revert ModuleNotExists();
     }
 
     /// @inheritdoc IRouterV2
