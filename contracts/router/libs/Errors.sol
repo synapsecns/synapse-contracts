@@ -10,9 +10,3 @@ error TokenAddressMismatch();
 error TokenNotContract();
 error TokenNotETH();
 error TokensIdentical();
-
-error BridgeFailed();
-error ModuleExists();
-error ModuleNotExists();
-error ModuleInvalid();
-error QueryEmpty();

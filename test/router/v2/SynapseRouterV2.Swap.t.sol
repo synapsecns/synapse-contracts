@@ -3,7 +3,7 @@ pragma solidity 0.8.17;
 
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {Action, ActionLib, BridgeToken, DefaultParams, LimitedToken, SwapQuery} from "../../../contracts/router/libs/Structs.sol";
-import {QueryEmpty} from "../../../contracts/router/libs/Errors.sol";
+import {SynapseRouterV2} from "../../../contracts/router/SynapseRouterV2.sol";
 
 import {BasicSynapseRouterV2Test} from "./BasicSynapseRouterV2.t.sol";
 
@@ -52,7 +52,7 @@ contract SynapseRouterV2SwapTest is BasicSynapseRouterV2Test {
         // empty query
         SwapQuery memory query;
 
-        vm.expectRevert(QueryEmpty.selector);
+        vm.expectRevert(SynapseRouterV2.SynapseRouterV2__QueryEmpty.selector);
         vm.prank(user);
         router.swap(to, token, amount, query);
     }

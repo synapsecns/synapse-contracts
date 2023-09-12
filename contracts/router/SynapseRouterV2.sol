@@ -6,7 +6,6 @@ import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 import {EnumerableMap} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableMap.sol";
 
 import {DefaultRouter} from "./DefaultRouter.sol";
-import {ModuleExists, ModuleNotExists, ModuleInvalid, QueryEmpty} from "./libs/Errors.sol";
 import {ActionLib, BridgeToken, DestRequest, LimitedToken, Pool, SwapQuery} from "./libs/Structs.sol";
 import {UniversalTokenLib} from "./libs/UniversalToken.sol";
 
@@ -28,6 +27,11 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     event ModuleConnected(bytes32 indexed moduleId, address bridgeModule);
     event ModuleUpdated(bytes32 indexed moduleId, address oldBridgeModule, address newBridgeModule);
     event ModuleDisconnected(bytes32 indexed moduleId);
+
+    error SynapseRouterV2__ModuleExists();
+    error SynapseRouterV2__ModuleNotExists();
+    error SynapseRouterV2__ModuleInvalid();
+    error SynapseRouterV2__QueryEmpty();
 
     /// @inheritdoc IRouterV2
     function bridgeViaSynapse(
@@ -68,7 +72,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         uint256 amount,
         SwapQuery memory query
     ) external payable returns (uint256 amountOut) {
-        if (!query.hasAdapter()) revert QueryEmpty();
+        if (!query.hasAdapter()) revert SynapseRouterV2__QueryEmpty();
 
         address tokenOut;
         (tokenOut, amountOut) = _doSwap(to, token, amount, query);
@@ -82,8 +86,8 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
     /// @inheritdoc IRouterV2
     function connectBridgeModule(bytes32 moduleId, address bridgeModule) external onlyOwner {
-        if (moduleId == bytes32(0) || bridgeModule == address(0)) revert ModuleInvalid();
-        if (_hasModule(moduleId)) revert ModuleExists();
+        if (moduleId == bytes32(0) || bridgeModule == address(0)) revert SynapseRouterV2__ModuleInvalid();
+        if (_hasModule(moduleId)) revert SynapseRouterV2__ModuleExists();
 
         _bridgeModules.set(uint256(moduleId), bridgeModule);
         emit ModuleConnected(moduleId, bridgeModule);
@@ -91,8 +95,8 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
     /// @inheritdoc IRouterV2
     function updateBridgeModule(bytes32 moduleId, address bridgeModule) external onlyOwner {
-        if (bridgeModule == address(0)) revert ModuleInvalid();
-        if (!_hasModule(moduleId)) revert ModuleNotExists();
+        if (bridgeModule == address(0)) revert SynapseRouterV2__ModuleInvalid();
+        if (!_hasModule(moduleId)) revert SynapseRouterV2__ModuleNotExists();
 
         address module = _bridgeModules.get(uint256(moduleId));
         _bridgeModules.set(uint256(moduleId), bridgeModule);
@@ -102,7 +106,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
     /// @inheritdoc IRouterV2
     function disconnectBridgeModule(bytes32 moduleId) external onlyOwner {
-        if (!_hasModule(moduleId)) revert ModuleNotExists();
+        if (!_hasModule(moduleId)) revert SynapseRouterV2__ModuleNotExists();
 
         _bridgeModules.remove(uint256(moduleId));
         emit ModuleDisconnected(moduleId);
@@ -110,7 +114,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
     /// @inheritdoc IRouterV2
     function idToModule(bytes32 moduleId) public view returns (address bridgeModule) {
-        if (!_hasModule(moduleId)) revert ModuleNotExists();
+        if (!_hasModule(moduleId)) revert SynapseRouterV2__ModuleNotExists();
         bridgeModule = _bridgeModules.get(uint256(moduleId));
     }
 
@@ -124,7 +128,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
                 break;
             }
         }
-        if (moduleId == bytes32(0)) revert ModuleNotExists();
+        if (moduleId == bytes32(0)) revert SynapseRouterV2__ModuleNotExists();
     }
 
     /// @inheritdoc IRouterV2

@@ -2,8 +2,8 @@
 pragma solidity 0.8.17;
 
 import {BasicSynapseRouterV2Test} from "./BasicSynapseRouterV2.t.sol";
-import {ModuleExists, ModuleNotExists, ModuleInvalid} from "../../../contracts/router/libs/Errors.sol";
 import {SwapQuoterV2} from "../../../contracts/router/quoter/SwapQuoterV2.sol";
+import {SynapseRouterV2} from "../../../contracts/router/SynapseRouterV2.sol";
 
 // solhint-disable func-name-mixedcase
 contract SynapseRouterV2ManagementTest is BasicSynapseRouterV2Test {
@@ -84,11 +84,11 @@ contract SynapseRouterV2ManagementTest is BasicSynapseRouterV2Test {
         vm.assume(moduleId != bytes32(0));
         vm.assume(module != address(0));
 
-        vm.expectRevert(ModuleInvalid.selector);
+        vm.expectRevert(SynapseRouterV2.SynapseRouterV2__ModuleInvalid.selector);
         vm.prank(owner);
         router.connectBridgeModule(bytes32(0), module);
 
-        vm.expectRevert(ModuleInvalid.selector);
+        vm.expectRevert(SynapseRouterV2.SynapseRouterV2__ModuleInvalid.selector);
         vm.prank(owner);
         router.connectBridgeModule(moduleId, address(0));
     }
@@ -102,7 +102,7 @@ contract SynapseRouterV2ManagementTest is BasicSynapseRouterV2Test {
         router.connectBridgeModule(moduleId, module);
 
         // should fail if reuse moduleId
-        vm.expectRevert(ModuleExists.selector);
+        vm.expectRevert(SynapseRouterV2.SynapseRouterV2__ModuleExists.selector);
         vm.prank(owner);
         router.connectBridgeModule(moduleId, address(0xA));
     }
@@ -126,7 +126,7 @@ contract SynapseRouterV2ManagementTest is BasicSynapseRouterV2Test {
         assertEq(router.moduleToId(newModule), moduleId);
 
         if (oldModule != newModule) {
-            vm.expectRevert(ModuleNotExists.selector);
+            vm.expectRevert(SynapseRouterV2.SynapseRouterV2__ModuleNotExists.selector);
             router.moduleToId(oldModule);
         }
     }
@@ -176,7 +176,7 @@ contract SynapseRouterV2ManagementTest is BasicSynapseRouterV2Test {
         vm.prank(owner);
         router.connectBridgeModule(moduleId, oldModule);
 
-        vm.expectRevert(ModuleInvalid.selector);
+        vm.expectRevert(SynapseRouterV2.SynapseRouterV2__ModuleInvalid.selector);
         vm.prank(owner);
         router.updateBridgeModule(moduleId, address(0));
     }
@@ -185,7 +185,7 @@ contract SynapseRouterV2ManagementTest is BasicSynapseRouterV2Test {
         vm.assume(moduleId != bytes32(0));
         vm.assume(newModule != address(0));
 
-        vm.expectRevert(ModuleNotExists.selector);
+        vm.expectRevert(SynapseRouterV2.SynapseRouterV2__ModuleNotExists.selector);
         vm.prank(owner);
         router.updateBridgeModule(moduleId, newModule);
     }
@@ -201,10 +201,10 @@ contract SynapseRouterV2ManagementTest is BasicSynapseRouterV2Test {
         vm.prank(owner);
         router.disconnectBridgeModule(moduleId);
 
-        vm.expectRevert(ModuleNotExists.selector);
+        vm.expectRevert(SynapseRouterV2.SynapseRouterV2__ModuleNotExists.selector);
         router.idToModule(moduleId);
 
-        vm.expectRevert(ModuleNotExists.selector);
+        vm.expectRevert(SynapseRouterV2.SynapseRouterV2__ModuleNotExists.selector);
         router.moduleToId(module);
     }
 
@@ -236,7 +236,7 @@ contract SynapseRouterV2ManagementTest is BasicSynapseRouterV2Test {
     }
 
     function test_disconnectBridgeModule_revert_moduleNotExists(bytes32 moduleId) public {
-        vm.expectRevert(ModuleNotExists.selector);
+        vm.expectRevert(SynapseRouterV2.SynapseRouterV2__ModuleNotExists.selector);
         vm.prank(owner);
         router.disconnectBridgeModule(moduleId);
     }
