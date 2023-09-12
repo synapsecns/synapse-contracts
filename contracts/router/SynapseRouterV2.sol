@@ -42,7 +42,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         address bridgeModule = idToModule(moduleId);
 
         // pull (and possibly swap) token into router
-        if (_hasAdapter(originQuery)) {
+        if (originQuery.hasAdapter()) {
             (token, amount) = _doSwap(address(this), token, amount, originQuery);
         } else {
             amount = _pullToken(address(this), token, amount); // TODO: test w transfer fees
@@ -68,7 +68,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         uint256 amount,
         SwapQuery memory query
     ) external payable returns (uint256 amountOut) {
-        if (!_hasAdapter(query)) revert QueryEmpty();
+        if (!query.hasAdapter()) revert QueryEmpty();
 
         address tokenOut;
         (tokenOut, amountOut) = _doSwap(to, token, amount, query);
@@ -295,12 +295,6 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
             // set in return array
             originQueries[i] = query;
         }
-    }
-
-    /// @notice Checks whether the router adapter was specified in the query.
-    /// Query without a router adapter specifies that no action needs to be taken.
-    function _hasAdapter(SwapQuery memory query) internal pure returns (bool) {
-        return query.routerAdapter != address(0);
     }
 
     /// @notice Checks whether module ID has already been connected to router
