@@ -27,12 +27,17 @@ if [ -z "$SCRIPT_PATH" ] || [ -z "$CHAIN_NAME" ] || [ -z "$WALLET_ENV_NAME" ]; t
     echo -e "${RED}Usage: ./script/run.sh <path/to/script.s.sol> <chainName> <walletName> [<options...>]${NC}"
     exit 1
 fi
-# Figure out if this is a deployment script: check if the script file name starts with "Deploy"
-IS_DEPLOYMENT_SCRIPT=$(basename $SCRIPT_PATH | grep -c "^Deploy")
 # Shift the arguments to pass the rest to `forge script`
 shift 3
-# Check if --broadcast option is passed without --verify for a deployment script
-if [[ "$@" == *"--broadcast"* ]] && [[ "$@" != *"--verify"* ]] && [ "$IS_DEPLOYMENT_SCRIPT" == "1" ]; then
+# Figure out if this is a broadcasted deployment script:
+# 1. Check if the script file name starts with "Deploy"
+IS_DEPLOY_SCRIPT=$(basename $SCRIPT_PATH | grep -c "^Deploy")
+# 2. Check if --broadcast option is passed
+IS_BROADCASTED=$(echo "$@" | grep -c "\-\-broadcast")
+# 3. Multiply the two
+IS_BROADCASTED_DEPLOYMENT=$((IS_BROADCASTED * IS_DEPLOY_SCRIPT))
+# Check if --verify is not passed for the broadcasted deployment script
+if [ "$IS_BROADCASTED_DEPLOYMENT" == "1" ] && [[ "$@" != *"--verify"* ]]; then
     # Add --verify option
     echo -e "${YELLOW}Deploy script: adding --verify for the broadcasting${NC}"
     set -- "$@" "--verify"
