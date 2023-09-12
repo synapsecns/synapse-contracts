@@ -39,23 +39,11 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
         if (bridgeToken == address(0)) revert SynapseBridgeModule__UnsupportedToken(token);
         // Approve the bridge to spend the token
         bridgeToken.universalApproveInfinity({spender: address(synapseBridge), amountToSpend: amount});
-        if (destQuery.routerAdapter == address(0)) {
-            // If no Router Adapter is set, no action is required on destination chain, use `deposit()` or `redeem()`
-            (tokenType == ILocalBridgeConfig.TokenType.Redeem ? synapseBridge.redeem : synapseBridge.deposit)(
-                to,
-                chainId,
-                bridgeToken,
-                amount
-            );
+        // Proceed with the bridging transaction based on the token type
+        if (tokenType == ILocalBridgeConfig.TokenType.Redeem) {
+            _redeemToken(to, chainId, bridgeToken, amount, destQuery);
         } else {
-            // Otherwise, use tokenType-dependent internal function to give destination chain action instructions
-            (tokenType == ILocalBridgeConfig.TokenType.Redeem ? _redeemTokenWithAction : _depositTokenWithAction)(
-                to,
-                chainId,
-                bridgeToken,
-                amount,
-                destQuery
-            );
+            _depositToken(to, chainId, bridgeToken, amount, destQuery);
         }
     }
 
@@ -130,13 +118,18 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
 
     /// @dev Initiates a bridging transaction for a token that requires a deposit on this chain
     /// and an action on the destination chain.
-    function _depositTokenWithAction(
+    function _depositToken(
         address to,
         uint256 chainId,
         address token,
         uint256 amount,
         SwapQuery memory destQuery
     ) internal {
+        // If no Router Adapter is set, no action is required on destination chain, use `deposit()`
+        if (destQuery.routerAdapter == address(0)) {
+            synapseBridge.deposit(to, chainId, token, amount);
+            return;
+        }
         // Decode the params for the destination chain otherwise
         DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
         // Token is deposited on THIS chain => it is minted on the destination chain.
@@ -167,13 +160,18 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
 
     /// @dev Initiates a bridging transaction for a token that requires a redeem on this chain
     /// and an action on the destination chain.
-    function _redeemTokenWithAction(
+    function _redeemToken(
         address to,
         uint256 chainId,
         address token,
         uint256 amount,
         SwapQuery memory destQuery
     ) internal {
+        // If no Router Adapter is set, no action is required on destination chain, use `redeem()`
+        if (destQuery.routerAdapter == address(0)) {
+            synapseBridge.redeem(to, chainId, token, amount);
+            return;
+        }
         // Decode the params for the destination chain otherwise
         DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
         // Token is redeemed on THIS chain => it could be either minted and withdrawn on the destination chain.
