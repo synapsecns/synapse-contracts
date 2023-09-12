@@ -62,7 +62,7 @@ contract GMXV1ModuleArbTestFork is Test {
         vm.createSelectFork(arbRPC, ARB_BLOCK_NUMBER);
 
         gmxV1Module = new GMXV1StableArbitrumModule(GMX_V1_ROUTER, GMX_V1_READER);
-        linkedPool = new LinkedPool(USDC_E);
+        linkedPool = new LinkedPool(USDC_E, address(this));
         user = makeAddr("User");
 
         vm.label(GMX_V1_ROUTER, "GMXV1Router");

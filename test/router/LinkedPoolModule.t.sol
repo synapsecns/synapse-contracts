@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {MockERC20, LinkedPoolTest} from "./LinkedPool.t.sol";
+import {MockERC20, LinkedPoolTest, TokenTree} from "./LinkedPool.t.sol";
 
 import {MockPoolModule} from "../mocks/MockPoolModule.sol";
 
@@ -9,27 +9,12 @@ import {MockPoolModule} from "../mocks/MockPoolModule.sol";
 contract LinkedPoolModuleTest is LinkedPoolTest {
     address public newPoolModule;
 
+    event PoolModuleUpdated(address pool, address oldPoolModule, address newPoolModule);
+
     function setUp() public virtual override {
         poolModule = address(new MockPoolModule());
         newPoolModule = address(new MockPoolModule());
         super.setUp();
-    }
-
-    function test_swap_revert_poolPaused() public override {
-        complexSetup();
-        // Pause poolB01
-        poolB01.setPaused(true);
-        uint8 tokenFrom = 3;
-        uint8 tokenTo = 7;
-        uint256 amount = 100;
-        // This goes through the paused pool
-        address tokenIn = linkedPool.getToken(tokenFrom);
-        uint256 amountIn = amount * (10**MockERC20(tokenIn).decimals());
-        prepareUser(tokenIn, amountIn);
-        // Expect revert message for failed swap delegated to a pool module
-        vm.expectRevert("Swap failed");
-        vm.prank(user);
-        linkedPool.swap(tokenFrom, tokenTo, amountIn, 0, type(uint256).max);
     }
 
     // ═════════════════════════════════════════ UPDATE POOL MODULE TESTS ══════════════════════════════════════════════
@@ -43,6 +28,18 @@ contract LinkedPoolModuleTest is LinkedPoolTest {
         assertEq(linkedPool.getPoolModule(address(poolB2)), newPoolModule);
         // Check that pool02 has old pool module
         assertEq(linkedPool.getPoolModule(address(pool02)), poolModule);
+    }
+
+    function test_updatePoolModule_emitsEvent() public {
+        // Setup with two pools: poolB2 and pool02
+        compactSetup();
+        vm.expectEmit();
+        emit PoolModuleUpdated(address(poolB2), poolModule, newPoolModule);
+        vm.recordLogs();
+        vm.prank(owner);
+        linkedPool.updatePoolModule(address(poolB2), newPoolModule);
+        // Should be exactly one event
+        assertEq(vm.getRecordedLogs().length, 1);
     }
 
     function test_updatePoolModule_revert_callerNotOwner(address caller) public {
@@ -64,7 +61,7 @@ contract LinkedPoolModuleTest is LinkedPoolTest {
             abi.encodeWithSelector(MockPoolModule.getPoolTokens.selector, poolB2),
             abi.encode(wrongTokensList)
         );
-        vm.expectRevert("Different token lists");
+        vm.expectRevert(TokenTree.TokenTree__DifferentTokenLists.selector);
         vm.prank(owner);
         linkedPool.updatePoolModule(address(poolB2), newPoolModule);
     }
@@ -82,7 +79,7 @@ contract LinkedPoolModuleTest is LinkedPoolTest {
             abi.encodeWithSelector(MockPoolModule.getPoolTokens.selector, poolB2),
             abi.encode(wrongTokensList)
         );
-        vm.expectRevert("Different token lists");
+        vm.expectRevert(TokenTree.TokenTree__DifferentTokenLists.selector);
         vm.prank(owner);
         linkedPool.updatePoolModule(address(poolB2), newPoolModule);
     }
@@ -99,7 +96,7 @@ contract LinkedPoolModuleTest is LinkedPoolTest {
             abi.encodeWithSelector(MockPoolModule.getPoolTokens.selector, poolB2),
             abi.encode(wrongTokensList)
         );
-        vm.expectRevert("Different token lists");
+        vm.expectRevert(TokenTree.TokenTree__DifferentTokenLists.selector);
         vm.prank(owner);
         linkedPool.updatePoolModule(address(poolB2), newPoolModule);
     }
@@ -116,7 +113,7 @@ contract LinkedPoolModuleTest is LinkedPoolTest {
             abi.encodeWithSelector(MockPoolModule.getPoolTokens.selector, poolB2),
             abi.encode(wrongTokensList)
         );
-        vm.expectRevert("Different token lists");
+        vm.expectRevert(TokenTree.TokenTree__DifferentTokenLists.selector);
         vm.prank(owner);
         linkedPool.updatePoolModule(address(poolB2), newPoolModule);
     }
@@ -133,7 +130,7 @@ contract LinkedPoolModuleTest is LinkedPoolTest {
             abi.encodeWithSelector(MockPoolModule.getPoolTokens.selector, poolB2),
             abi.encode(wrongTokensList)
         );
-        vm.expectRevert("Different token lists");
+        vm.expectRevert(TokenTree.TokenTree__DifferentTokenLists.selector);
         vm.prank(owner);
         linkedPool.updatePoolModule(address(poolB2), newPoolModule);
     }

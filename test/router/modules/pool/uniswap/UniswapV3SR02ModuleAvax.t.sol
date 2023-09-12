@@ -4,68 +4,69 @@ pragma solidity 0.8.17;
 import {Test} from "forge-std/Test.sol";
 
 import {LinkedPool} from "../../../../../contracts/router/LinkedPool.sol";
-import {IndexedToken, UniswapV3Module} from "../../../../../contracts/router/modules/pool/uniswap/UniswapV3Module.sol";
+import {IndexedToken, UniswapV3SR02Module} from "../../../../../contracts/router/modules/pool/uniswap/UniswapV3SR02Module.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
-contract UniswapV3ModuleArbTestFork is Test {
+contract UniswapV3SR02ModuleAvaxTestFork is Test {
     LinkedPool public linkedPool;
-    UniswapV3Module public uniswapV3Module;
+    UniswapV3SR02Module public uniswapV3SR02Module;
 
-    // 2023-06-27
-    uint256 public constant ARB_BLOCK_NUMBER = 105400000;
+    // 2023-09-05
+    uint256 public constant AVAX_BLOCK_NUMBER = 34800000;
 
-    // Uniswap V3 Router on Arbitrum
-    address public constant UNI_V3_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
+    // Uniswap V3 SwapRouter02 on Avalanche
+    address public constant UNI_V3_SWAP_ROUTER_02 = 0xbb00FF08d01D300023C629E8fFfFcb65A5a578cE;
 
-    // Eden's Uniswap V3 Static Quoter on Arbitrum
-    address public constant UNI_V3_STATIC_QUOTER = 0xc80f61d1bdAbD8f5285117e1558fDDf8C64870FE;
+    // Eden's Uniswap V3 Static Quoter on Avalanche
+    address public constant UNI_V3_STATIC_QUOTER = 0xc15804984E3e77B7f8A60E4553e2289c5fdeAe8B;
 
-    // Uniswap V3 USDC/USDC.e pool on Arbitrum
-    address public constant UNI_V3_USDC_POOL = 0x8e295789c9465487074a65b1ae9Ce0351172393f;
+    // Uniswap V3 USDC/USDT pool on Avalanche
+    address public constant UNI_V3_USDC_POOL = 0x804226cA4EDb38e7eF56D16d16E92dc3223347A0;
 
-    // Bridged USDC (USDC.e) on Arbitrum
-    address public constant USDC_E = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
+    // Native USDT on Avalanche
+    address public constant USDT = 0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7;
 
-    // Native USDC on Arbitrum
-    address public constant USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
+    // Native USDC on Avalanche
+    address public constant USDC = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
 
     address public user;
 
     function setUp() public {
-        string memory arbRPC = vm.envString("ARBITRUM_API");
-        vm.createSelectFork(arbRPC, ARB_BLOCK_NUMBER);
+        string memory avaxRPC = vm.envString("AVALANCHE_API");
+        vm.createSelectFork(avaxRPC, AVAX_BLOCK_NUMBER);
 
-        uniswapV3Module = new UniswapV3Module(UNI_V3_ROUTER, UNI_V3_STATIC_QUOTER);
+        uniswapV3SR02Module = new UniswapV3SR02Module(UNI_V3_SWAP_ROUTER_02, UNI_V3_STATIC_QUOTER);
         linkedPool = new LinkedPool(USDC, address(this));
         user = makeAddr("User");
 
-        vm.label(UNI_V3_ROUTER, "UniswapV3Router");
+        vm.label(UNI_V3_SWAP_ROUTER_02, "UniswapV3SwapRouter02");
         vm.label(UNI_V3_STATIC_QUOTER, "UniswapV3StaticQuoter");
         vm.label(UNI_V3_USDC_POOL, "UniswapV3USDCPool");
-        vm.label(USDC_E, "USDC.e");
+        vm.label(USDT, "USDT");
         vm.label(USDC, "USDC");
     }
 
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
 
     function testGetPoolTokens() public {
-        address[] memory tokens = uniswapV3Module.getPoolTokens(UNI_V3_USDC_POOL);
+        address[] memory tokens = uniswapV3SR02Module.getPoolTokens(UNI_V3_USDC_POOL);
         assertEq(tokens.length, 2);
-        assertEq(tokens[0], USDC);
-        assertEq(tokens[1], USDC_E);
+        // USDT address is lexically smaller than USDC address
+        assertEq(tokens[0], USDT);
+        assertEq(tokens[1], USDC);
     }
 
     // ══════════════════════════════════════════════ TESTS: ADD POOL ══════════════════════════════════════════════════
 
     function addPool() public {
-        linkedPool.addPool({nodeIndex: 0, pool: UNI_V3_USDC_POOL, poolModule: address(uniswapV3Module)});
+        linkedPool.addPool({nodeIndex: 0, pool: UNI_V3_USDC_POOL, poolModule: address(uniswapV3SR02Module)});
     }
 
     function testAddPool() public {
         addPool();
         assertEq(linkedPool.getToken(0), USDC);
-        assertEq(linkedPool.getToken(1), USDC_E);
+        assertEq(linkedPool.getToken(1), USDT);
     }
 
     // ════════════════════════════════════════════════ TESTS: SWAP ════════════════════════════════════════════════════
@@ -85,7 +86,7 @@ contract UniswapV3ModuleArbTestFork is Test {
         });
     }
 
-    function testSwapFromUSDCtoUSDCe() public {
+    function testSwapFromUSDCtoUSDT() public {
         addPool();
         uint256 amount = 100 * 10**6;
         prepareUser(USDC, amount);
@@ -94,27 +95,27 @@ contract UniswapV3ModuleArbTestFork is Test {
         assertGt(amountOut, 0);
         assertEq(amountOut, expectedAmountOut);
         assertEq(IERC20(USDC).balanceOf(user), 0);
-        assertEq(IERC20(USDC_E).balanceOf(user), amountOut);
+        assertEq(IERC20(USDT).balanceOf(user), amountOut);
     }
 
-    function testSwapFromUSDCetoUSDC() public {
+    function testSwapFromUSDTtoUSDC() public {
         addPool();
         uint256 amount = 100 * 10**6;
-        prepareUser(USDC_E, amount);
+        prepareUser(USDT, amount);
         uint256 expectedAmountOut = linkedPool.calculateSwap({nodeIndexFrom: 1, nodeIndexTo: 0, dx: amount});
         uint256 amountOut = swap({tokenIndexFrom: 1, tokenIndexTo: 0, amount: amount});
         assertGt(amountOut, 0);
         assertEq(amountOut, expectedAmountOut);
-        assertEq(IERC20(USDC_E).balanceOf(user), 0);
+        assertEq(IERC20(USDT).balanceOf(user), 0);
         assertEq(IERC20(USDC).balanceOf(user), amountOut);
     }
 
     function testPoolSwapRevertsWhenDirectCall() public {
         vm.expectRevert("Not a delegate call");
-        uniswapV3Module.poolSwap({
+        uniswapV3SR02Module.poolSwap({
             pool: UNI_V3_USDC_POOL,
             tokenFrom: IndexedToken({index: 0, token: USDC}),
-            tokenTo: IndexedToken({index: 1, token: USDC_E}),
+            tokenTo: IndexedToken({index: 1, token: USDT}),
             amountIn: 100 * 10**6
         });
     }
