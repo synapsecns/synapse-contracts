@@ -20,10 +20,7 @@ contract DeployTraderJoeV21Module is BasicSynapseScript {
         vm.startBroadcast();
         readConfig();
         // Use `deployTraderJoeV21Module` as callback to deploy the contract
-        address module = deployAndSave({
-            contractName: TRADER_JOE_V21_MODULE,
-            deployContract: deployTraderJoeV21Module
-        });
+        address module = deployAndSave({contractName: TRADER_JOE_V21_MODULE, deployContract: deployTraderJoeV21Module});
         vm.stopBroadcast();
         // Verify the module was deployed correctly
         require(address(TraderJoeV21Module(module).lbRouter()) == lbRouter, "!lbRouter");
