@@ -2,10 +2,11 @@
 pragma solidity 0.8.17;
 
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
+import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 import {EnumerableMap} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableMap.sol";
 
 import {DefaultRouter} from "./DefaultRouter.sol";
-import {BridgeFailed, ModuleExists, ModuleNotExists, ModuleInvalid, QueryEmpty} from "./libs/Errors.sol";
+import {ModuleExists, ModuleNotExists, ModuleInvalid, QueryEmpty} from "./libs/Errors.sol";
 import {ActionLib, BridgeToken, DestRequest, LimitedToken, Pool, SwapQuery} from "./libs/Structs.sol";
 import {UniversalTokenLib} from "./libs/UniversalToken.sol";
 
@@ -14,6 +15,7 @@ import {IBridgeModule} from "./interfaces/IBridgeModule.sol";
 import {IRouterV2} from "./interfaces/IRouterV2.sol";
 
 contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
+    using Address for address;
     using EnumerableMap for EnumerableMap.UintToAddressMap;
 
     /// @notice swap quoter
@@ -56,8 +58,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
             amount,
             destQuery
         );
-        (bool success, ) = bridgeModule.delegatecall(payload);
-        if (!success) revert BridgeFailed();
+        bridgeModule.functionDelegateCall(payload); // bubbles up the error, but nothing to be returned
     }
 
     /// @inheritdoc IRouterV2

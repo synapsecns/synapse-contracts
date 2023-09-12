@@ -5,7 +5,7 @@ import {MockBridgeModule} from "../mocks/MockBridgeModule.sol";
 import {MockFailedBridgeModule} from "../mocks/MockFailedBridgeModule.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {Action, ActionLib, BridgeToken, DefaultParams, LimitedToken, SwapQuery} from "../../../contracts/router/libs/Structs.sol";
-import {BridgeFailed, ModuleNotExists} from "../../../contracts/router/libs/Errors.sol";
+import {ModuleNotExists} from "../../../contracts/router/libs/Errors.sol";
 
 import {BasicSynapseRouterV2Test} from "./BasicSynapseRouterV2.t.sol";
 
@@ -149,7 +149,7 @@ contract SynapseRouterV2BridgeViaSynapseTest is BasicSynapseRouterV2Test {
         SwapQuery memory originQuery;
         SwapQuery memory destQuery;
 
-        vm.expectRevert(BridgeFailed.selector);
+        vm.expectRevert("Failed");
         vm.prank(user);
         router.bridgeViaSynapse(to, chainId, failedModuleId, token, amount, originQuery, destQuery);
     }
