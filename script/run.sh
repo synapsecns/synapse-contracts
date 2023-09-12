@@ -14,6 +14,7 @@
 # Colors
 RED="\033[0;31m"
 GREEN="\033[0;32m"
+YELLOW="\033[0;33m"
 NC="\033[0m" # No Color
 
 # Fetch the script path, chain name, keystore env name
@@ -26,8 +27,16 @@ if [ -z "$SCRIPT_PATH" ] || [ -z "$CHAIN_NAME" ] || [ -z "$WALLET_ENV_NAME" ]; t
     echo -e "${RED}Usage: ./script/run.sh <path/to/script.s.sol> <chainName> <walletName> [<options...>]${NC}"
     exit 1
 fi
+# Figure out if this is a deployment script: check if the script file name starts with "Deploy"
+IS_DEPLOYMENT_SCRIPT=$(basename $SCRIPT_PATH | grep -c "^Deploy")
 # Shift the arguments to pass the rest to `forge script`
 shift 3
+# Check if --broadcast option is passed without --verify for a deployment script
+if [[ "$@" == *"--broadcast"* ]] && [[ "$@" != *"--verify"* ]] && [ "$IS_DEPLOYMENT_SCRIPT" == "1" ]; then
+    # Add --verify option
+    echo -e "${YELLOW}Deploy script: adding --verify for the broadcasting${NC}"
+    set -- "$@" "--verify"
+fi
 # Preserve the quotes in the options, useful for --sig "function(arguments)"
 # https://stackoverflow.com/questions/10835933/how-can-i-preserve-quotes-in-printing-a-bash-scripts-arguments
 FORGE_OPTIONS=${*@Q}
