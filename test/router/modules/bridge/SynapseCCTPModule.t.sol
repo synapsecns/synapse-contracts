@@ -297,6 +297,19 @@ contract SynapseCCTPModuleTest is BaseCCTPTest {
         performDelegateCall(payload);
     }
 
+    function testDelegateBridgeRevertsWhenAdapterAndEmptyParams() public {
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(delegateCaller),
+            tokenOut: address(0),
+            minAmountOut: 0,
+            deadline: 0,
+            rawParams: ""
+        });
+        bytes memory payload = getModulePayload({bridgeToken: token, destQuery: destQuery});
+        vm.expectRevert(SynapseCCTPModule.SynapseCCTPModule__NoParamsFound.selector);
+        performDelegateCall(payload);
+    }
+
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
 
     function testGetMaxBridgedAmountReturnsMaxBurnAmountForSupportedToken() public {

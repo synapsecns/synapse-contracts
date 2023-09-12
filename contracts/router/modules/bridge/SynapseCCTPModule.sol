@@ -16,6 +16,7 @@ contract SynapseCCTPModule is OnlyDelegateCall, IBridgeModule {
     using UniversalTokenLib for address;
 
     error SynapseCCTPModule__EqualSwapIndexes(uint8 index);
+    error SynapseCCTPModule__NoParamsFound();
     error SynapseCCTPModule__UnsupportedAction(Action action);
     error SynapseCCTPModule__UnsupportedToken(address token);
 
@@ -117,6 +118,7 @@ contract SynapseCCTPModule is OnlyDelegateCall, IBridgeModule {
             // No action was specified, so no swap is required
             return (RequestLib.REQUEST_BASE, "");
         }
+        _assertHasParams(destQuery);
         DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
         // Actions other than swap are not supported for Circle tokens on the destination chain
         if (params.action != Action.Swap) revert SynapseCCTPModule__UnsupportedAction(params.action);
@@ -131,5 +133,12 @@ contract SynapseCCTPModule is OnlyDelegateCall, IBridgeModule {
             deadline: destQuery.deadline,
             minAmountOut: destQuery.minAmountOut
         });
+    }
+
+    /// @dev Checks that the swap query has raw params provided.
+    /// Note: there is no guarantee that the params will be decoded successfully, but we can at least
+    /// check that they are not empty to provide a better error message for the incorrect integrations.
+    function _assertHasParams(SwapQuery memory destQuery) internal pure {
+        if (destQuery.rawParams.length == 0) revert SynapseCCTPModule__NoParamsFound();
     }
 }
