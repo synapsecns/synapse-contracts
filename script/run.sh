@@ -123,9 +123,28 @@ echo "  Signer nonce: $NONCE"
 # Create directory for fresh deployments in case it doesn't exist
 mkdir -p ".deployments/$CHAIN_NAME"
 
+# Save current timestamp to check for new deployments later
+TIMESTAMP=$(date +%s)
+
 # Execute the script, print the command to sanity check the options
 bash -x -c "forge script $SCRIPT_PATH \
     -f $CHAIN_NAME \
     $WALLET_OPTIONS \
     $CHAIN_OPTIONS \
     $FORGE_OPTIONS"
+
+# Save new deployments if this is a broadcasted deployment script
+if [ "$IS_BROADCASTED_DEPLOYMENT" == "1" ]; then
+    # Check ".deployments/$CHAIN_NAME" for files created after the script execution
+    NEW_DEPLOYMENTS=$(find ".deployments/$CHAIN_NAME" -type f -newermt "@$TIMESTAMP")
+    # save-deployment.sh for each new deployment
+    for deployment in $NEW_DEPLOYMENTS; do
+        # Save the deployment
+        echo -e "${YELLOW}Found new potential deployment: $deployment${NC}"
+        # Extract the contract name: base name without extension.
+        # Need to cut at the last dot in case the contract alias contains dots (e.g. LinkedPool.nUSD.json).
+        deployment=$(basename $deployment)
+        deployment=${deployment%.*}
+        ./script/save-deployment.sh $CHAIN_NAME $deployment
+    done
+fi
