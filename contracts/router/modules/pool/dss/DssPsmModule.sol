@@ -9,7 +9,7 @@ import {IDssPsm} from "../../../interfaces/dss/IDssPsm.sol";
 import {IDssGemJoin} from "../../../interfaces/dss/IDssGemJoin.sol";
 import {UniversalTokenLib} from "../../../libs/UniversalToken.sol";
 
-import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
+import {OnlyDelegateCall} from "../../OnlyDelegateCall.sol";
 
 /// @notice PoolModule for MakerDAO Dai PSM modules
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router

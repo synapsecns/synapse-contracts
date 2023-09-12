@@ -9,7 +9,7 @@ import {
     QuoteExactInputSingleParams, IUniswapV3StaticQuoter
 } from "../../../interfaces/uniswap/IUniswapV3StaticQuoter.sol";
 import {UniversalTokenLib} from "../../../libs/UniversalToken.sol";
-import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
+import {OnlyDelegateCall} from "../../OnlyDelegateCall.sol";
 
 /// @notice This is implemented in a separate contract, as the ExactInputSingleParams struct
 /// is different between all chains and Avalanche (no deadline field on Avalanche).

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {OnlyDelegateCall} from "../pool/OnlyDelegateCall.sol";
+import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
 import {IBridgeModule} from "../../interfaces/IBridgeModule.sol";
 import {ILocalBridgeConfig} from "../../interfaces/ILocalBridgeConfig.sol";
 import {ISynapseBridge} from "../../interfaces/ISynapseBridge.sol";

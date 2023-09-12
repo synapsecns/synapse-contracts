@@ -10,7 +10,7 @@ import {IGMXV1Reader} from "../../../interfaces/gmx/IGMXV1Reader.sol";
 import {IGMXV1Router} from "../../../interfaces/gmx/IGMXV1Router.sol";
 import {IGMXV1Vault} from "../../../interfaces/gmx/IGMXV1Vault.sol";
 
-import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
+import {OnlyDelegateCall} from "../../OnlyDelegateCall.sol";
 
 /// @notice PoolModule for GMX V1 pools
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
