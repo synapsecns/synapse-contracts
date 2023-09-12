@@ -12,6 +12,7 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
     using UniversalTokenLib for address;
 
     error SynapseBridgeModule__EqualSwapIndexes(uint8 index);
+    error SynapseBridgeModule__NoParamsFound();
     error SynapseBridgeModule__UnsupportedDepositAction(Action action);
     error SynapseBridgeModule__UnsupportedRedeemAction(Action action);
     error SynapseBridgeModule__UnsupportedToken(address token);
@@ -131,6 +132,7 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
             return;
         }
         // Decode the params for the destination chain otherwise
+        _assertHasParams(destQuery);
         DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
         // Token is deposited on THIS chain => it is minted on the destination chain.
         // Minting of token is done by calling destination synapseBridge:
@@ -173,6 +175,7 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
             return;
         }
         // Decode the params for the destination chain otherwise
+        _assertHasParams(destQuery);
         DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
         // Token is redeemed on THIS chain => it could be either minted and withdrawn on the destination chain.
         // Minting of token is done by calling destination synapseBridge:
@@ -216,5 +219,12 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
         } else {
             revert SynapseBridgeModule__UnsupportedRedeemAction(params.action);
         }
+    }
+
+    /// @dev Checks that the swap query has raw params provided.
+    /// Note: there is no guarantee that the params will be decoded successfully, but we can at least
+    /// check that they are not empty to provide a better error message for the incorrect integrations.
+    function _assertHasParams(SwapQuery memory destQuery) internal pure {
+        if (destQuery.rawParams.length == 0) revert SynapseBridgeModule__NoParamsFound();
     }
 }

@@ -399,6 +399,28 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
         delegateCaller.performDelegateCall(address(module), payload);
     }
 
+    function testDelegateBridgeRevertsWhenRedeemWithAdapterAndEmptyRawParams() public {
+        addTokens();
+        MockERC20(redeemToken).mint(address(delegateCaller), AMOUNT);
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(delegateCaller),
+            tokenOut: address(0),
+            minAmountOut: 0,
+            deadline: 0,
+            rawParams: ""
+        });
+        bytes memory payload = abi.encodeWithSelector(
+            module.delegateBridge.selector,
+            TO,
+            CHAIN_ID,
+            redeemToken,
+            AMOUNT,
+            destQuery
+        );
+        vm.expectRevert(SynapseBridgeModule.SynapseBridgeModule__NoParamsFound.selector);
+        delegateCaller.performDelegateCall(address(module), payload);
+    }
+
     function testDelegateBridgeRevertsWhenDepositRemoveLiquidity() public {
         addTokens();
         MockERC20(depositToken).mint(address(delegateCaller), AMOUNT);
@@ -524,6 +546,28 @@ contract SynapseBridgeModuleTest is SynapseBridgeUtils {
         vm.expectRevert(
             abi.encodeWithSelector(SynapseBridgeModule.SynapseBridgeModule__EqualSwapIndexes.selector, TOKEN_INDEX_FROM)
         );
+        delegateCaller.performDelegateCall(address(module), payload);
+    }
+
+    function testDelegateBridgeRevertsWhenDepositWithAdapterAndEmptyRawParams() public {
+        addTokens();
+        MockERC20(depositToken).mint(address(delegateCaller), AMOUNT);
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(delegateCaller),
+            tokenOut: address(0),
+            minAmountOut: 0,
+            deadline: 0,
+            rawParams: ""
+        });
+        bytes memory payload = abi.encodeWithSelector(
+            module.delegateBridge.selector,
+            TO,
+            CHAIN_ID,
+            depositToken,
+            AMOUNT,
+            destQuery
+        );
+        vm.expectRevert(SynapseBridgeModule.SynapseBridgeModule__NoParamsFound.selector);
         delegateCaller.performDelegateCall(address(module), payload);
     }
 
