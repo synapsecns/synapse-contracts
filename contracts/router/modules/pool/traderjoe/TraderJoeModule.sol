@@ -7,7 +7,7 @@ import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
 import {ILBRouter} from "../../../interfaces/traderjoe/ILBRouter.sol";
 import {UniversalTokenLib} from "../../../libs/UniversalToken.sol";
 
-import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
+import {OnlyDelegateCall} from "../../OnlyDelegateCall.sol";
 
 /// @notice PoolModule for Trader Joe LBPairs
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
