@@ -145,78 +145,6 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         originTokens = _getConnectedBridgeTokens(tokenIn, true);
     }
 
-    /// @notice Gets all connected bridge tokens to the given token
-    /// @param token The token to connect bridge tokens with
-    /// @param origin Whether gathering on origin or destination chain
-    /// @param connected The connected bridge tokens. If origin == True, then returns origin bridge tokens. If origin == False, returns dest bridge tokens.
-    function _getConnectedBridgeTokens(address token, bool origin)
-        internal
-        view
-        returns (BridgeToken[] memory connected)
-    {
-        uint256 len = _bridgeModules.length();
-        BridgeToken[][] memory unflattened = new BridgeToken[][](len);
-
-        uint256 count;
-        for (uint256 i = 0; i < len; ++i) {
-            (, address bridgeModule) = _bridgeModules.at(i);
-            BridgeToken[] memory bridgeTokens = IBridgeModule(bridgeModule).getBridgeTokens();
-
-            // assemble limited token format for quoter call
-            uint256 amountFound;
-            bool[] memory isConnected = new bool[](bridgeTokens.length);
-            for (uint256 j = 0; j < bridgeTokens.length; ++j) {
-                LimitedToken memory _tokenIn = origin
-                    ? LimitedToken({actionMask: ActionLib.allActions(), token: token}) // origin bridge tokens
-                    : LimitedToken({
-                        actionMask: IBridgeModule(bridgeModule).tokenToActionMask(bridgeTokens[j].token),
-                        token: bridgeTokens[j].token
-                    }); // dest bridge tokens
-                address _tokenOut = origin ? bridgeTokens[j].token : token;
-                isConnected[j] = swapQuoter.areConnectedTokens(_tokenIn, _tokenOut);
-                if (isConnected[j]) amountFound++;
-            }
-
-            // push to unflattened tokens if bridge token connected to given token
-            unflattened[i] = new BridgeToken[](amountFound);
-            count += amountFound;
-
-            uint256 k;
-            for (uint256 j = 0; j < bridgeTokens.length; ++j) {
-                if (isConnected[j]) {
-                    unflattened[i][k] = bridgeTokens[j];
-                    k++;
-                }
-            }
-        }
-
-        // flatten into connected tokens
-        connected = unflattened.flatten(count);
-    }
-
-    /// @notice Gets all bridge tokens for supported bridge modules
-    function _getBridgeTokens() internal view returns (BridgeToken[] memory) {
-        uint256 len = _bridgeModules.length();
-        BridgeToken[][] memory unflattened = new BridgeToken[][](len);
-
-        uint256 count;
-        for (uint256 i = 0; i < len; ++i) {
-            (, address bridgeModule) = _bridgeModules.at(i);
-            BridgeToken[] memory tokens = IBridgeModule(bridgeModule).getBridgeTokens();
-
-            // push to unflattened
-            unflattened[i] = new BridgeToken[](tokens.length);
-            count += tokens.length;
-
-            for (uint256 j = 0; j < tokens.length; ++j) {
-                unflattened[i][j] = tokens[j];
-            }
-        }
-
-        // flatten into bridge tokens array
-        return unflattened.flatten(count);
-    }
-
     /// @inheritdoc IRouterV2
     function getSupportedTokens() external view returns (address[] memory supportedTokens) {
         // get all possible bridge tokens from supported bridge modules
@@ -342,6 +270,78 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
                 break;
             }
         }
+    }
+
+    /// @notice Gets all connected bridge tokens to the given token
+    /// @param token The token to connect bridge tokens with
+    /// @param origin Whether gathering on origin or destination chain
+    /// @param connected The connected bridge tokens. If origin == True, then returns origin bridge tokens. If origin == False, returns dest bridge tokens.
+    function _getConnectedBridgeTokens(address token, bool origin)
+        internal
+        view
+        returns (BridgeToken[] memory connected)
+    {
+        uint256 len = _bridgeModules.length();
+        BridgeToken[][] memory unflattened = new BridgeToken[][](len);
+
+        uint256 count;
+        for (uint256 i = 0; i < len; ++i) {
+            (, address bridgeModule) = _bridgeModules.at(i);
+            BridgeToken[] memory bridgeTokens = IBridgeModule(bridgeModule).getBridgeTokens();
+
+            // assemble limited token format for quoter call
+            uint256 amountFound;
+            bool[] memory isConnected = new bool[](bridgeTokens.length);
+            for (uint256 j = 0; j < bridgeTokens.length; ++j) {
+                LimitedToken memory _tokenIn = origin
+                    ? LimitedToken({actionMask: ActionLib.allActions(), token: token}) // origin bridge tokens
+                    : LimitedToken({
+                        actionMask: IBridgeModule(bridgeModule).tokenToActionMask(bridgeTokens[j].token),
+                        token: bridgeTokens[j].token
+                    }); // dest bridge tokens
+                address _tokenOut = origin ? bridgeTokens[j].token : token;
+                isConnected[j] = swapQuoter.areConnectedTokens(_tokenIn, _tokenOut);
+                if (isConnected[j]) amountFound++;
+            }
+
+            // push to unflattened tokens if bridge token connected to given token
+            unflattened[i] = new BridgeToken[](amountFound);
+            count += amountFound;
+
+            uint256 k;
+            for (uint256 j = 0; j < bridgeTokens.length; ++j) {
+                if (isConnected[j]) {
+                    unflattened[i][k] = bridgeTokens[j];
+                    k++;
+                }
+            }
+        }
+
+        // flatten into connected tokens
+        connected = unflattened.flatten(count);
+    }
+
+    /// @notice Gets all bridge tokens for supported bridge modules
+    function _getBridgeTokens() internal view returns (BridgeToken[] memory) {
+        uint256 len = _bridgeModules.length();
+        BridgeToken[][] memory unflattened = new BridgeToken[][](len);
+
+        uint256 count;
+        for (uint256 i = 0; i < len; ++i) {
+            (, address bridgeModule) = _bridgeModules.at(i);
+            BridgeToken[] memory tokens = IBridgeModule(bridgeModule).getBridgeTokens();
+
+            // push to unflattened
+            unflattened[i] = new BridgeToken[](tokens.length);
+            count += tokens.length;
+
+            for (uint256 j = 0; j < tokens.length; ++j) {
+                unflattened[i][j] = tokens[j];
+            }
+        }
+
+        // flatten into bridge tokens array
+        return unflattened.flatten(count);
     }
 
     /// @notice Calculates amount of bridge token in accounting for bridge fees
