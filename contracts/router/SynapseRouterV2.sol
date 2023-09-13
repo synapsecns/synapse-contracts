@@ -219,22 +219,51 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
     /// @inheritdoc IRouterV2
     function getSupportedTokens() external view returns (address[] memory supportedTokens) {
-        // get tokens in each quoter pool if pool also has a bridge token
-        Pool[] memory pools = swapQuoter.allPools();
-        address[][] memory unflattenedSupportedTokens = new address[][](pools.length);
+        // get all possible bridge tokens from supported bridge modules
+        BridgeToken[] memory bridgeTokens = _getBridgeTokens();
 
-        uint256 supportedTokensLength;
+        // get tokens in each quoter pool
+        Pool[] memory pools = swapQuoter.allPools();
+        address[][] memory unflattened = new address[][](pools.length + 1);
+
+        // supported should include all bridge tokens and any pool tokens paired with a bridge token
+        // @dev fill pool tokens first then last index of unflattened dedicated to bridge tokens
+        uint256 count;
         for (uint256 i = 0; i < pools.length; ++i) {
             Pool memory pool = pools[i];
-            unflattenedSupportedTokens[i] = new address[](pool.tokens.length);
+            unflattened[i] = new address[](pool.tokens.length);
+
+            bool does; // whether pool.tokens does contain a bridge token
             for (uint256 j = 0; j < pool.tokens.length; ++j) {
-                unflattenedSupportedTokens[i][j] = pool.tokens[j].token;
-                supportedTokensLength++;
+                // optimistically add pool token to list
+                unflattened[i][j] = pool.tokens[j].token;
+
+                // check whether pool token is a bridge token if haven't found one prior
+                for (uint256 k = 0; k < bridgeTokens.length; ++k) {
+                    if (does) break;
+                    does = (bridgeTokens[k].token == pool.tokens[j].token);
+                }
             }
+
+            if (!does)
+                delete unflattened[i]; // zero out if no bridge token
+            else count += pool.tokens.length;
         }
 
+        // fill in bridge tokens in last row of unflattened
+        unflattened[pools.length] = new address[](bridgeTokens.length);
+        for (uint256 i = 0; i < bridgeTokens.length; ++i) {
+            unflattened[pools.length][i] = bridgeTokens[i].token;
+        }
+        count += bridgeTokens.length;
+
         // flatten into supported tokens and filter out duplicates
-        supportedTokens = unflattenedSupportedTokens.flatten(supportedTokensLength).unique();
+        supportedTokens = unflattened.flatten(count).unique();
+
+        // add native weth if in supported list
+        if (supportedTokens.contains(swapQuoter.weth())) {
+            return supportedTokens.append(UniversalTokenLib.ETH_ADDRESS);
+        }
     }
 
     /// @inheritdoc IRouterV2

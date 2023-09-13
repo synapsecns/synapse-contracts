@@ -55,18 +55,12 @@ library Arrays {
     /// @return filtered The list of addresses without duplicates
     function unique(address[] memory unfiltered) internal pure returns (address[] memory filtered) {
         address[] memory intermediate = new address[](unfiltered.length);
+
+        // add unique elements to intermediate
         uint256 count;
         for (uint256 i = 0; i < unfiltered.length; ++i) {
             address el = unfiltered[i];
-
-            // check whether el already in intermediate (unique elements)
-            bool contains;
-            for (uint256 j = 0; j < intermediate.length; ++j) {
-                contains = (el == intermediate[j]);
-                if (contains) break;
-            }
-
-            if (!contains) {
+            if (!contains(intermediate, el)) {
                 intermediate[count] = el;
                 count++;
             }
@@ -77,5 +71,29 @@ library Arrays {
         for (uint256 i = 0; i < count; i++) {
             filtered[i] = intermediate[i];
         }
+    }
+
+    // TODO: test
+    /// @notice Whether given element is in the list of addresses
+    /// @param l The list of addresses
+    /// @param el The element to search for
+    /// @return does If given list does contain element
+    function contains(address[] memory l, address el) internal pure returns (bool does) {
+        for (uint256 j = 0; j < l.length; ++j) {
+            does = (el == l[j]);
+            if (does) break;
+        }
+        return does;
+    }
+
+    // TODO: test
+    /// @notice Appends a new element to the end of the list of addresses
+    /// @param l The list of addresses
+    /// @param el The element to append
+    /// @param r The new list of addresses with appended element
+    function append(address[] memory l, address el) internal pure returns (address[] memory r) {
+        r = new address[](l.length + 1);
+        for (uint256 i = 0; i < l.length; i++) r[i] = l[i];
+        r[r.length - 1] = el;
     }
 }

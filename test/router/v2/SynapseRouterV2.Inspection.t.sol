@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 import {MockBridgeModule} from "../mocks/MockBridgeModule.sol";
 import {Action, ActionLib, BridgeToken, LimitedToken, DestRequest, SwapQuery} from "../../../contracts/router/libs/Structs.sol";
+import {UniversalTokenLib} from "../../../contracts/router/libs/UniversalToken.sol";
 import {SynapseRouterV2} from "../../../contracts/router/SynapseRouterV2.sol";
 
 import {BasicSynapseRouterV2Test} from "./BasicSynapseRouterV2.t.sol";
@@ -35,6 +36,11 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
 
         vm.prank(owner);
         router.connectBridgeModule(moduleIdL1, address(bridgeModuleL1));
+
+        vm.label(nexusDai, "ETH DAI");
+        vm.label(nexusUsdc, "ETH USDC");
+        vm.label(nexusUsdt, "ETH USDT");
+        vm.label(nexusNusd, "ETH nUSD");
     }
 
     function deployL2BridgeModule() public {
@@ -54,6 +60,14 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
 
         vm.prank(owner);
         router.connectBridgeModule(moduleIdL2, address(bridgeModuleL2));
+
+        vm.label(neth, "nETH");
+        vm.label(nusd, "nUSD");
+        vm.label(usdcE, "USDC.e");
+        vm.label(usdt, "USDT");
+        vm.label(usdc, "USDC");
+        vm.label(weth, "WETH");
+        vm.label(UniversalTokenLib.ETH_ADDRESS, "ETH");
     }
 
     function checkBridgeTokens(BridgeToken[] memory expectedTokens, BridgeToken[] memory actualTokens) public {
@@ -65,8 +79,6 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
             assertEq(expectedToken.symbol, actualToken.symbol);
         }
     }
-
-    // TODO: test filtering of bridge token duplicates
 
     function testGetDestinationBridgeTokensL1Pool() public {
         // L2 => L1
@@ -141,10 +153,11 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         addL1Pool();
         deployL1BridgeModule();
 
-        address[] memory expectedTokens = new address[](3);
+        address[] memory expectedTokens = new address[](4);
         expectedTokens[0] = nexusDai;
         expectedTokens[1] = nexusUsdc;
         expectedTokens[2] = nexusUsdt;
+        expectedTokens[3] = nexusNusd;
 
         address[] memory actualTokens = router.getSupportedTokens();
 
@@ -157,13 +170,14 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         addL2Pools();
         deployL2BridgeModule();
 
+        // @dev usdc not included in supported tokens as not in a pool paired w bridge token
         address[] memory expectedTokens = new address[](6);
-        expectedTokens[0] = usdcE;
-        expectedTokens[1] = usdt;
-        expectedTokens[2] = usdc;
-        expectedTokens[3] = neth;
-        expectedTokens[4] = weth;
-        expectedTokens[5] = nusd;
+        expectedTokens[0] = neth;
+        expectedTokens[1] = weth;
+        expectedTokens[2] = nusd;
+        expectedTokens[3] = usdcE;
+        expectedTokens[4] = usdt;
+        expectedTokens[5] = UniversalTokenLib.ETH_ADDRESS; // added since WETH in supported list
 
         address[] memory actualTokens = router.getSupportedTokens();
 
