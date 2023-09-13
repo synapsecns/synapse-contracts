@@ -6,6 +6,7 @@ import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 import {EnumerableMap} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableMap.sol";
 
 import {DefaultRouter} from "./DefaultRouter.sol";
+import {Arrays} from "./libs/Arrays.sol";
 import {ActionLib, BridgeToken, DestRequest, LimitedToken, Pool, SwapQuery} from "./libs/Structs.sol";
 import {UniversalTokenLib} from "./libs/UniversalToken.sol";
 
@@ -15,6 +16,9 @@ import {IRouterV2} from "./interfaces/IRouterV2.sol";
 
 contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     using Address for address;
+    using Arrays for BridgeToken[][];
+    using Arrays for address[][];
+    using Arrays for address[];
     using EnumerableMap for EnumerableMap.UintToAddressMap;
 
     /// @notice swap quoter
@@ -168,14 +172,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         }
 
         // flatten into dest tokens
-        destTokens = new BridgeToken[](destTokensLength);
-        uint256 m;
-        for (uint256 i = 0; i < unflattenedDestTokens.length; ++i) {
-            for (uint256 j = 0; j < unflattenedDestTokens[i].length; ++j) {
-                destTokens[m] = unflattenedDestTokens[i][j];
-                m++;
-            }
-        }
+        destTokens = unflattenedDestTokens.flatten(destTokensLength);
     }
 
     /// @inheritdoc IRouterV2
@@ -213,18 +210,35 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         }
 
         // flatten into origin tokens
-        originTokens = new BridgeToken[](originTokensLength);
-        uint256 m;
-        for (uint256 i = 0; i < unflattenedOriginTokens.length; ++i) {
-            for (uint256 j = 0; j < unflattenedOriginTokens[i].length; ++j) {
-                originTokens[m] = unflattenedOriginTokens[i][j];
-                m++;
+        originTokens = unflattenedOriginTokens.flatten(originTokensLength);
+    }
+
+    /// @notice Gets all bridge tokens for supported bridge modules
+    function _getBridgeTokens() internal view returns (BridgeToken[] memory bridgeTokens) {
+        uint256 len = _bridgeModules.length();
+        BridgeToken[][] memory unflattenedBridgeTokens = new BridgeToken[][](len);
+        uint256 bridgeTokensLength;
+
+        for (uint256 i = 0; i < len; ++i) {
+            (, address bridgeModule) = _bridgeModules.at(i);
+            BridgeToken[] memory tokens = IBridgeModule(bridgeModule).getBridgeTokens();
+
+            // push to unflattened
+            unflattenedBridgeTokens[i] = new BridgeToken[](tokens.length);
+            bridgeTokensLength += tokens.length;
+
+            for (uint256 j = 0; j < tokens.length; ++j) {
+                unflattenedBridgeTokens[i][j] = tokens[j];
             }
         }
+
+        // flatten into bridge tokens
+        bridgeTokens = unflattenedBridgeTokens.flatten(bridgeTokensLength);
     }
 
     /// @inheritdoc IRouterV2
     function getSupportedTokens() external view returns (address[] memory supportedTokens) {
+        // get tokens in each quoter pool if pool also has a bridge token
         Pool[] memory pools = swapQuoter.allPools();
         address[][] memory unflattenedSupportedTokens = new address[][](pools.length);
 
@@ -238,17 +252,8 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
             }
         }
 
-        // flatten into supported tokens
-        address[] memory unfilteredSupportedTokens = new address[](supportedTokensLength);
-        uint256 k;
-        for (uint256 i = 0; i < unflattenedSupportedTokens.length; ++i) {
-            for (uint256 j = 0; j < unflattenedSupportedTokens[i].length; ++j) {
-                unfilteredSupportedTokens[k] = unflattenedSupportedTokens[i][j];
-                k++;
-            }
-        }
-
-        supportedTokens = _filterDuplicateAddresses(unfilteredSupportedTokens);
+        // flatten into supported tokens and filter out duplicates
+        supportedTokens = unflattenedSupportedTokens.flatten(supportedTokensLength).unique();
     }
 
     /// @inheritdoc IRouterV2
@@ -326,35 +331,6 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
                 bridgeModule = _bridgeModule;
                 break;
             }
-        }
-    }
-
-    /// @notice Filters out duplicate address entries in array
-    /// @param unfiltered The unfiltered list with potential duplicates
-    /// @return filtered The filtered list without duplicates
-    function _filterDuplicateAddresses(address[] memory unfiltered) internal view returns (address[] memory filtered) {
-        address[] memory intermediate = new address[](unfiltered.length);
-        uint256 count;
-        for (uint256 i = 0; i < unfiltered.length; ++i) {
-            address el = unfiltered[i];
-
-            // check whether el already in intermediate (unique elements)
-            bool contains;
-            for (uint256 j = 0; j < intermediate.length; ++j) {
-                contains = (el == intermediate[j]);
-                if (contains) break;
-            }
-
-            if (!contains) {
-                intermediate[count] = el;
-                count++;
-            }
-        }
-
-        // remove the zero elements at the end if any duplicates
-        filtered = new address[](count);
-        for (uint256 i = 0; i < count; i++) {
-            filtered[i] = intermediate[i];
         }
     }
 
