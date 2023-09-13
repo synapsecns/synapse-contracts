@@ -83,7 +83,6 @@ library Arrays {
             does = (el == l[j]);
             if (does) break;
         }
-        return does;
     }
 
     // TODO: test
