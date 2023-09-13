@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import {MockBridgeModule} from "../mocks/MockBridgeModule.sol";
 import {MockFailedBridgeModule} from "../mocks/MockFailedBridgeModule.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
+import {MockERC20TransferFees} from "../mocks/MockERC20TransferFees.sol";
 import {Action, ActionLib, BridgeToken, DefaultParams, LimitedToken, SwapQuery} from "../../../contracts/router/libs/Structs.sol";
 import {SynapseRouterV2} from "../../../contracts/router/SynapseRouterV2.sol";
 
@@ -13,6 +14,8 @@ import {BasicSynapseRouterV2Test} from "./BasicSynapseRouterV2.t.sol";
 contract SynapseRouterV2BridgeViaSynapseTest is BasicSynapseRouterV2Test {
     bytes32 public constant moduleId = keccak256("MOCK_BRIDGE");
     bytes32 public constant failedModuleId = keccak256("FAILED_BRIDGE");
+
+    address public teth; // transfer fee eth
 
     MockBridgeModule public bridgeModule;
 
@@ -44,6 +47,23 @@ contract SynapseRouterV2BridgeViaSynapseTest is BasicSynapseRouterV2Test {
 
         vm.prank(owner);
         router.connectBridgeModule(failedModuleId, address(failedBridgeModule));
+    }
+
+    function deployBridgeModuleTransferFees() public {
+        // deploy transfer fee mock token
+        teth = address(new MockERC20TransferFees("tETH", 18, 0.005e10));
+
+        // set up the bridge module
+        BridgeToken[] memory bridgeTokens = new BridgeToken[](1);
+        bridgeTokens[0] = BridgeToken({token: teth, symbol: "MOCK_TETH"});
+
+        LimitedToken[] memory limitedTokens = new LimitedToken[](1);
+        limitedTokens[0] = LimitedToken({token: teth, actionMask: ActionLib.allActions()});
+
+        bridgeModule = new MockBridgeModule(bridgeTokens, limitedTokens);
+
+        vm.prank(owner);
+        router.connectBridgeModule(moduleId, address(bridgeModule));
     }
 
     function testBridgeViaSynapse() public {
@@ -115,6 +135,44 @@ contract SynapseRouterV2BridgeViaSynapseTest is BasicSynapseRouterV2Test {
         // test token pulled and transferred to mock bridge
         address bridge = address(bridgeModule.bridge());
         assertEq(MockERC20(tokenOut).balanceOf(bridge), amountOut);
+    }
+
+    function testBridgeViaSynapse_tokenHasTransferFees() public {
+        deployBridgeModuleTransferFees();
+        addL2Pools(); // L2 => L1
+
+        address to = address(0xA);
+        uint256 chainId = 1;
+        address token = teth;
+        uint256 amount = 1e18;
+
+        prepareUser(token, amount);
+
+        // no origin or dest adapter involved
+        SwapQuery memory originQuery;
+        SwapQuery memory destQuery;
+
+        vm.prank(user);
+        router.bridgeViaSynapse(to, chainId, moduleId, token, amount, originQuery, destQuery);
+
+        // two hops: one in to router, another in to bridge
+        uint256 feeRate = MockERC20TransferFees(token).feeRate();
+        uint256 feeDecimals = MockERC20TransferFees(token).FEE_DECIMALS();
+
+        uint256 amountFeesRouter = (amount * feeRate) / feeDecimals;
+        amount -= amountFeesRouter;
+
+        uint256 amountFeesBridge = (amount * feeRate) / feeDecimals;
+        amount -= amountFeesBridge;
+
+        uint256 amountFees = amountFeesRouter + amountFeesBridge;
+
+        // test token pulled and transferred to mock bridge
+        address bridge = address(bridgeModule.bridge());
+        assertEq(MockERC20(token).balanceOf(bridge), amount);
+
+        // test transfer fees taken
+        assertEq(MockERC20(token).balanceOf(MockERC20TransferFees(token).owner()), amountFees);
     }
 
     function testBridgeViaSynapse_revert_moduleNotExists() public {

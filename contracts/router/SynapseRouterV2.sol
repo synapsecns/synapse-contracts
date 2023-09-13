@@ -53,7 +53,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         if (originQuery.hasAdapter()) {
             (token, amount) = _doSwap(address(this), token, amount, originQuery);
         } else {
-            amount = _pullToken(address(this), token, amount); // TODO: test w transfer fees
+            amount = _pullToken(address(this), token, amount);
         }
 
         // delegate bridge call to module
