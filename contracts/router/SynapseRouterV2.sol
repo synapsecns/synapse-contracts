@@ -77,9 +77,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         SwapQuery memory query
     ) external payable returns (uint256 amountOut) {
         if (!query.hasAdapter()) revert SynapseRouterV2__QueryEmpty();
-
-        address tokenOut;
-        (tokenOut, amountOut) = _doSwap(to, token, amount, query);
+        (, amountOut) = _doSwap(to, token, amount, query);
     }
 
     /// @inheritdoc IRouterV2
