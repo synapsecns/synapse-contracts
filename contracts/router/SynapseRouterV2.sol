@@ -264,6 +264,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     }
 
     /// @notice Searches all bridge modules to get the token address from the unique bridge symbol
+    /// @dev Returns zero value for unknown symbols (does not revert)
     /// @param symbol Symbol of the supported bridge token
     function _getTokenAndActionMaskFromSymbol(string memory symbol)
         internal
@@ -289,7 +290,8 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     /// @notice Gets all connected bridge tokens to the given token
     /// @param token The token to connect bridge tokens with
     /// @param origin Whether gathering on origin or destination chain
-    /// @param connected The connected bridge tokens. If origin == True, then returns origin bridge tokens. If origin == False, returns dest bridge tokens.
+    /// @param connected The connected bridge tokens. If origin == True, then returns origin
+    ///                  bridge tokens. If origin == False, returns dest bridge tokens.
     function _getConnectedBridgeTokens(address token, bool origin)
         internal
         view
@@ -336,6 +338,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     }
 
     /// @notice Calculates amount of bridge token in accounting for bridge fees
+    /// @dev Returns zero value if fee too big (does not revert)
     /// @param token    Address of the bridging token
     /// @param amount   Amount in before fees
     /// @param isSwap   Whether the user provided swap details for converting the bridge token
