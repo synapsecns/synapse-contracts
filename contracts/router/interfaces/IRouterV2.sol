@@ -116,6 +116,7 @@ interface IRouterV2 {
     function getOriginBridgeTokens(address tokenIn) external view returns (BridgeToken[] memory originTokens);
 
     /// @notice Gets the list of all tokens that can be swapped into bridge tokens on this chain.
+    /// @dev Supported tokens should include all bridge tokens and any pool tokens paired with a bridge token.
     /// @return supportedTokens Supported token addresses that can be swapped for bridge tokens
     function getSupportedTokens() external view returns (address[] memory supportedTokens);
 

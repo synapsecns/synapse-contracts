@@ -26,7 +26,7 @@ library Arrays {
             }
         }
 
-        if (k != count) revert ArrayLengthInvalid(k); // @dev should never happen in practice w router
+        if (k != count) revert ArrayLengthInvalid(k); // @dev should never happen in practice w router; TODO: test
     }
 
     /// @notice Flattens out a list of lists of addresses into a list of addresses
@@ -44,7 +44,16 @@ library Arrays {
             }
         }
 
-        if (k != count) revert ArrayLengthInvalid(k); // @dev should never happen in practice w router
+        if (k != count) revert ArrayLengthInvalid(k); // @dev should never happen in practice w router; TODO: test
+    }
+
+    // TODO: test
+    /// @notice Converts a list of bridge tokens to a list of their token addresses
+    /// @param b The list of bridge tokens
+    /// @return t The list of token addresses associated with given bridge tokens
+    function tokens(BridgeToken[] memory b) internal pure returns (address[] memory t) {
+        t = new address[](b.length);
+        for (uint256 i = 0; i < b.length; ++i) t[i] = b[i].token;
     }
 
     /// @notice Filters out duplicates and zero addresses from given list of addresses

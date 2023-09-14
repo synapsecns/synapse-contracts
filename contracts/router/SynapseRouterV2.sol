@@ -17,6 +17,7 @@ import {IRouterV2} from "./interfaces/IRouterV2.sol";
 contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     using Address for address;
     using Arrays for BridgeToken[][];
+    using Arrays for BridgeToken[];
     using Arrays for address[][];
     using Arrays for address[];
     using EnumerableMap for EnumerableMap.UintToAddressMap;
@@ -161,30 +162,26 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
     /// @inheritdoc IRouterV2
     function getSupportedTokens() external view returns (address[] memory supportedTokens) {
-        // supported should include all bridge tokens and any pool tokens paired with a bridge token
-        // get all possible bridge tokens from supported bridge modules
-        BridgeToken[] memory bridgeTokens = getBridgeTokens();
-
         // get tokens in each quoter pool
         Pool[] memory pools = swapQuoter.allPools();
 
         // init unflattened for aggregating supported tokens
-        uint256 count;
         address[][] memory unflattened = new address[][](pools.length + 1);
+        uint256 count;
 
         // last index of unflattened dedicated to bridge tokens
-        unflattened[pools.length] = new address[](bridgeTokens.length);
-        for (uint256 i = 0; i < bridgeTokens.length; ++i) {
-            unflattened[pools.length][i] = bridgeTokens[i].token;
-        }
-        count += bridgeTokens.length;
+        unflattened[pools.length] = getBridgeTokens().tokens();
+        count += unflattened[pools.length].length;
 
         // fill pool tokens up to but not including last index of unflattened
         for (uint256 i = 0; i < pools.length; ++i) {
             Pool memory pool = pools[i];
             unflattened[i] = new address[](pool.tokens.length);
 
-            bool does; // whether pool.tokens does contain a bridge token
+            // whether pool.tokens does contain a bridge token
+            // @dev need to initialize with contains pool LP token to catch edge case
+            // @dev of Ethereum Stablepool having LP token as bridge token
+            bool does = unflattened[pools.length].contains(pool.lpToken);
             for (uint256 j = 0; j < pool.tokens.length; ++j) {
                 // optimistically add pool token to list
                 unflattened[i][j] = pool.tokens[j].token;
@@ -203,9 +200,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         supportedTokens = unflattened.flatten(count).unique();
 
         // add native weth if in supported list
-        if (supportedTokens.contains(swapQuoter.weth())) {
-            return supportedTokens.append(UniversalTokenLib.ETH_ADDRESS);
-        }
+        if (supportedTokens.contains(swapQuoter.weth())) return supportedTokens.append(UniversalTokenLib.ETH_ADDRESS);
     }
 
     /// @inheritdoc IRouterV2
