@@ -147,16 +147,25 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
 
     /// @inheritdoc IRouterV2
     function getSupportedTokens() external view returns (address[] memory supportedTokens) {
+        // supported should include all bridge tokens and any pool tokens paired with a bridge token
         // get all possible bridge tokens from supported bridge modules
         BridgeToken[] memory bridgeTokens = _getBridgeTokens();
 
         // get tokens in each quoter pool
         Pool[] memory pools = swapQuoter.allPools();
+
+        // init unflattened for aggregating supported tokens
+        uint256 count;
         address[][] memory unflattened = new address[][](pools.length + 1);
 
-        // supported should include all bridge tokens and any pool tokens paired with a bridge token
-        // @dev fill pool tokens first then last index of unflattened dedicated to bridge tokens
-        uint256 count;
+        // last index of unflattened dedicated to bridge tokens
+        unflattened[pools.length] = new address[](bridgeTokens.length);
+        for (uint256 i = 0; i < bridgeTokens.length; ++i) {
+            unflattened[pools.length][i] = bridgeTokens[i].token;
+        }
+        count += bridgeTokens.length;
+
+        // fill pool tokens up to but not including last index of unflattened
         for (uint256 i = 0; i < pools.length; ++i) {
             Pool memory pool = pools[i];
             unflattened[i] = new address[](pool.tokens.length);
@@ -167,23 +176,14 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
                 unflattened[i][j] = pool.tokens[j].token;
 
                 // check whether pool token is a bridge token if haven't found one prior
-                for (uint256 k = 0; k < bridgeTokens.length; ++k) {
-                    if (does) break;
-                    does = (bridgeTokens[k].token == pool.tokens[j].token);
-                }
+                // @dev remember last index of unflattened has all the addresses of the bridge tokens
+                if (!does) does = unflattened[pools.length].contains(pool.tokens[j].token);
             }
 
-            if (!does)
-                delete unflattened[i]; // zero out if no bridge token
+            // zero out if no bridge token
+            if (!does) delete unflattened[i];
             else count += pool.tokens.length;
         }
-
-        // fill in bridge tokens in last row of unflattened
-        unflattened[pools.length] = new address[](bridgeTokens.length);
-        for (uint256 i = 0; i < bridgeTokens.length; ++i) {
-            unflattened[pools.length][i] = bridgeTokens[i].token;
-        }
-        count += bridgeTokens.length;
 
         // flatten into supported tokens and filter out duplicates
         supportedTokens = unflattened.flatten(count).unique();
