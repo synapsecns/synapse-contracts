@@ -80,6 +80,36 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         }
     }
 
+    function testGetBridgeTokensL1Pool() public {
+        // L1 => L2
+        addL1Pool();
+        deployL1BridgeModule();
+
+        BridgeToken[] memory expectedTokens = new BridgeToken[](4);
+        expectedTokens[0] = BridgeToken({token: nexusDai, symbol: "ETH DAI"});
+        expectedTokens[1] = BridgeToken({token: nexusUsdc, symbol: "ETH USDC"});
+        expectedTokens[2] = BridgeToken({token: nexusUsdt, symbol: "ETH USDT"});
+        expectedTokens[3] = BridgeToken({token: nexusNusd, symbol: "ETH nUSD"});
+
+        BridgeToken[] memory actualTokens = router.getBridgeTokens();
+        assertEq(expectedTokens.length, actualTokens.length);
+        checkBridgeTokens(expectedTokens, actualTokens);
+    }
+
+    function testGetBridgeTokensL2Pools() public {
+        // L2 => L1
+        addL2Pools();
+        deployL2BridgeModule();
+
+        BridgeToken[] memory expectedTokens = new BridgeToken[](2);
+        expectedTokens[0] = BridgeToken({token: neth, symbol: "nETH"});
+        expectedTokens[1] = BridgeToken({token: nusd, symbol: "nUSD"});
+
+        BridgeToken[] memory actualTokens = router.getBridgeTokens();
+        assertEq(expectedTokens.length, actualTokens.length);
+        checkBridgeTokens(expectedTokens, actualTokens);
+    }
+
     function testGetDestinationBridgeTokensL1Pool() public {
         // L2 => L1
         addL1Pool();

@@ -133,7 +133,6 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
         if (moduleId == bytes32(0)) revert SynapseRouterV2__ModuleNotExists();
     }
 
-    // TODO: test
     /// @inheritdoc IRouterV2
     function getBridgeTokens() public view returns (BridgeToken[] memory) {
         uint256 len = _bridgeModules.length();
