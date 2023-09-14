@@ -7,7 +7,6 @@ import {BridgeToken} from "./Structs.sol";
 library Arrays {
     error ArrayLengthInvalid(uint256 count);
 
-    // TODO: test
     /// @notice Flattens out a list of lists of bridge tokens into a list of bridge tokens
     /// @param unflattened The list of lists of bridge tokens
     /// @param count The total number of bridge tokens in unflattened
@@ -30,7 +29,6 @@ library Arrays {
         if (k != count) revert ArrayLengthInvalid(k); // @dev should never happen in practice w router
     }
 
-    // TODO: test
     /// @notice Flattens out a list of lists of addresses into a list of addresses
     /// @param unflattened The list of lists of addresses
     /// @param count The total number of addresses in unflattened
@@ -49,8 +47,8 @@ library Arrays {
         if (k != count) revert ArrayLengthInvalid(k); // @dev should never happen in practice w router
     }
 
-    // TODO: test
-    /// @notice Filters out duplicates from given list of addresses
+    /// @notice Filters out duplicates and zero addresses from given list of addresses
+    /// @dev Removes zero addresses from list
     /// @param unfiltered The list of addresses with duplicates
     /// @return filtered The list of addresses without duplicates
     function unique(address[] memory unfiltered) internal pure returns (address[] memory filtered) {
@@ -73,7 +71,6 @@ library Arrays {
         }
     }
 
-    // TODO: test
     /// @notice Whether given element is in the list of addresses
     /// @param l The list of addresses
     /// @param el The element to search for
@@ -85,7 +82,6 @@ library Arrays {
         }
     }
 
-    // TODO: test
     /// @notice Appends a new element to the end of the list of addresses
     /// @param l The list of addresses
     /// @param el The element to append
