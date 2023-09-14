@@ -93,6 +93,12 @@ interface IRouterV2 {
     /// @return moduleId Unique bridge module ID
     function moduleToId(address bridgeModule) external view returns (bytes32 moduleId);
 
+    /// @notice Gets all bridge tokens for supported bridge modules
+    /// @return bridgeTokens List of structs with following information:
+    ///                  - symbol: unique token ID consistent among all chains
+    ///                  - token: bridge token address
+    function getBridgeTokens() external view returns (BridgeToken[] memory bridgeTokens);
+
     /// @notice Gets the list of all bridge tokens (and their symbols), such that destination swap
     /// from a bridge token to `tokenOut` is possible.
     /// @param tokenOut  Token address to swap to on destination chain
