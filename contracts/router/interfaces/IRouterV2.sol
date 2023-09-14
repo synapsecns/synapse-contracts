@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {BridgeToken, DestRequest, SwapQuery} from "../libs/Structs.sol";
+import {ISwapQuoterV2} from "./ISwapQuoterV2.sol";
 
 interface IRouterV2 {
     /// @notice Initiate a bridge transaction with an optional swap on both origin and destination chains.
@@ -61,11 +62,26 @@ interface IRouterV2 {
         SwapQuery memory query
     ) external payable returns (uint256 amountOut);
 
+    /// @notice Sets the Swap Quoter address to get the swap quotes from.
+    /// @param _swapQuoter Swap Quoter
+    function setSwapQuoter(ISwapQuoterV2 _swapQuoter) external;
+
     /// @notice Whitelists a new bridge module for users to route through
     /// @dev Reverts if not router owner
     /// @param moduleId Unique bridge module ID
     /// @param bridgeModule Bridge module address
     function connectBridgeModule(bytes32 moduleId, address bridgeModule) external;
+
+    /// @notice Updates a whitelisted bridge module
+    /// @dev Reverts if not router owner
+    /// @param moduleId Unique bridge module ID
+    /// @param bridgeModule New bridge module address to update to
+    function updateBridgeModule(bytes32 moduleId, address bridgeModule) external;
+
+    /// @notice Disconnects a whitelisted bridge module
+    /// @dev Reverts if not router owner
+    /// @param moduleId Unique bridge module ID
+    function disconnectBridgeModule(bytes32 moduleId) external;
 
     /// @notice Gets the address associated with the given bridge module ID
     /// @param moduleId Unique bridge module ID
@@ -76,6 +92,12 @@ interface IRouterV2 {
     /// @param bridgeModule Bridge module address
     /// @return moduleId Unique bridge module ID
     function moduleToId(address bridgeModule) external view returns (bytes32 moduleId);
+
+    /// @notice Gets all bridge tokens for supported bridge modules
+    /// @return bridgeTokens List of structs with following information:
+    ///                  - symbol: unique token ID consistent among all chains
+    ///                  - token: bridge token address
+    function getBridgeTokens() external view returns (BridgeToken[] memory bridgeTokens);
 
     /// @notice Gets the list of all bridge tokens (and their symbols), such that destination swap
     /// from a bridge token to `tokenOut` is possible.
@@ -94,6 +116,7 @@ interface IRouterV2 {
     function getOriginBridgeTokens(address tokenIn) external view returns (BridgeToken[] memory originTokens);
 
     /// @notice Gets the list of all tokens that can be swapped into bridge tokens on this chain.
+    /// @dev Supported tokens should include all bridge tokens and any pool tokens paired with a bridge token.
     /// @return supportedTokens Supported token addresses that can be swapped for bridge tokens
     function getSupportedTokens() external view returns (address[] memory supportedTokens);
 
