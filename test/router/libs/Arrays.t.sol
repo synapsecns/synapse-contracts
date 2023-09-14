@@ -5,6 +5,7 @@ import {Strings} from "@openzeppelin/contracts-4.5.0/utils/Strings.sol";
 
 import {ArraysLibHarness} from "../harnesses/ArraysLibHarness.sol";
 import {BridgeToken} from "../../../contracts/router/libs/Structs.sol";
+import {Arrays} from "../../../contracts/router/libs/Arrays.sol";
 
 import {Test} from "forge-std/Test.sol";
 
@@ -42,6 +43,20 @@ contract ArraysLibraryTest is Test {
         }
     }
 
+    function getBridgeTokensArray() public view returns (BridgeToken[] memory bridgeTokens, uint256 num) {
+        uint256 count;
+        for (uint256 i = 0; i < rows; i++) count += (i + 1); // 1 + 2 + ... + rows
+
+        bridgeTokens = new BridgeToken[](count);
+        for (uint256 i = 0; i < count; i++) {
+            bridgeTokens[i] = BridgeToken({
+                symbol: Strings.toString(i / 2),
+                token: address(uint160(i / 2)) // divide by 2 for non-unique els: [0, 0, 1, 1, ...]
+            });
+            if (i % 2 == 0) num++;
+        }
+    }
+
     function getAddressesArray() public view returns (address[] memory addrs, uint256 num) {
         uint256 count;
         for (uint256 i = 0; i < rows; i++) count += (i + 1); // 1 + 2 + ... + rows
@@ -53,7 +68,7 @@ contract ArraysLibraryTest is Test {
         }
     }
 
-    function testFlattenBridgeTokenArray() public {
+    function testFlatten_BridgeToken() public {
         (BridgeToken[][] memory unflattened, uint256 count) = getNestedBridgeTokensArray();
 
         BridgeToken[] memory expect = new BridgeToken[](count);
@@ -64,7 +79,13 @@ contract ArraysLibraryTest is Test {
         checkBridgeTokens(actual, expect);
     }
 
-    function testFlattenAddressesArray() public {
+    function testFlatten_BridgeToken_revert_ArrayLengthInvalid() public {
+        (BridgeToken[][] memory unflattened, uint256 count) = getNestedBridgeTokensArray();
+        vm.expectRevert(abi.encodeWithSelector(Arrays.ArrayLengthInvalid.selector, count));
+        libHarness.flatten(unflattened, count + 1);
+    }
+
+    function testFlatten_Address() public {
         (address[][] memory unflattened, uint256 count) = getNestedAddressesArray();
 
         address[] memory expect = new address[](count);
@@ -74,7 +95,23 @@ contract ArraysLibraryTest is Test {
         checkAddresses(actual, expect);
     }
 
-    function testUniqueAddressesArray() public {
+    function testFlatten_Address_revert_ArrayLengthInvalid() public {
+        (address[][] memory unflattened, uint256 count) = getNestedAddressesArray();
+        vm.expectRevert(abi.encodeWithSelector(Arrays.ArrayLengthInvalid.selector, count));
+        libHarness.flatten(unflattened, count + 1);
+    }
+
+    function testTokens_BridgeToken() public {
+        (BridgeToken[] memory b, ) = getBridgeTokensArray();
+
+        address[] memory expect = new address[](b.length);
+        for (uint256 i = 0; i < b.length; i++) expect[i] = address(uint160(i / 2));
+
+        address[] memory actual = libHarness.tokens(b);
+        checkAddresses(actual, expect);
+    }
+
+    function testUnique_Address() public {
         (address[] memory unfiltered, uint256 num) = getAddressesArray();
 
         address[] memory expect = new address[](num - 1); // zero address excluded
@@ -85,7 +122,7 @@ contract ArraysLibraryTest is Test {
         assertEq(actual.length, expect.length);
     }
 
-    function testContainsAddressesArray() public {
+    function testContains_Address() public {
         (address[] memory l, uint256 num) = getAddressesArray();
 
         // should contain addr(1) but not addr(7)
@@ -93,7 +130,7 @@ contract ArraysLibraryTest is Test {
         assertFalse(libHarness.contains(l, address(uint160(2 * num + 1))));
     }
 
-    function testAppendAddressesArray() public {
+    function testAppend_Address() public {
         (address[] memory l, uint256 num) = getAddressesArray();
 
         address[] memory expect = new address[](l.length + 1);

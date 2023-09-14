@@ -13,6 +13,10 @@ contract ArraysLibHarness {
         return Arrays.flatten(unflattened, count);
     }
 
+    function tokens(BridgeToken[] memory b) external pure returns (address[] memory) {
+        return Arrays.tokens(b);
+    }
+
     function unique(address[] memory unfiltered) external pure returns (address[] memory) {
         return Arrays.unique(unfiltered);
     }

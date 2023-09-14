@@ -26,7 +26,7 @@ library Arrays {
             }
         }
 
-        if (k != count) revert ArrayLengthInvalid(k); // @dev should never happen in practice w router; TODO: test
+        if (k != count) revert ArrayLengthInvalid(k); // @dev should never happen in practice w router
     }
 
     /// @notice Flattens out a list of lists of addresses into a list of addresses
@@ -44,10 +44,9 @@ library Arrays {
             }
         }
 
-        if (k != count) revert ArrayLengthInvalid(k); // @dev should never happen in practice w router; TODO: test
+        if (k != count) revert ArrayLengthInvalid(k); // @dev should never happen in practice w router
     }
 
-    // TODO: test
     /// @notice Converts a list of bridge tokens to a list of their token addresses
     /// @param b The list of bridge tokens
     /// @return t The list of token addresses associated with given bridge tokens
