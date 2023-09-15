@@ -10,8 +10,8 @@
     "harmony": "--legacy --slow",
     "klatyn": "--skip-simulation",
     "metis": "--legacy",
-    "moonbeam": "--skip-simulation",
-    "moonriver": "--skip-simulation",
+    "moonbeam": "--skip-simulation --slow",
+    "moonriver": "--skip-simulation --slow",
     "optimism": "--with-gas-price 1234",
     "polygon": "--slow"
   }
