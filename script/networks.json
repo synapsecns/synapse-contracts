@@ -1,13 +1,18 @@
 {
   "forgeOptions": {
     "arbitrum": "--with-gas-price 100000000",
-    "aurora": "--legacy",
-    "boba": "--legacy --skip-simulation",
-    "canto": "--legacy",
-    "dfk": "--legacy",
-    "dogechain": "--legacy",
-    "harmony": "--legacy",
+    "aurora": "--legacy --slow",
+    "boba": "--legacy --skip-simulation --slow",
+    "canto": "--legacy --slow",
+    "cronos": "--slow",
+    "dfk": "--legacy --slow",
+    "dogechain": "--legacy --slow",
+    "harmony": "--legacy --slow",
     "klatyn": "--skip-simulation",
-    "metis": "--legacy"
+    "metis": "--legacy",
+    "moonbeam": "--skip-simulation",
+    "moonriver": "--skip-simulation",
+    "optimism": "--with-gas-price 1234",
+    "polygon": "--slow"
   }
 }
