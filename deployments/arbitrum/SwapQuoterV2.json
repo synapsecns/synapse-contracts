@@ -1,6 +1,6 @@
 {
-  "address": "0x9FBFf54b967654B0c76b174D2B95614060Dd6B07",
-  "constructorArgs": "0x0000000000000000000000007e7a0e201fd38d3adaa9523da6c109a07118c96a0000000000000000000000000000000000f54b784e70e1cf1f99fb53b08d6fea00000000000000000000000082af49447d8a07e3bd95bd0d56f35241523fbab1000000000000000000000000b73acb429ba868984c0236bdf940d4fe1e643f27",
+  "address": "0xE402cC7826dD835FCe5E3cFb61D56703fEbc2642",
+  "constructorArgs": "0x0000000000000000000000007e7a0e201fd38d3adaa9523da6c109a07118c96a0000000000000000000000000000000000f54b784e70e1cf1f99fb53b08d6fea00000000000000000000000082af49447d8a07e3bd95bd0d56f35241523fbab10000000000000000000000000fea3e5840334fc758a3decf14546bfdfbef5cd3",
   "abi": [
     {
       "inputs": [
@@ -29,6 +29,28 @@
       "type": "constructor"
     },
     {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "pool",
+          "type": "address"
+        }
+      ],
+      "name": "SwapQuoterV2__DuplicatedPool",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "pool",
+          "type": "address"
+        }
+      ],
+      "name": "SwapQuoterV2__UnknownPool",
+      "type": "error"
+    },
+    {
       "anonymous": false,
       "inputs": [
         {
@@ -45,6 +67,69 @@
         }
       ],
       "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "bridgeToken",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum SwapQuoterV2.PoolType",
+          "name": "poolType",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "pool",
+          "type": "address"
+        }
+      ],
+      "name": "PoolAdded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "bridgeToken",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum SwapQuoterV2.PoolType",
+          "name": "poolType",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "pool",
+          "type": "address"
+        }
+      ],
+      "name": "PoolRemoved",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "synapseRouter",
+          "type": "address"
+        }
+      ],
+      "name": "SynapseRouterUpdated",
       "type": "event"
     },
     {
@@ -114,6 +199,42 @@
           "internalType": "struct Pool[]",
           "name": "pools",
           "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "actionMask",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "token",
+              "type": "address"
+            }
+          ],
+          "internalType": "struct LimitedToken",
+          "name": "tokenIn",
+          "type": "tuple"
+        },
+        {
+          "internalType": "address",
+          "name": "tokenOut",
+          "type": "address"
+        }
+      ],
+      "name": "areConnectedTokens",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
         }
       ],
       "stateMutability": "view",
