@@ -17,6 +17,7 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
 
     string public constant MAINNET_RPC_ENV = "MAINNET_API";
     string public constant QUOTER_V2 = "SwapQuoterV2";
+    uint256 public constant MAINNET_CHAIN_ID = 1;
 
     string public config;
     mapping(address => bool) public isIgnoredPool;
@@ -33,16 +34,19 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         // Save current chainId, then switch to Mainnet
         uint256 forkId = vm.activeFork();
         uint256 chainId = blockChainId();
-        string memory mainnetRPC = vm.envString(MAINNET_RPC_ENV);
-        vm.createSelectFork(mainnetRPC);
+        // Switch to Mainnet if we're not already there
+        if (chainId != MAINNET_CHAIN_ID) {
+            string memory mainnetRPC = vm.envString(MAINNET_RPC_ENV);
+            vm.createSelectFork(mainnetRPC);
+        }
         // get the config for the current chain
         (
             string[] memory tokenIDs,
             IBridgeConfigV3.Token[] memory tokens,
             IBridgeConfigV3.Pool[] memory pools
         ) = getChainConfig(chainId);
-        // Switch back to the original chain
-        vm.selectFork(forkId);
+        // Switch back to the original chain (if we switched)
+        if (chainId != MAINNET_CHAIN_ID) vm.selectFork(forkId);
         // Get a list of pools that should be ignored by the quoter
         loadIgnoredPools();
         // Serialize the config

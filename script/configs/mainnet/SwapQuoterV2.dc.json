@@ -1,0 +1,12 @@
+{
+  "ids": [
+    "nUSD"
+  ],
+  "pools": {
+    "nUSD": {
+      "isLinked": false,
+      "pool": "0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8",
+      "token": "0x1B84765dE8B7566e4cEAF4D0fD3c5aF52D3DdE4F"
+    }
+  }
+}
