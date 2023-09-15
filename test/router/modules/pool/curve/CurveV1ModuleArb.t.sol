@@ -31,7 +31,7 @@ contract CurveV1ModuleArbTestFork is Test {
         vm.createSelectFork(arbRPC, ARB_BLOCK_NUMBER);
 
         curveV1Module = new CurveV1Module();
-        linkedPool = new LinkedPool(USDC_E);
+        linkedPool = new LinkedPool(USDC_E, address(this));
         user = makeAddr("User");
 
         vm.label(CURVE_V1_2POOL, "CurveV12Pool");

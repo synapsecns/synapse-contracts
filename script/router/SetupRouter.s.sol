@@ -38,9 +38,10 @@ contract SetupRouterScript is DeployScript {
     SynapseRouter internal router;
     SwapQuoter internal quoter;
 
+    // TODO: Use new template scripts
     constructor() public {
         // Load deployer private key
-        setupPK("OWNER_PK");
+        // setupPK("OWNER_PK");
         // Load chain name that block.chainid refers to
         loadChain();
     }
@@ -48,13 +49,16 @@ contract SetupRouterScript is DeployScript {
     function execute(bool _isBroadcasted) public override {
         string memory config = loadDeployConfig(ROUTER);
         _checkConfig(config);
-        startBroadcast(_isBroadcasted);
+        vm.startBroadcast();
+        broadcasterAddress = msg.sender;
+        // startBroadcast(_isBroadcasted);
         router = SynapseRouter(payable(loadDeployment(ROUTER)));
         quoter = SwapQuoter(loadDeployment(QUOTER));
         _setupRouter(config);
         _removeRouterTokens(config);
         _setupQuoter(config);
-        stopBroadcast();
+        vm.stopBroadcast();
+        // stopBroadcast();
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

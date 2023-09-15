@@ -37,7 +37,7 @@ contract UniswapV3ModuleArbTestFork is Test {
         vm.createSelectFork(arbRPC, ARB_BLOCK_NUMBER);
 
         uniswapV3Module = new UniswapV3Module(UNI_V3_ROUTER, UNI_V3_STATIC_QUOTER);
-        linkedPool = new LinkedPool(USDC);
+        linkedPool = new LinkedPool(USDC, address(this));
         user = makeAddr("User");
 
         vm.label(UNI_V3_ROUTER, "UniswapV3Router");

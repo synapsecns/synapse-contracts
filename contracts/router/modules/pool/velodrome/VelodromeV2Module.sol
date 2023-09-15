@@ -7,7 +7,7 @@ import {UniversalTokenLib} from "../../../libs/UniversalToken.sol";
 import {IVelodromeV2Pool} from "../../../interfaces/velodrome/IVelodromeV2Pool.sol";
 import {IVelodromeV2Router} from "../../../interfaces/velodrome/IVelodromeV2Router.sol";
 
-import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
+import {OnlyDelegateCall} from "../../OnlyDelegateCall.sol";
 
 /// @notice PoolModule for Velodrome V2 pools
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router

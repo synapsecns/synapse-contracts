@@ -3,13 +3,29 @@ pragma solidity 0.8.17;
 
 import {PoolQuoterV1} from "./PoolQuoterV1.sol";
 import {ISwapQuoterV1, LimitedToken, SwapQuery, Pool} from "../interfaces/ISwapQuoterV1.sol";
+import {ISwapQuoterV2} from "../interfaces/ISwapQuoterV2.sol";
 import {Action, ActionLib} from "../libs/Structs.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableSet.sol";
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
-contract SwapQuoterV2 is PoolQuoterV1, Ownable {
+contract SwapQuoterV2 is PoolQuoterV1, Ownable, ISwapQuoterV2 {
     using EnumerableSet for EnumerableSet.AddressSet;
+
+    /// @notice Error when trying to add a pool that has been added already.
+    error SwapQuoterV2__DuplicatedPool(address pool);
+
+    /// @notice Error when trying to remove a pool that has not been added.
+    error SwapQuoterV2__UnknownPool(address pool);
+
+    /// @notice Emitted when a pool is added to SwapQuoterV2.
+    event PoolAdded(address bridgeToken, PoolType poolType, address pool);
+
+    /// @notice Emitted when a pool is removed from SwapQuoterV2.
+    event PoolRemoved(address bridgeToken, PoolType poolType, address pool);
+
+    /// @notice Emitted when the SynapseRouter contract is updated.
+    event SynapseRouterUpdated(address synapseRouter);
 
     /// @notice Defines the type of supported liquidity pool.
     /// - Default: pool that implements the IDefaultPool interface, which is either the StableSwap pool
@@ -43,6 +59,8 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         address pool;
     }
 
+    // ══════════════════════════════════════════════════ STORAGE ══════════════════════════════════════════════════════
+
     /// @notice Address of the SynapseRouter contract, which is used as "Router Adapter" for doing
     /// swaps through Default Pools (or handling ETH).
     address public synapseRouter;
@@ -65,7 +83,7 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         address weth_,
         address owner_
     ) PoolQuoterV1(defaultPoolCalc_, weth_) {
-        synapseRouter = synapseRouter_;
+        setSynapseRouter(synapseRouter_);
         transferOwnership(owner_);
     }
 
@@ -106,8 +124,9 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     /// swaps through Default Pools (or handling ETH).
     /// Note: this will not affect the old SynapseRouter contract which still uses this Quoter, as the old SynapseRouter
     /// could handle the requests with the new SynapseRouter as external "Router Adapter".
-    function setSynapseRouter(address synapseRouter_) external onlyOwner {
+    function setSynapseRouter(address synapseRouter_) public onlyOwner {
         synapseRouter = synapseRouter_;
+        emit SynapseRouterUpdated(synapseRouter_);
     }
 
     // ══════════════════════════════════════════════ QUOTER V2 VIEWS ══════════════════════════════════════════════════
@@ -154,7 +173,14 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         unchecked {
             // unchecked: ++i never overflows uint256
             for (uint256 i = 0; i < length; ++i) {
-                if (_isConnected(bridgeTokensIn[i].actionMask, bridgeTokensIn[i].token, tokenOut)) {
+                if (
+                    _isConnected({
+                        isOriginSwap: false,
+                        actionMask: bridgeTokensIn[i].actionMask,
+                        tokenIn: bridgeTokensIn[i].token,
+                        tokenOut: tokenOut
+                    })
+                ) {
                     isConnected[i] = true;
                     // unchecked: ++amountFound never overflows uint256
                     ++amountFound;
@@ -181,6 +207,16 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             // which would lead to every swap to revert by default.
             query.deadline = type(uint256).max;
         }
+    }
+
+    // ═════════════════════════════════════════════ GENERAL QUOTES V2 ═════════════════════════════════════════════════
+
+    /// @inheritdoc ISwapQuoterV2
+    function areConnectedTokens(LimitedToken memory tokenIn, address tokenOut) external view returns (bool) {
+        // Check if this is a request for an origin swap.
+        // These are given with the tokenIn.actionMask set to the full set of actions.
+        bool isOriginSwap = tokenIn.actionMask == ActionLib.allActions();
+        return _isConnected(isOriginSwap, tokenIn.actionMask, tokenIn.token, tokenOut);
     }
 
     // ══════════════════════════════════════════════ POOL GETTERS V1 ══════════════════════════════════════════════════
@@ -249,7 +285,8 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             _bridgeTokens.add(bridgeToken);
             _bridgePools[bridgeToken] = TypedPool({poolType: pool.poolType, pool: pool.pool});
         }
-        require(wasAdded, "Pool has been added before");
+        if (!wasAdded) revert SwapQuoterV2__DuplicatedPool(pool.pool);
+        emit PoolAdded(pool.bridgeToken, pool.poolType, pool.pool);
     }
 
     /// @dev Removes a pool from SwapQuoterV2.
@@ -273,7 +310,8 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             wasRemoved = _bridgeTokens.remove(bridgeToken) && _bridgePools[bridgeToken].pool == pool.pool;
             delete _bridgePools[pool.bridgeToken];
         }
-        require(wasRemoved, "Unknown pool");
+        if (!wasRemoved) revert SwapQuoterV2__UnknownPool(pool.pool);
+        emit PoolRemoved(pool.bridgeToken, pool.poolType, pool.pool);
     }
 
     // ═════════════════════════════════════════ INTERNAL: POOL INSPECTION ═════════════════════════════════════════════
@@ -289,6 +327,7 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
     /// @dev Checks whether `tokenIn -> tokenOut` is possible given the `actionMask` of available actions for `tokenIn`.
     /// Will only consider the whitelisted pool for `tokenIn`, if Swap/AddLiquidity/RemoveLiquidity are required.
     function _isConnected(
+        bool isOriginSwap,
         uint256 actionMask,
         address tokenIn,
         address tokenOut
@@ -301,6 +340,23 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
         if (Action.HandleEth.isIncluded(actionMask) && _isEthAndWeth(tokenIn, tokenOut)) {
             return true;
         }
+        if (isOriginSwap) {
+            return _isOriginSwapPossible(actionMask, tokenIn, tokenOut);
+        } else {
+            return _isDestinationSwapPossible(actionMask, tokenIn, tokenOut);
+        }
+    }
+
+    /// @dev Checks whether destination swap `tokenIn -> tokenOut` is possible:
+    /// - Only whitelisted pool for `tokenIn` is considered.
+    /// - Only pool-related actions included in `actionMask` are considered:
+    ///     - Default Pool: Swap/AddLiquidity/RemoveLiquidity
+    ///     - Linked Pool: Swap
+    function _isDestinationSwapPossible(
+        uint256 actionMask,
+        address tokenIn,
+        address tokenOut
+    ) internal view returns (bool) {
         TypedPool memory bridgePool = _bridgePools[tokenIn];
         // Do nothing, if tokenIn doesn't have a whitelisted pool
         if (bridgePool.pool == address(0)) return false;
@@ -311,6 +367,44 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
             // Check if Linked Pool could fulfill tokenIn -> tokenOut request.
             return _isConnectedViaLinkedPool(actionMask, bridgePool.pool, tokenIn, tokenOut);
         }
+    }
+
+    /// @dev Checks whether origin swap `tokenIn -> tokenOut` is possible:
+    /// - All available pools are considered, both origin-only and whitelisted pools for destination swaps.
+    /// - Only pool-related actions included in `actionMask` are considered:
+    ///     - Default Pool: Swap/AddLiquidity/RemoveLiquidity
+    ///     - Linked Pool: Swap
+    function _isOriginSwapPossible(
+        uint256 actionMask,
+        address tokenIn,
+        address tokenOut
+    ) internal view returns (bool) {
+        unchecked {
+            uint256 numPools = _originDefaultPools.length();
+            // unchecked: ++i never overflows uint256
+            for (uint256 i = 0; i < numPools; ++i) {
+                if (_isConnectedViaDefaultPool(actionMask, _originDefaultPools.at(i), tokenIn, tokenOut)) {
+                    return true;
+                }
+            }
+            numPools = _originLinkedPools.length();
+            // unchecked: ++i never overflows uint256
+            for (uint256 i = 0; i < numPools; ++i) {
+                if (_isConnectedViaLinkedPool(actionMask, _originLinkedPools.at(i), tokenIn, tokenOut)) {
+                    return true;
+                }
+            }
+            // Also check all whitelisted pools for destination swaps, as these could be used for origin swaps as well
+            numPools = _bridgeTokens.length();
+            // unchecked: ++i never overflows uint256
+            for (uint256 i = 0; i < numPools; ++i) {
+                TypedPool memory bridgePool = _bridgePools[_bridgeTokens.at(i)];
+                if (_isPoolSwapPossible(actionMask, bridgePool, tokenIn, tokenOut)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /// @dev Returns the SwapQuery struct that could be used to fulfill `tokenIn -> tokenOut` request.
@@ -361,6 +455,26 @@ contract SwapQuoterV2 is PoolQuoterV1, Ownable {
                 TypedPool memory bridgePool = _bridgePools[_bridgeTokens.at(i)];
                 _checkPoolQuote(actionMask, bridgePool, tokenIn, tokenOut, amountIn, query);
             }
+        }
+    }
+
+    /// @dev Checks whether `tokenIn -> tokenOut` is possible via the given Pool,
+    /// given the `actionMask` of available actions for the token.
+    /// Note: only checks pool-related actions:
+    /// - Default Pool: Swap/AddLiquidity/RemoveLiquidity
+    /// - Linked Pool: Swap
+    function _isPoolSwapPossible(
+        uint256 actionMask,
+        TypedPool memory bridgePool,
+        address tokenIn,
+        address tokenOut
+    ) internal view returns (bool) {
+        // Don't do anything, if no whitelisted pool exists.
+        if (bridgePool.pool == address(0)) return false;
+        if (bridgePool.poolType == PoolType.Default) {
+            return _isConnectedViaDefaultPool(actionMask, bridgePool.pool, tokenIn, tokenOut);
+        } else {
+            return _isConnectedViaLinkedPool(actionMask, bridgePool.pool, tokenIn, tokenOut);
         }
     }
 

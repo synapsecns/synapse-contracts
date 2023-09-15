@@ -21,6 +21,20 @@ pragma solidity 0.8.17;
 /// > This contract is only responsible for storing and traversing the tree. The swap/quote logic, as well as
 /// > transformation of the inner tree into IDefaultPool interface is implemented in the child contract.
 abstract contract TokenTree {
+    error TokenTree__DifferentTokenLists();
+    error TokenTree__IndexOutOfRange(uint256 index);
+    error TokenTree__NodeTokenNotInPool();
+    error TokenTree__PoolAlreadyAttached();
+    error TokenTree__PoolAlreadyOnRootPath();
+    error TokenTree__SwapPoolUsedTwice(address pool);
+    error TokenTree__TooManyNodes();
+    error TokenTree__TooManyPools();
+    error TokenTree__UnknownPool();
+
+    event TokenNodeAdded(uint256 childIndex, address token, address parentPool);
+    event PoolAdded(uint256 parentIndex, address pool, address poolModule);
+    event PoolModuleUpdated(address pool, address oldPoolModule, address newPoolModule);
+
     /// @notice Struct so store the tree nodes
     /// @param token        Address of the token represented by this node
     /// @param depth        Depth of the node in the tree
@@ -91,32 +105,39 @@ abstract contract TokenTree {
     // ════════════════════════════════════════════════ CONSTRUCTOR ════════════════════════════════════════════════════
 
     constructor(address bridgeToken) {
-        // The root node is always the bridge token
-        _addNode({token: bridgeToken, depth: 0, poolIndex: 0, rootPathParent: 0});
         // Push the empty pool so that `poolIndex` for non-root nodes is never 0
         _pools.push(address(0));
+        // The root node is always the bridge token
+        _addNode({token: bridgeToken, depth: 0, poolIndex: 0, rootPathParent: 0});
+    }
+
+    modifier checkIndex(uint256 nodeIndex) {
+        if (nodeIndex >= _nodes.length) revert TokenTree__IndexOutOfRange(nodeIndex);
+        _;
     }
 
     // ══════════════════════════════════════════════ INTERNAL LOGIC ═══════════════════════════════════════════════════
 
     /// @dev Adds a pool having `N` pool tokens to the tree by adding `N-1` new nodes
     /// as the children of the given node. Given node needs to represent a token from the pool.
+    /// Note: assumes that nodeIndex is valid, and that pool is not a zero address.
     function _addPool(
         uint256 nodeIndex,
         address pool,
         address poolModule
     ) internal {
-        require(nodeIndex < _nodes.length, "Out of range");
         Node memory node = _nodes[nodeIndex];
         if (poolModule == address(0)) poolModule = address(this);
         (bool wasAdded, uint8 poolIndex) = (false, _poolMap[pool].index);
+        // Save the pool and emit an event if it's not been added before
         if (poolIndex == 0) {
-            require(_pools.length <= type(uint8).max, "Too many pools");
+            if (_pools.length > type(uint8).max) revert TokenTree__TooManyPools();
             // Can do the unsafe cast here, as we just checked that pool index fits into uint8
             poolIndex = uint8(_pools.length);
             _pools.push(pool);
             _poolMap[pool] = Pool({module: poolModule, index: poolIndex});
             wasAdded = true;
+            emit PoolAdded(nodeIndex, pool, poolModule);
         } else {
             // Check if the existing pool could be added to the node. This enforces some sanity checks,
             // as well the invariant that any path from root to node doesn't contain the same pool twice.
@@ -144,7 +165,7 @@ abstract contract TokenTree {
                 _addNode(token, childDepth, poolIndex, rootPathParent);
             }
         }
-        require(nodeFound, "Node token not found in the pool");
+        if (!nodeFound) revert TokenTree__NodeTokenNotInPool();
     }
 
     /// @dev Adds a new node to the tree and saves its path to the root.
@@ -156,7 +177,7 @@ abstract contract TokenTree {
     ) internal {
         // Index of the newly inserted child node
         uint256 nodeIndex = _nodes.length;
-        require(nodeIndex <= type(uint8).max, "Too many nodes");
+        if (nodeIndex > type(uint8).max) revert TokenTree__TooManyNodes();
         // Don't add the bridge token (root) twice. This may happen if we add a new pool containing the bridge token
         // to a few existing nodes. E.g. we have old nUSD/USDC/USDT pool, and we add a new nUSD/USDC pool. In this case
         // we attach nUSD/USDC pool to root, and then attach old nUSD/USDC/USDT pool to the newly added USDC node
@@ -168,6 +189,7 @@ abstract contract TokenTree {
         _tokenNodes[token].push(nodeIndex);
         // Push the root path for the new node. The root path is the inserted node index + the parent's root path.
         _rootPath.push((nodeIndex << (8 * depth)) | rootPathParent);
+        emit TokenNodeAdded(nodeIndex, token, _pools[poolIndex]);
     }
 
     /// @dev Updates the Pool Module for the given pool.
@@ -175,16 +197,17 @@ abstract contract TokenTree {
     function _updatePoolModule(address pool, address newPoolModule) internal {
         // Check that pool was previously added
         address oldPoolModule = _poolMap[pool].module;
-        require(oldPoolModule != address(0), "Pool not found");
+        if (oldPoolModule == address(0)) revert TokenTree__UnknownPool();
         // Sanity check that pool modules produce the same list of tokens
         address[] memory oldTokens = _getPoolTokens(oldPoolModule, pool);
         address[] memory newTokens = _getPoolTokens(newPoolModule, pool);
-        require(oldTokens.length == newTokens.length, "Different token lists");
+        if (oldTokens.length != newTokens.length) revert TokenTree__DifferentTokenLists();
         for (uint256 i = 0; i < oldTokens.length; ++i) {
-            require(oldTokens[i] == newTokens[i], "Different token lists");
+            if (oldTokens[i] != newTokens[i]) revert TokenTree__DifferentTokenLists();
         }
         // Update the pool module
         _poolMap[pool].module = newPoolModule;
+        emit PoolModuleUpdated(pool, oldPoolModule, newPoolModule);
     }
 
     // ══════════════════════════════════════ INTERNAL LOGIC: MULTIPLE POOLS ═══════════════════════════════════════════
@@ -341,13 +364,11 @@ abstract contract TokenTree {
         uint256 nodeIndexTo,
         uint256 amountIn
     ) internal returns (uint256 visitedPoolsMask_, uint256 amountOut) {
-        if (visitedPoolsMask & (1 << poolIndex) != 0) {
-            // If we already used this pool on the path, we can't use it again.
-            revert("Can't use same pool twice");
-        }
+        address pool = _pools[poolIndex];
+        // If we already used this pool on the path, we can't use it again.
+        if (visitedPoolsMask & (1 << poolIndex) != 0) revert TokenTree__SwapPoolUsedTwice(pool);
         // Mark the pool as visited
         visitedPoolsMask_ = visitedPoolsMask | (1 << poolIndex);
-        address pool = _pools[poolIndex];
         amountOut = _poolSwap(_poolMap[pool].module, pool, nodeIndexFrom, nodeIndexTo, amountIn);
     }
 
@@ -553,13 +574,13 @@ abstract contract TokenTree {
         uint8 poolIndex
     ) internal view {
         // Check that the pool is not already attached to the node
-        require(_attachedPools[nodeIndex] & (1 << poolIndex) == 0, "Pool already attached");
+        if (_attachedPools[nodeIndex] & (1 << poolIndex) != 0) revert TokenTree__PoolAlreadyAttached();
         // Here we iterate over all nodes from the root to the node, and check that the pool connecting the current node
         // to its parent is not the pool we want to add. We skip the root node (depth 0), as it has no parent.
         uint256 rootPath = _rootPath[nodeIndex];
         for (uint256 d = 1; d <= nodeDepth; ) {
             uint256 nodeIndex_ = _extractNodeIndex(rootPath, d);
-            require(_nodes[nodeIndex_].poolIndex != poolIndex, "Pool already on path to root");
+            if (_nodes[nodeIndex_].poolIndex == poolIndex) revert TokenTree__PoolAlreadyOnRootPath();
             unchecked {
                 ++d;
             }

@@ -5,7 +5,7 @@ import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
 import {ICurveV1Pool} from "../../../interfaces/curve/ICurveV1Pool.sol";
 import {UniversalTokenLib} from "../../../libs/UniversalToken.sol";
 
-import {OnlyDelegateCall} from "../OnlyDelegateCall.sol";
+import {OnlyDelegateCall} from "../../OnlyDelegateCall.sol";
 
 /// @notice PoolModule for Curve V1 pools
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router

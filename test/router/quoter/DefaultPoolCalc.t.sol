@@ -34,7 +34,7 @@ contract DefaultPoolCalcTestFork is Test {
 
     function setUp() public {
         user = makeAddr("User");
-        ethRPC = vm.envString("rpc_mainnet");
+        ethRPC = vm.envString("MAINNET_API");
         calc = new DefaultPoolCalc();
         vm.makePersistent(address(calc));
         vm.createSelectFork(ethRPC, BLOCK_NUMBER_RECENT);
