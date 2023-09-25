@@ -56,11 +56,10 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
         deploySynapseBridgeModule();
         if (hasCCTP) deploySynapseCCTPModule();
-
         addExpectedModules();
         connectBridgeModules();
-        addExpectedTokens();
 
+        addExpectedTokens();
         user = makeAddr("User");
     }
 
@@ -117,8 +116,12 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
     // TODO: tests for views: generic getters, origin/destination getAmountOut
 
-    // TODO:
-    function testSetup() public {}
+    function testSetup() public {
+        for (uint256 i = 0; i < expectedModules.length; i++) {
+            console.log("%s: %s [%s]", i, expectedModules[i], moduleNames[expectedModules[i]]);
+            assertEq(router.moduleToId(expectedModules[i]), moduleIds[expectedModules[i]]);
+        }
+    }
 
     // TODO:
     function testBridges() public {}
