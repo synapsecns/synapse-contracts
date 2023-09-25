@@ -4,7 +4,11 @@ pragma solidity 0.8.17;
 import {IntegrationUtils} from "../../utils/IntegrationUtils.sol";
 
 import {ISwapQuoterV2} from "../../../contracts/router/interfaces/ISwapQuoterV2.sol";
+import {IBridgeModule} from "../../../contracts/router/interfaces/IBridgeModule.sol";
+
 import {SynapseRouterV2} from "../../../contracts/router/SynapseRouterV2.sol";
+import {SynapseBridgeModule} from "../../../contracts/router/modules/bridge/SynapseBridgeModule.sol";
+import {SynapseCCTPModule} from "../../../contracts/router/modules/bridge/SynapseCCTPModule.sol";
 
 import {console, Test} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
@@ -17,13 +21,20 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
     ISwapQuoterV2 private _quoter;
 
-    bool public hasCCTP;
     address[] public expectedModules;
     mapping(address => string) public moduleNames;
     mapping(address => bytes32) public moduleIds;
 
     address[] public expectedTokens;
     mapping(address => string) public tokenNames;
+
+    // synapse bridge module
+    address public synapseLocalBridgeConfig;
+    address public synapseBridge;
+
+    // synapse cctp module
+    bool public hasCCTP;
+    address public synapseCCTP;
 
     SynapseRouterV2 public router;
     address public user;
@@ -61,14 +72,23 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         router.setSwapQuoter(_quoter);
     }
 
-    // TODO:
-    function deploySynapseBridgeModule() public virtual {}
+    function deploySynapseBridgeModule() public virtual {
+        require(synapseLocalBridgeConfig != address(0), "synapseLocalBridgeConfig == address(0)");
+        require(synapseBridge != address(0), "synapseBridge == address(0)");
 
-    // TODO:
-    function deploySynapseCCTPModule() public virtual {}
+        address module = address(new SynapseBridgeModule(synapseLocalBridgeConfig, synapseBridge));
+        addExpectedModule(module, "SynapseBridgeModule");
+    }
 
-    // TODO:
-    function addExpectedModules() public virtual; // TODO: override to by default include bridge, cctp
+    function deploySynapseCCTPModule() public virtual {
+        require(synapseCCTP != address(0), "synapseCCTP == address(0)");
+
+        address module = address(new SynapseCCTPModule(synapseCCTP));
+        addExpectedModule(module, "SynapseCCTPModule");
+    }
+
+    /// @dev override to include more modules than bridge, cctp
+    function addExpectedModules() public virtual;
 
     function addExpectedModule(address module, string memory moduleName) public virtual {
         expectedModules.push(module);
