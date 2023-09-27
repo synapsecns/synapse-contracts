@@ -28,4 +28,10 @@ abstract contract IntegrationUtils is Test {
     }
 
     function afterBlockchainForked() public virtual {}
+
+    function getChainId() public returns (uint256 id) {
+        assembly {
+            id := chainid()
+        }
+    }
 }
