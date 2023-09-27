@@ -7,8 +7,12 @@ import {ISwapQuoterV2} from "../../../contracts/router/interfaces/ISwapQuoterV2.
 import {IBridgeModule} from "../../../contracts/router/interfaces/IBridgeModule.sol";
 import {ILocalBridgeConfig} from "../../../contracts/router/interfaces/ILocalBridgeConfig.sol";
 
+import {IMessageTransmitter} from "../../../contracts/cctp/interfaces/IMessageTransmitter.sol";
+import {ISynapseCCTPConfig} from "../../../contracts/cctp/interfaces/ISynapseCCTPConfig.sol";
+
 import {Arrays} from "../../../contracts/router/libs/Arrays.sol";
 import {Action, BridgeToken, DefaultParams, SwapQuery} from "../../../contracts/router/libs/Structs.sol";
+import {RequestLib} from "../../../contracts/cctp/libs/Request.sol";
 
 import {SynapseRouterV2} from "../../../contracts/router/SynapseRouterV2.sol";
 import {SynapseBridgeModule} from "../../../contracts/router/modules/bridge/SynapseBridgeModule.sol";
@@ -81,7 +85,17 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         uint256 swapDeadline
     );
 
-    // TODO: synapse cctp events
+    // synapse cctp events
+    event CircleRequestSent(
+        uint256 chainId,
+        address indexed sender,
+        uint64 nonce,
+        address token,
+        uint256 amount,
+        uint32 requestVersion,
+        bytes formattedRequest,
+        bytes32 requestID
+    );
 
     constructor(
         string memory envRPC,
@@ -175,14 +189,14 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
     // TODO: add separate bridge tests with origin, dest query
     function testBridges() public {
-        SwapQuery memory emptyQuery;
+        SwapQuery memory emptyQuery; // TODO: array of origin, dest queries to try ...
         for (uint256 i = 0; i < expectedModules.length; i++) {
             address module = expectedModules[i];
             bytes32 moduleId = moduleIds[module];
             for (uint256 j = 0; j < expectedTokens.length; j++) {
                 address token = expectedTokens[j];
                 address[] memory supportedTokens = IBridgeModule(module).getBridgeTokens().tokens();
-                if (!supportedTokens.contains(token)) continue; // test not relevant if module doesn't support token
+                if (!supportedTokens.contains(token)) continue; // test not relevant if module doesn't support token; TODO: change for queries
                 for (uint256 k = 0; k < expectedChainIds.length; k++) {
                     uint256 chainId = expectedChainIds[k];
                     checkBridge(chainId, moduleId, token, emptyQuery, emptyQuery);
@@ -314,7 +328,42 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         SwapQuery memory destQuery
     ) public {
         if (moduleId != getModuleId("SynapseCCTPModule")) return;
-        // TODO:
+
+        uint32 originDomain = ISynapseCCTPConfig(synapseCCTP).localDomain();
+
+        ISynapseCCTPConfig.DomainConfig memory remoteDomainConfig = ISynapseCCTPConfig(synapseCCTP).remoteDomainConfig(
+            chainId
+        );
+        uint32 destDomain = remoteDomainConfig.domain;
+
+        IMessageTransmitter messageTransmitter = ISynapseCCTPConfig(synapseCCTP).messageTransmitter();
+        uint64 nonce = messageTransmitter.nextAvailableNonce();
+
+        (uint32 requestVersion, bytes memory swapParams) = deriveCCTPSwapParams(destQuery);
+        bytes memory expectedRequest = RequestLib.formatRequest({
+            requestVersion: requestVersion,
+            baseRequest: RequestLib.formatBaseRequest({
+                originDomain: originDomain,
+                nonce: nonce,
+                originBurnToken: token,
+                amount: amount,
+                recipient: recipient
+            }),
+            swapParams: swapParams
+        });
+        bytes32 expectedRequestID = getCCTPRequestID(destDomain, requestVersion, expectedRequest);
+
+        vm.expectEmit(synapseCCTP);
+        emit CircleRequestSent({
+            chainId: chainId,
+            sender: user,
+            nonce: nonce,
+            token: token,
+            amount: amount,
+            requestVersion: requestVersion,
+            formattedRequest: expectedRequest,
+            requestID: expectedRequestID
+        });
     }
 
     /// @dev Override for events to listen for with additional expected modules
@@ -332,13 +381,13 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
     // TODO:
     function checkSwap() public virtual {}
 
-    // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════ GENERIC HELPERS ══════════════════════════════════════════════════════
 
-    function getModuleId(string memory moduleName) public returns (bytes32) {
+    function getModuleId(string memory moduleName) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(moduleName));
     }
 
-    function hasParams(SwapQuery memory destQuery) public returns (bool) {
+    function hasParams(SwapQuery memory destQuery) public pure returns (bool) {
         return (destQuery.rawParams.length > 0);
     }
 
@@ -360,5 +409,54 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         vm.startPrank(user);
         IERC20(token).safeApprove(spender, amount);
         vm.stopPrank();
+    }
+
+    // ══════════════════════════════════════════════════ CCTP HELPERS ══════════════════════════════════════════════════════
+
+    /// @dev see router/modules/bridge/SynapseCCTPModule.sol
+    function deriveCCTPSwapParams(SwapQuery memory destQuery)
+        public
+        pure
+        returns (uint32 requestVersion, bytes memory swapParams)
+    {
+        // Check if any action was specified in `destQuery`
+        if (destQuery.routerAdapter == address(0)) {
+            // No action was specified, so no swap is required
+            return (RequestLib.REQUEST_BASE, "");
+        }
+        require(hasParams(destQuery), "CCTP dest query has no swap params");
+        DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
+        // Actions other than swap are not supported for Circle tokens on the destination chain
+        require(params.action == Action.Swap, "invalid CCTP swap param action");
+        require(params.tokenIndexFrom != params.tokenIndexTo, "invalid CCTP swap param token indices");
+        requestVersion = RequestLib.REQUEST_SWAP;
+        swapParams = RequestLib.formatSwapParams({
+            tokenIndexFrom: params.tokenIndexFrom,
+            tokenIndexTo: params.tokenIndexTo,
+            deadline: destQuery.deadline,
+            minAmountOut: destQuery.minAmountOut
+        });
+    }
+
+    /// @notice Calculates the unique identifier of the request.
+    /// @dev see cctp/SynapseCCTP.sol
+    function getCCTPRequestID(
+        uint32 destinationDomain,
+        uint32 requestVersion,
+        bytes memory formattedRequest
+    ) public pure returns (bytes32 requestID) {
+        // Merge the destination domain and the request version into a single uint256.
+        uint256 prefix = (uint256(destinationDomain) << 32) | requestVersion;
+        bytes32 requestHash = keccak256(formattedRequest);
+        // Use assembly to return hash of the prefix and the request hash.
+        // We are using scratch space to avoid unnecessary memory expansion.
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            // Store prefix in memory at 0, and requestHash at 32.
+            mstore(0, prefix)
+            mstore(32, requestHash)
+            // Return hash of first 64 bytes of memory.
+            requestID := keccak256(0, 64)
+        }
     }
 }
