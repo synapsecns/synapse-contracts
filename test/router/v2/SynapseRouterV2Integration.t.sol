@@ -204,8 +204,9 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
         // TODO: include swap query params in logs, factor in getters check
         console.log("Bridging %s from chain %s -> %s", tokenNames[token], getChainId(), chainId);
-        checkBridgeEvent(chainId, moduleId, token, amount, originQuery, destQuery);
         uint256 balanceBefore = IERC20(token).balanceOf(user);
+
+        checkBridgeEvent(chainId, moduleId, token, amount, originQuery, destQuery);
         vm.prank(user);
         router.bridgeViaSynapse({
             to: recipient,
@@ -249,8 +250,9 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         //  3. TokenRedeem: Wrapped syn asset burned and no destQuery
         //  4. TokenRedeemAndSwap: Wrapped syn asset burned and destQuery w Action.Swap
         //  5. TokenRedeemAndRemove: Wrapped syn asset burned and destQuery  w Action.RemoveLiquidity
-        vm.expectEmit(synapseBridge);
         (ILocalBridgeConfig.TokenType tokenType, ) = ILocalBridgeConfig(synapseLocalBridgeConfig).config(token);
+
+        vm.expectEmit(synapseBridge); // @dev next call should be to router bridge function
         if (tokenType == ILocalBridgeConfig.TokenType.Deposit) {
             // case 1
             if (!hasParams(destQuery)) {
