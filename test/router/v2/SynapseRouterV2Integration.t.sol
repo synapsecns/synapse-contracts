@@ -5,9 +5,10 @@ import {IntegrationUtils} from "../../utils/IntegrationUtils.sol";
 
 import {ISwapQuoterV2} from "../../../contracts/router/interfaces/ISwapQuoterV2.sol";
 import {IBridgeModule} from "../../../contracts/router/interfaces/IBridgeModule.sol";
+import {ILocalBridgeConfig} from "../../../contracts/router/interfaces/ILocalBridgeConfig.sol";
 
 import {Arrays} from "../../../contracts/router/libs/Arrays.sol";
-import {BridgeToken, SwapQuery} from "../../../contracts/router/libs/Structs.sol";
+import {Action, BridgeToken, DefaultParams, SwapQuery} from "../../../contracts/router/libs/Structs.sol";
 
 import {SynapseRouterV2} from "../../../contracts/router/SynapseRouterV2.sol";
 import {SynapseBridgeModule} from "../../../contracts/router/modules/bridge/SynapseBridgeModule.sol";
@@ -45,6 +46,42 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
     SynapseRouterV2 public router;
     address public user;
     address public recipient;
+
+    /// synapse bridge events
+    event TokenDeposit(address indexed to, uint256 chainId, address token, uint256 amount);
+    event TokenDepositAndSwap(
+        address indexed to,
+        uint256 chainId,
+        address token,
+        uint256 amount,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline
+    );
+
+    event TokenRedeem(address indexed to, uint256 chainId, address token, uint256 amount);
+    event TokenRedeemAndSwap(
+        address indexed to,
+        uint256 chainId,
+        address token,
+        uint256 amount,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 minDy,
+        uint256 deadline
+    );
+    event TokenRedeemAndRemove(
+        address indexed to,
+        uint256 chainId,
+        address token,
+        uint256 amount,
+        uint8 swapTokenIndex,
+        uint256 swapMinAmount,
+        uint256 swapDeadline
+    );
+
+    // TODO: synapse cctp events
 
     constructor(
         string memory envRPC,
@@ -167,6 +204,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
         // TODO: include swap query params in logs, factor in getters check
         console.log("Bridging %s from chain %s -> %s", tokenNames[token], getChainId(), chainId);
+        checkBridgeEvent(chainId, moduleId, token, amount, originQuery, destQuery);
         uint256 balanceBefore = IERC20(token).balanceOf(user);
         vm.prank(user);
         router.bridgeViaSynapse({
@@ -179,7 +217,6 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             destQuery: destQuery
         });
         assertEq(IERC20(token).balanceOf(user), balanceBefore - amount, "Failed to spend token");
-        checkBridgeEvent(chainId, moduleId, token, amount, originQuery, destQuery);
     }
 
     function checkBridgeEvent(
@@ -191,10 +228,10 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         SwapQuery memory destQuery
     ) public virtual {
         if (moduleId == getModuleId("SynapseBridgeModule"))
-            checkSynapseBridgeEvent(chainId, moduleId, token, amount, originQuery, destQuery);
+            checkSynapseBridgeEvent(chainId, moduleId, token, amount, destQuery);
         else if (moduleId == getModuleId("SynapseCCTPModule"))
-            checkSynapseCCTPEvent(chainId, moduleId, token, amount, originQuery, destQuery);
-        else checkExpectedBridgeEvent(chainId, moduleId, token, amount, originQuery, destQuery);
+            checkSynapseCCTPEvent(chainId, moduleId, token, amount, destQuery);
+        else checkExpectedBridgeEvent(chainId, moduleId, token, amount, destQuery);
     }
 
     function checkSynapseBridgeEvent(
@@ -202,11 +239,69 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         bytes32 moduleId,
         address token,
         uint256 amount,
-        SwapQuery memory originQuery,
         SwapQuery memory destQuery
     ) public {
         if (moduleId != getModuleId("SynapseBridgeModule")) return;
-        // TODO:
+
+        // 5 cases
+        //  1. TokenDeposit: ERC20 asset deposit on this chain and no destQuery
+        //  2. TokenDepositAndSwap: ERC20 asset deposit on this chain and destQuery w Action.Swap
+        //  3. TokenRedeem: Wrapped syn asset burned and no destQuery
+        //  4. TokenRedeemAndSwap: Wrapped syn asset burned and destQuery w Action.Swap
+        //  5. TokenRedeemAndRemove: Wrapped syn asset burned and destQuery  w Action.RemoveLiquidity
+        vm.expectEmit(synapseBridge);
+        (ILocalBridgeConfig.TokenType tokenType, ) = ILocalBridgeConfig(synapseLocalBridgeConfig).config(token);
+        if (tokenType == ILocalBridgeConfig.TokenType.Deposit) {
+            // case 1
+            if (!hasParams(destQuery)) {
+                emit TokenDeposit(recipient, chainId, token, amount);
+                return;
+            }
+
+            // case 2
+            DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
+            if (params.action == Action.Swap)
+                emit TokenDepositAndSwap(
+                    recipient,
+                    chainId,
+                    token,
+                    amount,
+                    params.tokenIndexFrom,
+                    params.tokenIndexTo,
+                    destQuery.minAmountOut,
+                    destQuery.deadline
+                );
+        } else if (tokenType == ILocalBridgeConfig.TokenType.Redeem) {
+            // case 3
+            if (!hasParams(destQuery)) {
+                emit TokenRedeem(recipient, chainId, token, amount);
+                return;
+            }
+
+            DefaultParams memory params = abi.decode(destQuery.rawParams, (DefaultParams));
+            if (params.action == Action.Swap)
+                emit TokenRedeemAndSwap(
+                    recipient,
+                    chainId,
+                    token,
+                    amount,
+                    params.tokenIndexFrom,
+                    params.tokenIndexTo,
+                    destQuery.minAmountOut,
+                    destQuery.deadline
+                );
+            // case 4
+            else if (params.action == Action.RemoveLiquidity)
+                emit TokenRedeemAndRemove(
+                    recipient,
+                    chainId,
+                    token,
+                    amount,
+                    params.tokenIndexTo,
+                    destQuery.minAmountOut,
+                    destQuery.deadline
+                ); // case 5
+        }
     }
 
     function checkSynapseCCTPEvent(
@@ -214,7 +309,6 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         bytes32 moduleId,
         address token,
         uint256 amount,
-        SwapQuery memory originQuery,
         SwapQuery memory destQuery
     ) public {
         if (moduleId != getModuleId("SynapseCCTPModule")) return;
@@ -227,7 +321,6 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         bytes32 moduleId,
         address token,
         uint256 amount,
-        SwapQuery memory originQuery,
         SwapQuery memory destQuery
     ) public virtual;
 
@@ -241,6 +334,10 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
     function getModuleId(string memory moduleName) public returns (bytes32) {
         return keccak256(abi.encodePacked(moduleName));
+    }
+
+    function hasParams(SwapQuery memory destQuery) public returns (bool) {
+        return (destQuery.rawParams.length > 0);
     }
 
     function getTestAmount(address token) public view virtual returns (uint256) {
