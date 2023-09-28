@@ -185,6 +185,8 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             console.log("%s: %s [%s]", i, expectedModules[i], moduleNames[expectedModules[i]]);
             assertEq(router.moduleToId(expectedModules[i]), moduleIds[expectedModules[i]]);
         }
+        assertTrue(user != address(0), "user not set");
+        assertTrue(recipient != address(0), "recipient not set");
     }
 
     // TODO: add separate bridge tests with origin, dest query
@@ -330,7 +332,6 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         if (moduleId != getModuleId("SynapseCCTPModule")) return;
 
         uint32 originDomain = ISynapseCCTPConfig(synapseCCTP).localDomain();
-
         ISynapseCCTPConfig.DomainConfig memory remoteDomainConfig = ISynapseCCTPConfig(synapseCCTP).remoteDomainConfig(
             chainId
         );
@@ -375,11 +376,56 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         SwapQuery memory destQuery
     ) public virtual;
 
-    // TODO:
-    function testSwaps() public {}
+    // TODO: test getter for getOriginAmountOut, getOriginBridgeTokens above
+    function testSwaps() public {
+        for (uint256 j = 0; j < expectedTokens.length; j++) {
+            address token = expectedTokens[j];
+            uint256 amount = getTestAmount(token);
+            string[] memory symbols = router.getOriginBridgeTokens(token).symbols();
+            SwapQuery[] memory queries = router.getOriginAmountOut(token, symbols, amount);
+            for (uint256 k = 0; k < queries.length; k++) {
+                checkSwap(recipient, token, amount, queries[k]);
+            }
+        }
+    }
 
-    // TODO:
-    function checkSwap() public virtual {}
+    function checkSwap(
+        address to,
+        address token,
+        uint256 amount,
+        SwapQuery memory query
+    ) public virtual {
+        mintToken(token, amount);
+        approveSpending(token, address(router), amount);
+
+        address tokenFrom = token;
+        address tokenTo = query.tokenOut;
+        uint256 expectedAmountOut = query.minAmountOut;
+
+        console.log("Swapping: %s -> %s", tokenNames[tokenFrom], tokenNames[tokenTo]);
+        console.log("   Expecting: %s -> %s", amount, expectedAmountOut);
+
+        uint256 balanceFromBefore = IERC20(tokenFrom).balanceOf(user);
+        uint256 balanceToBefore = IERC20(tokenTo).balanceOf(to);
+
+        vm.prank(user);
+        uint256 amountOut = router.swap(to, token, amount, query);
+        assertEq(amountOut, expectedAmountOut, "Failed to get exact quote");
+
+        // check balances after swap
+        assertEq(
+            IERC20(tokenFrom).balanceOf(user),
+            tokenFrom == tokenTo && user == recipient
+                ? balanceFromBefore - amount + amountOut
+                : balanceFromBefore - amount
+        );
+        assertEq(
+            IERC20(tokenTo).balanceOf(to),
+            tokenFrom == tokenTo && user == recipient
+                ? balanceToBefore + amountOut - amount
+                : balanceToBefore + amountOut
+        );
+    }
 
     // ══════════════════════════════════════════════════ GENERIC HELPERS ══════════════════════════════════════════════════════
 
