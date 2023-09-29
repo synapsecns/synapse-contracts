@@ -40,6 +40,8 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
     address[] public expectedTokens;
     mapping(address => string) public tokenNames;
 
+    BridgeToken[] public expectedBridgeTokens;
+
     // synapse bridge module
     address public synapseLocalBridgeConfig;
     address public synapseBridge;
@@ -158,6 +160,14 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         moduleNames[module] = moduleName;
         moduleIds[module] = getModuleId(moduleName);
         vm.label(module, moduleName);
+
+        // push the associated bridge tokens to expected bridge token array
+        BridgeToken[] memory bridgeTokens = IBridgeModule(module).getBridgeTokens();
+        for (uint256 i = 0; i < bridgeTokens.length; i++) {
+            expectedBridgeTokens.push(bridgeTokens[i]);
+            tokenNames[bridgeTokens[i].token] = bridgeTokens[i].symbol;
+            vm.label(bridgeTokens[i].token, bridgeTokens[i].symbol);
+        }
     }
 
     function connectBridgeModules() public virtual {
@@ -184,9 +194,29 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         for (uint256 i = 0; i < expectedModules.length; i++) {
             console.log("%s: %s [%s]", i, expectedModules[i], moduleNames[expectedModules[i]]);
             assertEq(router.moduleToId(expectedModules[i]), moduleIds[expectedModules[i]]);
+
+            // check all bridge tokens in expected bridge tokens array
+            address[] memory tokens = IBridgeModule(expectedModules[i]).getBridgeTokens().tokens();
+            for (uint256 j = 0; i < tokens.length; j++) {
+                assertTrue(expectedBridgeTokens.tokens().contains(tokens[j]));
+                console.log("%s: %s [%s]", j, tokens[j], tokenNames[tokens[j]]);
+            }
         }
         assertTrue(user != address(0), "user not set");
         assertTrue(recipient != address(0), "recipient not set");
+    }
+
+    function testGetBridgeTokens() public {
+        checkBridgeTokens(router.getBridgeTokens(), expectedBridgeTokens);
+    }
+
+    function checkBridgeTokens(BridgeToken[] memory actual, BridgeToken[] memory expect) public {
+        assertEq(actual.length, expect.length);
+        for (uint256 i = 0; i < actual.length; i++) {
+            console.log("%s: %s [%s]", i, expect[i].token, expect[i].symbol);
+            assertEq(actual[i].symbol, expect[i].symbol);
+            assertEq(actual[i].token, expect[i].token);
+        }
     }
 
     function testBridges() public {
