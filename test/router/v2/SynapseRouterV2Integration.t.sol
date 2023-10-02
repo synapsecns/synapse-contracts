@@ -264,8 +264,14 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         console.log("Bridging %s from chain %s -> %s", tokenNames[token], getChainId(), chainId);
         if (originQuery.hasAdapter())
             console.log("   Swapping: %s -> %s before bridging", tokenNames[token], tokenNames[originQuery.tokenOut]);
-        if (destQuery.hasAdapter())
-            console.log("   Swapping: %s -> %s after bridging", tokenNames[token], tokenNames[destQuery.tokenOut]);
+        if (destQuery.hasAdapter()) {
+            address destTokenIn = originQuery.hasAdapter() ? originQuery.tokenOut : token;
+            console.log(
+                "   Swapping: %s -> %s after bridging",
+                tokenNames[destTokenIn],
+                tokenNames[destQuery.tokenOut]
+            );
+        }
 
         uint256 balanceBefore = IERC20(token).balanceOf(user);
 
