@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {IntegrationUtils} from "../../utils/IntegrationUtils.sol";
+import {IntegrationUtils} from "../../../utils/IntegrationUtils.sol";
 
-import {ISwapQuoterV2} from "../../../contracts/router/interfaces/ISwapQuoterV2.sol";
-import {IBridgeModule} from "../../../contracts/router/interfaces/IBridgeModule.sol";
-import {ILocalBridgeConfig} from "../../../contracts/router/interfaces/ILocalBridgeConfig.sol";
+import {ISwapQuoterV2} from "../../../../contracts/router/interfaces/ISwapQuoterV2.sol";
+import {IBridgeModule} from "../../../../contracts/router/interfaces/IBridgeModule.sol";
+import {ILocalBridgeConfig} from "../../../../contracts/router/interfaces/ILocalBridgeConfig.sol";
 
-import {IMessageTransmitter} from "../../../contracts/cctp/interfaces/IMessageTransmitter.sol";
-import {ISynapseCCTPConfig} from "../../../contracts/cctp/interfaces/ISynapseCCTPConfig.sol";
+import {IMessageTransmitter} from "../../../../contracts/cctp/interfaces/IMessageTransmitter.sol";
+import {ISynapseCCTPConfig} from "../../../../contracts/cctp/interfaces/ISynapseCCTPConfig.sol";
 
-import {Arrays} from "../../../contracts/router/libs/Arrays.sol";
-import {Action, ActionLib, BridgeToken, DefaultParams, DestRequest, LimitedToken, SwapQuery} from "../../../contracts/router/libs/Structs.sol";
-import {RequestLib} from "../../../contracts/cctp/libs/Request.sol";
+import {Arrays} from "../../../../contracts/router/libs/Arrays.sol";
+import {Action, ActionLib, BridgeToken, DefaultParams, DestRequest, LimitedToken, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
+import {RequestLib} from "../../../../contracts/cctp/libs/Request.sol";
 
-import {SynapseRouterV2} from "../../../contracts/router/SynapseRouterV2.sol";
-import {SynapseBridgeModule} from "../../../contracts/router/modules/bridge/SynapseBridgeModule.sol";
-import {SynapseCCTPModule} from "../../../contracts/router/modules/bridge/SynapseCCTPModule.sol";
+import {SynapseRouterV2} from "../../../../contracts/router/SynapseRouterV2.sol";
+import {SynapseBridgeModule} from "../../../../contracts/router/modules/bridge/SynapseBridgeModule.sol";
+import {SynapseCCTPModule} from "../../../../contracts/router/modules/bridge/SynapseCCTPModule.sol";
 
 import {console, Test} from "forge-std/Test.sol";
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
