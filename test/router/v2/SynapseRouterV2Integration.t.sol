@@ -41,6 +41,8 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
     mapping(address => string) public tokenNames;
 
     BridgeToken[] public expectedBridgeTokens;
+    mapping(address => BridgeToken[]) public expectedOriginBridgeTokens; // tokenIn => bridgeTokens
+    mapping(address => BridgeToken[]) public expectedDestBridgeTokens; // tokenOut => bridgeTokens
 
     // synapse bridge module
     address public synapseLocalBridgeConfig;
@@ -118,8 +120,8 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         if (synapseCCTP != address(0)) deploySynapseCCTPModule();
 
         addExpectedChainIds();
+        addExpectedTokens(); // @dev must come before adding expected modules for connected bridge tokens
         addExpectedModules();
-        addExpectedTokens();
 
         connectBridgeModules();
         user = makeAddr("User");
@@ -167,6 +169,32 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             expectedBridgeTokens.push(bridgeTokens[i]);
             tokenNames[bridgeTokens[i].token] = bridgeTokens[i].symbol;
             vm.label(bridgeTokens[i].token, bridgeTokens[i].symbol);
+
+            // for each expected token we have, add both dest and origin connected bridge tokens
+            for (uint256 j = 0; j < expectedTokens.length; j++) {
+                // origin
+                if (
+                    _quoter.areConnectedTokens(
+                        LimitedToken({actionMask: ActionLib.allActions(), token: expectedTokens[j]}),
+                        bridgeTokens[i].token
+                    )
+                ) {
+                    expectedOriginBridgeTokens[expectedTokens[j]].push(bridgeTokens[i]);
+                }
+
+                // destination
+                if (
+                    _quoter.areConnectedTokens(
+                        LimitedToken({
+                            actionMask: IBridgeModule(module).tokenToActionMask(bridgeTokens[i].token),
+                            token: bridgeTokens[i].token
+                        }),
+                        expectedTokens[j]
+                    )
+                ) {
+                    expectedDestBridgeTokens[expectedTokens[j]].push(bridgeTokens[i]);
+                }
+            }
         }
     }
 
@@ -208,6 +236,24 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
     function testGetBridgeTokens() public {
         checkBridgeTokens(router.getBridgeTokens(), expectedBridgeTokens);
+    }
+
+    function testGetOriginBridgeTokens() public {
+        for (uint256 i = 0; i < expectedTokens.length; i++) {
+            checkBridgeTokens(
+                router.getOriginBridgeTokens(expectedTokens[i]),
+                expectedOriginBridgeTokens[expectedTokens[i]]
+            );
+        }
+    }
+
+    function testGetDestinationBridgeTokens() public {
+        for (uint256 i = 0; i < expectedTokens.length; i++) {
+            checkBridgeTokens(
+                router.getDestinationBridgeTokens(expectedTokens[i]),
+                expectedDestBridgeTokens[expectedTokens[i]]
+            );
+        }
     }
 
     function checkBridgeTokens(BridgeToken[] memory actual, BridgeToken[] memory expect) public {
@@ -485,7 +531,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         );
     }
 
-    // TODO: test getter for getOriginAmountOut, getOriginBridgeTokens above
+    // TODO: test getter for getOriginAmountOut above
     /// @notice Returns all possible origin swap queries
     function getOriginSwapQueries(address token) public returns (SwapQuery[] memory) {
         uint256 amount = getTestAmount(token);
@@ -493,7 +539,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         SwapQuery[] memory queries = router.getOriginAmountOut(token, symbols, amount);
     }
 
-    // TODO: test getter for getDestinationAmountOut, getDestinationBridgeTokens above
+    // TODO: test getter for getDestinationAmountOut above
     /// @notice Returns all possible destination swap queries
     function getDestinationSwapQueries(address token) public returns (SwapQuery[] memory) {
         uint256 amount = getTestAmount(token);
