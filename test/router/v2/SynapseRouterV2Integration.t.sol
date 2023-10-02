@@ -206,6 +206,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         }
     }
 
+    /// @dev Must implement such that all router supported tokens are in expectedTokens array
     function addExpectedTokens() public virtual;
 
     function addExpectedToken(address token, string memory tokenName) public virtual {
@@ -262,6 +263,17 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             console.log("%s: %s [%s]", i, expect[i].token, expect[i].symbol);
             assertEq(actual[i].symbol, expect[i].symbol);
             assertEq(actual[i].token, expect[i].token);
+        }
+    }
+
+    function testGetSupportedTokens() public {
+        checkSupportedTokens(router.getSupportedTokens(), expectedTokens);
+    }
+
+    function checkSupportedTokens(address[] memory actual, address[] memory expect) public {
+        assertEq(actual.length, expect.length);
+        for (uint256 i = 0; i < actual.length; i++) {
+            assertTrue(expect.contains(actual[i]));
         }
     }
 
