@@ -217,7 +217,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
     // ═══════════════════════════════════════════════════ TESTS ═══════════════════════════════════════════════════════
 
-    // TODO: tests for views: generic getters, origin/destination getAmountOut
+    // TODO: tests for views: origin/destination getAmountOut
 
     function testSetup() public {
         for (uint256 i = 0; i < expectedModules.length; i++) {
@@ -545,36 +545,42 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
     // TODO: test getter for getOriginAmountOut above
     /// @notice Returns all possible origin swap queries
-    function getOriginSwapQueries(address token) public returns (SwapQuery[] memory) {
+    function getOriginSwapQueries(address token) public returns (SwapQuery[] memory queries) {
         uint256 amount = getTestAmount(token);
         string[] memory symbols = router.getOriginBridgeTokens(token).symbols();
-        SwapQuery[] memory queries = router.getOriginAmountOut(token, symbols, amount);
+        queries = router.getOriginAmountOut(token, symbols, amount);
+    }
+
+    /// @notice Returns all possible destination requests
+    function getDestinationRequests(address token) public returns (DestRequest[] memory requests) {
+        uint256 amount = getTestAmount(token);
+        string[] memory symbols = router.getDestinationBridgeTokens(token).symbols();
+
+        requests = new DestRequest[](symbols.length);
+        for (uint256 i = 0; i < requests.length; i++) requests[i] = DestRequest({symbol: symbols[i], amountIn: amount});
     }
 
     // TODO: test getter for getDestinationAmountOut above
     /// @notice Returns all possible destination swap queries
-    function getDestinationSwapQueries(address token) public returns (SwapQuery[] memory) {
-        uint256 amount = getTestAmount(token);
-        string[] memory symbols = router.getDestinationBridgeTokens(token).symbols();
-        DestRequest[] memory requests = new DestRequest[](symbols.length);
-        for (uint256 i = 0; i < requests.length; i++) requests[i] = DestRequest({symbol: symbols[i], amountIn: amount});
-        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, token);
+    function getDestinationSwapQueries(address token) public returns (SwapQuery[] memory queries) {
+        DestRequest[] memory requests = getDestinationRequests(token);
+        queries = router.getDestinationAmountOut(requests, token);
     }
 
-    function getOriginSwapQueriesWithEmpty(address token) public returns (SwapQuery[] memory) {
+    function getOriginSwapQueriesWithEmpty(address token) public returns (SwapQuery[] memory queries) {
         SwapQuery memory empty;
         SwapQuery[] memory qs = getOriginSwapQueries(token);
 
-        SwapQuery[] memory queries = new SwapQuery[](qs.length + 1);
+        queries = new SwapQuery[](qs.length + 1);
         for (uint256 i = 0; i < qs.length; i++) queries[i] = qs[i];
         queries[queries.length - 1] = empty;
     }
 
-    function getDestinationSwapQueriesWithEmpty(address token) public returns (SwapQuery[] memory) {
+    function getDestinationSwapQueriesWithEmpty(address token) public returns (SwapQuery[] memory queries) {
         SwapQuery memory empty;
         SwapQuery[] memory qs = getDestinationSwapQueries(token);
 
-        SwapQuery[] memory queries = new SwapQuery[](qs.length + 1);
+        queries = new SwapQuery[](qs.length + 1);
         for (uint256 i = 0; i < qs.length; i++) queries[i] = qs[i];
         queries[queries.length - 1] = empty;
     }
