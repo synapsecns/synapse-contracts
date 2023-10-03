@@ -226,7 +226,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
             // check all bridge tokens in expected bridge tokens array
             address[] memory tokens = IBridgeModule(expectedModules[i]).getBridgeTokens().tokens();
-            for (uint256 j = 0; i < tokens.length; j++) {
+            for (uint256 j = 0; j < tokens.length; j++) {
                 assertTrue(expectedBridgeTokens.tokens().contains(tokens[j]));
                 console.log("%s: %s [%s]", j, tokens[j], tokenNames[tokens[j]]);
             }
