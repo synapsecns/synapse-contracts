@@ -112,6 +112,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
     function setUp() public virtual override {
         super.setUp(); // @dev afterBlockchainForked() should be overwritten for extra config here
+        addExpectedTokens(); // @dev must come before adding expected modules for connected bridge tokens
 
         deployRouter();
         setSwapQuoter();
@@ -120,7 +121,6 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         if (synapseCCTP != address(0)) deploySynapseCCTPModule();
 
         addExpectedChainIds();
-        addExpectedTokens(); // @dev must come before adding expected modules for connected bridge tokens
         addExpectedModules();
 
         connectBridgeModules();
@@ -217,8 +217,6 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
     // ═══════════════════════════════════════════════════ TESTS ═══════════════════════════════════════════════════════
 
-    // TODO: tests for views: origin/destination getAmountOut
-
     function testSetup() public {
         for (uint256 i = 0; i < expectedModules.length; i++) {
             console.log("%s: %s [%s]", i, expectedModules[i], moduleNames[expectedModules[i]]);
@@ -238,6 +236,8 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
     function testGetBridgeTokens() public {
         checkBridgeTokens(router.getBridgeTokens(), expectedBridgeTokens);
     }
+
+    // TODO: testGetSupportedTokens, testGetOriginAmountOut, testGetDestinationAmountOut
 
     function testGetOriginBridgeTokens() public {
         for (uint256 i = 0; i < expectedTokens.length; i++) {
@@ -264,10 +264,6 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             assertEq(actual[i].symbol, expect[i].symbol);
             assertEq(actual[i].token, expect[i].token);
         }
-    }
-
-    function testGetSupportedTokens() public {
-        checkSupportedTokens(router.getSupportedTokens(), expectedTokens);
     }
 
     function checkSupportedTokens(address[] memory actual, address[] memory expect) public {
