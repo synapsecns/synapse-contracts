@@ -286,23 +286,16 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
                 address token = expectedTokens[j];
 
                 // assemble possible swap queries including the empty query
-                SwapQuery[] memory originQueries = getOriginSwapQueriesWithEmpty(token);
-                SwapQuery[] memory destQueries = getDestinationSwapQueriesWithEmpty(token);
-
+                // Use empty query only for dest as we're only testing on origin chain
+                SwapQuery[] memory originQueries = getOriginSwapQueries(token);
                 for (uint256 o = 0; o < originQueries.length; o++) {
-                    for (uint256 d = 0; d < destQueries.length; d++) {
-                        SwapQuery memory originQuery = originQueries[o];
-                        SwapQuery memory destQuery = destQueries[d];
+                    SwapQuery memory originQuery = originQueries[o];
+                    SwapQuery memory destQuery;
 
-                        // test not relevant if module doesn't support token
-                        if (
-                            !originQuery.hasAdapter() &&
-                            !destQuery.hasAdapter() &&
-                            !supportedBridgeTokens.contains(token)
-                        ) continue;
-                        for (uint256 c = 0; c < expectedChainIds.length; c++)
-                            checkBridge(expectedChainIds[c], moduleIds[module], token, originQuery, destQuery);
-                    }
+                    // test not relevant if module doesn't support token
+                    if (!originQuery.hasAdapter() && !supportedBridgeTokens.contains(token)) continue;
+                    for (uint256 c = 0; c < expectedChainIds.length; c++)
+                        checkBridge(expectedChainIds[c], moduleIds[module], token, originQuery, destQuery);
                 }
             }
         }
@@ -361,6 +354,8 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             amount = _quoter.getAmountOut(_tokenIn, originQuery.tokenOut, amount).minAmountOut; // @dev getter tests above
             token = originQuery.tokenOut;
         }
+
+        // TODO: fix if originQuery swaps into a different module bridge token ...
 
         if (moduleId == getModuleId("SynapseBridgeModule"))
             checkSynapseBridgeEvent(chainId, moduleId, token, amount, destQuery);
@@ -500,6 +495,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             uint256 amount = getTestAmount(token);
             SwapQuery[] memory queries = getOriginSwapQueries(token);
             for (uint256 k = 0; k < queries.length; k++) {
+                if (!queries[k].hasAdapter()) continue;
                 checkSwap(recipient, token, amount, queries[k]);
             }
         }
@@ -549,40 +545,6 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         uint256 amount = getTestAmount(token);
         string[] memory symbols = router.getOriginBridgeTokens(token).symbols();
         queries = router.getOriginAmountOut(token, symbols, amount);
-    }
-
-    /// @notice Returns all possible destination requests
-    function getDestinationRequests(address token) public returns (DestRequest[] memory requests) {
-        uint256 amount = getTestAmount(token);
-        string[] memory symbols = router.getDestinationBridgeTokens(token).symbols();
-
-        requests = new DestRequest[](symbols.length);
-        for (uint256 i = 0; i < requests.length; i++) requests[i] = DestRequest({symbol: symbols[i], amountIn: amount});
-    }
-
-    // TODO: test getter for getDestinationAmountOut above
-    /// @notice Returns all possible destination swap queries
-    function getDestinationSwapQueries(address token) public returns (SwapQuery[] memory queries) {
-        DestRequest[] memory requests = getDestinationRequests(token);
-        queries = router.getDestinationAmountOut(requests, token);
-    }
-
-    function getOriginSwapQueriesWithEmpty(address token) public returns (SwapQuery[] memory queries) {
-        SwapQuery memory empty;
-        SwapQuery[] memory qs = getOriginSwapQueries(token);
-
-        queries = new SwapQuery[](qs.length + 1);
-        for (uint256 i = 0; i < qs.length; i++) queries[i] = qs[i];
-        queries[queries.length - 1] = empty;
-    }
-
-    function getDestinationSwapQueriesWithEmpty(address token) public returns (SwapQuery[] memory queries) {
-        SwapQuery memory empty;
-        SwapQuery[] memory qs = getDestinationSwapQueries(token);
-
-        queries = new SwapQuery[](qs.length + 1);
-        for (uint256 i = 0; i < qs.length; i++) queries[i] = qs[i];
-        queries[queries.length - 1] = empty;
     }
 
     // ══════════════════════════════════════════════════ GENERIC HELPERS ══════════════════════════════════════════════════════

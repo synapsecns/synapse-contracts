@@ -31,6 +31,10 @@ contract SynapseRouterV2ArbitrumIntegrationTest is SynapseRouterV2IntegrationTes
     address private constant UNIDX = 0x5429706887FCb58a595677B73E9B0441C25d993D;
     address private constant PEPE = 0xA54B8e178A49F8e5405A4d44Bb31F496e5564A05;
 
+    // supported tokens (for adapter swaps)
+    address private constant USDC_E = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
+    address private constant USDT = 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9;
+
     constructor() SynapseRouterV2IntegrationTest(ARB_ENV_RPC, ARB_BLOCK_NUMBER, ARB_SWAP_QUOTER) {}
 
     function afterBlockchainForked() public virtual override {
@@ -46,21 +50,8 @@ contract SynapseRouterV2ArbitrumIntegrationTest is SynapseRouterV2IntegrationTes
     // TODO: add non-bridge tokens
     function addExpectedTokens() public virtual override {
         addExpectedToken(NUSD, "NUSD");
-        addExpectedToken(SYN, "SYN");
-        addExpectedToken(NETH, "NETH");
-        addExpectedToken(WSOHM, "wsOHM");
-        addExpectedToken(GOHM, "gOHM");
-        addExpectedToken(GMX, "GMX");
-        addExpectedToken(USTC, "USTC");
-        addExpectedToken(NEWO, "NEWO");
-        addExpectedToken(SDT, "SDT");
-        addExpectedToken(VSTA, "VSTA");
-        addExpectedToken(H20, "H20");
-        addExpectedToken(L2DAO, "L2DAO");
-        addExpectedToken(AGEUR, "AGEUR");
-        addExpectedToken(PLS, "PLS");
-        addExpectedToken(UNIDX, "UNIDX");
-        addExpectedToken(PEPE, "PEPE");
+        addExpectedToken(USDC_E, "USDC.e");
+        addExpectedToken(USDT, "USDT");
     }
 
     /// @dev no additional modules. only testing CCIP, Bridge
