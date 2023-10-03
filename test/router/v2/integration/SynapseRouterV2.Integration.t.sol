@@ -228,7 +228,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             address[] memory tokens = IBridgeModule(expectedModules[i]).getBridgeTokens().tokens();
             for (uint256 j = 0; j < tokens.length; j++) {
                 assertTrue(expectedBridgeTokens.tokens().contains(tokens[j]));
-                console.log("%s: %s [%s]", j, tokens[j], tokenNames[tokens[j]]);
+                console.log("   %s: %s [%s]", j, tokens[j], tokenNames[tokens[j]]);
             }
         }
         assertTrue(user != address(0), "user not set");
@@ -292,10 +292,11 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
                     SwapQuery memory originQuery = originQueries[o];
                     SwapQuery memory destQuery;
 
-                    // test not relevant if module doesn't support token
-                    if (!originQuery.hasAdapter() && !supportedBridgeTokens.contains(token)) continue;
+                    // test not relevant if module doesn't support bridge token in
+                    address tokenIn = originQuery.hasAdapter() ? originQuery.tokenOut : token;
+                    if (!supportedBridgeTokens.contains(tokenIn)) continue;
                     for (uint256 c = 0; c < expectedChainIds.length; c++)
-                        checkBridge(expectedChainIds[c], moduleIds[module], token, originQuery, destQuery);
+                        checkBridge(expectedChainIds[c], module, token, originQuery, destQuery);
                 }
             }
         }
@@ -303,7 +304,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
     function checkBridge(
         uint256 chainId,
-        bytes32 moduleId,
+        address module,
         address token,
         SwapQuery memory originQuery,
         SwapQuery memory destQuery
@@ -312,7 +313,9 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         mintToken(token, amount);
         approveSpending(token, address(router), amount);
 
+        bytes32 moduleId = moduleIds[module];
         console.log("Bridging %s from chain %s -> %s", tokenNames[token], getChainId(), chainId);
+        console.log("   Via module: %s", moduleNames[module]);
         if (originQuery.hasAdapter())
             console.log("   Swapping: %s -> %s before bridging", tokenNames[token], tokenNames[originQuery.tokenOut]);
         if (destQuery.hasAdapter()) {
@@ -354,8 +357,6 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             amount = _quoter.getAmountOut(_tokenIn, originQuery.tokenOut, amount).minAmountOut; // @dev getter tests above
             token = originQuery.tokenOut;
         }
-
-        // TODO: fix if originQuery swaps into a different module bridge token ...
 
         if (moduleId == getModuleId("SynapseBridgeModule"))
             checkSynapseBridgeEvent(chainId, moduleId, token, amount, destQuery);
@@ -470,7 +471,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         vm.expectEmit(synapseCCTP);
         emit CircleRequestSent({
             chainId: chainId,
-            sender: user,
+            sender: msg.sender,
             nonce: nonce,
             token: token,
             amount: amount,
