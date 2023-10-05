@@ -1,10 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
-import {SynapseRouterV2IntegrationTest} from "./SynapseRouterV2.Integration.t.sol";
+import {BridgeToken, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
 
-contract SynapseRouterV2ArbitrumIntegrationTest is SynapseRouterV2IntegrationTest {
+import {SynapseRouterV2IntegrationTest} from "./SynapseRouterV2.Integration.t.sol";
+import {SynapseRouterV2BridgeUtils} from "./SynapseRouterV2.BridgeUtils.t.sol";
+import {SynapseRouterV2CCTPUtils} from "./SynapseRouterV2.CCTPUtils.t.sol";
+
+contract SynapseRouterV2ArbitrumIntegrationTest is
+    SynapseRouterV2IntegrationTest,
+    SynapseRouterV2BridgeUtils,
+    SynapseRouterV2CCTPUtils
+{
     string private constant ARB_ENV_RPC = "ARBITRUM_API";
     uint256 public constant ARB_BLOCK_NUMBER = 136866865; // 2023-10-02
 
@@ -34,6 +41,7 @@ contract SynapseRouterV2ArbitrumIntegrationTest is SynapseRouterV2IntegrationTes
     // supported tokens (for adapter swaps)
     address private constant USDC_E = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
     address private constant USDT = 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9;
+    address private constant USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
 
     constructor() SynapseRouterV2IntegrationTest(ARB_ENV_RPC, ARB_BLOCK_NUMBER, ARB_SWAP_QUOTER) {}
 
@@ -43,26 +51,62 @@ contract SynapseRouterV2ArbitrumIntegrationTest is SynapseRouterV2IntegrationTes
         synapseCCTP = ARB_SYN_CCTP;
     }
 
-    function addExpectedChainIds() public virtual override {
-        expectedChainIds.push(1); // bridging from arbitrum to mainnet
-    }
-
-    // TODO: add non-bridge tokens
     function addExpectedTokens() public virtual override {
         addExpectedToken(NUSD, "NUSD");
         addExpectedToken(USDC_E, "USDC.e");
         addExpectedToken(USDT, "USDT");
+        addExpectedToken(USDC, "USDC");
     }
 
-    /// @dev no additional modules. only testing CCIP, Bridge
-    function addExpectedModules() public virtual override {}
+    // testing CCTP, synapse bridge
+    function addExpectedModules() public virtual override {
+        deploySynapseBridgeModule();
+        addExpectedModule(synapseBridgeModule, "SynapseBridgeModule");
 
-    /// @dev no additional bridge events to look for given no additional modules
-    function checkExpectedBridgeEvent(
-        uint256 chainId,
-        bytes32 moduleId,
-        address token,
-        uint256 amount,
-        SwapQuery memory destQuery
-    ) public virtual override {}
+        deploySynapseCCTPModule();
+        addExpectedModule(synapseCCTPModule, "SynapseCCTPModule");
+    }
+
+    function addExpectedBridgeTokens() public virtual override {
+        // add synapse bridge module bridge tokens
+        address[] memory originTokensBridge = new address[](2);
+        originTokensBridge[0] = USDC_E;
+        originTokensBridge[1] = USDT;
+
+        address[] memory destinationTokensBridge = new address[](2);
+        destinationTokensBridge[0] = USDC_E;
+        destinationTokensBridge[1] = USDT;
+
+        addExpectedBridgeToken(BridgeToken({symbol: "NUSD", token: NUSD}), originTokensBridge, destinationTokensBridge);
+
+        // add synapse cctp module bridge tokens
+        address[] memory originTokensCCTP = new address[](1);
+        originTokensCCTP[0] = USDC;
+
+        address[] memory destinationTokensCCTP = new address[](1);
+        destinationTokensCCTP[0] = USDC;
+
+        addExpectedBridgeToken(
+            BridgeToken({symbol: "CCTP.USDC", token: USDC}),
+            originTokensCCTP,
+            destinationTokensCCTP
+        );
+    }
+
+    /// TODO: Tests that must be implemented
+    function testGetBridgeTokens() public virtual override {}
+
+    function testGetSupportedTokens() public virtual override {}
+
+    function testGetOriginBridgeTokens() public virtual override {}
+
+    function testGetDestinationBridgeTokens() public virtual override {}
+
+    function testGetOriginAmountOut() public virtual override {}
+
+    function testGetDestinationAmountOut() public virtual override {}
+
+    function testBridges() public virtual override {}
+
+    function testSwaps() public virtual override {}
 }
