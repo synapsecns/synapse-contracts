@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {BridgeToken, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
+import {BridgeToken, LimitedToken, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
 
 import {SynapseRouterV2IntegrationTest} from "./SynapseRouterV2.Integration.t.sol";
 import {SynapseRouterV2BridgeUtils} from "./SynapseRouterV2.BridgeUtils.t.sol";
 import {SynapseRouterV2CCTPUtils} from "./SynapseRouterV2.CCTPUtils.t.sol";
+
+import {console} from "forge-std/Test.sol";
 
 contract SynapseRouterV2ArbitrumIntegrationTest is
     SynapseRouterV2IntegrationTest,
@@ -71,28 +73,31 @@ contract SynapseRouterV2ArbitrumIntegrationTest is
 
     function addExpectedBridgeTokens() public virtual override {
         // add synapse bridge module bridge tokens
-        address[] memory originTokensBridge = new address[](3);
-        originTokensBridge[0] = USDC_E;
-        originTokensBridge[1] = USDT;
-        originTokensBridge[2] = USDC;
+        address[] memory originTokensBridge = new address[](4);
+        originTokensBridge[0] = NUSD;
+        originTokensBridge[1] = USDC_E;
+        originTokensBridge[2] = USDT;
+        originTokensBridge[3] = USDC;
 
         address[] memory destinationTokensBridge = new address[](3);
-        destinationTokensBridge[0] = USDC_E;
-        destinationTokensBridge[1] = USDT;
-        destinationTokensBridge[2] = USDC;
+        destinationTokensBridge[0] = NUSD;
+        destinationTokensBridge[1] = USDC_E;
+        destinationTokensBridge[2] = USDT;
 
-        addExpectedBridgeToken(BridgeToken({symbol: "NUSD", token: NUSD}), originTokensBridge, destinationTokensBridge);
+        addExpectedBridgeToken(BridgeToken({symbol: "nUSD", token: NUSD}), originTokensBridge, destinationTokensBridge);
 
         // add synapse cctp module bridge tokens
-        address[] memory originTokensCCTP = new address[](3);
-        originTokensCCTP[0] = NUSD;
-        originTokensCCTP[1] = USDT;
-        originTokensCCTP[2] = USDC_E;
+        address[] memory originTokensCCTP = new address[](4);
+        originTokensCCTP[0] = USDC;
+        originTokensCCTP[1] = NUSD;
+        originTokensCCTP[2] = USDT;
+        originTokensCCTP[3] = USDC_E;
 
-        address[] memory destinationTokensCCTP = new address[](3);
-        destinationTokensCCTP[0] = NUSD;
-        destinationTokensCCTP[1] = USDT;
-        destinationTokensCCTP[2] = USDC_E;
+        address[] memory destinationTokensCCTP = new address[](4);
+        destinationTokensCCTP[0] = USDC;
+        destinationTokensCCTP[1] = NUSD;
+        destinationTokensCCTP[2] = USDT;
+        destinationTokensCCTP[3] = USDC_E;
 
         addExpectedBridgeToken(
             BridgeToken({symbol: "CCTP.USDC", token: USDC}),
@@ -126,9 +131,25 @@ contract SynapseRouterV2ArbitrumIntegrationTest is
 
     function testGetSupportedTokens() public virtual override {}
 
-    function testGetOriginBridgeTokens() public virtual override {}
+    function testGetOriginBridgeTokens() public virtual override {
+        for (uint256 i = 0; i < expectedTokens.length; i++) {
+            console.log("tokenIn %s: %s [%s]", i, expectedTokens[i], tokenNames[expectedTokens[i]]);
+            checkBridgeTokenArrays(
+                router.getOriginBridgeTokens(expectedTokens[i]),
+                expectedOriginBridgeTokens[expectedTokens[i]]
+            );
+        }
+    }
 
-    function testGetDestinationBridgeTokens() public virtual override {}
+    function testGetDestinationBridgeTokens() public virtual override {
+        for (uint256 i = 0; i < expectedTokens.length; i++) {
+            console.log("tokenOut %s: %s [%s]", i, expectedTokens[i], tokenNames[expectedTokens[i]]);
+            checkBridgeTokenArrays(
+                router.getDestinationBridgeTokens(expectedTokens[i]),
+                expectedDestinationBridgeTokens[expectedTokens[i]]
+            );
+        }
+    }
 
     function testGetOriginAmountOut() public virtual override {}
 
