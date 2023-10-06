@@ -210,5 +210,44 @@ contract SynapseRouterV2ArbitrumIntegrationTest is
         );
     }
 
+    function testSynapseBridge_arbitrumToOptimism_inNUSD_outUSDCe() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        SwapQuery memory originQuery;
+
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: 0xF44938b0125A6662f9536281aD2CD6c499F22004, // stableswap pool on optimism
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: 0xF44938b0125A6662f9536281aD2CD6c499F22004,
+            tokenOut: 0x7F5c764cBc14f9669B88837ca1490cCa17c31607, // USDC.e on optimism
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+
+        redeemAndSwapEvent = RedeemAndSwapEvent({
+            to: recipient,
+            chainId: 10,
+            token: NUSD,
+            amount: getTestAmount(NUSD),
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: 0,
+            deadline: type(uint256).max
+        });
+        initiateBridge(
+            expectRedeemAndSwapEvent,
+            10, // optimism
+            module,
+            NUSD,
+            originQuery,
+            destQuery
+        );
+    }
+
     // TODO: function testSwaps() public virtual override {}
 }
