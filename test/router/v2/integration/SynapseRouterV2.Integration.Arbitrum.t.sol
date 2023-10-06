@@ -31,7 +31,7 @@ contract SynapseRouterV2ArbitrumIntegrationTest is
     address private constant NEWO = 0x0877154a755B24D499B8e2bD7ecD54d3c92BA433;
     address private constant SDT = 0x087d18A77465c34CDFd3a081a2504b7E86CE4EF8;
     address private constant VSTA = 0xa684cd057951541187f288294a1e1C2646aA2d24;
-    address private constant H20 = 0xD1c6f989e9552DB523aBAE2378227fBb059a3976;
+    address private constant H2O = 0xD1c6f989e9552DB523aBAE2378227fBb059a3976;
     address private constant L2DAO = 0x2CaB3abfC1670D1a452dF502e216a66883cDf079;
     address private constant AGEUR = 0x16BFc5fe024980124bEf51d1D792dC539d1B5Bf0;
     address private constant PLS = 0x51318B7D00db7ACc4026C88c3952B66278B6A67F;
@@ -60,31 +60,39 @@ contract SynapseRouterV2ArbitrumIntegrationTest is
 
     // testing CCTP, synapse bridge
     function addExpectedModules() public virtual override {
+        // bridgeModules[0] = SynapseBridgeModule
         deploySynapseBridgeModule();
         addExpectedModule(synapseBridgeModule, "SynapseBridgeModule");
 
+        // bridgeModules[1] = SynapseCCTPModule
         deploySynapseCCTPModule();
         addExpectedModule(synapseCCTPModule, "SynapseCCTPModule");
     }
 
     function addExpectedBridgeTokens() public virtual override {
         // add synapse bridge module bridge tokens
-        address[] memory originTokensBridge = new address[](2);
+        address[] memory originTokensBridge = new address[](3);
         originTokensBridge[0] = USDC_E;
         originTokensBridge[1] = USDT;
+        originTokensBridge[2] = USDC;
 
-        address[] memory destinationTokensBridge = new address[](2);
+        address[] memory destinationTokensBridge = new address[](3);
         destinationTokensBridge[0] = USDC_E;
         destinationTokensBridge[1] = USDT;
+        destinationTokensBridge[2] = USDC;
 
         addExpectedBridgeToken(BridgeToken({symbol: "NUSD", token: NUSD}), originTokensBridge, destinationTokensBridge);
 
         // add synapse cctp module bridge tokens
-        address[] memory originTokensCCTP = new address[](1);
-        originTokensCCTP[0] = USDC;
+        address[] memory originTokensCCTP = new address[](3);
+        originTokensCCTP[0] = NUSD;
+        originTokensCCTP[1] = USDT;
+        originTokensCCTP[2] = USDC_E;
 
-        address[] memory destinationTokensCCTP = new address[](1);
-        destinationTokensCCTP[0] = USDC;
+        address[] memory destinationTokensCCTP = new address[](3);
+        destinationTokensCCTP[0] = NUSD;
+        destinationTokensCCTP[1] = USDT;
+        destinationTokensCCTP[2] = USDC_E;
 
         addExpectedBridgeToken(
             BridgeToken({symbol: "CCTP.USDC", token: USDC}),
@@ -93,8 +101,28 @@ contract SynapseRouterV2ArbitrumIntegrationTest is
         );
     }
 
-    /// TODO: Tests that must be implemented
-    function testGetBridgeTokens() public virtual override {}
+    function testGetBridgeTokens() public virtual override {
+        BridgeToken[] memory bridgeTokens = new BridgeToken[](17);
+        bridgeTokens[0] = BridgeToken({token: NUSD, symbol: "nUSD"});
+        bridgeTokens[1] = BridgeToken({token: SYN, symbol: "SYN"});
+        bridgeTokens[2] = BridgeToken({token: NETH, symbol: "nETH"});
+        bridgeTokens[3] = BridgeToken({token: WSOHM, symbol: "wsOHM"});
+        bridgeTokens[4] = BridgeToken({token: GOHM, symbol: "gOHM"});
+        bridgeTokens[5] = BridgeToken({token: GMX, symbol: "GMX"});
+        bridgeTokens[6] = BridgeToken({token: USTC, symbol: "UST"});
+        bridgeTokens[7] = BridgeToken({token: NEWO, symbol: "NEWO"});
+        bridgeTokens[8] = BridgeToken({token: SDT, symbol: "SDT"});
+        bridgeTokens[9] = BridgeToken({token: VSTA, symbol: "VSTA"});
+        bridgeTokens[10] = BridgeToken({token: H2O, symbol: "H2O"});
+        bridgeTokens[11] = BridgeToken({token: L2DAO, symbol: "L2DAO"});
+        bridgeTokens[12] = BridgeToken({token: AGEUR, symbol: "agEUR"});
+        bridgeTokens[13] = BridgeToken({token: PLS, symbol: "PLS"});
+        bridgeTokens[14] = BridgeToken({token: UNIDX, symbol: "UNIDX"});
+        bridgeTokens[15] = BridgeToken({token: PEPE, symbol: "PEPE"});
+        bridgeTokens[16] = BridgeToken({token: USDC, symbol: "CCTP.USDC"});
+
+        checkBridgeTokenArrays(router.getBridgeTokens(), bridgeTokens);
+    }
 
     function testGetSupportedTokens() public virtual override {}
 

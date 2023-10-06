@@ -12,6 +12,7 @@ import {ISynapseCCTPConfig} from "../../../../contracts/cctp/interfaces/ISynapse
 
 import {Arrays} from "../../../../contracts/router/libs/Arrays.sol";
 import {Action, ActionLib, BridgeToken, DefaultParams, DestRequest, LimitedToken, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
+import {UniversalTokenLib} from "../../../../contracts/router/libs/UniversalToken.sol";
 import {SynapseRouterV2} from "../../../../contracts/router/SynapseRouterV2.sol";
 
 import {console, Test} from "forge-std/Test.sol";
@@ -189,7 +190,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         expectEmitOrRevert();
 
         vm.prank(user);
-        router.bridgeViaSynapse({
+        router.bridgeViaSynapse{value: token == UniversalTokenLib.ETH_ADDRESS ? amount : 0}({
             to: recipient,
             chainId: chainId,
             moduleId: moduleId,
