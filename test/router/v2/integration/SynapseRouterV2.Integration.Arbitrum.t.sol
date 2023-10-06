@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {BridgeToken, LimitedToken, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
+import {Action, BridgeToken, DefaultParams, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
 
 import {SynapseRouterV2IntegrationTest} from "./SynapseRouterV2.Integration.t.sol";
 import {SynapseRouterV2BridgeUtils} from "./SynapseRouterV2.BridgeUtils.t.sol";
@@ -155,7 +155,60 @@ contract SynapseRouterV2ArbitrumIntegrationTest is
 
     function testGetDestinationAmountOut() public virtual override {}
 
-    function testBridges() public virtual override {}
+    function testSynapseBridge_arbitrumToEthereum_inNUSD_outNUSD() public {
+        address module = expectedModules[0]; // Synapse bridge module
 
-    function testSwaps() public virtual override {}
+        SwapQuery memory originQuery;
+        SwapQuery memory destQuery;
+
+        redeemEvent = RedeemEvent({to: recipient, chainId: 1, token: NUSD, amount: getTestAmount(NUSD)});
+        initiateBridge(
+            expectRedeemEvent,
+            1, // mainnet
+            module,
+            NUSD,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_arbitrumToEthereum_inNUSD_outUSDC() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        SwapQuery memory originQuery;
+
+        DefaultParams memory params = DefaultParams({
+            action: Action.RemoveLiquidity,
+            pool: 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8, // stableswap pool on mainnet
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8, // irrelevant for test
+            tokenOut: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48, // USDC on mainnet
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+
+        redeemAndRemoveEvent = RedeemAndRemoveEvent({
+            to: recipient,
+            chainId: 1,
+            token: NUSD,
+            amount: getTestAmount(NUSD),
+            swapTokenIndex: 1,
+            swapMinAmount: 0,
+            swapDeadline: type(uint256).max
+        });
+        initiateBridge(
+            expectRedeemAndRemoveEvent,
+            1, // mainnet
+            module,
+            NUSD,
+            originQuery,
+            destQuery
+        );
+    }
+
+    // TODO: function testSwaps() public virtual override {}
 }

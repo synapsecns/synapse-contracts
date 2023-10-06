@@ -134,7 +134,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         assertTrue(recipient != address(0), "recipient not set");
     }
 
-    /// @dev Tests that must be implemented
+    /// @dev View tests that must be implemented
     function testGetBridgeTokens() public virtual;
 
     function testGetSupportedTokens() public virtual;
@@ -146,10 +146,6 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
     function testGetOriginAmountOut() public virtual;
 
     function testGetDestinationAmountOut() public virtual;
-
-    function testBridges() public virtual;
-
-    function testSwaps() public virtual;
 
     // ══════════════════════════════════════════════════ TEST HELPERS ══════════════════════════════════════════════════════
 
