@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {Action, BridgeToken, DefaultParams, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
+import {IDefaultPool} from "../../../../contracts/router/interfaces/IDefaultPool.sol";
 
 import {SynapseRouterV2IntegrationTest} from "./SynapseRouterV2.Integration.t.sol";
 import {SynapseRouterV2BridgeUtils} from "./SynapseRouterV2.BridgeUtils.t.sol";
@@ -244,6 +245,64 @@ contract SynapseRouterV2ArbitrumIntegrationTest is
             10, // optimism
             module,
             NUSD,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_arbitrumToMainnet_inUSDCe_outNUSD() public {
+        address module = expectedModules[0];
+
+        address pool = 0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40;
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: NUSD,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+        SwapQuery memory destQuery;
+
+        uint256 amount = IDefaultPool(pool).calculateSwap({
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0,
+            dx: getTestAmount(USDC_E)
+        });
+
+        redeemEvent = RedeemEvent({to: recipient, chainId: 1, token: NUSD, amount: amount});
+        initiateBridge(
+            expectRedeemEvent,
+            1, // mainnet
+            module,
+            USDC_E,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_arbitrumToEthereum_inGMX_outGMX() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        SwapQuery memory originQuery;
+        SwapQuery memory destQuery;
+
+        depositEvent = DepositEvent({
+            to: recipient,
+            chainId: 1, // mainnet
+            token: GMX,
+            amount: getTestAmount(GMX)
+        });
+        initiateBridge(
+            expectDepositEvent,
+            1, // mainnet
+            module,
+            GMX,
             originQuery,
             destQuery
         );
