@@ -348,5 +348,63 @@ contract SynapseRouterV2ArbitrumIntegrationTest is
         );
     }
 
+    function testSynapseCCTP_arbitrumToEthereum_inUSDCe_outUSDC() public {
+        address module = expectedModules[1]; // Synapse CCTP module
+
+        address pool = 0xC40BF702aBebB494842e2a1751bCf6D8C5be2Fa9;
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: USDC,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+        SwapQuery memory destQuery;
+
+        uint32 requestVersion = getRequestVersion(true);
+        bytes memory swapParams = bytes("");
+
+        uint32 originDomain = 3;
+        uint32 destDomain = 0;
+        uint64 nonce = getNextAvailableNonce();
+        uint256 amount = calculateSwap(pool, 1, 0, getTestAmount(USDC_E));
+
+        bytes memory formattedRequest = formatRequest(
+            requestVersion,
+            originDomain,
+            nonce,
+            USDC,
+            amount,
+            recipient,
+            swapParams
+        );
+        bytes32 expectedRequestID = getExpectedRequestID(formattedRequest, destDomain, requestVersion);
+
+        requestSentEvent = CircleRequestSentEvent({
+            chainId: 1,
+            sender: msg.sender,
+            nonce: nonce,
+            token: USDC,
+            amount: amount,
+            requestVersion: requestVersion,
+            formattedRequest: formattedRequest,
+            requestID: expectedRequestID
+        });
+        initiateBridge(
+            expectCircleRequestSentEvent,
+            1, // mainnet
+            module,
+            USDC_E,
+            originQuery,
+            destQuery
+        );
+    }
+
     // TODO: function testSwaps() public virtual override {}
 }

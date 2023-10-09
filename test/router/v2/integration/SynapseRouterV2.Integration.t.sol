@@ -6,6 +6,7 @@ import {IntegrationUtils} from "../../../utils/IntegrationUtils.sol";
 import {ISwapQuoterV2} from "../../../../contracts/router/interfaces/ISwapQuoterV2.sol";
 import {IBridgeModule} from "../../../../contracts/router/interfaces/IBridgeModule.sol";
 import {ILocalBridgeConfig} from "../../../../contracts/router/interfaces/ILocalBridgeConfig.sol";
+import {IDefaultPool} from "../../../../contracts/router/interfaces/IDefaultPool.sol";
 
 import {IMessageTransmitter} from "../../../../contracts/cctp/interfaces/IMessageTransmitter.sol";
 import {ISynapseCCTPConfig} from "../../../../contracts/cctp/interfaces/ISynapseCCTPConfig.sol";
@@ -242,6 +243,15 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
     function getTestAmount(address token) public view virtual returns (uint256) {
         // 0.01 units in the token decimals
         return 10**uint256(IERC20Metadata(token).decimals() - 2);
+    }
+
+    function calculateSwap(
+        address pool,
+        uint8 tokenIndexFrom,
+        uint8 tokenIndexTo,
+        uint256 dx
+    ) internal view returns (uint256) {
+        return IDefaultPool(pool).calculateSwap({tokenIndexFrom: tokenIndexFrom, tokenIndexTo: tokenIndexTo, dx: dx});
     }
 
     // Could be overridden if `deal` does not work with the token

@@ -2,7 +2,6 @@
 pragma solidity 0.8.17;
 
 import {SynapseBridgeModule} from "../../../../contracts/router/modules/bridge/SynapseBridgeModule.sol";
-import {IDefaultPool} from "../../../../contracts/router/interfaces/IDefaultPool.sol";
 
 import {Test} from "forge-std/Test.sol";
 
@@ -102,15 +101,6 @@ abstract contract SynapseRouterV2BridgeUtils is Test {
         require(synapseLocalBridgeConfig != address(0), "synapseLocalBridgeConfig == address(0)");
         require(synapseBridge != address(0), "synapseBridge == address(0)");
         synapseBridgeModule = address(new SynapseBridgeModule(synapseLocalBridgeConfig, synapseBridge));
-    }
-
-    function calculateSwap(
-        address pool,
-        uint8 tokenIndexFrom,
-        uint8 tokenIndexTo,
-        uint256 dx
-    ) internal view returns (uint256) {
-        return IDefaultPool(pool).calculateSwap({tokenIndexFrom: tokenIndexFrom, tokenIndexTo: tokenIndexTo, dx: dx});
     }
 
     function expectDepositEvent() internal {
