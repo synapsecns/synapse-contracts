@@ -2,7 +2,6 @@
 pragma solidity 0.8.17;
 
 import {Action, BridgeToken, DefaultParams, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
-import {IDefaultPool} from "../../../../contracts/router/interfaces/IDefaultPool.sol";
 
 import {SynapseRouterV2IntegrationTest} from "./SynapseRouterV2.Integration.t.sol";
 import {SynapseRouterV2BridgeUtils} from "./SynapseRouterV2.BridgeUtils.t.sol";
@@ -269,12 +268,7 @@ contract SynapseRouterV2ArbitrumIntegrationTest is
         });
         SwapQuery memory destQuery;
 
-        uint256 amount = IDefaultPool(pool).calculateSwap({
-            tokenIndexFrom: 1,
-            tokenIndexTo: 0,
-            dx: getTestAmount(USDC_E)
-        });
-
+        uint256 amount = calculateSwap(pool, 1, 0, getTestAmount(USDC_E));
         redeemEvent = RedeemEvent({to: recipient, chainId: 1, token: NUSD, amount: amount});
         initiateBridge(
             expectRedeemEvent,
@@ -303,6 +297,52 @@ contract SynapseRouterV2ArbitrumIntegrationTest is
             1, // mainnet
             module,
             GMX,
+            originQuery,
+            destQuery
+        );
+    }
+
+    // TODO: deposit and swap but with what token, pool
+
+    function testSynapseCCTP_arbitrumToEthereum_inUSDC_outUSDC() public {
+        address module = expectedModules[1]; // Synapse CCTP module
+
+        SwapQuery memory originQuery;
+        SwapQuery memory destQuery;
+
+        uint32 requestVersion = getRequestVersion(true);
+        bytes memory swapParams = bytes("");
+
+        uint32 originDomain = 3;
+        uint32 destDomain = 0;
+        uint64 nonce = getNextAvailableNonce();
+
+        bytes memory formattedRequest = formatRequest(
+            requestVersion,
+            originDomain,
+            nonce,
+            USDC,
+            getTestAmount(USDC),
+            recipient,
+            swapParams
+        );
+        bytes32 expectedRequestID = getExpectedRequestID(formattedRequest, destDomain, requestVersion);
+
+        requestSentEvent = CircleRequestSentEvent({
+            chainId: 1,
+            sender: msg.sender,
+            nonce: nonce,
+            token: USDC,
+            amount: getTestAmount(USDC),
+            requestVersion: requestVersion,
+            formattedRequest: formattedRequest,
+            requestID: expectedRequestID
+        });
+        initiateBridge(
+            expectCircleRequestSentEvent,
+            1, // mainnet
+            module,
+            USDC,
             originQuery,
             destQuery
         );
