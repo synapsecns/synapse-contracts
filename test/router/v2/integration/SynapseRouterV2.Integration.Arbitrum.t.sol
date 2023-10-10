@@ -9,7 +9,7 @@ import {SynapseRouterV2CCTPUtils} from "./SynapseRouterV2.CCTPUtils.t.sol";
 
 import {console} from "forge-std/Test.sol";
 
-contract SynapseRouterV2ArbitrumIntegrationTest is
+contract SynapseRouterV2ArbitrumIntegrationTestFork is
     SynapseRouterV2IntegrationTest,
     SynapseRouterV2BridgeUtils,
     SynapseRouterV2CCTPUtils
