@@ -467,5 +467,23 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         );
     }
 
-    // TODO: function testSwaps() public virtual override {}
+    function testSwap_arbitrum_inUSDCe_outUSDC() public {
+        address module = expectedModules[1]; // Synapse CCTP module
+
+        address pool = 0xC40BF702aBebB494842e2a1751bCf6D8C5be2Fa9;
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: USDC,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+        initiateSwap(recipient, USDC_E, getTestAmount(USDC_E), query);
+    }
 }
