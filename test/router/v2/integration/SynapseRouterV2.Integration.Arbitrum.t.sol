@@ -477,7 +477,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
             tokenIndexFrom: 1,
             tokenIndexTo: 0
         });
-        SwapQuery memory originQuery = SwapQuery({
+        SwapQuery memory query = SwapQuery({
             routerAdapter: address(router),
             tokenOut: USDC,
             minAmountOut: 0,
