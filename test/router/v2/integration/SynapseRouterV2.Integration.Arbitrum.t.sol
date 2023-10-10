@@ -406,5 +406,66 @@ contract SynapseRouterV2ArbitrumIntegrationTest is
         );
     }
 
+    function testSynapseCCTP_arbitrumToOptimism_inUSDC_outUSDCe() public {
+        address module = expectedModules[1]; // Synapse CCTP module
+
+        SwapQuery memory originQuery;
+
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: 0x2E2D190AD4e0d7BE9569BAeBD4d33298379b0502, // uni v3 pool on optimism
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: 0xE23c791718081D720E1E48408C110055f7aa86db,
+            tokenOut: 0x7F5c764cBc14f9669B88837ca1490cCa17c31607, // USDC.e on optimism
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+
+        uint32 requestVersion = getRequestVersion(false);
+        bytes memory swapParams = formatSwapParams({
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            deadline: type(uint256).max,
+            minAmountOut: 0
+        });
+
+        uint32 originDomain = 3;
+        uint32 destDomain = 2;
+        uint64 nonce = getNextAvailableNonce();
+
+        bytes memory formattedRequest = formatRequest(
+            requestVersion,
+            originDomain,
+            nonce,
+            USDC,
+            getTestAmount(USDC),
+            recipient,
+            swapParams
+        );
+        bytes32 expectedRequestID = getExpectedRequestID(formattedRequest, destDomain, requestVersion);
+        requestSentEvent = CircleRequestSentEvent({
+            chainId: 10,
+            sender: msg.sender,
+            nonce: nonce,
+            token: USDC,
+            amount: getTestAmount(USDC),
+            requestVersion: requestVersion,
+            formattedRequest: formattedRequest,
+            requestID: expectedRequestID
+        });
+        initiateBridge(
+            expectCircleRequestSentEvent,
+            10, // optimism
+            module,
+            USDC,
+            originQuery,
+            destQuery
+        );
+    }
+
     // TODO: function testSwaps() public virtual override {}
 }
