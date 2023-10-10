@@ -284,4 +284,15 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             assertTrue(expect.contains(actual[i]));
         }
     }
+
+    function checkSwapQueryArrays(SwapQuery[] memory actual, SwapQuery[] memory expect) public {
+        assertEq(actual.length, expect.length);
+        for (uint256 i = 0; i < actual.length; i++) {
+            assertEq(actual[i].routerAdapter, expect[i].routerAdapter);
+            assertEq(actual[i].tokenOut, expect[i].tokenOut);
+            assertEq(actual[i].minAmountOut, expect[i].minAmountOut);
+            assertEq(actual[i].deadline, expect[i].deadline);
+            assertEq(actual[i].rawParams, expect[i].rawParams);
+        }
+    }
 }

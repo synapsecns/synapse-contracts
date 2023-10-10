@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Action, BridgeToken, DefaultParams, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
+import {Action, ActionLib, BridgeToken, DefaultParams, LimitedToken, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
 
 import {SynapseRouterV2IntegrationTest} from "./SynapseRouterV2.Integration.t.sol";
 import {SynapseRouterV2BridgeUtils} from "./SynapseRouterV2.BridgeUtils.t.sol";
@@ -151,7 +151,28 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         }
     }
 
-    function testGetOriginAmountOut() public virtual override {}
+    function testGetOriginAmountOut() public virtual override {
+        for (uint256 i = 0; i < expectedTokens.length; i++) {
+            console.log("tokenIn %s: %s [%s]", i, expectedTokens[i], tokenNames[expectedTokens[i]]);
+
+            address tokenIn = expectedTokens[i];
+            if (tokenIn == NUSD) continue; // ignore the bridge token since swapping into it
+
+            string[] memory symbols = new string[](1);
+            symbols[0] = "nUSD";
+
+            SwapQuery[] memory actual = router.getOriginAmountOut(tokenIn, symbols, getTestAmount(tokenIn));
+            SwapQuery[] memory expect = new SwapQuery[](1);
+            expect[0] = _quoter.getAmountOut({
+                tokenIn: LimitedToken({actionMask: ActionLib.allActions(), token: tokenIn}),
+                tokenOut: NUSD,
+                amountIn: getTestAmount(tokenIn)
+            });
+            console.log("   Expecting: %s -> %s", getTestAmount(tokenIn), expect[0].minAmountOut);
+
+            checkSwapQueryArrays(actual, expect);
+        }
+    }
 
     function testGetDestinationAmountOut() public virtual override {}
 
