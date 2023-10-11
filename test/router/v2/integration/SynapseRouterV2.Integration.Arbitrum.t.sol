@@ -192,6 +192,43 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(query.rawParams, bytes(""));
     }
 
+    /// @dev UNI not supported so amount out should produce zero
+    function testGetOriginAmountOut_inUSDCe_outUNI() public {
+        address tokenIn = USDC_E;
+        string[] memory tokenSymbols = new string[](1);
+        tokenSymbols[0] = "UNI";
+        uint256 amountIn = getTestAmount(USDC_E);
+
+        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
+        assertEq(queries.length, 1);
+
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, address(0));
+        assertEq(query.minAmountOut, 0);
+        assertEq(query.deadline, 0);
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    /// @dev CCTP has max bridged amount out of 1M USDC
+    function testGetOriginAmountOut_inUSDCe_outUSDC() public {
+        address tokenIn = USDC_E;
+        string[] memory tokenSymbols = new string[](1);
+        tokenSymbols[0] = "CCTP.USD";
+        uint256 amountIn = 1000000000001;
+
+        uint256 amountOut = 1000000000000;
+        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
+        assertEq(queries.length, 1);
+
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, address(0));
+        assertEq(query.minAmountOut, 0);
+        assertEq(query.deadline, 0);
+        assertEq(query.rawParams, bytes(""));
+    }
+
     function testGetDestinationAmountOut() public {}
 
     function testSynapseBridge_arbitrumToEthereum_inNUSD_outNUSD() public {
