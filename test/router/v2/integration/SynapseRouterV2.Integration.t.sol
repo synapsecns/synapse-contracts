@@ -135,19 +135,6 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         assertTrue(recipient != address(0), "recipient not set");
     }
 
-    /// @dev View tests that must be implemented
-    function testGetBridgeTokens() public virtual;
-
-    function testGetSupportedTokens() public virtual;
-
-    function testGetOriginBridgeTokens() public virtual;
-
-    function testGetDestinationBridgeTokens() public virtual;
-
-    function testGetOriginAmountOut() public virtual;
-
-    function testGetDestinationAmountOut() public virtual;
-
     // ══════════════════════════════════════════════════ TEST HELPERS ══════════════════════════════════════════════════════
 
     function initiateBridge(
@@ -243,6 +230,14 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
     function getTestAmount(address token) public view virtual returns (uint256) {
         // 0.01 units in the token decimals
         return 10**uint256(IERC20Metadata(token).decimals() - 2);
+    }
+
+    function getSwapParams(
+        address pool,
+        uint8 indexFrom,
+        uint8 indexTo
+    ) internal pure returns (bytes memory) {
+        return abi.encode(DefaultParams(Action.Swap, pool, indexFrom, indexTo));
     }
 
     function calculateSwap(

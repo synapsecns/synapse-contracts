@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Action, ActionLib, BridgeToken, DefaultParams, LimitedToken, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
+import {Action, ActionLib, BridgeToken, DefaultParams, DestRequest, LimitedToken, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
+import {IBridgeModule} from "../../../../contracts/router/interfaces/IBridgeModule.sol";
 
 import {SynapseRouterV2IntegrationTest} from "./SynapseRouterV2.Integration.t.sol";
 import {SynapseRouterV2BridgeUtils} from "./SynapseRouterV2.BridgeUtils.t.sol";
@@ -106,7 +107,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         );
     }
 
-    function testGetBridgeTokens() public virtual override {
+    function testGetBridgeTokens() public {
         BridgeToken[] memory bridgeTokens = new BridgeToken[](17);
         bridgeTokens[0] = BridgeToken({token: NUSD, symbol: "nUSD"});
         bridgeTokens[1] = BridgeToken({token: SYN, symbol: "SYN"});
@@ -129,9 +130,9 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         checkBridgeTokenArrays(router.getBridgeTokens(), bridgeTokens);
     }
 
-    function testGetSupportedTokens() public virtual override {}
+    function testGetSupportedTokens() public {}
 
-    function testGetOriginBridgeTokens() public virtual override {
+    function testGetOriginBridgeTokens() public {
         for (uint256 i = 0; i < expectedTokens.length; i++) {
             console.log("tokenIn %s: %s [%s]", i, expectedTokens[i], tokenNames[expectedTokens[i]]);
             checkBridgeTokenArrays(
@@ -141,7 +142,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         }
     }
 
-    function testGetDestinationBridgeTokens() public virtual override {
+    function testGetDestinationBridgeTokens() public {
         for (uint256 i = 0; i < expectedTokens.length; i++) {
             console.log("tokenOut %s: %s [%s]", i, expectedTokens[i], tokenNames[expectedTokens[i]]);
             checkBridgeTokenArrays(
@@ -151,30 +152,47 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         }
     }
 
-    function testGetOriginAmountOut() public virtual override {
-        for (uint256 i = 0; i < expectedTokens.length; i++) {
-            console.log("tokenIn %s: %s [%s]", i, expectedTokens[i], tokenNames[expectedTokens[i]]);
+    function testGetOriginAmountOut_inUSDCe_outNUSD() public {
+        address tokenIn = USDC_E;
+        string[] memory tokenSymbols = new string[](1);
+        tokenSymbols[0] = "nUSD";
+        uint256 amountIn = getTestAmount(USDC_E);
 
-            address tokenIn = expectedTokens[i];
-            if (tokenIn == NUSD) continue; // ignore the bridge token since swapping into it
+        address pool = 0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40;
+        uint8 indexFrom = 1;
+        uint8 indexTo = 0;
+        uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountIn);
 
-            string[] memory symbols = new string[](1);
-            symbols[0] = "nUSD";
+        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
+        assertEq(queries.length, 1);
 
-            SwapQuery[] memory actual = router.getOriginAmountOut(tokenIn, symbols, getTestAmount(tokenIn));
-            SwapQuery[] memory expect = new SwapQuery[](1);
-            expect[0] = _quoter.getAmountOut({
-                tokenIn: LimitedToken({actionMask: ActionLib.allActions(), token: tokenIn}),
-                tokenOut: NUSD,
-                amountIn: getTestAmount(tokenIn)
-            });
-            console.log("   Expecting: %s -> %s", getTestAmount(tokenIn), expect[0].minAmountOut);
-
-            checkSwapQueryArrays(actual, expect);
-        }
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, ARB_SYN_ROUTER_V1);
+        assertEq(query.tokenOut, NUSD);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
     }
 
-    function testGetDestinationAmountOut() public virtual override {}
+    function testGetOriginAmountOut_inNUSD_outNUSD() public {
+        address tokenIn = NUSD;
+        string[] memory tokenSymbols = new string[](1);
+        tokenSymbols[0] = "nUSD";
+        uint256 amountIn = getTestAmount(NUSD);
+
+        uint256 amountOut = amountIn;
+        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
+        assertEq(queries.length, 1);
+
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, NUSD);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    function testGetDestinationAmountOut() public {}
 
     function testSynapseBridge_arbitrumToEthereum_inNUSD_outNUSD() public {
         address module = expectedModules[0]; // Synapse bridge module
@@ -322,8 +340,6 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
             destQuery
         );
     }
-
-    // TODO: deposit and swap but with what token, pool
 
     function testSynapseCCTP_arbitrumToEthereum_inUSDC_outUSDC() public {
         address module = expectedModules[1]; // Synapse CCTP module
