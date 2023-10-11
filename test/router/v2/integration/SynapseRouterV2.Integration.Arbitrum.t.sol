@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {Action, ActionLib, BridgeToken, DefaultParams, DestRequest, LimitedToken, SwapQuery} from "../../../../contracts/router/libs/Structs.sol";
+import {UniversalTokenLib} from "../../../../contracts/router/libs/UniversalToken.sol";
 import {IBridgeModule} from "../../../../contracts/router/interfaces/IBridgeModule.sol";
 
 import {SynapseRouterV2IntegrationTest} from "./SynapseRouterV2.Integration.t.sol";
@@ -42,9 +43,16 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
     address private constant PEPE = 0xA54B8e178A49F8e5405A4d44Bb31F496e5564A05;
 
     // supported tokens (for adapter swaps)
+    address private constant NUSD_LP = 0xcFd72be67Ee69A0dd7cF0f846Fc0D98C33d60F16;
     address private constant USDC_E = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
     address private constant USDT = 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9;
     address private constant USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
+
+    address private constant NETH_LP = 0xD70A52248e546A3B260849386410C7170c7BD1E9;
+    address private constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
+
+    address private constant FRAX = 0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F;
+    address private constant DAI = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
 
     constructor() SynapseRouterV2IntegrationTest(ARB_ENV_RPC, ARB_BLOCK_NUMBER, ARB_SWAP_QUOTER) {}
 
@@ -130,7 +138,33 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         checkBridgeTokenArrays(router.getBridgeTokens(), bridgeTokens);
     }
 
-    function testGetSupportedTokens() public {}
+    function testGetSupportedTokens() public {
+        address[] memory supportedTokens = new address[](23);
+        supportedTokens[0] = NUSD;
+        supportedTokens[1] = USDC_E;
+        supportedTokens[2] = USDT;
+        supportedTokens[3] = NETH;
+        supportedTokens[4] = WETH;
+        supportedTokens[5] = USDC;
+        supportedTokens[6] = FRAX;
+        supportedTokens[7] = DAI;
+        supportedTokens[8] = SYN;
+        supportedTokens[9] = WSOHM;
+        supportedTokens[10] = GOHM;
+        supportedTokens[11] = GMX;
+        supportedTokens[12] = USTC;
+        supportedTokens[13] = NEWO;
+        supportedTokens[14] = SDT;
+        supportedTokens[15] = VSTA;
+        supportedTokens[16] = H2O;
+        supportedTokens[17] = L2DAO;
+        supportedTokens[18] = AGEUR;
+        supportedTokens[19] = PLS;
+        supportedTokens[20] = UNIDX;
+        supportedTokens[21] = PEPE;
+        supportedTokens[22] = UniversalTokenLib.ETH_ADDRESS;
+        checkAddressArrays(router.getSupportedTokens(), supportedTokens);
+    }
 
     function testGetOriginBridgeTokens() public {
         for (uint256 i = 0; i < expectedTokens.length; i++) {
