@@ -265,6 +265,50 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(query.rawParams, bytes(""));
     }
 
+    function testGetOriginAmountOut_inETH_outNETH() public {
+        address tokenIn = UniversalTokenLib.ETH_ADDRESS;
+        string[] memory tokenSymbols = new string[](1);
+        tokenSymbols[0] = "nETH";
+        uint256 amountIn = 10e18;
+
+        address pool = 0xa067668661C84476aFcDc6fA5D758C4c01C34352;
+        uint8 indexFrom = 1;
+        uint8 indexTo = 0;
+        uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountIn);
+
+        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
+        assertEq(queries.length, 1);
+
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, ARB_SYN_ROUTER_V1);
+        assertEq(query.tokenOut, NETH);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
+    }
+
+    function testGetOriginAmountOut_inWETH_outNETH() public {
+        address tokenIn = WETH;
+        string[] memory tokenSymbols = new string[](1);
+        tokenSymbols[0] = "nETH";
+        uint256 amountIn = 10e18;
+
+        address pool = 0xa067668661C84476aFcDc6fA5D758C4c01C34352;
+        uint8 indexFrom = 1;
+        uint8 indexTo = 0;
+        uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountIn);
+
+        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
+        assertEq(queries.length, 1);
+
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, ARB_SYN_ROUTER_V1);
+        assertEq(query.tokenOut, NETH);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
+    }
+
     function testGetDestinationAmountOut_inNUSD_outUSDCe() public {
         uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
         DestRequest[] memory requests = new DestRequest[](1);
