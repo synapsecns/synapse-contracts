@@ -327,6 +327,25 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(query.rawParams, bytes(""));
     }
 
+    function testGetDestinationAmountOut_inNUSD_outUSDCe_amountInLessThanFee() public {
+        uint256 amountIn = getTestAmount(NUSD);
+        DestRequest[] memory requests = new DestRequest[](1);
+        requests[0] = DestRequest({symbol: "nUSD", amountIn: amountIn});
+
+        address tokenOut = USDC_E;
+        assertTrue(calculateBridgeFee(NUSD, amountIn) >= amountIn);
+
+        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
+        assertEq(queries.length, 1);
+
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, address(0));
+        assertEq(query.minAmountOut, 0);
+        assertEq(query.deadline, 0);
+        assertEq(query.rawParams, bytes(""));
+    }
+
     function testSynapseBridge_arbitrumToEthereum_inNUSD_outNUSD() public {
         address module = expectedModules[0]; // Synapse bridge module
 
