@@ -515,6 +515,70 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         );
     }
 
+    function testSynapseBridge_arbitrumToEthereum_inETH_outNETH() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        address pool = 0xa067668661C84476aFcDc6fA5D758C4c01C34352;
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: NETH,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+        SwapQuery memory destQuery;
+
+        uint256 amount = getTestAmount(UniversalTokenLib.ETH_ADDRESS);
+        uint256 amountOut = calculateSwap(pool, 1, 0, amount);
+        redeemEvent = RedeemEvent({to: recipient, chainId: 1, token: NETH, amount: amountOut});
+        initiateBridge(
+            expectRedeemEvent,
+            1, // mainnet
+            module,
+            UniversalTokenLib.ETH_ADDRESS,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_arbitrumToEthereum_inWETH_outNETH() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        address pool = 0xa067668661C84476aFcDc6fA5D758C4c01C34352;
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: NETH,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+        SwapQuery memory destQuery;
+
+        uint256 amount = getTestAmount(WETH);
+        uint256 amountOut = calculateSwap(pool, 1, 0, amount);
+        redeemEvent = RedeemEvent({to: recipient, chainId: 1, token: NETH, amount: amountOut});
+        initiateBridge(
+            expectRedeemEvent,
+            1, // mainnet
+            module,
+            WETH,
+            originQuery,
+            destQuery
+        );
+    }
+
     function testSynapseBridge_arbitrumToEthereum_inGMX_outGMX() public {
         address module = expectedModules[0]; // Synapse bridge module
 

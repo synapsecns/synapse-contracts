@@ -163,7 +163,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             );
         }
 
-        uint256 balanceBefore = IERC20(token).balanceOf(user);
+        uint256 balanceBefore = token == UniversalTokenLib.ETH_ADDRESS ? user.balance : IERC20(token).balanceOf(user);
         expectEmitOrRevert();
 
         vm.prank(user);
@@ -176,7 +176,9 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             originQuery: originQuery,
             destQuery: destQuery
         });
-        assertEq(IERC20(token).balanceOf(user), balanceBefore - amount, "Failed to spend token");
+
+        uint256 balanceAfter = token == UniversalTokenLib.ETH_ADDRESS ? user.balance : IERC20(token).balanceOf(user);
+        assertEq(balanceAfter, balanceBefore - amount, "Failed to spend token");
     }
 
     function initiateSwap(
@@ -229,6 +231,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
     function getTestAmount(address token) public view virtual returns (uint256) {
         // 0.01 units in the token decimals
+        if (token == UniversalTokenLib.ETH_ADDRESS) return 10**16;
         return 10**uint256(IERC20Metadata(token).decimals() - 2);
     }
 
@@ -251,7 +254,8 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
     // Could be overridden if `deal` does not work with the token
     function mintToken(address token, uint256 amount) public virtual {
-        deal(token, user, amount);
+        if (token == UniversalTokenLib.ETH_ADDRESS) deal(user, amount);
+        else deal(token, user, amount);
     }
 
     function approveSpending(
@@ -259,6 +263,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         address spender,
         uint256 amount
     ) public {
+        if (token == UniversalTokenLib.ETH_ADDRESS) return;
         vm.startPrank(user);
         IERC20(token).safeApprove(spender, amount);
         vm.stopPrank();
