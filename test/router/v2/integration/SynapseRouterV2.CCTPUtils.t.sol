@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 import {SynapseCCTPModule} from "../../../../contracts/router/modules/bridge/SynapseCCTPModule.sol";
 import {ISynapseCCTPConfig} from "../../../../contracts/cctp/interfaces/ISynapseCCTPConfig.sol";
+import {ISynapseCCTPFees} from "../../../../contracts/cctp/interfaces/ISynapseCCTPFees.sol";
 import {RequestLib} from "../../../../contracts/cctp/libs/Request.sol";
 
 import {Test} from "forge-std/Test.sol";
@@ -40,6 +41,14 @@ abstract contract SynapseRouterV2CCTPUtils is Test {
     function deploySynapseCCTPModule() public virtual {
         require(synapseCCTP != address(0), "synapseCCTP == address(0)");
         synapseCCTPModule = address(new SynapseCCTPModule(synapseCCTP));
+    }
+
+    function calculateFeeAmount(
+        address token,
+        uint256 amount,
+        bool isSwap
+    ) internal view returns (uint256) {
+        return ISynapseCCTPFees(synapseCCTP).calculateFeeAmount(token, amount, isSwap);
     }
 
     function expectCircleRequestSentEvent() internal {

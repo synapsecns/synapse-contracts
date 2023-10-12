@@ -289,6 +289,44 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
     }
 
+    function testGetDestinationAmountOut_inNUSD_outNUSD() public {
+        uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest[] memory requests = new DestRequest[](1);
+        requests[0] = DestRequest({symbol: "nUSD", amountIn: amountIn});
+
+        address tokenOut = NUSD;
+        uint256 amountInLessBridgeFees = amountIn - calculateBridgeFee(NUSD, amountIn);
+        uint256 amountOut = amountInLessBridgeFees;
+
+        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
+        assertEq(queries.length, 1);
+
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    /// @dev UNI not supported so amount out should produce zero
+    function testGetDestinationAmountOut_inUNI_outNUSD() public {
+        uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest[] memory requests = new DestRequest[](1);
+        requests[0] = DestRequest({symbol: "UNI", amountIn: amountIn});
+
+        address tokenOut = NUSD;
+        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
+        assertEq(queries.length, 1);
+
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, address(0));
+        assertEq(query.minAmountOut, 0);
+        assertEq(query.deadline, 0);
+        assertEq(query.rawParams, bytes(""));
+    }
+
     function testSynapseBridge_arbitrumToEthereum_inNUSD_outNUSD() public {
         address module = expectedModules[0]; // Synapse bridge module
 
