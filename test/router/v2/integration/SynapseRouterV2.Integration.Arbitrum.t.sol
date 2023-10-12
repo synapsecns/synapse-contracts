@@ -115,6 +115,8 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         );
     }
 
+    // TODO: tests starting from ETH/WETH
+
     function testGetBridgeTokens() public {
         BridgeToken[] memory bridgeTokens = new BridgeToken[](17);
         bridgeTokens[0] = BridgeToken({token: NUSD, symbol: "nUSD"});
@@ -263,7 +265,29 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(query.rawParams, bytes(""));
     }
 
-    function testGetDestinationAmountOut() public {}
+    function testGetDestinationAmountOut_inNUSD_outUSDCe() public {
+        uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest[] memory requests = new DestRequest[](1);
+        requests[0] = DestRequest({symbol: "nUSD", amountIn: amountIn});
+
+        address tokenOut = USDC_E;
+        address pool = 0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40;
+        uint8 indexFrom = 0;
+        uint8 indexTo = 1;
+
+        uint256 amountInLessBridgeFees = amountIn - calculateBridgeFee(NUSD, amountIn);
+        uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountInLessBridgeFees);
+
+        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
+        assertEq(queries.length, 1);
+
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, ARB_SYN_ROUTER_V1);
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
+    }
 
     function testSynapseBridge_arbitrumToEthereum_inNUSD_outNUSD() public {
         address module = expectedModules[0]; // Synapse bridge module

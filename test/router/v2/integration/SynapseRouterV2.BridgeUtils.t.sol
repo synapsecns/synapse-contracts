@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {SynapseBridgeModule} from "../../../../contracts/router/modules/bridge/SynapseBridgeModule.sol";
+import {ILocalBridgeConfig} from "../../../../contracts/router/interfaces/ILocalBridgeConfig.sol";
 
 import {Test} from "forge-std/Test.sol";
 
@@ -101,6 +102,10 @@ abstract contract SynapseRouterV2BridgeUtils is Test {
         require(synapseLocalBridgeConfig != address(0), "synapseLocalBridgeConfig == address(0)");
         require(synapseBridge != address(0), "synapseBridge == address(0)");
         synapseBridgeModule = address(new SynapseBridgeModule(synapseLocalBridgeConfig, synapseBridge));
+    }
+
+    function calculateBridgeFee(address token, uint256 amount) internal view returns (uint256) {
+        return ILocalBridgeConfig(synapseLocalBridgeConfig).calculateBridgeFee(token, amount);
     }
 
     function expectDepositEvent() internal {
