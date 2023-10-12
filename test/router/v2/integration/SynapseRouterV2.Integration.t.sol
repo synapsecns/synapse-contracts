@@ -163,7 +163,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             );
         }
 
-        uint256 balanceBefore = token == UniversalTokenLib.ETH_ADDRESS ? user.balance : IERC20(token).balanceOf(user);
+        uint256 balanceBefore = getBalanceOf(token, user);
         expectEmitOrRevert();
 
         vm.prank(user);
@@ -177,7 +177,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
             destQuery: destQuery
         });
 
-        uint256 balanceAfter = token == UniversalTokenLib.ETH_ADDRESS ? user.balance : IERC20(token).balanceOf(user);
+        uint256 balanceAfter = getBalanceOf(token, user);
         assertEq(balanceAfter, balanceBefore - amount, "Failed to spend token");
     }
 
@@ -196,23 +196,28 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
         console.log("Swapping: %s -> %s", tokenNames[tokenFrom], tokenNames[tokenTo]);
 
-        uint256 balanceFromBefore = IERC20(tokenFrom).balanceOf(user);
-        uint256 balanceToBefore = IERC20(tokenTo).balanceOf(to);
+        uint256 balanceFromBefore = getBalanceOf(tokenFrom, user);
+        uint256 balanceToBefore = getBalanceOf(tokenTo, to);
 
         vm.prank(user);
-        uint256 amountOut = router.swap(to, token, amount, query);
+        uint256 amountOut = router.swap{value: token == UniversalTokenLib.ETH_ADDRESS ? amount : 0}(
+            to,
+            token,
+            amount,
+            query
+        );
 
         console.log("   Expecting: %s -> %s", amount, amountOut);
 
         // check balances after swap
         assertEq(
-            IERC20(tokenFrom).balanceOf(user),
+            getBalanceOf(tokenFrom, user),
             tokenFrom == tokenTo && user == recipient
                 ? balanceFromBefore - amount + amountOut
                 : balanceFromBefore - amount
         );
         assertEq(
-            IERC20(tokenTo).balanceOf(to),
+            getBalanceOf(tokenTo, to),
             tokenFrom == tokenTo && user == recipient
                 ? balanceToBefore + amountOut - amount
                 : balanceToBefore + amountOut
@@ -267,6 +272,10 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         vm.startPrank(user);
         IERC20(token).safeApprove(spender, amount);
         vm.stopPrank();
+    }
+
+    function getBalanceOf(address token, address user) public view returns (uint256) {
+        return token == UniversalTokenLib.ETH_ADDRESS ? user.balance : IERC20(token).balanceOf(user);
     }
 
     function checkBridgeTokenArrays(BridgeToken[] memory actual, BridgeToken[] memory expect) public {

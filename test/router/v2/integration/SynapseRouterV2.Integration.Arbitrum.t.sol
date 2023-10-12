@@ -765,8 +765,6 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
     }
 
     function testSwap_arbitrum_inUSDCe_outUSDC() public {
-        address module = expectedModules[1]; // Synapse CCTP module
-
         address pool = 0xC40BF702aBebB494842e2a1751bCf6D8C5be2Fa9;
         DefaultParams memory params = DefaultParams({
             action: Action.Swap,
@@ -782,5 +780,41 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
             rawParams: abi.encode(params)
         });
         initiateSwap(recipient, USDC_E, getTestAmount(USDC_E), query);
+    }
+
+    function testSwap_arbitrum_inETH_outNETH() public {
+        address pool = 0xa067668661C84476aFcDc6fA5D758C4c01C34352;
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory query = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: NETH,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+        initiateSwap(recipient, UniversalTokenLib.ETH_ADDRESS, getTestAmount(UniversalTokenLib.ETH_ADDRESS), query);
+    }
+
+    function testSwap_arbitrum_inWETH_outNETH() public {
+        address pool = 0xa067668661C84476aFcDc6fA5D758C4c01C34352;
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory query = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: NETH,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+        initiateSwap(recipient, WETH, getTestAmount(WETH), query);
     }
 }
