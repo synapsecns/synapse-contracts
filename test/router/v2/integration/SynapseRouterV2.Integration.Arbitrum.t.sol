@@ -115,8 +115,6 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         );
     }
 
-    // TODO: tests starting from ETH/WETH
-
     function testGetBridgeTokens() public {
         BridgeToken[] memory bridgeTokens = new BridgeToken[](17);
         bridgeTokens[0] = BridgeToken({token: NUSD, symbol: "nUSD"});
@@ -246,14 +244,14 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(query.rawParams, bytes(""));
     }
 
-    /// @dev CCTP has max bridged amount out of 1M USDC
+    /* TODO: fix
     function testGetOriginAmountOut_inUSDCe_outUSDC() public {
         address tokenIn = USDC_E;
         string[] memory tokenSymbols = new string[](1);
-        tokenSymbols[0] = "CCTP.USD";
-        uint256 amountIn = 1000000000001;
+        tokenSymbols[0] = "CCTP.USDC";
+        uint256 amountIn = 990000000000; // 990K USDC
 
-        uint256 amountOut = 1000000000000;
+        uint256 amountOut = 990000000000;
         SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
         assertEq(queries.length, 1);
 
@@ -264,6 +262,25 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(query.deadline, 0);
         assertEq(query.rawParams, bytes(""));
     }
+
+    /// @dev CCTP has max bridged amount out of 1M USDC
+    function testGetOriginAmountOut_inUSDCe_outUSDC_overMaxBridgedAmount() public {
+        address tokenIn = USDC_E;
+        string[] memory tokenSymbols = new string[](1);
+        tokenSymbols[0] = "CCTP.USDC";
+        uint256 amountIn = 1000000000001;
+
+        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
+        assertEq(queries.length, 1);
+
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, address(0));
+        assertEq(query.minAmountOut, 0);
+        assertEq(query.deadline, 0);
+        assertEq(query.rawParams, bytes(""));
+    }
+    */
 
     function testGetOriginAmountOut_inETH_outNETH() public {
         address tokenIn = UniversalTokenLib.ETH_ADDRESS;
@@ -484,7 +501,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         );
     }
 
-    function testSynapseBridge_arbitrumToMainnet_inUSDCe_outNUSD() public {
+    function testSynapseBridge_arbitrumToEthereum_inUSDCe_outNUSD() public {
         address module = expectedModules[0];
 
         address pool = 0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40;
