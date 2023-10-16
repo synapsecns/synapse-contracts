@@ -150,7 +150,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         approveSpending(token, address(router), amount);
 
         bytes32 moduleId = moduleIds[module];
-        console.log("Bridging %s from chain %s -> %s", tokenNames[token], getChainId(), chainId);
+        console.log("Bridging %s from chain %s -> %s", tokenNames[token], block.chainid, chainId);
         console.log("   Via module: %s", moduleNames[module]);
         if (originQuery.hasAdapter())
             console.log("   Swapping: %s -> %s before bridging", tokenNames[token], tokenNames[originQuery.tokenOut]);
