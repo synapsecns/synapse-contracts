@@ -374,6 +374,56 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(query.rawParams, bytes(""));
     }
 
+    function testGetDestinationAmountOut_inNETH_outWETH() public {
+        uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest[] memory requests = new DestRequest[](1);
+        requests[0] = DestRequest({symbol: "nETH", amountIn: amountIn});
+
+        address tokenOut = WETH;
+        uint256 fee = (amountIn * 0.0004e10) / 10**10;
+
+        address pool = 0xa067668661C84476aFcDc6fA5D758C4c01C34352;
+        uint8 indexTo = 1;
+        uint8 indexFrom = 0;
+        uint256 amountInLessBridgeFees = amountIn - fee;
+        uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountInLessBridgeFees);
+
+        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
+        assertEq(queries.length, 1);
+
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
+    }
+
+    function testGetDestinationAmountOut_inNETH_outETH() public {
+        uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest[] memory requests = new DestRequest[](1);
+        requests[0] = DestRequest({symbol: "nETH", amountIn: amountIn});
+
+        address tokenOut = UniversalTokenLib.ETH_ADDRESS;
+        uint256 fee = (amountIn * 0.0004e10) / 10**10;
+
+        address pool = 0xa067668661C84476aFcDc6fA5D758C4c01C34352;
+        uint8 indexTo = 1;
+        uint8 indexFrom = 0;
+        uint256 amountInLessBridgeFees = amountIn - fee;
+        uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountInLessBridgeFees);
+
+        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
+        assertEq(queries.length, 1);
+
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
+    }
+
     /// @dev UNI not supported so amount out should produce zero
     function testGetDestinationAmountOut_inUNI_outNUSD() public {
         uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
