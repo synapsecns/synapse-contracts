@@ -794,7 +794,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         SwapQuery memory query = SwapQuery({
             routerAdapter: address(router),
             tokenOut: USDC,
-            minAmountOut: 0,
+            minAmountOut: calculateSwap(pool, 1, 0, getTestAmount(USDC_E)),
             deadline: type(uint256).max,
             rawParams: abi.encode(params)
         });
@@ -812,7 +812,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         SwapQuery memory query = SwapQuery({
             routerAdapter: address(router),
             tokenOut: NETH,
-            minAmountOut: 0,
+            minAmountOut: calculateSwap(pool, 1, 0, getTestAmount(UniversalTokenLib.ETH_ADDRESS)),
             deadline: type(uint256).max,
             rawParams: abi.encode(params)
         });
@@ -830,7 +830,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         SwapQuery memory query = SwapQuery({
             routerAdapter: address(router),
             tokenOut: NETH,
-            minAmountOut: 0,
+            minAmountOut: calculateSwap(pool, 1, 0, getTestAmount(WETH)),
             deadline: type(uint256).max,
             rawParams: abi.encode(params)
         });

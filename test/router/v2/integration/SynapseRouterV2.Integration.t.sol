@@ -196,6 +196,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
         address tokenFrom = token;
         address tokenTo = query.tokenOut;
+        uint256 expectedAmountOut = query.minAmountOut;
 
         console.log("Swapping: %s -> %s", tokenNames[tokenFrom], tokenNames[tokenTo]);
 
@@ -211,6 +212,9 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         );
 
         console.log("   Expecting: %s -> %s", amount, amountOut);
+
+        // check expected amount out matches router amount out
+        assertEq(amountOut, expectedAmountOut);
 
         // check balances after swap
         assertEq(
