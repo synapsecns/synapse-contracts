@@ -274,8 +274,8 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         vm.stopPrank();
     }
 
-    function getBalanceOf(address token, address user) public view returns (uint256) {
-        return token == UniversalTokenLib.ETH_ADDRESS ? user.balance : IERC20(token).balanceOf(user);
+    function getBalanceOf(address token, address _user) public view returns (uint256) {
+        return token == UniversalTokenLib.ETH_ADDRESS ? _user.balance : IERC20(token).balanceOf(_user);
     }
 
     function checkBridgeTokenArrays(BridgeToken[] memory actual, BridgeToken[] memory expect) public {
