@@ -212,15 +212,11 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         // check balances after swap
         assertEq(
             getBalanceOf(tokenFrom, user),
-            tokenFrom == tokenTo && user == recipient
-                ? balanceFromBefore - amount + amountOut
-                : balanceFromBefore - amount
+            tokenFrom == tokenTo && user == to ? balanceFromBefore - amount + amountOut : balanceFromBefore - amount
         );
         assertEq(
             getBalanceOf(tokenTo, to),
-            tokenFrom == tokenTo && user == recipient
-                ? balanceToBefore + amountOut - amount
-                : balanceToBefore + amountOut
+            tokenFrom == tokenTo && user == to ? balanceToBefore + amountOut - amount : balanceToBefore + amountOut
         );
     }
 
