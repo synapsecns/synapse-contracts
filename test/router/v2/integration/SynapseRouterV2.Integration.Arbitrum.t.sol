@@ -392,6 +392,24 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(query.rawParams, bytes(""));
     }
 
+    /// @dev Not supported as of test block height
+    function testGetDestinationAmountOut_inNUSD_outUSDC() public {
+        uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest[] memory requests = new DestRequest[](1);
+        requests[0] = DestRequest({symbol: "nUSD", amountIn: amountIn});
+
+        address tokenOut = USDC;
+        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
+        assertEq(queries.length, 1);
+
+        SwapQuery memory query = queries[0];
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, 0);
+        assertEq(query.deadline, 0);
+        assertEq(query.rawParams, bytes(""));
+    }
+
     function testGetDestinationAmountOut_inNUSD_outUSDCe_amountInLessThanFee() public {
         uint256 amountIn = getTestAmount(NUSD);
         DestRequest[] memory requests = new DestRequest[](1);
