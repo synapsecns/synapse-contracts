@@ -201,7 +201,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(queries.length, 1);
 
         SwapQuery memory query = queries[0];
-        assertEq(query.routerAdapter, ARB_SYN_ROUTER_V1);
+        assertEq(query.routerAdapter, address(router));
         assertEq(query.tokenOut, NUSD);
         assertEq(query.minAmountOut, amountOut);
         assertEq(query.deadline, type(uint256).max);
@@ -297,7 +297,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(queries.length, 1);
 
         SwapQuery memory query = queries[0];
-        assertEq(query.routerAdapter, ARB_SYN_ROUTER_V1);
+        assertEq(query.routerAdapter, address(router));
         assertEq(query.tokenOut, NETH);
         assertEq(query.minAmountOut, amountOut);
         assertEq(query.deadline, type(uint256).max);
@@ -319,7 +319,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(queries.length, 1);
 
         SwapQuery memory query = queries[0];
-        assertEq(query.routerAdapter, ARB_SYN_ROUTER_V1);
+        assertEq(query.routerAdapter, address(router));
         assertEq(query.tokenOut, NETH);
         assertEq(query.minAmountOut, amountOut);
         assertEq(query.deadline, type(uint256).max);
@@ -343,7 +343,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(queries.length, 1);
 
         SwapQuery memory query = queries[0];
-        assertEq(query.routerAdapter, ARB_SYN_ROUTER_V1);
+        assertEq(query.routerAdapter, address(router));
         assertEq(query.tokenOut, tokenOut);
         assertEq(query.minAmountOut, amountOut);
         assertEq(query.deadline, type(uint256).max);

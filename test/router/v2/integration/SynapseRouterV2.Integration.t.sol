@@ -7,6 +7,7 @@ import {ISwapQuoterV2} from "../../../../contracts/router/interfaces/ISwapQuoter
 import {IBridgeModule} from "../../../../contracts/router/interfaces/IBridgeModule.sol";
 import {ILocalBridgeConfig} from "../../../../contracts/router/interfaces/ILocalBridgeConfig.sol";
 import {IDefaultPool} from "../../../../contracts/router/interfaces/IDefaultPool.sol";
+import {IOwnable} from "../../../../contracts/router/interfaces/IOwnable.sol";
 
 import {IMessageTransmitter} from "../../../../contracts/cctp/interfaces/IMessageTransmitter.sol";
 import {ISynapseCCTPConfig} from "../../../../contracts/cctp/interfaces/ISynapseCCTPConfig.sol";
@@ -75,6 +76,9 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
     function setSwapQuoter() public virtual {
         router.setSwapQuoter(_quoter);
+
+        vm.prank(IOwnable(address(_quoter)).owner());
+        _quoter.setSynapseRouter(address(router));
     }
 
     /// @dev override to include more modules than bridge, cctp
