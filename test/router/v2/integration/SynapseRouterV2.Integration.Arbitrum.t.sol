@@ -338,7 +338,8 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         uint8 indexFrom = 0;
         uint8 indexTo = 1;
 
-        uint256 amountInLessBridgeFees = amountIn - calculateBridgeFee(NUSD, amountIn);
+        uint256 fee = (amountIn * 0.0004e10) / 10**10;
+        uint256 amountInLessBridgeFees = amountIn - fee;
         uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountInLessBridgeFees);
 
         SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
@@ -358,7 +359,8 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         requests[0] = DestRequest({symbol: "nUSD", amountIn: amountIn});
 
         address tokenOut = NUSD;
-        uint256 amountInLessBridgeFees = amountIn - calculateBridgeFee(NUSD, amountIn);
+        uint256 fee = (amountIn * 0.0004e10) / 10**10;
+        uint256 amountInLessBridgeFees = amountIn - fee;
         uint256 amountOut = amountInLessBridgeFees;
 
         SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
@@ -396,7 +398,9 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         requests[0] = DestRequest({symbol: "nUSD", amountIn: amountIn});
 
         address tokenOut = USDC_E;
-        assertTrue(calculateBridgeFee(NUSD, amountIn) >= amountIn);
+        uint256 fee = (amountIn * 0.0004e10) / 10**10;
+        if (fee < 2e18) fee = 2e18; // @dev nUSD has min of 2 nUSD
+        assertTrue(fee >= amountIn);
 
         SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
         assertEq(queries.length, 1);

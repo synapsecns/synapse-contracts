@@ -104,10 +104,6 @@ abstract contract SynapseRouterV2BridgeUtils is Test {
         synapseBridgeModule = address(new SynapseBridgeModule(synapseLocalBridgeConfig, synapseBridge));
     }
 
-    function calculateBridgeFee(address token, uint256 amount) internal view returns (uint256) {
-        return ILocalBridgeConfig(synapseLocalBridgeConfig).calculateBridgeFee(token, amount);
-    }
-
     function expectDepositEvent() internal {
         vm.expectEmit(synapseBridge);
         emit TokenDeposit(depositEvent.to, depositEvent.chainId, depositEvent.token, depositEvent.amount);

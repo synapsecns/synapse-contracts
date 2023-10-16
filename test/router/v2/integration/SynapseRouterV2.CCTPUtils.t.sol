@@ -43,14 +43,6 @@ abstract contract SynapseRouterV2CCTPUtils is Test {
         synapseCCTPModule = address(new SynapseCCTPModule(synapseCCTP));
     }
 
-    function calculateFeeAmount(
-        address token,
-        uint256 amount,
-        bool isSwap
-    ) internal view returns (uint256) {
-        return ISynapseCCTPFees(synapseCCTP).calculateFeeAmount(token, amount, isSwap);
-    }
-
     function expectCircleRequestSentEvent() internal {
         vm.expectEmit(synapseCCTP);
         emit CircleRequestSent(
