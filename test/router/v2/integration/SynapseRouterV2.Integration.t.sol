@@ -196,7 +196,6 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
 
         address tokenFrom = token;
         address tokenTo = query.tokenOut;
-        uint256 expectedAmountOut = query.minAmountOut;
 
         console.log("Swapping: %s -> %s", tokenNames[tokenFrom], tokenNames[tokenTo]);
 

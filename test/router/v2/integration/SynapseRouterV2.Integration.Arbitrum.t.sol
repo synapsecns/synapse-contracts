@@ -244,23 +244,26 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(query.rawParams, bytes(""));
     }
 
-    /* TODO: fix
     function testGetOriginAmountOut_inUSDCe_outUSDC() public {
         address tokenIn = USDC_E;
         string[] memory tokenSymbols = new string[](1);
         tokenSymbols[0] = "CCTP.USDC";
         uint256 amountIn = 990000000000; // 990K USDC
 
-        uint256 amountOut = 990000000000;
+        address pool = 0xC40BF702aBebB494842e2a1751bCf6D8C5be2Fa9;
+        uint8 indexFrom = 1;
+        uint8 indexTo = 0;
+        uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountIn);
+
         SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
         assertEq(queries.length, 1);
 
         SwapQuery memory query = queries[0];
-        assertEq(query.routerAdapter, address(0));
-        assertEq(query.tokenOut, address(0));
-        assertEq(query.minAmountOut, 0);
-        assertEq(query.deadline, 0);
-        assertEq(query.rawParams, bytes(""));
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, USDC);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
     }
 
     /// @dev CCTP has max bridged amount out of 1M USDC
@@ -268,7 +271,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         address tokenIn = USDC_E;
         string[] memory tokenSymbols = new string[](1);
         tokenSymbols[0] = "CCTP.USDC";
-        uint256 amountIn = 1000000000001;
+        uint256 amountIn = 1100000000000;
 
         SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
         assertEq(queries.length, 1);
@@ -280,7 +283,6 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         assertEq(query.deadline, 0);
         assertEq(query.rawParams, bytes(""));
     }
-    */
 
     function testGetOriginAmountOut_inETH_outNETH() public {
         address tokenIn = UniversalTokenLib.ETH_ADDRESS;
