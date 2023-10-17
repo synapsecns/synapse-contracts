@@ -17,6 +17,10 @@ contract ArraysLibHarness {
         return Arrays.tokens(b);
     }
 
+    function symbols(BridgeToken[] memory b) external pure returns (string[] memory) {
+        return Arrays.symbols(b);
+    }
+
     function unique(address[] memory unfiltered) external pure returns (address[] memory) {
         return Arrays.unique(unfiltered);
     }

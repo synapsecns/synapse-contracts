@@ -111,6 +111,16 @@ contract ArraysLibraryTest is Test {
         checkAddresses(actual, expect);
     }
 
+    function testSymbols_BridgeToken() public {
+        (BridgeToken[] memory b, ) = getBridgeTokensArray();
+
+        string[] memory expect = new string[](b.length);
+        for (uint256 i = 0; i < b.length; i++) expect[i] = Strings.toString(i / 2);
+
+        string[] memory actual = libHarness.symbols(b);
+        checkStrings(actual, expect);
+    }
+
     function testUnique_Address() public {
         (address[] memory unfiltered, uint256 num) = getAddressesArray();
 
@@ -143,12 +153,21 @@ contract ArraysLibraryTest is Test {
     }
 
     function checkAddresses(address[] memory actual, address[] memory expect) public {
+        assertEq(actual.length, expect.length, "address array lengths not equal");
+        for (uint256 i = 0; i < actual.length; i++) {
+            assertEq(actual[i], expect[i]);
+        }
+    }
+
+    function checkStrings(string[] memory actual, string[] memory expect) public {
+        assertEq(actual.length, expect.length, "string array lengths not equal");
         for (uint256 i = 0; i < actual.length; i++) {
             assertEq(actual[i], expect[i]);
         }
     }
 
     function checkBridgeTokens(BridgeToken[] memory actual, BridgeToken[] memory expect) public {
+        assertEq(actual.length, expect.length, "bridge token array lengths not equal");
         for (uint256 i = 0; i < actual.length; i++) {
             assertEq(actual[i].symbol, expect[i].symbol);
             assertEq(actual[i].token, expect[i].token);

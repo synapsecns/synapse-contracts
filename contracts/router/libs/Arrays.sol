@@ -55,6 +55,14 @@ library Arrays {
         for (uint256 i = 0; i < b.length; ++i) t[i] = b[i].token;
     }
 
+    /// @notice Converts a list of bridge tokens to a list of their token symbols
+    /// @param b The list of bridge tokens
+    /// @return s The list of token symbols associated with given bridge tokens
+    function symbols(BridgeToken[] memory b) internal pure returns (string[] memory s) {
+        s = new string[](b.length);
+        for (uint256 i = 0; i < b.length; ++i) s[i] = b[i].symbol;
+    }
+
     /// @notice Filters out duplicates and zero addresses from given list of addresses
     /// @dev Removes zero addresses from list
     /// @param unfiltered The list of addresses with duplicates
