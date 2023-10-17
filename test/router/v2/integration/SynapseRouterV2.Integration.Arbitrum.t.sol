@@ -777,6 +777,56 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         );
     }
 
+    function testSynapseBridge_arbitrumToEthereum_inUSDCe_outUSDC() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        DefaultParams memory originParams = DefaultParams({
+            action: Action.Swap,
+            pool: 0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40,
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: NUSD,
+            minAmountOut: calculateSwap(0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40, 1, 0, getTestAmount(USDC_E)),
+            deadline: type(uint256).max,
+            rawParams: abi.encode(originParams)
+        });
+
+        DefaultParams memory params = DefaultParams({
+            action: Action.RemoveLiquidity,
+            pool: 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8, // stableswap pool on mainnet
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8, // irrelevant for test
+            tokenOut: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48, // USDC on mainnet
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+
+        redeemAndRemoveEvent = RedeemAndRemoveEvent({
+            to: recipient,
+            chainId: 1,
+            token: NUSD,
+            amount: originQuery.minAmountOut,
+            swapTokenIndex: 1,
+            swapMinAmount: 0,
+            swapDeadline: type(uint256).max
+        });
+        initiateBridge(
+            expectRedeemAndRemoveEvent,
+            1, // mainnet
+            module,
+            USDC_E,
+            originQuery,
+            destQuery
+        );
+    }
+
     function testSynapseBridge_arbitrumToEthereum_inGMX_outGMX() public {
         address module = expectedModules[0]; // Synapse bridge module
 
