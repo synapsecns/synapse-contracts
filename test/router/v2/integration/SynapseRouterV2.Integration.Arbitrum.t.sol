@@ -498,83 +498,6 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         );
     }
 
-    function testSynapseBridge_arbitrumToEthereum_inNUSD_outUSDC() public {
-        address module = expectedModules[0]; // Synapse bridge module
-
-        SwapQuery memory originQuery;
-
-        DefaultParams memory params = DefaultParams({
-            action: Action.RemoveLiquidity,
-            pool: 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8, // stableswap pool on mainnet
-            tokenIndexFrom: 0,
-            tokenIndexTo: 1
-        });
-        SwapQuery memory destQuery = SwapQuery({
-            routerAdapter: 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8, // irrelevant for test
-            tokenOut: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48, // USDC on mainnet
-            minAmountOut: 0,
-            deadline: type(uint256).max,
-            rawParams: abi.encode(params)
-        });
-
-        redeemAndRemoveEvent = RedeemAndRemoveEvent({
-            to: recipient,
-            chainId: 1,
-            token: NUSD,
-            amount: getTestAmount(NUSD),
-            swapTokenIndex: 1,
-            swapMinAmount: 0,
-            swapDeadline: type(uint256).max
-        });
-        initiateBridge(
-            expectRedeemAndRemoveEvent,
-            1, // mainnet
-            module,
-            NUSD,
-            originQuery,
-            destQuery
-        );
-    }
-
-    function testSynapseBridge_arbitrumToOptimism_inNUSD_outUSDCe() public {
-        address module = expectedModules[0]; // Synapse bridge module
-
-        SwapQuery memory originQuery;
-
-        DefaultParams memory params = DefaultParams({
-            action: Action.Swap,
-            pool: 0xF44938b0125A6662f9536281aD2CD6c499F22004, // stableswap pool on optimism
-            tokenIndexFrom: 0,
-            tokenIndexTo: 1
-        });
-        SwapQuery memory destQuery = SwapQuery({
-            routerAdapter: 0xF44938b0125A6662f9536281aD2CD6c499F22004,
-            tokenOut: 0x7F5c764cBc14f9669B88837ca1490cCa17c31607, // USDC.e on optimism
-            minAmountOut: 0,
-            deadline: type(uint256).max,
-            rawParams: abi.encode(params)
-        });
-
-        redeemAndSwapEvent = RedeemAndSwapEvent({
-            to: recipient,
-            chainId: 10,
-            token: NUSD,
-            amount: getTestAmount(NUSD),
-            tokenIndexFrom: 0,
-            tokenIndexTo: 1,
-            minDy: 0,
-            deadline: type(uint256).max
-        });
-        initiateBridge(
-            expectRedeemAndSwapEvent,
-            10, // optimism
-            module,
-            NUSD,
-            originQuery,
-            destQuery
-        );
-    }
-
     function testSynapseBridge_arbitrumToEthereum_inUSDCe_outNUSD() public {
         address module = expectedModules[0];
 
@@ -665,6 +588,134 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
             1, // mainnet
             module,
             WETH,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_arbitrumToOptimism_inNUSD_outUSDCe() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        SwapQuery memory originQuery;
+
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: 0xF44938b0125A6662f9536281aD2CD6c499F22004, // stableswap pool on optimism
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: 0xF44938b0125A6662f9536281aD2CD6c499F22004,
+            tokenOut: 0x7F5c764cBc14f9669B88837ca1490cCa17c31607, // USDC.e on optimism
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+
+        redeemAndSwapEvent = RedeemAndSwapEvent({
+            to: recipient,
+            chainId: 10,
+            token: NUSD,
+            amount: getTestAmount(NUSD),
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: 0,
+            deadline: type(uint256).max
+        });
+        initiateBridge(
+            expectRedeemAndSwapEvent,
+            10, // optimism
+            module,
+            NUSD,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_arbitrumToOptimism_inUSDCe_outUSDCe() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        DefaultParams memory originParams = DefaultParams({
+            action: Action.Swap,
+            pool: 0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40,
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: NUSD,
+            minAmountOut: calculateSwap(0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40, 1, 0, getTestAmount(USDC_E)),
+            deadline: type(uint256).max,
+            rawParams: abi.encode(originParams)
+        });
+
+        DefaultParams memory destParams = DefaultParams({
+            action: Action.Swap,
+            pool: 0xF44938b0125A6662f9536281aD2CD6c499F22004, // stableswap pool on optimism
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: 0xF44938b0125A6662f9536281aD2CD6c499F22004,
+            tokenOut: 0x7F5c764cBc14f9669B88837ca1490cCa17c31607, // USDC.e on optimism
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(destParams)
+        });
+
+        redeemAndSwapEvent = RedeemAndSwapEvent({
+            to: recipient,
+            chainId: 10,
+            token: NUSD,
+            amount: originQuery.minAmountOut,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: 0,
+            deadline: type(uint256).max
+        });
+        initiateBridge(
+            expectRedeemAndSwapEvent,
+            10, // optimism
+            module,
+            USDC_E,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_arbitrumToEthereum_inNUSD_outUSDC() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        SwapQuery memory originQuery;
+
+        DefaultParams memory params = DefaultParams({
+            action: Action.RemoveLiquidity,
+            pool: 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8, // stableswap pool on mainnet
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8, // irrelevant for test
+            tokenOut: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48, // USDC on mainnet
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+
+        redeemAndRemoveEvent = RedeemAndRemoveEvent({
+            to: recipient,
+            chainId: 1,
+            token: NUSD,
+            amount: getTestAmount(NUSD),
+            swapTokenIndex: 1,
+            swapMinAmount: 0,
+            swapDeadline: type(uint256).max
+        });
+        initiateBridge(
+            expectRedeemAndRemoveEvent,
+            1, // mainnet
+            module,
+            NUSD,
             originQuery,
             destQuery
         );
