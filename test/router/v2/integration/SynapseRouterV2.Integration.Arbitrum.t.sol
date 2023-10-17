@@ -683,6 +683,62 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         );
     }
 
+    function testSynapseBridge_arbitrumToOptimism_inETH_outWETH() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        DefaultParams memory originParams = DefaultParams({
+            action: Action.Swap,
+            pool: 0xa067668661C84476aFcDc6fA5D758C4c01C34352,
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: NETH,
+            minAmountOut: calculateSwap(
+                0xa067668661C84476aFcDc6fA5D758C4c01C34352,
+                1,
+                0,
+                getTestAmount(UniversalTokenLib.ETH_ADDRESS)
+            ),
+            deadline: type(uint256).max,
+            rawParams: abi.encode(originParams)
+        });
+
+        DefaultParams memory destParams = DefaultParams({
+            action: Action.Swap,
+            pool: 0xE27BFf97CE92C3e1Ff7AA9f86781FDd6D48F5eE9, // stableswap pool on optimism
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: 0xE27BFf97CE92C3e1Ff7AA9f86781FDd6D48F5eE9,
+            tokenOut: 0x121ab82b49B2BC4c7901CA46B8277962b4350204, // WETH on optimism
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(destParams)
+        });
+
+        redeemAndSwapEvent = RedeemAndSwapEvent({
+            to: recipient,
+            chainId: 10,
+            token: NETH,
+            amount: originQuery.minAmountOut,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: 0,
+            deadline: type(uint256).max
+        });
+        initiateBridge(
+            expectRedeemAndSwapEvent,
+            10, // optimism
+            module,
+            UniversalTokenLib.ETH_ADDRESS,
+            originQuery,
+            destQuery
+        );
+    }
+
     function testSynapseBridge_arbitrumToEthereum_inNUSD_outUSDC() public {
         address module = expectedModules[0]; // Synapse bridge module
 
