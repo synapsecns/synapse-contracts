@@ -1012,6 +1012,84 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         );
     }
 
+    function testSynapseCCTP_arbitrumToOptimism_inUSDCe_outUSDCe() public {
+        address module = expectedModules[1]; // Synapse CCTP module
+
+        address pool = 0xC40BF702aBebB494842e2a1751bCf6D8C5be2Fa9;
+        DefaultParams memory originParams = DefaultParams({
+            action: Action.Swap,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: USDC,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(originParams)
+        });
+
+        DefaultParams memory destParams = DefaultParams({
+            action: Action.Swap,
+            pool: 0x2E2D190AD4e0d7BE9569BAeBD4d33298379b0502, // uni v3 pool on optimism
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: 0xE23c791718081D720E1E48408C110055f7aa86db,
+            tokenOut: 0x7F5c764cBc14f9669B88837ca1490cCa17c31607, // USDC.e on optimism
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(destParams)
+        });
+
+        uint32 requestVersion = getRequestVersion(false);
+        bytes memory swapParams = formatSwapParams({
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            deadline: type(uint256).max,
+            minAmountOut: 0
+        });
+
+        {
+            uint32 originDomain = 3;
+            uint32 destDomain = 2;
+            uint64 nonce = getNextAvailableNonce();
+
+            uint256 amount = calculateSwap(pool, 1, 0, getTestAmount(USDC_E));
+            bytes memory formattedRequest = formatRequest(
+                requestVersion,
+                originDomain,
+                nonce,
+                USDC,
+                amount,
+                recipient,
+                swapParams
+            );
+            bytes32 expectedRequestID = getExpectedRequestID(formattedRequest, destDomain, requestVersion);
+            requestSentEvent = CircleRequestSentEvent({
+                chainId: 10,
+                sender: msg.sender,
+                nonce: nonce,
+                token: USDC,
+                amount: amount,
+                requestVersion: requestVersion,
+                formattedRequest: formattedRequest,
+                requestID: expectedRequestID
+            });
+        }
+
+        initiateBridge(
+            expectCircleRequestSentEvent,
+            10, // optimism
+            module,
+            USDC_E,
+            originQuery,
+            destQuery
+        );
+    }
+
     function testSwap_arbitrum_inUSDCe_outUSDC() public {
         address pool = 0xC40BF702aBebB494842e2a1751bCf6D8C5be2Fa9;
         DefaultParams memory params = DefaultParams({
