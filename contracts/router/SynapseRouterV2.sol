@@ -204,29 +204,22 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     }
 
     /// @inheritdoc IRouterV2
-    function getDestinationAmountOut(DestRequest[] memory requests, address tokenOut)
+    function getDestinationAmountOut(DestRequest memory request, address tokenOut)
         external
         view
-        returns (SwapQuery[] memory destQueries)
+        returns (SwapQuery memory destQuery)
     {
-        destQueries = new SwapQuery[](requests.length);
-        for (uint256 i = 0; i < requests.length; ++i) {
-            DestRequest memory request = requests[i];
-            (address token, uint256 actionMask, address bridgeModule) = _getTokenAndActionMaskFromSymbol(
-                request.symbol
-            );
-            if (token == address(0)) continue;
+        (address token, uint256 actionMask, address bridgeModule) = _getTokenAndActionMaskFromSymbol(request.symbol);
+        if (token == address(0)) return destQuery; // empty
 
-            // account for bridge fees in amountIn
-            bool isSwap = !(token == tokenOut ||
-                (tokenOut == UniversalTokenLib.ETH_ADDRESS && token == swapQuoter.weth()));
-            uint256 amountIn = _calculateBridgeAmountIn(bridgeModule, token, request.amountIn, isSwap);
-            if (amountIn == 0) continue;
+        // account for bridge fees in amountIn
+        bool isSwap = !(token == tokenOut || (tokenOut == UniversalTokenLib.ETH_ADDRESS && token == swapQuoter.weth()));
+        uint256 amountIn = _calculateBridgeAmountIn(bridgeModule, token, request.amountIn, isSwap);
+        if (amountIn == 0) return destQuery; // empty
 
-            // query the quoter
-            LimitedToken memory tokenIn = LimitedToken({actionMask: actionMask, token: token});
-            destQueries[i] = swapQuoter.getAmountOut(tokenIn, tokenOut, amountIn);
-        }
+        // query the quoter
+        LimitedToken memory tokenIn = LimitedToken({actionMask: actionMask, token: token});
+        destQuery = swapQuoter.getAmountOut(tokenIn, tokenOut, amountIn);
     }
 
     /// @inheritdoc IRouterV2

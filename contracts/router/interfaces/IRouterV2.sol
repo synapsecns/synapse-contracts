@@ -125,16 +125,16 @@ interface IRouterV2 {
     /// @dev Will NOT revert if any of the tokens are not supported, instead will return an empty query for that symbol.
     /// Note: it is NOT possible to form a SwapQuery off-chain using alternative SwapAdapter for the destination swap.
     /// For the time being, only swaps through the Synapse-supported pools are available on destination chain.
-    /// @param requests  List of structs with following information:
+    /// @param request Struct with following information:
     ///                 - symbol: unique token ID consistent among all chains
     ///                 - amountIn: amount of bridge token to start with, before the bridge fee is applied
     /// @param tokenOut  Token user wants to receive on destination chain
-    /// @return destQueries  List of structs that could be used as `destQuery` in SynapseRouter.
+    /// @return destQuery  Structs that could be used as `destQuery` in SynapseRouter.
     ///                      minAmountOut and deadline fields will need to be adjusted based on the user settings.
-    function getDestinationAmountOut(DestRequest[] memory requests, address tokenOut)
+    function getDestinationAmountOut(DestRequest memory request, address tokenOut)
         external
         view
-        returns (SwapQuery[] memory destQueries);
+        returns (SwapQuery memory destQuery);
 
     /// @notice Finds the best path between `tokenIn` and every supported bridge token from the given list,
     /// treating the swap as "origin swap", without putting any restrictions on the swap.

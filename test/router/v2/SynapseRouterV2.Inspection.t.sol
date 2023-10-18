@@ -253,9 +253,9 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
             rawParams: getSwapParams(address(poolNethWeth), 0, 1)
         });
 
-        SwapQuery[] memory actualQueries = router.getDestinationAmountOut(requests, weth);
+        SwapQuery[] memory actualQueries = new SwapQuery[](1);
+        actualQueries[0] = router.getDestinationAmountOut(requests[0], weth);
 
-        assertEq(expectedQueries.length, actualQueries.length);
         checkSwapQueries(expectedQueries, actualQueries);
     }
 
