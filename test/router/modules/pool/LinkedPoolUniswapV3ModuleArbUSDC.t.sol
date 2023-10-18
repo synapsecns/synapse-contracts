@@ -6,7 +6,6 @@ import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 import {UniswapV3Module} from "../../../../contracts/router/modules/pool/uniswap/UniswapV3Module.sol";
 
 contract LinkedPoolUniswapV3ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
-    string private constant ARB_ENV_RPC = "ARBITRUM_API";
     // 2023-06-27
     uint256 public constant ARB_BLOCK_NUMBER = 105400000;
 
@@ -31,9 +30,9 @@ contract LinkedPoolUniswapV3ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
 
     UniswapV3Module public uniswapV3Module;
 
-    constructor() LinkedPoolIntegrationTest(ARB_ENV_RPC, ARB_BLOCK_NUMBER) {}
+    constructor() LinkedPoolIntegrationTest("arbitrum", "UniswapV3Module", ARB_BLOCK_NUMBER) {}
 
-    function afterBlockchainForked() public override {
+    function deployModule() public override {
         uniswapV3Module = new UniswapV3Module(UNI_V3_ROUTER, UNI_V3_STATIC_QUOTER);
     }
 

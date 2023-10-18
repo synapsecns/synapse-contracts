@@ -6,7 +6,6 @@ import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 import {GMXV1StableArbitrumModule} from "../../../../contracts/router/modules/pool/gmx/GMXV1StableArbitrumModule.sol";
 
 contract LinkedPoolGMXV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
-    string private constant ARB_ENV_RPC = "ARBITRUM_API";
     // 2023-07-28
     uint256 public constant ARB_BLOCK_NUMBER = 115816525;
 
@@ -48,9 +47,9 @@ contract LinkedPoolGMXV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
 
     GMXV1StableArbitrumModule public gmxV1Module;
 
-    constructor() LinkedPoolIntegrationTest(ARB_ENV_RPC, ARB_BLOCK_NUMBER) {}
+    constructor() LinkedPoolIntegrationTest("arbitrum", "GMXV1StableArbitrumModule", ARB_BLOCK_NUMBER) {}
 
-    function afterBlockchainForked() public override {
+    function deployModule() public override {
         gmxV1Module = new GMXV1StableArbitrumModule(GMX_V1_ROUTER, GMX_V1_READER);
     }
 

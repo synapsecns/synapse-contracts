@@ -6,7 +6,6 @@ import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 import {DssPsmModule} from "../../../../contracts/router/modules/pool/dss/DssPsmModule.sol";
 
 contract LinkedPoolDssPsmModuleEthUSDCTestFork is LinkedPoolIntegrationTest {
-    string private constant ETH_ENV_RPC = "ETHEREUM_API";
     // 2023-07-24
     uint256 public constant ETH_BLOCK_NUMBER = 17763746;
 
@@ -27,9 +26,9 @@ contract LinkedPoolDssPsmModuleEthUSDCTestFork is LinkedPoolIntegrationTest {
 
     DssPsmModule public dssPsmModule;
 
-    constructor() LinkedPoolIntegrationTest(ETH_ENV_RPC, ETH_BLOCK_NUMBER) {}
+    constructor() LinkedPoolIntegrationTest("mainnet", "DssPsmModule", ETH_BLOCK_NUMBER) {}
 
-    function afterBlockchainForked() public override {
+    function deployModule() public override {
         dssPsmModule = new DssPsmModule();
     }
 

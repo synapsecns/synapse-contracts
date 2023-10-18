@@ -6,7 +6,6 @@ import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 import {UniswapV3SR02Module} from "../../../../contracts/router/modules/pool/uniswap/UniswapV3SR02Module.sol";
 
 contract LinkedPoolUniswapV3SR02ModuleAvaxUSDCTestFork is LinkedPoolIntegrationTest {
-    string private constant AVAX_ENV_RPC = "AVALANCHE_API";
     // 2023-09-05
     uint256 public constant AVAX_BLOCK_NUMBER = 34800000;
 
@@ -26,9 +25,9 @@ contract LinkedPoolUniswapV3SR02ModuleAvaxUSDCTestFork is LinkedPoolIntegrationT
 
     UniswapV3SR02Module public uniswapV3SR02Module;
 
-    constructor() LinkedPoolIntegrationTest(AVAX_ENV_RPC, AVAX_BLOCK_NUMBER) {}
+    constructor() LinkedPoolIntegrationTest("avalanche", "UniswapV3SR02Module", AVAX_BLOCK_NUMBER) {}
 
-    function afterBlockchainForked() public override {
+    function deployModule() public override {
         uniswapV3SR02Module = new UniswapV3SR02Module(UNI_V3_SWAP_ROUTER_02, UNI_V3_STATIC_QUOTER);
     }
 

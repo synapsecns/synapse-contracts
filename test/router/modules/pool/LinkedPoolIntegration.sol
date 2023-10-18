@@ -3,17 +3,14 @@ pragma solidity 0.8.17;
 
 import {LinkedPool} from "../../../../contracts/router/LinkedPool.sol";
 
-import {console, Test} from "forge-std/Test.sol";
+import {console, IntegrationUtils} from "../../../utils/IntegrationUtils.sol";
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts-4.5.0/token/ERC20/extensions/IERC20Metadata.sol";
 
 // solhint-disable no-console
-abstract contract LinkedPoolIntegrationTest is Test {
+abstract contract LinkedPoolIntegrationTest is IntegrationUtils {
     using SafeERC20 for IERC20;
-
-    string private _envRPC;
-    uint256 private _forkBlockNumber;
 
     address[] public expectedTokens;
     mapping(address => string) public tokenNames;
@@ -22,30 +19,21 @@ abstract contract LinkedPoolIntegrationTest is Test {
 
     address public user;
 
-    constructor(string memory envRPC, uint256 forkBlockNumber) {
-        _envRPC = envRPC;
-        _forkBlockNumber = forkBlockNumber;
-    }
+    constructor(
+        string memory chainName_,
+        string memory contractName_,
+        uint256 forkBlockNumber
+    ) IntegrationUtils(chainName_, contractName_, forkBlockNumber) {}
 
-    function setUp() public virtual {
-        forkBlockchain();
-        afterBlockchainForked();
+    function afterBlockchainForked() public virtual override {
+        deployModule();
         addExpectedTokens();
         deployLinkedPool();
         addPools();
         user = makeAddr("User");
     }
 
-    function forkBlockchain() public virtual {
-        string memory rpcURL = vm.envString(_envRPC);
-        if (_forkBlockNumber > 0) {
-            vm.createSelectFork(rpcURL, _forkBlockNumber);
-        } else {
-            vm.createSelectFork(rpcURL);
-        }
-    }
-
-    function afterBlockchainForked() public virtual {}
+    function deployModule() public virtual;
 
     function addExpectedTokens() public virtual;
 
