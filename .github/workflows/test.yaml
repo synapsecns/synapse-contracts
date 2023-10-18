@@ -108,5 +108,5 @@ jobs:
       - name: Run integration tests
         # The public RPC URLs are defined in .env.example
         run: |
-          source .env.example
+          mv .env.example .env
           ./script/foundry-integration.sh
