@@ -19,12 +19,15 @@ abstract contract IntegrationUtils is Test {
         string memory contractName,
         uint256 forkBlockNumber
     ) {
+        console.log("%s %s %s", chainName, contractName, forkBlockNumber);
         // Chain name should be lowercase.
         _chainName = chainName.toLowerCase();
         _contractName = contractName;
+        console.log("%s %s", _chainName, _contractName);
         // Environment variable name is CHAIN_NAME_API (uppercase).
         _envRPC = chainName.toUpperCase().concat("_API");
         _forkBlockNumber = forkBlockNumber;
+        console.log("%s %s", _envRPC, _forkBlockNumber);
     }
 
     /// @notice This will be used to run the test contract as a script first in order
