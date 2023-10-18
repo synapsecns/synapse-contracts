@@ -8,6 +8,9 @@ INTEGRATION_TESTS=$(find test -type f -name "*Integration*.t.sol")
 # Print the amount of integration tests found.
 echo "Found $(echo $INTEGRATION_TESTS | wc -w) integration tests"
 
+# Track the integration tests for contracts that are not yet deployed.
+NOT_DEPLOYED_TESTS=()
+
 for TEST_FILE in $INTEGRATION_TESTS; do
   # First, run the test as a forge script. This will print the following:
   # == Logs ==
@@ -30,10 +33,14 @@ for TEST_FILE in $INTEGRATION_TESTS; do
   # Check if the deployment for the tested contract already exists.
   DEPLOYMENT_FILE="deployments/$CHAIN_NAME/$CONTRACT_NAME.json"
   if [ -f $DEPLOYMENT_FILE ]; then
-    echo "  $CONTRACT_NAME already deployed on $CHAIN_NAME: skipping test"
+    echo "  ✅ $CONTRACT_NAME on $CHAIN_NAME: skipping (already deployed)"
   else
-    echo "  $CONTRACT_NAME not yet deployed on $CHAIN_NAME: running test"
-    # Run the test and exit if it fails.
-    forge test --match-path $TEST_FILE -vvv || exit 1
+    echo "  ❓ $CONTRACT_NAME on $CHAIN_NAME: testing (not deployed)"
+    NOT_DEPLOYED_TESTS+=($TEST_FILE)
   fi
+done
+
+echo "Running $(echo ${NOT_DEPLOYED_TESTS[@]} | wc -w) integration tests"
+for TEST_FILE in ${NOT_DEPLOYED_TESTS[@]}; do
+  forge test -vvv --match-path $TEST_FILE
 done
