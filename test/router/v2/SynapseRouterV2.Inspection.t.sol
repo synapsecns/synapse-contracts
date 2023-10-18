@@ -215,17 +215,12 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         checkSupportedTokens(expectedTokens, actualTokens);
     }
 
-    function checkSwapQueries(SwapQuery[] memory expectedQueries, SwapQuery[] memory actualQueries) public {
-        for (uint256 i = 0; i < actualQueries.length; i++) {
-            SwapQuery memory expectedQuery = expectedQueries[i];
-            SwapQuery memory actualQuery = actualQueries[i];
-
-            assertEq(expectedQuery.routerAdapter, actualQuery.routerAdapter);
-            assertEq(expectedQuery.tokenOut, actualQuery.tokenOut);
-            assertEq(expectedQuery.minAmountOut, actualQuery.minAmountOut);
-            assertEq(expectedQuery.deadline, actualQuery.deadline);
-            assertEq(expectedQuery.rawParams, actualQuery.rawParams);
-        }
+    function checkSwapQuery(SwapQuery memory expectedQuery, SwapQuery memory actualQuery) public {
+        assertEq(expectedQuery.routerAdapter, actualQuery.routerAdapter);
+        assertEq(expectedQuery.tokenOut, actualQuery.tokenOut);
+        assertEq(expectedQuery.minAmountOut, actualQuery.minAmountOut);
+        assertEq(expectedQuery.deadline, actualQuery.deadline);
+        assertEq(expectedQuery.rawParams, actualQuery.rawParams);
     }
 
     function testGetDestinationAmountOutL2Pools() public {
@@ -240,23 +235,18 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         bridgeModuleL2.setMaxBridgedAmount(neth, maxBridgedAmount);
 
         uint256 amountIn = 1000000000000000000; // 1 wad
-        DestRequest[] memory requests = new DestRequest[](1);
-        requests[0] = DestRequest({symbol: "nETH", amountIn: amountIn});
+        DestRequest memory request = DestRequest({symbol: "nETH", amountIn: amountIn});
         address tokenOut = weth;
 
-        SwapQuery[] memory expectedQueries = new SwapQuery[](1);
-        expectedQueries[0] = SwapQuery({
+        SwapQuery memory expectedQuery = SwapQuery({
             routerAdapter: address(router), // default pool
             tokenOut: weth,
             minAmountOut: 999800019849755190, // 0.9998 wad
             deadline: type(uint256).max,
             rawParams: getSwapParams(address(poolNethWeth), 0, 1)
         });
-
-        SwapQuery[] memory actualQueries = new SwapQuery[](1);
-        actualQueries[0] = router.getDestinationAmountOut(requests[0], weth);
-
-        checkSwapQueries(expectedQueries, actualQueries);
+        SwapQuery memory actualQuery = router.getDestinationAmountOut(request, weth);
+        checkSwapQuery(expectedQuery, actualQuery);
     }
 
     function testGetOriginAmountOutL2Pools() public {
@@ -271,23 +261,17 @@ contract SynapseRouterV2InspectionTest is BasicSynapseRouterV2Test {
         bridgeModuleL2.setMaxBridgedAmount(neth, maxBridgedAmount);
 
         address tokenIn = weth;
-        string[] memory tokenSymbols = new string[](1);
-        tokenSymbols[0] = "nETH";
+        string memory tokenSymbol = "nETH";
         uint256 amountIn = 1000000000000000000; // 1 wad
 
-        SwapQuery[] memory expectedQueries = new SwapQuery[](1);
-        expectedQueries[0] = SwapQuery({
+        SwapQuery memory expectedQuery = SwapQuery({
             routerAdapter: address(router), // default pool
             tokenOut: neth,
             minAmountOut: 999702966365812232, // 0.9997 wad
             deadline: type(uint256).max,
             rawParams: getSwapParams(address(poolNethWeth), 1, 0)
         });
-
-        SwapQuery[] memory actualQueries = new SwapQuery[](1);
-        actualQueries[0] = router.getOriginAmountOut(tokenIn, tokenSymbols[0], amountIn);
-
-        assertEq(expectedQueries.length, actualQueries.length);
-        checkSwapQueries(expectedQueries, actualQueries);
+        SwapQuery memory actualQuery = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        checkSwapQuery(expectedQuery, actualQuery);
     }
 }
