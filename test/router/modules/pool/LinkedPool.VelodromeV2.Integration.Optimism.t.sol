@@ -5,7 +5,7 @@ import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {VelodromeV2Module} from "../../../../contracts/router/modules/pool/velodrome/VelodromeV2Module.sol";
 
-contract LinkedPoolVelodromeV2ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
+contract LinkedPoolVelodromeV2ModuleOptTestFork is LinkedPoolIntegrationTest {
     // 2023-07-11
     uint256 public constant OPT_BLOCK_NUMBER = 106753037;
 

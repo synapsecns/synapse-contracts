@@ -5,7 +5,7 @@ import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {CurveV1Module} from "../../../../contracts/router/modules/pool/curve/CurveV1Module.sol";
 
-contract LinkedPoolCurveV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
+contract LinkedPoolCurveV1ModuleArbTestFork is LinkedPoolIntegrationTest {
     // 2023-07-03
     uint256 public constant ARB_BLOCK_NUMBER = 107596120;
 

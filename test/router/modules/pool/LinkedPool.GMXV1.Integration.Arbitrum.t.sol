@@ -5,7 +5,7 @@ import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {GMXV1StableArbitrumModule} from "../../../../contracts/router/modules/pool/gmx/GMXV1StableArbitrumModule.sol";
 
-contract LinkedPoolGMXV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
+contract LinkedPoolGMXV1ModuleArbTestFork is LinkedPoolIntegrationTest {
     // 2023-07-28
     uint256 public constant ARB_BLOCK_NUMBER = 115816525;
 

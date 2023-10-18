@@ -5,7 +5,7 @@ import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {UniswapV3Module} from "../../../../contracts/router/modules/pool/uniswap/UniswapV3Module.sol";
 
-contract LinkedPoolUniswapV3ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
+contract LinkedPoolUniswapV3ModuleArbTestFork is LinkedPoolIntegrationTest {
     // 2023-06-27
     uint256 public constant ARB_BLOCK_NUMBER = 105400000;
 

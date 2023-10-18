@@ -5,7 +5,7 @@ import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {UniswapV3SR02Module} from "../../../../contracts/router/modules/pool/uniswap/UniswapV3SR02Module.sol";
 
-contract LinkedPoolUniswapV3SR02ModuleAvaxUSDCTestFork is LinkedPoolIntegrationTest {
+contract LinkedPoolUniswapV3SR02ModuleAvaxTestFork is LinkedPoolIntegrationTest {
     // 2023-09-05
     uint256 public constant AVAX_BLOCK_NUMBER = 34800000;
 

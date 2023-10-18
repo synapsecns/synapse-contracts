@@ -5,7 +5,7 @@ import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {DssPsmModule} from "../../../../contracts/router/modules/pool/dss/DssPsmModule.sol";
 
-contract LinkedPoolDssPsmModuleEthUSDCTestFork is LinkedPoolIntegrationTest {
+contract LinkedPoolDssPsmModuleEthTestFork is LinkedPoolIntegrationTest {
     // 2023-07-24
     uint256 public constant ETH_BLOCK_NUMBER = 17763746;
 

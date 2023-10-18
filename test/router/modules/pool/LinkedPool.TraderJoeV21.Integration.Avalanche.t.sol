@@ -5,7 +5,7 @@ import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {TraderJoeV21Module} from "../../../../contracts/router/modules/pool/traderjoe/TraderJoeV21Module.sol";
 
-contract LinkedPoolTraderJoeV21ModuleAvaxUSDCTestFork is LinkedPoolIntegrationTest {
+contract LinkedPoolTraderJoeV21ModuleAvaxTestFork is LinkedPoolIntegrationTest {
     // 2023-09-05
     uint256 public constant AVAX_BLOCK_NUMBER = 34807165;
 

@@ -5,7 +5,7 @@ import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {GMXV1StableAvalancheModule} from "../../../../contracts/router/modules/pool/gmx/GMXV1StableAvalancheModule.sol";
 
-contract LinkedPoolGMXV1ModuleAvaxUSDCTestFork is LinkedPoolIntegrationTest {
+contract LinkedPoolGMXV1ModuleAvaxTestFork is LinkedPoolIntegrationTest {
     // 2023-09-05
     uint256 public constant AVAX_BLOCK_NUMBER = 34807165;
 
