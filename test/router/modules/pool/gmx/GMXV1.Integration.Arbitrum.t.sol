@@ -57,7 +57,7 @@ contract GMXV1ModuleArbTestFork is IntegrationUtils {
 
     address public user;
 
-    constructor() IntegrationUtils("arbitrum", "GMXV1Module", ARB_BLOCK_NUMBER) {}
+    constructor() IntegrationUtils("arbitrum", "GMXV1StableArbitrumModule", ARB_BLOCK_NUMBER) {}
 
     function afterBlockchainForked() public override {
         gmxV1Module = new GMXV1StableArbitrumModule(GMX_V1_ROUTER, GMX_V1_READER);

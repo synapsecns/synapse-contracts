@@ -48,7 +48,7 @@ contract GMXV1ModuleAvaxTestFork is IntegrationUtils {
 
     address public user;
 
-    constructor() IntegrationUtils("avalanche", "GMXV1Module", AVAX_BLOCK_NUMBER) {}
+    constructor() IntegrationUtils("avalanche", "GMXV1StableAvalancheModule", AVAX_BLOCK_NUMBER) {}
 
     function afterBlockchainForked() public override {
         gmxV1Module = new GMXV1StableAvalancheModule(GMX_V1_ROUTER, GMX_V1_READER);
