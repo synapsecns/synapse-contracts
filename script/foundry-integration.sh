@@ -12,11 +12,24 @@ echo "Found $(echo $INTEGRATION_TESTS | wc -w) integration tests"
 NOT_DEPLOYED_TESTS=()
 
 for TEST_FILE in $INTEGRATION_TESTS; do
-  # First, run the test as a forge script. This will print the following:
+  # First, get the name of the defined contract in the test file.
+  # There should be a single line starting with "contract <CONTRACT_NAME>" in the file.
+  COUNT=$(grep -c "^contract" $TEST_FILE)
+  if [ $COUNT -ne 1 ]; then
+    echo "  Found $COUNT contracts in $TEST_FILE, expected 1"
+    exit 1
+  fi
+  CONTRACT_NAME=$(grep "^contract" $TEST_FILE | awk '{print $2}')
+  # Then, run the InspectIntegration script to get the chain and contract name. 
+  # The argument is $TEST_FILE_BASENAME:$CONTRACT_NAME.
+  # Extract base name from file path.
+  INSPECT_PATH="script/integration/InspectIntegration.s.sol"
+  INSPECT_ARGS=$(basename $TEST_FILE):$CONTRACT_NAME
+  # Its output is:
   # == Logs ==
   #   $CHAIN_NAME $CONTRACT_NAME
   # We need to extract the chain and contract name from this output.
-  TEST_ARGS=$(forge script $TEST_FILE | grep "==" -A1 | tail -n 1)
+  TEST_ARGS=$(forge script $INSPECT_PATH --sig "run(string)" $INSPECT_ARGS | grep "==" -A1 | tail -n 1)
   CHAIN_NAME=$(echo $TEST_ARGS | awk '{print $1}')
   CONTRACT_NAME=$(echo $TEST_ARGS | awk '{print $2}')
   # Check that both the chain and contract name are not empty.
