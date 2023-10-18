@@ -5,9 +5,9 @@ import {Action, ActionLib, BridgeToken, DefaultParams, DestRequest, LimitedToken
 import {UniversalTokenLib} from "../../../../contracts/router/libs/UniversalToken.sol";
 import {IBridgeModule} from "../../../../contracts/router/interfaces/IBridgeModule.sol";
 
-import {SynapseRouterV2IntegrationTest} from "./SynapseRouterV2.Integration.t.sol";
-import {SynapseRouterV2BridgeUtils} from "./SynapseRouterV2.BridgeUtils.t.sol";
-import {SynapseRouterV2CCTPUtils} from "./SynapseRouterV2.CCTPUtils.t.sol";
+import {SynapseRouterV2IntegrationTest} from "./SynapseRouterV2.Integration.sol";
+import {SynapseRouterV2BridgeUtils} from "./SynapseRouterV2.BridgeUtils.sol";
+import {SynapseRouterV2CCTPUtils} from "./SynapseRouterV2.CCTPUtils.sol";
 
 import {console} from "forge-std/Test.sol";
 
