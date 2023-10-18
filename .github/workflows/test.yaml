@@ -100,4 +100,6 @@ jobs:
           version: nightly
       - name: Run integration tests
         # The public RPC URLs are defined in .env.example
-        run: source .env.example && ./script/foundry-integration.sh
+        run: |
+          source .env.example
+          ./script/foundry-integration.sh
