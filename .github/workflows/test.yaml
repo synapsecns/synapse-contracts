@@ -80,6 +80,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           submodules: recursive
+
       - name: Cache node modules
         uses: actions/cache@v2
         env:
@@ -92,12 +93,18 @@ jobs:
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
             ${{ runner.os }}-
+
       - name: Installing dependencies
         run: npm install
+
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
+
+      - name: Build contracts
+        run: forge build
+
       - name: Run integration tests
         # The public RPC URLs are defined in .env.example
         run: |
