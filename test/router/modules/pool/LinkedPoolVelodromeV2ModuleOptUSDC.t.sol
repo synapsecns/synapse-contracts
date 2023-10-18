@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.t.sol";
+import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {VelodromeV2Module} from "../../../../contracts/router/modules/pool/velodrome/VelodromeV2Module.sol";
 

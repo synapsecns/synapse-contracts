@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.t.sol";
+import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {GMXV1StableAvalancheModule} from "../../../../contracts/router/modules/pool/gmx/GMXV1StableAvalancheModule.sol";
 
