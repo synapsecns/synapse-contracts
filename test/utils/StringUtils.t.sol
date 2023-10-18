@@ -12,6 +12,10 @@ contract StringUtilsHarness {
     function toUpperCase(string memory s) public pure returns (string memory upper) {
         return StringUtils.toUpperCase(s);
     }
+
+    function concat(string memory a, string memory b) public pure returns (string memory) {
+        return StringUtils.concat(a, b);
+    }
 }
 
 contract StringUtilsTest is Test {
@@ -32,6 +36,14 @@ contract StringUtilsTest is Test {
         string memory s = "Hello, World!";
         string memory expected = "HELLO, WORLD!";
         string memory actual = harness.toUpperCase(s);
+        assertEq(actual, expected);
+    }
+
+    function testConcat() public {
+        string memory a = "Hello, ";
+        string memory b = "World!";
+        string memory expected = "Hello, World!";
+        string memory actual = harness.concat(a, b);
         assertEq(actual, expected);
     }
 }

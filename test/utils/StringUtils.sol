@@ -30,4 +30,10 @@ library StringUtils {
         }
         return string(b);
     }
+
+    /// @notice Returns the concatenation of two strings.
+    /// @dev This is used instead of string.concat, which is only available in Solidity >=0.8.
+    function concat(string memory a, string memory b) internal pure returns (string memory) {
+        return string(abi.encodePacked(a, b));
+    }
 }
