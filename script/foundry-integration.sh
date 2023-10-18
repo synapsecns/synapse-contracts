@@ -16,6 +16,17 @@ for TEST_FILE in $INTEGRATION_TESTS; do
   TEST_ARGS=$(forge script $TEST_FILE | grep "==" -A1 | tail -n 1)
   CHAIN_NAME=$(echo $TEST_ARGS | awk '{print $1}')
   CONTRACT_NAME=$(echo $TEST_ARGS | awk '{print $2}')
+  # Check that both the chain and contract name are not empty.
+  if [ -z "$CHAIN_NAME" ] || [ -z "$CONTRACT_NAME" ]; then
+    echo "  [CHAIN_NAME=$CHAIN_NAME] [CONTRACT_NAME=$CONTRACT_NAME]"
+    echo "  Could not extract chain and contract name from test file $TEST_FILE"
+    exit 1
+  fi
+  # Check that the chain name is valid: deployments/$CHAIN_NAME must exist.
+  if [ ! -d "deployments/$CHAIN_NAME" ]; then
+    echo "  Chain $CHAIN_NAME does not exist"
+    exit 1
+  fi
   # Check if the deployment for the tested contract already exists.
   DEPLOYMENT_FILE="deployments/$CHAIN_NAME/$CONTRACT_NAME.json"
   if [ -f $DEPLOYMENT_FILE ]; then
