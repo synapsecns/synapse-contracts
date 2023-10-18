@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Build the contracts first
-forge build --silent
+forge build
 
 # Find all test files used for the integration tests.
 INTEGRATION_TESTS=$(find test -type f -name "*Integration*.t.sol")
