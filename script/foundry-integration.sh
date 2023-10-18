@@ -16,7 +16,6 @@ for TEST_FILE in $INTEGRATION_TESTS; do
   # == Logs ==
   #   $CHAIN_NAME $CONTRACT_NAME
   # We need to extract the chain and contract name from this output.
-  forge script $TEST_FILE -vvvvv
   TEST_ARGS=$(forge script $TEST_FILE | grep "==" -A1 | tail -n 1)
   CHAIN_NAME=$(echo $TEST_ARGS | awk '{print $1}')
   CONTRACT_NAME=$(echo $TEST_ARGS | awk '{print $2}')
