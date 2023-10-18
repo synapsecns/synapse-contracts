@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Test} from "forge-std/Test.sol";
+import {IntegrationUtils} from "../../../../utils/IntegrationUtils.sol";
 
 import {LinkedPool} from "../../../../../contracts/router/LinkedPool.sol";
 import {IndexedToken, VelodromeV2Module} from "../../../../../contracts/router/modules/pool/velodrome/VelodromeV2Module.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
-contract VelodromeV2ModuleOptTestFork is Test {
+contract VelodromeV2ModuleOptTestFork is IntegrationUtils {
     LinkedPool public linkedPool;
     VelodromeV2Module public velodromeV2Module;
 
@@ -29,10 +29,9 @@ contract VelodromeV2ModuleOptTestFork is Test {
 
     address public user;
 
-    function setUp() public {
-        string memory optRPC = vm.envString("OPTIMISM_API");
-        vm.createSelectFork(optRPC, OPT_BLOCK_NUMBER);
+    constructor() IntegrationUtils("optimism", "VelodromeV2Module", OPT_BLOCK_NUMBER) {}
 
+    function afterBlockchainForked() public override {
         velodromeV2Module = new VelodromeV2Module(VEL_V2_ROUTER);
         linkedPool = new LinkedPool(OP, address(this));
         user = makeAddr("User");

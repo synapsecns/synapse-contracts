@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Test} from "forge-std/Test.sol";
+import {IntegrationUtils} from "../../../../utils/IntegrationUtils.sol";
 
 import {LinkedPool} from "../../../../../contracts/router/LinkedPool.sol";
 import {IndexedToken, UniswapV3SR02Module} from "../../../../../contracts/router/modules/pool/uniswap/UniswapV3SR02Module.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
-contract UniswapV3SR02ModuleAvaxTestFork is Test {
+contract UniswapV3SR02ModuleAvaxTestFork is IntegrationUtils {
     LinkedPool public linkedPool;
     UniswapV3SR02Module public uniswapV3SR02Module;
 
@@ -32,10 +32,9 @@ contract UniswapV3SR02ModuleAvaxTestFork is Test {
 
     address public user;
 
-    function setUp() public {
-        string memory avaxRPC = vm.envString("AVALANCHE_API");
-        vm.createSelectFork(avaxRPC, AVAX_BLOCK_NUMBER);
+    constructor() IntegrationUtils("avalanche", "UniswapV3SR02Module", AVAX_BLOCK_NUMBER) {}
 
+    function afterBlockchainForked() public override {
         uniswapV3SR02Module = new UniswapV3SR02Module(UNI_V3_SWAP_ROUTER_02, UNI_V3_STATIC_QUOTER);
         linkedPool = new LinkedPool(USDC, address(this));
         user = makeAddr("User");

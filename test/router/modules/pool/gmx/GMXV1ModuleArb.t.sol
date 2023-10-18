@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Test} from "forge-std/Test.sol";
+import {IntegrationUtils} from "../../../../utils/IntegrationUtils.sol";
 
 import {LinkedPool} from "../../../../../contracts/router/LinkedPool.sol";
 import {IndexedToken} from "../../../../../contracts/router/modules/pool/gmx/GMXV1Module.sol";
@@ -9,7 +9,7 @@ import {GMXV1StableArbitrumModule} from "../../../../../contracts/router/modules
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
-contract GMXV1ModuleArbTestFork is Test {
+contract GMXV1ModuleArbTestFork is IntegrationUtils {
     LinkedPool public linkedPool;
     GMXV1StableArbitrumModule public gmxV1Module;
 
@@ -57,10 +57,9 @@ contract GMXV1ModuleArbTestFork is Test {
 
     address public user;
 
-    function setUp() public {
-        string memory arbRPC = vm.envString("ARBITRUM_API");
-        vm.createSelectFork(arbRPC, ARB_BLOCK_NUMBER);
+    constructor() IntegrationUtils("arbitrum", "GMXV1Module", ARB_BLOCK_NUMBER) {}
 
+    function afterBlockchainForked() public override {
         gmxV1Module = new GMXV1StableArbitrumModule(GMX_V1_ROUTER, GMX_V1_READER);
         linkedPool = new LinkedPool(USDC_E, address(this));
         user = makeAddr("User");

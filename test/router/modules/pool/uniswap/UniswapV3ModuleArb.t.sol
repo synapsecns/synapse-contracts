@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Test} from "forge-std/Test.sol";
+import {IntegrationUtils} from "../../../../utils/IntegrationUtils.sol";
 
 import {LinkedPool} from "../../../../../contracts/router/LinkedPool.sol";
 import {IndexedToken, UniswapV3Module} from "../../../../../contracts/router/modules/pool/uniswap/UniswapV3Module.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
-contract UniswapV3ModuleArbTestFork is Test {
+contract UniswapV3ModuleArbTestFork is IntegrationUtils {
     LinkedPool public linkedPool;
     UniswapV3Module public uniswapV3Module;
 
@@ -32,10 +32,9 @@ contract UniswapV3ModuleArbTestFork is Test {
 
     address public user;
 
-    function setUp() public {
-        string memory arbRPC = vm.envString("ARBITRUM_API");
-        vm.createSelectFork(arbRPC, ARB_BLOCK_NUMBER);
+    constructor() IntegrationUtils("arbitrum", "UniswapV3Module", ARB_BLOCK_NUMBER) {}
 
+    function afterBlockchainForked() public override {
         uniswapV3Module = new UniswapV3Module(UNI_V3_ROUTER, UNI_V3_STATIC_QUOTER);
         linkedPool = new LinkedPool(USDC, address(this));
         user = makeAddr("User");
