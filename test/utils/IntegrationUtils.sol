@@ -1,37 +1,31 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.6.12;
 
+import {IntegrationTest} from "./IntegrationTest.sol";
 import {StringUtils} from "./StringUtils.sol";
 import {Test, console} from "forge-std/Test.sol";
 
 // solhint-disable no-console
-abstract contract IntegrationUtils is Test {
+abstract contract IntegrationUtils is Test, IntegrationTest {
     using StringUtils for string;
 
-    string private _chainName;
-    string private _contractName;
+    string public chainName;
+    string public contractName;
 
     string private _envRPC;
     uint256 private _forkBlockNumber;
 
     constructor(
-        string memory chainName,
-        string memory contractName,
+        string memory chainName_,
+        string memory contractName_,
         uint256 forkBlockNumber
     ) {
         // Chain name should be lowercase.
-        _chainName = chainName.toLowerCase();
-        _contractName = contractName;
+        chainName = chainName_.toLowerCase();
+        contractName = contractName_;
         // Environment variable name is CHAIN_NAME_API (uppercase).
-        _envRPC = chainName.toUpperCase().concat("_API");
+        _envRPC = chainName_.toUpperCase().concat("_API");
         _forkBlockNumber = forkBlockNumber;
-    }
-
-    /// @notice This will be used to run the test contract as a script first in order
-    /// to check if the corresponding contract on the chain has already been deployed.
-    /// If the contract has been deployed, the integration test will be skipped.
-    function run() external view {
-        console.log("%s %s", _chainName, _contractName);
     }
 
     function setUp() public virtual {
