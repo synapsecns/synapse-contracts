@@ -6,7 +6,7 @@ forge build
 # Find all test files used for the integration tests.
 INTEGRATION_TESTS=$(find test -type f -name "*Integration*.t.sol")
 # Print the amount of integration tests found.
-echo "Found $(wc -w <<< $INTEGRATION_TESTS) integration tests"
+echo "Found $(wc -w <<<$INTEGRATION_TESTS) integration tests"
 
 # Track the integration tests for contracts that are not yet deployed.
 NOT_DEPLOYED_TESTS=()
@@ -20,7 +20,7 @@ for TEST_FILE in $INTEGRATION_TESTS; do
     exit 1
   fi
   CONTRACT_NAME=$(awk '/^contract/ {print $2}' $TEST_FILE)
-  # Then, run the InspectIntegration script to get the chain and contract name. 
+  # Then, run the InspectIntegration script to get the chain and contract name.
   # The argument is $TEST_FILE_BASENAME:$CONTRACT_NAME.
   # Extract base name from file path.
   INSPECT_PATH="script/integration/InspectIntegration.s.sol"
@@ -30,8 +30,8 @@ for TEST_FILE in $INTEGRATION_TESTS; do
   #   $CHAIN_NAME $CONTRACT_NAME
   # We need to extract the chain and contract name from this output.
   TEST_ARGS=$(forge script $INSPECT_PATH --sig "run(string)" $INSPECT_ARGS | awk '/==/ {getline; print}')
-  CHAIN_NAME=$(awk '{print $1}' <<< $TEST_ARGS)
-  CONTRACT_NAME=$(awk '{print $2}' <<< $TEST_ARGS)
+  CHAIN_NAME=$(awk '{print $1}' <<<$TEST_ARGS)
+  CONTRACT_NAME=$(awk '{print $2}' <<<$TEST_ARGS)
   # Check that both the chain and contract name are not empty.
   if [ -z "$CHAIN_NAME" ] || [ -z "$CONTRACT_NAME" ]; then
     echo "  [CHAIN_NAME=$CHAIN_NAME] [CONTRACT_NAME=$CONTRACT_NAME]"
@@ -56,5 +56,8 @@ done
 echo "Running ${#NOT_DEPLOYED_TESTS[@]} integration tests"
 # Combine all test files into a single GLOB pattern using {a,b,c} syntax.
 # This is necessary because forge test does not support multiple --match-path arguments.
-TEST_FILES=$(IFS=, ; echo "${NOT_DEPLOYED_TESTS[*]}")
+TEST_FILES=$(
+  IFS=,
+  echo "${NOT_DEPLOYED_TESTS[*]}"
+)
 forge test --match-path "{$TEST_FILES}"
