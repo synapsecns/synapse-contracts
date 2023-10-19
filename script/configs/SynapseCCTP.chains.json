@@ -1,15 +1,17 @@
 {
   "mainnet": {
-    "chains": ["arbitrum", "avalanche", "mainnet", "optimism"],
+    "chains": ["arbitrum", "avalanche", "base", "mainnet", "optimism"],
     "domains": {
       "arbitrum": 3,
       "avalanche": 1,
+      "base": 6,
       "mainnet": 0,
       "optimism": 2
     },
     "gasAirdrop": {
       "arbitrum": 600000000000000,
       "avalanche": 25000000000000000,
+      "base": 69,
       "mainnet": 0,
       "optimism": 300000000000000
     }
