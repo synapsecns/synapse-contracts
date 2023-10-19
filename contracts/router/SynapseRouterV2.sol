@@ -204,53 +204,43 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     }
 
     /// @inheritdoc IRouterV2
-    function getDestinationAmountOut(DestRequest[] memory requests, address tokenOut)
+    function getDestinationAmountOut(DestRequest memory request, address tokenOut)
         external
         view
-        returns (SwapQuery[] memory destQueries)
+        returns (SwapQuery memory destQuery)
     {
-        destQueries = new SwapQuery[](requests.length);
-        for (uint256 i = 0; i < requests.length; ++i) {
-            DestRequest memory request = requests[i];
-            (address token, uint256 actionMask, address bridgeModule) = _getTokenAndActionMaskFromSymbol(
-                request.symbol
-            );
-            if (token == address(0)) continue;
+        (address token, uint256 actionMask, address bridgeModule) = _getTokenAndActionMaskFromSymbol(request.symbol);
+        if (token == address(0)) return destQuery; // empty
 
-            // account for bridge fees in amountIn
-            bool isSwap = !(token == tokenOut ||
-                (tokenOut == UniversalTokenLib.ETH_ADDRESS && token == swapQuoter.weth()));
-            uint256 amountIn = _calculateBridgeAmountIn(bridgeModule, token, request.amountIn, isSwap);
-            if (amountIn == 0) continue;
+        // account for bridge fees in amountIn
+        bool isSwap = !(token == tokenOut || (tokenOut == UniversalTokenLib.ETH_ADDRESS && token == swapQuoter.weth()));
+        uint256 amountIn = _calculateBridgeAmountIn(bridgeModule, token, request.amountIn, isSwap);
+        if (amountIn == 0) return destQuery; // empty
 
-            // query the quoter
-            LimitedToken memory tokenIn = LimitedToken({actionMask: actionMask, token: token});
-            destQueries[i] = swapQuoter.getAmountOut(tokenIn, tokenOut, amountIn);
-        }
+        // query the quoter
+        LimitedToken memory tokenIn = LimitedToken({actionMask: actionMask, token: token});
+        destQuery = swapQuoter.getAmountOut(tokenIn, tokenOut, amountIn);
     }
 
     /// @inheritdoc IRouterV2
     function getOriginAmountOut(
         address tokenIn,
-        string[] memory tokenSymbols,
+        string memory tokenSymbol,
         uint256 amountIn
-    ) external view returns (SwapQuery[] memory originQueries) {
-        originQueries = new SwapQuery[](tokenSymbols.length);
-        for (uint256 i = 0; i < tokenSymbols.length; ++i) {
-            (address tokenOut, , address bridgeModule) = _getTokenAndActionMaskFromSymbol(tokenSymbols[i]);
-            if (tokenOut == address(0)) continue;
+    ) external view returns (SwapQuery memory originQuery) {
+        (address tokenOut, , address bridgeModule) = _getTokenAndActionMaskFromSymbol(tokenSymbol);
+        if (tokenOut == address(0)) return originQuery; // empty
 
-            // query the quoter
-            LimitedToken memory _tokenIn = LimitedToken({actionMask: ActionLib.allActions(), token: tokenIn});
-            SwapQuery memory query = swapQuoter.getAmountOut(_tokenIn, tokenOut, amountIn);
+        // query the quoter
+        LimitedToken memory _tokenIn = LimitedToken({actionMask: ActionLib.allActions(), token: tokenIn});
+        SwapQuery memory query = swapQuoter.getAmountOut(_tokenIn, tokenOut, amountIn);
 
-            // check max amount can bridge
-            uint256 maxAmountOut = IBridgeModule(bridgeModule).getMaxBridgedAmount(tokenOut);
-            if (query.minAmountOut > maxAmountOut) continue;
+        // check max amount can bridge
+        uint256 maxAmountOut = IBridgeModule(bridgeModule).getMaxBridgedAmount(tokenOut);
+        if (query.minAmountOut > maxAmountOut) return originQuery; // empty
 
-            // set in return array
-            originQueries[i] = query;
-        }
+        // set in return array
+        originQuery = query;
     }
 
     /// @notice Checks whether module ID has already been connected to router

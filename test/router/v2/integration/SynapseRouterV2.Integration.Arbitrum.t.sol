@@ -187,8 +187,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
 
     function testGetOriginAmountOut_inUSDCe_outNUSD() public {
         address tokenIn = USDC_E;
-        string[] memory tokenSymbols = new string[](1);
-        tokenSymbols[0] = "nUSD";
+        string memory tokenSymbol = "nUSD";
         uint256 amountIn = getTestAmount(USDC_E);
 
         address pool = 0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40;
@@ -196,10 +195,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         uint8 indexTo = 0;
         uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountIn);
 
-        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
         assertEq(query.routerAdapter, address(router));
         assertEq(query.tokenOut, NUSD);
         assertEq(query.minAmountOut, amountOut);
@@ -209,15 +205,11 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
 
     function testGetOriginAmountOut_inNUSD_outNUSD() public {
         address tokenIn = NUSD;
-        string[] memory tokenSymbols = new string[](1);
-        tokenSymbols[0] = "nUSD";
+        string memory tokenSymbol = "nUSD";
         uint256 amountIn = getTestAmount(NUSD);
 
         uint256 amountOut = amountIn;
-        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
         assertEq(query.routerAdapter, address(0));
         assertEq(query.tokenOut, NUSD);
         assertEq(query.minAmountOut, amountOut);
@@ -228,14 +220,10 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
     /// @dev UNI not supported so amount out should produce zero
     function testGetOriginAmountOut_inUSDCe_outUNI() public {
         address tokenIn = USDC_E;
-        string[] memory tokenSymbols = new string[](1);
-        tokenSymbols[0] = "UNI";
+        string memory tokenSymbol = "UNI";
         uint256 amountIn = getTestAmount(USDC_E);
 
-        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
         assertEq(query.routerAdapter, address(0));
         assertEq(query.tokenOut, address(0));
         assertEq(query.minAmountOut, 0);
@@ -245,8 +233,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
 
     function testGetOriginAmountOut_inUSDCe_outUSDC() public {
         address tokenIn = USDC_E;
-        string[] memory tokenSymbols = new string[](1);
-        tokenSymbols[0] = "CCTP.USDC";
+        string memory tokenSymbol = "CCTP.USDC";
         uint256 amountIn = 990000000000; // 990K USDC
 
         address pool = 0xC40BF702aBebB494842e2a1751bCf6D8C5be2Fa9;
@@ -254,10 +241,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         uint8 indexTo = 0;
         uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountIn);
 
-        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
         assertEq(query.routerAdapter, address(router));
         assertEq(query.tokenOut, USDC);
         assertEq(query.minAmountOut, amountOut);
@@ -268,14 +252,10 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
     /// @dev CCTP has max bridged amount out of 1M USDC
     function testGetOriginAmountOut_inUSDCe_outUSDC_overMaxBridgedAmount() public {
         address tokenIn = USDC_E;
-        string[] memory tokenSymbols = new string[](1);
-        tokenSymbols[0] = "CCTP.USDC";
+        string memory tokenSymbol = "CCTP.USDC";
         uint256 amountIn = 1100000000000;
 
-        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
         assertEq(query.routerAdapter, address(0));
         assertEq(query.tokenOut, address(0));
         assertEq(query.minAmountOut, 0);
@@ -285,8 +265,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
 
     function testGetOriginAmountOut_inETH_outNETH() public {
         address tokenIn = UniversalTokenLib.ETH_ADDRESS;
-        string[] memory tokenSymbols = new string[](1);
-        tokenSymbols[0] = "nETH";
+        string memory tokenSymbol = "nETH";
         uint256 amountIn = 10e18;
 
         address pool = 0xa067668661C84476aFcDc6fA5D758C4c01C34352;
@@ -294,10 +273,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         uint8 indexTo = 0;
         uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountIn);
 
-        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
         assertEq(query.routerAdapter, address(router));
         assertEq(query.tokenOut, NETH);
         assertEq(query.minAmountOut, amountOut);
@@ -307,8 +283,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
 
     function testGetOriginAmountOut_inWETH_outNETH() public {
         address tokenIn = WETH;
-        string[] memory tokenSymbols = new string[](1);
-        tokenSymbols[0] = "nETH";
+        string memory tokenSymbol = "nETH";
         uint256 amountIn = 10e18;
 
         address pool = 0xa067668661C84476aFcDc6fA5D758C4c01C34352;
@@ -316,10 +291,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         uint8 indexTo = 0;
         uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountIn);
 
-        SwapQuery[] memory queries = router.getOriginAmountOut(tokenIn, tokenSymbols, amountIn);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
         assertEq(query.routerAdapter, address(router));
         assertEq(query.tokenOut, NETH);
         assertEq(query.minAmountOut, amountOut);
@@ -329,8 +301,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
 
     function testGetDestinationAmountOut_inNUSD_outUSDCe() public {
         uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
-        DestRequest[] memory requests = new DestRequest[](1);
-        requests[0] = DestRequest({symbol: "nUSD", amountIn: amountIn});
+        DestRequest memory request = DestRequest({symbol: "nUSD", amountIn: amountIn});
 
         address tokenOut = USDC_E;
         address pool = 0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40;
@@ -341,10 +312,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         uint256 amountInLessBridgeFees = amountIn - fee;
         uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountInLessBridgeFees);
 
-        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
         assertEq(query.routerAdapter, address(router));
         assertEq(query.tokenOut, tokenOut);
         assertEq(query.minAmountOut, amountOut);
@@ -354,18 +322,14 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
 
     function testGetDestinationAmountOut_inNUSD_outNUSD() public {
         uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
-        DestRequest[] memory requests = new DestRequest[](1);
-        requests[0] = DestRequest({symbol: "nUSD", amountIn: amountIn});
+        DestRequest memory request = DestRequest({symbol: "nUSD", amountIn: amountIn});
 
         address tokenOut = NUSD;
         uint256 fee = (amountIn * 0.0004e10) / 10**10;
         uint256 amountInLessBridgeFees = amountIn - fee;
         uint256 amountOut = amountInLessBridgeFees;
 
-        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
         assertEq(query.routerAdapter, address(0));
         assertEq(query.tokenOut, tokenOut);
         assertEq(query.minAmountOut, amountOut);
@@ -375,8 +339,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
 
     function testGetDestinationAmountOut_inNETH_outWETH() public {
         uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
-        DestRequest[] memory requests = new DestRequest[](1);
-        requests[0] = DestRequest({symbol: "nETH", amountIn: amountIn});
+        DestRequest memory request = DestRequest({symbol: "nETH", amountIn: amountIn});
 
         address tokenOut = WETH;
         uint256 fee = (amountIn * 0.0004e10) / 10**10;
@@ -387,10 +350,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         uint256 amountInLessBridgeFees = amountIn - fee;
         uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountInLessBridgeFees);
 
-        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
         assertEq(query.routerAdapter, address(router));
         assertEq(query.tokenOut, tokenOut);
         assertEq(query.minAmountOut, amountOut);
@@ -400,8 +360,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
 
     function testGetDestinationAmountOut_inNETH_outETH() public {
         uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
-        DestRequest[] memory requests = new DestRequest[](1);
-        requests[0] = DestRequest({symbol: "nETH", amountIn: amountIn});
+        DestRequest memory request = DestRequest({symbol: "nETH", amountIn: amountIn});
 
         address tokenOut = UniversalTokenLib.ETH_ADDRESS;
         uint256 fee = (amountIn * 0.0004e10) / 10**10;
@@ -412,10 +371,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         uint256 amountInLessBridgeFees = amountIn - fee;
         uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountInLessBridgeFees);
 
-        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
         assertEq(query.routerAdapter, address(router));
         assertEq(query.tokenOut, tokenOut);
         assertEq(query.minAmountOut, amountOut);
@@ -426,14 +382,10 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
     /// @dev UNI not supported so amount out should produce zero
     function testGetDestinationAmountOut_inUNI_outNUSD() public {
         uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
-        DestRequest[] memory requests = new DestRequest[](1);
-        requests[0] = DestRequest({symbol: "UNI", amountIn: amountIn});
+        DestRequest memory request = DestRequest({symbol: "UNI", amountIn: amountIn});
 
         address tokenOut = NUSD;
-        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
         assertEq(query.routerAdapter, address(0));
         assertEq(query.tokenOut, address(0));
         assertEq(query.minAmountOut, 0);
@@ -444,14 +396,10 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
     /// @dev Not supported as of test block height
     function testGetDestinationAmountOut_inNUSD_outUSDC() public {
         uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
-        DestRequest[] memory requests = new DestRequest[](1);
-        requests[0] = DestRequest({symbol: "nUSD", amountIn: amountIn});
+        DestRequest memory request = DestRequest({symbol: "nUSD", amountIn: amountIn});
 
         address tokenOut = USDC;
-        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
         assertEq(query.routerAdapter, address(0));
         assertEq(query.tokenOut, tokenOut);
         assertEq(query.minAmountOut, 0);
@@ -461,18 +409,14 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
 
     function testGetDestinationAmountOut_inNUSD_outUSDCe_amountInLessThanFee() public {
         uint256 amountIn = getTestAmount(NUSD);
-        DestRequest[] memory requests = new DestRequest[](1);
-        requests[0] = DestRequest({symbol: "nUSD", amountIn: amountIn});
+        DestRequest memory request = DestRequest({symbol: "nUSD", amountIn: amountIn});
 
         address tokenOut = USDC_E;
         uint256 fee = (amountIn * 0.0004e10) / 10**10;
         if (fee < 2e18) fee = 2e18; // @dev nUSD has min of 2 nUSD
         assertTrue(fee >= amountIn);
 
-        SwapQuery[] memory queries = router.getDestinationAmountOut(requests, tokenOut);
-        assertEq(queries.length, 1);
-
-        SwapQuery memory query = queries[0];
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
         assertEq(query.routerAdapter, address(0));
         assertEq(query.tokenOut, address(0));
         assertEq(query.minAmountOut, 0);

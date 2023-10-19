@@ -94,6 +94,7 @@ interface IRouterV2 {
     function moduleToId(address bridgeModule) external view returns (bytes32 moduleId);
 
     /// @notice Gets all bridge tokens for supported bridge modules
+    /// @dev Intended for off-chain queries.
     /// @return bridgeTokens List of structs with following information:
     ///                  - symbol: unique token ID consistent among all chains
     ///                  - token: bridge token address
@@ -101,6 +102,7 @@ interface IRouterV2 {
 
     /// @notice Gets the list of all bridge tokens (and their symbols), such that destination swap
     /// from a bridge token to `tokenOut` is possible.
+    /// @dev Intended for off-chain queries.
     /// @param tokenOut  Token address to swap to on destination chain
     /// @return destTokens List of structs with following information:
     ///                  - symbol: unique token ID consistent among all chains
@@ -109,6 +111,7 @@ interface IRouterV2 {
 
     /// @notice Gets the list of all bridge tokens (and their symbols), such that origin swap
     /// from `tokenIn` to a bridge token is possible.
+    /// @dev Intended for off-chain queries.
     /// @param tokenIn  Token address to swap from on origin chain
     /// @return originTokens List of structs with following information:
     ///                  - symbol: unique token ID consistent among all chains
@@ -117,39 +120,40 @@ interface IRouterV2 {
 
     /// @notice Gets the list of all tokens that can be swapped into bridge tokens on this chain.
     /// @dev Supported tokens should include all bridge tokens and any pool tokens paired with a bridge token.
+    /// @dev Intended for off-chain queries.
     /// @return supportedTokens Supported token addresses that can be swapped for bridge tokens
     function getSupportedTokens() external view returns (address[] memory supportedTokens);
 
     /// @notice Finds the best path between every supported bridge token from the given list and `tokenOut`,
     /// treating the swap as "destination swap", limiting possible actions to those available for every bridge token.
-    /// @dev Will NOT revert if any of the tokens are not supported, instead will return an empty query for that symbol.
+    /// @dev Intended for off-chain queries. Will NOT revert if any of the tokens are not supported, instead will return an empty query for that symbol.
     /// Note: it is NOT possible to form a SwapQuery off-chain using alternative SwapAdapter for the destination swap.
     /// For the time being, only swaps through the Synapse-supported pools are available on destination chain.
-    /// @param requests  List of structs with following information:
+    /// @param request Struct with following information:
     ///                 - symbol: unique token ID consistent among all chains
     ///                 - amountIn: amount of bridge token to start with, before the bridge fee is applied
     /// @param tokenOut  Token user wants to receive on destination chain
-    /// @return destQueries  List of structs that could be used as `destQuery` in SynapseRouter.
+    /// @return destQuery  Structs that could be used as `destQuery` in SynapseRouter.
     ///                      minAmountOut and deadline fields will need to be adjusted based on the user settings.
-    function getDestinationAmountOut(DestRequest[] memory requests, address tokenOut)
+    function getDestinationAmountOut(DestRequest memory request, address tokenOut)
         external
         view
-        returns (SwapQuery[] memory destQueries);
+        returns (SwapQuery memory destQuery);
 
     /// @notice Finds the best path between `tokenIn` and every supported bridge token from the given list,
     /// treating the swap as "origin swap", without putting any restrictions on the swap.
-    /// @dev Will NOT revert if any of the tokens are not supported, instead will return an empty query for that symbol.
+    /// @dev Intended for off-chain queries. Will NOT revert if any of the tokens are not supported, instead will return an empty query for that symbol.
     /// Check (query.minAmountOut != 0): this is true only if the swap is possible and bridge token is supported.
     /// The returned queries with minAmountOut != 0 could be used as `originQuery` with SynapseRouter.
     /// Note: it is possible to form a SwapQuery off-chain using alternative SwapAdapter for the origin swap.
     /// @param tokenIn       Initial token that user wants to bridge/swap
-    /// @param tokenSymbols  List of symbols representing bridge tokens
+    /// @param tokenSymbol  Symbol representing bridge tokens
     /// @param amountIn      Amount of tokens user wants to bridge/swap
-    /// @return originQueries    List of structs that could be used as `originQuery` in SynapseRouter.
+    /// @return originQuery    Structs that could be used as `originQuery` in SynapseRouter.
     ///                          minAmountOut and deadline fields will need to be adjusted based on the user settings.
     function getOriginAmountOut(
         address tokenIn,
-        string[] memory tokenSymbols,
+        string memory tokenSymbol,
         uint256 amountIn
-    ) external view returns (SwapQuery[] memory originQueries);
+    ) external view returns (SwapQuery memory originQuery);
 }
