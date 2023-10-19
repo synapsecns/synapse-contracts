@@ -34,7 +34,7 @@ jobs:
 
       - name: Install and Compile
         run: |
-          npm install
+          npm ci
           npm run build
 
       - name: Test
@@ -64,7 +64,7 @@ jobs:
             ${{ runner.os }}-
 
       - name: Installing dependencies
-        run: npm install
+        run: npm ci
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
@@ -95,7 +95,7 @@ jobs:
             ${{ runner.os }}-
 
       - name: Installing dependencies
-        run: npm install
+        run: npm ci
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
