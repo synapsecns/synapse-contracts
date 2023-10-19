@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.t.sol";
+import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {CurveV1Module} from "../../../../contracts/router/modules/pool/curve/CurveV1Module.sol";
 
-contract LinkedPoolCurveV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
-    string private constant ARB_ENV_RPC = "ARBITRUM_API";
+contract LinkedPoolCurveV1ModuleArbTestFork is LinkedPoolIntegrationTest {
     // 2023-07-03
     uint256 public constant ARB_BLOCK_NUMBER = 107596120;
 
@@ -25,9 +24,9 @@ contract LinkedPoolCurveV1ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
 
     CurveV1Module public curveV1Module;
 
-    constructor() LinkedPoolIntegrationTest(ARB_ENV_RPC, ARB_BLOCK_NUMBER) {}
+    constructor() LinkedPoolIntegrationTest("arbitrum", "CurveV1Module", ARB_BLOCK_NUMBER) {}
 
-    function afterBlockchainForked() public override {
+    function deployModule() public override {
         curveV1Module = new CurveV1Module();
     }
 

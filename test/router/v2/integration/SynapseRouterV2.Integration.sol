@@ -46,10 +46,10 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
     address public recipient;
 
     constructor(
-        string memory envRPC,
+        string memory chainName,
         uint256 forkBlockNumber,
         address quoter
-    ) IntegrationUtils(envRPC, forkBlockNumber) {
+    ) IntegrationUtils(chainName, "SynapseRouterV2", forkBlockNumber) {
         require(quoter != address(0), "swapQuoter == address(0)");
         _quoter = ISwapQuoterV2(quoter);
     }

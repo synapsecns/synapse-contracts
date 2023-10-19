@@ -1,72 +1,93 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Test} from "forge-std/Test.sol";
+import {IntegrationUtils} from "../../../../utils/IntegrationUtils.sol";
 
 import {LinkedPool} from "../../../../../contracts/router/LinkedPool.sol";
-import {IndexedToken, UniswapV3SR02Module} from "../../../../../contracts/router/modules/pool/uniswap/UniswapV3SR02Module.sol";
+import {IndexedToken} from "../../../../../contracts/router/modules/pool/gmx/GMXV1Module.sol";
+import {GMXV1StableAvalancheModule} from "../../../../../contracts/router/modules/pool/gmx/GMXV1StableAvalancheModule.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
-contract UniswapV3SR02ModuleAvaxTestFork is Test {
+contract GMXV1ModuleAvaxTestFork is IntegrationUtils {
     LinkedPool public linkedPool;
-    UniswapV3SR02Module public uniswapV3SR02Module;
+    GMXV1StableAvalancheModule public gmxV1Module;
 
     // 2023-09-05
-    uint256 public constant AVAX_BLOCK_NUMBER = 34800000;
+    uint256 public constant AVAX_BLOCK_NUMBER = 34807165;
 
-    // Uniswap V3 SwapRouter02 on Avalanche
-    address public constant UNI_V3_SWAP_ROUTER_02 = 0xbb00FF08d01D300023C629E8fFfFcb65A5a578cE;
+    // GMX V1 router on Avalanche
+    address public constant GMX_V1_ROUTER = 0x5F719c2F1095F7B9fc68a68e35B51194f4b6abe8;
 
-    // Eden's Uniswap V3 Static Quoter on Avalanche
-    address public constant UNI_V3_STATIC_QUOTER = 0xc15804984E3e77B7f8A60E4553e2289c5fdeAe8B;
+    // GMX V1 vault pool on Avalanche
+    address public constant GMX_V1_VAULT = 0x9ab2De34A33fB459b538c43f251eB825645e8595;
 
-    // Uniswap V3 USDC/USDT pool on Avalanche
-    address public constant UNI_V3_USDC_POOL = 0x804226cA4EDb38e7eF56D16d16E92dc3223347A0;
+    // GMX V1 reader on Avalanche
+    address public constant GMX_V1_READER = 0x67b789D48c926006F5132BFCe4e976F0A7A63d5D;
 
-    // Native USDT on Avalanche
-    address public constant USDT = 0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7;
+    // Native WAVAX on Avalanche
+    address public constant WAVAX = 0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7;
+
+    // Bridged WBTC on Avalanche
+    address public constant WBTC_E = 0x50b7545627a5162F82A992c33b87aDc75187B218;
+
+    // Bridged WETH on Avalanche
+    address public constant WETH_E = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
+
+    // MIM on Avalanche
+    address public constant MIM = 0x130966628846BFd36ff31a822705796e8cb8C18D;
+
+    // Bridged USDC on Avalance
+    address public constant USDC_E = 0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664;
 
     // Native USDC on Avalanche
     address public constant USDC = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
 
+    // Bridged BTC on Avalanche
+    address public constant BTC_B = 0x152b9d0FdC40C096757F570A51E494bd4b943E50;
+
     address public user;
 
-    function setUp() public {
-        string memory avaxRPC = vm.envString("AVALANCHE_API");
-        vm.createSelectFork(avaxRPC, AVAX_BLOCK_NUMBER);
+    constructor() IntegrationUtils("avalanche", "GMXV1StableAvalancheModule", AVAX_BLOCK_NUMBER) {}
 
-        uniswapV3SR02Module = new UniswapV3SR02Module(UNI_V3_SWAP_ROUTER_02, UNI_V3_STATIC_QUOTER);
-        linkedPool = new LinkedPool(USDC, address(this));
+    function afterBlockchainForked() public override {
+        gmxV1Module = new GMXV1StableAvalancheModule(GMX_V1_ROUTER, GMX_V1_READER);
+        linkedPool = new LinkedPool(USDC_E, address(this));
         user = makeAddr("User");
 
-        vm.label(UNI_V3_SWAP_ROUTER_02, "UniswapV3SwapRouter02");
-        vm.label(UNI_V3_STATIC_QUOTER, "UniswapV3StaticQuoter");
-        vm.label(UNI_V3_USDC_POOL, "UniswapV3USDCPool");
-        vm.label(USDT, "USDT");
+        vm.label(GMX_V1_ROUTER, "GMXV1Router");
+        vm.label(GMX_V1_VAULT, "GMXV1Vault");
+
+        vm.label(WAVAX, "WAVAX");
+        vm.label(WBTC_E, "WBTC.e");
+        vm.label(WETH_E, "WETH.e");
+        vm.label(MIM, "MIM");
+        vm.label(USDC_E, "USDC.e");
         vm.label(USDC, "USDC");
+        vm.label(BTC_B, "BTC.b");
     }
 
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
 
     function testGetPoolTokens() public {
-        address[] memory tokens = uniswapV3SR02Module.getPoolTokens(UNI_V3_USDC_POOL);
+        address[] memory tokens = gmxV1Module.getPoolTokens(GMX_V1_VAULT);
         assertEq(tokens.length, 2);
-        // USDT address is lexically smaller than USDC address
-        assertEq(tokens[0], USDT);
+
+        assertEq(tokens[0], USDC_E);
         assertEq(tokens[1], USDC);
     }
 
     // ══════════════════════════════════════════════ TESTS: ADD POOL ══════════════════════════════════════════════════
 
     function addPool() public {
-        linkedPool.addPool({nodeIndex: 0, pool: UNI_V3_USDC_POOL, poolModule: address(uniswapV3SR02Module)});
+        linkedPool.addPool({nodeIndex: 0, pool: GMX_V1_VAULT, poolModule: address(gmxV1Module)});
     }
 
     function testAddPool() public {
         addPool();
-        assertEq(linkedPool.getToken(0), USDC);
-        assertEq(linkedPool.getToken(1), USDT);
+
+        assertEq(linkedPool.getToken(0), USDC_E);
+        assertEq(linkedPool.getToken(1), USDC);
     }
 
     // ════════════════════════════════════════════════ TESTS: SWAP ════════════════════════════════════════════════════
@@ -86,36 +107,36 @@ contract UniswapV3SR02ModuleAvaxTestFork is Test {
         });
     }
 
-    function testSwapFromUSDCtoUSDT() public {
+    function testSwapFromUSDCetoUSDC() public {
         addPool();
-        uint256 amount = 100 * 10**6;
-        prepareUser(USDC, amount);
+        uint256 amount = 10 * 10**6;
+        prepareUser(USDC_E, amount);
         uint256 expectedAmountOut = linkedPool.calculateSwap({nodeIndexFrom: 0, nodeIndexTo: 1, dx: amount});
         uint256 amountOut = swap({tokenIndexFrom: 0, tokenIndexTo: 1, amount: amount});
         assertGt(amountOut, 0);
         assertEq(amountOut, expectedAmountOut);
-        assertEq(IERC20(USDC).balanceOf(user), 0);
-        assertEq(IERC20(USDT).balanceOf(user), amountOut);
+        assertEq(IERC20(USDC_E).balanceOf(user), 0);
+        assertEq(IERC20(USDC).balanceOf(user), amountOut);
     }
 
-    function testSwapFromUSDTtoUSDC() public {
+    function testSwapFromUSDCtoUSDCe() public {
         addPool();
         uint256 amount = 100 * 10**6;
-        prepareUser(USDT, amount);
+        prepareUser(USDC, amount);
         uint256 expectedAmountOut = linkedPool.calculateSwap({nodeIndexFrom: 1, nodeIndexTo: 0, dx: amount});
         uint256 amountOut = swap({tokenIndexFrom: 1, tokenIndexTo: 0, amount: amount});
         assertGt(amountOut, 0);
         assertEq(amountOut, expectedAmountOut);
-        assertEq(IERC20(USDT).balanceOf(user), 0);
-        assertEq(IERC20(USDC).balanceOf(user), amountOut);
+        assertEq(IERC20(USDC).balanceOf(user), 0);
+        assertEq(IERC20(USDC_E).balanceOf(user), amountOut);
     }
 
     function testPoolSwapRevertsWhenDirectCall() public {
         vm.expectRevert("Not a delegate call");
-        uniswapV3SR02Module.poolSwap({
-            pool: UNI_V3_USDC_POOL,
-            tokenFrom: IndexedToken({index: 0, token: USDC}),
-            tokenTo: IndexedToken({index: 1, token: USDT}),
+        gmxV1Module.poolSwap({
+            pool: GMX_V1_VAULT,
+            tokenFrom: IndexedToken({index: 0, token: USDC_E}),
+            tokenTo: IndexedToken({index: 1, token: USDC}),
             amountIn: 100 * 10**6
         });
     }

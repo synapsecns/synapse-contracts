@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.t.sol";
+import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {TraderJoeV21Module} from "../../../../contracts/router/modules/pool/traderjoe/TraderJoeV21Module.sol";
 
-contract LinkedPoolTraderJoeV21ModuleAvaxUSDCTestFork is LinkedPoolIntegrationTest {
-    string private constant AVAX_ENV_RPC = "AVALANCHE_API";
+contract LinkedPoolTraderJoeV21ModuleAvaxTestFork is LinkedPoolIntegrationTest {
     // 2023-09-05
     uint256 public constant AVAX_BLOCK_NUMBER = 34807165;
 
@@ -32,9 +31,9 @@ contract LinkedPoolTraderJoeV21ModuleAvaxUSDCTestFork is LinkedPoolIntegrationTe
 
     TraderJoeV21Module public traderJoeModule;
 
-    constructor() LinkedPoolIntegrationTest(AVAX_ENV_RPC, AVAX_BLOCK_NUMBER) {}
+    constructor() LinkedPoolIntegrationTest("avalanche", "TraderJoeV21Module", AVAX_BLOCK_NUMBER) {}
 
-    function afterBlockchainForked() public override {
+    function deployModule() public override {
         traderJoeModule = new TraderJoeV21Module(LB_ROUTER);
     }
 

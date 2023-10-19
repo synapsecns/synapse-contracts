@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.t.sol";
+import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {GMXV1StableAvalancheModule} from "../../../../contracts/router/modules/pool/gmx/GMXV1StableAvalancheModule.sol";
 
-contract LinkedPoolGMXV1ModuleAvaxUSDCTestFork is LinkedPoolIntegrationTest {
-    string private constant AVAX_ENV_RPC = "AVALANCHE_API";
+contract LinkedPoolGMXV1ModuleAvaxTestFork is LinkedPoolIntegrationTest {
     // 2023-09-05
     uint256 public constant AVAX_BLOCK_NUMBER = 34807165;
 
@@ -45,9 +44,9 @@ contract LinkedPoolGMXV1ModuleAvaxUSDCTestFork is LinkedPoolIntegrationTest {
 
     GMXV1StableAvalancheModule public gmxV1Module;
 
-    constructor() LinkedPoolIntegrationTest(AVAX_ENV_RPC, AVAX_BLOCK_NUMBER) {}
+    constructor() LinkedPoolIntegrationTest("avalanche", "GMXV1StableAvalancheModule", AVAX_BLOCK_NUMBER) {}
 
-    function afterBlockchainForked() public override {
+    function deployModule() public override {
         gmxV1Module = new GMXV1StableAvalancheModule(GMX_V1_ROUTER, GMX_V1_READER);
     }
 

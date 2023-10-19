@@ -1,15 +1,30 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.17;
+pragma solidity >=0.6.12;
 
-import {Test} from "forge-std/Test.sol";
+import {IntegrationTest} from "./IntegrationTest.sol";
+import {StringUtils} from "./StringUtils.sol";
+import {Test, console} from "forge-std/Test.sol";
 
 // solhint-disable no-console
-abstract contract IntegrationUtils is Test {
+abstract contract IntegrationUtils is Test, IntegrationTest {
+    using StringUtils for string;
+
+    string public chainName;
+    string public contractName;
+
     string private _envRPC;
     uint256 private _forkBlockNumber;
 
-    constructor(string memory envRPC, uint256 forkBlockNumber) {
-        _envRPC = envRPC;
+    constructor(
+        string memory chainName_,
+        string memory contractName_,
+        uint256 forkBlockNumber
+    ) {
+        // Chain name should be lowercase.
+        chainName = chainName_.toLowerCase();
+        contractName = contractName_;
+        // Environment variable name is CHAIN_NAME_API (uppercase).
+        _envRPC = chainName_.toUpperCase().concat("_API");
         _forkBlockNumber = forkBlockNumber;
     }
 

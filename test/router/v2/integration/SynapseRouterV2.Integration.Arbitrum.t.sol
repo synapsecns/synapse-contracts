@@ -5,9 +5,9 @@ import {Action, ActionLib, BridgeToken, DefaultParams, DestRequest, LimitedToken
 import {UniversalTokenLib} from "../../../../contracts/router/libs/UniversalToken.sol";
 import {IBridgeModule} from "../../../../contracts/router/interfaces/IBridgeModule.sol";
 
-import {SynapseRouterV2IntegrationTest} from "./SynapseRouterV2.Integration.t.sol";
-import {SynapseRouterV2BridgeUtils} from "./SynapseRouterV2.BridgeUtils.t.sol";
-import {SynapseRouterV2CCTPUtils} from "./SynapseRouterV2.CCTPUtils.t.sol";
+import {SynapseRouterV2IntegrationTest} from "./SynapseRouterV2.Integration.sol";
+import {SynapseRouterV2BridgeUtils} from "./SynapseRouterV2.BridgeUtils.sol";
+import {SynapseRouterV2CCTPUtils} from "./SynapseRouterV2.CCTPUtils.sol";
 
 import {console} from "forge-std/Test.sol";
 
@@ -16,7 +16,6 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
     SynapseRouterV2BridgeUtils,
     SynapseRouterV2CCTPUtils
 {
-    string private constant ARB_ENV_RPC = "ARBITRUM_API";
     uint256 public constant ARB_BLOCK_NUMBER = 136866865; // 2023-10-02
 
     address private constant ARB_SWAP_QUOTER = 0xE402cC7826dD835FCe5E3cFb61D56703fEbc2642;
@@ -54,7 +53,7 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
     address private constant FRAX = 0x17FC002b466eEc40DaE837Fc4bE5c67993ddBd6F;
     address private constant DAI = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
 
-    constructor() SynapseRouterV2IntegrationTest(ARB_ENV_RPC, ARB_BLOCK_NUMBER, ARB_SWAP_QUOTER) {}
+    constructor() SynapseRouterV2IntegrationTest("arbitrum", ARB_BLOCK_NUMBER, ARB_SWAP_QUOTER) {}
 
     function afterBlockchainForked() public virtual override {
         synapseLocalBridgeConfig = ARB_SYN_ROUTER_V1;

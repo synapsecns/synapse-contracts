@@ -1,63 +1,70 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {Test} from "forge-std/Test.sol";
+import {IntegrationUtils} from "../../../../utils/IntegrationUtils.sol";
 
 import {LinkedPool} from "../../../../../contracts/router/LinkedPool.sol";
-import {IndexedToken, CurveV1Module} from "../../../../../contracts/router/modules/pool/curve/CurveV1Module.sol";
+import {IndexedToken, UniswapV3Module} from "../../../../../contracts/router/modules/pool/uniswap/UniswapV3Module.sol";
 
 import {IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/IERC20.sol";
 
-contract CurveV1ModuleArbTestFork is Test {
+contract UniswapV3ModuleArbTestFork is IntegrationUtils {
     LinkedPool public linkedPool;
-    CurveV1Module public curveV1Module;
+    UniswapV3Module public uniswapV3Module;
 
-    // 2023-07-03
-    uint256 public constant ARB_BLOCK_NUMBER = 107596120;
+    // 2023-06-27
+    uint256 public constant ARB_BLOCK_NUMBER = 105400000;
 
-    // Curve V1 USDC/USDT pool (2pool) on Arbitrum
-    address public constant CURVE_V1_2POOL = 0x7f90122BF0700F9E7e1F688fe926940E8839F353;
+    // Uniswap V3 Router on Arbitrum
+    address public constant UNI_V3_ROUTER = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
 
-    // Native USDT on Arbitrum
-    address public constant USDT = 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9;
+    // Eden's Uniswap V3 Static Quoter on Arbitrum
+    address public constant UNI_V3_STATIC_QUOTER = 0xc80f61d1bdAbD8f5285117e1558fDDf8C64870FE;
 
-    // Bridged USDC on Arbitrum
+    // Uniswap V3 USDC/USDC.e pool on Arbitrum
+    address public constant UNI_V3_USDC_POOL = 0x8e295789c9465487074a65b1ae9Ce0351172393f;
+
+    // Bridged USDC (USDC.e) on Arbitrum
     address public constant USDC_E = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
+
+    // Native USDC on Arbitrum
+    address public constant USDC = 0xaf88d065e77c8cC2239327C5EDb3A432268e5831;
 
     address public user;
 
-    function setUp() public {
-        string memory arbRPC = vm.envString("ARBITRUM_API");
-        vm.createSelectFork(arbRPC, ARB_BLOCK_NUMBER);
+    constructor() IntegrationUtils("arbitrum", "UniswapV3Module", ARB_BLOCK_NUMBER) {}
 
-        curveV1Module = new CurveV1Module();
-        linkedPool = new LinkedPool(USDC_E, address(this));
+    function afterBlockchainForked() public override {
+        uniswapV3Module = new UniswapV3Module(UNI_V3_ROUTER, UNI_V3_STATIC_QUOTER);
+        linkedPool = new LinkedPool(USDC, address(this));
         user = makeAddr("User");
 
-        vm.label(CURVE_V1_2POOL, "CurveV12Pool");
-        vm.label(USDT, "USDT");
+        vm.label(UNI_V3_ROUTER, "UniswapV3Router");
+        vm.label(UNI_V3_STATIC_QUOTER, "UniswapV3StaticQuoter");
+        vm.label(UNI_V3_USDC_POOL, "UniswapV3USDCPool");
         vm.label(USDC_E, "USDC.e");
+        vm.label(USDC, "USDC");
     }
 
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
 
     function testGetPoolTokens() public {
-        address[] memory tokens = curveV1Module.getPoolTokens(CURVE_V1_2POOL);
+        address[] memory tokens = uniswapV3Module.getPoolTokens(UNI_V3_USDC_POOL);
         assertEq(tokens.length, 2);
-        assertEq(tokens[0], USDC_E);
-        assertEq(tokens[1], USDT);
+        assertEq(tokens[0], USDC);
+        assertEq(tokens[1], USDC_E);
     }
 
     // ══════════════════════════════════════════════ TESTS: ADD POOL ══════════════════════════════════════════════════
 
     function addPool() public {
-        linkedPool.addPool({nodeIndex: 0, pool: CURVE_V1_2POOL, poolModule: address(curveV1Module)});
+        linkedPool.addPool({nodeIndex: 0, pool: UNI_V3_USDC_POOL, poolModule: address(uniswapV3Module)});
     }
 
     function testAddPool() public {
         addPool();
-        assertEq(linkedPool.getToken(0), USDC_E);
-        assertEq(linkedPool.getToken(1), USDT);
+        assertEq(linkedPool.getToken(0), USDC);
+        assertEq(linkedPool.getToken(1), USDC_E);
     }
 
     // ════════════════════════════════════════════════ TESTS: SWAP ════════════════════════════════════════════════════
@@ -77,36 +84,36 @@ contract CurveV1ModuleArbTestFork is Test {
         });
     }
 
-    function testSwapFromUSDCtoUSDT() public {
+    function testSwapFromUSDCtoUSDCe() public {
         addPool();
         uint256 amount = 100 * 10**6;
-        prepareUser(USDC_E, amount);
+        prepareUser(USDC, amount);
         uint256 expectedAmountOut = linkedPool.calculateSwap({nodeIndexFrom: 0, nodeIndexTo: 1, dx: amount});
         uint256 amountOut = swap({tokenIndexFrom: 0, tokenIndexTo: 1, amount: amount});
         assertGt(amountOut, 0);
         assertEq(amountOut, expectedAmountOut);
-        assertEq(IERC20(USDC_E).balanceOf(user), 0);
-        assertEq(IERC20(USDT).balanceOf(user), amountOut);
+        assertEq(IERC20(USDC).balanceOf(user), 0);
+        assertEq(IERC20(USDC_E).balanceOf(user), amountOut);
     }
 
-    function testSwapFromUSDTtoUSDC() public {
+    function testSwapFromUSDCetoUSDC() public {
         addPool();
         uint256 amount = 100 * 10**6;
-        prepareUser(USDT, amount);
+        prepareUser(USDC_E, amount);
         uint256 expectedAmountOut = linkedPool.calculateSwap({nodeIndexFrom: 1, nodeIndexTo: 0, dx: amount});
         uint256 amountOut = swap({tokenIndexFrom: 1, tokenIndexTo: 0, amount: amount});
         assertGt(amountOut, 0);
         assertEq(amountOut, expectedAmountOut);
-        assertEq(IERC20(USDT).balanceOf(user), 0);
-        assertEq(IERC20(USDC_E).balanceOf(user), amountOut);
+        assertEq(IERC20(USDC_E).balanceOf(user), 0);
+        assertEq(IERC20(USDC).balanceOf(user), amountOut);
     }
 
     function testPoolSwapRevertsWhenDirectCall() public {
         vm.expectRevert("Not a delegate call");
-        curveV1Module.poolSwap({
-            pool: CURVE_V1_2POOL,
-            tokenFrom: IndexedToken({index: 0, token: USDC_E}),
-            tokenTo: IndexedToken({index: 1, token: USDT}),
+        uniswapV3Module.poolSwap({
+            pool: UNI_V3_USDC_POOL,
+            tokenFrom: IndexedToken({index: 0, token: USDC}),
+            tokenTo: IndexedToken({index: 1, token: USDC_E}),
             amountIn: 100 * 10**6
         });
     }

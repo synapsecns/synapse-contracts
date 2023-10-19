@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.t.sol";
+import {LinkedPoolIntegrationTest} from "./LinkedPoolIntegration.sol";
 
 import {VelodromeV2Module} from "../../../../contracts/router/modules/pool/velodrome/VelodromeV2Module.sol";
 
-contract LinkedPoolVelodromeV2ModuleArbUSDCTestFork is LinkedPoolIntegrationTest {
-    string private constant OPT_ENV_RPC = "OPTIMISM_API";
+contract LinkedPoolVelodromeV2ModuleOptTestFork is LinkedPoolIntegrationTest {
     // 2023-07-11
     uint256 public constant OPT_BLOCK_NUMBER = 106753037;
 
@@ -28,9 +27,9 @@ contract LinkedPoolVelodromeV2ModuleArbUSDCTestFork is LinkedPoolIntegrationTest
 
     VelodromeV2Module public velodromeV2Module;
 
-    constructor() LinkedPoolIntegrationTest(OPT_ENV_RPC, OPT_BLOCK_NUMBER) {}
+    constructor() LinkedPoolIntegrationTest("optimism", "VelodromeV2Module", OPT_BLOCK_NUMBER) {}
 
-    function afterBlockchainForked() public override {
+    function deployModule() public override {
         velodromeV2Module = new VelodromeV2Module(VEL_V2_ROUTER);
     }
 
