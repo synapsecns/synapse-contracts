@@ -3,33 +3,31 @@ pragma solidity 0.8.17;
 
 import {SynapseCCTPRouter} from "../../contracts/cctp/SynapseCCTPRouter.sol";
 
-import {DeployScript} from "../utils/DeployScript.sol";
+import {BasicSynapseScript} from "../templates/BasicSynapse.s.sol";
 import {console, stdJson} from "forge-std/Script.sol";
 
 // solhint-disable no-console
-contract DeploySynapseCCTProuterScript is DeployScript {
+contract DeploySynapseCCTProuterScript is BasicSynapseScript {
     using stdJson for string;
 
     string public constant SYNAPSE_CCTP = "SynapseCCTP";
     string public constant SYNAPSE_CCTP_ROUTER = "SynapseCCTPRouter";
 
-    constructor() {
-        setupPK("ROUTER_DEPLOYER_PK");
-        // Load chain name that block.chainid refers to
-        loadChain();
+    function run() external {
+        // Setup the BasicSynapseScript
+        setUp();
+        vm.startBroadcast();
+        // Use `deploySynapseCCTPRouter` as callback to deploy the contract
+        deployAndSave({contractName: SYNAPSE_CCTP_ROUTER, deployContract: deploySynapseCCTPRouter});
+        vm.stopBroadcast();
     }
 
-    /// @notice Logic for executing the script
-    function execute(bool isBroadcasted_) public override {
-        startBroadcast(isBroadcasted_);
-        address synapseCCTP = loadDeployment(SYNAPSE_CCTP);
-        SynapseCCTPRouter router = deployCCTPRouter(synapseCCTP);
-        stopBroadcast();
-        require(router.synapseCCTP() == synapseCCTP, "Failed to set SynapseCCTP");
-    }
-
-    function deployCCTPRouter(address synapseCCTP) public returns (SynapseCCTPRouter router) {
-        router = new SynapseCCTPRouter(synapseCCTP);
-        saveDeployment(SYNAPSE_CCTP_ROUTER, address(router));
+    /// @notice Callback function to deploy the SynapseCCTPRouter contract.
+    /// Must follow this signature for the deploy script to work:
+    /// `deployContract() internal returns (address deployedAt, bytes memory constructorArgs)`
+    function deploySynapseCCTPRouter() internal returns (address deployedAt, bytes memory constructorArgs) {
+        address synapseCCTP = getDeploymentAddress(SYNAPSE_CCTP);
+        deployedAt = address(new SynapseCCTPRouter(synapseCCTP));
+        constructorArgs = abi.encode(synapseCCTP);
     }
 }
