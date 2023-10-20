@@ -18,7 +18,7 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
 {
     uint256 public constant ETH_BLOCK_NUMBER = 18392588; // 2023-10-20
 
-    address private constant ETH_SWAP_QUOTER = 0x78A83C17600aDd7447dBD6B8aB26330481075295;
+    address private constant ETH_SWAP_QUOTER = 0x5682dC851C33adb48F6958a963A5d3Aa31F6f184;
     address private constant ETH_SYN_ROUTER_V1 = 0x7E7A0e201FD38d3ADAA9523Da6C109a07118C96a;
     address private constant ETH_SYN_BRIDGE = 0x2796317b0fF8538F253012862c06787Adfb8cEb6;
     address private constant ETH_SYN_CCTP = 0xfB2Bfc368a7edfD51aa2cbEC513ad50edEa74E84;

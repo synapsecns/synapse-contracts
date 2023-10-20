@@ -59,8 +59,6 @@ contract SynapseRouterV2ArbitrumIntegrationTestFork is
         synapseLocalBridgeConfig = ARB_SYN_ROUTER_V1;
         synapseBridge = ARB_SYN_BRIDGE;
         synapseCCTP = ARB_SYN_CCTP;
-
-        setRouterOnQuoter = true;
     }
 
     function addExpectedTokens() public virtual override {

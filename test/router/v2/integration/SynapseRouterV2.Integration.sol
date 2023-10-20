@@ -44,7 +44,6 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
     SynapseRouterV2 public router;
     address public user;
     address public recipient;
-    bool public setRouterOnQuoter;
 
     constructor(
         string memory chainName,
@@ -78,10 +77,8 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
     function setSwapQuoter() public virtual {
         router.setSwapQuoter(_quoter);
 
-        if (setRouterOnQuoter) {
-            vm.prank(IOwnable(address(_quoter)).owner());
-            _quoter.setSynapseRouter(address(router));
-        }
+        vm.prank(IOwnable(address(_quoter)).owner());
+        _quoter.setSynapseRouter(address(router));
     }
 
     /// @dev override to include more modules than bridge, cctp
