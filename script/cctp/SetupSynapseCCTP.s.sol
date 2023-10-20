@@ -52,7 +52,7 @@ contract SetupCCTPScript is BasicSynapseScript {
     function setupTokensCCTP() internal {
         string memory config = getDeployConfig(SYNAPSE_CCTP);
         // Get the list of symbols
-        string[] memory symbols = config.readStringArray(".tokens.symbols");
+        string[] memory symbols = vm.parseJsonKeys(config, ".tokens");
         console.log("Setting up %s tokens", symbols.length);
         for (uint256 i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
