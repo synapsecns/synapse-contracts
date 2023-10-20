@@ -130,7 +130,34 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
         bridgeTokens[20] = BridgeToken({token: LINK, symbol: "LINK"});
         bridgeTokens[21] = BridgeToken({token: UNIDX, symbol: "UNIDX"});
         bridgeTokens[22] = BridgeToken({token: USDC, symbol: "CCTP.USDC"});
-
         checkBridgeTokenArrays(router.getBridgeTokens(), bridgeTokens);
+    }
+
+    function testGetSupportedTokens() public {
+        address[] memory supportedTokens = new address[](23);
+        supportedTokens[0] = DAI;
+        supportedTokens[1] = USDC;
+        supportedTokens[2] = USDT;
+        supportedTokens[3] = NUSD;
+        supportedTokens[4] = SYN;
+        supportedTokens[5] = WETH;
+        supportedTokens[6] = HIGH;
+        supportedTokens[7] = WSOHM;
+        supportedTokens[8] = DOG;
+        supportedTokens[9] = FRAX;
+        supportedTokens[10] = GOHM;
+        supportedTokens[11] = UST;
+        supportedTokens[12] = NEWO;
+        supportedTokens[13] = PEPE;
+        supportedTokens[14] = SDT;
+        supportedTokens[15] = VSTA;
+        supportedTokens[16] = SFI;
+        supportedTokens[17] = H2O;
+        supportedTokens[18] = WBTC;
+        supportedTokens[19] = AGEUR;
+        supportedTokens[20] = LINK;
+        supportedTokens[21] = UNIDX;
+        supportedTokens[22] = UniversalTokenLib.ETH_ADDRESS;
+        checkAddressArrays(router.getSupportedTokens(), supportedTokens);
     }
 }
