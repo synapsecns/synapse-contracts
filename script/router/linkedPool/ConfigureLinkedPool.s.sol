@@ -44,39 +44,43 @@ contract ConfigureLinkedPool is BasicSynapseScript {
         bytes memory encodedPools = config.parseRaw(".pools");
         PoolParams[] memory poolParamsList = abi.decode(encodedPools, (PoolParams[]));
         for (uint256 i = 0; i < poolParamsList.length; ++i) {
-            PoolParams memory params = poolParamsList[i];
-            // TODO: add options to update pool module here on in a separate script?
-            address poolModule = bytes(params.poolModule).length == 0
-                ? address(0)
-                : getDeploymentAddress(params.poolModule.concat("Module"));
-            string memory module = poolModule == address(0) ? "None" : params.poolModule;
-            if (isAttached(params.nodeIndex, params.pool)) {
-                printLog(
-                    StringUtils.concat(
-                        "Skipping: already attached [node = ",
-                        params.nodeIndex.fromUint(),
-                        "] [pool = %s] [module = ",
-                        module,
-                        "]"
-                    ),
-                    params.pool
-                );
-            } else {
-                printLog(
-                    StringUtils.concat(
-                        "Attaching: [node = ",
-                        params.nodeIndex.fromUint(),
-                        "] [pool = %s] [module = ",
-                        module,
-                        "]"
-                    ),
-                    params.pool,
-                    poolModule
-                );
-                linkedPool.addPool(params.nodeIndex, params.pool, poolModule);
-            }
+            checkAndAttachPool(poolParamsList[i]);
         }
         decreaseIndent();
+    }
+
+    /// @dev Checks if a pool is already attached to a given node and attaches it if not.
+    function checkAndAttachPool(PoolParams memory params) internal {
+        // TODO: add options to update pool module here or in a separate script?
+        address poolModule = bytes(params.poolModule).length == 0
+            ? address(0)
+            : getDeploymentAddress(params.poolModule.concat("Module"));
+        string memory module = poolModule == address(0) ? "None" : params.poolModule;
+        if (isAttached(params.nodeIndex, params.pool)) {
+            printLog(
+                StringUtils.concat(
+                    "Skipping: already attached [node = ",
+                    params.nodeIndex.fromUint(),
+                    "] [pool = %s] [module = ",
+                    module,
+                    "]"
+                ),
+                params.pool
+            );
+        } else {
+            printLog(
+                StringUtils.concat(
+                    "Attaching: [node = ",
+                    params.nodeIndex.fromUint(),
+                    "] [pool = %s] [module = ",
+                    module,
+                    "]"
+                ),
+                params.pool,
+                poolModule
+            );
+            linkedPool.addPool(params.nodeIndex, params.pool, poolModule);
+        }
     }
 
     /// @dev Checks if a pool is already attached to a given node.
