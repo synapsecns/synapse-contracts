@@ -20,4 +20,10 @@ interface ISwapQuoterV2 is ISwapQuoterV1 {
     /// - If this is a request for the swap to be performed as the "destination swap" in the bridge workflow,
     /// only the whitelisted pool for tokenIn.token will be considered for the swap.
     function areConnectedTokens(LimitedToken memory tokenIn, address tokenOut) external view returns (bool);
+
+    /// @notice Allows to set the SynapseRouter contract, which is used as "Router Adapter" for doing
+    /// swaps through Default Pools (or handling ETH).
+    /// Note: this will not affect the old SynapseRouter contract which still uses this Quoter, as the old SynapseRouter
+    /// could handle the requests with the new SynapseRouter as external "Router Adapter".
+    function setSynapseRouter(address synapseRouter_) external;
 }

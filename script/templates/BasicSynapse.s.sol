@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.6.12;
+pragma experimental ABIEncoderV2;
 
 import {BasicUtils, StringUtils} from "./BasicUtils.sol";
 import {IImmutableCreate2Factory} from "../interfaces/IImmutableCreate2Factory.sol";
@@ -12,9 +13,18 @@ contract BasicSynapseScript is BasicUtils {
     using StringUtils for string;
     using StringUtils for uint256;
 
+    // Order of the struct members must match the alphabetical order of the JSON keys
+    struct SaltEntry {
+        bytes32 initCodeHash;
+        address predictedAddress;
+        bytes32 salt;
+    }
+
     string internal constant TAB = "    ";
     /// @notice Deployed on lots of chains, could be deployed on more chains in a permissionless way
     address public constant IMMUTABLE_CREATE2_FACTORY = 0x0000000000FFe8B47B3e2130213B802212439497;
+    /// @notice Deployed on lots of chains, could be deployed on more chains using EOA
+    string public constant MINIMAL_CREATE2_FACTORY = "Create2Factory";
 
     /// @notice Name of the active chain, should match the name of the directory in deployments
     string public activeChain;
@@ -111,18 +121,78 @@ contract BasicSynapseScript is BasicUtils {
         internal
         returns (address deployedAt)
     {
-        // Check that ImmutableCreate2Factory is deployed
-        assertContractCodeExists("ImmutableCreate2Factory", IMMUTABLE_CREATE2_FACTORY);
         // Init code is the contract bytecode with constructor args appended
         bytes memory initCode = abi.encodePacked(getContractBytecode(contractName), constructorArgs);
-        deployedAt = IImmutableCreate2Factory(IMMUTABLE_CREATE2_FACTORY).safeCreate2(nextDeploymentSalt, initCode);
+        // If no salt was provided, try reading it from the pre-saved list
+        if (nextDeploymentSalt == 0) {
+            nextDeploymentSalt = loadDeploymentSalt(initCode, contractName);
+        }
+        deployedAt = factoryDeployCreate2(initCode, nextDeploymentSalt);
         // Erase the salt after the deployment
         nextDeploymentSalt = 0;
+    }
+
+    /// @notice Creates a contract with the given init code.
+    /// Deployment is done in a deterministic way, using create2 and the given salt.
+    /// Note: does not save the deployment JSON.
+    function factoryDeployCreate2(bytes memory initCode, bytes32 salt) internal returns (address deployedAt) {
+        // Get address of the factory on the active chain
+        address factory = getDeploymentAddress(MINIMAL_CREATE2_FACTORY);
+        assertContractCodeExists(MINIMAL_CREATE2_FACTORY, factory);
+        address predicted = predictAddress(factory, initCode, salt);
+        require(getCodeSize(predicted) == 0, "Contract already deployed");
+        // Payload is salt + initCode
+        bytes memory payload = abi.encodePacked(salt, initCode);
+        // solhint-disable-next-line avoid-low-level-calls
+        (bool success, bytes memory returnData) = factory.call(payload);
+        require(success, "CREATE2 deployment failed");
+        // returnData is 20 bytes of address rather than ABI-encoded address
+        require(returnData.length == 20, "Invalid return data");
+        returnData = abi.encodePacked(bytes12(0), returnData);
+        deployedAt = abi.decode(returnData, (address));
+        require(deployedAt == predicted, "Invalid deployment address");
+    }
+
+    /// @notice Predicts the address of a contract that would be deployed with the given init code and salt.
+    function predictAddress(bytes memory initCode, bytes32 salt) internal returns (address deployedAt) {
+        address factory = getDeploymentAddress(MINIMAL_CREATE2_FACTORY);
+        return predictAddress(factory, initCode, salt);
+    }
+
+    /// @notice Predicts the address of a contract that would be deployed with the given factory, init code and salt.
+    function predictAddress(
+        address factory,
+        bytes memory initCode,
+        bytes32 salt
+    ) internal pure returns (address deployedAt) {
+        deployedAt = address(
+            uint160(uint256(keccak256(abi.encodePacked(bytes1(0xff), factory, salt, keccak256(initCode)))))
+        );
     }
 
     /// @notice Sets the salt to be used for the next create2 deployment.
     function setDeploymentSalt(bytes32 salt) internal {
         nextDeploymentSalt = salt;
+    }
+
+    /// @notice Loads pre-saved deployment salt for a contract, if there is any.
+    /// Note: returns 0 if there is no pre-saved salt.
+    function loadDeploymentSalt(bytes memory initCode, string memory contractName)
+        internal
+        view
+        returns (bytes32 salt)
+    {
+        bytes32 initCodeHash = keccak256(initCode);
+        string memory allSalts = getGlobalConfig(MINIMAL_CREATE2_FACTORY, "salts");
+        // Try to read the salt from the JSON
+        try vm.parseJson(allSalts, StringUtils.concat(".", contractName)) returns (bytes memory encoded) {
+            SaltEntry memory entry = abi.decode(encoded, (SaltEntry));
+            require(entry.initCodeHash == initCodeHash, "Invalid init code hash");
+            return entry.salt;
+        } catch {
+            // No key is present in the JSON, return 0
+            return 0;
+        }
     }
 
     /// @notice Deploys a contract and saves the deployment JSON, if the contract hasn't been deployed yet.
@@ -240,13 +310,16 @@ contract BasicSynapseScript is BasicUtils {
 
     /// @notice Asserts that a contract is deployed on the active chain by checking its code size.
     function assertContractCodeExists(string memory contractName, address contractAddr) internal view {
+        require(getCodeSize(contractAddr) != 0, StringUtils.concat("No code for ", contractName, " on ", activeChain));
+    }
+
+    /// @notice Returns the code size for a given address on the active chain.
+    function getCodeSize(address contractAddr) internal view returns (uint256 codeSize) {
         // address.code.length is only available in Solidity 0.8.0+
-        uint256 codeSize;
         // solhint-disable-next-line no-inline-assembly
         assembly {
             codeSize := extcodesize(contractAddr)
         }
-        require(codeSize != 0, StringUtils.concat("No code for ", contractName, " on ", activeChain));
     }
 
     /// @notice Returns the deployment address for a contract on the active chain.

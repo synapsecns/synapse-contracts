@@ -7,6 +7,7 @@ import {SynapseScript} from "../utils/SynapseScript.sol";
 
 import {BridgeConfigV3Lens, LocalBridgeConfig} from "../../contracts/bridge/utils/BridgeConfigV3Lens.sol";
 
+// solhint-disable no-console
 contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
     using stdJson for string;
 
@@ -42,6 +43,8 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
         string memory ethRPC = vm.envString("MAINNET_API");
         vm.createSelectFork(ethRPC);
         (LocalBridgeConfig.BridgeTokenConfig[] memory tokens, address[] memory pools) = getChainConfig(chainId);
+        // Filter out MockSwap and duplicated pools
+        pools = _filterPools(pools);
 
         _loadIgnoredIds();
 
@@ -70,6 +73,32 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
         fullConfig = fullConfig.serialize("pools", pools);
 
         saveDeployConfig(ROUTER, fullConfig);
+    }
+
+    function _filterPools(address[] memory pools) internal returns (address[] memory filteredPools) {
+        address mockSwap = tryLoadDeployment("MockSwap");
+        bool[] memory isRealAndUnique = new bool[](pools.length);
+        uint256 count = 0;
+        for (uint256 i = 0; i < pools.length; ++i) {
+            // Skip MockSwap
+            if (pools[i] == mockSwap) continue;
+            // Skip pools that are already in the list
+            bool isUnique = true;
+            for (uint256 j = 0; j < i; ++j) {
+                if (pools[i] == pools[j]) {
+                    isUnique = false;
+                    break;
+                }
+            }
+            if (!isUnique) continue;
+            isRealAndUnique[i] = true;
+            ++count;
+        }
+        filteredPools = new address[](count);
+        count = 0;
+        for (uint256 i = 0; i < pools.length; ++i) {
+            if (isRealAndUnique[i]) filteredPools[count++] = pools[i];
+        }
     }
 
     function _loadIgnoredIds() internal {

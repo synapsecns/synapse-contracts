@@ -3,45 +3,45 @@ pragma solidity 0.8.17;
 
 import {ITokenMessenger, SynapseCCTP} from "../../contracts/cctp/SynapseCCTP.sol";
 
-import {DeployScript} from "../utils/DeployScript.sol";
-import {console, stdJson} from "forge-std/Script.sol";
+import {BasicSynapseScript} from "../templates/BasicSynapse.s.sol";
+import {stdJson} from "forge-std/Script.sol";
 
 // solhint-disable no-console
-contract DeploySynapseCCTPScript is DeployScript {
+contract DeploySynapseCCTP is BasicSynapseScript {
     using stdJson for string;
 
     string public constant SYNAPSE_CCTP = "SynapseCCTP";
 
-    address public synapseCCTP;
+    address public tokenMessenger;
     address public owner;
 
-    constructor() {
-        setupPK("ROUTER_DEPLOYER_PK");
-        owner = loadAddress("OWNER_PK");
-        // Load chain name that block.chainid refers to
-        loadChain();
+    function run() external {
+        // Setup the BasicSynapseScript
+        setUp();
+        bytes memory constructorArgs = loadConfig();
+        vm.startBroadcast();
+        // Use CREATE2 to deploy the contract with zero salt to prevent collisions
+        setDeploymentSalt(0);
+        address deployed = deployAndSave({
+            contractName: SYNAPSE_CCTP,
+            constructorArgs: constructorArgs,
+            deployCode: deployCreate2
+        });
+        vm.stopBroadcast();
+        // Sanity checks
+        require(SynapseCCTP(deployed).owner() == owner, "Failed to set owner");
+        require(address(SynapseCCTP(deployed).tokenMessenger()) == tokenMessenger, "Failed to set tokenMessenger");
     }
 
-    /// @notice Logic for executing the script
-    function execute(bool isBroadcasted_) public override {
-        startBroadcast(isBroadcasted_);
-        synapseCCTP = tryLoadDeployment(SYNAPSE_CCTP);
-        if (synapseCCTP != address(0)) {
-            console.log("SynapseCCTP already deployed at %s", synapseCCTP);
-            return;
-        }
-        string memory config = loadDeployConfig(SYNAPSE_CCTP);
-        deploySynapseCCTP(config);
-        stopBroadcast();
-        require(SynapseCCTP(synapseCCTP).owner() == owner, "Failed to set owner");
-    }
-
-    function deploySynapseCCTP(string memory config) internal {
-        // Deploy SynapseCCTP if not deployed already
-        address tokenMessenger = config.readAddress(".tokenMessenger");
+    function loadConfig() public returns (bytes memory constructorArgs) {
+        string memory config = getDeployConfig(SYNAPSE_CCTP);
+        // Read tokenMessenger from config
+        tokenMessenger = config.readAddress(".tokenMessenger");
         require(tokenMessenger != address(0), "TokenMessenger not set");
+        // Read owner address from .env
+        owner = vm.envAddress("OWNER_ADDR");
         require(owner != address(0), "Owner not set");
-        synapseCCTP = address(new SynapseCCTP(ITokenMessenger(tokenMessenger), owner));
-        saveDeployment(SYNAPSE_CCTP, synapseCCTP);
+        printLog("Using [tokenMessenger = %s] [owner = %s]", tokenMessenger, owner);
+        constructorArgs = abi.encode(tokenMessenger, owner);
     }
 }

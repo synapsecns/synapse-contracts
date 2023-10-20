@@ -5,7 +5,7 @@
     "boba": "--legacy --skip-simulation --slow",
     "canto": "--legacy --slow",
     "cronos": "--slow",
-    "dfk": "--legacy --slow",
+    "dfk": "--slow",
     "dogechain": "--legacy --slow",
     "harmony": "--legacy --slow",
     "klatyn": "--skip-simulation",
