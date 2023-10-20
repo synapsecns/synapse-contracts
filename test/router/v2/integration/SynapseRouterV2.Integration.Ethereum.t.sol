@@ -88,6 +88,9 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
         destinationTokensBridge[3] = USDT;
 
         addExpectedBridgeToken(BridgeToken({symbol: "nUSD", token: NUSD}), originTokensBridge, destinationTokensBridge);
+        addExpectedBridgeToken(BridgeToken({symbol: "USDC", token: USDC}), originTokensBridge, destinationTokensBridge);
+        addExpectedBridgeToken(BridgeToken({symbol: "USDT", token: USDT}), originTokensBridge, destinationTokensBridge);
+        addExpectedBridgeToken(BridgeToken({symbol: "DAI", token: DAI}), originTokensBridge, destinationTokensBridge);
 
         // add synapse cctp module bridge tokens
         address[] memory originTokensCCTP = new address[](4);
@@ -102,7 +105,11 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
         destinationTokensCCTP[2] = DAI;
         destinationTokensCCTP[3] = USDT;
 
-        addExpectedBridgeToken(BridgeToken({symbol: "USDC", token: USDC}), originTokensCCTP, destinationTokensCCTP);
+        addExpectedBridgeToken(
+            BridgeToken({symbol: "CCTP.USDC", token: USDC}),
+            originTokensCCTP,
+            destinationTokensCCTP
+        );
     }
 
     function testGetBridgeTokens() public {
@@ -159,5 +166,15 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
         supportedTokens[21] = UNIDX;
         supportedTokens[22] = UniversalTokenLib.ETH_ADDRESS;
         checkAddressArrays(router.getSupportedTokens(), supportedTokens);
+    }
+
+    function testGetOriginBridgeTokens() public {
+        for (uint256 i = 0; i < expectedTokens.length; i++) {
+            console.log("tokenIn %s: %s [%s]", i, expectedTokens[i], tokenNames[expectedTokens[i]]);
+            checkBridgeTokenArrays(
+                router.getOriginBridgeTokens(expectedTokens[i]),
+                expectedOriginBridgeTokens[expectedTokens[i]]
+            );
+        }
     }
 }
