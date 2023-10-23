@@ -16,7 +16,7 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
     SynapseRouterV2BridgeUtils,
     SynapseRouterV2CCTPUtils
 {
-    uint256 public constant ETH_BLOCK_NUMBER = 18392588; // 2023-10-20
+    uint256 public constant ETH_BLOCK_NUMBER = 18413747; // 2023-10-23
 
     address private constant ETH_SWAP_QUOTER = 0x5682dC851C33adb48F6958a963A5d3Aa31F6f184;
     address private constant ETH_SYN_ROUTER_V1 = 0x7E7A0e201FD38d3ADAA9523Da6C109a07118C96a;
@@ -60,6 +60,8 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
         addExpectedToken(DAI, "DAI");
         addExpectedToken(USDC, "USDC");
         addExpectedToken(USDT, "USDT");
+        addExpectedToken(WETH, "WETH");
+        addExpectedToken(UniversalTokenLib.ETH_ADDRESS, "ETH");
     }
 
     // testing CCTP, synapse bridge
@@ -74,12 +76,12 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
     }
 
     function addExpectedBridgeTokens() public virtual override {
-        // add synapse bridge module bridge tokens
-        address[] memory originTokensBridge = new address[](4);
-        originTokensBridge[0] = NUSD;
-        originTokensBridge[1] = DAI;
-        originTokensBridge[2] = USDC;
-        originTokensBridge[3] = USDT;
+        // add synapse bridge module bridge tokens for stables
+        address[] memory originTokensBridgeStables = new address[](4);
+        originTokensBridgeStables[0] = NUSD;
+        originTokensBridgeStables[1] = DAI;
+        originTokensBridgeStables[2] = USDC;
+        originTokensBridgeStables[3] = USDT;
 
         address[] memory destinationTokensBridgeNUSD = new address[](4);
         destinationTokensBridgeNUSD[0] = NUSD;
@@ -98,23 +100,38 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
 
         addExpectedBridgeToken(
             BridgeToken({symbol: "nUSD", token: NUSD}),
-            originTokensBridge,
+            originTokensBridgeStables,
             destinationTokensBridgeNUSD
         );
         addExpectedBridgeToken(
             BridgeToken({symbol: "USDC", token: USDC}),
-            originTokensBridge,
+            originTokensBridgeStables,
             destinationTokensBridgeUSDC
         );
         addExpectedBridgeToken(
             BridgeToken({symbol: "USDT", token: USDT}),
-            originTokensBridge,
+            originTokensBridgeStables,
             destinationTokensBridgeUSDT
         );
         addExpectedBridgeToken(
             BridgeToken({symbol: "DAI", token: DAI}),
-            originTokensBridge,
+            originTokensBridgeStables,
             destinationTokensBridgeDAI
+        );
+
+        // add synapse bridge module bridge tokens for ETH
+        address[] memory originTokensBridgeETH = new address[](2);
+        originTokensBridgeETH[0] = WETH;
+        originTokensBridgeETH[1] = UniversalTokenLib.ETH_ADDRESS;
+
+        address[] memory destinationTokensBridgeETH = new address[](2);
+        destinationTokensBridgeETH[0] = WETH;
+        destinationTokensBridgeETH[1] = UniversalTokenLib.ETH_ADDRESS;
+
+        addExpectedBridgeToken(
+            BridgeToken({symbol: "nETH", token: WETH}),
+            originTokensBridgeETH,
+            destinationTokensBridgeETH
         );
 
         // add synapse cctp module bridge tokens
@@ -124,8 +141,10 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
         originTokensCCTP[2] = DAI;
         originTokensCCTP[3] = USDT;
 
-        address[] memory destinationTokensCCTP = new address[](1);
+        address[] memory destinationTokensCCTP = new address[](3);
         destinationTokensCCTP[0] = USDC;
+        destinationTokensCCTP[1] = DAI;
+        destinationTokensCCTP[2] = USDT;
 
         addExpectedBridgeToken(
             BridgeToken({symbol: "CCTP.USDC", token: USDC}),
