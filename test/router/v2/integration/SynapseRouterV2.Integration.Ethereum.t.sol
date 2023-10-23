@@ -323,4 +323,52 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
         assertEq(query.deadline, type(uint256).max);
         assertEq(query.rawParams, abi.encode(params));
     }
+
+    function testGetOriginAmountOut_inUSDC_outUSDC_overMaxBridgedAmount() public {
+        address tokenIn = USDC;
+        string memory tokenSymbol = "CCTP.USDC";
+        uint256 amountIn = 1100000000000;
+
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, address(0));
+        assertEq(query.minAmountOut, 0);
+        assertEq(query.deadline, 0);
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    function testGetOriginAmountOut_inETH_outNETH() public {
+        address tokenIn = UniversalTokenLib.ETH_ADDRESS;
+        string memory tokenSymbol = "nETH";
+        uint256 amountIn = 10e18;
+        uint256 amountOut = amountIn;
+
+        DefaultParams memory params = DefaultParams({
+            action: Action.HandleEth,
+            pool: address(0),
+            tokenIndexFrom: type(uint8).max,
+            tokenIndexTo: type(uint8).max
+        });
+
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, WETH);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, abi.encode(params));
+    }
+
+    function testGetOriginAmountOut_inWETH_outNETH() public {
+        address tokenIn = WETH;
+        string memory tokenSymbol = "nETH";
+        uint256 amountIn = 10e18;
+        uint256 amountOut = amountIn;
+
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, WETH);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, bytes(""));
+    }
 }
