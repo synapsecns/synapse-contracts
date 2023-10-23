@@ -228,4 +228,32 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
             );
         }
     }
+
+    function testGetOriginAmountOut_inUSDC_outNUSD() public {
+        address tokenIn = USDC;
+        string memory tokenSymbol = "nUSD";
+        uint256 amountIn = getTestAmount(USDC);
+
+        address pool = 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8;
+        uint8 indexFrom = 1;
+        uint8 indexTo = type(uint8).max;
+
+        uint256[] memory amountsIn = new uint256[](3);
+        amountsIn[1] = amountIn;
+        uint256 amountOut = _quoter.calculateAddLiquidity(pool, amountsIn);
+
+        DefaultParams memory params = DefaultParams({
+            action: Action.AddLiquidity,
+            pool: pool,
+            tokenIndexFrom: indexFrom,
+            tokenIndexTo: indexTo
+        });
+
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, NUSD);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, abi.encode(params));
+    }
 }
