@@ -256,4 +256,71 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
         assertEq(query.deadline, type(uint256).max);
         assertEq(query.rawParams, abi.encode(params));
     }
+
+    function testGetOriginAmountOut_inNUSD_outNUSD() public {
+        address tokenIn = NUSD;
+        string memory tokenSymbol = "nUSD";
+        uint256 amountIn = getTestAmount(NUSD);
+
+        uint256 amountOut = amountIn;
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, NUSD);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    /// @dev UNI not supported so amount out should produce zero
+    function testGetOriginAmountOut_inUSDC_outUNI() public {
+        address tokenIn = USDC;
+        string memory tokenSymbol = "UNI";
+        uint256 amountIn = getTestAmount(USDC);
+
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, address(0));
+        assertEq(query.minAmountOut, 0);
+        assertEq(query.deadline, 0);
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    function testGetOriginAmountOut_inUSDC_outUSDC() public {
+        address tokenIn = USDC;
+        string memory tokenSymbol = "CCTP.USDC";
+        uint256 amountIn = getTestAmount(USDC);
+
+        uint256 amountOut = amountIn;
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, USDC);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    function testGetOriginAmountOut_inDAI_outUSDC() public {
+        address tokenIn = DAI;
+        string memory tokenSymbol = "CCTP.USDC";
+        uint256 amountIn = getTestAmount(DAI);
+
+        address pool = 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8;
+        uint8 indexFrom = 0;
+        uint8 indexTo = 1;
+        uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountIn);
+
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: pool,
+            tokenIndexFrom: indexFrom,
+            tokenIndexTo: indexTo
+        });
+
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, USDC);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, abi.encode(params));
+    }
 }
