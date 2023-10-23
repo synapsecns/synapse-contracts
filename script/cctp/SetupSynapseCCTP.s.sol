@@ -45,7 +45,7 @@ contract SetupCCTPScript is BasicSynapseScript {
         setupTokensCCTP();
         setupRemoteDeployments();
         setupGasAirdrop();
-        transferOwnership();
+        // transferOwnership();
         vm.stopBroadcast();
     }
 
@@ -141,6 +141,10 @@ contract SetupCCTPScript is BasicSynapseScript {
                 require(synapseCCTP.localDomain() == domain, "Incorrect local domain");
                 console.log("       Skip: current chain");
                 chainFound = true;
+                continue;
+            }
+            if (keccak256(bytes(remoteChain)) != keccak256("avalanche")) {
+                console.log("       Skip: preliminary support only for avalanche");
                 continue;
             }
             address remoteSynapseCCTP = getDeploymentAddress(remoteChain, SYNAPSE_CCTP);
