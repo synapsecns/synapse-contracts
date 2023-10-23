@@ -371,4 +371,66 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
         assertEq(query.deadline, type(uint256).max);
         assertEq(query.rawParams, bytes(""));
     }
+
+    function testGetDestinationAmountOut_inNUSD_outNUSD() public {
+        uint256 amountIn = 100000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest memory request = DestRequest({symbol: "nUSD", amountIn: amountIn});
+
+        address tokenOut = NUSD;
+        uint256 fee = (amountIn * 0.0012e10) / 10**10;
+        uint256 amountInLessBridgeFees = amountIn - fee;
+        uint256 amountOut = amountInLessBridgeFees;
+
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    function testGetDestinationAmountOut_inNUSD_outUSDC() public {
+        uint256 amountIn = 100000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest memory request = DestRequest({symbol: "nUSD", amountIn: amountIn});
+
+        address tokenOut = USDC;
+        uint256 fee = (amountIn * 0.0012e10) / 10**10;
+        uint256 amountInLessBridgeFees = amountIn - fee;
+
+        address pool = 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8;
+        uint8 indexFrom = type(uint8).max;
+        uint8 indexTo = 1;
+
+        uint256 amountOut = _quoter.calculateWithdrawOneToken(pool, amountInLessBridgeFees, 1);
+        DefaultParams memory params = DefaultParams({
+            action: Action.RemoveLiquidity,
+            pool: pool,
+            tokenIndexFrom: indexFrom,
+            tokenIndexTo: indexTo
+        });
+
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, abi.encode(params));
+    }
+
+    function testGetDestinationAmountOut_inNETH_outWETH() public {
+        uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest memory request = DestRequest({symbol: "nETH", amountIn: amountIn});
+
+        address tokenOut = WETH;
+        uint256 fee = (amountIn * 0.001e10) / 10**10;
+        uint256 amountInLessBridgeFees = amountIn - fee;
+        uint256 amountOut = amountInLessBridgeFees;
+
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, bytes(""));
+    }
 }
