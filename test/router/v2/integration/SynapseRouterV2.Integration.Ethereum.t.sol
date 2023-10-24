@@ -597,13 +597,148 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
         );
     }
 
-    function testSynapseBridge_ethereumToArbitrum_inWETH_outNETH() public {}
+    function testSynapseBridge_ethereumToArbitrum_inWETH_outNETH() public {
+        address module = expectedModules[0];
 
-    function testSynapseBridge_ethereumToArbitrum_inWETH_outWETH() public {}
+        uint256 amountIn = getTestAmount(WETH);
+        SwapQuery memory originQuery;
+        SwapQuery memory destQuery;
 
-    function testSynapseBridge_ethereumToArbitrum_inETH_outWETH() public {}
+        depositEvent = DepositEvent({to: recipient, chainId: 42161, token: WETH, amount: amountIn});
+        initiateBridge(
+            expectDepositEvent,
+            42161, // arbitrum
+            module,
+            WETH,
+            originQuery,
+            destQuery
+        );
+    }
 
-    function testSynapseBridge_ethereumToArbitrum_inWETH_outETH() public {}
+    function testSynapseBridge_ethereumToArbitrum_inWETH_outWETH() public {
+        address module = expectedModules[0];
+
+        uint256 amountIn = getTestAmount(WETH);
+        SwapQuery memory originQuery;
+
+        address pool = 0xa067668661C84476aFcDc6fA5D758C4c01C34352;
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: pool,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: pool, // placeholder
+            tokenOut: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1, // WETH on arbitrum
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+
+        depositAndSwapEvent = DepositAndSwapEvent({
+            to: recipient,
+            chainId: 42161,
+            token: WETH,
+            amount: amountIn,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: 0,
+            deadline: type(uint256).max
+        });
+        initiateBridge(
+            expectDepositAndSwapEvent,
+            42161, // arbitrum
+            module,
+            WETH,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_ethereumToArbitrum_inETH_outNETH() public {
+        address module = expectedModules[0];
+
+        uint256 amountIn = getTestAmount(WETH);
+
+        DefaultParams memory params = DefaultParams({
+            action: Action.HandleEth,
+            pool: address(0),
+            tokenIndexFrom: type(uint8).max,
+            tokenIndexTo: type(uint8).max
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: WETH,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+        SwapQuery memory destQuery;
+
+        depositEvent = DepositEvent({to: recipient, chainId: 42161, token: WETH, amount: amountIn});
+        initiateBridge(
+            expectDepositEvent,
+            42161, // arbitrum
+            module,
+            UniversalTokenLib.ETH_ADDRESS,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_ethereumToArbitrum_inETH_outWETH() public {
+        address module = expectedModules[0];
+        uint256 amountIn = getTestAmount(WETH);
+
+        DefaultParams memory originParams = DefaultParams({
+            action: Action.HandleEth,
+            pool: address(0),
+            tokenIndexFrom: type(uint8).max,
+            tokenIndexTo: type(uint8).max
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: WETH,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(originParams)
+        });
+
+        address destPool = 0xa067668661C84476aFcDc6fA5D758C4c01C34352;
+        DefaultParams memory destParams = DefaultParams({
+            action: Action.Swap,
+            pool: destPool,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: destPool, // placeholder
+            tokenOut: 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1, // WETH on arbitrum
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(destParams)
+        });
+
+        depositAndSwapEvent = DepositAndSwapEvent({
+            to: recipient,
+            chainId: 42161,
+            token: WETH,
+            amount: amountIn,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: 0,
+            deadline: type(uint256).max
+        });
+        initiateBridge(
+            expectDepositAndSwapEvent,
+            42161, // arbitrum
+            module,
+            UniversalTokenLib.ETH_ADDRESS,
+            originQuery,
+            destQuery
+        );
+    }
 
     function testSynapseCCTP_ethereumToArbitrum_inUSDC_outUSDC() public {}
 
