@@ -8,7 +8,7 @@
     "CCTP": {
       "USDC": {
         "isLinked": true,
-        "pool": "0x7366f949a383278acb4783694554D8d83d84D02e",
+        "pool": "0x9A2Dea7B81cfe3e0011D44D41c5c5142b8d9abdF",
         "token": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"
       }
     },
