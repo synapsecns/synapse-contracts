@@ -54,10 +54,9 @@ for TEST_FILE in $INTEGRATION_TESTS; do
 done
 
 echo "Running ${#NOT_DEPLOYED_TESTS[@]} integration tests"
-# Combine all test files into a single GLOB pattern using {a,b,c} syntax.
-# This is necessary because forge test does not support multiple --match-path arguments.
-TEST_FILES=$(
-  IFS=,
-  echo "${NOT_DEPLOYED_TESTS[*]}"
-)
-forge test --match-path "{$TEST_FILES}"
+# Run integration tests one by one to decrease the amount of rate limit errors.
+for TEST_FILE in ${NOT_DEPLOYED_TESTS[@]}; do
+  forge test --match-path $TEST_FILE
+  # Sleep for 5 seconds to avoid rate limit errors.
+  sleep 5
+done
