@@ -502,4 +502,112 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
         assertEq(query.deadline, 0);
         assertEq(query.rawParams, bytes(""));
     }
+
+    function testSynapseBridge_ethereumToArbitrum_inUSDC_outNUSD() public {
+        address module = expectedModules[0];
+
+        uint256 amountIn = getTestAmount(USDC);
+        address pool = 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8;
+
+        DefaultParams memory params = DefaultParams({
+            action: Action.AddLiquidity,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 1,
+            tokenIndexTo: type(uint8).max
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: NUSD,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+        SwapQuery memory destQuery;
+
+        uint256[] memory amountsIn = new uint256[](3);
+        amountsIn[1] = amountIn;
+        uint256 amount = _quoter.calculateAddLiquidity(pool, amountsIn);
+
+        depositEvent = DepositEvent({to: recipient, chainId: 42161, token: NUSD, amount: amount});
+        initiateBridge(
+            expectDepositEvent,
+            42161, // arbitrum
+            module,
+            USDC,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_ethereumToArbitrum_inUSDC_outUSDCe() public {
+        address module = expectedModules[0];
+
+        uint256 amountIn = getTestAmount(USDC);
+        address pool = 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8;
+
+        DefaultParams memory originParams = DefaultParams({
+            action: Action.AddLiquidity,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 1,
+            tokenIndexTo: type(uint8).max
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: NUSD,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(originParams)
+        });
+
+        DefaultParams memory destParams = DefaultParams({
+            action: Action.Swap,
+            pool: 0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: 0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40,
+            tokenOut: 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8, // USDCe on arbitrum
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(destParams)
+        });
+
+        uint256[] memory amountsIn = new uint256[](3);
+        amountsIn[1] = amountIn;
+        uint256 amount = _quoter.calculateAddLiquidity(pool, amountsIn);
+
+        depositAndSwapEvent = DepositAndSwapEvent({
+            to: recipient,
+            chainId: 42161,
+            token: NUSD,
+            amount: amount,
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            minDy: 0,
+            deadline: type(uint256).max
+        });
+        initiateBridge(
+            expectDepositAndSwapEvent,
+            42161, // arbitrum
+            module,
+            USDC,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_ethereumToArbitrum_inWETH_outNETH() public {}
+
+    function testSynapseBridge_ethereumToArbitrum_inWETH_outWETH() public {}
+
+    function testSynapseBridge_ethereumToArbitrum_inETH_outWETH() public {}
+
+    function testSynapseBridge_ethereumToArbitrum_inWETH_outETH() public {}
+
+    function testSynapseCCTP_ethereumToArbitrum_inUSDC_outUSDC() public {}
+
+    function testSynapseCCTP_ethereumToArbitrum_inDAI_outUSDC() public {}
+
+    function testSynapseCCTP_ethereumToArbitrum_inUSDC_outDAI() public {}
 }
