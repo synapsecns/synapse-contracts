@@ -11,7 +11,6 @@ contract DeployAlgebraModule is BasicSynapseScript {
     using stdJson for string;
     using StringUtils for string;
 
-    string public constant ALGEBRA = "Algebra";
     string public constant ALGEBRA_MODULE = "AlgebraModule";
 
     address public algebraRouter;
@@ -26,7 +25,7 @@ contract DeployAlgebraModule is BasicSynapseScript {
         // Use `deployAlgebraModule` as callback to deploy the contract
         address module = deployAndSaveAs({
             contractName: ALGEBRA_MODULE,
-            contractAlias: ALGEBRA.concat(key, "Module"),
+            contractAlias: ALGEBRA_MODULE.concat(key),
             deployContract: deployAlgebraModule
         });
         vm.stopBroadcast();
