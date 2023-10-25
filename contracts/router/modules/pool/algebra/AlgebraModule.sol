@@ -37,7 +37,7 @@ contract AlgebraModule is OnlyDelegateCall, IPoolModule {
         // Prepare Algebra Router params for the swap, see for reference:
         // https://docs.algebra.finance/en/docs/contracts/guides/swaps/single-swaps
         // We set `amountOutMinimum` to 0, as the slippage checks are done outside of Pool Module
-        // We set `sqrtPriceLimitX96` to 0, as we don't want to limit the price (same reason as above)
+        // We set `limitSqrtPrice` to 0, as we don't want to limit the price (same reason as above)
         ExactInputSingleParams memory params = ExactInputSingleParams({
             tokenIn: tokenIn,
             tokenOut: tokenTo.token,
@@ -45,7 +45,7 @@ contract AlgebraModule is OnlyDelegateCall, IPoolModule {
             deadline: block.timestamp,
             amountIn: amountIn,
             amountOutMinimum: 0,
-            sqrtPriceLimitX96: 0
+            limitSqrtPrice: 0
         });
         // Swap the tokens, we can trust Algebra Router to return the correct amountOut
         amountOut = algebraRouter.exactInputSingle(params);
@@ -67,7 +67,7 @@ contract AlgebraModule is OnlyDelegateCall, IPoolModule {
             tokenIn: tokenFrom.token,
             tokenOut: tokenTo.token,
             amountIn: amountIn,
-            sqrtPriceLimitX96: 0
+            limitSqrtPrice: 0
         });
         amountOut = algebraStaticQuoter.quoteExactInputSingle(params);
     }
