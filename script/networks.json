@@ -12,7 +12,7 @@
     "metis": "--legacy",
     "moonbeam": "--skip-simulation --slow",
     "moonriver": "--skip-simulation --slow",
-    "optimism": "--with-gas-price 1234",
+    "optimism": "--with-gas-price 1337",
     "polygon": "--slow"
   }
 }

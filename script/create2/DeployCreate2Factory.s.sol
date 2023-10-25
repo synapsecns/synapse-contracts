@@ -8,12 +8,12 @@ import {console2, stdJson} from "forge-std/Script.sol";
 contract DeployCreate2Factory is BasicSynapseScript {
     using stdJson for string;
 
-    string public constant CREATE2_FACTORY = "Create2Factory";
+    string public constant CREATE2_FACTORY_CONTRACT = "Create2Factory";
 
     function run() external {
         // Setup the BasicSynapseScript
         setUp();
-        address deployedAt = tryGetDeploymentAddress(CREATE2_FACTORY);
+        address deployedAt = tryGetDeploymentAddress(CREATE2_FACTORY_CONTRACT);
         if (deployedAt != address(0)) {
             console2.log("Skipping: Create2Factory already deployed at %s", deployedAt);
             return;
@@ -31,7 +31,7 @@ contract DeployCreate2Factory is BasicSynapseScript {
     }
 
     function deployFactory() internal returns (address deployedAt) {
-        string memory config = getGlobalConfig({contractName: CREATE2_FACTORY, globalProperty: "code"});
+        string memory config = getGlobalConfig({contractName: CREATE2_FACTORY_CONTRACT, globalProperty: "code"});
         bytes memory initCode = config.readBytes(".initCode");
         // Use assembly to deploy the factory contract
         // solhint-disable-next-line no-inline-assembly
@@ -43,7 +43,7 @@ contract DeployCreate2Factory is BasicSynapseScript {
     }
 
     function verifyFactoryDeployment(address deployedAt) internal {
-        string memory config = getGlobalConfig({contractName: CREATE2_FACTORY, globalProperty: "code"});
+        string memory config = getGlobalConfig({contractName: CREATE2_FACTORY_CONTRACT, globalProperty: "code"});
         bytes memory bytecode = config.readBytes(".bytecode");
         bytes memory deployedBytecode = deployedAt.code;
         // Should match the bytecode of the deployed contract
@@ -60,6 +60,6 @@ contract DeployCreate2Factory is BasicSynapseScript {
         console2.log("Deployed Create2Factory at %s", deployedAt);
         // Save minimal deployment artifact
         string memory data = serializeDeploymentData({deployedAt: deployedAt, constructorArgs: ""});
-        data.write(freshDeploymentPath({contractName: CREATE2_FACTORY}));
+        data.write(freshDeploymentPath({contractName: CREATE2_FACTORY_CONTRACT}));
     }
 }

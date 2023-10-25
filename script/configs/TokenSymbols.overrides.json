@@ -1,0 +1,14 @@
+{
+  "arbitrum": [
+    {
+      "address": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+      "symbol": "USDC.e"
+    }
+  ],
+  "optimism": [
+    {
+      "address": "0x7F5c764cBc14f9669B88837ca1490cCa17c31607",
+      "symbol": "USDC.e"
+    }
+  ]
+}

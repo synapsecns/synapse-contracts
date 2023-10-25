@@ -1,0 +1,75 @@
+graph G {
+    token0 [label = "0: USDC";];
+    token1 [label = "1: nUSD";];
+    token2 [label = "2: USDt";];
+    token3 [label = "3: DAI.e";];
+    token4 [label = "4: USDC.e";];
+    token5 [label = "5: USDT.e";];
+    token6 [label = "6: USDt";];
+    token7 [label = "7: USDC.e";];
+    token8 [label = "8: nUSD";];
+    token9 [label = "9: DAI.e";];
+    token10 [label = "10: USDT.e";];
+    pool0 [label = "DefaultPool 0xa196";shape = rect;style = dashed;];
+    token0 -- pool0;
+    subgraph cluster0 {
+        style = dotted;
+        pool0 -- token1;
+        pool0 -- token2;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token1 -- token2;
+        }
+    }
+    pool1 [label = "DefaultPool 0xed2a";shape = rect;style = dashed;];
+    token1 -- pool1;
+    subgraph cluster1 {
+        style = dotted;
+        pool1 -- token3;
+        pool1 -- token4;
+        pool1 -- token5;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token3 -- token4;
+            token4 -- token5;
+        }
+    }
+    pool2 [label = "UniswapV3SR02 0x8042";shape = rect;style = dashed;];
+    token0 -- pool2;
+    subgraph cluster2 {
+        style = dotted;
+        pool2 -- token6;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token6;
+        }
+    }
+    pool3 [label = "GMXV1StableAvalanche 0x9ab2";shape = rect;style = dashed;];
+    token0 -- pool3;
+    subgraph cluster3 {
+        style = dotted;
+        pool3 -- token7;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token7;
+        }
+    }
+    pool4 [label = "DefaultPool 0xed2a";shape = rect;style = dashed;];
+    token7 -- pool4;
+    subgraph cluster4 {
+        style = dotted;
+        pool4 -- token8;
+        pool4 -- token9;
+        pool4 -- token10;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token8 -- token9;
+            token9 -- token10;
+        }
+    }
+}

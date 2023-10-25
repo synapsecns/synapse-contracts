@@ -212,7 +212,12 @@ abstract contract BasicUtils is CommonBase {
         pure
         returns (string memory path)
     {
-        return DEPLOY_CONFIGS.concat(chain, "/", contractName, ".dc.json");
+        return genericConfigPath({chain: chain, fileName: contractName.concat(".dc.json")});
+    }
+
+    /// @notice Returns the path to the generic contract config file for a contract on a given chain.
+    function genericConfigPath(string memory chain, string memory fileName) internal pure returns (string memory path) {
+        return DEPLOY_CONFIGS.concat(chain, "/", fileName);
     }
 
     /// @notice Returns the path to the global config JSON that is shared across all chains for a contract.

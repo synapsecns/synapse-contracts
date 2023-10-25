@@ -82,7 +82,10 @@ if [ "$CONSTRUCTOR_ARGS" == "null" ]; then
     CONSTRUCTOR_ARGS="0x"
 fi
 
-forge verify-contract $CONTRACT_ADDRESS $CONTRACT_NAME \
+# Contract canonical name is everything preceding the first dot in the contract name
+# Or the entire contract name if there is no dot
+CONTRACT_CANONICAL_NAME=$(echo $CONTRACT_NAME | cut -d. -f1)
+forge verify-contract $CONTRACT_ADDRESS $CONTRACT_CANONICAL_NAME \
     --chain $CHAIN_ID \
     $VERIFIER_OPTIONS \
     $FORGE_ARGS \
