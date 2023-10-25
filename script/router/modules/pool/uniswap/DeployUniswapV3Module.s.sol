@@ -11,6 +11,7 @@ contract DeployUniswapV3Module is BasicSynapseScript {
     using stdJson for string;
     using StringUtils for string;
 
+    string public constant UNI_V3 = "UniswapV3";
     string public constant UNI_V3_MODULE = "UniswapV3Module";
 
     address public uniswapV3Router;
@@ -25,7 +26,7 @@ contract DeployUniswapV3Module is BasicSynapseScript {
         // Use `deployUniswapV3Module` as callback to deploy the contract
         address module = deployAndSaveAs({
             contractName: UNI_V3_MODULE,
-            contractAlias: UNI_V3_MODULE.concat(key),
+            contractAlias: UNI_V3.concat(key, "Module"),
             deployContract: deployUniswapV3Module
         });
         vm.stopBroadcast();
