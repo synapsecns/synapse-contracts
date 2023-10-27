@@ -40,6 +40,7 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
     address private constant JEWEL = 0x997Ddaa07d716995DE90577C123Db411584E5E46;
     address private constant SFI = 0xc2Bf0A1f7D8Da50D608bc96CF701110d4A438312;
     address private constant H2O = 0xC6b11a4Fd833d1117E9D312c02865647cd961107;
+    address private constant USDC = 0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E;
 
     // supported tokens (for adapter swaps)
     address private constant USDC_E = 0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664;
@@ -60,6 +61,7 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         addExpectedToken(USDC_E, "USDC.e");
         addExpectedToken(DAI_E, "DAI.e");
         addExpectedToken(USDT_E, "USDT.e");
+        addExpectedToken(USDC, "CCTP.USDC");
         addExpectedToken(NETH, "nETH");
         addExpectedToken(AVWETH, "avWETH");
     }
@@ -75,5 +77,75 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         addExpectedModule(synapseCCTPModule, "SynapseCCTPModule");
     }
 
-    function addExpectedBridgeTokens() public virtual override {}
+    function addExpectedBridgeTokens() public virtual override {
+        // add synapse bridge module bridge tokens
+        address[] memory originTokensBridgeStables = new address[](4);
+        originTokensBridgeStables[0] = NUSD;
+        originTokensBridgeStables[1] = DAI_E;
+        originTokensBridgeStables[2] = USDC_E;
+        originTokensBridgeStables[3] = USDT_E;
+
+        address[] memory destinationTokensBridgeStables = new address[](4);
+        destinationTokensBridgeStables[0] = NUSD;
+        destinationTokensBridgeStables[1] = DAI_E;
+        destinationTokensBridgeStables[2] = USDC_E;
+        destinationTokensBridgeStables[3] = USDT_E;
+
+        addExpectedBridgeToken(
+            BridgeToken({symbol: "nUSD", token: NUSD}),
+            originTokensBridgeStables,
+            destinationTokensBridgeStables
+        );
+
+        // add synapse bridge module bridge tokens for ETH
+        address[] memory originTokensBridgeETH = new address[](2);
+        originTokensBridgeETH[0] = NETH;
+        originTokensBridgeETH[1] = AVWETH;
+
+        address[] memory destinationTokensBridgeETH = new address[](2);
+        destinationTokensBridgeETH[0] = NETH;
+        destinationTokensBridgeETH[1] = AVWETH;
+
+        addExpectedBridgeToken(
+            BridgeToken({symbol: "nETH", token: NETH}),
+            originTokensBridgeETH,
+            destinationTokensBridgeETH
+        );
+
+        // add synapse cctp module bridge tokens
+        address[] memory originTokensCCTP = new address[](2);
+        originTokensCCTP[0] = USDC;
+        originTokensCCTP[1] = USDC_E;
+
+        address[] memory destinationTokensCCTP = new address[](2);
+        destinationTokensCCTP[0] = USDC;
+        destinationTokensCCTP[1] = USDC_E;
+
+        addExpectedBridgeToken(
+            BridgeToken({symbol: "CCTP.USDC", token: USDC}),
+            originTokensCCTP,
+            destinationTokensCCTP
+        );
+    }
+
+    function testGetBridgeTokens() public {
+        BridgeToken[] memory bridgeTokens = new BridgeToken[](16);
+        bridgeTokens[0] = BridgeToken({token: NUSD, symbol: "nUSD"});
+        bridgeTokens[1] = BridgeToken({token: SYN, symbol: "SYN"});
+        bridgeTokens[2] = BridgeToken({token: NETH, symbol: "nETH"});
+        bridgeTokens[3] = BridgeToken({token: WSOHM, symbol: "wsOHM"});
+        bridgeTokens[4] = BridgeToken({token: NFD, symbol: "NFD"});
+        bridgeTokens[5] = BridgeToken({token: GOHM, symbol: "gOHM"});
+        bridgeTokens[6] = BridgeToken({token: WAVAX, symbol: "AVAX"});
+        bridgeTokens[7] = BridgeToken({token: GMX, symbol: "GMX"});
+        bridgeTokens[8] = BridgeToken({token: UST, symbol: "UST"});
+        bridgeTokens[9] = BridgeToken({token: NEWO, symbol: "NEWO"});
+        bridgeTokens[10] = BridgeToken({token: BTC_B, symbol: "BTCB"});
+        bridgeTokens[11] = BridgeToken({token: SDT, symbol: "SDT"});
+        bridgeTokens[12] = BridgeToken({token: JEWEL, symbol: "JEWEL"});
+        bridgeTokens[13] = BridgeToken({token: SFI, symbol: "SFI"});
+        bridgeTokens[14] = BridgeToken({token: H2O, symbol: "H2O"});
+        bridgeTokens[15] = BridgeToken({token: USDC, symbol: "CCTP.USDC"});
+        checkBridgeTokenArrays(router.getBridgeTokens(), bridgeTokens);
+    }
 }
