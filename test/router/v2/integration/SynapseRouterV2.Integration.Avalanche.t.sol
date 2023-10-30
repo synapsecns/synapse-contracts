@@ -46,7 +46,8 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
     address private constant USDC_E = 0xA7D7079b0FEaD91F3e65f86E8915Cb59c1a4C664;
     address private constant DAI_E = 0xd586E7F844cEa2F87f50152665BCbc2C279D8d70;
     address private constant USDT_E = 0xc7198437980c041c805A1EDcbA50c1Ce5db95118;
-    address private constant AVWETH = 0x53f7c5869a859F0AeC3D334ee8B4Cf01E3492f21;
+    address private constant WETH_E = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
+    address private constant USDT = 0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7;
 
     constructor() SynapseRouterV2IntegrationTest("avalanche", AVAX_BLOCK_NUMBER, AVAX_SWAP_QUOTER) {}
 
@@ -63,7 +64,7 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         addExpectedToken(USDT_E, "USDT.e");
         addExpectedToken(USDC, "CCTP.USDC");
         addExpectedToken(NETH, "nETH");
-        addExpectedToken(AVWETH, "avWETH");
+        addExpectedToken(WETH_E, "WETH.e");
     }
 
     // testing CCTP, synapse bridge
@@ -79,11 +80,12 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
 
     function addExpectedBridgeTokens() public virtual override {
         // add synapse bridge module bridge tokens
-        address[] memory originTokensBridgeStables = new address[](4);
+        address[] memory originTokensBridgeStables = new address[](5);
         originTokensBridgeStables[0] = NUSD;
         originTokensBridgeStables[1] = DAI_E;
         originTokensBridgeStables[2] = USDC_E;
         originTokensBridgeStables[3] = USDT_E;
+        originTokensBridgeStables[4] = USDC;
 
         address[] memory destinationTokensBridgeStables = new address[](4);
         destinationTokensBridgeStables[0] = NUSD;
@@ -100,11 +102,11 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         // add synapse bridge module bridge tokens for ETH
         address[] memory originTokensBridgeETH = new address[](2);
         originTokensBridgeETH[0] = NETH;
-        originTokensBridgeETH[1] = AVWETH;
+        originTokensBridgeETH[1] = WETH_E;
 
         address[] memory destinationTokensBridgeETH = new address[](2);
         destinationTokensBridgeETH[0] = NETH;
-        destinationTokensBridgeETH[1] = AVWETH;
+        destinationTokensBridgeETH[1] = WETH_E;
 
         addExpectedBridgeToken(
             BridgeToken({symbol: "nETH", token: NETH}),
@@ -113,13 +115,19 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         );
 
         // add synapse cctp module bridge tokens
-        address[] memory originTokensCCTP = new address[](2);
+        address[] memory originTokensCCTP = new address[](5);
         originTokensCCTP[0] = USDC;
-        originTokensCCTP[1] = USDC_E;
+        originTokensCCTP[1] = NUSD;
+        originTokensCCTP[2] = USDC_E;
+        originTokensCCTP[3] = DAI_E;
+        originTokensCCTP[4] = USDT_E;
 
-        address[] memory destinationTokensCCTP = new address[](2);
+        address[] memory destinationTokensCCTP = new address[](5);
         destinationTokensCCTP[0] = USDC;
-        destinationTokensCCTP[1] = USDC_E;
+        destinationTokensCCTP[1] = NUSD;
+        destinationTokensCCTP[2] = USDC_E;
+        destinationTokensCCTP[3] = DAI_E;
+        destinationTokensCCTP[4] = USDT_E;
 
         addExpectedBridgeToken(
             BridgeToken({symbol: "CCTP.USDC", token: USDC}),
@@ -147,5 +155,52 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         bridgeTokens[14] = BridgeToken({token: H2O, symbol: "H2O"});
         bridgeTokens[15] = BridgeToken({token: USDC, symbol: "CCTP.USDC"});
         checkBridgeTokenArrays(router.getBridgeTokens(), bridgeTokens);
+    }
+
+    function testGetSupportedTokens() public {
+        address[] memory supportedTokens = new address[](22);
+        supportedTokens[0] = NUSD;
+        supportedTokens[1] = DAI_E;
+        supportedTokens[2] = USDC_E;
+        supportedTokens[3] = USDT_E;
+        supportedTokens[4] = NETH;
+        supportedTokens[5] = WETH_E;
+        supportedTokens[6] = USDC;
+        supportedTokens[7] = USDT;
+        supportedTokens[8] = SYN;
+        supportedTokens[9] = WSOHM;
+        supportedTokens[10] = NFD;
+        supportedTokens[11] = GOHM;
+        supportedTokens[12] = WAVAX;
+        supportedTokens[13] = GMX;
+        supportedTokens[14] = UST;
+        supportedTokens[15] = NEWO;
+        supportedTokens[16] = BTC_B;
+        supportedTokens[17] = SDT;
+        supportedTokens[18] = JEWEL;
+        supportedTokens[19] = SFI;
+        supportedTokens[20] = H2O;
+        supportedTokens[21] = UniversalTokenLib.ETH_ADDRESS; // AVAX
+        checkAddressArrays(router.getSupportedTokens(), supportedTokens);
+    }
+
+    function testGetOriginBridgeTokens() public {
+        for (uint256 i = 0; i < expectedTokens.length; i++) {
+            console.log("tokenIn %s: %s [%s]", i, expectedTokens[i], tokenNames[expectedTokens[i]]);
+            checkBridgeTokenArrays(
+                router.getOriginBridgeTokens(expectedTokens[i]),
+                expectedOriginBridgeTokens[expectedTokens[i]]
+            );
+        }
+    }
+
+    function testGetDestinationBridgeTokens() public {
+        for (uint256 i = 0; i < expectedTokens.length; i++) {
+            console.log("tokenOut %s: %s [%s]", i, expectedTokens[i], tokenNames[expectedTokens[i]]);
+            checkBridgeTokenArrays(
+                router.getDestinationBridgeTokens(expectedTokens[i]),
+                expectedDestinationBridgeTokens[expectedTokens[i]]
+            );
+        }
     }
 }

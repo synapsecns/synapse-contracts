@@ -293,6 +293,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
     function checkAddressArrays(address[] memory actual, address[] memory expect) public {
         assertEq(actual.length, expect.length);
         for (uint256 i = 0; i < actual.length; i++) {
+            console.log("%s: %s", i, actual[i]);
             assertTrue(expect.contains(actual[i]));
         }
     }
