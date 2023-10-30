@@ -203,4 +203,50 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
             );
         }
     }
+
+    function testGetOriginAmountOut_inUSDCe_outNUSD() public {
+        address tokenIn = USDC_E;
+        string memory tokenSymbol = "nUSD";
+        uint256 amountIn = getTestAmount(USDC_E);
+
+        address pool = AVAX_STABLE_POOL;
+        uint8 indexFrom = 2;
+        uint8 indexTo = 0;
+        uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountIn);
+
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, NUSD);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
+    }
+
+    function testGetOriginAmountOut_inNUSD_outNUSD() public {
+        address tokenIn = NUSD;
+        string memory tokenSymbol = "nUSD";
+        uint256 amountIn = getTestAmount(NUSD);
+
+        uint256 amountOut = amountIn;
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, NUSD);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    /// @dev UNI not supported so amount out should produce zero
+    function testGetOriginAmountOut_inUSDCe_outUNI() public {
+        address tokenIn = USDC_E;
+        string memory tokenSymbol = "UNI";
+        uint256 amountIn = getTestAmount(USDC_E);
+
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, address(0));
+        assertEq(query.minAmountOut, 0);
+        assertEq(query.deadline, 0);
+        assertEq(query.rawParams, bytes(""));
+    }
 }
