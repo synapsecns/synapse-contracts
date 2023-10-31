@@ -318,7 +318,54 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
     }
 
-    // TODO: testGetOriginAmountOut_inGMX_outGMX()
+    function testGetOriginAmountOut_inWAVAX_outWAVAX() public {
+        address tokenIn = WAVAX;
+        string memory tokenSymbol = "AVAX";
+        uint256 amountIn = getTestAmount(WAVAX);
+
+        uint256 amountOut = amountIn;
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, WAVAX);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    function testGetOriginAmountOut_inAVAX_outWAVAX() public {
+        address tokenIn = UniversalTokenLib.ETH_ADDRESS;
+        string memory tokenSymbol = "AVAX";
+        uint256 amountIn = getTestAmount(WAVAX);
+
+        DefaultParams memory params = DefaultParams({
+            action: Action.HandleEth,
+            pool: address(0),
+            tokenIndexFrom: type(uint8).max,
+            tokenIndexTo: type(uint8).max
+        });
+
+        uint256 amountOut = amountIn;
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, WAVAX);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, abi.encode(params));
+    }
+
+    function testGetOriginAmountOut_inGMX_outGMX() public {
+        address tokenIn = GMX;
+        string memory tokenSymbol = "GMX";
+        uint256 amountIn = getTestAmount(GMX);
+
+        uint256 amountOut = amountIn;
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, GMX);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, bytes(""));
+    }
 
     function testGetDestinationAmountOut_inNUSD_outUSDCe() public {
         uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
@@ -379,5 +426,61 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
     }
 
-    // TODO: testGetDestinationAmountOut_inGMX_outGMX() public {}
+    function testGetDestinationAmountOut_inWAVAX_outWAVAX() public {
+        uint256 amountIn = 1000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest memory request = DestRequest({symbol: "AVAX", amountIn: amountIn});
+
+        address tokenOut = WAVAX;
+        uint256 fee = (amountIn * 0.0004e10) / 10**10;
+        uint256 amountInLessBridgeFees = amountIn - fee;
+        uint256 amountOut = amountInLessBridgeFees;
+
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    function testGetDestinationAmountOut_inWAVAX_outAVAX() public {
+        uint256 amountIn = 1000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest memory request = DestRequest({symbol: "AVAX", amountIn: amountIn});
+
+        address tokenOut = UniversalTokenLib.ETH_ADDRESS;
+        uint256 fee = (amountIn * 0.0004e10) / 10**10;
+        uint256 amountInLessBridgeFees = amountIn - fee;
+        uint256 amountOut = amountInLessBridgeFees;
+
+        DefaultParams memory params = DefaultParams({
+            action: Action.HandleEth,
+            pool: address(0),
+            tokenIndexFrom: type(uint8).max,
+            tokenIndexTo: type(uint8).max
+        });
+
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, abi.encode(params));
+    }
+
+    function testGetDestinationAmountOut_inGMX_outGMX() public {
+        uint256 amountIn = 1000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest memory request = DestRequest({symbol: "GMX", amountIn: amountIn});
+
+        address tokenOut = GMX;
+        uint256 fee = (amountIn * 0.0005e10) / 10**10;
+        uint256 amountInLessBridgeFees = amountIn - fee;
+        uint256 amountOut = amountInLessBridgeFees;
+
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, bytes(""));
+    }
 }
