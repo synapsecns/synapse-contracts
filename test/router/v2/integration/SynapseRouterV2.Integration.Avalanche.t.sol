@@ -65,7 +65,7 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         addExpectedToken(USDC, "CCTP.USDC");
         addExpectedToken(NETH, "nETH");
         addExpectedToken(WETH_E, "WETH.e");
-        // TODO: WAVAX
+        // TODO: WAVAX, GMX
     }
 
     // testing CCTP, synapse bridge
@@ -288,4 +288,67 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         assertEq(query.deadline, type(uint256).max);
         assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
     }
+
+    // TODO: testGetOriginAmountOut_inGMX_outGMX()
+
+    function testGetDestinationAmountOut_inNUSD_outUSDCe() public {
+        uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest memory request = DestRequest({symbol: "nUSD", amountIn: amountIn});
+
+        address tokenOut = USDC_E;
+        address pool = AVAX_STABLE_POOL;
+        uint8 indexFrom = 0;
+        uint8 indexTo = 2;
+
+        uint256 fee = (amountIn * 0.0008e10) / 10**10;
+        uint256 amountInLessBridgeFees = amountIn - fee;
+        uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountInLessBridgeFees);
+
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
+    }
+
+    function testGetDestinationAmountOut_inNUSD_outNUSD() public {
+        uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest memory request = DestRequest({symbol: "nUSD", amountIn: amountIn});
+
+        address tokenOut = NUSD;
+        uint256 fee = (amountIn * 0.0008e10) / 10**10;
+        uint256 amountInLessBridgeFees = amountIn - fee;
+        uint256 amountOut = amountInLessBridgeFees;
+
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, bytes(""));
+    }
+
+    function testGetDestinationAmountOut_inNETH_outWETHe() public {
+        uint256 amountIn = 10000 * 1e18; // @dev need larger amount to be larger than fee amount
+        DestRequest memory request = DestRequest({symbol: "nETH", amountIn: amountIn});
+
+        address tokenOut = WETH_E;
+        uint256 fee = (amountIn * 0.0006e10) / 10**10;
+
+        address pool = 0xdd60483Ace9B215a7c019A44Be2F22Aa9982652E; // Aave swap wrapper
+        uint8 indexFrom = 0;
+        uint8 indexTo = 1;
+        uint256 amountInLessBridgeFees = amountIn - fee;
+        uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountInLessBridgeFees);
+
+        SwapQuery memory query = router.getDestinationAmountOut(request, tokenOut);
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, tokenOut);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
+    }
+
+    // TODO: testGetDestinationAmountOut_inGMX_outGMX() public {}
 }
