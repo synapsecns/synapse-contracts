@@ -65,7 +65,8 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         addExpectedToken(USDC, "CCTP.USDC");
         addExpectedToken(NETH, "nETH");
         addExpectedToken(WETH_E, "WETH.e");
-        // TODO: WAVAX, GMX
+        addExpectedToken(WAVAX, "WAVAX");
+        addExpectedToken(GMX, "GMX");
     }
 
     // testing CCTP, synapse bridge
@@ -113,6 +114,34 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
             BridgeToken({symbol: "nETH", token: NETH}),
             originTokensBridgeETH,
             destinationTokensBridgeETH
+        );
+
+        // add synapse bridge module bridge tokens for WAVAX
+        address[] memory originTokensBridgeWAVAX = new address[](2);
+        originTokensBridgeWAVAX[0] = WAVAX;
+        originTokensBridgeWAVAX[1] = UniversalTokenLib.ETH_ADDRESS;
+
+        address[] memory destinationTokensBridgeWAVAX = new address[](2);
+        destinationTokensBridgeWAVAX[0] = WAVAX;
+        destinationTokensBridgeWAVAX[1] = UniversalTokenLib.ETH_ADDRESS;
+
+        addExpectedBridgeToken(
+            BridgeToken({symbol: "AVAX", token: WAVAX}),
+            originTokensBridgeWAVAX,
+            destinationTokensBridgeWAVAX
+        );
+
+        // add synapse bridge module bridge tokens for GMX
+        address[] memory originTokensBridgeGMX = new address[](1);
+        originTokensBridgeGMX[0] = GMX;
+
+        address[] memory destinationTokensBridgeGMX = new address[](1);
+        destinationTokensBridgeGMX[0] = GMX;
+
+        addExpectedBridgeToken(
+            BridgeToken({symbol: "GMX", token: GMX}),
+            originTokensBridgeGMX,
+            destinationTokensBridgeGMX
         );
 
         // add synapse cctp module bridge tokens
