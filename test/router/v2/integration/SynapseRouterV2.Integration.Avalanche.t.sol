@@ -65,6 +65,7 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         addExpectedToken(USDC, "CCTP.USDC");
         addExpectedToken(NETH, "nETH");
         addExpectedToken(WETH_E, "WETH.e");
+        // TODO: WAVAX
     }
 
     // testing CCTP, synapse bridge
@@ -248,5 +249,43 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         assertEq(query.minAmountOut, 0);
         assertEq(query.deadline, 0);
         assertEq(query.rawParams, bytes(""));
+    }
+
+    function testGetOriginAmountOut_inUSDCe_outUSDC() public {
+        address tokenIn = USDC_E;
+        string memory tokenSymbol = "CCTP.USDC";
+        uint256 amountIn = 990000000000; // 990K USDC
+
+        address pool = 0x9A2Dea7B81cfe3e0011D44D41c5c5142b8d9abdF; // LinkedPool
+        uint8 indexFrom = 4;
+        uint8 indexTo = 0;
+        uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountIn);
+
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, USDC);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
+    }
+
+    /// @dev not enough liquidity to test CCTP max bridged amount out
+
+    function testGetOriginAmountOut_inWETHe_outNETH() public {
+        address tokenIn = WETH_E;
+        string memory tokenSymbol = "nETH";
+        uint256 amountIn = 10e18;
+
+        address pool = 0xdd60483Ace9B215a7c019A44Be2F22Aa9982652E; // Aave swap wrapper
+        uint8 indexFrom = 1;
+        uint8 indexTo = 0;
+        uint256 amountOut = calculateSwap(pool, indexFrom, indexTo, amountIn);
+
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, NETH);
+        assertEq(query.minAmountOut, amountOut);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, getSwapParams(pool, indexFrom, indexTo));
     }
 }
