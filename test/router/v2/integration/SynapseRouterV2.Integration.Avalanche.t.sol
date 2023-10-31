@@ -622,6 +622,7 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         );
     }
 
+    // TODO: fix bridge module for this edge case
     function testSynapseBridge_avalancheToEthereum_inGMX_outGMX() public {
         address module = expectedModules[0]; // Synapse bridge module
 
@@ -695,6 +696,109 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
             1, // mainnet
             module,
             UniversalTokenLib.ETH_ADDRESS,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseCCTP_avalancheToEthereum_inUSDC_outUSDC() public {
+        address module = expectedModules[1]; // Synapse CCTP module
+
+        SwapQuery memory originQuery;
+        SwapQuery memory destQuery;
+
+        uint32 requestVersion = getRequestVersion(true);
+        bytes memory swapParams = bytes("");
+
+        uint32 originDomain = 1;
+        uint32 destDomain = 0;
+        uint64 nonce = getNextAvailableNonce();
+
+        bytes memory formattedRequest = formatRequest(
+            requestVersion,
+            originDomain,
+            nonce,
+            USDC,
+            getTestAmount(USDC),
+            recipient,
+            swapParams
+        );
+        bytes32 expectedRequestID = getExpectedRequestID(formattedRequest, destDomain, requestVersion);
+
+        requestSentEvent = CircleRequestSentEvent({
+            chainId: 1,
+            sender: msg.sender,
+            nonce: nonce,
+            token: USDC,
+            amount: getTestAmount(USDC),
+            requestVersion: requestVersion,
+            formattedRequest: formattedRequest,
+            requestID: expectedRequestID
+        });
+        initiateBridge(
+            expectCircleRequestSentEvent,
+            1, // mainnet
+            module,
+            USDC,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseCCTP_avalancheToEthereum_inUSDCe_outUSDC() public {
+        address module = expectedModules[1]; // Synapse CCTP module
+
+        address pool = 0x9A2Dea7B81cfe3e0011D44D41c5c5142b8d9abdF; // LinkedPool
+        DefaultParams memory originParams = DefaultParams({
+            action: Action.Swap,
+            pool: pool,
+            tokenIndexFrom: 4,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: USDC,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(originParams)
+        });
+        uint256 amountIn = calculateSwap(pool, 4, 0, getTestAmount(USDC_E));
+
+        SwapQuery memory destQuery;
+
+        uint32 requestVersion = getRequestVersion(true);
+        bytes memory swapParams = bytes("");
+
+        uint32 originDomain = 1;
+        uint32 destDomain = 0;
+        uint64 nonce = getNextAvailableNonce();
+
+        bytes memory formattedRequest = formatRequest(
+            requestVersion,
+            originDomain,
+            nonce,
+            USDC,
+            amountIn,
+            recipient,
+            swapParams
+        );
+        bytes32 expectedRequestID = getExpectedRequestID(formattedRequest, destDomain, requestVersion);
+
+        requestSentEvent = CircleRequestSentEvent({
+            chainId: 1,
+            sender: msg.sender,
+            nonce: nonce,
+            token: USDC,
+            amount: amountIn,
+            requestVersion: requestVersion,
+            formattedRequest: formattedRequest,
+            requestID: expectedRequestID
+        });
+        initiateBridge(
+            expectCircleRequestSentEvent,
+            1, // mainnet
+            module,
+            USDC_E,
             originQuery,
             destQuery
         );
