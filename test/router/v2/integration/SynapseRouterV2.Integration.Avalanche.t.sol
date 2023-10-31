@@ -532,33 +532,169 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         );
     }
 
-    function testSynapseBridge_avalancheToEthereum_inWETHe_outNETH() public {
-        address module = expectedModules[0]; // Synapse bridge module
+    function testSynapseBridge_avalancheToEthereum_inNUSD_outUSDC() public {
+        address module = expectedModules[0];
 
-        address pool = 0xdd60483Ace9B215a7c019A44Be2F22Aa9982652E; // Aave swap wrapper
-        DefaultParams memory params = DefaultParams({
+        SwapQuery memory originQuery;
+        DefaultParams memory destParams = DefaultParams({
+            action: Action.RemoveLiquidity,
+            pool: 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8, // stableswap pool on mainnet
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8, // irrelevant for test
+            tokenOut: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48, // USDC on mainnet
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(destParams)
+        });
+
+        redeemAndRemoveEvent = RedeemAndRemoveEvent({
+            to: recipient,
+            chainId: 1,
+            token: NUSD,
+            amount: getTestAmount(NUSD),
+            swapTokenIndex: 1,
+            swapMinAmount: 0,
+            swapDeadline: type(uint256).max
+        });
+        initiateBridge(
+            expectRedeemAndRemoveEvent,
+            1, // mainnet
+            module,
+            NUSD,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_avalancheToEthereum_inUSDCe_outUSDC() public {
+        address module = expectedModules[0];
+
+        address pool = AVAX_STABLE_POOL;
+        uint256 amount = calculateSwap(pool, 2, 0, getTestAmount(USDC_E));
+
+        DefaultParams memory originParams = DefaultParams({
             action: Action.Swap,
-            pool: pool, // linked pool
-            tokenIndexFrom: 1,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 2,
             tokenIndexTo: 0
         });
         SwapQuery memory originQuery = SwapQuery({
             routerAdapter: address(router),
-            tokenOut: NETH,
+            tokenOut: NUSD,
+            minAmountOut: amount,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(originParams)
+        });
+
+        DefaultParams memory destParams = DefaultParams({
+            action: Action.RemoveLiquidity,
+            pool: 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8, // stableswap pool on mainnet
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8, // irrelevant for test
+            tokenOut: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48, // USDC on mainnet
             minAmountOut: 0,
             deadline: type(uint256).max,
-            rawParams: abi.encode(params)
+            rawParams: abi.encode(destParams)
+        });
+
+        redeemAndRemoveEvent = RedeemAndRemoveEvent({
+            to: recipient,
+            chainId: 1,
+            token: NUSD,
+            amount: originQuery.minAmountOut,
+            swapTokenIndex: 1,
+            swapMinAmount: 0,
+            swapDeadline: type(uint256).max
+        });
+        initiateBridge(
+            expectRedeemAndRemoveEvent,
+            1, // mainnet
+            module,
+            USDC_E,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_avalancheToEthereum_inGMX_outGMX() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        SwapQuery memory originQuery;
+        SwapQuery memory destQuery;
+
+        depositEvent = DepositEvent({
+            to: recipient,
+            chainId: 1, // mainnet
+            token: GMX,
+            amount: getTestAmount(GMX)
+        });
+        initiateBridge(
+            expectDepositEvent,
+            1, // mainnet
+            module,
+            GMX,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_avalancheToEthereum_inWAVAX_outWAVAX() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        SwapQuery memory originQuery;
+        SwapQuery memory destQuery;
+
+        depositEvent = DepositEvent({
+            to: recipient,
+            chainId: 1, // mainnet
+            token: WAVAX,
+            amount: getTestAmount(WAVAX)
+        });
+        initiateBridge(
+            expectDepositEvent,
+            1, // mainnet
+            module,
+            WAVAX,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_avalancheToEthereum_inAVAX_outWAVAX() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        DefaultParams memory originParams = DefaultParams({
+            action: Action.HandleEth,
+            pool: address(0),
+            tokenIndexFrom: type(uint8).max,
+            tokenIndexTo: type(uint8).max
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: WAVAX,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(originParams)
         });
         SwapQuery memory destQuery;
 
-        uint256 amount = getTestAmount(WETH_E);
-        uint256 amountOut = calculateSwap(pool, 1, 0, amount);
-        redeemEvent = RedeemEvent({to: recipient, chainId: 1, token: NETH, amount: amountOut});
+        depositEvent = DepositEvent({
+            to: recipient,
+            chainId: 1, // mainnet
+            token: WAVAX,
+            amount: getTestAmount(WAVAX)
+        });
         initiateBridge(
-            expectRedeemEvent,
+            expectDepositEvent,
             1, // mainnet
             module,
-            WETH_E,
+            UniversalTokenLib.ETH_ADDRESS,
             originQuery,
             destQuery
         );
