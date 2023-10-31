@@ -483,4 +483,84 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         assertEq(query.deadline, type(uint256).max);
         assertEq(query.rawParams, bytes(""));
     }
+
+    function testSynapseBridge_avalancheToEthereum_inNUSD_outNUSD() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        SwapQuery memory originQuery;
+        SwapQuery memory destQuery;
+
+        redeemEvent = RedeemEvent({to: recipient, chainId: 1, token: NUSD, amount: getTestAmount(NUSD)});
+        initiateBridge(
+            expectRedeemEvent,
+            1, // mainnet
+            module,
+            NUSD,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_avalancheToEthereum_inUSDCe_outNUSD() public {
+        address module = expectedModules[0];
+
+        address pool = AVAX_STABLE_POOL;
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 2,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: NUSD,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+        SwapQuery memory destQuery;
+
+        uint256 amount = calculateSwap(pool, 2, 0, getTestAmount(USDC_E));
+        redeemEvent = RedeemEvent({to: recipient, chainId: 1, token: NUSD, amount: amount});
+        initiateBridge(
+            expectRedeemEvent,
+            1, // mainnet
+            module,
+            USDC_E,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseBridge_avalancheToEthereum_inWETHe_outNETH() public {
+        address module = expectedModules[0]; // Synapse bridge module
+
+        address pool = 0xdd60483Ace9B215a7c019A44Be2F22Aa9982652E; // Aave swap wrapper
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: pool, // linked pool
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: NETH,
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+        SwapQuery memory destQuery;
+
+        uint256 amount = getTestAmount(WETH_E);
+        uint256 amountOut = calculateSwap(pool, 1, 0, amount);
+        redeemEvent = RedeemEvent({to: recipient, chainId: 1, token: NETH, amount: amountOut});
+        initiateBridge(
+            expectRedeemEvent,
+            1, // mainnet
+            module,
+            WETH_E,
+            originQuery,
+            destQuery
+        );
+    }
 }
