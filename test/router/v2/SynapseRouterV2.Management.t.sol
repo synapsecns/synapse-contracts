@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {BasicSynapseRouterV2Test} from "./BasicSynapseRouterV2.t.sol";
+import {BasicSynapseRouterV2Test, MockERC20} from "./BasicSynapseRouterV2.t.sol";
 import {SwapQuoterV2} from "../../../contracts/router/quoter/SwapQuoterV2.sol";
 import {SynapseRouterV2} from "../../../contracts/router/SynapseRouterV2.sol";
 
@@ -49,6 +49,19 @@ contract SynapseRouterV2ManagementTest is BasicSynapseRouterV2Test {
 
         vm.expectRevert("Ownable: caller is not the owner");
         router.setSwapQuoter(newSwapQuoter);
+    }
+
+    function test_setAllowance_setsAllowance() public {
+        MockERC20 token = new MockERC20("Mock", 18);
+        vm.prank(owner);
+        router.setAllowance(address(token), address(1234), 5678);
+        assertEq(token.allowance(address(router), address(1234)), 5678);
+    }
+
+    function test_setAllowance_revert_callerNotOwner() public {
+        MockERC20 token = new MockERC20("Mock", 18);
+        vm.expectRevert("Ownable: caller is not the owner");
+        router.setAllowance(address(token), address(1234), 5678);
     }
 
     function test_connectBridgeModule(bytes32 moduleId, address module) public {
