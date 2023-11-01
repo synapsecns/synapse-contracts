@@ -38,8 +38,11 @@ contract SynapseBridgeModule is OnlyDelegateCall, IBridgeModule {
         (ILocalBridgeConfig.TokenType tokenType, address bridgeToken) = localBridgeConfig.config(token);
         // Use config.bridgeToken as the token address for the bridging purposes
         if (bridgeToken == address(0)) revert SynapseBridgeModule__UnsupportedToken(token);
-        // Approve the bridge to spend the token
-        bridgeToken.universalApproveInfinity({spender: address(synapseBridge), amountToSpend: amount});
+        // Don't issue the approval if the wrapper token is involved
+        // In this case the approval is either unnecessary or manually set in the SynapseRouterV2 using `setAllowance`
+        if (token == bridgeToken) {
+            bridgeToken.universalApproveInfinity({spender: address(synapseBridge), amountToSpend: amount});
+        }
         // Proceed with the bridging transaction based on the token type
         if (tokenType == ILocalBridgeConfig.TokenType.Redeem) {
             _redeemToken(to, chainId, bridgeToken, amount, destQuery);
