@@ -942,4 +942,40 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
             destQuery
         );
     }
+
+    function testSwap_avalanche_inUSDCe_outUSDTe() public {
+        address pool = AVAX_STABLE_POOL;
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 2,
+            tokenIndexTo: 3
+        });
+        SwapQuery memory query = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: USDT_E,
+            minAmountOut: calculateSwap(pool, 2, 3, getTestAmount(USDC_E)),
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+        initiateSwap(recipient, USDC_E, getTestAmount(USDC_E), query);
+    }
+
+    function testSwap_avalanche_inWETHe_outNETH() public {
+        address pool = 0xdd60483Ace9B215a7c019A44Be2F22Aa9982652E; // Aave swap wrapper
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: pool, // stableswap pool on arbitrum
+            tokenIndexFrom: 1,
+            tokenIndexTo: 0
+        });
+        SwapQuery memory query = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: NETH,
+            minAmountOut: calculateSwap(pool, 1, 0, getTestAmount(WETH_E)),
+            deadline: type(uint256).max,
+            rawParams: abi.encode(params)
+        });
+        initiateSwap(recipient, WETH_E, getTestAmount(WETH_E), query);
+    }
 }

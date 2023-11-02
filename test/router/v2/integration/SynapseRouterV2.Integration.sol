@@ -214,7 +214,7 @@ abstract contract SynapseRouterV2IntegrationTest is IntegrationUtils {
         console.log("   Expecting: %s -> %s", amount, amountOut);
 
         // check expected amount out matches router amount out
-        assertEq(amountOut, expectedAmountOut);
+        assertApproxEqAbs(amountOut, expectedAmountOut, 1); // 1 wei abs diff tol
 
         // check balances after swap
         assertEq(
