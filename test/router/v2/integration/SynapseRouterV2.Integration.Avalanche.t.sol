@@ -48,6 +48,7 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
     address private constant USDT_E = 0xc7198437980c041c805A1EDcbA50c1Ce5db95118;
     address private constant WETH_E = 0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB;
     address private constant USDT = 0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7;
+    address private constant GMX_WRAPPER = 0x20A9DC684B4d0407EF8C9A302BEAaA18ee15F656;
 
     constructor() SynapseRouterV2IntegrationTest("avalanche", AVAX_BLOCK_NUMBER, AVAX_SWAP_QUOTER) {}
 
@@ -622,21 +623,15 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         );
     }
 
-    // TODO: fix bridge module for this edge case
     function testSynapseBridge_avalancheToEthereum_inGMX_outGMX() public {
         address module = expectedModules[0]; // Synapse bridge module
 
         SwapQuery memory originQuery;
         SwapQuery memory destQuery;
 
-        depositEvent = DepositEvent({
-            to: recipient,
-            chainId: 1, // mainnet
-            token: GMX,
-            amount: getTestAmount(GMX)
-        });
+        redeemEvent = RedeemEvent({to: recipient, chainId: 1, token: GMX_WRAPPER, amount: getTestAmount(GMX)});
         initiateBridge(
-            expectDepositEvent,
+            expectRedeemEvent,
             1, // mainnet
             module,
             GMX,
