@@ -798,4 +798,148 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
             destQuery
         );
     }
+
+    function testSynapseCCTP_avalancheToArbitrum_inUSDC_outUSDCe() public {
+        address module = expectedModules[1]; // Synapse CCTP module
+
+        SwapQuery memory originQuery;
+
+        DefaultParams memory destParams = DefaultParams({
+            action: Action.Swap,
+            pool: 0xC40BF702aBebB494842e2a1751bCf6D8C5be2Fa9, // stableswap pool on arbitrum
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: 0xC40BF702aBebB494842e2a1751bCf6D8C5be2Fa9,
+            tokenOut: 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8, // USDCe on arbitrum
+            minAmountOut: 0,
+            deadline: type(uint256).max,
+            rawParams: abi.encode(destParams)
+        });
+
+        uint32 requestVersion = getRequestVersion(false);
+        bytes memory swapParams = formatSwapParams({
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            deadline: type(uint256).max,
+            minAmountOut: 0
+        });
+
+        uint32 originDomain = 1;
+        uint32 destDomain = 3;
+        uint64 nonce = getNextAvailableNonce();
+
+        bytes memory formattedRequest = formatRequest(
+            requestVersion,
+            originDomain,
+            nonce,
+            USDC,
+            getTestAmount(USDC),
+            recipient,
+            swapParams
+        );
+        bytes32 expectedRequestID = getExpectedRequestID(formattedRequest, destDomain, requestVersion);
+
+        requestSentEvent = CircleRequestSentEvent({
+            chainId: 42161,
+            sender: msg.sender,
+            nonce: nonce,
+            token: USDC,
+            amount: getTestAmount(USDC),
+            requestVersion: requestVersion,
+            formattedRequest: formattedRequest,
+            requestID: expectedRequestID
+        });
+        initiateBridge(
+            expectCircleRequestSentEvent,
+            42161, // arbitrum
+            module,
+            USDC,
+            originQuery,
+            destQuery
+        );
+    }
+
+    function testSynapseCCTP_avalancheToArbitrum_inUSDCe_outUSDCe() public {
+        address module = expectedModules[1]; // Synapse CCTP module
+
+        address pool = 0x9A2Dea7B81cfe3e0011D44D41c5c5142b8d9abdF; // LinkedPool
+
+        uint256 amountIn = calculateSwap(pool, 4, 0, getTestAmount(USDC_E));
+
+        SwapQuery memory originQuery;
+        SwapQuery memory destQuery;
+        {
+            DefaultParams memory originParams = DefaultParams({
+                action: Action.Swap,
+                pool: pool,
+                tokenIndexFrom: 4,
+                tokenIndexTo: 0
+            });
+            originQuery = SwapQuery({
+                routerAdapter: address(router),
+                tokenOut: USDC,
+                minAmountOut: 0,
+                deadline: type(uint256).max,
+                rawParams: abi.encode(originParams)
+            });
+
+            DefaultParams memory destParams = DefaultParams({
+                action: Action.Swap,
+                pool: 0xC40BF702aBebB494842e2a1751bCf6D8C5be2Fa9, // stableswap pool on arbitrum
+                tokenIndexFrom: 0,
+                tokenIndexTo: 1
+            });
+            destQuery = SwapQuery({
+                routerAdapter: 0xC40BF702aBebB494842e2a1751bCf6D8C5be2Fa9,
+                tokenOut: 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8, // USDCe on arbitrum
+                minAmountOut: 0,
+                deadline: type(uint256).max,
+                rawParams: abi.encode(destParams)
+            });
+        }
+
+        uint32 requestVersion = getRequestVersion(false);
+        bytes memory swapParams = formatSwapParams({
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1,
+            deadline: type(uint256).max,
+            minAmountOut: 0
+        });
+
+        uint32 originDomain = 1;
+        uint32 destDomain = 3;
+        uint64 nonce = getNextAvailableNonce();
+
+        bytes memory formattedRequest = formatRequest(
+            requestVersion,
+            originDomain,
+            nonce,
+            USDC,
+            amountIn,
+            recipient,
+            swapParams
+        );
+        bytes32 expectedRequestID = getExpectedRequestID(formattedRequest, destDomain, requestVersion);
+
+        requestSentEvent = CircleRequestSentEvent({
+            chainId: 42161,
+            sender: msg.sender,
+            nonce: nonce,
+            token: USDC,
+            amount: amountIn,
+            requestVersion: requestVersion,
+            formattedRequest: formattedRequest,
+            requestID: expectedRequestID
+        });
+        initiateBridge(
+            expectCircleRequestSentEvent,
+            42161, // arbitrum
+            module,
+            USDC_E,
+            originQuery,
+            destQuery
+        );
+    }
 }
