@@ -26,6 +26,12 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         string poolModule;
     }
 
+    struct NoQuoteFound {
+        uint256 nodeIndexFrom;
+        uint256 nodeIndexTo;
+        address pool;
+    }
+
     LinkedPool public linkedPool;
     uint256 public tokenNodesAmount;
     string public linkedPoolAlias;
@@ -43,6 +49,9 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
     /// @notice Maximum percent difference between expected and actual swap amount
     /// @dev An 18 decimal fixed point number, where 1e18 == 100%
     uint256 public maxPercentDelta;
+
+    /// @notice List of adjacent nodes that have no quote
+    NoQuoteFound[] public noQuotesFound;
 
     address public user;
 
@@ -129,12 +138,14 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         for (uint8 nodeIndexFrom = 1; nodeIndexFrom < tokenNodesAmount; nodeIndexFrom++) {
             checkSwap(0, nodeIndexFrom);
         }
+        logNoQuotesFound();
     }
 
     function testSwapsToRoot() public {
         for (uint8 nodeIndexTo = 1; nodeIndexTo < tokenNodesAmount; nodeIndexTo++) {
             checkSwap(nodeIndexTo, 0);
         }
+        logNoQuotesFound();
     }
 
     function testSwapsBetweenNodes() public {
@@ -143,6 +154,7 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
                 checkSwap(nodeIndexFrom, nodeIndexTo);
             }
         }
+        logNoQuotesFound();
     }
 
     function checkSwap(uint8 nodeIndexFrom, uint8 nodeIndexTo) internal {
@@ -178,6 +190,17 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         // Revert to the snapshot to reset the balances
         // This way every test is independent
         assert(vm.revertTo(snapshotId));
+        // Save nodes with no quotes after resetting the state
+        if (expectedAmountOut == 0) {
+            saveAmountOutZero(nodeIndexFrom, nodeIndexTo);
+        }
+    }
+
+    function saveAmountOutZero(uint8 nodeIndexFrom, uint8 nodeIndexTo) internal {
+        // Save nodes only if the swap path contains exactly 1 pool to avoid spamming the console
+        address pool = commonPool[nodeIndexFrom][nodeIndexTo];
+        if (pool == address(0)) return;
+        noQuotesFound.push(NoQuoteFound({nodeIndexFrom: nodeIndexFrom, nodeIndexTo: nodeIndexTo, pool: pool}));
     }
 
     // ══════════════════════════════════════════════════ LOGGING ══════════════════════════════════════════════════════
@@ -194,16 +217,25 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         console2.log("Swapping %s -> %s", nodeIndexFrom, nodeIndexTo);
         console2.log("   amountIn: %s %s", amountIn.fromFloat(tokenDecimals[tokenFrom]), tokenSymbols[tokenFrom]);
         console2.log("  amountOut: %s %s", expectedAmountOut.fromFloat(tokenDecimals[tokenTo]), tokenSymbols[tokenTo]);
-        if (expectedAmountOut == 0) {
-            logAmountOutZero(nodeIndexFrom, nodeIndexTo);
+    }
+
+    function logNoQuotesFound() internal view {
+        console2.log("Zero quotes found between adjacent nodes: %s", noQuotesFound.length);
+        for (uint256 i = 0; i < noQuotesFound.length; i++) {
+            logAmountOutZero(noQuotesFound[i]);
         }
     }
 
-    function logAmountOutZero(uint8 nodeIndexFrom, uint8 nodeIndexTo) internal view {
-        // Print a warning only if the swap path contains exactly 1 pool to avoid spamming the console
-        address pool = commonPool[nodeIndexFrom][nodeIndexTo];
-        if (pool == address(0)) return;
-        console2.log(unicode"❗❗❗ WARNING: no quote for pool %s", pool);
+    function logAmountOutZero(NoQuoteFound memory absentQuote) internal view {
+        console2.log(
+            unicode"❗❗❗ WARNING: no quote for %s -> %s",
+            absentQuote.nodeIndexFrom,
+            absentQuote.nodeIndexTo
+        );
+        address tokenFrom = tokens[absentQuote.nodeIndexFrom];
+        address tokenTo = tokens[absentQuote.nodeIndexTo];
+        console2.log("   %s %s -> %s", swapValue, tokenSymbols[tokenFrom], tokenSymbols[tokenTo]);
+        console2.log("   pool: %s", absentQuote.pool);
     }
 
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
