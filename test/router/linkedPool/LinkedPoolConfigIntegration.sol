@@ -40,6 +40,9 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
     /// @notice Swap value to be used as amountIn for all swaps, before token decimals are applied
     /// @dev Use something like 10_000 for USD tokens, 10 for ETH tokens
     uint256 public swapValue;
+    /// @notice Maximum percent difference between expected and actual swap amount
+    /// @dev An 18 decimal fixed point number, where 1e18 == 100%
+    uint256 public maxPercentDelta;
 
     address public user;
 
@@ -47,10 +50,12 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         string memory chainName_,
         uint256 forkBlockNumber,
         string memory bridgeSymbol_,
-        uint256 swapValue_
+        uint256 swapValue_,
+        uint256 maxPercentDelta_
     ) IntegrationUtils(chainName_, linkedPoolAlias = string.concat("LinkedPool.", bridgeSymbol_), forkBlockNumber) {
         user = makeAddr("User");
         swapValue = swapValue_;
+        maxPercentDelta = maxPercentDelta_;
     }
 
     // ═══════════════════════════════════════════════════ SETUP ═══════════════════════════════════════════════════════
@@ -162,7 +167,13 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         });
         if (expectedAmountOut > 0) {
             uint256 amountAfter = IERC20(tokens[nodeIndexTo]).balanceOf(user);
-            assertEq(amountAfter - amountBefore, expectedAmountOut);
+            // Check that the amount out is within the expected range
+            assertApproxEqRelDecimal({
+                a: amountAfter - amountBefore,
+                b: expectedAmountOut,
+                maxPercentDelta: maxPercentDelta,
+                decimals: tokenDecimals[tokens[nodeIndexTo]]
+            });
         }
         // Revert to the snapshot to reset the balances
         // This way every test is independent
