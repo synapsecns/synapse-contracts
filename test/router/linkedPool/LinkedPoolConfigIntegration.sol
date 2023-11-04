@@ -26,6 +26,12 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         string poolModule;
     }
 
+    // enforce alphabetical order to match the JSON order
+    struct OverridenToken {
+        address tokenAddress;
+        string tokenSymbol;
+    }
+
     struct NoQuoteFound {
         uint256 nodeIndexFrom;
         uint256 nodeIndexTo;
@@ -74,6 +80,8 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         deployLinkedPool();
         addPools();
         readTokens();
+        // Read overrides after tokens are read to apply them
+        readSymbolOverrides();
     }
 
     function readPoolConfig() internal virtual {
@@ -129,6 +137,17 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
             tokens.push(token);
             tokenSymbols[token] = IERC20Metadata(token).symbol();
             tokenDecimals[token] = IERC20Metadata(token).decimals();
+        }
+    }
+
+    function readSymbolOverrides() internal {
+        string memory overridesJSON = vm.readFile("script/configs/TokenSymbols.overrides.json");
+        bytes memory encodedOverrides = overridesJSON.parseRaw(StringUtils.concat(".", chainName));
+        // Exit early if there are no overrides for this chain
+        if (encodedOverrides.length == 0) return;
+        OverridenToken[] memory overrides = abi.decode(encodedOverrides, (OverridenToken[]));
+        for (uint256 i = 0; i < overrides.length; i++) {
+            tokenSymbols[overrides[i].tokenAddress] = overrides[i].tokenSymbol;
         }
     }
 
