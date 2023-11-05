@@ -2,7 +2,9 @@
 pragma solidity 0.8.17;
 
 import {ILinkedPool} from "../../../contracts/router/interfaces/ILinkedPool.sol";
+import {BridgeToken} from "../../../contracts/router/libs/Structs.sol";
 import {SwapQuoterV2} from "../../../contracts/router/quoter/SwapQuoterV2.sol";
+import {SynapseCCTP} from "../../../contracts/cctp/SynapseCCTP.sol";
 
 import {BridgeConfigLens, IBridgeConfigV3} from "./helpers/BridgeConfigLens.sol";
 import {console2, BasicSynapseScript, StringUtils} from "../../templates/BasicSynapse.s.sol";
@@ -37,9 +39,9 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         }
         // Get a list of pools that should be ignored by the quoter
         loadIgnoredPools();
+        saveSynapseCCTPPools();
         saveBridgeConfigPools();
         // TODO: save origin-only pools as well
-        // TODO: save pools from SynapseCCTP as well
         // Serialize the config
         config = "config";
         config = config.serialize("pools", serializeSavedPools());
@@ -59,6 +61,17 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         }
         // Add the zero address to the ignored list to simplify the logic
         isIgnoredPool[address(0)] = true;
+    }
+
+    /// @notice Saves pool to be later added to SwapQuoterV2 config
+    function savePoolIfNotIgnored(
+        address bridgeToken,
+        address pool,
+        string memory symbol
+    ) internal {
+        if (isIgnoredPool[pool]) return;
+        savedPools.push(SwapQuoterV2.BridgePool({bridgeToken: bridgeToken, poolType: getPoolType(pool), pool: pool}));
+        savedPoolSymbols.push(symbol);
     }
 
     /// @notice Saves the whitelisted bridge pools from the Mainnet BridgeConfigV3 contract in `savedPools`
@@ -81,15 +94,27 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         if (chainId != MAINNET_CHAIN_ID) vm.selectFork(forkId);
         for (uint256 i = 0; i < pools.length; ++i) {
             address pool = pools[i].poolAddress;
-            if (isIgnoredPool[pool]) continue;
-            savedPools.push(
-                SwapQuoterV2.BridgePool({
-                    bridgeToken: stringToAddress(tokens[i].tokenAddress),
-                    poolType: getPoolType(pool),
-                    pool: pool
-                })
-            );
-            savedPoolSymbols.push(tokenIDs[i]);
+            savePoolIfNotIgnored({
+                bridgeToken: stringToAddress(tokens[i].tokenAddress),
+                pool: pool,
+                symbol: tokenIDs[i]
+            });
+        }
+    }
+
+    /// @notice Saves the whitelisted pools for the SynapseCCTP bridge tokens in `savedPools`
+    function saveSynapseCCTPPools() internal {
+        address synapseCCTPDeployment = tryGetDeploymentAddress("SynapseCCTP");
+        if (synapseCCTPDeployment == address(0)) {
+            console2.log("Skipping: SynapseCCTP deployment not found on %s", activeChain);
+            return;
+        }
+        SynapseCCTP synapseCCTP = SynapseCCTP(synapseCCTPDeployment);
+        BridgeToken[] memory bridgeTokens = synapseCCTP.getBridgeTokens();
+        // Iterate over whitelisted pools for the SynapseCCTP bridge tokens
+        for (uint256 i = 0; i < bridgeTokens.length; ++i) {
+            address pool = synapseCCTP.circleTokenPool(bridgeTokens[i].token);
+            savePoolIfNotIgnored({bridgeToken: bridgeTokens[i].token, pool: pool, symbol: bridgeTokens[i].symbol});
         }
     }
 
