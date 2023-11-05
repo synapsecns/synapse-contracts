@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {ILinkedPool} from "../../../contracts/router/interfaces/ILinkedPool.sol";
+import {SwapQuoterV2} from "../../../contracts/router/quoter/SwapQuoterV2.sol";
 
 import {BridgeConfigLens, IBridgeConfigV3} from "./helpers/BridgeConfigLens.sol";
 import {console2, BasicSynapseScript, StringUtils} from "../../templates/BasicSynapse.s.sol";
@@ -21,6 +22,9 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
 
     string public config;
     mapping(address => bool) public isIgnoredPool;
+
+    SwapQuoterV2.BridgePool[] public savedPools;
+    string[] public savedPoolSymbols;
 
     function run() external {
         // Setup the BasicSynapseScript
@@ -57,6 +61,7 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         config.write(configFN);
     }
 
+    /// @notice Loads the list of pools that should be ignored by the Quoter
     function loadIgnoredPools() internal {
         string memory ignoredJson = getGlobalConfig(QUOTER_V2, "ignored");
         string[] memory ignoredContractNames = ignoredJson.readStringArray(".contractNames");
@@ -69,6 +74,38 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         }
         // Add the zero address to the ignored list to simplify the logic
         isIgnoredPool[address(0)] = true;
+    }
+
+    /// @notice Saves the whitelisted bridge pools from the Mainnet BridgeConfigV3 contract in `savedPools`
+    function saveBridgeConfigPools() internal {
+        // Save current chainId, then switch to Mainnet
+        uint256 forkId = vm.activeFork();
+        uint256 chainId = blockChainId();
+        // Switch to Mainnet if we're not already there
+        if (chainId != MAINNET_CHAIN_ID) {
+            string memory mainnetRPC = vm.envString(MAINNET_RPC_ENV);
+            vm.createSelectFork(mainnetRPC);
+        }
+        // get the config for the current chain
+        (
+            string[] memory tokenIDs,
+            IBridgeConfigV3.Token[] memory tokens,
+            IBridgeConfigV3.Pool[] memory pools
+        ) = getChainConfig(chainId);
+        // Switch back to the original chain (if we switched)
+        if (chainId != MAINNET_CHAIN_ID) vm.selectFork(forkId);
+        for (uint256 i = 0; i < pools.length; ++i) {
+            address pool = pools[i].poolAddress;
+            if (isIgnoredPool[pool]) continue;
+            savedPools.push(
+                SwapQuoterV2.BridgePool({
+                    bridgeToken: stringToAddress(tokens[i].tokenAddress),
+                    poolType: getPoolType(pool),
+                    pool: pool
+                })
+            );
+            savedPoolSymbols.push(tokenIDs[i]);
+        }
     }
 
     function serializePoolIDs(string[] memory tokenIDs, IBridgeConfigV3.Pool[] memory pools) internal {
@@ -125,5 +162,9 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         // Issue a static call to pool.tokenNodesAmount() which is only implemented by LinkedPool
         (bool success, ) = pool.staticcall(abi.encodeWithSelector(ILinkedPool.tokenNodesAmount.selector));
         return success;
+    }
+
+    function getPoolType(address pool) internal view returns (SwapQuoterV2.PoolType) {
+        return isLinkedPool(pool) ? SwapQuoterV2.PoolType.Linked : SwapQuoterV2.PoolType.Default;
     }
 }
