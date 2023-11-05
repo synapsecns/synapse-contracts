@@ -13,7 +13,7 @@ import {stdJson} from "forge-std/Script.sol";
 /// @notice This script saves the config for the SwapQuoterV2 contract
 /// by inspecting BridgeConfigV3 contract on Mainnet.
 contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
-    using StringUtils for string;
+    using StringUtils for *;
     using stdJson for string;
 
     string public constant MAINNET_RPC_ENV = "MAINNET_API";
@@ -35,29 +35,14 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
             config = getDeployConfig(QUOTER_V2);
             return;
         }
-        // Save current chainId, then switch to Mainnet
-        uint256 forkId = vm.activeFork();
-        uint256 chainId = blockChainId();
-        // Switch to Mainnet if we're not already there
-        if (chainId != MAINNET_CHAIN_ID) {
-            string memory mainnetRPC = vm.envString(MAINNET_RPC_ENV);
-            vm.createSelectFork(mainnetRPC);
-        }
-        // get the config for the current chain
-        (
-            string[] memory tokenIDs,
-            IBridgeConfigV3.Token[] memory tokens,
-            IBridgeConfigV3.Pool[] memory pools
-        ) = getChainConfig(chainId);
-        // Switch back to the original chain (if we switched)
-        if (chainId != MAINNET_CHAIN_ID) vm.selectFork(forkId);
         // Get a list of pools that should be ignored by the quoter
         loadIgnoredPools();
+        saveBridgeConfigPools();
+        // TODO: save origin-only pools as well
+        // TODO: save pools from SynapseCCTP as well
         // Serialize the config
         config = "config";
-        serializePoolIDs(tokenIDs, pools);
-        serializePools(tokenIDs, tokens, pools);
-        // TODO: serialize origin-only pools as well
+        config = config.serialize("pools", serializeSavedPools());
         config.write(configFN);
     }
 
@@ -108,54 +93,24 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         }
     }
 
-    function serializePoolIDs(string[] memory tokenIDs, IBridgeConfigV3.Pool[] memory pools) internal {
-        // Filter out pools that don't exist or ignored
-        uint256 poolsLength = 0;
-        for (uint256 i = 0; i < pools.length; ++i) {
-            if (!isIgnoredPool[pools[i].poolAddress]) {
-                ++poolsLength;
-            }
-        }
-        string[] memory poolIDs = new string[](poolsLength);
-        poolsLength = 0;
-        for (uint256 i = 0; i < pools.length; ++i) {
-            if (!isIgnoredPool[pools[i].poolAddress]) {
-                console2.log("Token ID: %s", tokenIDs[i]);
-                console2.log("Pool address: %s", pools[i].poolAddress);
-                poolIDs[poolsLength++] = tokenIDs[i];
-            }
-        }
-        config.serialize("ids", poolIDs);
-    }
-
-    function serializePools(
-        string[] memory tokenIDs,
-        IBridgeConfigV3.Token[] memory tokens,
-        IBridgeConfigV3.Pool[] memory pools
-    ) internal returns (string memory json) {
-        // Find out how many pools exist
-        uint256 poolsLength = 0;
-        for (uint256 i = 0; i < pools.length; ++i) {
-            if (!isIgnoredPool[pools[i].poolAddress]) {
-                ++poolsLength;
-            }
-        }
+    function serializeSavedPools() internal returns (string memory json) {
         json = "json.pools";
-        uint256 poolsFound = 0;
-        for (uint256 i = 0; i < pools.length; ++i) {
-            if (isIgnoredPool[pools[i].poolAddress]) continue;
-            ++poolsFound;
+        for (uint256 i = 0; i < savedPools.length; ++i) {
+            address pool = savedPools[i].pool;
             string memory jsonPool = "local";
-            jsonPool.serialize("isLinked", isLinkedPool(pools[i].poolAddress));
-            jsonPool.serialize("pool", pools[i].poolAddress);
-            jsonPool = jsonPool.serialize("token", stringToAddress(tokens[i].tokenAddress));
-            if (poolsFound == poolsLength) {
-                json = json.serialize(tokenIDs[i], jsonPool);
+            jsonPool.serialize("bridgeSymbol", savedPoolSymbols[i]);
+            jsonPool.serialize("isLinked", savedPools[i].poolType == SwapQuoterV2.PoolType.Linked);
+            jsonPool.serialize("pool", pool);
+            jsonPool = jsonPool.serialize("token", savedPools[i].bridgeToken);
+            // Use "0", "1", "2", ... as keys for the pools because
+            // forge doesn't support serializing arrays of objects at the moment
+            string memory key = i.fromUint();
+            if (i == savedPools.length - 1) {
+                json = json.serialize(key, jsonPool);
             } else {
-                json.serialize(tokenIDs[i], jsonPool);
+                json.serialize(key, jsonPool);
             }
         }
-        config = config.serialize("pools", json);
     }
 
     function isLinkedPool(address pool) internal view returns (bool) {
