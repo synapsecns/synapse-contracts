@@ -62,7 +62,7 @@ done
 echo "Running ${#TESTS_TO_RUN[@]} integration tests"
 # Run integration tests one by one to decrease the amount of rate limit errors.
 for TEST_FILE in ${TESTS_TO_RUN[@]}; do
-  forge test --match-path $TEST_FILE
+  forge test -vv --match-path $TEST_FILE
   # Sleep for 5 seconds to avoid rate limit errors.
   sleep 5
 done
