@@ -22,15 +22,18 @@ contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
     error NexusPoolModule__UnsupportedIndex(uint8 tokenIndex);
     error NexusPoolModule__UnsupportedPool(address pool);
 
+    /// @notice External contract that is used for precise addLiquidity calculations
     address public constant DEFAULT_POOL_CALC = 0x0000000000F54b784E70E1Cf1F99FB53b08D6FEA;
+    /// @notice Address of the pool this module is used for
     address public constant NEXUS_POOL = 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8;
 
-    uint256 public constant NUM_TOKENS = 3;
-    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-
-    address public constant NUSD = 0x1B84765dE8B7566e4cEAF4D0fD3c5aF52D3DdE4F;
+    /// @dev Hardcoded token addresses for the Nexus pool
+    uint256 internal constant NUM_TOKENS = 3;
+    address internal constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address internal constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address internal constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    /// @dev Address of the pool's LP token, which is also a token supported by SynapseBridge
+    address internal constant NUSD = 0x1B84765dE8B7566e4cEAF4D0fD3c5aF52D3DdE4F;
 
     modifier onlyNexusPool(address pool) {
         if (pool != NEXUS_POOL) revert NexusPoolModule__UnsupportedPool(pool);
