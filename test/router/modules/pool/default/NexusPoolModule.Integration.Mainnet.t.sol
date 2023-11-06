@@ -40,7 +40,7 @@ contract NexusPoolModuleEthTestFork is IntegrationUtils {
     constructor() IntegrationUtils("mainnet", "NexusPoolModule", ETH_BLOCK_NUMBER) {}
 
     function afterBlockchainForked() public override {
-        nexusPoolModule = new NexusPoolModule({defaultPoolCalc_: DEFAULT_POOL_CALC, nexusPool_: NEXUS_POOL});
+        nexusPoolModule = new NexusPoolModule();
         linkedPool = new LinkedPool(USDC, address(this));
         user = makeAddr("User");
         caller = new DelegateCaller();
@@ -181,13 +181,6 @@ contract NexusPoolModuleEthTestFork is IntegrationUtils {
     }
 
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
-
-    function testImmutables() public {
-        assertEq(address(nexusPoolModule.defaultPoolCalc()), DEFAULT_POOL_CALC);
-        assertEq(nexusPoolModule.nexusPool(), NEXUS_POOL);
-        assertEq(nexusPoolModule.nexusPoolNumTokens(), 3);
-        assertEq(nexusPoolModule.nexusPoolLpToken(), NUSD);
-    }
 
     function testGetPoolTokens() public {
         address[] memory tokens = nexusPoolModule.getPoolTokens(NEXUS_POOL);
