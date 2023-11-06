@@ -30,9 +30,7 @@ for TEST_FILE in $INTEGRATION_TESTS; do
   #   $CHAIN_NAME $CONTRACT_NAME
   # We need to extract the chain and contract name from this output.
   TEST_ARGS=$(forge script $INSPECT_PATH --sig "run(string)" $INSPECT_ARGS | awk '/==/ {getline; print}')
-  CHAIN_NAME=$(awk '{print $1}' <<<$TEST_ARGS)
-  CONTRACT_NAME=$(awk '{print $2}' <<<$TEST_ARGS)
-  RUN_IF_DEPLOYED=$(awk '{print $3}' <<<$TEST_ARGS)
+  read -r CHAIN_NAME CONTRACT_NAME RUN_IF_DEPLOYED <<< "$TEST_ARGS"
   # Check that both the chain and contract name are not empty.
   if [ -z "$CHAIN_NAME" ] || [ -z "$CONTRACT_NAME" ]; then
     echo "  [CHAIN_NAME=$CHAIN_NAME] [CONTRACT_NAME=$CONTRACT_NAME]"
