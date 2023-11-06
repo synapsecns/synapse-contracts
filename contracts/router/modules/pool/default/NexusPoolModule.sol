@@ -6,6 +6,8 @@ import {IDefaultPoolCalc} from "../../../interfaces/IDefaultPoolCalc.sol";
 import {IPausable} from "../../../interfaces/IPausable.sol";
 import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
 
+import {UniversalTokenLib} from "../../../libs/UniversalToken.sol";
+
 import {OnlyDelegateCall} from "../../OnlyDelegateCall.sol";
 
 /// @notice PoolModule for the Nexus pool. Treats the pool's LP token (nUSD) as an additional pool token.
@@ -13,6 +15,8 @@ import {OnlyDelegateCall} from "../../OnlyDelegateCall.sol";
 /// lpToken -> poolToken is done by removing liquidity in a form of a single token.
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
 contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
+    using UniversalTokenLib for address;
+
     error NexusPoolModule__EqualIndexes(uint8 tokenIndex);
     error NexusPoolModule__Paused();
     error NexusPoolModule__UnsupportedIndex(uint8 tokenIndex);
@@ -50,9 +54,38 @@ contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
         IndexedToken memory tokenFrom,
         IndexedToken memory tokenTo,
         uint256 amountIn
-    ) external returns (uint256 amountOut) {
+    ) external onlyNexusPool(pool) onlySupportedIndexes(tokenFrom.index, tokenTo.index) returns (uint256 amountOut) {
         // This function should be only called via delegatecall
         assertDelegateCall();
+        // Approve tokenIn for spending by the pool no matter what the action is
+        tokenFrom.token.universalApproveInfinity({spender: pool, amountToSpend: amountIn});
+        if (tokenFrom.index == nexusPoolNumTokens) {
+            // Case 1: tokenFrom == nUSD -> remove liquidity
+            amountOut = IDefaultExtendedPool(pool).removeLiquidityOneToken({
+                tokenAmount: amountIn,
+                tokenIndex: tokenTo.index,
+                minAmount: 0,
+                deadline: block.timestamp
+            });
+        } else if (tokenTo.index == nexusPoolNumTokens) {
+            // Case 2: tokenTo == nUSD -> add liquidity
+            uint256[] memory amounts = new uint256[](nexusPoolNumTokens);
+            amounts[tokenFrom.index] = amountIn;
+            amountOut = IDefaultExtendedPool(pool).addLiquidity({
+                amounts: amounts,
+                minToMint: 0,
+                deadline: block.timestamp
+            });
+        } else {
+            // Case 3: tokenFrom != nUSD && tokenTo != nUSD -> swap
+            amountOut = IDefaultExtendedPool(pool).swap({
+                tokenIndexFrom: tokenFrom.index,
+                tokenIndexTo: tokenTo.index,
+                dx: amountIn,
+                minDy: 0,
+                deadline: block.timestamp
+            });
+        }
     }
 
     // ═══════════════════════════════════════════════════ VIEWS ═══════════════════════════════════════════════════════
