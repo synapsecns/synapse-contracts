@@ -7,7 +7,9 @@ import {LinkedPool} from "../../../../../contracts/router/LinkedPool.sol";
 import {IndexedToken, NexusPoolModule} from "../../../../../contracts/router/modules/pool/default/NexusPoolModule.sol";
 
 import {DelegateCaller} from "../../bridge/DelegateCaller.sol";
+import {IPausable} from "../../../../interfaces/IPausable.sol";
 
+import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
 contract NexusPoolModuleEthTestFork is IntegrationUtils {
@@ -100,6 +102,82 @@ contract NexusPoolModuleEthTestFork is IntegrationUtils {
         );
         vm.expectRevert(abi.encodeWithSelector(NexusPoolModule.NexusPoolModule__UnsupportedIndex.selector, 4));
         caller.performDelegateCall(address(nexusPoolModule), encodedCall);
+    }
+
+    // ══════════════════════════════════════════ TESTS: REVERTS (VIEWS) ═══════════════════════════════════════════════
+
+    function testGetPoolTokensRevertsWhenUnsupportedPool() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(NexusPoolModule.NexusPoolModule__UnsupportedPool.selector, address(1337))
+        );
+        nexusPoolModule.getPoolTokens(address(1337));
+    }
+
+    function testGetPoolQuoteRevertsWhenUnsupportedPool() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(NexusPoolModule.NexusPoolModule__UnsupportedPool.selector, address(1337))
+        );
+        nexusPoolModule.getPoolQuote(
+            address(1337),
+            IndexedToken({token: USDC, index: 0}),
+            IndexedToken({token: DAI, index: 1}),
+            100 * 10**6,
+            false
+        );
+    }
+
+    function testGetPoolQuoteRevertsWhenEqualIndexes() public {
+        for (uint8 index = 0; index <= 3; ++index) {
+            address token = nexusPoolModule.getPoolTokens(NEXUS_POOL)[index];
+            vm.expectRevert(abi.encodeWithSelector(NexusPoolModule.NexusPoolModule__EqualIndexes.selector, index));
+            nexusPoolModule.getPoolQuote(
+                NEXUS_POOL,
+                IndexedToken({token: token, index: index}),
+                IndexedToken({token: token, index: index}),
+                100 * 10**6,
+                false
+            );
+        }
+    }
+
+    function testGetPoolQuoteRevertsWhenUnsupportedToIndex() public {
+        vm.expectRevert(abi.encodeWithSelector(NexusPoolModule.NexusPoolModule__UnsupportedIndex.selector, 4));
+        nexusPoolModule.getPoolQuote(
+            NEXUS_POOL,
+            IndexedToken({token: USDC, index: 0}),
+            IndexedToken({token: NUSD, index: 4}),
+            100 * 10**6,
+            false
+        );
+    }
+
+    function testGetPoolQuoteRevertsWhenUnsupportedFromIndex() public {
+        vm.expectRevert(abi.encodeWithSelector(NexusPoolModule.NexusPoolModule__UnsupportedIndex.selector, 4));
+        nexusPoolModule.getPoolQuote(
+            NEXUS_POOL,
+            IndexedToken({token: NUSD, index: 4}),
+            IndexedToken({token: USDC, index: 0}),
+            100 * 10**6,
+            false
+        );
+    }
+
+    function pausePool() public {
+        address owner = Ownable(NEXUS_POOL).owner();
+        vm.prank(owner);
+        IPausable(NEXUS_POOL).pause();
+    }
+
+    function testGetPoolQuoteRevertsWhenPoolPaused() public {
+        pausePool();
+        vm.expectRevert(NexusPoolModule.NexusPoolModule__Paused.selector);
+        nexusPoolModule.getPoolQuote(
+            NEXUS_POOL,
+            IndexedToken({token: USDC, index: 0}),
+            IndexedToken({token: DAI, index: 1}),
+            100 * 10**6,
+            true
+        );
     }
 
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
