@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {IDefaultExtendedPool} from "../../../interfaces/IDefaultExtendedPool.sol";
 import {IDefaultPoolCalc} from "../../../interfaces/IDefaultPoolCalc.sol";
 import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
 
@@ -41,4 +42,25 @@ contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
 
     /// @inheritdoc IPoolModule
     function getPoolTokens(address pool) external view returns (address[] memory tokens) {}
+
+    // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
+
+    /// @dev Returns the LP token address for the given pool.
+    function _lpToken(address pool) internal view returns (address lpToken) {
+        (, , , , , , lpToken) = IDefaultExtendedPool(pool).swapStorage();
+    }
+
+    /// @dev Returns the number of tokens in the pool, excluding the LP token.
+    function _numTokens(address pool) internal view returns (uint256 numTokens) {
+        /// @dev same logic as LinkedPool.sol::_getPoolTokens
+        while (true) {
+            try IDefaultExtendedPool(pool).getToken(uint8(numTokens)) returns (address) {
+                unchecked {
+                    ++numTokens;
+                }
+            } catch {
+                break;
+            }
+        }
+    }
 }
