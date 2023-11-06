@@ -4,10 +4,12 @@ pragma solidity 0.8.17;
 import {LinkedPool} from "../../../contracts/router/LinkedPool.sol";
 
 import {BasicSynapseScript, StringUtils} from "../../templates/BasicSynapse.s.sol";
+import {ModuleNaming} from "./ModuleNaming.sol";
 
 import {stdJson} from "forge-std/Script.sol";
 
 contract ConfigureLinkedPool is BasicSynapseScript {
+    using ModuleNaming for string;
     using StringUtils for string;
     using StringUtils for uint256;
     using stdJson for string;
@@ -54,7 +56,7 @@ contract ConfigureLinkedPool is BasicSynapseScript {
         // TODO: add options to update pool module here or in a separate script?
         address poolModule = bytes(params.poolModule).length == 0
             ? address(0)
-            : getDeploymentAddress(params.poolModule.concat("Module"));
+            : getDeploymentAddress(params.poolModule.getModuleDeploymentName());
         string memory module = poolModule == address(0) ? "None" : params.poolModule;
         if (isAttached(params.nodeIndex, params.pool)) {
             printLog(
