@@ -189,15 +189,13 @@ contract BasicSynapseScript is BasicUtils {
     {
         bytes32 initCodeHash = keccak256(initCode);
         string memory allSalts = getGlobalConfig(MINIMAL_CREATE2_FACTORY, "salts");
-        // Try to read the salt from the JSON
-        try vm.parseJson(allSalts, StringUtils.concat(".", contractName)) returns (bytes memory encoded) {
-            SaltEntry memory entry = abi.decode(encoded, (SaltEntry));
-            require(entry.initCodeHash == initCodeHash, "Invalid init code hash");
-            return entry.salt;
-        } catch {
-            // No key is present in the JSON, return 0
-            return 0;
-        }
+        string memory key = StringUtils.concat(".", contractName);
+        if (!vm.keyExists(allSalts, key)) return 0;
+        // Read the salt entry from the JSON
+        bytes memory encoded = vm.parseJson(allSalts, key);
+        SaltEntry memory entry = abi.decode(encoded, (SaltEntry));
+        require(entry.initCodeHash == initCodeHash, "Invalid init code hash");
+        return entry.salt;
     }
 
     /// @notice Deploys a contract and saves the deployment JSON, if the contract hasn't been deployed yet.
