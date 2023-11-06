@@ -12,6 +12,8 @@ import {OnlyDelegateCall} from "../../OnlyDelegateCall.sol";
 /// lpToken -> poolToken is done by removing liquidity in a form of a single token.
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
 contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
+    error NexusPoolModule__IncorrectPool(address pool);
+
     IDefaultPoolCalc public immutable defaultPoolCalc;
     /// These need to be immutable in order to be accessed via delegatecall
     address public immutable nexusPool;
@@ -24,6 +26,11 @@ contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
         nexusPool = nexusPool_;
         nexusPoolNumTokens = _numTokens(nexusPool_);
         nexusPoolLpToken = _lpToken(nexusPool_);
+    }
+
+    modifier onlyNexusPool(address pool) {
+        if (pool != nexusPool) revert NexusPoolModule__IncorrectPool(pool);
+        _;
     }
 
     /// @inheritdoc IPoolModule
@@ -49,7 +56,14 @@ contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
     ) external view returns (uint256 amountOut) {}
 
     /// @inheritdoc IPoolModule
-    function getPoolTokens(address pool) external view returns (address[] memory tokens) {}
+    function getPoolTokens(address pool) external view onlyNexusPool(pool) returns (address[] memory tokens) {
+        // Extend the list of pool tokens with the LP token
+        tokens = new address[](nexusPoolNumTokens + 1);
+        for (uint256 i = 0; i < nexusPoolNumTokens; i++) {
+            tokens[i] = IDefaultExtendedPool(pool).getToken(uint8(i));
+        }
+        tokens[nexusPoolNumTokens] = nexusPoolLpToken;
+    }
 
     // ══════════════════════════════════════════════ INTERNAL VIEWS ═══════════════════════════════════════════════════
 
