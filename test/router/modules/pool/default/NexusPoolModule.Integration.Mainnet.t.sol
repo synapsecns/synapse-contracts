@@ -6,6 +6,8 @@ import {IntegrationUtils} from "../../../../utils/IntegrationUtils.sol";
 import {LinkedPool} from "../../../../../contracts/router/LinkedPool.sol";
 import {IndexedToken, NexusPoolModule} from "../../../../../contracts/router/modules/pool/default/NexusPoolModule.sol";
 
+import {DelegateCaller} from "../../bridge/DelegateCaller.sol";
+
 import {IERC20, SafeERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
 contract NexusPoolModuleEthTestFork is IntegrationUtils {
@@ -13,6 +15,8 @@ contract NexusPoolModuleEthTestFork is IntegrationUtils {
 
     LinkedPool public linkedPool;
     NexusPoolModule public nexusPoolModule;
+
+    DelegateCaller public caller;
 
     // 2023-11-03
     uint256 public constant ETH_BLOCK_NUMBER = 18490000;
@@ -37,6 +41,65 @@ contract NexusPoolModuleEthTestFork is IntegrationUtils {
         nexusPoolModule = new NexusPoolModule({defaultPoolCalc_: DEFAULT_POOL_CALC, nexusPool_: NEXUS_POOL});
         linkedPool = new LinkedPool(USDC, address(this));
         user = makeAddr("User");
+        caller = new DelegateCaller();
+    }
+
+    // ═══════════════════════════════════════════ TESTS: REVERTS (SWAP) ═══════════════════════════════════════════════
+
+    function testPoolSwapRevertsWhenDirectCall() public {
+        vm.expectRevert("Not a delegate call");
+        nexusPoolModule.poolSwap({
+            pool: NEXUS_POOL,
+            tokenFrom: IndexedToken({token: USDC, index: 0}),
+            tokenTo: IndexedToken({token: DAI, index: 1}),
+            amountIn: 100 * 10**6
+        });
+    }
+
+    function testPoolSwapRevertsWhenUnsupportedPool() public {
+        bytes memory encodedCall = abi.encodeCall(
+            nexusPoolModule.poolSwap,
+            (address(1337), IndexedToken({token: USDC, index: 0}), IndexedToken({token: DAI, index: 1}), 100 * 10**6)
+        );
+        vm.expectRevert(
+            abi.encodeWithSelector(NexusPoolModule.NexusPoolModule__UnsupportedPool.selector, address(1337))
+        );
+        caller.performDelegateCall(address(nexusPoolModule), encodedCall);
+    }
+
+    function testPoolSwapRevertsWhenEqualIndexes() public {
+        for (uint8 index = 0; index <= 3; ++index) {
+            address token = nexusPoolModule.getPoolTokens(NEXUS_POOL)[index];
+            bytes memory encodedCall = abi.encodeCall(
+                nexusPoolModule.poolSwap,
+                (
+                    NEXUS_POOL,
+                    IndexedToken({token: token, index: index}),
+                    IndexedToken({token: token, index: index}),
+                    100 * 10**6
+                )
+            );
+            vm.expectRevert(abi.encodeWithSelector(NexusPoolModule.NexusPoolModule__EqualIndexes.selector, index));
+            caller.performDelegateCall(address(nexusPoolModule), encodedCall);
+        }
+    }
+
+    function testPoolSwapRevertsWhenUnsupportedToIndex() public {
+        bytes memory encodedCall = abi.encodeCall(
+            nexusPoolModule.poolSwap,
+            (NEXUS_POOL, IndexedToken({token: USDC, index: 0}), IndexedToken({token: NUSD, index: 4}), 100 * 10**6)
+        );
+        vm.expectRevert(abi.encodeWithSelector(NexusPoolModule.NexusPoolModule__UnsupportedIndex.selector, 4));
+        caller.performDelegateCall(address(nexusPoolModule), encodedCall);
+    }
+
+    function testPoolSwapRevertsWhenUnsupportedFromIndex() public {
+        bytes memory encodedCall = abi.encodeCall(
+            nexusPoolModule.poolSwap,
+            (NEXUS_POOL, IndexedToken({token: NUSD, index: 4}), IndexedToken({token: USDC, index: 0}), 100 * 10**6)
+        );
+        vm.expectRevert(abi.encodeWithSelector(NexusPoolModule.NexusPoolModule__UnsupportedIndex.selector, 4));
+        caller.performDelegateCall(address(nexusPoolModule), encodedCall);
     }
 
     // ═══════════════════════════════════════════════ TESTS: VIEWS ════════════════════════════════════════════════════
