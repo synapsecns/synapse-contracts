@@ -13,9 +13,17 @@ import {OnlyDelegateCall} from "../../OnlyDelegateCall.sol";
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
 contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
     IDefaultPoolCalc public immutable defaultPoolCalc;
+    /// These need to be immutable in order to be accessed via delegatecall
+    address public immutable nexusPool;
+    uint256 public immutable nexusPoolNumTokens;
+    address public immutable nexusPoolLpToken;
 
-    constructor(address defaultPoolCalc_) {
+    constructor(address defaultPoolCalc_, address nexusPool_) {
         defaultPoolCalc = IDefaultPoolCalc(defaultPoolCalc_);
+        // Save all the pool information during the deployment
+        nexusPool = nexusPool_;
+        nexusPoolNumTokens = _numTokens(nexusPool_);
+        nexusPoolLpToken = _lpToken(nexusPool_);
     }
 
     /// @inheritdoc IPoolModule
