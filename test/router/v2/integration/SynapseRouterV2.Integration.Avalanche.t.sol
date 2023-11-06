@@ -64,6 +64,7 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         addExpectedToken(DAI_E, "DAI.e");
         addExpectedToken(USDT_E, "USDT.e");
         addExpectedToken(USDC, "CCTP.USDC");
+        addExpectedToken(USDT, "USDT");
         addExpectedToken(NETH, "nETH");
         addExpectedToken(WETH_E, "WETH.e");
         addExpectedToken(WAVAX, "WAVAX");
@@ -83,12 +84,13 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
 
     function addExpectedBridgeTokens() public virtual override {
         // add synapse bridge module bridge tokens
-        address[] memory originTokensBridgeStables = new address[](5);
+        address[] memory originTokensBridgeStables = new address[](6);
         originTokensBridgeStables[0] = NUSD;
         originTokensBridgeStables[1] = DAI_E;
         originTokensBridgeStables[2] = USDC_E;
         originTokensBridgeStables[3] = USDT_E;
         originTokensBridgeStables[4] = USDC;
+        originTokensBridgeStables[5] = USDT;
 
         address[] memory destinationTokensBridgeStables = new address[](4);
         destinationTokensBridgeStables[0] = NUSD;
@@ -146,19 +148,21 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
         );
 
         // add synapse cctp module bridge tokens
-        address[] memory originTokensCCTP = new address[](5);
+        address[] memory originTokensCCTP = new address[](6);
         originTokensCCTP[0] = USDC;
         originTokensCCTP[1] = NUSD;
         originTokensCCTP[2] = USDC_E;
         originTokensCCTP[3] = DAI_E;
         originTokensCCTP[4] = USDT_E;
+        originTokensCCTP[5] = USDT;
 
-        address[] memory destinationTokensCCTP = new address[](5);
+        address[] memory destinationTokensCCTP = new address[](6);
         destinationTokensCCTP[0] = USDC;
         destinationTokensCCTP[1] = NUSD;
         destinationTokensCCTP[2] = USDC_E;
         destinationTokensCCTP[3] = DAI_E;
         destinationTokensCCTP[4] = USDT_E;
+        destinationTokensCCTP[5] = USDT;
 
         addExpectedBridgeToken(
             BridgeToken({symbol: "CCTP.USDC", token: USDC}),
@@ -300,6 +304,18 @@ contract SynapseRouterV2AvalancheIntegrationTestFork is
     }
 
     /// @dev not enough liquidity to test CCTP max bridged amount out
+    function testGetOriginAmountOut_inUSDC_outUSDC_overMaxBridgedAmount() public {
+        address tokenIn = USDC;
+        string memory tokenSymbol = "CCTP.USDC";
+        uint256 amountIn = 10**12 + 1;
+
+        SwapQuery memory query = router.getOriginAmountOut(tokenIn, tokenSymbol, amountIn);
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, address(0));
+        assertEq(query.minAmountOut, 0);
+        assertEq(query.deadline, 0);
+        assertEq(query.rawParams, bytes(""));
+    }
 
     function testGetOriginAmountOut_inWETHe_outNETH() public {
         address tokenIn = WETH_E;
