@@ -901,7 +901,7 @@ contract SynapseRouterV2EthereumIntegrationTestFork is
         });
         initiateBridge(
             expectCircleRequestSentEvent,
-            42161, // mainnet
+            42161, // arbitrum
             module,
             USDC,
             originQuery,
