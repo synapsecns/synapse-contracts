@@ -9,7 +9,7 @@ INTEGRATION_TESTS=$(find test -type f -name "*Integration*.t.sol")
 echo "Found $(wc -w <<<$INTEGRATION_TESTS) integration tests"
 
 # Track the integration tests for contracts that are not yet deployed.
-NOT_DEPLOYED_TESTS=()
+TESTS_TO_RUN=()
 
 for TEST_FILE in $INTEGRATION_TESTS; do
   # First, get the name of the defined contract in the test file.
@@ -32,6 +32,7 @@ for TEST_FILE in $INTEGRATION_TESTS; do
   TEST_ARGS=$(forge script $INSPECT_PATH --sig "run(string)" $INSPECT_ARGS | awk '/==/ {getline; print}')
   CHAIN_NAME=$(awk '{print $1}' <<<$TEST_ARGS)
   CONTRACT_NAME=$(awk '{print $2}' <<<$TEST_ARGS)
+  RUN_IF_DEPLOYED=$(awk '{print $3}' <<<$TEST_ARGS)
   # Check that both the chain and contract name are not empty.
   if [ -z "$CHAIN_NAME" ] || [ -z "$CONTRACT_NAME" ]; then
     echo "  [CHAIN_NAME=$CHAIN_NAME] [CONTRACT_NAME=$CONTRACT_NAME]"
@@ -44,18 +45,23 @@ for TEST_FILE in $INTEGRATION_TESTS; do
     exit 1
   fi
   # Check if the deployment for the tested contract already exists.
-  DEPLOYMENT_FILE="deployments/$CHAIN_NAME/$CONTRACT_NAME.json"
-  if [ -f $DEPLOYMENT_FILE ]; then
-    echo "  ✅ $CONTRACT_NAME on $CHAIN_NAME: skipping (already deployed)"
+  DEPLOYMENT_FILE="deployments/${CHAIN_NAME}/${CONTRACT_NAME}.json"
+  if [ -f "${DEPLOYMENT_FILE}" ]; then
+    if [ "${RUN_IF_DEPLOYED}" -eq 0 ]; then
+      echo "  ✅ ${CONTRACT_NAME} on ${CHAIN_NAME}: skipping (already deployed)"
+      continue
+    fi
+    echo "  ❗ ${CONTRACT_NAME} on ${CHAIN_NAME}: testing (deployed)"
   else
-    echo "  ❓ $CONTRACT_NAME on $CHAIN_NAME: testing (not deployed)"
-    NOT_DEPLOYED_TESTS+=($TEST_FILE)
+    echo "  ❓ ${CONTRACT_NAME} on ${CHAIN_NAME}: testing (not deployed)"
   fi
+  # Add the test file to the list of tests to run
+  TESTS_TO_RUN+=("${TEST_FILE}")
 done
 
-echo "Running ${#NOT_DEPLOYED_TESTS[@]} integration tests"
+echo "Running ${#TESTS_TO_RUN[@]} integration tests"
 # Run integration tests one by one to decrease the amount of rate limit errors.
-for TEST_FILE in ${NOT_DEPLOYED_TESTS[@]}; do
+for TEST_FILE in ${TESTS_TO_RUN[@]}; do
   forge test --match-path $TEST_FILE
   # Sleep for 5 seconds to avoid rate limit errors.
   sleep 5
