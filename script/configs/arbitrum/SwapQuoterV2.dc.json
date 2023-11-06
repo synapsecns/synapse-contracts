@@ -1,26 +1,22 @@
 {
-  "ids": [
-    "nUSD",
-    "nETH",
-    "CCTP.USDC"
-  ],
   "pools": {
-    "CCTP": {
-      "USDC": {
-        "isLinked": true,
-        "pool": "0xC40BF702aBebB494842e2a1751bCf6D8C5be2Fa9",
-        "token": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
-      }
+    "0": {
+      "description": "CCTP.USDC",
+      "isLinked": true,
+      "pool": "0x9A2Dea7B81cfe3e0011D44D41c5c5142b8d9abdF",
+      "token": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
     },
-    "nETH": {
-      "isLinked": false,
-      "pool": "0xa067668661C84476aFcDc6fA5D758C4c01C34352",
-      "token": "0x3ea9B0ab55F34Fb188824Ee288CeaEfC63cf908e"
-    },
-    "nUSD": {
+    "1": {
+      "description": "nUSD",
       "isLinked": false,
       "pool": "0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40",
       "token": "0x2913E812Cf0dcCA30FB28E6Cac3d2DCFF4497688"
+    },
+    "2": {
+      "description": "nETH",
+      "isLinked": false,
+      "pool": "0xa067668661C84476aFcDc6fA5D758C4c01C34352",
+      "token": "0x3ea9B0ab55F34Fb188824Ee288CeaEfC63cf908e"
     }
   }
 }
