@@ -73,6 +73,10 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         maxPercentDelta = maxPercentDelta_;
     }
 
+    function runIfDeployed() external pure override returns (bool) {
+        return true;
+    }
+
     // ═══════════════════════════════════════════════════ SETUP ═══════════════════════════════════════════════════════
 
     function afterBlockchainForked() public virtual override {
