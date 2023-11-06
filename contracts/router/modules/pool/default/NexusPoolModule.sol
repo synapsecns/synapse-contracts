@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 import {IDefaultExtendedPool} from "../../../interfaces/IDefaultExtendedPool.sol";
 import {IDefaultPoolCalc} from "../../../interfaces/IDefaultPoolCalc.sol";
+import {IPausable} from "../../../interfaces/IPausable.sol";
 import {IndexedToken, IPoolModule} from "../../../interfaces/IPoolModule.sol";
 
 import {OnlyDelegateCall} from "../../OnlyDelegateCall.sol";
@@ -13,6 +14,7 @@ import {OnlyDelegateCall} from "../../OnlyDelegateCall.sol";
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
 contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
     error NexusPoolModule__EqualIndexes(uint8 tokenIndex);
+    error NexusPoolModule__Paused();
     error NexusPoolModule__UnsupportedIndex(uint8 tokenIndex);
     error NexusPoolModule__UnsupportedPool(address pool);
 
@@ -69,6 +71,7 @@ contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
         onlySupportedIndexes(tokenFrom.index, tokenTo.index)
         returns (uint256 amountOut)
     {
+        if (probePaused && IPausable(pool).paused()) revert NexusPoolModule__Paused();
         if (tokenFrom.index == nexusPoolNumTokens) {
             // Case 1: tokenFrom == nUSD -> remove liquidity
             amountOut = IDefaultExtendedPool(pool).calculateRemoveLiquidityOneToken({
