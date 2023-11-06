@@ -16,8 +16,15 @@ contract DeployUniswapV3Module is BasicSynapseScript {
     address public uniswapV3Router;
     address public staticQuoter;
 
-    function run(string memory uniswapForkName) external {
-        string memory key = string.concat(".", uniswapForkName);
+    /// @notice Deploys the module for canonical UniV3
+    function run() external {
+        run("");
+    }
+
+    /// @notice Deploys the module for UniV3, which could be canonical or a fork
+    function run(string memory uniswapForkName) public {
+        // Check if need to deploy module for canonical UniV3 or a fork
+        string memory key = bytes(uniswapForkName).length == 0 ? "" : string.concat(".", uniswapForkName);
         // Setup the BasicSynapseScript
         setUp();
         vm.startBroadcast();
