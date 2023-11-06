@@ -18,6 +18,7 @@ contract ConfigureQuoterV2 is BasicRouterScript {
 
     // Order of the struct members must match the alphabetical order of the JSON keys
     struct PoolEntry {
+        string description;
         bool isLinked;
         address poolAddress;
         address tokenAddress;
@@ -45,9 +46,9 @@ contract ConfigureQuoterV2 is BasicRouterScript {
 
     function readConfig() internal {
         config = getDeployConfig(QUOTER_V2);
-        string[] memory ids = config.readStringArray(".ids");
-        for (uint256 i = 0; i < ids.length; ++i) {
-            string memory key = StringUtils.concat(".pools.", ids[i]);
+        string[] memory keys = vm.parseJsonKeys(config, ".pools");
+        for (uint256 i = 0; i < keys.length; ++i) {
+            string memory key = StringUtils.concat(".pools.", keys[i]);
             PoolEntry memory pool = abi.decode(config.parseRaw(key), (PoolEntry));
             configBridgePools.push(
                 SwapQuoterV2.BridgePool({
@@ -56,17 +57,22 @@ contract ConfigureQuoterV2 is BasicRouterScript {
                     pool: pool.poolAddress
                 })
             );
+            // Origin-only pools have bridgeToken == address(0) and its description does not matter
+            // (e.g. originOnly.LinkedPool.nUSD)
+            if (pool.tokenAddress == address(0)) continue;
+            // For the bridge pools, the description is the bridge token symbol
+            string memory symbol = pool.description;
             // Record id (symbol) <> bridgeToken mapping, sanity check that there are no duplicates
-            if (symbolToBridgeToken[ids[i]] != address(0)) {
-                console2.log("Duplicate symbol: %s", ids[i]);
+            if (symbolToBridgeToken[symbol] != address(0)) {
+                console2.log("Duplicate symbol: %s", symbol);
                 revert("Duplicate symbol");
             }
             if (bytes(bridgeTokenToSymbol[pool.tokenAddress]).length != 0) {
                 console2.log("Duplicate bridge token: %s", pool.tokenAddress);
                 revert("Duplicate bridge token");
             }
-            bridgeTokenToSymbol[pool.tokenAddress] = ids[i];
-            symbolToBridgeToken[ids[i]] = pool.tokenAddress;
+            bridgeTokenToSymbol[pool.tokenAddress] = symbol;
+            symbolToBridgeToken[symbol] = pool.tokenAddress;
         }
     }
 
