@@ -24,7 +24,12 @@ contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
 
     address public constant DEFAULT_POOL_CALC = 0x0000000000F54b784E70E1Cf1F99FB53b08D6FEA;
     address public constant NEXUS_POOL = 0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8;
+
     uint256 public constant NUM_TOKENS = 3;
+    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+
     address public constant NUSD = 0x1B84765dE8B7566e4cEAF4D0fD3c5aF52D3DdE4F;
 
     modifier onlyNexusPool(address pool) {
@@ -119,12 +124,12 @@ contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
     }
 
     /// @inheritdoc IPoolModule
-    function getPoolTokens(address pool) external view onlyNexusPool(pool) returns (address[] memory tokens) {
+    function getPoolTokens(address pool) external pure onlyNexusPool(pool) returns (address[] memory tokens) {
         // Extend the list of pool tokens with the LP token
-        tokens = new address[](NUM_TOKENS + 1);
-        for (uint256 i = 0; i < NUM_TOKENS; i++) {
-            tokens[i] = IDefaultExtendedPool(pool).getToken(uint8(i));
-        }
-        tokens[NUM_TOKENS] = NUSD;
+        tokens = new address[](4);
+        tokens[0] = DAI;
+        tokens[1] = USDC;
+        tokens[2] = USDT;
+        tokens[3] = NUSD;
     }
 }
