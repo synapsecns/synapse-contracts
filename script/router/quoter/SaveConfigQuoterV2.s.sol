@@ -39,9 +39,9 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         }
         // Get a list of pools that should be ignored by the quoter
         loadIgnoredPools();
+        saveOriginOnlyPools();
         saveSynapseCCTPPools();
         saveBridgeConfigPools();
-        // TODO: save origin-only pools as well
         // Serialize the config
         config = "config";
         config = config.serialize("pools", serializeSavedPools());
@@ -118,12 +118,31 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         }
     }
 
+    /// @notice Saves the origin-only pools defined in SwapQuoterV2.originOnly.json in `savedPools`
+    function saveOriginOnlyPools() internal {
+        string memory originOnlyJson = getGlobalConfig(QUOTER_V2, "originOnly");
+        string memory key = string.concat(".", activeChain);
+        try vm.parseJsonStringArray(originOnlyJson, key) returns (string[] memory poolNames) {
+            for (uint256 i = 0; i < poolNames.length; ++i) {
+                // Pool name in global config must match the deployment artifact name for the active chain
+                address pool = getDeploymentAddress(poolNames[i]);
+                savePoolIfNotIgnored({
+                    bridgeToken: address(0),
+                    pool: pool,
+                    symbol: string.concat("originOnly.", poolNames[i])
+                });
+            }
+        } catch {
+            // Do nothing on revert - origin-only pools are simply not defined for this chain
+        }
+    }
+
     function serializeSavedPools() internal returns (string memory json) {
         json = "json.pools";
         for (uint256 i = 0; i < savedPools.length; ++i) {
             address pool = savedPools[i].pool;
             string memory jsonPool = "local";
-            jsonPool.serialize("bridgeSymbol", savedPoolSymbols[i]);
+            jsonPool.serialize("description", savedPoolSymbols[i]);
             jsonPool.serialize("isLinked", savedPools[i].poolType == SwapQuoterV2.PoolType.Linked);
             jsonPool.serialize("pool", pool);
             jsonPool = jsonPool.serialize("token", savedPools[i].bridgeToken);
