@@ -12,7 +12,9 @@ import {OnlyDelegateCall} from "../../OnlyDelegateCall.sol";
 /// lpToken -> poolToken is done by removing liquidity in a form of a single token.
 /// @dev Implements IPoolModule interface to be used with pools added to LinkedPool router
 contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
-    error NexusPoolModule__IncorrectPool(address pool);
+    error NexusPoolModule__EqualIndexes(uint8 tokenIndex);
+    error NexusPoolModule__UnsupportedIndex(uint8 tokenIndex);
+    error NexusPoolModule__UnsupportedPool(address pool);
 
     IDefaultPoolCalc public immutable defaultPoolCalc;
     /// These need to be immutable in order to be accessed via delegatecall
@@ -29,7 +31,14 @@ contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
     }
 
     modifier onlyNexusPool(address pool) {
-        if (pool != nexusPool) revert NexusPoolModule__IncorrectPool(pool);
+        if (pool != nexusPool) revert NexusPoolModule__UnsupportedPool(pool);
+        _;
+    }
+
+    modifier onlySupportedIndexes(uint8 tokenIndexFrom, uint8 tokenIndexTo) {
+        if (tokenIndexFrom > nexusPoolNumTokens) revert NexusPoolModule__UnsupportedIndex(tokenIndexFrom);
+        if (tokenIndexTo > nexusPoolNumTokens) revert NexusPoolModule__UnsupportedIndex(tokenIndexTo);
+        if (tokenIndexFrom == tokenIndexTo) revert NexusPoolModule__EqualIndexes(tokenIndexFrom);
         _;
     }
 
@@ -53,7 +62,34 @@ contract NexusPoolModule is OnlyDelegateCall, IPoolModule {
         IndexedToken memory tokenTo,
         uint256 amountIn,
         bool probePaused
-    ) external view returns (uint256 amountOut) {}
+    )
+        external
+        view
+        onlyNexusPool(pool)
+        onlySupportedIndexes(tokenFrom.index, tokenTo.index)
+        returns (uint256 amountOut)
+    {
+        if (tokenFrom.index == nexusPoolNumTokens) {
+            // Case 1: tokenFrom == nUSD -> remove liquidity
+            amountOut = IDefaultExtendedPool(pool).calculateRemoveLiquidityOneToken({
+                tokenAmount: amountIn,
+                tokenIndex: tokenTo.index
+            });
+        } else if (tokenTo.index == nexusPoolNumTokens) {
+            // Case 2: tokenTo == nUSD -> add liquidity
+            // Need to use DefaultPoolCalc to get the precise quote
+            uint256[] memory amounts = new uint256[](nexusPoolNumTokens);
+            amounts[tokenFrom.index] = amountIn;
+            amountOut = defaultPoolCalc.calculateAddLiquidity(nexusPool, amounts);
+        } else {
+            // Case 3: tokenFrom != nUSD && tokenTo != nUSD -> swap
+            amountOut = IDefaultExtendedPool(pool).calculateSwap({
+                tokenIndexFrom: tokenFrom.index,
+                tokenIndexTo: tokenTo.index,
+                dx: amountIn
+            });
+        }
+    }
 
     /// @inheritdoc IPoolModule
     function getPoolTokens(address pool) external view onlyNexusPool(pool) returns (address[] memory tokens) {
