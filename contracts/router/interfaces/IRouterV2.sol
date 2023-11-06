@@ -66,6 +66,14 @@ interface IRouterV2 {
     /// @param _swapQuoter Swap Quoter
     function setSwapQuoter(ISwapQuoterV2 _swapQuoter) external;
 
+    /// @notice Sets a custom allowance for the given token.
+    /// @dev Reverts if not router owner. To be used for the wrapper token setups.
+    function setAllowance(
+        address token,
+        address spender,
+        uint256 amount
+    ) external;
+
     /// @notice Whitelists a new bridge module for users to route through
     /// @dev Reverts if not router owner
     /// @param moduleId Unique bridge module ID

@@ -4,12 +4,14 @@ pragma solidity 0.8.17;
 import {LinkedPool} from "../../../contracts/router/LinkedPool.sol";
 
 import {BasicSynapseScript, StringUtils} from "../../templates/BasicSynapse.s.sol";
+import {ModuleNaming} from "./ModuleNaming.sol";
 
 import {stdJson} from "forge-std/Script.sol";
 import {IERC20Metadata} from "@openzeppelin/contracts-4.5.0/token/ERC20/extensions/IERC20Metadata.sol";
 import {Strings} from "@openzeppelin/contracts-4.5.0/utils/Strings.sol";
 
 contract GenerateTokenTree is BasicSynapseScript {
+    using ModuleNaming for string;
     using stdJson for string;
     using StringUtils for string;
     using Strings for uint256;
@@ -79,7 +81,7 @@ contract GenerateTokenTree is BasicSynapseScript {
     function addPoolToTokenTree(uint256 poolIndex, PoolParams memory params) internal {
         address poolModule = bytes(params.poolModule).length == 0
             ? address(0)
-            : getDeploymentAddress(params.poolModule.concat("Module"));
+            : getDeploymentAddress(params.poolModule.getModuleDeploymentName());
         uint256 numNodes = linkedPool.tokenNodesAmount();
         linkedPool.addPool(params.nodeIndex, params.pool, poolModule);
         // Save newly added nodes for later

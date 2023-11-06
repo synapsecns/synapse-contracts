@@ -1,0 +1,6 @@
+{
+  "BaseSwap": {
+    "uniswapV3Router": "0xacB8Ac8d5597A97267e16Dae214eE3F5dBd551BB",
+    "uniswapV3StaticQuoter": "0xbAD189BDF6a05FDaFA33CA917d094A64954093c4"
+  }
+}

@@ -16,6 +16,12 @@ contract SynapseBridgeModuleWrappersTest is SynapseBridgeModuleTest {
         redeemWrapperToken = address(new MockWrapperToken(redeemToken));
         vm.label(depositWrapperToken, "DWT");
         vm.label(redeemWrapperToken, "RWT");
+        // Approve spending of wrapper tokens on behalf of the delegate caller
+        // In practice, this would be done by SynapseRouter.setAllowance()
+        vm.startPrank(address(delegateCaller));
+        MockWrapperToken(depositWrapperToken).approve(synapseBridge, type(uint256).max);
+        MockWrapperToken(redeemWrapperToken).approve(synapseBridge, type(uint256).max);
+        vm.stopPrank();
     }
 
     function addTokens() public virtual override {

@@ -4,6 +4,7 @@ pragma solidity 0.8.17;
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 import {Address} from "@openzeppelin/contracts-4.5.0/utils/Address.sol";
 import {EnumerableMap} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableMap.sol";
+import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
 
 import {DefaultRouter} from "./DefaultRouter.sol";
 import {Arrays} from "./libs/Arrays.sol";
@@ -21,6 +22,7 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     using Arrays for address[][];
     using Arrays for address[];
     using EnumerableMap for EnumerableMap.UintToAddressMap;
+    using SafeERC20 for IERC20;
 
     /// @notice swap quoter
     ISwapQuoterV2 public swapQuoter;
@@ -85,6 +87,15 @@ contract SynapseRouterV2 is IRouterV2, DefaultRouter, Ownable {
     function setSwapQuoter(ISwapQuoterV2 _swapQuoter) external onlyOwner {
         emit QuoterSet(address(swapQuoter), address(_swapQuoter));
         swapQuoter = _swapQuoter;
+    }
+
+    /// @inheritdoc IRouterV2
+    function setAllowance(
+        address token,
+        address spender,
+        uint256 amount
+    ) external onlyOwner {
+        IERC20(token).safeApprove(spender, amount);
     }
 
     /// @inheritdoc IRouterV2

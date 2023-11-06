@@ -1,0 +1,25 @@
+{
+  "bridgeToken": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  "pools": [
+    {
+      "nodeIndex": 0,
+      "pool": "0x88492051E18a65FE00241A93699A6082aE95c828",
+      "poolModule": "UniswapV3.BaseSwap"
+    },
+    {
+      "nodeIndex": 1,
+      "pool": "0x2C1E1A69ee809d3062AcE40fB83A9bFB59623d95",
+      "poolModule": "Algebra.SynthSwap"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0xf6C5F01C7F3148891ad0e19DF78743D31E390D1f",
+      "poolModule": "CurveV1"
+    },
+    {
+      "nodeIndex": 3,
+      "pool": "0x2C1E1A69ee809d3062AcE40fB83A9bFB59623d95",
+      "poolModule": "Algebra.SynthSwap"
+    }
+  ]
+}
