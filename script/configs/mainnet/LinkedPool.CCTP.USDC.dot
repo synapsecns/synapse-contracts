@@ -1,16 +1,16 @@
 graph G {
-    token0 [label = "0: USDC";];
-    token1 [label = "1: DAI";];
-    token2 [label = "2: USDT";];
-    token3 [label = "3: nUSD";];
-    token4 [label = "4: crvUSD";];
-    token5 [label = "5: FRAX";];
-    token6 [label = "6: crvUSD";];
-    token7 [label = "7: FRAX";];
-    token8 [label = "8: LUSD";];
-    token9 [label = "9: PYUSD";];
-    token10 [label = "10: USDT";];
-    pool0 [label = "NexusPool 0x1116";shape = rect;style = dashed;];
+    token0 [label = "USDC\n0";];
+    token1 [label = "DAI\n1";];
+    token2 [label = "USDT\n2";];
+    token3 [label = "nUSD\n3";];
+    token4 [label = "crvUSD\n4";];
+    token5 [label = "FRAX\n5";];
+    token6 [label = "crvUSD\n6";];
+    token7 [label = "FRAX\n7";];
+    token8 [label = "LUSD\n8";];
+    token9 [label = "PYUSD\n9";];
+    token10 [label = "USDT\n10";];
+    pool0 [label = "NexusPool\n0x1116";shape = rect;style = dashed;];
     token0 -- pool0;
     subgraph cluster0 {
         style = dotted;
@@ -24,7 +24,7 @@ graph G {
             token2 -- token3;
         }
     }
-    pool1 [label = "CurveV1 0x4dec";shape = rect;style = dashed;];
+    pool1 [label = "CurveV1\n0x4dec";shape = rect;style = dashed;];
     token0 -- pool1;
     subgraph cluster1 {
         style = dotted;
@@ -35,7 +35,7 @@ graph G {
             token4;
         }
     }
-    pool2 [label = "CurveV1 0xdcef";shape = rect;style = dashed;];
+    pool2 [label = "CurveV1\n0xdcef";shape = rect;style = dashed;];
     token0 -- pool2;
     subgraph cluster2 {
         style = dotted;
@@ -46,7 +46,7 @@ graph G {
             token5;
         }
     }
-    pool3 [label = "UniswapV3 0x73ea";shape = rect;style = dashed;];
+    pool3 [label = "UniswapV3\n0x73ea";shape = rect;style = dashed;];
     token0 -- pool3;
     subgraph cluster3 {
         style = dotted;
@@ -57,7 +57,7 @@ graph G {
             token6;
         }
     }
-    pool4 [label = "UniswapV3 0xc63b";shape = rect;style = dashed;];
+    pool4 [label = "UniswapV3\n0xc63b";shape = rect;style = dashed;];
     token0 -- pool4;
     subgraph cluster4 {
         style = dotted;
@@ -68,7 +68,7 @@ graph G {
             token7;
         }
     }
-    pool5 [label = "UniswapV3 0x4e09";shape = rect;style = dashed;];
+    pool5 [label = "UniswapV3\n0x4e09";shape = rect;style = dashed;];
     token0 -- pool5;
     subgraph cluster5 {
         style = dotted;
@@ -79,7 +79,7 @@ graph G {
             token8;
         }
     }
-    pool6 [label = "UniswapV3 0x1339";shape = rect;style = dashed;];
+    pool6 [label = "UniswapV3\n0x1339";shape = rect;style = dashed;];
     token0 -- pool6;
     subgraph cluster6 {
         style = dotted;
@@ -90,7 +90,7 @@ graph G {
             token9;
         }
     }
-    pool7 [label = "UniswapV3 0x3416";shape = rect;style = dashed;];
+    pool7 [label = "UniswapV3\n0x3416";shape = rect;style = dashed;];
     token0 -- pool7;
     subgraph cluster7 {
         style = dotted;
