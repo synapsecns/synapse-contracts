@@ -9,7 +9,9 @@ import {Test, console} from "forge-std/Test.sol";
 abstract contract IntegrationUtils is Test, IntegrationTest {
     using StringUtils for string;
 
+    /// @inheritdoc IntegrationTest
     string public chainName;
+    /// @inheritdoc IntegrationTest
     string public contractName;
 
     string private _envRPC;
@@ -43,4 +45,9 @@ abstract contract IntegrationUtils is Test, IntegrationTest {
     }
 
     function afterBlockchainForked() public virtual {}
+
+    /// @inheritdoc IntegrationTest
+    function runIfDeployed() external view virtual returns (bool) {
+        return false;
+    }
 }
