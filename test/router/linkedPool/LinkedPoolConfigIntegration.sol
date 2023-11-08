@@ -261,19 +261,22 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
     // ══════════════════════════════════════════════════ LOGGING ══════════════════════════════════════════════════════
 
     function logQuotes() internal view {
-        logQuotes(zeroQuotes, "amountOut == 0");
-        logQuotes(slippageQuotes, "slippage >= 1%");
+        logQuotes({
+            quotes: zeroQuotes,
+            description: "amountOut == 0",
+            warningMsg: unicode"⛔ Swap is not possible for"
+        });
+        logQuotes({quotes: slippageQuotes, description: "slippage >= 1%", warningMsg: unicode"💥 High slippage for"});
     }
 
-    function logQuotes(LoggedQuote[] storage quotes, string memory description) internal view {
+    function logQuotes(
+        LoggedQuote[] storage quotes,
+        string memory description,
+        string memory warningMsg
+    ) internal view {
         console2.log("Quotes with [%s] between adjacent nodes: %s", description, quotes.length);
         for (uint256 i = 0; i < quotes.length; i++) {
-            console2.log(
-                unicode"❗❗❗ WARNING: [%s] for %s -> %s",
-                description,
-                quotes[i].nodeIndexFrom,
-                quotes[i].nodeIndexTo
-            );
+            console2.log(unicode"   %s for %s -> %s", warningMsg, quotes[i].nodeIndexFrom, quotes[i].nodeIndexTo);
             address tokenFrom = tokens[quotes[i].nodeIndexFrom];
             address tokenTo = tokens[quotes[i].nodeIndexTo];
             string memory amountOutInfo = quotes[i]
