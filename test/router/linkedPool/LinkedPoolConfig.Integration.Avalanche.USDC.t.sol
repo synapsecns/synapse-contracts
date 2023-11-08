@@ -16,4 +16,9 @@ contract LinkedPoolConfigUSDCAvaxTestFork is LinkedPoolConfigIntegrationTest {
     constructor()
         LinkedPoolConfigIntegrationTest("avalanche", AVAX_BLOCK_NUMBER, "CCTP.USDC", SWAP_VALUE, MAX_PERCENT_DELTA)
     {}
+
+    // TODO: remote this before merging
+    function runIfDeployed() public pure override returns (bool) {
+        return true;
+    }
 }
