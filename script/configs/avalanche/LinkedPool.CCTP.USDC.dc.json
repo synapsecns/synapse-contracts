@@ -25,6 +25,21 @@
       "nodeIndex": 7,
       "pool": "0xED2a7edd7413021d440b09D654f3b87712abAB66",
       "poolModule": ""
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0x9B2Cc8E6a2Bbb56d6bE4682891a91B0e48633c72",
+      "poolModule": "TraderJoeV21"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0x7c13D4C3E9DFa683E7a5792a9FF20CB5FD22B0c0",
+      "poolModule": "TraderJoeV21"
+    },
+    {
+      "nodeIndex": 12,
+      "pool": "0xED2a7edd7413021d440b09D654f3b87712abAB66",
+      "poolModule": ""
     }
   ]
 }
