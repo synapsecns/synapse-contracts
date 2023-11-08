@@ -191,6 +191,18 @@ library StringUtils {
     /// @param val       The float to convert, scaled by 10**decimals
     /// @param decimals  The number of decimals to use
     function fromFloat(uint256 val, uint256 decimals) internal pure returns (string memory) {
+        return fromFloat(val, decimals, decimals);
+    }
+
+    /// @notice Converts a float to its string representation, optionally leaving some fractional digits out.
+    /// @param val              The float to convert, scaled by 10**decimals
+    /// @param decimals         The number of decimals to use
+    /// @param decimalsToLeave  The number of decimals to leave in the fractional part
+    function fromFloat(
+        uint256 val,
+        uint256 decimals,
+        uint256 decimalsToLeave
+    ) internal pure returns (string memory) {
         // Get the integer part
         string memory strInt = fromUint(val / 10**decimals);
         // Get the fractional part
@@ -198,6 +210,10 @@ library StringUtils {
         // Pad fractional part with zeros to match the number of decimals
         while (bytes(strFrac).length < decimals) {
             strFrac = concat("0", strFrac);
+        }
+        if (decimalsToLeave < decimals) {
+            // Truncate fractional part
+            strFrac = substring(strFrac, 0, decimalsToLeave);
         }
         // Concatenate integer and fractional parts
         return concat(strInt, ".", strFrac);
@@ -207,5 +223,12 @@ library StringUtils {
     /// @param val   The float to convert, scaled by 10**18
     function fromWei(uint256 val) internal pure returns (string memory) {
         return fromFloat(val, 18);
+    }
+
+    /// @notice Converts a float to its string representation, using 18 decimals, optionally leaving some fractional digits out.
+    /// @param val              The float to convert, scaled by 10**18
+    /// @param decimalsToLeave  The number of decimals to leave in the fractional part
+    function fromWei(uint256 val, uint256 decimalsToLeave) internal pure returns (string memory) {
+        return fromFloat(val, 18, decimalsToLeave);
     }
 }
