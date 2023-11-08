@@ -32,7 +32,7 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         string tokenSymbol;
     }
 
-    struct NoQuoteFound {
+    struct LoggedQuote {
         uint256 nodeIndexFrom;
         uint256 nodeIndexTo;
         address pool;
@@ -57,7 +57,7 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
     uint256 public maxPercentDelta;
 
     /// @notice List of adjacent nodes that have no quote
-    NoQuoteFound[] public noQuotesFound;
+    LoggedQuote[] public zeroQuotes;
 
     address public user;
 
@@ -162,14 +162,14 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         for (uint8 nodeIndexFrom = 1; nodeIndexFrom < tokenNodesAmount; nodeIndexFrom++) {
             checkSwap(0, nodeIndexFrom);
         }
-        logNoQuotesFound();
+        logQuotes();
     }
 
     function testSwapsToRoot() public {
         for (uint8 nodeIndexTo = 1; nodeIndexTo < tokenNodesAmount; nodeIndexTo++) {
             checkSwap(nodeIndexTo, 0);
         }
-        logNoQuotesFound();
+        logQuotes();
     }
 
     function testSwapsBetweenNodes() public {
@@ -178,7 +178,7 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
                 checkSwap(nodeIndexFrom, nodeIndexTo);
             }
         }
-        logNoQuotesFound();
+        logQuotes();
     }
 
     function checkSwap(uint8 nodeIndexFrom, uint8 nodeIndexTo) internal {
@@ -224,7 +224,7 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         // Save nodes only if the swap path contains exactly 1 pool to avoid spamming the console
         address pool = commonPool[nodeIndexFrom][nodeIndexTo];
         if (pool == address(0)) return;
-        noQuotesFound.push(NoQuoteFound({nodeIndexFrom: nodeIndexFrom, nodeIndexTo: nodeIndexTo, pool: pool}));
+        zeroQuotes.push(LoggedQuote({nodeIndexFrom: nodeIndexFrom, nodeIndexTo: nodeIndexTo, pool: pool}));
     }
 
     // ══════════════════════════════════════════════════ LOGGING ══════════════════════════════════════════════════════
@@ -243,23 +243,24 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         console2.log("  amountOut: %s %s", expectedAmountOut.fromFloat(tokenDecimals[tokenTo]), tokenSymbols[tokenTo]);
     }
 
-    function logNoQuotesFound() internal view {
-        console2.log("Zero quotes found between adjacent nodes: %s", noQuotesFound.length);
-        for (uint256 i = 0; i < noQuotesFound.length; i++) {
-            logAmountOutZero(noQuotesFound[i]);
-        }
+    function logQuotes() internal view {
+        logQuotes(zeroQuotes, "amountOut == 0");
     }
 
-    function logAmountOutZero(NoQuoteFound memory absentQuote) internal view {
-        console2.log(
-            unicode"❗❗❗ WARNING: no quote for %s -> %s",
-            absentQuote.nodeIndexFrom,
-            absentQuote.nodeIndexTo
-        );
-        address tokenFrom = tokens[absentQuote.nodeIndexFrom];
-        address tokenTo = tokens[absentQuote.nodeIndexTo];
-        console2.log("   %s %s -> %s", swapValue, tokenSymbols[tokenFrom], tokenSymbols[tokenTo]);
-        console2.log("   pool: %s", absentQuote.pool);
+    function logQuotes(LoggedQuote[] storage quotes, string memory description) internal view {
+        console2.log("Quotes with [%s] between adjacent nodes: %s", description, quotes.length);
+        for (uint256 i = 0; i < quotes.length; i++) {
+            console2.log(
+                unicode"❗❗❗ WARNING: [%s] for %s -> %s",
+                description,
+                quotes[i].nodeIndexFrom,
+                quotes[i].nodeIndexTo
+            );
+            address tokenFrom = tokens[quotes[i].nodeIndexFrom];
+            address tokenTo = tokens[quotes[i].nodeIndexTo];
+            console2.log("   %s %s -> %s", swapValue, tokenSymbols[tokenFrom], tokenSymbols[tokenTo]);
+            console2.log("   pool: %s", quotes[i].pool);
+        }
     }
 
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
