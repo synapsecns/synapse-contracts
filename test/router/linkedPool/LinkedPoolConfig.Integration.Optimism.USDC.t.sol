@@ -5,9 +5,6 @@ import {LinkedPoolConfigIntegrationTest} from "./LinkedPoolConfigIntegration.sol
 import {ISynth} from "../../interfaces/ISynth.sol";
 
 contract LinkedPoolConfigUSDCOptTestFork is LinkedPoolConfigIntegrationTest {
-    // Don't pin to a specific block number
-    uint256 public constant OPT_BLOCK_NUMBER = 0;
-
     /// @notice Test swaps worth 10_000 USDC
     uint256 public constant SWAP_VALUE = 10_000;
 
@@ -17,9 +14,7 @@ contract LinkedPoolConfigUSDCOptTestFork is LinkedPoolConfigIntegrationTest {
     /// @notice Optimism sUSD
     address public constant SUSD = 0x8c6f28f2F1A3C87F0f938b96d27520d9751ec8d9;
 
-    constructor()
-        LinkedPoolConfigIntegrationTest("optimism", OPT_BLOCK_NUMBER, "CCTP.USDC", SWAP_VALUE, MAX_PERCENT_DELTA)
-    {}
+    constructor() LinkedPoolConfigIntegrationTest("optimism", "CCTP.USDC", SWAP_VALUE, MAX_PERCENT_DELTA) {}
 
     /// @dev sUSD requires special logic for deal cheatcode to work, as the balances are stored externally
     function setBalance(address token, uint256 amount) internal virtual override {

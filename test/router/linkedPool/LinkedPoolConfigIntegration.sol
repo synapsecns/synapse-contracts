@@ -65,13 +65,14 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
 
     address public user;
 
+    /// @dev We don't pin the LinkedPool config tests to a specific block number because we want to be able to run them
+    /// against the current state of the chain to test the latest configuration against the current liquidity composition.
     constructor(
         string memory chainName_,
-        uint256 forkBlockNumber,
         string memory bridgeSymbol_,
         uint256 swapValue_,
         uint256 maxPercentDelta_
-    ) IntegrationUtils(chainName_, linkedPoolAlias = string.concat("LinkedPool.", bridgeSymbol_), forkBlockNumber) {
+    ) IntegrationUtils(chainName_, linkedPoolAlias = string.concat("LinkedPool.", bridgeSymbol_), 0) {
         user = makeAddr("User");
         swapValue = swapValue_;
         maxPercentDelta = maxPercentDelta_;
