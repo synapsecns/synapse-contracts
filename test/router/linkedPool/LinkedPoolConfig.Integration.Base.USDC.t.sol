@@ -4,8 +4,8 @@ pragma solidity 0.8.17;
 import {LinkedPoolConfigIntegrationTest} from "./LinkedPoolConfigIntegration.sol";
 
 contract LinkedPoolConfigUSDCBaseTestFork is LinkedPoolConfigIntegrationTest {
-    // 2023-11-04
-    uint256 public constant BASE_BLOCK_NUMBER = 6150000;
+    // Don't pin to a specific block number
+    uint256 public constant BASE_BLOCK_NUMBER = 0;
 
     /// @notice Test swaps worth 10_000 USDC
     uint256 public constant SWAP_VALUE = 10_000;

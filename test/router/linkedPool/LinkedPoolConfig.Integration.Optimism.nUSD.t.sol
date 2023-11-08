@@ -5,8 +5,8 @@ import {LinkedPoolConfigIntegrationTest} from "./LinkedPoolConfigIntegration.sol
 import {ISynth} from "../../interfaces/ISynth.sol";
 
 contract LinkedPoolConfigNUSDOptTestFork is LinkedPoolConfigIntegrationTest {
-    // 2023-11-04
-    uint256 public constant OPT_BLOCK_NUMBER = 111750000;
+    // Don't pin to a specific block number
+    uint256 public constant OPT_BLOCK_NUMBER = 0;
 
     /// @notice Test swaps worth 10_000 USDC
     uint256 public constant SWAP_VALUE = 10_000;
