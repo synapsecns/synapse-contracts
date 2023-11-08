@@ -33,9 +33,10 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
     }
 
     struct LoggedQuote {
-        uint256 nodeIndexFrom;
-        uint256 nodeIndexTo;
+        uint8 nodeIndexFrom;
+        uint8 nodeIndexTo;
         address pool;
+        uint256 amountOut;
     }
 
     LinkedPool public linkedPool;
@@ -58,6 +59,9 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
 
     /// @notice List of adjacent nodes that have no quote
     LoggedQuote[] public zeroQuotes;
+    /// @notice List of adjacent nodes that have quote with slippage over 1%
+    LoggedQuote[] public slippageQuotes;
+    uint256 public constant MAX_SLIPPAGE = 0.01e18;
 
     address public user;
 
@@ -216,15 +220,41 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         assert(vm.revertTo(snapshotId));
         // Save nodes with no quotes after resetting the state
         if (expectedAmountOut == 0) {
-            saveAmountOutZero(nodeIndexFrom, nodeIndexTo);
+            saveBadQuote(zeroQuotes, 0, nodeIndexFrom, nodeIndexTo);
+        } else if (calculateSlippage(nodeIndexFrom, nodeIndexTo, amountIn, expectedAmountOut) >= MAX_SLIPPAGE) {
+            saveBadQuote(slippageQuotes, expectedAmountOut, nodeIndexFrom, nodeIndexTo);
         }
     }
 
-    function saveAmountOutZero(uint8 nodeIndexFrom, uint8 nodeIndexTo) internal {
+    function calculateSlippage(
+        uint8 nodeIndexFrom,
+        uint8 nodeIndexTo,
+        uint256 amountIn,
+        uint256 expectedAmountOut
+    ) internal view returns (uint256 slippage) {
+        address tokenFrom = tokens[nodeIndexFrom];
+        address tokenTo = tokens[nodeIndexTo];
+        // Convert to decimals of tokenTo to get the "no-slippage" amount
+        uint256 amountOutNoSlippage = (amountIn * 10**tokenDecimals[tokenTo]) / 10**tokenDecimals[tokenFrom];
+        if (expectedAmountOut >= amountOutNoSlippage) {
+            // Slippage <= 0% (aka positive slippage)
+            return 0;
+        }
+        slippage = ((amountOutNoSlippage - expectedAmountOut) * 1e18) / amountOutNoSlippage;
+    }
+
+    function saveBadQuote(
+        LoggedQuote[] storage loggedQuotes,
+        uint256 amountOut,
+        uint8 nodeIndexFrom,
+        uint8 nodeIndexTo
+    ) internal {
         // Save nodes only if the swap path contains exactly 1 pool to avoid spamming the console
         address pool = commonPool[nodeIndexFrom][nodeIndexTo];
         if (pool == address(0)) return;
-        zeroQuotes.push(LoggedQuote({nodeIndexFrom: nodeIndexFrom, nodeIndexTo: nodeIndexTo, pool: pool}));
+        loggedQuotes.push(
+            LoggedQuote({nodeIndexFrom: nodeIndexFrom, nodeIndexTo: nodeIndexTo, pool: pool, amountOut: amountOut})
+        );
     }
 
     // ══════════════════════════════════════════════════ LOGGING ══════════════════════════════════════════════════════
@@ -245,6 +275,7 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
 
     function logQuotes() internal view {
         logQuotes(zeroQuotes, "amountOut == 0");
+        logQuotes(slippageQuotes, "slippage >= 1%");
     }
 
     function logQuotes(LoggedQuote[] storage quotes, string memory description) internal view {
@@ -258,8 +289,24 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
             );
             address tokenFrom = tokens[quotes[i].nodeIndexFrom];
             address tokenTo = tokens[quotes[i].nodeIndexTo];
-            console2.log("   %s %s -> %s", swapValue, tokenSymbols[tokenFrom], tokenSymbols[tokenTo]);
-            console2.log("   pool: %s", quotes[i].pool);
+            string memory amountOutInfo = quotes[i]
+                .amountOut
+                .fromFloat({decimals: tokenDecimals[tokenTo], decimalsToLeave: 2})
+                .concat(" ", tokenSymbols[tokenTo]);
+            console2.log("   %s %s -> %s", swapValue, tokenSymbols[tokenFrom], amountOutInfo);
+            if (quotes[i].amountOut != 0) {
+                // Multiply by 100 to get a percentage value
+                string memory slippage = (100 *
+                    calculateSlippage(
+                        quotes[i].nodeIndexFrom,
+                        quotes[i].nodeIndexTo,
+                        getTestAmount(tokenFrom),
+                        quotes[i].amountOut
+                    )).fromWei({decimalsToLeave: 1});
+                console2.log("   pool: %s, slippage: %s%%", quotes[i].pool, slippage);
+            } else {
+                console2.log("   pool: %s", quotes[i].pool);
+            }
         }
     }
 
