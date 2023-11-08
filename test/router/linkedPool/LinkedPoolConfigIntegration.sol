@@ -190,7 +190,8 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
             return;
         }
         uint256 snapshotId = vm.snapshot();
-        (uint256 amountIn, uint256 expectedAmountOut) = logExpectedSwap(nodeIndexFrom, nodeIndexTo);
+        uint256 amountIn = getTestAmount(tokens[nodeIndexFrom]);
+        uint256 expectedAmountOut = linkedPool.calculateSwap(nodeIndexFrom, nodeIndexTo, amountIn);
         // Record balance before minting in case tokenFrom == tokenTo
         uint256 amountBefore = IERC20(tokens[nodeIndexTo]).balanceOf(user);
         prepareUser(tokens[nodeIndexFrom], amountIn);
@@ -258,20 +259,6 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
     }
 
     // ══════════════════════════════════════════════════ LOGGING ══════════════════════════════════════════════════════
-
-    function logExpectedSwap(uint8 nodeIndexFrom, uint8 nodeIndexTo)
-        internal
-        view
-        returns (uint256 amountIn, uint256 expectedAmountOut)
-    {
-        address tokenFrom = tokens[nodeIndexFrom];
-        address tokenTo = tokens[nodeIndexTo];
-        amountIn = getTestAmount(tokenFrom);
-        expectedAmountOut = linkedPool.calculateSwap(nodeIndexFrom, nodeIndexTo, amountIn);
-        console2.log("Swapping %s -> %s", nodeIndexFrom, nodeIndexTo);
-        console2.log("   amountIn: %s %s", amountIn.fromFloat(tokenDecimals[tokenFrom]), tokenSymbols[tokenFrom]);
-        console2.log("  amountOut: %s %s", expectedAmountOut.fromFloat(tokenDecimals[tokenTo]), tokenSymbols[tokenTo]);
-    }
 
     function logQuotes() internal view {
         logQuotes(zeroQuotes, "amountOut == 0");
