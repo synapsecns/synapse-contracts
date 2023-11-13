@@ -32,11 +32,6 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
         // Setup the BasicSynapseScript
         setUp();
         string memory configFN = deployConfigPath(QUOTER_V2);
-        if (fileExists(configFN)) {
-            console2.log("Skipping: deploy config for [%s] on [%s] already exists", QUOTER_V2, activeChain);
-            config = getDeployConfig(QUOTER_V2);
-            return;
-        }
         // Get a list of pools that should be ignored by the quoter
         loadIgnoredPools();
         saveOriginOnlyPools();
