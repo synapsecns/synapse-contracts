@@ -11,4 +11,9 @@ contract LinkedPoolConfigUSDCAvaxTestFork is LinkedPoolConfigIntegrationTest {
     uint256 public constant MAX_PERCENT_DELTA = 0;
 
     constructor() LinkedPoolConfigIntegrationTest("avalanche", "CCTP.USDC", SWAP_VALUE, MAX_PERCENT_DELTA) {}
+
+    // TODO: remove before merging
+    function runIfDeployed() public pure override returns (bool) {
+        return true;
+    }
 }
