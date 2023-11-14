@@ -15,6 +15,13 @@ graph G {
     token13 [label = "nUSD\n13";];
     token14 [label = "DAI.e\n14";];
     token15 [label = "USDT.e\n15";];
+    token16 [label = "USDT.e\n16";];
+    token17 [label = "USDT.e\n17";];
+    token18 [label = "USDT.e\n18";];
+    token19 [label = "nUSD\n19";];
+    token20 [label = "DAI.e\n20";];
+    token21 [label = "USDC.e\n21";];
+    token22 [label = "USDt\n22";];
     pool0 [label = "DefaultPool\n0xa196";shape = rect;style = dashed;];
     token0 -- pool0;
     subgraph cluster0 {
@@ -111,6 +118,64 @@ graph G {
             edge [style = invis;];
             token13 -- token14;
             token14 -- token15;
+        }
+    }
+    pool8 [label = "TraderJoeV21\n0xe2b1";shape = rect;style = dashed;];
+    token0 -- pool8;
+    subgraph cluster8 {
+        style = dotted;
+        pool8 -- token16;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token16;
+        }
+    }
+    pool9 [label = "TraderJoeV21\n0x6fe0";shape = rect;style = dashed;];
+    token6 -- pool9;
+    subgraph cluster9 {
+        style = dotted;
+        pool9 -- token17;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token17;
+        }
+    }
+    pool10 [label = "TraderJoeV21\n0x6fe0";shape = rect;style = dashed;];
+    token11 -- pool10;
+    subgraph cluster10 {
+        style = dotted;
+        pool10 -- token18;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token18;
+        }
+    }
+    pool11 [label = "DefaultPool\n0xed2a";shape = rect;style = dashed;];
+    token16 -- pool11;
+    subgraph cluster11 {
+        style = dotted;
+        pool11 -- token19;
+        pool11 -- token20;
+        pool11 -- token21;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token19 -- token20;
+            token20 -- token21;
+        }
+    }
+    pool12 [label = "TraderJoeV21\n0x6fe0";shape = rect;style = dashed;];
+    token16 -- pool12;
+    subgraph cluster12 {
+        style = dotted;
+        pool12 -- token22;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token22;
         }
     }
 }
