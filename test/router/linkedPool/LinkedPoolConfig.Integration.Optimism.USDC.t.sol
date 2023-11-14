@@ -23,4 +23,9 @@ contract LinkedPoolConfigUSDCOptTestFork is LinkedPoolConfigIntegrationTest {
         }
         super.setBalance(token, amount);
     }
+
+    // TODO: remove before merging
+    function runIfDeployed() public pure override returns (bool) {
+        return true;
+    }
 }
