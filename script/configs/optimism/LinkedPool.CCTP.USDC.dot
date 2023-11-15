@@ -16,8 +16,10 @@ graph G {
     token14 [label = "DAI\n14";];
     token15 [label = "USDT\n15";];
     token16 [label = "USDT\n16";];
-    token17 [label = "sUSD\n17";];
-    token18 [label = "nUSD\n18";];
+    token17 [label = "USDT\n17";];
+    token18 [label = "sUSD\n18";];
+    token19 [label = "sUSD\n19";];
+    token20 [label = "nUSD\n20";];
     pool0 [label = "UniswapV3\n0x2e2d";shape = rect;style = dashed;];
     token0 -- pool0;
     subgraph cluster0 {
@@ -174,7 +176,7 @@ graph G {
             token16;
         }
     }
-    pool14 [label = "UniswapV3\n0x252c";shape = rect;style = dashed;];
+    pool14 [label = "VelodromeV2\n0x2b47";shape = rect;style = dashed;];
     token11 -- pool14;
     subgraph cluster14 {
         style = dotted;
@@ -185,7 +187,7 @@ graph G {
             token17;
         }
     }
-    pool15 [label = "DefaultPool\n0xf449";shape = rect;style = dashed;];
+    pool15 [label = "VelodromeV2\n0x6d5b";shape = rect;style = dashed;];
     token11 -- pool15;
     subgraph cluster15 {
         style = dotted;
@@ -194,6 +196,28 @@ graph G {
             rank = same;
             edge [style = invis;];
             token18;
+        }
+    }
+    pool16 [label = "UniswapV3\n0x252c";shape = rect;style = dashed;];
+    token11 -- pool16;
+    subgraph cluster16 {
+        style = dotted;
+        pool16 -- token19;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token19;
+        }
+    }
+    pool17 [label = "DefaultPool\n0xf449";shape = rect;style = dashed;];
+    token11 -- pool17;
+    subgraph cluster17 {
+        style = dotted;
+        pool17 -- token20;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token20;
         }
     }
 }

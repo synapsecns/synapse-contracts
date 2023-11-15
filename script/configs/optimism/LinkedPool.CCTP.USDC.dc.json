@@ -73,6 +73,16 @@
     },
     {
       "nodeIndex": 11,
+      "pool": "0x2B47C794c3789f499D8A54Ec12f949EeCCE8bA16",
+      "poolModule": "VelodromeV2"
+    },
+    {
+      "nodeIndex": 11,
+      "pool": "0x6d5BA400640226e24b50214d2bBb3D4Db8e6e15a",
+      "poolModule": "VelodromeV2"
+    },
+    {
+      "nodeIndex": 11,
       "pool": "0x252cBDff917169775Be2b552eC9f6781aF95e7F6",
       "poolModule": "UniswapV3"
     },
