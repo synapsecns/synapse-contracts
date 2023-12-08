@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 import {
     CCTPIncorrectChainId,
     CCTPIncorrectDomain,
+    CCTPIncorrectTokenAmount,
     CCTPMessageNotReceived,
     CCTPTokenNotFound,
     CCTPZeroAddress,
@@ -436,6 +437,37 @@ contract SynapseCCTPTest is BaseCCTPTest {
             signature: "",
             requestVersion: RequestLib.REQUEST_SWAP,
             formattedRequest: swapRequest
+        });
+    }
+
+    function testReceiveCircleTokenBaseRequestRevertIncorrectTokenAmount() public {
+        disableGasAirdrops();
+        // Mint some tokens for the destination SynapseCCTP to custody
+        uint256 fullAmount = 10**12;
+        cctpSetups[DOMAIN_AVAX].mintBurnToken.mintPublic(address(synapseCCTPs[DOMAIN_AVAX]), fullAmount);
+        // Construct a CCTP message with lower amount to be minted
+        uint256 amount = 10**8;
+        bytes memory message = getExpectedMessage({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            originBurnToken: address(cctpSetups[DOMAIN_ETH].mintBurnToken),
+            amount: amount,
+            destinationCaller: 0
+        });
+        // Construct a request with the higher amount
+        bytes memory request = getExpectedRequest({
+            originDomain: DOMAIN_ETH,
+            amount: fullAmount + amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+        vm.prank(relayer);
+        vm.expectRevert(CCTPIncorrectTokenAmount.selector);
+        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
+            message: message,
+            signature: "",
+            requestVersion: RequestLib.REQUEST_BASE,
+            formattedRequest: request
         });
     }
 
