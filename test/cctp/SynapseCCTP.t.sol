@@ -259,6 +259,47 @@ contract SynapseCCTPTest is BaseCCTPTest {
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), expectedAmountOut);
     }
 
+    function testReceiveCircleTokenBaseRequestSucceedsWhenRequestIdAlreadyUsed() public {
+        uint256 amount = 10**8;
+        uint256 baseFeeAmount = 10**6;
+        uint256 expectedAmountOut = amount - baseFeeAmount;
+        bytes memory frontrunMessage = getExpectedMessage({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            originBurnToken: address(cctpSetups[DOMAIN_ETH].mintBurnToken),
+            amount: amount,
+            destinationCaller: 0
+        });
+        bytes memory request = getExpectedRequest({
+            originDomain: DOMAIN_ETH,
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+        // Frontrun the actual message with identical requestId
+        deal(relayer, chainGasAmounts[DOMAIN_AVAX]);
+        vm.prank(relayer);
+        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken{value: chainGasAmounts[DOMAIN_AVAX]}({
+            message: frontrunMessage,
+            signature: "",
+            requestVersion: RequestLib.REQUEST_BASE,
+            formattedRequest: request
+        });
+        // SynapseCCTP message should still be fulfilled
+        checkRequestFulfilled({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amountIn: amount,
+            expectedFeeAmount: baseFeeAmount,
+            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
+            expectedAmountOut: expectedAmountOut,
+            swapParams: ""
+        });
+        // Everything is 2x as expected because of the frontrun
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, 2 * baseFeeAmount);
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), 2 * expectedAmountOut);
+    }
+
     function testReceiveCircleTokenBaseRequestRevertTransmitterReturnsFalse() public {
         disableGasAirdrops();
         uint256 amount = 10**8;
