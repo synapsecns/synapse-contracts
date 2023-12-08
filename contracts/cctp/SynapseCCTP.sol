@@ -6,6 +6,7 @@ import {
     CCTPIncorrectChainId,
     CCTPIncorrectDomain,
     CCTPIncorrectGasAmount,
+    CCTPIncorrectTokenAmount,
     CCTPMessageNotReceived,
     CCTPTokenNotFound,
     CCTPZeroAddress,
@@ -197,8 +198,10 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
         // This ensures that requestID is unique for each request, and that it is not possible to replay requests.
         bytes32 requestID = _requestID(localDomain, requestVersion, formattedRequest);
         // Kindly ask the Circle Bridge to mint the tokens for us.
-        _mintCircleToken(message, signature, requestID);
         address token = _getLocalToken(originDomain, originBurnToken);
+        uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+        _mintCircleToken(message, signature, requestID);
+        if (IERC20(token).balanceOf(address(this)) - balanceBefore != amount) revert CCTPIncorrectTokenAmount();
         uint256 fee;
         // Apply the bridging fee. This will revert if amount <= fee.
         (amount, fee) = _applyRelayerFee(token, amount, requestVersion == RequestLib.REQUEST_SWAP);
