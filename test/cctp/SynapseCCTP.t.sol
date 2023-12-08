@@ -236,6 +236,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: expectedAmountOut,
             swapParams: ""
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, baseFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), expectedAmountOut);
     }
 
@@ -419,6 +420,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: expectedAmountOut,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(poolSetups[DOMAIN_AVAX].token.balanceOf(recipient), expectedAmountOut);
     }
 
@@ -445,6 +447,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: expectedAmountOut,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(poolSetups[DOMAIN_AVAX].token.balanceOf(recipient), expectedAmountOut);
     }
 
@@ -610,6 +613,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -633,6 +637,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -656,6 +661,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -679,6 +685,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -702,6 +709,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -725,6 +733,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -747,6 +756,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -770,6 +780,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -1096,7 +1107,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
             requestVersion: requestVersion,
             swapParams: swapParams
         });
-        assertFalse(synapseCCTPs[destinationDomain].isRequestFulfilled(expected.requestID));
         deal(relayer, chainGasAmounts[destinationDomain]);
         vm.expectEmit();
         emit MintAndWithdraw({
@@ -1114,6 +1124,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             amount: expectedAmountOut,
             requestID: expected.requestID
         });
+        uint256 balanceBefore = recipient.balance;
         vm.prank(relayer);
         synapseCCTPs[destinationDomain].receiveCircleToken{value: chainGasAmounts[destinationDomain]}({
             message: expected.message,
@@ -1122,8 +1133,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             formattedRequest: expected.request
         });
         assertTrue(synapseCCTPs[destinationDomain].isRequestFulfilled(expected.requestID));
-        assertEq(recipient.balance, chainGasAmounts[destinationDomain]);
-        checkAccumulatedRelayerFee(destinationDomain, expectedFeeAmount);
+        assertEq(recipient.balance - balanceBefore, chainGasAmounts[destinationDomain]);
     }
 
     function checkAccumulatedRelayerFee(uint32 domain, uint256 expectedFeeAmount) public {
