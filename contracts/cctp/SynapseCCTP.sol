@@ -201,7 +201,7 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
         address token = _getLocalToken(originDomain, originBurnToken);
         uint256 balanceBefore = IERC20(token).balanceOf(address(this));
         _mintCircleToken(message, signature, requestID);
-        if (IERC20(token).balanceOf(address(this)) - balanceBefore != amount) revert CCTPIncorrectTokenAmount();
+        if (IERC20(token).balanceOf(address(this)) != balanceBefore + amount) revert CCTPIncorrectTokenAmount();
         uint256 fee;
         // Apply the bridging fee. This will revert if amount <= fee.
         (amount, fee) = _applyRelayerFee(token, amount, requestVersion == RequestLib.REQUEST_SWAP);
