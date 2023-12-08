@@ -356,8 +356,13 @@ contract SynapseCCTPTest is BaseCCTPTest {
             for (uint8 j = 0; j < 8; ++j) {
                 // Change j-th bit in request[byteIndex], leaving others unchanged
                 malformedRequest[byteIndex] = expected.request[byteIndex] ^ bytes1(uint8(1) << j);
-                // destinationCaller check in MessageTransmitter should fail
-                vm.expectRevert("Invalid caller for message");
+                if (i == 0 || i == 2) {
+                    // originDomain, originBurnToken -> localToken should fail
+                    vm.expectRevert(CCTPTokenNotFound.selector);
+                } else {
+                    // destinationCaller check in MessageTransmitter should fail
+                    vm.expectRevert("Invalid caller for message");
+                }
                 synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
                     message: expected.message,
                     signature: "",
@@ -563,8 +568,13 @@ contract SynapseCCTPTest is BaseCCTPTest {
                     baseRequest: malformedRequest,
                     swapParams: swapParams
                 });
-                // destinationCaller check in MessageTransmitter should fail
-                vm.expectRevert("Invalid caller for message");
+                if (i == 0 || i == 2) {
+                    // originDomain, originBurnToken -> localToken should fail
+                    vm.expectRevert(CCTPTokenNotFound.selector);
+                } else {
+                    // destinationCaller check in MessageTransmitter should fail
+                    vm.expectRevert("Invalid caller for message");
+                }
                 synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
                     message: expected.message,
                     signature: "",
