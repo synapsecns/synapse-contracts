@@ -29,9 +29,24 @@ contract SynapseCCTPTest is BaseCCTPTest {
         bytes message;
     }
 
-    function testConstructorSetsOwner() public {
-        SynapseCCTP cctp = new SynapseCCTP(cctpSetups[DOMAIN_ETH].tokenMessenger, owner);
-        assertEq(address(cctp.owner()), owner);
+    function testConstructorSetsCCTPData() public {
+        SynapseCCTP cctp = new SynapseCCTP(cctpSetups[DOMAIN_ETH].tokenMessenger);
+        assertEq(address(cctp.tokenMessenger()), address(cctpSetups[DOMAIN_ETH].tokenMessenger));
+        assertEq(address(cctp.messageTransmitter()), address(cctpSetups[DOMAIN_ETH].messageTransmitter));
+        assertEq(cctp.localDomain(), DOMAIN_ETH);
+    }
+
+    function testInitializerSetsOwner() public {
+        SynapseCCTP cctp = new SynapseCCTP(cctpSetups[DOMAIN_ETH].tokenMessenger);
+        cctp.initialize(owner);
+        assertEq(cctp.owner(), owner);
+    }
+
+    function testInitializerRevertsOnSecondCall() public {
+        SynapseCCTP cctp = new SynapseCCTP(cctpSetups[DOMAIN_ETH].tokenMessenger);
+        cctp.initialize(owner);
+        vm.expectRevert("Initializable: contract is already initialized");
+        cctp.initialize(address(1234));
     }
 
     function testSendCircleTokenBaseRequest() public {
