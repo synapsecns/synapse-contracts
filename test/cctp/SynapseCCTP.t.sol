@@ -946,6 +946,14 @@ contract SynapseCCTPTest is BaseCCTPTest {
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(owner), 2 * 10**6);
     }
 
+    function testWithdrawProtocolFeesEmitsEvent() public {
+        accumulateFees();
+        vm.expectEmit(address(synapseCCTPs[DOMAIN_AVAX]));
+        emit FeesWithdrawn(owner, address(cctpSetups[DOMAIN_AVAX].mintBurnToken), 2 * 10**6);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_AVAX].withdrawProtocolFees(address(cctpSetups[DOMAIN_AVAX].mintBurnToken));
+    }
+
     function testWithdrawProtocolFeesRevertsWhenCallerNotOwner(address caller) public {
         vm.assume(caller != owner);
         vm.expectRevert("Ownable: caller is not the owner");
@@ -974,6 +982,14 @@ contract SynapseCCTPTest is BaseCCTPTest {
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(collector), 1 * 10**6);
     }
 
+    function testWithdrawRelayerFeesEmitsEvent() public {
+        accumulateFees();
+        vm.expectEmit(address(synapseCCTPs[DOMAIN_AVAX]));
+        emit FeesWithdrawn(collector, address(cctpSetups[DOMAIN_AVAX].mintBurnToken), 1 * 10**6);
+        vm.prank(collector);
+        synapseCCTPs[DOMAIN_AVAX].withdrawRelayerFees(address(cctpSetups[DOMAIN_AVAX].mintBurnToken));
+    }
+
     function testWithdrawRelayerFeesRevertsWhenZeroAmount() public {
         vm.expectRevert(CCTPZeroAmount.selector);
         vm.prank(collector);
@@ -993,6 +1009,18 @@ contract SynapseCCTPTest is BaseCCTPTest {
         (uint32 domain, address synapseCCTP) = synapseCCTPs[DOMAIN_ETH].remoteDomainConfig(10);
         assertEq(domain, 2);
         assertEq(synapseCCTP, address(42));
+    }
+
+    function testSetRemoteDomainConfigEmitsEvent() public {
+        vm.chainId(CHAINID_ETH);
+        vm.expectEmit(address(synapseCCTPs[DOMAIN_ETH]));
+        emit RemoteDomainConfigSet(10, 2, address(42));
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setRemoteDomainConfig({
+            remoteChainId: 10,
+            remoteDomain: 2,
+            remoteSynapseCCTP: address(42)
+        });
     }
 
     function testSetRemoteDomainConfigRevertsWhenCallerNotOwner(address caller) public {
@@ -1080,6 +1108,14 @@ contract SynapseCCTPTest is BaseCCTPTest {
         vm.prank(owner);
         synapseCCTPs[DOMAIN_ETH].setCircleTokenPool(token, address(42));
         assertEq(synapseCCTPs[DOMAIN_ETH].circleTokenPool(token), address(42));
+    }
+
+    function testSetCircleTokenPoolEmitsEvent() public {
+        address token = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        vm.expectEmit(address(synapseCCTPs[DOMAIN_ETH]));
+        emit CircleTokenPoolSet(token, address(42));
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setCircleTokenPool(token, address(42));
     }
 
     function testSetCircleTokenPoolRevertsWhenCallerNotOwner(address caller) public {

@@ -43,4 +43,21 @@ abstract contract SynapseCCTPEvents {
         uint256 amount,
         bytes32 requestID
     );
+
+    /// @notice Emitted when a remote deployment of SynapseCCTP is set.
+    /// @param remoteChainId        Chain ID of the remote chain
+    /// @param remoteDomain         CCTP domain of the remote chain
+    /// @param remoteSynapseCCTP    Address of the SynapseCCTP contract on the remote chain
+    event RemoteDomainConfigSet(uint256 remoteChainId, uint32 remoteDomain, address remoteSynapseCCTP);
+
+    /// @notice Emitted when a liquidity pool is set for a Circle token.
+    /// @param token                Address of the Circle token
+    /// @param pool                 Address of the liquidity pool
+    event CircleTokenPoolSet(address token, address pool);
+
+    /// @notice Emitted when collected fees are withdrawn from the contract.
+    /// @param recipient            Address of the recipient
+    /// @param token                Address of the token
+    /// @param amount               Amount of tokens withdrawn
+    event FeesWithdrawn(address recipient, address token, uint256 amount);
 }

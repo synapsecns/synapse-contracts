@@ -86,6 +86,7 @@ contract SynapseCCTP is SynapseCCTPFees, PausableUpgradeable, SynapseCCTPEvents,
         // Remote SynapseCCTP should be non-zero.
         if (remoteSynapseCCTP == address(0)) revert CCTPZeroAddress();
         remoteDomainConfig[remoteChainId] = DomainConfig(remoteDomain, remoteSynapseCCTP);
+        emit RemoteDomainConfigSet(remoteChainId, remoteDomain, remoteSynapseCCTP);
     }
 
     /// @notice Sets the liquidity pool for the given Circle token.
@@ -94,6 +95,7 @@ contract SynapseCCTP is SynapseCCTPFees, PausableUpgradeable, SynapseCCTPEvents,
         if (!_bridgeTokens.contains(circleToken)) revert CCTPTokenNotFound();
         // Pool address can be zero if no swaps are supported for the Circle token.
         circleTokenPool[circleToken] = pool;
+        emit CircleTokenPoolSet(circleToken, pool);
     }
 
     /// @notice Allows the contract owner to pause the sending of CCTP tokens.
@@ -116,6 +118,7 @@ contract SynapseCCTP is SynapseCCTPFees, PausableUpgradeable, SynapseCCTPEvents,
         if (accFees == 0) revert CCTPZeroAmount();
         accumulatedFees[address(0)][token] = 0;
         IERC20(token).safeTransfer(msg.sender, accFees);
+        emit FeesWithdrawn(msg.sender, token, accFees);
     }
 
     /// @notice Allows the Relayer's fee collector to withdraw accumulated relayer fees.
@@ -124,6 +127,7 @@ contract SynapseCCTP is SynapseCCTPFees, PausableUpgradeable, SynapseCCTPEvents,
         if (accFees == 0) revert CCTPZeroAmount();
         accumulatedFees[msg.sender][token] = 0;
         IERC20(token).safeTransfer(msg.sender, accFees);
+        emit FeesWithdrawn(msg.sender, token, accFees);
     }
 
     // ════════════════════════════════════════════════ CCTP LOGIC ═════════════════════════════════════════════════════
