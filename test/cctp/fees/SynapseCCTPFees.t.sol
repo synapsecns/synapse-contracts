@@ -21,6 +21,10 @@ import {Test} from "forge-std/Test.sol";
 
 // solhint-disable-next-line no-empty-blocks
 contract SynapseCCTPFeesHarness is SynapseCCTPFees {
+    constructor(address owner) {
+        _transferOwnership(owner);
+    }
+
     receive() external payable {}
 
     /// @notice Exposes the internal `_applyRelayerFee` function for testing purposes
@@ -45,9 +49,8 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
     address public eurc;
 
     function setUp() public {
-        cctpFees = new SynapseCCTPFeesHarness();
         owner = makeAddr("Owner");
-        cctpFees.transferOwnership(owner);
+        cctpFees = new SynapseCCTPFeesHarness(owner);
         usdc = makeAddr("USDC");
         eurc = makeAddr("EURC");
     }

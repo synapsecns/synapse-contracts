@@ -43,7 +43,8 @@ contract DeploySynapseCCTP is BasicSynapseScript {
     /// Must follow this signature for the deploy script to work:
     /// `deployContract() internal returns (address deployedAt, bytes memory constructorArgs)`
     function deploySynapseCCTP() internal returns (address deployedAt, bytes memory constructorArgs) {
-        deployedAt = address(new SynapseCCTP(ITokenMessenger(tokenMessenger), owner));
+        // TODO: Use Proxy for deployment
+        // deployedAt = address(new SynapseCCTP(ITokenMessenger(tokenMessenger), owner));
         constructorArgs = abi.encode(tokenMessenger, owner);
     }
 }
