@@ -17,10 +17,10 @@ import {
 import {TypeCasts} from "../libs/TypeCasts.sol";
 import {BridgeToken} from "../../router/libs/Structs.sol";
 
-import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable-4.5.0/access/OwnableUpgradeable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts-4.5.0/utils/structs/EnumerableSet.sol";
 
-abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable, ISynapseCCTPFees {
+abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, OwnableUpgradeable, ISynapseCCTPFees {
     using EnumerableSet for EnumerableSet.AddressSet;
     using TypeCasts for uint256;
 
@@ -70,7 +70,15 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, Ownable, ISynapseCCT
     /// @notice Amount of chain's native gas airdropped to the token recipient for every fulfilled CCTP request
     uint256 public chainGasAmount;
     /// @dev A list of all supported bridge tokens
+    /// Note: takes two storage slots
     EnumerableSet.AddressSet internal _bridgeTokens;
+
+    /**
+     * This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[41] private __gap;
 
     // ════════════════════════════════════════════════ ONLY OWNER ═════════════════════════════════════════════════════
 

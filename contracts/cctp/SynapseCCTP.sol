@@ -27,9 +27,9 @@ import {TypeCasts} from "./libs/TypeCasts.sol";
 import {IDefaultPool} from "../router/interfaces/IDefaultPool.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
-import {Pausable} from "@openzeppelin/contracts-4.5.0/security/Pausable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable-4.5.0/security/PausableUpgradeable.sol";
 
-contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCCTP {
+contract SynapseCCTP is SynapseCCTPFees, PausableUpgradeable, SynapseCCTPEvents, ISynapseCCTP {
     using EnumerableSet for EnumerableSet.AddressSet;
     using MinimalForwarderLib for address;
     using SafeERC20 for IERC20;
@@ -58,10 +58,14 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
     // (Circle token => liquidity pool with the token)
     mapping(address => address) public circleTokenPool;
 
-    constructor(ITokenMessenger tokenMessenger_, address owner_) {
+    constructor(ITokenMessenger tokenMessenger_) {
         tokenMessenger = tokenMessenger_;
         messageTransmitter = IMessageTransmitter(tokenMessenger_.localMessageTransmitter());
         localDomain = messageTransmitter.localDomain();
+    }
+
+    function initialize(address owner_) external initializer {
+        __Pausable_init();
         _transferOwnership(owner_);
     }
 
