@@ -109,6 +109,15 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         assertEq(cctpFees.symbolToToken("CCTP.EURC"), eurc);
     }
 
+    function testAddTokenEmitsEvents() public {
+        vm.expectEmit(address(cctpFees));
+        emit TokenAdded("CCTP.USDC", usdc);
+        vm.expectEmit(address(cctpFees));
+        emit TokenFeeSet(usdc, 1, 2, 3, 4);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", usdc, 1, 2, 3, 4);
+    }
+
     function testAddTokenRevertsWhenCallerNotOwner(address caller) public {
         vm.assume(caller != owner);
         vm.prank(caller);
@@ -223,6 +232,14 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         cctpFees.removeToken(usdc);
     }
 
+    function testRemoveTokenEmitsTokenRemoved() public {
+        addTokens();
+        vm.expectEmit(address(cctpFees));
+        emit TokenRemoved("CCTP.USDC", usdc);
+        vm.prank(owner);
+        cctpFees.removeToken(usdc);
+    }
+
     function testRemoveTokenUpdatesBridgeTokensList() public {
         addTokensThenRemoveOne();
         BridgeToken[] memory tokens = cctpFees.getBridgeTokens();
@@ -276,6 +293,14 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         assertEq(minBaseFee, 2 * 10**6);
         assertEq(minSwapFee, 3 * 10**6);
         assertEq(maxFee, 4 * 10**6);
+    }
+
+    function testSetTokenFeeEmitsTokenFeeSet() public {
+        addTokens();
+        vm.expectEmit(address(cctpFees));
+        emit TokenFeeSet(usdc, 1, 2, 3, 4);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 1, 2, 3, 4);
     }
 
     function testSetTokenFeeRevertsWhenCallerNotOwner(address caller) public {

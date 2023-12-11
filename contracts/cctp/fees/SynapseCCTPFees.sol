@@ -106,6 +106,7 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, OwnableUpgradeable, 
         // Add token <> symbol link
         tokenToSymbol[token] = symbol;
         symbolToToken[symbol] = token;
+        emit TokenAdded(symbol, token);
         // Set token fee
         _setTokenFee(token, relayerFee, minBaseFee, minSwapFee, maxFee);
     }
@@ -121,6 +122,7 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, OwnableUpgradeable, 
         delete symbolToToken[symbol];
         // Remove token fee structure
         delete feeStructures[token];
+        emit TokenRemoved(symbol, token);
     }
 
     /// @notice Allows to rescue stuck gas from the contract.
@@ -252,6 +254,7 @@ abstract contract SynapseCCTPFees is SynapseCCTPFeesEvents, OwnableUpgradeable, 
             minSwapFee: minSwapFee.safeCastToUint72(),
             maxFee: maxFee.safeCastToUint72()
         });
+        emit TokenFeeSet(token, relayerFee, minBaseFee, minSwapFee, maxFee);
     }
 
     /// @dev Transfers `msg.value` to the recipient. Assumes that `msg.value == chainGasAmount` at this point.
