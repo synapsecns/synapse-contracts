@@ -1,0 +1,45 @@
+{
+  "bridgeToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+  "pools": [
+    {
+      "nodeIndex": 0,
+      "pool": "0x1116898DdA4015eD8dDefb84b6e8Bc24528Af2d8",
+      "poolModule": "NexusPool"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0x4DEcE678ceceb27446b35C672dC7d61F30bAD69E",
+      "poolModule": "CurveV1"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0xDcEF968d416a41Cdac0ED8702fAC8128A64241A2",
+      "poolModule": "CurveV1"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0x73eA3D8Ba3D7380201B270ec504b33eD5e478542",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0xc63B0708E2F7e69CB8A1df0e1389A98C35A76D52",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0x4e0924d3a751bE199C426d52fb1f2337fa96f736",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0x13394005C1012e708fCe1EB974F1130fDc73a5Ce",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0x3416cF6C708Da44DB2624D63ea0AAef7113527C6",
+      "poolModule": "UniswapV3"
+    }
+  ]
+}
