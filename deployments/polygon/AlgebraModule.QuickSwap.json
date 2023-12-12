@@ -1,0 +1,188 @@
+{
+  "address": "0x71035BE2414fF19d90302f528b97183B87c3c096",
+  "constructorArgs": "0x000000000000000000000000f5b509bb0909a69b1c207e495f687a596c168e120000000000000000000000002e0a046481c676235b806bd004c4b492c850fb34",
+  "abi": [
+    {
+      "type": "constructor",
+      "inputs": [
+        {
+          "name": "algebraRouter_",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "algebraStaticQuoter_",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "algebraRouter",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract IAlgebraRouter"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "algebraStaticQuoter",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract IAlgebraStaticQuoter"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getPoolQuote",
+      "inputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "tokenFrom",
+          "type": "tuple",
+          "internalType": "struct IndexedToken",
+          "components": [
+            {
+              "name": "index",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "token",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        },
+        {
+          "name": "tokenTo",
+          "type": "tuple",
+          "internalType": "struct IndexedToken",
+          "components": [
+            {
+              "name": "index",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "token",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        },
+        {
+          "name": "amountIn",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "amountOut",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getPoolTokens",
+      "inputs": [
+        {
+          "name": "pool",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tokens",
+          "type": "address[]",
+          "internalType": "address[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "poolSwap",
+      "inputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "tokenFrom",
+          "type": "tuple",
+          "internalType": "struct IndexedToken",
+          "components": [
+            {
+              "name": "index",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "token",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        },
+        {
+          "name": "tokenTo",
+          "type": "tuple",
+          "internalType": "struct IndexedToken",
+          "components": [
+            {
+              "name": "index",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "token",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        },
+        {
+          "name": "amountIn",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "amountOut",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    }
+  ]
+}

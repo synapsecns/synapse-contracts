@@ -1,0 +1,188 @@
+{
+  "address": "0x444feF20C748daD51E6146881775D031Cd03eBdE",
+  "constructorArgs": "0x000000000000000000000000e592427a0aece92de3edee1f18e0157c058615640000000000000000000000007637aaeb5bd58269b782726680d83f72c651ae74",
+  "abi": [
+    {
+      "type": "constructor",
+      "inputs": [
+        {
+          "name": "uniswapV3Router_",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "uniswapV3StaticQuoter_",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "getPoolQuote",
+      "inputs": [
+        {
+          "name": "pool",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "tokenFrom",
+          "type": "tuple",
+          "internalType": "struct IndexedToken",
+          "components": [
+            {
+              "name": "index",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "token",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        },
+        {
+          "name": "tokenTo",
+          "type": "tuple",
+          "internalType": "struct IndexedToken",
+          "components": [
+            {
+              "name": "index",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "token",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        },
+        {
+          "name": "amountIn",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "amountOut",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getPoolTokens",
+      "inputs": [
+        {
+          "name": "pool",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tokens",
+          "type": "address[]",
+          "internalType": "address[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "poolSwap",
+      "inputs": [
+        {
+          "name": "pool",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "tokenFrom",
+          "type": "tuple",
+          "internalType": "struct IndexedToken",
+          "components": [
+            {
+              "name": "index",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "token",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        },
+        {
+          "name": "tokenTo",
+          "type": "tuple",
+          "internalType": "struct IndexedToken",
+          "components": [
+            {
+              "name": "index",
+              "type": "uint8",
+              "internalType": "uint8"
+            },
+            {
+              "name": "token",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        },
+        {
+          "name": "amountIn",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "amountOut",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "uniswapV3Router",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract IUniswapV3Router"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "uniswapV3StaticQuoter",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "contract IUniswapV3StaticQuoter"
+        }
+      ],
+      "stateMutability": "view"
+    }
+  ]
+}
