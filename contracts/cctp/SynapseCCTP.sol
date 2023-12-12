@@ -263,12 +263,13 @@ contract SynapseCCTP is SynapseCCTPFees, PausableUpgradeable, SynapseCCTPEvents,
         bytes calldata signature,
         bytes32 requestID
     ) internal {
-        // Deploy a forwarder specific to this request. Will revert if the requestID has been used before.
+        // Deploy a forwarder specific to this request. Will return the address if already deployed.
         address forwarder = MinimalForwarderLib.deploy(requestID);
         // Form the payload for the Circle Bridge.
         bytes memory payload = abi.encodeWithSelector(IMessageTransmitter.receiveMessage.selector, message, signature);
-        // Use the deployed forwarder (who is the only one who can call the Circle Bridge for this message)
-        // This will revert if the provided message is not properly formatted, or if the signatures are invalid.
+        // Use the deployed forwarder (the only one who can call the Circle Bridge for a valid SynapseCCTP message).
+        // This will revert if the provided message is not properly formatted, if the signatures are invalid,
+        // or if this message has been already used before.
         bytes memory returnData = forwarder.forwardCall(address(messageTransmitter), payload);
         // messageTransmitter.receiveMessage is supposed to return true if the message was received.
         if (!abi.decode(returnData, (bool))) revert CCTPMessageNotReceived();
