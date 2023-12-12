@@ -9,12 +9,12 @@
       "polygon": 7
     },
     "gasAirdrop": {
-      "arbitrum": 600000000000000,
+      "arbitrum": 300000000000000,
       "avalanche": 25000000000000000,
-      "base": 500000000000000,
+      "base": 300000000000000,
       "mainnet": 0,
       "optimism": 300000000000000,
-      "polygon": 1234
+      "polygon": 250000000000000000
     }
   },
   "testnet": {

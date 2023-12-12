@@ -5,8 +5,8 @@
       "pool": "0xC9b89AcfB36c9f7d8d2befe38Ac3FB766204Cbd9",
       "token": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
       "relayerFee": 4000000,
-      "minBaseFee": 1600000,
-      "minSwapFee": 1600000,
+      "minBaseFee": 2000000,
+      "minSwapFee": 2000000,
       "maxFee": 400000000
     }
   }

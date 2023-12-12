@@ -4,10 +4,10 @@
     "USDC": {
       "pool": "0x0000000000000000000000000000000000000000",
       "token": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
-      "relayerFee": 0,
-      "minBaseFee": 1,
-      "minSwapFee": 1,
-      "maxFee": 1
+      "relayerFee": 4000000,
+      "minBaseFee": 450000,
+      "minSwapFee": 1000000,
+      "maxFee": 400000000
     }
   }
 }
