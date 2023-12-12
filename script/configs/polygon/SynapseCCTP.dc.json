@@ -1,0 +1,13 @@
+{
+  "tokenMessenger": "0x9daF8c91AEFAE50b9c0E69629D3F6Ca40cA3B3FE",
+  "tokens": {
+    "USDC": {
+      "pool": "0x0000000000000000000000000000000000000000",
+      "token": "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
+      "relayerFee": 0,
+      "minBaseFee": 1,
+      "minSwapFee": 1,
+      "maxFee": 1
+    }
+  }
+}
