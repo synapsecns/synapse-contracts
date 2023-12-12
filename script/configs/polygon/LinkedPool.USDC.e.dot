@@ -1,0 +1,152 @@
+graph G {
+    token0 [label = "USDC.e\n0";];
+    token1 [label = "USDC\n1";];
+    token2 [label = "USDC\n2";];
+    token3 [label = "USDT\n3";];
+    token4 [label = "USDT\n4";];
+    token5 [label = "DAI\n5";];
+    token6 [label = "DAI\n6";];
+    token7 [label = "FRAX\n7";];
+    token8 [label = "nUSD\n8";];
+    token9 [label = "DAI\n9";];
+    token10 [label = "USDT\n10";];
+    token11 [label = "USDT\n11";];
+    token12 [label = "DAI\n12";];
+    token13 [label = "USDT\n13";];
+    token14 [label = "DAI\n14";];
+    pool0 [label = "UniswapV3\n0xd36e";shape = rect;style = dashed;];
+    token0 -- pool0;
+    subgraph cluster0 {
+        style = dotted;
+        pool0 -- token1;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token1;
+        }
+    }
+    pool1 [label = "Algebra.QuickSwap\n0xeecb";shape = rect;style = dashed;];
+    token0 -- pool1;
+    subgraph cluster1 {
+        style = dotted;
+        pool1 -- token2;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token2;
+        }
+    }
+    pool2 [label = "UniswapV3\n0xdac8";shape = rect;style = dashed;];
+    token0 -- pool2;
+    subgraph cluster2 {
+        style = dotted;
+        pool2 -- token3;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token3;
+        }
+    }
+    pool3 [label = "Algebra.QuickSwap\n0x7b92";shape = rect;style = dashed;];
+    token0 -- pool3;
+    subgraph cluster3 {
+        style = dotted;
+        pool3 -- token4;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token4;
+        }
+    }
+    pool4 [label = "UniswapV3\n0x5645";shape = rect;style = dashed;];
+    token0 -- pool4;
+    subgraph cluster4 {
+        style = dotted;
+        pool4 -- token5;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token5;
+        }
+    }
+    pool5 [label = "Algebra.QuickSwap\n0xe7e0";shape = rect;style = dashed;];
+    token0 -- pool5;
+    subgraph cluster5 {
+        style = dotted;
+        pool5 -- token6;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token6;
+        }
+    }
+    pool6 [label = "UniswapV3\n0xbeaf";shape = rect;style = dashed;];
+    token0 -- pool6;
+    subgraph cluster6 {
+        style = dotted;
+        pool6 -- token7;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token7;
+        }
+    }
+    pool7 [label = "DefaultPool\n0x85fc";shape = rect;style = dashed;];
+    token0 -- pool7;
+    subgraph cluster7 {
+        style = dotted;
+        pool7 -- token8;
+        pool7 -- token9;
+        pool7 -- token10;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token8 -- token9;
+            token9 -- token10;
+        }
+    }
+    pool8 [label = "UniswapV3\n0x3108";shape = rect;style = dashed;];
+    token1 -- pool8;
+    subgraph cluster8 {
+        style = dotted;
+        pool8 -- token11;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token11;
+        }
+    }
+    pool9 [label = "UniswapV3\n0xf369";shape = rect;style = dashed;];
+    token1 -- pool9;
+    subgraph cluster9 {
+        style = dotted;
+        pool9 -- token12;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token12;
+        }
+    }
+    pool10 [label = "UniswapV3\n0x3108";shape = rect;style = dashed;];
+    token2 -- pool10;
+    subgraph cluster10 {
+        style = dotted;
+        pool10 -- token13;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token13;
+        }
+    }
+    pool11 [label = "UniswapV3\n0xf369";shape = rect;style = dashed;];
+    token2 -- pool11;
+    subgraph cluster11 {
+        style = dotted;
+        pool11 -- token14;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token14;
+        }
+    }
+}

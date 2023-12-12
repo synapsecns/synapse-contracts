@@ -10,5 +10,11 @@
       "address": "0x7F5c764cBc14f9669B88837ca1490cCa17c31607",
       "symbol": "USDC.e"
     }
+  ],
+  "polygon": [
+    {
+      "address": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+      "symbol": "USDC.e"
+    }
   ]
 }
