@@ -1,0 +1,28 @@
+digraph {
+    compound = true;
+    
+    sdk [label = "SDK";];
+    router [label = "Destination Chain\nRouterV2";shape = rect;];
+    getAmountOut [label = <<I>3. getAmountOut<br></br>(bridgeToken, tokenOut,<br></br>amountIn - feeAmount)</I>>;shape = none;];
+    quoter [label = "QuoterV2";shape = rect;];
+    
+    rankdir = "LR";
+    sdk -> router [label = <<I>1. getDestinationAmountOut<br></br>({symbol, amountIn}[],<br></br>tokenOut)</I>>;];
+    
+    subgraph cluster1 {
+        node [shape = rect; style = dashed;];
+        module1 [label = "Bridge Module (Synapse Bridge)";];
+        module2 [label = "Bridge Module (Synapse CCTP)";];
+        module3 [label = "Bridge Module (Synapse <...>)";];
+    }
+    
+    subgraph {
+        rank = same;
+        router -> getAmountOut [dir = none;];
+        getAmountOut -> quoter;
+    }
+    
+    router -> module1 [label = <<I>2a. symbolToToken(symbol)</I>>; lhead = cluster1; weight = 10;];
+    router:se -> module2:w [label = <<I>2b. calculateFeeAmount<br></br>(bridgeToken,amountIn)</I>>; lhead = cluster1;];
+    router:se -> module3:nw [label = <<I>2c. getBridgeActionMask<br></br>(bridgeToken)</I>>; lhead = cluster1;];
+}

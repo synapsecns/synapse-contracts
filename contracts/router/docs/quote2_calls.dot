@@ -1,0 +1,27 @@
+digraph {
+    compound = true;
+    
+    sdk [label = "SDK";];
+    router [label = "Origin Chain\nRouterV2";shape = rect;];
+    getAmountOut [label = <<I>3. getAmountOut<br></br>(tokenIn, bridgeToken,<br></br>amountIn)</I>>;shape = none;];
+    quoter [label = "QuoterV2";shape = rect;];
+    
+    rankdir = "LR";
+    sdk -> router [label = <<I>1. getOriginAmountOut<br></br>(tokenIn, symbols,amountIn)</I>>;];
+    
+    subgraph cluster1 {
+        node [shape = rect; style = dashed;];
+        module1 [label = "Bridge Module (Synapse Bridge)";];
+        module2 [label = "Bridge Module (Synapse CCTP)";];
+        module3 [label = "Bridge Module (Synapse <...>)";];
+    }
+    
+    subgraph {
+        rank = same;
+        router -> getAmountOut [dir = none;];
+        getAmountOut -> quoter;
+    }
+    
+    router -> module1 [label = <<I>2a. symbolToToken(symbol)</I>>; lhead = cluster1; weight = 10;];
+    router:se -> module2 [label = <<I>2b. getMaxBridgedAmount(token)</I>>; lhead = cluster1;];
+}
