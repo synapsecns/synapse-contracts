@@ -19,8 +19,11 @@ contract FastBridgeRouterTest is Test {
 
     MockDefaultPool public pool;
 
+    address user;
+
     function setUp() public {
         owner = makeAddr("Owner");
+        user = makeAddr("User");
         fastBridge = new MockFastBridge();
         router = new FastBridgeRouter(address(fastBridge), owner);
 
@@ -34,6 +37,12 @@ contract FastBridgeRouterTest is Test {
         // Mint some tokens to the pool
         token0.mint(address(pool), 100 ether);
         token1.mint(address(pool), 120 ether);
+        // Mint some tokens to the user
+        token0.mint(user, 10 ether);
+        token1.mint(user, 10 ether);
+        // Approve the Router to spend the user's tokens
+        token0.approve(address(router), 10 ether);
+        token1.approve(address(router), 10 ether);
     }
 
     function test_constructor() public {
