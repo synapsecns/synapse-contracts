@@ -28,7 +28,9 @@ contract FastBridgeRouterTest is FBRTest {
         token0.mint(user, 10 ether);
         token1.mint(user, 10 ether);
         // Approve the Router to spend the user's tokens
+        vm.prank(user);
         token0.approve(address(router), 10 ether);
+        vm.prank(user);
         token1.approve(address(router), 10 ether);
     }
 
