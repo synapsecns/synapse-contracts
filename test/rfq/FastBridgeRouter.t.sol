@@ -1,40 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {FastBridgeRouter, IFastBridge, SwapQuery} from "../../contracts/rfq/FastBridgeRouter.sol";
-import {Action, DefaultParams} from "../../contracts/router/libs/Structs.sol";
+import {IFastBridge, SwapQuery} from "../../contracts/rfq/FastBridgeRouter.sol";
 
-import {MockFastBridge} from "../mocks/MockFastBridge.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockDefaultPool} from "../mocks/MockDefaultPool.sol";
 
-import {Test} from "forge-std/Test.sol";
+import {FBRTest} from "./FBRTest.sol";
 
-contract FastBridgeRouterTest is Test {
-    uint256 constant RFQ_DEADLINE = 12 hours;
-    address constant TOKEN_OUT = address(1337);
-    uint256 constant FIXED_FEE = 0.01 ether;
-    uint32 constant DST_CHAIN_ID = 420;
-
-    FastBridgeRouter public router;
-    MockFastBridge public fastBridge;
-    address owner;
-
+contract FastBridgeRouterTest is FBRTest {
     MockERC20 public token0;
     MockERC20 public token1;
 
-    MockDefaultPool public pool;
-
-    address user;
-    address recipient;
-
-    function setUp() public {
-        owner = makeAddr("Owner");
-        recipient = makeAddr("Recipient");
-        user = makeAddr("User");
-        fastBridge = new MockFastBridge();
-        router = new FastBridgeRouter(address(fastBridge), owner);
-
+    function setUp() public override {
+        super.setUp();
         token0 = new MockERC20("T0", 18);
         token1 = new MockERC20("T1", 18);
 
@@ -51,60 +30,6 @@ contract FastBridgeRouterTest is Test {
         // Approve the Router to spend the user's tokens
         token0.approve(address(router), 10 ether);
         token1.approve(address(router), 10 ether);
-    }
-
-    function test_constructor() public {
-        assertEq(address(router.fastBridge()), address(fastBridge));
-        assertEq(router.owner(), owner);
-    }
-
-    function getOriginSwapParams() public view returns (bytes memory) {
-        DefaultParams memory params = DefaultParams({
-            action: Action.Swap,
-            pool: address(pool),
-            tokenIndexFrom: 0,
-            tokenIndexTo: 1
-        });
-        return abi.encode(params);
-    }
-
-    function getDestQueryNoRebate(uint256 amount) public view returns (SwapQuery memory destQuery) {
-        destQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: TOKEN_OUT,
-            minAmountOut: amount - FIXED_FEE,
-            deadline: block.timestamp + RFQ_DEADLINE,
-            rawParams: ""
-        });
-    }
-
-    function getDestQueryWithRebate(uint256 amount) public view returns (SwapQuery memory destQuery) {
-        destQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: TOKEN_OUT,
-            minAmountOut: amount - FIXED_FEE,
-            deadline: block.timestamp + RFQ_DEADLINE,
-            // TODO: encode "With gas rebate on destination chain"
-            rawParams: ""
-        });
-    }
-
-    function getExpectedBridgeParams(
-        address originToken,
-        uint256 originAmount,
-        bool sendChainGas
-    ) public view returns (IFastBridge.BridgeParams memory expectedParams) {
-        expectedParams = IFastBridge.BridgeParams({
-            dstChainId: DST_CHAIN_ID,
-            sender: user,
-            to: recipient,
-            originToken: originToken,
-            destToken: TOKEN_OUT,
-            originAmount: originAmount,
-            destAmount: originAmount - FIXED_FEE,
-            sendChainGas: sendChainGas,
-            deadline: block.timestamp + RFQ_DEADLINE
-        });
     }
 
     function test_bridge_noOriginSwap_noGasRebate() public {
@@ -170,7 +95,7 @@ contract FastBridgeRouterTest is Test {
             tokenOut: address(token1),
             minAmountOut: amount,
             deadline: block.timestamp,
-            rawParams: getOriginSwapParams()
+            rawParams: getOriginSwapParams(0, 1)
         });
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token1),
@@ -198,7 +123,7 @@ contract FastBridgeRouterTest is Test {
             tokenOut: address(token1),
             minAmountOut: amount,
             deadline: block.timestamp,
-            rawParams: getOriginSwapParams()
+            rawParams: getOriginSwapParams(0, 1)
         });
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token1),
@@ -226,24 +151,13 @@ contract FastBridgeRouterTest is Test {
         // End test prematurely if the returned array is not of length 2
         require(originQueries.length == 2, "Invalid array length");
         // First query: token0 -> token0
-        checkQueryNoSwap(originQueries[0]);
+        checkQueryNoAction({query: originQueries[0], token: address(token0), amount: 1 ether});
         // Second query: token0 -> token1
-        checkQueryWithSwap(originQueries[1]);
-    }
-
-    function checkQueryNoSwap(SwapQuery memory query) internal {
-        assertEq(query.routerAdapter, address(0));
-        assertEq(query.tokenOut, address(token0));
-        assertEq(query.minAmountOut, 1 ether);
-        assertEq(query.deadline, type(uint256).max);
-        assertEq(query.rawParams, "");
-    }
-
-    function checkQueryWithSwap(SwapQuery memory query) internal {
-        assertEq(query.routerAdapter, address(router));
-        assertEq(query.tokenOut, address(token1));
-        assertEq(query.minAmountOut, pool.calculateSwap(0, 1, 1 ether));
-        assertEq(query.deadline, type(uint256).max);
-        assertEq(query.rawParams, getOriginSwapParams());
+        checkQueryWithAction({
+            query: originQueries[1],
+            token: address(token1),
+            amount: pool.calculateSwap(0, 1, 1 ether),
+            rawParams: getOriginSwapParams(0, 1)
+        });
     }
 }
