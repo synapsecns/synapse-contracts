@@ -237,6 +237,32 @@ contract FastBridgeRouterTest is Test {
     }
 
     function test_getOriginAmountOut() public {
-        // TODO
+        address[] memory bridgeTokens = new address[](2);
+        bridgeTokens[0] = address(token0);
+        bridgeTokens[1] = address(token1);
+        // Ask for token0 -> [token0, token1] quotes
+        SwapQuery[] memory originQueries = router.getOriginAmountOut(address(token0), bridgeTokens, 1 ether);
+        // End test prematurely if the returned array is not of length 2
+        require(originQueries.length == 2, "Invalid array length");
+        // First query: token0 -> token0
+        checkQueryNoSwap(originQueries[0]);
+        // Second query: token0 -> token1
+        checkQueryWithSwap(originQueries[1]);
+    }
+
+    function checkQueryNoSwap(SwapQuery memory query) internal {
+        assertEq(query.routerAdapter, address(0));
+        assertEq(query.tokenOut, address(token0));
+        assertEq(query.minAmountOut, 1 ether);
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, "");
+    }
+
+    function checkQueryWithSwap(SwapQuery memory query) internal {
+        assertEq(query.routerAdapter, address(router));
+        assertEq(query.tokenOut, address(token1));
+        assertEq(query.minAmountOut, pool.calculateSwap(0, 1, 1 ether));
+        assertEq(query.deadline, type(uint256).max);
+        assertEq(query.rawParams, getOriginSwapParams());
     }
 }
