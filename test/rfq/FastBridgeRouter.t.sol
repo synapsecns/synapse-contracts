@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {FastBridgeRouter, IFastBridge, SwapQuery} from "../../contracts/rfq/FastBridgeRouter.sol";
+import {Action, DefaultParams} from "../../contracts/router/libs/Structs.sol";
 
 import {MockFastBridge} from "../mocks/MockFastBridge.sol";
 import {MockERC20} from "../mocks/MockERC20.sol";
@@ -73,7 +74,6 @@ contract FastBridgeRouterTest is Test {
             tokenOut: TOKEN_OUT,
             minAmountOut: amountOut,
             deadline: block.timestamp + RFQ_DEADLINE,
-            // TODO: encode "No gas rebate on destination chain"
             rawParams: ""
         });
         IFastBridge.BridgeParams memory expectedParams = IFastBridge.BridgeParams({
@@ -120,8 +120,8 @@ contract FastBridgeRouterTest is Test {
         });
         IFastBridge.BridgeParams memory expectedParams = IFastBridge.BridgeParams({
             dstChainId: DST_CHAIN_ID,
-            to: recipient,
             sender: user,
+            to: recipient,
             originToken: address(token0),
             destToken: TOKEN_OUT,
             originAmount: amount,
@@ -141,8 +141,99 @@ contract FastBridgeRouterTest is Test {
         });
     }
 
-    function test_bridge_withOriginSwap() public {
-        // TODO
+    function getOriginSwapParams() public view returns (bytes memory) {
+        DefaultParams memory params = DefaultParams({
+            action: Action.Swap,
+            pool: address(pool),
+            tokenIndexFrom: 0,
+            tokenIndexTo: 1
+        });
+        return abi.encode(params);
+    }
+
+    function test_bridge_withOriginSwap_noGasRebate() public {
+        uint256 amountBeforeSwap = 1 ether;
+        // T0 -> T1 swap on origin chain
+        uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
+        uint256 amountOut = amount - FIXED_FEE;
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: address(token1),
+            minAmountOut: amount,
+            deadline: block.timestamp,
+            rawParams: getOriginSwapParams()
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(0),
+            tokenOut: TOKEN_OUT,
+            minAmountOut: amountOut,
+            deadline: block.timestamp + RFQ_DEADLINE,
+            rawParams: ""
+        });
+        IFastBridge.BridgeParams memory expectedParams = IFastBridge.BridgeParams({
+            dstChainId: DST_CHAIN_ID,
+            sender: user,
+            to: recipient,
+            originToken: address(token1),
+            destToken: TOKEN_OUT,
+            originAmount: amount,
+            destAmount: amountOut,
+            sendChainGas: false,
+            deadline: block.timestamp + RFQ_DEADLINE
+        });
+        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.prank(user);
+        router.bridge({
+            recipient: recipient,
+            chainId: DST_CHAIN_ID,
+            token: address(token0),
+            amount: amountBeforeSwap,
+            originQuery: originQuery,
+            destQuery: destQuery
+        });
+    }
+
+    function test_bridge_withOriginSwap_withGasRebate() public {
+        uint256 amountBeforeSwap = 1 ether;
+        // T0 -> T1 swap on origin chain
+        uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
+        uint256 amountOut = amount - FIXED_FEE;
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: address(token1),
+            minAmountOut: amount,
+            deadline: block.timestamp,
+            rawParams: getOriginSwapParams()
+        });
+        SwapQuery memory destQuery = SwapQuery({
+            routerAdapter: address(0),
+            tokenOut: TOKEN_OUT,
+            minAmountOut: amountOut,
+            deadline: block.timestamp + RFQ_DEADLINE,
+            // TODO: encode "With gas rebate on destination chain"
+            rawParams: ""
+        });
+        IFastBridge.BridgeParams memory expectedParams = IFastBridge.BridgeParams({
+            dstChainId: DST_CHAIN_ID,
+            sender: user,
+            to: recipient,
+            originToken: address(token1),
+            destToken: TOKEN_OUT,
+            originAmount: amount,
+            destAmount: amountOut,
+            sendChainGas: true,
+            deadline: block.timestamp + RFQ_DEADLINE
+        });
+        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.prank(user);
+        router.bridge({
+            recipient: recipient,
+            chainId: DST_CHAIN_ID,
+            token: address(token0),
+            amount: amountBeforeSwap,
+            originQuery: originQuery,
+            destQuery: destQuery
+        });
     }
 
     function test_getOriginAmountOut() public {
