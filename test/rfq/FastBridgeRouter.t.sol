@@ -244,11 +244,11 @@ abstract contract FastBridgeRouterTest is FBRTest {
     // ═══════════════════════════════════════ TESTS: GET ORIGIN AMOUNT OUT ════════════════════════════════════════════
 
     function test_getOriginAmountOut() public {
-        address[] memory bridgeTokens = new address[](2);
-        bridgeTokens[0] = address(token0);
-        bridgeTokens[1] = address(token1);
+        address[] memory rfqTokens = new address[](2);
+        rfqTokens[0] = address(token0);
+        rfqTokens[1] = address(token1);
         // Ask for token0 -> [token0, token1] quotes
-        SwapQuery[] memory originQueries = router.getOriginAmountOut(address(token0), bridgeTokens, 1 ether);
+        SwapQuery[] memory originQueries = router.getOriginAmountOut(address(token0), rfqTokens, 1 ether);
         // End test prematurely if the returned array is not of length 2
         require(originQueries.length == 2, "Invalid array length");
         // First query: token0 -> token0

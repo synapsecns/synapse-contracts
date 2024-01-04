@@ -17,11 +17,12 @@ contract FastBridgeRouter is DefaultRouter, Ownable, IFastBridgeRouter {
     /// @param newSwapQuoter The new swap quoter.
     event SwapQuoterSet(address newSwapQuoter);
 
+    /// @inheritdoc IFastBridgeRouter
     address public immutable fastBridge;
-    /// @notice Magic value that indicates that the user wants to receive gas rebate on the destination chain.
-    /// This is the answer to the ultimate question of life, the universe, and everything.
+    /// @inheritdoc IFastBridgeRouter
     bytes1 public constant GAS_REBATE_FLAG = 0x2A;
 
+    /// @inheritdoc IFastBridgeRouter
     address public swapQuoter;
 
     constructor(address fastBridge_, address owner_) {
@@ -29,6 +30,7 @@ contract FastBridgeRouter is DefaultRouter, Ownable, IFastBridgeRouter {
         transferOwnership(owner_);
     }
 
+    /// @inheritdoc IFastBridgeRouter
     function setSwapQuoter(address swapQuoter_) external onlyOwner {
         swapQuoter = swapQuoter_;
         emit SwapQuoterSet(swapQuoter_);
@@ -69,15 +71,15 @@ contract FastBridgeRouter is DefaultRouter, Ownable, IFastBridgeRouter {
     /// @inheritdoc IFastBridgeRouter
     function getOriginAmountOut(
         address tokenIn,
-        address[] memory bridgeTokens,
+        address[] memory rfqTokens,
         uint256 amountIn
     ) external view returns (SwapQuery[] memory originQueries) {
-        uint256 len = bridgeTokens.length;
+        uint256 len = rfqTokens.length;
         originQueries = new SwapQuery[](len);
         for (uint256 i = 0; i < len; ++i) {
             originQueries[i] = ISwapQuoter(swapQuoter).getAmountOut(
                 LimitedToken({actionMask: ActionLib.allActions(), token: tokenIn}),
-                bridgeTokens[i],
+                rfqTokens[i],
                 amountIn
             );
             // Adjust the Adapter address if it exists
