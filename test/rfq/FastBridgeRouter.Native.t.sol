@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {IFastBridge, SwapQuery} from "../../contracts/rfq/FastBridgeRouter.sol";
+import {MsgValueIncorrect, TokenNotContract, TokenNotETH} from "../../contracts/router/libs/Errors.sol";
 
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockWETH} from "../router/mocks/MockWETH.sol";
@@ -553,6 +554,92 @@ contract FastBridgeRouterNativeTest is FBRTest {
             amount: amountBeforeSwap,
             originQuery: originQuery,
             destQuery: getDestQueryWithRebate(amount)
+        });
+    }
+
+    // ══════════════════════════════════════════════ TESTS: REVERTS ═══════════════════════════════════════════════════
+
+    function test_bridge_revert_msgValueWithERC20() public {
+        uint256 amount = 1 ether;
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(0),
+            tokenOut: address(token),
+            minAmountOut: amount,
+            deadline: block.timestamp,
+            rawParams: ""
+        });
+        vm.expectRevert(TokenNotETH.selector);
+        vm.prank(user);
+        router.bridge{value: 1 ether}({
+            recipient: recipient,
+            chainId: DST_CHAIN_ID,
+            token: address(token),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: getDestQueryNoRebate(amount)
+        });
+    }
+
+    function test_bridge_revert_msgValueZeroWithETH() public {
+        uint256 amount = 1 ether;
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(0),
+            tokenOut: ETH,
+            minAmountOut: amount,
+            deadline: block.timestamp,
+            rawParams: ""
+        });
+        vm.expectRevert(TokenNotContract.selector);
+        vm.prank(user);
+        router.bridge({
+            recipient: recipient,
+            chainId: DST_CHAIN_ID,
+            token: ETH,
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: getDestQueryNoRebate(amount)
+        });
+    }
+
+    function test_bridge_revert_msgValueLowerWithETH() public {
+        uint256 amount = 1 ether;
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(0),
+            tokenOut: ETH,
+            minAmountOut: amount,
+            deadline: block.timestamp,
+            rawParams: ""
+        });
+        vm.expectRevert(MsgValueIncorrect.selector);
+        vm.prank(user);
+        router.bridge{value: amount - 1}({
+            recipient: recipient,
+            chainId: DST_CHAIN_ID,
+            token: ETH,
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: getDestQueryNoRebate(amount)
+        });
+    }
+
+    function test_bridge_revert_msgValueHigherWithETH() public {
+        uint256 amount = 1 ether;
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(0),
+            tokenOut: ETH,
+            minAmountOut: amount,
+            deadline: block.timestamp,
+            rawParams: ""
+        });
+        vm.expectRevert(MsgValueIncorrect.selector);
+        vm.prank(user);
+        router.bridge{value: amount + 1}({
+            recipient: recipient,
+            chainId: DST_CHAIN_ID,
+            token: ETH,
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: getDestQueryNoRebate(amount)
         });
     }
 

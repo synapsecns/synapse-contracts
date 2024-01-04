@@ -2,6 +2,7 @@
 pragma solidity 0.8.17;
 
 import {IFastBridge, SwapQuery} from "../../contracts/rfq/FastBridgeRouter.sol";
+import {DeadlineExceeded, InsufficientOutputAmount} from "../../contracts/router/libs/Errors.sol";
 
 import {MockERC20} from "../mocks/MockERC20.sol";
 import {MockDefaultPool} from "../mocks/MockDefaultPool.sol";
@@ -143,6 +144,56 @@ contract FastBridgeRouterTest is FBRTest {
             destQuery: getDestQueryWithRebate(amount)
         });
     }
+
+    // ══════════════════════════════════════════════ TESTS: REVERTS ═══════════════════════════════════════════════════
+
+    function test_bridge_revert_originSwap_deadlineExceeded() public {
+        uint256 amountBeforeSwap = 1 ether;
+        // T0 -> T1 swap on origin chain
+        uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: address(token1),
+            minAmountOut: amount,
+            deadline: block.timestamp - 1,
+            rawParams: getOriginSwapParams(0, 1)
+        });
+        vm.expectRevert(DeadlineExceeded.selector);
+        vm.prank(user);
+        router.bridge({
+            recipient: recipient,
+            chainId: DST_CHAIN_ID,
+            token: address(token0),
+            amount: amountBeforeSwap,
+            originQuery: originQuery,
+            destQuery: getDestQueryNoRebate(amount)
+        });
+    }
+
+    function test_bridge_revert_originSwap_minAmountOutNotMet() public {
+        uint256 amountBeforeSwap = 1 ether;
+        // T0 -> T1 swap on origin chain
+        uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
+        SwapQuery memory originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: address(token1),
+            minAmountOut: amount + 1,
+            deadline: block.timestamp,
+            rawParams: getOriginSwapParams(0, 1)
+        });
+        vm.expectRevert(InsufficientOutputAmount.selector);
+        vm.prank(user);
+        router.bridge({
+            recipient: recipient,
+            chainId: DST_CHAIN_ID,
+            token: address(token0),
+            amount: amountBeforeSwap,
+            originQuery: originQuery,
+            destQuery: getDestQueryNoRebate(amount)
+        });
+    }
+
+    // ═══════════════════════════════════════ TESTS: GET ORIGIN AMOUNT OUT ════════════════════════════════════════════
 
     function test_getOriginAmountOut() public {
         address[] memory bridgeTokens = new address[](2);
