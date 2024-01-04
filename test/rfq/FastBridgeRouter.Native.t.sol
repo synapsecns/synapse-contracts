@@ -555,4 +555,90 @@ contract FastBridgeRouterNativeTest is FBRTest {
             destQuery: getDestQueryWithRebate(amount)
         });
     }
+
+    // ═══════════════════════════════════════ TESTS: GET ORIGIN AMOUNT OUT ════════════════════════════════════════════
+
+    function test_getOriginAmountOut_fromETH() public {
+        uint256 amount = 1 ether;
+        address[] memory tokens = new address[](3);
+        tokens[0] = ETH;
+        tokens[1] = address(weth);
+        tokens[2] = address(token);
+        // Ask for ETH -> [ETH, WETH, TKN] quotes
+        SwapQuery[] memory originQueries = router.getOriginAmountOut(ETH, tokens, amount);
+        // End test prematurely if the returned array is not of length 3
+        require(originQueries.length == 3, "Invalid array length");
+        // First query: ETH -> ETH
+        checkQueryNoAction({query: originQueries[0], token: ETH, amount: amount});
+        // Second query: ETH -> WETH
+        checkQueryWithAction({
+            query: originQueries[1],
+            token: address(weth),
+            amount: amount,
+            rawParams: getOriginHandleETHParams()
+        });
+        // Third query: ETH -> TKN
+        checkQueryWithAction({
+            query: originQueries[2],
+            token: address(token),
+            amount: pool.calculateSwap(1, 0, amount),
+            rawParams: getOriginSwapParams(1, 0)
+        });
+    }
+
+    function test_getOriginAmountOut_fromWETH() public {
+        uint256 amount = 1 ether;
+        address[] memory tokens = new address[](3);
+        tokens[0] = ETH;
+        tokens[1] = address(weth);
+        tokens[2] = address(token);
+        // Ask for WETH -> [ETH, WETH, TKN] quotes
+        SwapQuery[] memory originQueries = router.getOriginAmountOut(address(weth), tokens, amount);
+        // End test prematurely if the returned array is not of length 3
+        require(originQueries.length == 3, "Invalid array length");
+        // First query: WETH -> ETH
+        checkQueryWithAction({
+            query: originQueries[0],
+            token: ETH,
+            amount: amount,
+            rawParams: getOriginHandleETHParams()
+        });
+        // Second query: WETH -> WETH
+        checkQueryNoAction({query: originQueries[1], token: address(weth), amount: amount});
+        // Third query: WETH -> TKN
+        checkQueryWithAction({
+            query: originQueries[2],
+            token: address(token),
+            amount: pool.calculateSwap(1, 0, amount),
+            rawParams: getOriginSwapParams(1, 0)
+        });
+    }
+
+    function test_getOriginAmountOut_fromTKN() public {
+        uint256 amount = 1 ether;
+        address[] memory tokens = new address[](3);
+        tokens[0] = ETH;
+        tokens[1] = address(weth);
+        tokens[2] = address(token);
+        // Ask for TKN -> [ETH, WETH, TKN] quotes
+        SwapQuery[] memory originQueries = router.getOriginAmountOut(address(token), tokens, amount);
+        // End test prematurely if the returned array is not of length 3
+        require(originQueries.length == 3, "Invalid array length");
+        // First query: TKN -> ETH
+        checkQueryWithAction({
+            query: originQueries[0],
+            token: ETH,
+            amount: pool.calculateSwap(0, 1, amount),
+            rawParams: getOriginSwapParams(0, 1)
+        });
+        // Second query: TKN -> WETH
+        checkQueryWithAction({
+            query: originQueries[1],
+            token: address(weth),
+            amount: pool.calculateSwap(0, 1, amount),
+            rawParams: getOriginSwapParams(0, 1)
+        });
+        // Third query: TKN -> TKN
+        checkQueryNoAction({query: originQueries[2], token: address(token), amount: amount});
+    }
 }
