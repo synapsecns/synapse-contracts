@@ -4,6 +4,8 @@ pragma solidity ^0.8.0;
 import {SwapQuery} from "../../router/libs/Structs.sol";
 
 interface IFastBridgeRouter {
+    function setSwapQuoter(address swapQuoter_) external;
+
     function bridge(
         address recipient,
         uint256 chainId,

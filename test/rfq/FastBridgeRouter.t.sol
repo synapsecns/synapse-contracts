@@ -13,6 +13,8 @@ contract FastBridgeRouterTest is FBRTest {
     MockERC20 public token0;
     MockERC20 public token1;
 
+    event SwapQuoterSet(address newSwapQuoter);
+
     function setUp() public override {
         super.setUp();
         token0 = new MockERC20("T0", 18);
@@ -34,6 +36,32 @@ contract FastBridgeRouterTest is FBRTest {
         vm.prank(user);
         token1.approve(address(router), 10 ether);
     }
+
+    // ══════════════════════════════════════════ TESTS: SET SWAP QUOTER ═══════════════════════════════════════════════
+
+    function test_setSwapQuoter_setsSwapQuoter() public {
+        address newSwapQuoter = address(0x123);
+        vm.prank(owner);
+        router.setSwapQuoter(newSwapQuoter);
+        assertEq(router.swapQuoter(), newSwapQuoter);
+    }
+
+    function test_setSwapQuoter_emitsEvent() public {
+        address newSwapQuoter = address(0x123);
+        vm.expectEmit(address(router));
+        emit SwapQuoterSet(newSwapQuoter);
+        vm.prank(owner);
+        router.setSwapQuoter(newSwapQuoter);
+    }
+
+    function test_setSwapQuoter_revert_whenNotOwner() public {
+        address newSwapQuoter = address(0x123);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(user);
+        router.setSwapQuoter(newSwapQuoter);
+    }
+
+    // ═══════════════════════════════════════════════ TESTS: BRIDGE ═══════════════════════════════════════════════════
 
     function test_bridge_noOriginSwap_noGasRebate() public {
         uint256 amount = 1 ether;

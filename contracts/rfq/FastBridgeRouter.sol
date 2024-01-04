@@ -11,14 +11,25 @@ import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 contract FastBridgeRouter is DefaultRouter, Ownable, IFastBridgeRouter {
     using UniversalTokenLib for address;
 
+    /// @notice Emitted when the swap quoter is set.
+    /// @param newSwapQuoter The new swap quoter.
+    event SwapQuoterSet(address newSwapQuoter);
+
     address public immutable fastBridge;
     /// @notice Magic value that indicates that the user wants to receive gas rebate on the destination chain.
     /// This is the answer to the ultimate question of life, the universe, and everything.
     bytes1 public constant GAS_REBATE_FLAG = 0x2A;
 
+    address public swapQuoter;
+
     constructor(address fastBridge_, address owner_) {
         fastBridge = fastBridge_;
         transferOwnership(owner_);
+    }
+
+    function setSwapQuoter(address swapQuoter_) external onlyOwner {
+        swapQuoter = swapQuoter_;
+        emit SwapQuoterSet(swapQuoter_);
     }
 
     /// @inheritdoc IFastBridgeRouter
