@@ -3,8 +3,10 @@ pragma solidity 0.8.17;
 
 import {DefaultRouter} from "../router/DefaultRouter.sol";
 import {UniversalTokenLib} from "../router/libs/UniversalToken.sol";
+import {ActionLib, LimitedToken} from "../router/libs/Structs.sol";
 import {IFastBridge} from "./interfaces/IFastBridge.sol";
 import {IFastBridgeRouter, SwapQuery} from "./interfaces/IFastBridgeRouter.sol";
+import {ISwapQuoter} from "./interfaces/ISwapQuoter.sol";
 
 import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 
@@ -69,7 +71,21 @@ contract FastBridgeRouter is DefaultRouter, Ownable, IFastBridgeRouter {
         address tokenIn,
         address[] memory bridgeTokens,
         uint256 amountIn
-    ) external view returns (SwapQuery[] memory originQueries) {}
+    ) external view returns (SwapQuery[] memory originQueries) {
+        uint256 len = bridgeTokens.length;
+        originQueries = new SwapQuery[](len);
+        for (uint256 i = 0; i < len; ++i) {
+            originQueries[i] = ISwapQuoter(swapQuoter).getAmountOut(
+                LimitedToken({actionMask: ActionLib.allActions(), token: tokenIn}),
+                bridgeTokens[i],
+                amountIn
+            );
+            // Adjust the Adapter address if it exists
+            if (originQueries[i].hasAdapter()) {
+                originQueries[i].routerAdapter = address(this);
+            }
+        }
+    }
 
     /// @dev Checks if the explicit instruction to send gas to the destination chain was provided.
     function _chainGasRequested(bytes memory rawParams) internal pure returns (bool) {
