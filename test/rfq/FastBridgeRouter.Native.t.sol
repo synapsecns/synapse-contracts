@@ -57,7 +57,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: false
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: amount,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge{value: amount}({
             recipient: recipient,
@@ -85,7 +89,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: true
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: amount,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge{value: amount}({
             recipient: recipient,
@@ -113,7 +121,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: false
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: 0,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge{value: amount}({
             recipient: recipient,
@@ -141,7 +153,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: true
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: 0,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge{value: amount}({
             recipient: recipient,
@@ -170,7 +186,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: false
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: 0,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge{value: amountBeforeSwap}({
             recipient: recipient,
@@ -199,7 +219,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: true
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: 0,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge{value: amountBeforeSwap}({
             recipient: recipient,
@@ -229,7 +253,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: false
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: 0,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge({
             recipient: recipient,
@@ -257,7 +285,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: true
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: 0,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge({
             recipient: recipient,
@@ -285,7 +317,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: false
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: amount,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge({
             recipient: recipient,
@@ -313,7 +349,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: true
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: amount,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge({
             recipient: recipient,
@@ -342,7 +382,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: false
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: 0,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge({
             recipient: recipient,
@@ -371,7 +415,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: true
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: 0,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge({
             recipient: recipient,
@@ -401,7 +449,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: false
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: 0,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge({
             recipient: recipient,
@@ -429,7 +481,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: true
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: 0,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge({
             recipient: recipient,
@@ -458,7 +514,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: false
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: 0,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge({
             recipient: recipient,
@@ -487,7 +547,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: true
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: 0,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge({
             recipient: recipient,
@@ -516,7 +580,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: false
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: amount,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge({
             recipient: recipient,
@@ -545,7 +613,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
             originAmount: amount,
             sendChainGas: true
         });
-        vm.expectCall(address(fastBridge), abi.encodeCall(IFastBridge.bridge, (expectedParams)));
+        vm.expectCall({
+            callee: address(fastBridge),
+            msgValue: amount,
+            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
+        });
         vm.prank(user);
         router.bridge({
             recipient: recipient,
