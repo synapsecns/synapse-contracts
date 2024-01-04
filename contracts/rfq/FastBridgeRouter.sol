@@ -12,6 +12,9 @@ contract FastBridgeRouter is DefaultRouter, Ownable, IFastBridgeRouter {
     using UniversalTokenLib for address;
 
     address public immutable fastBridge;
+    /// @notice Magic value that indicates that the user wants to receive gas rebate on the destination chain.
+    /// This is the answer to the ultimate question of life, the universe, and everything.
+    bytes1 public constant GAS_REBATE_FLAG = 0x2A;
 
     constructor(address fastBridge_, address owner_) {
         fastBridge = fastBridge_;
@@ -42,8 +45,7 @@ contract FastBridgeRouter is DefaultRouter, Ownable, IFastBridgeRouter {
             destToken: destQuery.tokenOut,
             originAmount: amount,
             destAmount: destQuery.minAmountOut,
-            // TODO: proper implementation
-            sendChainGas: destQuery.rawParams.length > 0,
+            sendChainGas: _chainGasRequested(destQuery.rawParams),
             deadline: destQuery.deadline
         });
         token.universalApproveInfinity(fastBridge, amount);
@@ -57,4 +59,9 @@ contract FastBridgeRouter is DefaultRouter, Ownable, IFastBridgeRouter {
         address[] memory bridgeTokens,
         uint256 amountIn
     ) external view returns (SwapQuery[] memory originQueries) {}
+
+    /// @dev Checks if the explicit instruction to send gas to the destination chain was provided.
+    function _chainGasRequested(bytes memory rawParams) internal pure returns (bool) {
+        return rawParams.length > 0 && rawParams[0] == GAS_REBATE_FLAG;
+    }
 }

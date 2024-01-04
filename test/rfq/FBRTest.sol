@@ -73,8 +73,7 @@ abstract contract FBRTest is Test {
             tokenOut: TOKEN_OUT,
             minAmountOut: amount - FIXED_FEE,
             deadline: block.timestamp + RFQ_DEADLINE,
-            // TODO: proper implementation
-            rawParams: hex"deadbeef"
+            rawParams: abi.encodePacked(uint8(42))
         });
     }
 
