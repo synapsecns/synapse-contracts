@@ -10,7 +10,7 @@ import {MockDefaultPool} from "../mocks/MockDefaultPool.sol";
 
 import {FBRTest} from "./FBRTest.sol";
 
-contract FastBridgeRouterNativeTest is FBRTest {
+abstract contract FastBridgeRouterNativeTest is FBRTest {
     address public constant ETH = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     MockERC20 public token;
@@ -37,7 +37,11 @@ contract FastBridgeRouterNativeTest is FBRTest {
         token.approve(address(router), 10 ether);
         vm.prank(user);
         weth.approve(address(router), 10 ether);
+
+        setUpSwapQuoter();
     }
+
+    function setUpSwapQuoter() internal virtual;
 
     // ═══════════════════════════════════════════ TESTS: START FROM ETH ═══════════════════════════════════════════════
 
