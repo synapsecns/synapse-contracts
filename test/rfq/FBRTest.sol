@@ -73,8 +73,8 @@ abstract contract FBRTest is Test {
             tokenOut: TOKEN_OUT,
             minAmountOut: amount - FIXED_FEE,
             deadline: block.timestamp + RFQ_DEADLINE,
-            // TODO: encode "With gas rebate on destination chain"
-            rawParams: ""
+            // TODO: proper implementation
+            rawParams: hex"deadbeef"
         });
     }
 
