@@ -13,6 +13,7 @@ abstract contract FastBridgeRouterTest is FBRTest {
     MockERC20 public token0;
     MockERC20 public token1;
 
+    event FastBridgeSet(address newFastBridge);
     event SwapQuoterSet(address newSwapQuoter);
 
     function setUp() public override {
@@ -40,6 +41,30 @@ abstract contract FastBridgeRouterTest is FBRTest {
     }
 
     function setUpSwapQuoter() internal virtual;
+
+    // ══════════════════════════════════════════ TESTS: SET FAST BRIDGE ═══════════════════════════════════════════════
+
+    function test_setFastBridge_setsFastBridge() public {
+        address newFastBridge = address(0x123);
+        vm.prank(owner);
+        router.setFastBridge(newFastBridge);
+        assertEq(router.fastBridge(), newFastBridge);
+    }
+
+    function test_setFastBridge_emitsEvent() public {
+        address newFastBridge = address(0x123);
+        vm.expectEmit(address(router));
+        emit FastBridgeSet(newFastBridge);
+        vm.prank(owner);
+        router.setFastBridge(newFastBridge);
+    }
+
+    function test_setFastBridge_revert_whenNotOwner() public {
+        address newFastBridge = address(0x123);
+        vm.expectRevert("Ownable: caller is not the owner");
+        vm.prank(user);
+        router.setFastBridge(newFastBridge);
+    }
 
     // ══════════════════════════════════════════ TESTS: SET SWAP QUOTER ═══════════════════════════════════════════════
 

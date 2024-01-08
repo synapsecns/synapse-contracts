@@ -17,17 +17,26 @@ contract FastBridgeRouter is DefaultRouter, Ownable, IFastBridgeRouter {
     /// @param newSwapQuoter The new swap quoter.
     event SwapQuoterSet(address newSwapQuoter);
 
-    /// @inheritdoc IFastBridgeRouter
-    address public immutable fastBridge;
+    /// @notice Emitted when the new FastBridge contract is set.
+    /// @param newFastBridge The new FastBridge contract.
+    event FastBridgeSet(address newFastBridge);
+
     /// @inheritdoc IFastBridgeRouter
     bytes1 public constant GAS_REBATE_FLAG = 0x2A;
 
     /// @inheritdoc IFastBridgeRouter
+    address public fastBridge;
+    /// @inheritdoc IFastBridgeRouter
     address public swapQuoter;
 
-    constructor(address fastBridge_, address owner_) {
-        fastBridge = fastBridge_;
+    constructor(address owner_) {
         transferOwnership(owner_);
+    }
+
+    /// @inheritdoc IFastBridgeRouter
+    function setFastBridge(address fastBridge_) external onlyOwner {
+        fastBridge = fastBridge_;
+        emit FastBridgeSet(fastBridge_);
     }
 
     /// @inheritdoc IFastBridgeRouter

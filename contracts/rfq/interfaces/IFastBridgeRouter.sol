@@ -4,6 +4,11 @@ pragma solidity ^0.8.0;
 import {SwapQuery} from "../../router/libs/Structs.sol";
 
 interface IFastBridgeRouter {
+    /// @notice Sets the address of the FastBridge contract
+    /// @dev This function is only callable by the owner
+    /// @param fastBridge_      The address of the FastBridge contract
+    function setFastBridge(address fastBridge_) external;
+
     /// @notice Sets the address of the SwapQuoter contract
     /// @dev This function is only callable by the owner
     /// @param swapQuoter_      The address of the SwapQuoter contract

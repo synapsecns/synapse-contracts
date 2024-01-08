@@ -29,7 +29,9 @@ abstract contract FBRTest is Test {
         recipient = makeAddr("Recipient");
         user = makeAddr("User");
         fastBridge = new MockFastBridge();
-        router = new FastBridgeRouter(address(fastBridge), owner);
+        router = new FastBridgeRouter(owner);
+        vm.prank(owner);
+        router.setFastBridge(address(fastBridge));
     }
 
     function test_constructor() public {
