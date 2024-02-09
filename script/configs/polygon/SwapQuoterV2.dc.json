@@ -1,0 +1,16 @@
+{
+  "pools": {
+    "0": {
+      "description": "CCTP.USDC",
+      "isLinked": true,
+      "pool": "0x686eC64ae1C2E299C6684e1E2640FcEC7D2c01F1",
+      "token": "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"
+    },
+    "1": {
+      "description": "nUSD",
+      "isLinked": false,
+      "pool": "0x85fCD7Dd0a1e1A9FCD5FD886ED522dE8221C3EE5",
+      "token": "0xB6c473756050dE474286bED418B77Aeac39B02aF"
+    }
+  }
+}

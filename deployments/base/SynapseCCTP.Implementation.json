@@ -1,6 +1,6 @@
 {
-  "address": "0x12715a66773BD9C54534a01aBF01d05F6B4Bd35E",
-  "constructorArgs": "0x000000000000000000000000bd3fa81b58ba92a82136038b25adec7066af3155",
+  "address": "0x1381932Af0C50D59A9088D9667e154b1582A29dE",
+  "constructorArgs": "0x0000000000000000000000001682ae6375c4e4a97e4b583bc394c861a46d8962",
   "abi": [
     {
       "type": "constructor",

@@ -1,23 +1,23 @@
 {
   "mainnet": {
-    "chains": ["arbitrum", "avalanche", "base", "mainnet", "optimism"],
     "domains": {
       "arbitrum": 3,
       "avalanche": 1,
       "base": 6,
       "mainnet": 0,
-      "optimism": 2
+      "optimism": 2,
+      "polygon": 7
     },
     "gasAirdrop": {
-      "arbitrum": 600000000000000,
+      "arbitrum": 300000000000000,
       "avalanche": 25000000000000000,
-      "base": 500000000000000,
+      "base": 300000000000000,
       "mainnet": 0,
-      "optimism": 300000000000000
+      "optimism": 300000000000000,
+      "polygon": 250000000000000000
     }
   },
   "testnet": {
-    "chains": ["arbitrum_goerli", "fuji", "goerli"],
     "domains": {
       "arbitrum_goerli": 3,
       "fuji": 1,

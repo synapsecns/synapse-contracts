@@ -130,7 +130,7 @@ contract SetupCCTPScript is BasicSynapseScript {
     function setupRemoteDeployments() public {
         console.log("Setting up remote deployments");
         string memory config = getGlobalConfig({contractName: SYNAPSE_CCTP, globalProperty: "chains"});
-        string[] memory chains = config.readStringArray(ENVIRONMENT.concat(".chains"));
+        string[] memory chains = vm.parseJsonKeys(config, ENVIRONMENT.concat(".domains"));
         bool chainFound = false;
         for (uint256 i = 0; i < chains.length; ++i) {
             string memory remoteChain = chains[i];
