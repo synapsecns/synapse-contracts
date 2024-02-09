@@ -35,6 +35,7 @@ contract GenerateTokenTree is BasicSynapseScript {
     string public constant CLOSING_BRACKET = "}";
     // prettier-ignore
     string public constant QUOTE_SYMBOL = "\"";
+    string public constant NEWLINE_SYMBOL = "\\n";
 
     string public config;
     LinkedPool public linkedPool;
@@ -211,16 +212,18 @@ contract GenerateTokenTree is BasicSynapseScript {
 
     /// @notice Returns the label to be used for a token node in the DOT file.
     function getTokenLabel(uint256 index, string memory symbol) internal pure returns (string memory label) {
-        // Example: "label = "0: USDC";"
-        label = StringUtils.concat("label = ", QUOTE_SYMBOL, index.toString(), ": ");
-        label = label.concat(symbol, QUOTE_SYMBOL, ";");
+        // Example: "label = "USDC\n0";"
+        // Using newline separator to make the label multiline and lower its width a bit
+        label = StringUtils.concat("label = ", QUOTE_SYMBOL, symbol, NEWLINE_SYMBOL);
+        label = label.concat(index.toString(), QUOTE_SYMBOL, ";");
     }
 
     /// @notice Returns the label to be used for a pool in the DOT file.
     function getPoolLabel(PoolParams memory params) internal pure returns (string memory label) {
-        // Example: "label = "DefaultPool 0xabcd;shape = rect;style = dashed;"
+        // Example: "label = "DefaultPool\n0xabcd;shape = rect;style = dashed;"
+        // Using newline separator to make the label multiline and lower its width a bit
         string memory poolName = bytes(params.poolModule).length == 0 ? "DefaultPool" : params.poolModule;
-        label = StringUtils.concat("label = ", QUOTE_SYMBOL, poolName, " ");
+        label = StringUtils.concat("label = ", QUOTE_SYMBOL, poolName, NEWLINE_SYMBOL);
         string memory shortenedAddress = uint256(uint160(params.pool) >> 144).toHexString();
         label = label.concat(shortenedAddress, QUOTE_SYMBOL, ";shape = rect;style = dashed;");
     }

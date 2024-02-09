@@ -1,16 +1,28 @@
 graph G {
-    token0 [label = "0: USDC";];
-    token1 [label = "1: nUSD";];
-    token2 [label = "2: USDt";];
-    token3 [label = "3: DAI.e";];
-    token4 [label = "4: USDC.e";];
-    token5 [label = "5: USDT.e";];
-    token6 [label = "6: USDt";];
-    token7 [label = "7: USDC.e";];
-    token8 [label = "8: nUSD";];
-    token9 [label = "9: DAI.e";];
-    token10 [label = "10: USDT.e";];
-    pool0 [label = "DefaultPool 0xa196";shape = rect;style = dashed;];
+    token0 [label = "USDC\n0";];
+    token1 [label = "nUSD\n1";];
+    token2 [label = "USDt\n2";];
+    token3 [label = "DAI.e\n3";];
+    token4 [label = "USDC.e\n4";];
+    token5 [label = "USDT.e\n5";];
+    token6 [label = "USDt\n6";];
+    token7 [label = "USDC.e\n7";];
+    token8 [label = "nUSD\n8";];
+    token9 [label = "DAI.e\n9";];
+    token10 [label = "USDT.e\n10";];
+    token11 [label = "USDt\n11";];
+    token12 [label = "USDC.e\n12";];
+    token13 [label = "nUSD\n13";];
+    token14 [label = "DAI.e\n14";];
+    token15 [label = "USDT.e\n15";];
+    token16 [label = "USDT.e\n16";];
+    token17 [label = "USDT.e\n17";];
+    token18 [label = "USDT.e\n18";];
+    token19 [label = "nUSD\n19";];
+    token20 [label = "DAI.e\n20";];
+    token21 [label = "USDC.e\n21";];
+    token22 [label = "USDt\n22";];
+    pool0 [label = "DefaultPool\n0xa196";shape = rect;style = dashed;];
     token0 -- pool0;
     subgraph cluster0 {
         style = dotted;
@@ -22,7 +34,7 @@ graph G {
             token1 -- token2;
         }
     }
-    pool1 [label = "DefaultPool 0xed2a";shape = rect;style = dashed;];
+    pool1 [label = "DefaultPool\n0xed2a";shape = rect;style = dashed;];
     token1 -- pool1;
     subgraph cluster1 {
         style = dotted;
@@ -36,7 +48,7 @@ graph G {
             token4 -- token5;
         }
     }
-    pool2 [label = "UniswapV3SR02 0x8042";shape = rect;style = dashed;];
+    pool2 [label = "UniswapV3SR02\n0x8042";shape = rect;style = dashed;];
     token0 -- pool2;
     subgraph cluster2 {
         style = dotted;
@@ -47,7 +59,7 @@ graph G {
             token6;
         }
     }
-    pool3 [label = "GMXV1StableAvalanche 0x9ab2";shape = rect;style = dashed;];
+    pool3 [label = "GMXV1StableAvalanche\n0x9ab2";shape = rect;style = dashed;];
     token0 -- pool3;
     subgraph cluster3 {
         style = dotted;
@@ -58,7 +70,7 @@ graph G {
             token7;
         }
     }
-    pool4 [label = "DefaultPool 0xed2a";shape = rect;style = dashed;];
+    pool4 [label = "DefaultPool\n0xed2a";shape = rect;style = dashed;];
     token7 -- pool4;
     subgraph cluster4 {
         style = dotted;
@@ -70,6 +82,100 @@ graph G {
             edge [style = invis;];
             token8 -- token9;
             token9 -- token10;
+        }
+    }
+    pool5 [label = "TraderJoeV21\n0x9b2c";shape = rect;style = dashed;];
+    token0 -- pool5;
+    subgraph cluster5 {
+        style = dotted;
+        pool5 -- token11;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token11;
+        }
+    }
+    pool6 [label = "TraderJoeV21\n0x7c13";shape = rect;style = dashed;];
+    token0 -- pool6;
+    subgraph cluster6 {
+        style = dotted;
+        pool6 -- token12;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token12;
+        }
+    }
+    pool7 [label = "DefaultPool\n0xed2a";shape = rect;style = dashed;];
+    token12 -- pool7;
+    subgraph cluster7 {
+        style = dotted;
+        pool7 -- token13;
+        pool7 -- token14;
+        pool7 -- token15;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token13 -- token14;
+            token14 -- token15;
+        }
+    }
+    pool8 [label = "TraderJoeV21\n0xe2b1";shape = rect;style = dashed;];
+    token0 -- pool8;
+    subgraph cluster8 {
+        style = dotted;
+        pool8 -- token16;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token16;
+        }
+    }
+    pool9 [label = "TraderJoeV21\n0x6fe0";shape = rect;style = dashed;];
+    token6 -- pool9;
+    subgraph cluster9 {
+        style = dotted;
+        pool9 -- token17;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token17;
+        }
+    }
+    pool10 [label = "TraderJoeV21\n0x6fe0";shape = rect;style = dashed;];
+    token11 -- pool10;
+    subgraph cluster10 {
+        style = dotted;
+        pool10 -- token18;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token18;
+        }
+    }
+    pool11 [label = "DefaultPool\n0xed2a";shape = rect;style = dashed;];
+    token16 -- pool11;
+    subgraph cluster11 {
+        style = dotted;
+        pool11 -- token19;
+        pool11 -- token20;
+        pool11 -- token21;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token19 -- token20;
+            token20 -- token21;
+        }
+    }
+    pool12 [label = "TraderJoeV21\n0x6fe0";shape = rect;style = dashed;];
+    token16 -- pool12;
+    subgraph cluster12 {
+        style = dotted;
+        pool12 -- token22;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token22;
         }
     }
 }

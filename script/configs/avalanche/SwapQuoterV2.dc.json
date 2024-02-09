@@ -1,0 +1,22 @@
+{
+  "pools": {
+    "0": {
+      "description": "CCTP.USDC",
+      "isLinked": true,
+      "pool": "0x9A2Dea7B81cfe3e0011D44D41c5c5142b8d9abdF",
+      "token": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E"
+    },
+    "1": {
+      "description": "nUSD",
+      "isLinked": false,
+      "pool": "0xED2a7edd7413021d440b09D654f3b87712abAB66",
+      "token": "0xCFc37A6AB183dd4aED08C204D1c2773c0b1BDf46"
+    },
+    "2": {
+      "description": "nETH",
+      "isLinked": false,
+      "pool": "0xdd60483Ace9B215a7c019A44Be2F22Aa9982652E",
+      "token": "0x19E1ae0eE35c0404f835521146206595d37981ae"
+    }
+  }
+}

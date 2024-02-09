@@ -32,10 +32,11 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         string tokenSymbol;
     }
 
-    struct NoQuoteFound {
-        uint256 nodeIndexFrom;
-        uint256 nodeIndexTo;
+    struct LoggedQuote {
+        uint8 nodeIndexFrom;
+        uint8 nodeIndexTo;
         address pool;
+        uint256 amountOut;
     }
 
     LinkedPool public linkedPool;
@@ -57,17 +58,21 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
     uint256 public maxPercentDelta;
 
     /// @notice List of adjacent nodes that have no quote
-    NoQuoteFound[] public noQuotesFound;
+    LoggedQuote[] public zeroQuotes;
+    /// @notice List of adjacent nodes that have quote with slippage over 1%
+    LoggedQuote[] public slippageQuotes;
+    uint256 public constant MAX_SLIPPAGE = 0.01e18;
 
     address public user;
 
+    /// @dev We don't pin the LinkedPool config tests to a specific block number because we want to be able to run them
+    /// against the current state of the chain to test the latest configuration against the current liquidity composition.
     constructor(
         string memory chainName_,
-        uint256 forkBlockNumber,
         string memory bridgeSymbol_,
         uint256 swapValue_,
         uint256 maxPercentDelta_
-    ) IntegrationUtils(chainName_, linkedPoolAlias = string.concat("LinkedPool.", bridgeSymbol_), forkBlockNumber) {
+    ) IntegrationUtils(chainName_, linkedPoolAlias = string.concat("LinkedPool.", bridgeSymbol_), 0) {
         user = makeAddr("User");
         swapValue = swapValue_;
         maxPercentDelta = maxPercentDelta_;
@@ -157,14 +162,14 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         for (uint8 nodeIndexFrom = 1; nodeIndexFrom < tokenNodesAmount; nodeIndexFrom++) {
             checkSwap(0, nodeIndexFrom);
         }
-        logNoQuotesFound();
+        logQuotes();
     }
 
     function testSwapsToRoot() public {
         for (uint8 nodeIndexTo = 1; nodeIndexTo < tokenNodesAmount; nodeIndexTo++) {
             checkSwap(nodeIndexTo, 0);
         }
-        logNoQuotesFound();
+        logQuotes();
     }
 
     function testSwapsBetweenNodes() public {
@@ -173,7 +178,7 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
                 checkSwap(nodeIndexFrom, nodeIndexTo);
             }
         }
-        logNoQuotesFound();
+        logQuotes();
     }
 
     function checkSwap(uint8 nodeIndexFrom, uint8 nodeIndexTo) internal {
@@ -181,7 +186,8 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
             return;
         }
         uint256 snapshotId = vm.snapshot();
-        (uint256 amountIn, uint256 expectedAmountOut) = logExpectedSwap(nodeIndexFrom, nodeIndexTo);
+        uint256 amountIn = getTestAmount(tokens[nodeIndexFrom]);
+        uint256 expectedAmountOut = linkedPool.calculateSwap(nodeIndexFrom, nodeIndexTo, amountIn);
         // Record balance before minting in case tokenFrom == tokenTo
         uint256 amountBefore = IERC20(tokens[nodeIndexTo]).balanceOf(user);
         prepareUser(tokens[nodeIndexFrom], amountIn);
@@ -211,50 +217,83 @@ abstract contract LinkedPoolConfigIntegrationTest is IntegrationUtils {
         assert(vm.revertTo(snapshotId));
         // Save nodes with no quotes after resetting the state
         if (expectedAmountOut == 0) {
-            saveAmountOutZero(nodeIndexFrom, nodeIndexTo);
+            saveBadQuote(zeroQuotes, 0, nodeIndexFrom, nodeIndexTo);
+        } else if (calculateSlippage(nodeIndexFrom, nodeIndexTo, amountIn, expectedAmountOut) >= MAX_SLIPPAGE) {
+            saveBadQuote(slippageQuotes, expectedAmountOut, nodeIndexFrom, nodeIndexTo);
         }
     }
 
-    function saveAmountOutZero(uint8 nodeIndexFrom, uint8 nodeIndexTo) internal {
+    function calculateSlippage(
+        uint8 nodeIndexFrom,
+        uint8 nodeIndexTo,
+        uint256 amountIn,
+        uint256 expectedAmountOut
+    ) internal view returns (uint256 slippage) {
+        address tokenFrom = tokens[nodeIndexFrom];
+        address tokenTo = tokens[nodeIndexTo];
+        // Convert to decimals of tokenTo to get the "no-slippage" amount
+        uint256 amountOutNoSlippage = (amountIn * 10**tokenDecimals[tokenTo]) / 10**tokenDecimals[tokenFrom];
+        if (expectedAmountOut >= amountOutNoSlippage) {
+            // Slippage <= 0% (aka positive slippage)
+            return 0;
+        }
+        slippage = ((amountOutNoSlippage - expectedAmountOut) * 1e18) / amountOutNoSlippage;
+    }
+
+    function saveBadQuote(
+        LoggedQuote[] storage loggedQuotes,
+        uint256 amountOut,
+        uint8 nodeIndexFrom,
+        uint8 nodeIndexTo
+    ) internal {
         // Save nodes only if the swap path contains exactly 1 pool to avoid spamming the console
         address pool = commonPool[nodeIndexFrom][nodeIndexTo];
         if (pool == address(0)) return;
-        noQuotesFound.push(NoQuoteFound({nodeIndexFrom: nodeIndexFrom, nodeIndexTo: nodeIndexTo, pool: pool}));
+        loggedQuotes.push(
+            LoggedQuote({nodeIndexFrom: nodeIndexFrom, nodeIndexTo: nodeIndexTo, pool: pool, amountOut: amountOut})
+        );
     }
 
     // ══════════════════════════════════════════════════ LOGGING ══════════════════════════════════════════════════════
 
-    function logExpectedSwap(uint8 nodeIndexFrom, uint8 nodeIndexTo)
-        internal
-        view
-        returns (uint256 amountIn, uint256 expectedAmountOut)
-    {
-        address tokenFrom = tokens[nodeIndexFrom];
-        address tokenTo = tokens[nodeIndexTo];
-        amountIn = getTestAmount(tokenFrom);
-        expectedAmountOut = linkedPool.calculateSwap(nodeIndexFrom, nodeIndexTo, amountIn);
-        console2.log("Swapping %s -> %s", nodeIndexFrom, nodeIndexTo);
-        console2.log("   amountIn: %s %s", amountIn.fromFloat(tokenDecimals[tokenFrom]), tokenSymbols[tokenFrom]);
-        console2.log("  amountOut: %s %s", expectedAmountOut.fromFloat(tokenDecimals[tokenTo]), tokenSymbols[tokenTo]);
+    function logQuotes() internal view {
+        logQuotes({
+            quotes: zeroQuotes,
+            description: "amountOut == 0",
+            warningMsg: unicode"⛔ Swap is not possible for"
+        });
+        logQuotes({quotes: slippageQuotes, description: "slippage >= 1%", warningMsg: unicode"💥 High slippage for"});
     }
 
-    function logNoQuotesFound() internal view {
-        console2.log("Zero quotes found between adjacent nodes: %s", noQuotesFound.length);
-        for (uint256 i = 0; i < noQuotesFound.length; i++) {
-            logAmountOutZero(noQuotesFound[i]);
+    function logQuotes(
+        LoggedQuote[] storage quotes,
+        string memory description,
+        string memory warningMsg
+    ) internal view {
+        console2.log("Quotes with [%s] between adjacent nodes: %s", description, quotes.length);
+        for (uint256 i = 0; i < quotes.length; i++) {
+            console2.log(unicode"   %s for %s -> %s", warningMsg, quotes[i].nodeIndexFrom, quotes[i].nodeIndexTo);
+            address tokenFrom = tokens[quotes[i].nodeIndexFrom];
+            address tokenTo = tokens[quotes[i].nodeIndexTo];
+            string memory amountOutInfo = quotes[i]
+                .amountOut
+                .fromFloat({decimals: tokenDecimals[tokenTo], decimalsToLeave: 2})
+                .concat(" ", tokenSymbols[tokenTo]);
+            console2.log("   %s %s -> %s", swapValue, tokenSymbols[tokenFrom], amountOutInfo);
+            if (quotes[i].amountOut != 0) {
+                // Multiply by 100 to get a percentage value
+                string memory slippage = (100 *
+                    calculateSlippage(
+                        quotes[i].nodeIndexFrom,
+                        quotes[i].nodeIndexTo,
+                        getTestAmount(tokenFrom),
+                        quotes[i].amountOut
+                    )).fromWei({decimalsToLeave: 1});
+                console2.log("   pool: %s, slippage: %s%%", quotes[i].pool, slippage);
+            } else {
+                console2.log("   pool: %s", quotes[i].pool);
+            }
         }
-    }
-
-    function logAmountOutZero(NoQuoteFound memory absentQuote) internal view {
-        console2.log(
-            unicode"❗❗❗ WARNING: no quote for %s -> %s",
-            absentQuote.nodeIndexFrom,
-            absentQuote.nodeIndexTo
-        );
-        address tokenFrom = tokens[absentQuote.nodeIndexFrom];
-        address tokenTo = tokens[absentQuote.nodeIndexTo];
-        console2.log("   %s %s -> %s", swapValue, tokenSymbols[tokenFrom], tokenSymbols[tokenTo]);
-        console2.log("   pool: %s", absentQuote.pool);
     }
 
     // ══════════════════════════════════════════════════ HELPERS ══════════════════════════════════════════════════════
