@@ -54,7 +54,7 @@ contract SetupRouterScript is DeployScript {
         quoter = SwapQuoter(loadDeployment(QUOTER));
         _setupRouter(config);
         _removeRouterTokens(config);
-        _setupQuoter(config);
+        // _setupQuoter(config);
         vm.stopBroadcast();
         // stopBroadcast();
     }
@@ -161,12 +161,12 @@ contract SetupRouterScript is DeployScript {
             } else {
                 console.log("No tokens to update");
             }
-            if (router.swapQuoter() != quoter) {
-                router.setSwapQuoter(quoter);
-                console.log("%s set to %s", QUOTER, address(quoter));
-            } else {
-                console.log("%s already set up in %s", QUOTER, ROUTER);
-            }
+            // if (router.swapQuoter() != quoter) {
+            //     router.setSwapQuoter(quoter);
+            //     console.log("%s set to %s", QUOTER, address(quoter));
+            // } else {
+            //     console.log("%s already set up in %s", QUOTER, ROUTER);
+            // }
         } else {
             _printSkipped("add tokens", ROUTER, owner);
             _printSkipped("set SwapQuoter", ROUTER, owner);
