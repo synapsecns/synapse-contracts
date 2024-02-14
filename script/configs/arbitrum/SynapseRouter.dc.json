@@ -18,10 +18,6 @@
     "UNIDX",
     "PEPE"
   ],
-  "pools": [
-    "0x9Dd329F5411466d9e0C488fF72519CA9fEf0cb40",
-    "0xa067668661C84476aFcDc6fA5D758C4c01C34352"
-  ],
   "tokens": {
     "GMX": {
       "bridgeFee": 5000000,

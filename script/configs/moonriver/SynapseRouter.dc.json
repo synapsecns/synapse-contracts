@@ -9,7 +9,6 @@
     "UST",
     "H2O"
   ],
-  "pools": [],
   "tokens": {
     "H2O": {
       "bridgeFee": 10000000,

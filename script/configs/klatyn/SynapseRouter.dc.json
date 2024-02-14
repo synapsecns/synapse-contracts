@@ -12,10 +12,6 @@
     "BTCB",
     "LINK"
   ],
-  "pools": [
-    "0x0150E4bb98422f3b38aE8524E0cE0B7E734923eB",
-    "0x0150E4bb98422f3b38aE8524E0cE0B7E734923eB"
-  ],
   "tokens": {
     "AVAX": {
       "bridgeFee": 4000000,

@@ -5,9 +5,6 @@
     "nETH",
     "UNIDX"
   ],
-  "pools": [
-    "0x6223bD82010E2fB69F329933De20897e7a4C225f"
-  ],
   "tokens": {
     "SYN": {
       "bridgeFee": 5000000,

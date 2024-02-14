@@ -5,10 +5,6 @@
     "SYN",
     "nETH"
   ],
-  "pools": [
-    "0x0271984e4cfA2A0f02664baACD551CcFCC9920E8",
-    "0xF60F88bA0CB381b8D8A662744fF93486273c22F9"
-  ],
   "tokens": {
     "SYN": {
       "bridgeFee": 5000000,

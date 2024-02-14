@@ -10,9 +10,6 @@
     "H2O",
     "MATIC"
   ],
-  "pools": [
-    "0x85fCD7Dd0a1e1A9FCD5FD886ED522dE8221C3EE5"
-  ],
   "tokens": {
     "DOG": {
       "bridgeFee": 10000000,
