@@ -1,0 +1,65 @@
+{
+  "bridgeToken": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+  "pools": [
+    {
+      "nodeIndex": 0,
+      "pool": "0xD36ec33c8bed5a9F7B6630855f1533455b98a418",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0xEecB5Db986c20a8C88D8332E7e252A9671565751",
+      "poolModule": "Algebra.QuickSwap"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0xDaC8A8E6DBf8c690ec6815e0fF03491B2770255D",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0x7B925e617aefd7FB3a93Abe3a701135D7a1Ba710",
+      "poolModule": "Algebra.QuickSwap"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0x5645dCB64c059aa11212707fbf4E7F984440a8Cf",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0xe7E0eB9F6bCcCfe847fDf62a3628319a092F11a2",
+      "poolModule": "Algebra.QuickSwap"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0xbEAf7156bA07C3dF8FAc42E90188c5a752470DB7",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 0,
+      "pool": "0x85fCD7Dd0a1e1A9FCD5FD886ED522dE8221C3EE5",
+      "poolModule": ""
+    },
+    {
+      "nodeIndex": 1,
+      "pool": "0x31083a78E11B18e450fd139F9ABEa98CD53181B7",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 1,
+      "pool": "0xf369277650aD6654f25412ea8BFBD5942733BaBC",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 2,
+      "pool": "0x31083a78E11B18e450fd139F9ABEa98CD53181B7",
+      "poolModule": "UniswapV3"
+    },
+    {
+      "nodeIndex": 2,
+      "pool": "0xf369277650aD6654f25412ea8BFBD5942733BaBC",
+      "poolModule": "UniswapV3"
+    }
+  ]
+}
