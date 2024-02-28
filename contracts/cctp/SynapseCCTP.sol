@@ -6,6 +6,7 @@ import {
     CCTPIncorrectChainId,
     CCTPIncorrectDomain,
     CCTPIncorrectGasAmount,
+    CCTPIncorrectTokenAmount,
     CCTPMessageNotReceived,
     CCTPTokenNotFound,
     CCTPZeroAddress,
@@ -26,9 +27,9 @@ import {TypeCasts} from "./libs/TypeCasts.sol";
 import {IDefaultPool} from "../router/interfaces/IDefaultPool.sol";
 
 import {SafeERC20, IERC20} from "@openzeppelin/contracts-4.5.0/token/ERC20/utils/SafeERC20.sol";
-import {Pausable} from "@openzeppelin/contracts-4.5.0/security/Pausable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable-4.5.0/security/PausableUpgradeable.sol";
 
-contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCCTP {
+contract SynapseCCTP is SynapseCCTPFees, PausableUpgradeable, SynapseCCTPEvents, ISynapseCCTP {
     using EnumerableSet for EnumerableSet.AddressSet;
     using MinimalForwarderLib for address;
     using SafeERC20 for IERC20;
@@ -57,10 +58,14 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
     // (Circle token => liquidity pool with the token)
     mapping(address => address) public circleTokenPool;
 
-    constructor(ITokenMessenger tokenMessenger_, address owner_) {
+    constructor(ITokenMessenger tokenMessenger_) {
         tokenMessenger = tokenMessenger_;
         messageTransmitter = IMessageTransmitter(tokenMessenger_.localMessageTransmitter());
         localDomain = messageTransmitter.localDomain();
+    }
+
+    function initialize(address owner_) external initializer {
+        __Pausable_init();
         _transferOwnership(owner_);
     }
 
@@ -81,6 +86,7 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
         // Remote SynapseCCTP should be non-zero.
         if (remoteSynapseCCTP == address(0)) revert CCTPZeroAddress();
         remoteDomainConfig[remoteChainId] = DomainConfig(remoteDomain, remoteSynapseCCTP);
+        emit RemoteDomainConfigSet(remoteChainId, remoteDomain, remoteSynapseCCTP);
     }
 
     /// @notice Sets the liquidity pool for the given Circle token.
@@ -89,6 +95,7 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
         if (!_bridgeTokens.contains(circleToken)) revert CCTPTokenNotFound();
         // Pool address can be zero if no swaps are supported for the Circle token.
         circleTokenPool[circleToken] = pool;
+        emit CircleTokenPoolSet(circleToken, pool);
     }
 
     /// @notice Allows the contract owner to pause the sending of CCTP tokens.
@@ -111,6 +118,7 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
         if (accFees == 0) revert CCTPZeroAmount();
         accumulatedFees[address(0)][token] = 0;
         IERC20(token).safeTransfer(msg.sender, accFees);
+        emit FeesWithdrawn(msg.sender, token, accFees);
     }
 
     /// @notice Allows the Relayer's fee collector to withdraw accumulated relayer fees.
@@ -119,6 +127,7 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
         if (accFees == 0) revert CCTPZeroAmount();
         accumulatedFees[msg.sender][token] = 0;
         IERC20(token).safeTransfer(msg.sender, accFees);
+        emit FeesWithdrawn(msg.sender, token, accFees);
     }
 
     // ════════════════════════════════════════════════ CCTP LOGIC ═════════════════════════════════════════════════════
@@ -197,8 +206,10 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
         // This ensures that requestID is unique for each request, and that it is not possible to replay requests.
         bytes32 requestID = _requestID(localDomain, requestVersion, formattedRequest);
         // Kindly ask the Circle Bridge to mint the tokens for us.
-        _mintCircleToken(message, signature, requestID);
         address token = _getLocalToken(originDomain, originBurnToken);
+        uint256 balanceBefore = IERC20(token).balanceOf(address(this));
+        _mintCircleToken(message, signature, requestID);
+        if (IERC20(token).balanceOf(address(this)) != balanceBefore + amount) revert CCTPIncorrectTokenAmount();
         uint256 fee;
         // Apply the bridging fee. This will revert if amount <= fee.
         (amount, fee) = _applyRelayerFee(token, amount, requestVersion == RequestLib.REQUEST_SWAP);
@@ -252,12 +263,13 @@ contract SynapseCCTP is SynapseCCTPFees, Pausable, SynapseCCTPEvents, ISynapseCC
         bytes calldata signature,
         bytes32 requestID
     ) internal {
-        // Deploy a forwarder specific to this request. Will revert if the requestID has been used before.
+        // Deploy a forwarder specific to this request. Will return the address if already deployed.
         address forwarder = MinimalForwarderLib.deploy(requestID);
         // Form the payload for the Circle Bridge.
         bytes memory payload = abi.encodeWithSelector(IMessageTransmitter.receiveMessage.selector, message, signature);
-        // Use the deployed forwarder (who is the only one who can call the Circle Bridge for this message)
-        // This will revert if the provided message is not properly formatted, or if the signatures are invalid.
+        // Use the deployed forwarder (the only one who can call the Circle Bridge for a valid SynapseCCTP message).
+        // This will revert if the provided message is not properly formatted, if the signatures are invalid,
+        // or if this message has been already used before.
         bytes memory returnData = forwarder.forwardCall(address(messageTransmitter), payload);
         // messageTransmitter.receiveMessage is supposed to return true if the message was received.
         if (!abi.decode(returnData, (bool))) revert CCTPMessageNotReceived();

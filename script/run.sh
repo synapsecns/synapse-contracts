@@ -52,15 +52,6 @@ for arg in "$@"; do
     fi
 done
 
-# Fetch the RPC URL for the chain from .env
-source .env
-CHAIN_RPC_ENV=${CHAIN_NAME^^}_API
-CHAIN_RPC_URL=${!CHAIN_RPC_ENV}
-if [ -z "$CHAIN_RPC_URL" ]; then
-    echo -e "${RED}Error: $CHAIN_RPC_ENV env var not found${NC}"
-    exit 1
-fi
-
 # Fetch the chain-specific options from "./script/networks.json"
 # Check if json file exists
 NETWORKS_JSON="./script/networks.json"
@@ -113,12 +104,7 @@ fi
 
 # Print information about the signer address
 echo -e "${GREEN}Using $WALLET_ADDR [$WALLET_TYPE] as the signer address${NC}"
-# Get the signer balance in Ether
-BALANCE=$(cast balance --ether --rpc-url $CHAIN_RPC_URL $WALLET_ADDR)
-# Get that signer nonce
-NONCE=$(cast nonce --rpc-url $CHAIN_RPC_URL $WALLET_ADDR)
-echo "  Signer balance: $BALANCE"
-echo "  Signer nonce: $NONCE"
+./script/sh/wallet.sh $CHAIN_NAME $WALLET_ENV_NAME
 
 # Create directory for fresh deployments in case it doesn't exist
 mkdir -p ".deployments/$CHAIN_NAME"

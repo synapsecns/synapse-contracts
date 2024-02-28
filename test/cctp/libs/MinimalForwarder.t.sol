@@ -26,10 +26,10 @@ contract MinimalForwarderLibraryTest is Test {
         assertEq(forwarder.code, MinimalForwarderLib.FORWARDER_BYTECODE);
     }
 
-    function testDeployRevertsUsingSameSalt(bytes32 salt) public {
-        libHarness.deploy(salt);
-        vm.expectRevert(ForwarderDeploymentFailed.selector);
-        libHarness.deploy(salt);
+    function testDeployUsingSameSalt(bytes32 salt) public {
+        testDeploy(salt);
+        // Subsequent deploys with the same salt should just return the same address
+        testDeploy(salt);
     }
 
     function testForwarderBytecodeLength() public {

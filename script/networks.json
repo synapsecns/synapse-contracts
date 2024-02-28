@@ -2,6 +2,7 @@
   "forgeOptions": {
     "arbitrum": "--with-gas-price 100000000",
     "aurora": "--legacy --slow",
+    "base": "--with-gas-price 100000000",
     "boba": "--legacy --skip-simulation --slow",
     "canto": "--legacy --slow",
     "cronos": "--slow",

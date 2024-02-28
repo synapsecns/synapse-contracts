@@ -77,7 +77,8 @@ abstract contract BaseCCTPTest is MessageTransmitterEvents, TokenMessengerEvents
     }
 
     function deploySynapseCCTP(uint32 domain, uint256 chainGasAmount) public returns (SynapseCCTP synapseCCTP) {
-        synapseCCTP = new SynapseCCTP(cctpSetups[domain].tokenMessenger, address(this));
+        synapseCCTP = new SynapseCCTP(cctpSetups[domain].tokenMessenger);
+        synapseCCTP.initialize(address(this));
         chainGasAmounts[domain] = chainGasAmount;
         synapseCCTP.setChainGasAmount(chainGasAmount);
         // 1 bps relayer fee, minBaseFee = 1, minSwapFee = 2, maxFee = 100

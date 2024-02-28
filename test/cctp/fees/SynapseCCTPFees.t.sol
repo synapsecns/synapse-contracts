@@ -21,6 +21,10 @@ import {Test} from "forge-std/Test.sol";
 
 // solhint-disable-next-line no-empty-blocks
 contract SynapseCCTPFeesHarness is SynapseCCTPFees {
+    constructor(address owner) {
+        _transferOwnership(owner);
+    }
+
     receive() external payable {}
 
     /// @notice Exposes the internal `_applyRelayerFee` function for testing purposes
@@ -45,9 +49,8 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
     address public eurc;
 
     function setUp() public {
-        cctpFees = new SynapseCCTPFeesHarness();
         owner = makeAddr("Owner");
-        cctpFees.transferOwnership(owner);
+        cctpFees = new SynapseCCTPFeesHarness(owner);
         usdc = makeAddr("USDC");
         eurc = makeAddr("EURC");
     }
@@ -104,6 +107,15 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         addTokens();
         assertEq(cctpFees.symbolToToken("CCTP.USDC"), usdc);
         assertEq(cctpFees.symbolToToken("CCTP.EURC"), eurc);
+    }
+
+    function testAddTokenEmitsEvents() public {
+        vm.expectEmit(address(cctpFees));
+        emit TokenAdded("CCTP.USDC", usdc);
+        vm.expectEmit(address(cctpFees));
+        emit TokenFeeSet(usdc, 1, 2, 3, 4);
+        vm.prank(owner);
+        cctpFees.addToken("CCTP.USDC", usdc, 1, 2, 3, 4);
     }
 
     function testAddTokenRevertsWhenCallerNotOwner(address caller) public {
@@ -220,6 +232,14 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         cctpFees.removeToken(usdc);
     }
 
+    function testRemoveTokenEmitsTokenRemoved() public {
+        addTokens();
+        vm.expectEmit(address(cctpFees));
+        emit TokenRemoved("CCTP.USDC", usdc);
+        vm.prank(owner);
+        cctpFees.removeToken(usdc);
+    }
+
     function testRemoveTokenUpdatesBridgeTokensList() public {
         addTokensThenRemoveOne();
         BridgeToken[] memory tokens = cctpFees.getBridgeTokens();
@@ -273,6 +293,14 @@ contract SynapseCCTPFeesTest is SynapseCCTPFeesEvents, Test {
         assertEq(minBaseFee, 2 * 10**6);
         assertEq(minSwapFee, 3 * 10**6);
         assertEq(maxFee, 4 * 10**6);
+    }
+
+    function testSetTokenFeeEmitsTokenFeeSet() public {
+        addTokens();
+        vm.expectEmit(address(cctpFees));
+        emit TokenFeeSet(usdc, 1, 2, 3, 4);
+        vm.prank(owner);
+        cctpFees.setTokenFee(usdc, 1, 2, 3, 4);
     }
 
     function testSetTokenFeeRevertsWhenCallerNotOwner(address caller) public {

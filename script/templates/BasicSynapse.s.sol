@@ -304,6 +304,25 @@ contract BasicSynapseScript is BasicUtils {
         });
     }
 
+    /// @notice Saves the deployment JSON for a proxy contract on a given chain under the specified alias.
+    /// The constructor args are fetched from the implementation deployment JSON.
+    /// Note: writes to the FRESH deployment path, which is moved to the correct location after the contract is deployed.
+    /// Note: requires ffi to be turned on, and jq to be installed.
+    function saveProxyDeployment(
+        string memory contractName,
+        string memory implementationAlias,
+        address deployedAt
+    ) internal {
+        bytes memory constructorArgs = getConstructorArgs({chain: activeChain, contractName: implementationAlias});
+        string memory dataWithoutABI = serializeDeploymentData(deployedAt, constructorArgs);
+        saveDeploymentData({
+            chain: activeChain,
+            contractName: contractName,
+            contractAlias: contractName,
+            dataWithoutABI: dataWithoutABI
+        });
+    }
+
     /// @notice Saves the deploy config for a contract on the active chain
     function saveDeployConfig(string memory contractName, string memory data) internal {
         saveDeployConfig({chain: activeChain, contractName: contractName, data: data});

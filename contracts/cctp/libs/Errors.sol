@@ -12,6 +12,7 @@ error CCTPIncorrectConfig();
 error CCTPIncorrectDomain();
 error CCTPIncorrectGasAmount();
 error CCTPIncorrectProtocolFee();
+error CCTPIncorrectTokenAmount();
 error CCTPInsufficientAmount();
 error CCTPSymbolAlreadyAdded();
 error CCTPSymbolIncorrect();

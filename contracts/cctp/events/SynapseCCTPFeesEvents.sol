@@ -25,4 +25,22 @@ abstract contract SynapseCCTPFeesEvents {
     /// @notice Emitted when the protocol fee is updated
     /// @param newProtocolFee  The new protocol fee
     event ProtocolFeeUpdated(uint256 newProtocolFee);
+
+    /// @notice Emitted when a support for the Circle token is added
+    /// @param symbol           Symbol of the Circle token
+    /// @param token            Address of the Circle token
+    event TokenAdded(string symbol, address token);
+
+    /// @notice Emitted when a support for the Circle token is removed
+    /// @param symbol           Symbol of the Circle token
+    /// @param token            Address of the Circle token
+    event TokenRemoved(string symbol, address token);
+
+    /// @notice Emitted when the token fee is set for a token
+    /// @param token            Address of the Circle token
+    /// @param relayerFee       Fee % for bridging a token to this chain, multiplied by `FEE_DENOMINATOR`
+    /// @param minBaseFee       Minimum fee for bridging a token to this chain using a base request
+    /// @param minSwapFee       Minimum fee for bridging a token to this chain using a swap request
+    /// @param maxFee           Maximum fee for bridging a token to this chain
+    event TokenFeeSet(address token, uint256 relayerFee, uint256 minBaseFee, uint256 minSwapFee, uint256 maxFee);
 }

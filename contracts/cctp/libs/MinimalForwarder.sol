@@ -149,10 +149,13 @@ library MinimalForwarderLib {
     bytes32 internal constant FORWARDER_INIT_CODE_HASH = keccak256(FORWARDER_INIT_CODE);
 
     /// @notice Deploys a minimal forwarder contract using `CREATE2` with a given salt.
-    /// @dev Will revert if the salt is already used.
+    /// @dev No-op if the contract is already deployed.
     /// @param salt         The salt to use for the deployment
     /// @return forwarder   The address of the deployed minimal forwarder
     function deploy(bytes32 salt) internal returns (address forwarder) {
+        // Check if the Forwarder has already been deployed.
+        forwarder = predictAddress(address(this), salt);
+        if (forwarder.code.length > 0) return forwarder;
         // `bytes arr` is stored in memory in the following way
         // 1. First, uint256 arr.length is stored. That requires 32 bytes (0x20).
         // 2. Then, the array data is stored.
@@ -163,7 +166,7 @@ library MinimalForwarderLib {
             // We add 0x20 to get the location where the init code starts.
             forwarder := create2(0, add(initCode, 0x20), mload(initCode), salt)
         }
-        // Deploy fails if the given salt is already used.
+        // Check if the deployment was successful.
         if (forwarder == address(0)) {
             revert ForwarderDeploymentFailed();
         }

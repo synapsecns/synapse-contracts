@@ -5,6 +5,7 @@ pragma solidity 0.8.17;
 import {
     CCTPIncorrectChainId,
     CCTPIncorrectDomain,
+    CCTPIncorrectTokenAmount,
     CCTPMessageNotReceived,
     CCTPTokenNotFound,
     CCTPZeroAddress,
@@ -28,9 +29,24 @@ contract SynapseCCTPTest is BaseCCTPTest {
         bytes message;
     }
 
-    function testConstructorSetsOwner() public {
-        SynapseCCTP cctp = new SynapseCCTP(cctpSetups[DOMAIN_ETH].tokenMessenger, owner);
-        assertEq(address(cctp.owner()), owner);
+    function testConstructorSetsCCTPData() public {
+        SynapseCCTP cctp = new SynapseCCTP(cctpSetups[DOMAIN_ETH].tokenMessenger);
+        assertEq(address(cctp.tokenMessenger()), address(cctpSetups[DOMAIN_ETH].tokenMessenger));
+        assertEq(address(cctp.messageTransmitter()), address(cctpSetups[DOMAIN_ETH].messageTransmitter));
+        assertEq(cctp.localDomain(), DOMAIN_ETH);
+    }
+
+    function testInitializerSetsOwner() public {
+        SynapseCCTP cctp = new SynapseCCTP(cctpSetups[DOMAIN_ETH].tokenMessenger);
+        cctp.initialize(owner);
+        assertEq(cctp.owner(), owner);
+    }
+
+    function testInitializerRevertsOnSecondCall() public {
+        SynapseCCTP cctp = new SynapseCCTP(cctpSetups[DOMAIN_ETH].tokenMessenger);
+        cctp.initialize(owner);
+        vm.expectRevert("Initializable: contract is already initialized");
+        cctp.initialize(address(1234));
     }
 
     function testSendCircleTokenBaseRequest() public {
@@ -236,6 +252,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: expectedAmountOut,
             swapParams: ""
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, baseFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), expectedAmountOut);
     }
 
@@ -256,6 +273,47 @@ contract SynapseCCTPTest is BaseCCTPTest {
             swapParams: ""
         });
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), expectedAmountOut);
+    }
+
+    function testReceiveCircleTokenBaseRequestSucceedsWhenRequestIdAlreadyUsed() public {
+        uint256 amount = 10**8;
+        uint256 baseFeeAmount = 10**6;
+        uint256 expectedAmountOut = amount - baseFeeAmount;
+        bytes memory frontrunMessage = getExpectedMessage({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            originBurnToken: address(cctpSetups[DOMAIN_ETH].mintBurnToken),
+            amount: amount,
+            destinationCaller: 0
+        });
+        bytes memory request = getExpectedRequest({
+            originDomain: DOMAIN_ETH,
+            amount: amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+        // Frontrun the actual message with identical requestId
+        deal(relayer, chainGasAmounts[DOMAIN_AVAX]);
+        vm.prank(relayer);
+        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken{value: chainGasAmounts[DOMAIN_AVAX]}({
+            message: frontrunMessage,
+            signature: "",
+            requestVersion: RequestLib.REQUEST_BASE,
+            formattedRequest: request
+        });
+        // SynapseCCTP message should still be fulfilled
+        checkRequestFulfilled({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            amountIn: amount,
+            expectedFeeAmount: baseFeeAmount,
+            expectedTokenOut: address(cctpSetups[DOMAIN_AVAX].mintBurnToken),
+            expectedAmountOut: expectedAmountOut,
+            swapParams: ""
+        });
+        // Everything is 2x as expected because of the frontrun
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, 2 * baseFeeAmount);
+        assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), 2 * expectedAmountOut);
     }
 
     function testReceiveCircleTokenBaseRequestRevertTransmitterReturnsFalse() public {
@@ -313,8 +371,13 @@ contract SynapseCCTPTest is BaseCCTPTest {
             for (uint8 j = 0; j < 8; ++j) {
                 // Change j-th bit in request[byteIndex], leaving others unchanged
                 malformedRequest[byteIndex] = expected.request[byteIndex] ^ bytes1(uint8(1) << j);
-                // destinationCaller check in MessageTransmitter should fail
-                vm.expectRevert("Invalid caller for message");
+                if (i == 0 || i == 2) {
+                    // originDomain, originBurnToken -> localToken should fail
+                    vm.expectRevert(CCTPTokenNotFound.selector);
+                } else {
+                    // destinationCaller check in MessageTransmitter should fail
+                    vm.expectRevert("Invalid caller for message");
+                }
                 synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
                     message: expected.message,
                     signature: "",
@@ -397,6 +460,37 @@ contract SynapseCCTPTest is BaseCCTPTest {
         });
     }
 
+    function testReceiveCircleTokenBaseRequestRevertIncorrectTokenAmount() public {
+        disableGasAirdrops();
+        // Mint some tokens for the destination SynapseCCTP to custody
+        uint256 fullAmount = 10**12;
+        cctpSetups[DOMAIN_AVAX].mintBurnToken.mintPublic(address(synapseCCTPs[DOMAIN_AVAX]), fullAmount);
+        // Construct a CCTP message with lower amount to be minted
+        uint256 amount = 10**8;
+        bytes memory message = getExpectedMessage({
+            originDomain: DOMAIN_ETH,
+            destinationDomain: DOMAIN_AVAX,
+            originBurnToken: address(cctpSetups[DOMAIN_ETH].mintBurnToken),
+            amount: amount,
+            destinationCaller: 0
+        });
+        // Construct a request with the higher amount
+        bytes memory request = getExpectedRequest({
+            originDomain: DOMAIN_ETH,
+            amount: fullAmount + amount,
+            requestVersion: RequestLib.REQUEST_BASE,
+            swapParams: ""
+        });
+        vm.prank(relayer);
+        vm.expectRevert(CCTPIncorrectTokenAmount.selector);
+        synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
+            message: message,
+            signature: "",
+            requestVersion: RequestLib.REQUEST_BASE,
+            formattedRequest: request
+        });
+    }
+
     // ═════════════════════════════════════ TESTS: RECEIVE WITH SWAP REQUEST ══════════════════════════════════════════
 
     function testReceiveCircleTokenSwapRequest() public {
@@ -419,6 +513,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: expectedAmountOut,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(poolSetups[DOMAIN_AVAX].token.balanceOf(recipient), expectedAmountOut);
     }
 
@@ -445,6 +540,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: expectedAmountOut,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(poolSetups[DOMAIN_AVAX].token.balanceOf(recipient), expectedAmountOut);
     }
 
@@ -487,8 +583,13 @@ contract SynapseCCTPTest is BaseCCTPTest {
                     baseRequest: malformedRequest,
                     swapParams: swapParams
                 });
-                // destinationCaller check in MessageTransmitter should fail
-                vm.expectRevert("Invalid caller for message");
+                if (i == 0 || i == 2) {
+                    // originDomain, originBurnToken -> localToken should fail
+                    vm.expectRevert(CCTPTokenNotFound.selector);
+                } else {
+                    // destinationCaller check in MessageTransmitter should fail
+                    vm.expectRevert("Invalid caller for message");
+                }
                 synapseCCTPs[DOMAIN_AVAX].receiveCircleToken({
                     message: expected.message,
                     signature: "",
@@ -610,6 +711,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -633,6 +735,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -656,6 +759,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -679,6 +783,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -702,6 +807,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -725,6 +831,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -747,6 +854,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -770,6 +878,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             expectedAmountOut: amount - swapFeeAmount,
             swapParams: swapParams
         });
+        checkAccumulatedRelayerFee(DOMAIN_AVAX, swapFeeAmount);
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(recipient), amount - swapFeeAmount);
     }
 
@@ -837,6 +946,14 @@ contract SynapseCCTPTest is BaseCCTPTest {
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(owner), 2 * 10**6);
     }
 
+    function testWithdrawProtocolFeesEmitsEvent() public {
+        accumulateFees();
+        vm.expectEmit(address(synapseCCTPs[DOMAIN_AVAX]));
+        emit FeesWithdrawn(owner, address(cctpSetups[DOMAIN_AVAX].mintBurnToken), 2 * 10**6);
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_AVAX].withdrawProtocolFees(address(cctpSetups[DOMAIN_AVAX].mintBurnToken));
+    }
+
     function testWithdrawProtocolFeesRevertsWhenCallerNotOwner(address caller) public {
         vm.assume(caller != owner);
         vm.expectRevert("Ownable: caller is not the owner");
@@ -865,6 +982,14 @@ contract SynapseCCTPTest is BaseCCTPTest {
         assertEq(cctpSetups[DOMAIN_AVAX].mintBurnToken.balanceOf(collector), 1 * 10**6);
     }
 
+    function testWithdrawRelayerFeesEmitsEvent() public {
+        accumulateFees();
+        vm.expectEmit(address(synapseCCTPs[DOMAIN_AVAX]));
+        emit FeesWithdrawn(collector, address(cctpSetups[DOMAIN_AVAX].mintBurnToken), 1 * 10**6);
+        vm.prank(collector);
+        synapseCCTPs[DOMAIN_AVAX].withdrawRelayerFees(address(cctpSetups[DOMAIN_AVAX].mintBurnToken));
+    }
+
     function testWithdrawRelayerFeesRevertsWhenZeroAmount() public {
         vm.expectRevert(CCTPZeroAmount.selector);
         vm.prank(collector);
@@ -884,6 +1009,18 @@ contract SynapseCCTPTest is BaseCCTPTest {
         (uint32 domain, address synapseCCTP) = synapseCCTPs[DOMAIN_ETH].remoteDomainConfig(10);
         assertEq(domain, 2);
         assertEq(synapseCCTP, address(42));
+    }
+
+    function testSetRemoteDomainConfigEmitsEvent() public {
+        vm.chainId(CHAINID_ETH);
+        vm.expectEmit(address(synapseCCTPs[DOMAIN_ETH]));
+        emit RemoteDomainConfigSet(10, 2, address(42));
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setRemoteDomainConfig({
+            remoteChainId: 10,
+            remoteDomain: 2,
+            remoteSynapseCCTP: address(42)
+        });
     }
 
     function testSetRemoteDomainConfigRevertsWhenCallerNotOwner(address caller) public {
@@ -971,6 +1108,14 @@ contract SynapseCCTPTest is BaseCCTPTest {
         vm.prank(owner);
         synapseCCTPs[DOMAIN_ETH].setCircleTokenPool(token, address(42));
         assertEq(synapseCCTPs[DOMAIN_ETH].circleTokenPool(token), address(42));
+    }
+
+    function testSetCircleTokenPoolEmitsEvent() public {
+        address token = address(cctpSetups[DOMAIN_ETH].mintBurnToken);
+        vm.expectEmit(address(synapseCCTPs[DOMAIN_ETH]));
+        emit CircleTokenPoolSet(token, address(42));
+        vm.prank(owner);
+        synapseCCTPs[DOMAIN_ETH].setCircleTokenPool(token, address(42));
     }
 
     function testSetCircleTokenPoolRevertsWhenCallerNotOwner(address caller) public {
@@ -1096,7 +1241,6 @@ contract SynapseCCTPTest is BaseCCTPTest {
             requestVersion: requestVersion,
             swapParams: swapParams
         });
-        assertFalse(synapseCCTPs[destinationDomain].isRequestFulfilled(expected.requestID));
         deal(relayer, chainGasAmounts[destinationDomain]);
         vm.expectEmit();
         emit MintAndWithdraw({
@@ -1114,6 +1258,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             amount: expectedAmountOut,
             requestID: expected.requestID
         });
+        uint256 balanceBefore = recipient.balance;
         vm.prank(relayer);
         synapseCCTPs[destinationDomain].receiveCircleToken{value: chainGasAmounts[destinationDomain]}({
             message: expected.message,
@@ -1122,8 +1267,7 @@ contract SynapseCCTPTest is BaseCCTPTest {
             formattedRequest: expected.request
         });
         assertTrue(synapseCCTPs[destinationDomain].isRequestFulfilled(expected.requestID));
-        assertEq(recipient.balance, chainGasAmounts[destinationDomain]);
-        checkAccumulatedRelayerFee(destinationDomain, expectedFeeAmount);
+        assertEq(recipient.balance - balanceBefore, chainGasAmounts[destinationDomain]);
     }
 
     function checkAccumulatedRelayerFee(uint32 domain, uint256 expectedFeeAmount) public {

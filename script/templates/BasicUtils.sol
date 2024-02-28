@@ -29,10 +29,19 @@ abstract contract BasicUtils is CommonBase {
     {
         data = "deployment";
         data.serialize("address", deployedAt);
-        if (constructorArgs.length == 0) {
-            return data.serialize("constructorArgs", string("0x"));
+        return serializeBytes(data, "constructorArgs", constructorArgs);
+    }
+
+    /// @notice Serializes a bytes value to a JSON string. Uses "0x" as the default value.
+    function serializeBytes(
+        string memory json,
+        string memory key,
+        bytes memory value
+    ) internal returns (string memory) {
+        if (value.length == 0) {
+            return json.serialize(key, string("0x"));
         } else {
-            return data.serialize("constructorArgs", constructorArgs);
+            return json.serialize(key, value);
         }
     }
 
@@ -139,6 +148,15 @@ abstract contract BasicUtils is CommonBase {
     {
         deployment = tryGetDeploymentAddress(chain, contractName);
         require(deployment != address(0), contractName.concat(" not deployed on ", chain));
+    }
+
+    function getConstructorArgs(string memory chain, string memory contractName)
+        internal
+        view
+        returns (bytes memory constructorArgs)
+    {
+        string memory json = vm.readFile(deploymentPath(chain, contractName));
+        return json.readBytes(".constructorArgs");
     }
 
     /// @notice Returns the deployment address for a contract on a given chain, if it exists.

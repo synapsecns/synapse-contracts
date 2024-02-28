@@ -2,11 +2,11 @@
   "tokenMessenger": "0x6B25532e1060CE10cc3B0A99e5683b91BFDe6982",
   "tokens": {
     "USDC": {
-      "pool": "0xA196a03653f6cc5cA0282A8BD7Ec60e93f620afc",
+      "pool": "0x9A2Dea7B81cfe3e0011D44D41c5c5142b8d9abdF",
       "token": "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
       "relayerFee": 4000000,
-      "minBaseFee": 1000000,
-      "minSwapFee": 1500000,
+      "minBaseFee": 20000000,
+      "minSwapFee": 40000000,
       "maxFee": 400000000
     }
   }
