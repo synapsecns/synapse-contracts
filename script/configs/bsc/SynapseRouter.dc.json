@@ -12,9 +12,6 @@
     "H2O",
     "BUSD"
   ],
-  "pools": [
-    "0x28ec0B36F0819ecB5005cAB836F4ED5a2eCa4D13"
-  ],
   "tokens": {
     "BUSD": {
       "bridgeFee": 10000000,

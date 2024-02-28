@@ -6,7 +6,6 @@ import "forge-std/Script.sol";
 import {DeployScript} from "../utils/DeployScript.sol";
 
 import {LocalBridgeConfig, SynapseRouter} from "../../contracts/bridge/router/SynapseRouter.sol";
-import {SwapQuoter, Pool} from "../../contracts/bridge/router/SwapQuoter.sol";
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
@@ -34,7 +33,6 @@ contract SetupRouterScript is DeployScript {
 
     // Deployed contracts
     SynapseRouter internal router;
-    SwapQuoter internal quoter;
 
     // TODO: Use new template scripts
     constructor() public {
@@ -49,14 +47,10 @@ contract SetupRouterScript is DeployScript {
         _checkConfig(config);
         vm.startBroadcast();
         broadcasterAddress = msg.sender;
-        // startBroadcast(_isBroadcasted);
         router = SynapseRouter(payable(loadDeployment(ROUTER)));
-        quoter = SwapQuoter(loadDeployment(QUOTER));
         _setupRouter(config);
         _removeRouterTokens(config);
-        _setupQuoter(config);
         vm.stopBroadcast();
-        // stopBroadcast();
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\
@@ -91,13 +85,6 @@ contract SetupRouterScript is DeployScript {
             console.log("Checking token: %s", address(token));
             // We're checking decimals, this should check if the provided address is ERC20 contract
             require(token.decimals() == tokenConfig.decimals, "Incorrect config: token");
-        }
-        console.log("===============  POOLS ===============");
-        // Check pools
-        address[] memory pools = config.readAddressArray(".pools");
-        for (uint256 i = 0; i < pools.length; ++i) {
-            console.log("Checking pool: %s", pools[i]);
-            require(pools[i] == address(0) || pools[i].isContract(), "Incorrect config: pool");
         }
     }
 
@@ -161,15 +148,8 @@ contract SetupRouterScript is DeployScript {
             } else {
                 console.log("No tokens to update");
             }
-            if (router.swapQuoter() != quoter) {
-                router.setSwapQuoter(quoter);
-                console.log("%s set to %s", QUOTER, address(quoter));
-            } else {
-                console.log("%s already set up in %s", QUOTER, ROUTER);
-            }
         } else {
             _printSkipped("add tokens", ROUTER, owner);
-            _printSkipped("set SwapQuoter", ROUTER, owner);
         }
     }
 
@@ -244,74 +224,6 @@ contract SetupRouterScript is DeployScript {
             bridgeFee != tokenConfig.bridgeFee ||
             minFee != uint256(tokenConfig.minFee) ||
             maxFee != uint256(tokenConfig.maxFee);
-    }
-
-    /*╔══════════════════════════════════════════════════════════════════════╗*\
-    ▏*║                           INTERNAL: QUOTER                           ║*▕
-    \*╚══════════════════════════════════════════════════════════════════════╝*/
-
-    /// @dev Configures SwapQuoter by adding all chain's liquidity pools.
-    function _setupQuoter(string memory config) internal {
-        address[] memory pools = config.readAddressArray(".pools");
-        if (pools.length == 1 && pools[0] == address(0)) {
-            pools = new address[](0);
-        }
-        Pool[] memory curPools = quoter.allPools();
-        _addNewPools(curPools, pools);
-        _removeOldPools(curPools, pools);
-    }
-
-    // Add pools from `pools` that are not in `curPools`
-    function _addNewPools(Pool[] memory curPools, address[] memory pools) internal {
-        bool[] memory poolExists = new bool[](pools.length);
-        uint256 newPoolsAmount = 0;
-        for (uint256 i = 0; i < pools.length; ++i) {
-            for (uint256 j = 0; j < curPools.length; ++j) {
-                if (pools[i] == curPools[j].pool) {
-                    poolExists[i] = true;
-                    break;
-                }
-            }
-            if (!poolExists[i]) ++newPoolsAmount;
-        }
-        if (newPoolsAmount != 0) {
-            address[] memory newPools = new address[](newPoolsAmount);
-            // Will now track the amount of found new pools
-            newPoolsAmount = 0;
-            for (uint256 i = 0; i < pools.length; ++i) {
-                if (!poolExists[i]) {
-                    newPools[newPoolsAmount++] = pools[i];
-                }
-            }
-            quoter.addPools(newPools);
-            console.log("%s pools added", newPoolsAmount);
-        } else {
-            console.log("No pools to add");
-        }
-    }
-
-    // Remove pools from `curPools` that are not in `pools`
-    function _removeOldPools(Pool[] memory curPools, address[] memory pools) internal {
-        bool[] memory poolRemains = new bool[](curPools.length);
-        uint256 oldPoolsAmount = 0;
-        for (uint256 i = 0; i < curPools.length; ++i) {
-            for (uint256 j = 0; j < pools.length; ++j) {
-                if (curPools[i].pool == pools[j]) {
-                    poolRemains[i] = true;
-                    break;
-                }
-            }
-            if (!poolRemains[i]) {
-                console.log("   Will be removing: %s", curPools[i].pool);
-                quoter.removePool(curPools[i].pool);
-                ++oldPoolsAmount;
-            }
-        }
-        if (oldPoolsAmount != 0) {
-            console.log("%s pools removed", oldPoolsAmount);
-        } else {
-            console.log("No pools to remove");
-        }
     }
 
     /*╔══════════════════════════════════════════════════════════════════════╗*\

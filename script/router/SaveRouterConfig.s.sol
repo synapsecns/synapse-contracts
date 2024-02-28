@@ -42,10 +42,7 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
         uint256 chainId = _chainId();
         string memory ethRPC = vm.envString("MAINNET_API");
         vm.createSelectFork(ethRPC);
-        (LocalBridgeConfig.BridgeTokenConfig[] memory tokens, address[] memory pools) = getChainConfig(chainId);
-        // Filter out MockSwap and duplicated pools
-        pools = _filterPools(pools);
-
+        (LocalBridgeConfig.BridgeTokenConfig[] memory tokens, ) = getChainConfig(chainId);
         _loadIgnoredIds();
 
         for (uint256 i = 0; i < tokens.length; ++i) {
@@ -69,36 +66,9 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
             tokensConfig = string("tokens").serialize(tokens[i].id, token);
         }
         fullConfig.serialize("ids", ids);
-        fullConfig.serialize("tokens", tokensConfig);
-        fullConfig = fullConfig.serialize("pools", pools);
+        fullConfig = fullConfig.serialize("tokens", tokensConfig);
 
         saveDeployConfig(ROUTER, fullConfig);
-    }
-
-    function _filterPools(address[] memory pools) internal returns (address[] memory filteredPools) {
-        address mockSwap = tryLoadDeployment("MockSwap");
-        bool[] memory isRealAndUnique = new bool[](pools.length);
-        uint256 count = 0;
-        for (uint256 i = 0; i < pools.length; ++i) {
-            // Skip MockSwap
-            if (pools[i] == mockSwap) continue;
-            // Skip pools that are already in the list
-            bool isUnique = true;
-            for (uint256 j = 0; j < i; ++j) {
-                if (pools[i] == pools[j]) {
-                    isUnique = false;
-                    break;
-                }
-            }
-            if (!isUnique) continue;
-            isRealAndUnique[i] = true;
-            ++count;
-        }
-        filteredPools = new address[](count);
-        count = 0;
-        for (uint256 i = 0; i < pools.length; ++i) {
-            if (isRealAndUnique[i]) filteredPools[count++] = pools[i];
-        }
     }
 
     function _loadIgnoredIds() internal {

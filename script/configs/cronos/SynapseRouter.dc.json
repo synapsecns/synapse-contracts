@@ -5,9 +5,6 @@
     "SYN",
     "gOHM"
   ],
-  "pools": [
-    "0xCb6674548586F20ca39C97A52A0ded86f48814De"
-  ],
   "tokens": {
     "SYN": {
       "bridgeFee": 5000000,

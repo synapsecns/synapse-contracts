@@ -5,9 +5,6 @@
     "SYN",
     "UST"
   ],
-  "pools": [
-    "0xCCd87854f58773fe75CdDa542457aC48E46c2D65"
-  ],
   "tokens": {
     "SYN": {
       "bridgeFee": 5000000,

@@ -8,10 +8,6 @@
     "gOHM",
     "UST"
   ],
-  "pools": [
-    "0x555982d2E211745b96736665e19D9308B615F78e",
-    "0x09fEC30669d63A13c666d2129230dD5588E2e240"
-  ],
   "tokens": {
     "JUMP": {
       "bridgeFee": 10000000,

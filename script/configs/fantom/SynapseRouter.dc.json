@@ -12,7 +12,6 @@
     "FTM",
     "UNIDX"
   ],
-  "pools": [],
   "tokens": {
     "FTM": {
       "bridgeFee": 10000000,
