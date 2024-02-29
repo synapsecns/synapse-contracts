@@ -81,8 +81,8 @@ contract SynapseCCTP is SynapseCCTPFees, PausableUpgradeable, SynapseCCTPEvents,
         if (remoteChainId == 0 || remoteChainId == block.chainid) revert CCTPIncorrectChainId();
         // Remote domain should differ from the local domain.
         if (remoteDomain == localDomain) revert CCTPIncorrectDomain();
-        // Remote domain should be 0 IF AND ONLY IF remote chain id is 11155111 (Ethereum Sepolia).
-        if ((remoteDomain == 0) != (remoteChainId == 11155111)) revert CCTPIncorrectDomain();
+        // Remote domain should be 0 IF AND ONLY IF remote chain id is 1 (Ethereum Mainnet).
+        if ((remoteDomain == 0) != (remoteChainId == 1)) revert CCTPIncorrectDomain();
         // Remote SynapseCCTP should be non-zero.
         if (remoteSynapseCCTP == address(0)) revert CCTPZeroAddress();
         remoteDomainConfig[remoteChainId] = DomainConfig(remoteDomain, remoteSynapseCCTP);
