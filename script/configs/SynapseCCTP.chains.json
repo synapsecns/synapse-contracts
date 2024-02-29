@@ -19,14 +19,12 @@
   },
   "testnet": {
     "domains": {
-      "arbitrum_goerli": 3,
-      "fuji": 1,
-      "goerli": 0
+      "eth_sepolia": 0,
+      "op_sepolia": 2
     },
     "gasAirdrop": {
-      "arbitrum_goerli": 600000000000000,
-      "fuji": 25000000000000000,
-      "goerli": 0
+      "eth_sepolia": 0,
+      "op_sepolia": 0
     }
   }
 }
