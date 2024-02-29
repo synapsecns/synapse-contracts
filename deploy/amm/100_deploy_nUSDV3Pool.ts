@@ -102,6 +102,14 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       INITIAL_A = 800;
     }
 
+
+    if ((await getChainId()) === CHAIN_ID.BLAST) {
+      TOKEN_ADDRESSES = [(await get("nUSD")).address, (await get("USDB")).address];
+      TOKEN_DECIMALS = [18, 18];
+      INITIAL_A = 500;
+    }
+
+
     // if (await getChainId() === CHAIN_ID.OPTIMISM) {
     //   TOKEN_ADDRESSES = [
     //     (await get("nUSD")).address,
