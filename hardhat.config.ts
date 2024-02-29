@@ -130,6 +130,9 @@ let config: HardhatUserConfig = {
     zkevm: {
       url: "https://zkevm-rpc.com",
     },
+    blast: {
+      url: process.env.BLAST_API
+    }
   },
   paths: {
     artifacts: "./build/artifacts",
@@ -252,6 +255,7 @@ if (process.env.PRIVATE_KEYS) {
     "dogechain",
     "base",
     "zkevm",
+    "blast",
   ];
   Object.keys(config.networks).forEach((network) => {
     if (PROD_NETWORKS.includes(network)) {
