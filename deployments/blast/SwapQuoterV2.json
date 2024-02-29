@@ -1,0 +1,703 @@
+{
+  "address": "0xbAD189BDF6a05FDaFA33CA917d094A64954093c4",
+  "constructorArgs": "0x0000000000000000000000007e7a0e201fd38d3adaa9523da6c109a07118c96a0000000000000000000000000000000000cc5af216a3e1614091a20e11bbfd3200000000000000000000000043000000000000000000000000000000000000040000000000000000000000000fea3e5840334fc758a3decf14546bfdfbef5cd3",
+  "abi": [
+    {
+      "type": "constructor",
+      "inputs": [
+        {
+          "name": "synapseRouter_",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "defaultPoolCalc_",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "weth_",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "owner_",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "addPools",
+      "inputs": [
+        {
+          "name": "pools",
+          "type": "tuple[]",
+          "internalType": "struct SwapQuoterV2.BridgePool[]",
+          "components": [
+            {
+              "name": "bridgeToken",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "poolType",
+              "type": "uint8",
+              "internalType": "enum SwapQuoterV2.PoolType"
+            },
+            {
+              "name": "pool",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "allPools",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "pools",
+          "type": "tuple[]",
+          "internalType": "struct Pool[]",
+          "components": [
+            {
+              "name": "pool",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "lpToken",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "tokens",
+              "type": "tuple[]",
+              "internalType": "struct PoolToken[]",
+              "components": [
+                {
+                  "name": "isWeth",
+                  "type": "bool",
+                  "internalType": "bool"
+                },
+                {
+                  "name": "token",
+                  "type": "address",
+                  "internalType": "address"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "areConnectedTokens",
+      "inputs": [
+        {
+          "name": "tokenIn",
+          "type": "tuple",
+          "internalType": "struct LimitedToken",
+          "components": [
+            {
+              "name": "actionMask",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "token",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool",
+          "internalType": "bool"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "calculateAddLiquidity",
+      "inputs": [
+        {
+          "name": "pool",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "amounts",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "amountOut",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "calculateRemoveLiquidity",
+      "inputs": [
+        {
+          "name": "pool",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "amount",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "amountsOut",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "calculateSwap",
+      "inputs": [
+        {
+          "name": "pool",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "tokenIndexFrom",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "tokenIndexTo",
+          "type": "uint8",
+          "internalType": "uint8"
+        },
+        {
+          "name": "dx",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "amountOut",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "calculateWithdrawOneToken",
+      "inputs": [
+        {
+          "name": "pool",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "tokenAmount",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "tokenIndex",
+          "type": "uint8",
+          "internalType": "uint8"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "amountOut",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "defaultPoolCalc",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "findConnectedTokens",
+      "inputs": [
+        {
+          "name": "bridgeTokensIn",
+          "type": "tuple[]",
+          "internalType": "struct LimitedToken[]",
+          "components": [
+            {
+              "name": "actionMask",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "token",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "amountFound",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "isConnected",
+          "type": "bool[]",
+          "internalType": "bool[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getAmountOut",
+      "inputs": [
+        {
+          "name": "tokenIn",
+          "type": "tuple",
+          "internalType": "struct LimitedToken",
+          "components": [
+            {
+              "name": "actionMask",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "token",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        },
+        {
+          "name": "tokenOut",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "amountIn",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "query",
+          "type": "tuple",
+          "internalType": "struct SwapQuery",
+          "components": [
+            {
+              "name": "routerAdapter",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "tokenOut",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "minAmountOut",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "deadline",
+              "type": "uint256",
+              "internalType": "uint256"
+            },
+            {
+              "name": "rawParams",
+              "type": "bytes",
+              "internalType": "bytes"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getBridgePools",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "bridgePools",
+          "type": "tuple[]",
+          "internalType": "struct SwapQuoterV2.BridgePool[]",
+          "components": [
+            {
+              "name": "bridgeToken",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "poolType",
+              "type": "uint8",
+              "internalType": "enum SwapQuoterV2.PoolType"
+            },
+            {
+              "name": "pool",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getOriginDefaultPools",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "originDefaultPools",
+          "type": "address[]",
+          "internalType": "address[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "getOriginLinkedPools",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "originLinkedPools",
+          "type": "address[]",
+          "internalType": "address[]"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "owner",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "poolInfo",
+      "inputs": [
+        {
+          "name": "pool",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "numTokens",
+          "type": "uint256",
+          "internalType": "uint256"
+        },
+        {
+          "name": "lpToken",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "poolTokens",
+      "inputs": [
+        {
+          "name": "pool",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "tokens",
+          "type": "tuple[]",
+          "internalType": "struct PoolToken[]",
+          "components": [
+            {
+              "name": "isWeth",
+              "type": "bool",
+              "internalType": "bool"
+            },
+            {
+              "name": "token",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "poolsAmount",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "amtPools",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "removePools",
+      "inputs": [
+        {
+          "name": "pools",
+          "type": "tuple[]",
+          "internalType": "struct SwapQuoterV2.BridgePool[]",
+          "components": [
+            {
+              "name": "bridgeToken",
+              "type": "address",
+              "internalType": "address"
+            },
+            {
+              "name": "poolType",
+              "type": "uint8",
+              "internalType": "enum SwapQuoterV2.PoolType"
+            },
+            {
+              "name": "pool",
+              "type": "address",
+              "internalType": "address"
+            }
+          ]
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "renounceOwnership",
+      "inputs": [],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "setSynapseRouter",
+      "inputs": [
+        {
+          "name": "synapseRouter_",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "synapseRouter",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "function",
+      "name": "transferOwnership",
+      "inputs": [
+        {
+          "name": "newOwner",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "outputs": [],
+      "stateMutability": "nonpayable"
+    },
+    {
+      "type": "function",
+      "name": "weth",
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "",
+          "type": "address",
+          "internalType": "address"
+        }
+      ],
+      "stateMutability": "view"
+    },
+    {
+      "type": "event",
+      "name": "OwnershipTransferred",
+      "inputs": [
+        {
+          "name": "previousOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        },
+        {
+          "name": "newOwner",
+          "type": "address",
+          "indexed": true,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PoolAdded",
+      "inputs": [
+        {
+          "name": "bridgeToken",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "poolType",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "enum SwapQuoterV2.PoolType"
+        },
+        {
+          "name": "pool",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "PoolRemoved",
+      "inputs": [
+        {
+          "name": "bridgeToken",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        },
+        {
+          "name": "poolType",
+          "type": "uint8",
+          "indexed": false,
+          "internalType": "enum SwapQuoterV2.PoolType"
+        },
+        {
+          "name": "pool",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "event",
+      "name": "SynapseRouterUpdated",
+      "inputs": [
+        {
+          "name": "synapseRouter",
+          "type": "address",
+          "indexed": false,
+          "internalType": "address"
+        }
+      ],
+      "anonymous": false
+    },
+    {
+      "type": "error",
+      "name": "SwapQuoterV2__DuplicatedPool",
+      "inputs": [
+        {
+          "name": "pool",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    },
+    {
+      "type": "error",
+      "name": "SwapQuoterV2__UnknownPool",
+      "inputs": [
+        {
+          "name": "pool",
+          "type": "address",
+          "internalType": "address"
+        }
+      ]
+    }
+  ]
+}
