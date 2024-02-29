@@ -54,7 +54,7 @@ contract DeploySynapseCCTPImplementation is BasicSynapseScript {
         proxyAdmin = getDeploymentAddress(proxyAdminName);
         printLog("Using [proxyAdmin = %s]", proxyAdmin);
         // Load owner address
-        owner = vm.envAddress("CCTP_TESTNET_ADDR");
+        owner = vm.envAddress("OWNER_ADDR");
         require(owner != address(0), "Owner not set");
         printLog("Using [owner = %s]", owner);
     }

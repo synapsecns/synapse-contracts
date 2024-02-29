@@ -26,7 +26,7 @@ contract SetupCCTPScript is BasicSynapseScript {
     string public constant SYMBOL_PREFIX = "CCTP.";
 
     string public constant SYNAPSE_CCTP = "SynapseCCTP";
-    string public constant ENVIRONMENT = ".testnet";
+    string public constant ENVIRONMENT = ".mainnet";
 
     SynapseCCTP public synapseCCTP;
 
@@ -45,7 +45,7 @@ contract SetupCCTPScript is BasicSynapseScript {
         setupTokensCCTP();
         setupRemoteDeployments();
         setupGasAirdrop();
-        // transferOwnership();
+        transferOwnership();
         vm.stopBroadcast();
     }
 

@@ -41,8 +41,8 @@ contract DeploySynapseCCTPImplementation is BasicSynapseScript {
         tokenMessenger = config.readAddress(".tokenMessenger");
         require(tokenMessenger != address(0), "TokenMessenger not set");
         // Read DevMultisig deployment address for the current chain
-        // devMultisig = getDeploymentAddress("DevMultisig");
-        // printLog("Using [devMultisig = %s]", devMultisig);
+        devMultisig = getDeploymentAddress("DevMultisig");
+        printLog("Using [devMultisig = %s]", devMultisig);
     }
 
     function deployAndInitialize() public {
@@ -74,17 +74,17 @@ contract DeploySynapseCCTPImplementation is BasicSynapseScript {
             });
         }
         // Transfer ownership of the ProxyAdmin to DevMultisig
-        // printLog("Transferring ownership of ProxyAdmin to DevMultisig");
-        // increaseIndent();
-        // address adminOwner = ProxyAdmin(proxyAdmin).owner();
-        // if (adminOwner == msg.sender) {
-        //     address multisig = getDeploymentAddress("DevMultisig");
-        //     ProxyAdmin(proxyAdmin).transferOwnership(multisig);
-        //     printLog("Ownership transferred to %s", multisig);
-        // } else {
-        //     printLog("Skipping: ProxyAdmin owned by %s", adminOwner);
-        // }
-        // decreaseIndent();
+        printLog("Transferring ownership of ProxyAdmin to DevMultisig");
+        increaseIndent();
+        address adminOwner = ProxyAdmin(proxyAdmin).owner();
+        if (adminOwner == msg.sender) {
+            address multisig = getDeploymentAddress("DevMultisig");
+            ProxyAdmin(proxyAdmin).transferOwnership(multisig);
+            printLog("Ownership transferred to %s", multisig);
+        } else {
+            printLog("Skipping: ProxyAdmin owned by %s", adminOwner);
+        }
+        decreaseIndent();
     }
 
     /// @notice Callback function to deploy the ProxyAdmin contract.
@@ -109,6 +109,6 @@ contract DeploySynapseCCTPImplementation is BasicSynapseScript {
             "Failed to set tokenMessenger"
         );
         require(SynapseCCTP(implementation).owner() == msg.sender, "Failed to set owner");
-        // require(ProxyAdmin(proxyAdmin).owner() == devMultisig, "Failed to set ProxyAdmin owner");
+        require(ProxyAdmin(proxyAdmin).owner() == devMultisig, "Failed to set ProxyAdmin owner");
     }
 }
