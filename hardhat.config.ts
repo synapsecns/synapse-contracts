@@ -131,8 +131,8 @@ let config: HardhatUserConfig = {
       url: "https://zkevm-rpc.com",
     },
     blast: {
-      url: process.env.BLAST_API
-    }
+      url: process.env.BLAST_API,
+    },
   },
   paths: {
     artifacts: "./build/artifacts",
