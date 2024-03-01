@@ -24,6 +24,7 @@ arbitrum = "${ARBITRUM_API}"
 aurora = "${AURORA_API}"
 avalanche = "${AVALANCHE_API}"
 base = "${BASE_API}"
+blast = "${BLAST_API}"
 boba = "${BOBA_API}"
 bsc = "${BSC_API}"
 canto = "${CANTO_API}"
@@ -47,6 +48,7 @@ arbitrum = { key = "${ARBITRUM_ETHERSCAN_KEY}", url = "${ARBITRUM_ETHERSCAN_URL}
 aurora = { key = "", url = "${AURORA_BLOCKSCOUT_URL}" }
 avalanche = { key = "${AVALANCHE_ETHERSCAN_KEY}", url = "${AVALANCHE_ETHERSCAN_URL}" }
 base = { key = "${BASE_ETHERSCAN_KEY}", url = "${BASE_ETHERSCAN_URL}" }
+blast = { key = "${BLAST_ETHERSCAN_KEY}", url = "${BLAST_ETHERSCAN_URL}" }
 boba = { key = "${BOBA_ETHERSCAN_KEY}", url = "${BOBA_ETHERSCAN_URL}" }
 bsc = { key = "${BSC_ETHERSCAN_KEY}", url = "${BSC_ETHERSCAN_URL}" }
 canto = { key = "", url = "${CANTO_BLOCKSCOUT_URL}" }
