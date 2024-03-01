@@ -1,0 +1,28 @@
+{
+  "bridge": "0x55769bAF6ec39B3bf4aAE948eB890eA33307Ef3C",
+  "ids": [
+    "nUSD",
+    "nETH"
+  ],
+  "tokens": {
+    "nETH": {
+      "bridgeFee": 1000000,
+      "bridgeToken": "0xce971282fAAc9faBcF121944956da7142cccC855",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x00000000000000000000000000000000000000000000000000038d7ea4c68000",
+      "token": "0xce971282fAAc9faBcF121944956da7142cccC855",
+      "tokenType": 0
+    },
+    "nUSD": {
+      "bridgeFee": 1000000,
+      "bridgeToken": "0x3194B0A295D87fDAA54DF852c248F7a6BAF6c6e0",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x0000000000000000000000000000000000000000000000003782dace9d900000",
+      "token": "0x3194B0A295D87fDAA54DF852c248F7a6BAF6c6e0",
+      "tokenType": 0
+    }
+  },
+  "wgas": "0x4300000000000000000000000000000000000004"
+}
