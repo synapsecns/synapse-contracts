@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
-
-import {SynapseRouter} from "../../contracts/bridge/router/SynapseRouter.sol";
+pragma solidity 0.8.17;
 
 import {BasicSynapseScript, console2} from "../templates/BasicSynapse.s.sol";
 
