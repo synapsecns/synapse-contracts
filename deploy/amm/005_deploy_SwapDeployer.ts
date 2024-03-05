@@ -18,7 +18,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
       const currentOwner = await read("SwapDeployer", "owner");
       const multisig = (await get("DevMultisig")).address;
 
-      if ((await getChainId()) == "1" && currentOwner != multisig) {
+      if (currentOwner != multisig) {
         await execute("SwapDeployer", { from: deployer, log: true }, "transferOwnership", multisig);
       }
     }

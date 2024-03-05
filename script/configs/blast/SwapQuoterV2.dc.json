@@ -1,0 +1,16 @@
+{
+  "pools": {
+    "0": {
+      "description": "nUSD",
+      "isLinked": false,
+      "pool": "0xa4bd1AAD7cF04567c10f38FC4355E91bba32aC9c",
+      "token": "0x3194B0A295D87fDAA54DF852c248F7a6BAF6c6e0"
+    },
+    "1": {
+      "description": "nETH",
+      "isLinked": false,
+      "pool": "0x999fcd13C54B26E02a6Ccd185f71550b3a4641c0",
+      "token": "0xce971282fAAc9faBcF121944956da7142cccC855"
+    }
+  }
+}
