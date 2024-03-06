@@ -2,9 +2,19 @@
   "bridge": "0x55769bAF6ec39B3bf4aAE948eB890eA33307Ef3C",
   "ids": [
     "nUSD",
+    "SYN",
     "nETH"
   ],
   "tokens": {
+    "SYN": {
+      "bridgeFee": 10000000,
+      "bridgeToken": "0x9592f08387134e218327E6E8423400eb845EdE0E",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x0000000000000000000000000000000000000000000000008ac7230489e80000",
+      "token": "0x9592f08387134e218327E6E8423400eb845EdE0E",
+      "tokenType": 0
+    },
     "nETH": {
       "bridgeFee": 1000000,
       "bridgeToken": "0xce971282fAAc9faBcF121944956da7142cccC855",
