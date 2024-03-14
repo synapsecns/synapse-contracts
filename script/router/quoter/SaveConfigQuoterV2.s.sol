@@ -46,16 +46,26 @@ contract SaveConfigQuoterV2 is BasicSynapseScript, BridgeConfigLens {
     /// @notice Loads the list of pools that should be ignored by the Quoter
     function loadIgnoredPools() internal {
         string memory ignoredJson = getGlobalConfig(QUOTER_V2, "ignored");
-        string[] memory ignoredContractNames = ignoredJson.readStringArray(".contractNames");
-        // Add existing deployments to the ignored list
-        for (uint256 i = 0; i < ignoredContractNames.length; ++i) {
-            address ignoredPool = tryGetDeploymentAddress(ignoredContractNames[i]);
-            if (ignoredPool != address(0)) {
-                isIgnoredPool[ignoredPool] = true;
-            }
+        string[] memory globallyIgnoredNames = ignoredJson.readStringArray(".global");
+        markIgnoredPools(globallyIgnoredNames);
+        string memory chainIgnoredKey = string.concat(".chain.", activeChain);
+        if (vm.keyExists(ignoredJson, chainIgnoredKey)) {
+            string[] memory chainIgnoredNames = ignoredJson.readStringArray(chainIgnoredKey);
+            markIgnoredPools(chainIgnoredNames);
         }
         // Add the zero address to the ignored list to simplify the logic
         isIgnoredPool[address(0)] = true;
+    }
+
+    /// @notice Marks the pools as ignored
+    function markIgnoredPools(string[] memory contractNames) internal {
+        for (uint256 i = 0; i < contractNames.length; ++i) {
+            address pool = tryGetDeploymentAddress(contractNames[i]);
+            if (pool != address(0)) {
+                console2.log("  Ignoring pool: %s at %s", contractNames[i], pool);
+                isIgnoredPool[pool] = true;
+            }
+        }
     }
 
     /// @notice Saves pool to be later added to SwapQuoterV2 config
