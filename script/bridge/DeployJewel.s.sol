@@ -10,7 +10,7 @@ import {console2, BasicSynapseScript} from "../templates/BasicSynapse.s.sol";
 contract DeployJEWEL is BasicSynapseScript {
     string public constant SYNAPSE_ERC20_FACTORY = "SynapseERC20Factory";
     string public constant SYNAPSE_ERC20 = "SynapseERC20";
-    string public constant SYNAPSE_BRIDGE = "SynapseERC20";
+    string public constant SYNAPSE_BRIDGE = "SynapseBridge";
     string public constant MULTISIG = "DevMultisig";
 
     SynapseERC20Factory public erc20Factory;
