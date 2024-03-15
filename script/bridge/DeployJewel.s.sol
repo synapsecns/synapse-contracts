@@ -29,7 +29,7 @@ contract DeployJEWEL is BasicSynapseScript {
         address multisig = getDeploymentAddress(MULTISIG);
         // Deploy
         erc20Factory = SynapseERC20Factory(factoryDeployment);
-        address deployedAt = erc20Factory.deploy(erc20Deployment, "DeFi Kingdoms", "JEWEL", 18, msg.sender);
+        address deployedAt = erc20Factory.deploy(erc20Deployment, "JEWEL", "JEWEL", 18, msg.sender);
         SynapseERC20 jewel = SynapseERC20(deployedAt);
 
         // Grant Roles
@@ -38,12 +38,12 @@ contract DeployJEWEL is BasicSynapseScript {
         jewel.renounceRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
         // Verify roles
-       require(jewel.hasRole(DEFAULT_ADMIN_ROLE, multisig), "Admin role not set correctly");
-       require(jewel.hasRole(MINTER_ROLE, bridge), "Minter not set correctly");
-       require(jewel.getRoleMemberCount(DEFAULT_ADMIN_ROLE) == 1, "Admin count not set correctly");
+        require(jewel.hasRole(DEFAULT_ADMIN_ROLE, multisig), "Admin role not set correctly");
+        require(jewel.hasRole(MINTER_ROLE, bridge), "Minter not set correctly");
+        require(jewel.getRoleMemberCount(DEFAULT_ADMIN_ROLE) == 1, "Admin count not set correctly");
         require(jewel.getRoleMemberCount(MINTER_ROLE) == 1, "Minter count not set correctly");
 
-       saveDeployment("SynapseERC20", "JEWEL", deployedAt, "");
+        saveDeployment("SynapseERC20", "JEWEL", deployedAt, "");
 
         vm.stopBroadcast();
     }
