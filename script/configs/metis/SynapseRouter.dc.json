@@ -6,9 +6,19 @@
     "nETH",
     "JUMP",
     "gOHM",
-    "UST"
+    "UST",
+    "JEWEL"
   ],
   "tokens": {
+    "JEWEL": {
+      "bridgeFee": 4000000,
+      "bridgeToken": "0x17C09cfC96C865CF546d73365Cedb6dC66986963",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x0000000000000000000000000000000000000000000000006f05b59d3b200000",
+      "token": "0x17C09cfC96C865CF546d73365Cedb6dC66986963",
+      "tokenType": 0
+    },
     "JUMP": {
       "bridgeFee": 10000000,
       "bridgeToken": "0xE3c82A836Ec85311a433fBd9486EfAF4b1AFbF48",
