@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# This script saves bytecode for a contract into "./script/bytecode/<contract>.json"
-# Usage: ./script/sh/bytecode.sh <contract>
+# This script saves bytecode for a contract into "./script/solc/<contract>.json"
+# Usage: ./script/sh/solc.sh <contract>
 
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
@@ -20,7 +20,7 @@ key=$(jq ".contracts | keys[] | select(endswith($keyFilter))" temp.out.json)
 # Get the bytecode
 bytecode="0x"$(jq -r ".contracts.$key.$1.evm.bytecode.object" temp.out.json)
 # Save the bytecode
-jq -n ".bytecode = \"$bytecode\"" >script/bytecode/$1.json
+jq -n ".bytecode = \"$bytecode\"" >script/solc/$1.json
 # Clean temp files
 rm temp.in.json
 rm temp.out.json

@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
-
-import {SynapseRouter} from "../../contracts/bridge/router/SynapseRouter.sol";
+pragma solidity 0.8.17;
 
 import {BasicSynapseScript, console2} from "../templates/BasicSynapse.s.sol";
 
@@ -14,7 +11,12 @@ contract DeployRouterV1 is BasicSynapseScript {
         setUp();
         vm.startBroadcast();
         skipToNonce(routerNonce);
-        deployAndSave({contractName: "SynapseRouter", deployContract: cbDeployRouterV1});
+        bytes memory constructorArgs = getConstructorArgs();
+        deployAndSave({
+            contractName: "SynapseRouter",
+            constructorArgs: constructorArgs,
+            deployCode: deploySolcGenerated
+        });
         vm.stopBroadcast();
     }
 
@@ -36,13 +38,9 @@ contract DeployRouterV1 is BasicSynapseScript {
         console2.log("Deployer nonce is %s", nonce);
     }
 
-    /// @notice Callback function to deploy the SynapseRouter contract.
-    /// Must follow this signature for the deploy script to work:
-    /// `deployContract() internal returns (address deployedAt, bytes memory constructorArgs)`
-    function cbDeployRouterV1() internal returns (address deployedAt, bytes memory constructorArgs) {
+    function getConstructorArgs() internal returns (bytes memory constructorArgs) {
         address bridge = getDeploymentAddress("SynapseBridge");
         address owner = vm.envAddress("OWNER_ADDR");
-        deployedAt = address(new SynapseRouter(bridge, owner));
         constructorArgs = abi.encode(bridge, owner);
     }
 }
