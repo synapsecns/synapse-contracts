@@ -1,3 +1,6 @@
 {
-  "contractNames": ["AvaxJewelSwap", "MockSwap"]
+  "global": ["AvaxJewelSwap", "MockSwap"],
+  "chain": {
+    "canto": ["ETHPool"]
+  }
 }
