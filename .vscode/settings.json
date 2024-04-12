@@ -1,5 +1,10 @@
 {
   "solidity.packageDefaultDependenciesContractsDirectory": "",
   "solidity.packageDefaultDependenciesDirectory": "node_modules",
-  "search.exclude": { "lib": true }
+  "search.exclude": {
+    "lib": true
+  },
+  "githubPullRequests.ignoredPullRequestBranches": [
+    "master"
+  ]
 }
