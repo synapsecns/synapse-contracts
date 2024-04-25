@@ -40,6 +40,7 @@ moonbeam = "${MOONBEAM_API}"
 moonriver = "${MOONRIVER_API}"
 optimism = "${OPTIMISM_API}"
 polygon = "${POLYGON_API}"
+scroll = "${SCROLL_API}"
 zkevm = "${ZKEVM_API}"
 # Testnets
 eth_sepolia = "${ETH_SEPOLIA_API}"
@@ -67,6 +68,7 @@ moonbeam = { key = "${MOONBEAM_ETHERSCAN_KEY}", url = "${MOONBEAM_ETHERSCAN_URL}
 moonriver = { key = "${MOONRIVER_ETHERSCAN_KEY}", url = "${MOONRIVER_ETHERSCAN_URL}" }
 optimism = { key = "${OPTIMISM_ETHERSCAN_KEY}", url = "${OPTIMISM_ETHERSCAN_URL}" }
 polygon = { key = "${POLYGON_ETHERSCAN_KEY}", url = "${POLYGON_ETHERSCAN_URL}" }
+scroll = { key = "${SCROLL_ETHERSCAN_KEY}", url = "${SCROLL_ETHERSCAN_URL}" }
 zkevm = { key = "${ZKEVM_ETHERSCAN_KEY}", url = "${ZKEVM_ETHERSCAN_URL}" }
 # Testnets
 eth_sepolia = { key = "${ETH_SEPOLIA_ETHERSCAN_KEY}", url = "${ETH_SEPOLIA_ETHERSCAN_URL}" }
