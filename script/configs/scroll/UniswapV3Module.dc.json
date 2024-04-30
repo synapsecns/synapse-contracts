@@ -1,0 +1,6 @@
+{
+  "Metavault": {
+    "uniswapV3Router": "0xC6433c65ED684e987287d4DE87869a0A7cc4C2eB",
+    "uniswapV3StaticQuoter": "0x1Db5a1d5D80fDEfc098635d3869Fa94d6fA44F5a"
+  }
+}
