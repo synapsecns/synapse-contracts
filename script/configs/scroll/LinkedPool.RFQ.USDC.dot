@@ -1,0 +1,15 @@
+graph G {
+    token0 [label = "USDC\n0";];
+    token1 [label = "USDT\n1";];
+    pool0 [label = "UniswapV3.Metavault\n0x887b";shape = rect;style = dashed;];
+    token0 -- pool0;
+    subgraph cluster0 {
+        style = dotted;
+        pool0 -- token1;
+        subgraph {
+            rank = same;
+            edge [style = invis;];
+            token1;
+        }
+    }
+}
