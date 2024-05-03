@@ -1,0 +1,9 @@
+{
+  "SPEC": {
+    "base": {
+      "decimals": 18,
+      "name": "Spectral Token",
+      "symbol": "SPEC"
+    }
+  }
+}
