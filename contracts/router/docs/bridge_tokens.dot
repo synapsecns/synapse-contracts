@@ -1,0 +1,24 @@
+digraph {
+    user [label = "User";];
+    router [label = "RouterV2";shape = rect;];
+    swappedTokens [label = <<I>2. Swapped tokens</I>>;shape = none;];
+    
+    module [label = "Bridge Module";shape = rect;style = dashed;];
+    adapter [label = "Router Adapter";shape = rect;];
+    bridge [label = "SynapseBridge | SynapseCCTP | ...";shape = rect;];
+    bridgedTokens [label = <<I>3. Bridged tokens</I>>;shape = none;];
+    
+    subgraph {
+        rank = same;
+        user -> router [label = <<I>1. bridgeViaSynapse()</I>>; style = invis;];
+        router -> module [label = <<I>3. delegateBridge()</I>>; style = invis;];
+    }
+    
+    user:s -> adapter:w [label = <<I>1. Input tokens</I>>;];
+    
+    router -> swappedTokens [dir = back; weight = 10;];
+    swappedTokens -> adapter [dir = none; weight = 10;];
+    router:e -> bridgedTokens:n [dir = none;];
+    module -> bridgedTokens [dir = none; style = invis; weight = 10;];
+    bridgedTokens -> bridge;
+}
