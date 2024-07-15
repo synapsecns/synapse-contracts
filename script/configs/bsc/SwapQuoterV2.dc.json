@@ -1,0 +1,10 @@
+{
+  "pools": {
+    "0": {
+      "description": "nUSD",
+      "isLinked": false,
+      "pool": "0x28ec0B36F0819ecB5005cAB836F4ED5a2eCa4D13",
+      "token": "0x23b891e5C62E0955ae2bD185990103928Ab817b3"
+    }
+  }
+}
