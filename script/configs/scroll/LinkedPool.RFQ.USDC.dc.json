@@ -1,0 +1,10 @@
+{
+  "bridgeToken": "0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4",
+  "pools": [
+    {
+      "nodeIndex": 0,
+      "pool": "0x887B414d34bA20Ae7ED5378380682f22071d08c2",
+      "poolModule": "UniswapV3.Metavault"
+    }
+  ]
+}

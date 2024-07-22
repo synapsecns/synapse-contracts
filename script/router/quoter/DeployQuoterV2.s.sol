@@ -23,7 +23,7 @@ contract DeployQuoterV2 is BasicRouterScript {
     /// Must follow this signature for the deploy script to work:
     /// `deployContract() internal returns (address deployedAt, bytes memory constructorArgs)`
     function deployQuoterV2() internal returns (address deployedAt, bytes memory constructorArgs) {
-        address synapseRouter = getLatestRouterDeployment();
+        address synapseRouter = tryGetLatestRouterDeployment();
         address defaultPoolCalc = getDeploymentAddress(DEFAULT_POOL_CALC);
         // We need specifically WGAS, so that on BNB chain we use WBNB
         address weth = getDeploymentAddress("WGAS");

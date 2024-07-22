@@ -22,4 +22,15 @@ abstract contract BasicRouterScript is BasicSynapseScript {
             synapseRouter = getDeploymentAddress(ROUTER_V1);
         }
     }
+
+    /// @notice Returns deployment of the latest SynapseRouter contract on the active chain, if available.
+    /// Otherwise, returns address(0).
+    function tryGetLatestRouterDeployment() internal returns (address synapseRouter) {
+        // Check if SynapseRouterV2 is deployed
+        synapseRouter = tryGetDeploymentAddress(ROUTER_V2);
+        // Use SynapseRouter if SynapseRouterV2 is not deployed
+        if (synapseRouter == address(0)) {
+            synapseRouter = tryGetDeploymentAddress(ROUTER_V1);
+        }
+    }
 }
