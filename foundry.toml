@@ -34,6 +34,7 @@ dogechain = "${DOGECHAIN_API}"
 fantom = "${FANTOM_API}"
 harmony = "${HARMONY_API}"
 klatyn = "${KLATYN_API}"
+linea = "${LINEA_API}"
 mainnet = "${MAINNET_API}"
 metis = "${METIS_API}"
 moonbeam = "${MOONBEAM_API}"
@@ -62,6 +63,7 @@ dogechain = { key = "", url = "${DOGECHAIN_BLOCKSCOUT_URL}" }
 fantom = { key = "${FANTOM_ETHERSCAN_KEY}", url = "${FANTOM_ETHERSCAN_URL}" }
 # Harmony doesn't have an endpoint for verification, and Sourcify does not support Harmony
 # Klaytn doesn't have an endpoint for verification, and doesn't support Sourcify yet
+linea = { key = "${LINEA_ETHERSCAN_KEY}", url = "${LINEA_ETHERSCAN_URL}" }
 mainnet = { key = "${MAINNET_ETHERSCAN_KEY}", url = "${MAINNET_ETHERSCAN_URL}" }
 metis = { key = "", url = "${METIS_BLOCKSCOUT_URL}" }
 moonbeam = { key = "${MOONBEAM_ETHERSCAN_KEY}", url = "${MOONBEAM_ETHERSCAN_URL}" }
