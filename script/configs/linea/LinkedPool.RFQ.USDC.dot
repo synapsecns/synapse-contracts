@@ -1,7 +1,7 @@
 graph G {
     token0 [label = "USDC\n0";];
     token1 [label = "USDT\n1";];
-    pool0 [label = "UniswapV3SR02\n0xf178";shape = rect;style = dashed;];
+    pool0 [label = "Algebra.Lynex\n0x6e9a";shape = rect;style = dashed;];
     token0 -- pool0;
     subgraph cluster0 {
         style = dotted;
