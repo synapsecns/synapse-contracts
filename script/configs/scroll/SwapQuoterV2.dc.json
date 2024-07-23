@@ -3,7 +3,7 @@
     "0": {
       "description": "originOnly.LinkedPool.RFQ.USDC",
       "isLinked": true,
-      "pool": "0x71035BE2414fF19d90302f528b97183B87c3c096",
+      "pool": "0xA9d3E57033a636471D05c7bD6f4F564152e1c3f4",
       "token": "0x0000000000000000000000000000000000000000"
     }
   }
