@@ -1,0 +1,10 @@
+{
+  "bridgeToken": "0x176211869cA2b568f2A7D4EE941E073a821EE1ff",
+  "pools": [
+    {
+      "nodeIndex": 0,
+      "pool": "0x6E9AD0B8A41E2c148e7B0385d3EcBFDb8A216a9B",
+      "poolModule": "Algebra.Lynex"
+    }
+  ]
+}
