@@ -92,7 +92,7 @@ abstract contract FastBridgeRouterTest is FBRTest {
 
     // ═══════════════════════════════════════════════ TESTS: BRIDGE ═══════════════════════════════════════════════════
 
-    function test_bridge_noOriginSwap_noGasRebate() public {
+    function test_bridge_noOriginSwap_noGasRebate_senderEOA() public {
         uint256 amount = 1 ether;
         // No swap on origin chain
         SwapQuery memory originQuery = SwapQuery({
@@ -123,7 +123,7 @@ abstract contract FastBridgeRouterTest is FBRTest {
         });
     }
 
-    function test_bridge_noOriginSwap_withGasRebate() public {
+    function test_bridge_noOriginSwap_withGasRebate_senderEOA() public {
         uint256 amount = 1 ether;
         // No swap on origin chain
         SwapQuery memory originQuery = SwapQuery({
@@ -154,7 +154,7 @@ abstract contract FastBridgeRouterTest is FBRTest {
         });
     }
 
-    function test_bridge_withOriginSwap_noGasRebate() public {
+    function test_bridge_withOriginSwap_noGasRebate_senderEOA() public {
         uint256 amountBeforeSwap = 1 ether;
         // T0 -> T1 swap on origin chain
         uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
@@ -186,7 +186,7 @@ abstract contract FastBridgeRouterTest is FBRTest {
         });
     }
 
-    function test_bridge_withOriginSwap_withGasRebate() public {
+    function test_bridge_withOriginSwap_withGasRebate_senderEOA() public {
         uint256 amountBeforeSwap = 1 ether;
         // T0 -> T1 swap on origin chain
         uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
