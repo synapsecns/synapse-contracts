@@ -1,0 +1,10 @@
+{
+  "pools": {
+    "0": {
+      "description": "originOnly.LinkedPool.RFQ.USDC",
+      "isLinked": true,
+      "pool": "0x71035BE2414fF19d90302f528b97183B87c3c096",
+      "token": "0x0000000000000000000000000000000000000000"
+    }
+  }
+}

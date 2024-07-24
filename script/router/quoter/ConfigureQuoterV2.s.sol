@@ -77,7 +77,7 @@ contract ConfigureQuoterV2 is BasicRouterScript {
     }
 
     function setSynapseRouter() internal {
-        address latestRouter = getLatestRouterDeployment();
+        address latestRouter = tryGetLatestRouterDeployment();
         if (quoterV2.synapseRouter() != latestRouter) {
             console2.log("Setting synapseRouter to %s", latestRouter);
             quoterV2.setSynapseRouter(latestRouter);

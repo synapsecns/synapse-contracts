@@ -1,12 +1,12 @@
 graph G {
-    token0 [label = "0: USDC";];
-    token1 [label = "1: USDbC";];
-    token2 [label = "2: DAI";];
-    token3 [label = "3: USDbC";];
-    token4 [label = "4: axlUSDC";];
-    token5 [label = "5: crvUSD";];
-    token6 [label = "6: DAI";];
-    pool0 [label = "UniswapV3.BaseSwap 0x8849";shape = rect;style = dashed;];
+    token0 [label = "USDC\n0";];
+    token1 [label = "USDbC\n1";];
+    token2 [label = "DAI\n2";];
+    token3 [label = "USDbC\n3";];
+    token4 [label = "axlUSDC\n4";];
+    token5 [label = "crvUSD\n5";];
+    token6 [label = "DAI\n6";];
+    pool0 [label = "UniswapV3.BaseSwap\n0x8849";shape = rect;style = dashed;];
     token0 -- pool0;
     subgraph cluster0 {
         style = dotted;
@@ -17,7 +17,7 @@ graph G {
             token1;
         }
     }
-    pool1 [label = "Algebra.SynthSwap 0x2c1e";shape = rect;style = dashed;];
+    pool1 [label = "Algebra.SynthSwap\n0x2c1e";shape = rect;style = dashed;];
     token1 -- pool1;
     subgraph cluster1 {
         style = dotted;
@@ -28,7 +28,7 @@ graph G {
             token2;
         }
     }
-    pool2 [label = "CurveV1 0xf6c5";shape = rect;style = dashed;];
+    pool2 [label = "CurveV1\n0xf6c5";shape = rect;style = dashed;];
     token0 -- pool2;
     subgraph cluster2 {
         style = dotted;
@@ -42,7 +42,7 @@ graph G {
             token4 -- token5;
         }
     }
-    pool3 [label = "Algebra.SynthSwap 0x2c1e";shape = rect;style = dashed;];
+    pool3 [label = "Algebra.SynthSwap\n0x2c1e";shape = rect;style = dashed;];
     token3 -- pool3;
     subgraph cluster3 {
         style = dotted;

@@ -6,6 +6,7 @@ src = "contracts"
 out = "artifacts"
 libs = ["node_modules", "lib"]
 ffi = true
+unchecked_cheatcode_artifacts = true
 fs_permissions = [{ access = "read", path = "./artifacts"}, { access = "read-write", path = "./deployments"}, { access = "read-write", path = "./.deployments"}, {access = "read-write", path = "./script"}]
 
 ## set only when the `hardhat` profile is selected

@@ -3,8 +3,8 @@
   "pools": [
     {
       "nodeIndex": 0,
-      "pool": "0x887B414d34bA20Ae7ED5378380682f22071d08c2",
-      "poolModule": "UniswapV3.Metavault"
+      "pool": "0xf1783F3377b3A70465C193eF33942c0803121ba0",
+      "poolModule": "UniswapV3SR02"
     }
   ]
 }
