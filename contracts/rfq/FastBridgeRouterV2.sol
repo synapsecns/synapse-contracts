@@ -56,6 +56,10 @@ contract FastBridgeRouterV2 is DefaultRouter, Ownable, IFastBridgeRouter {
         SwapQuery memory originQuery,
         SwapQuery memory destQuery
     ) external payable {
+        address originSender = _getOriginSender(destQuery.rawParams);
+        if (originSender == address(0)) {
+            revert FastBridgeRouterV2__OriginSenderNotSpecified();
+        }
         if (originQuery.hasAdapter()) {
             // Perform a swap using the swap adapter, set this contract as recipient
             (token, amount) = _doSwap(address(this), token, amount, originQuery);
@@ -65,7 +69,7 @@ contract FastBridgeRouterV2 is DefaultRouter, Ownable, IFastBridgeRouter {
         }
         IFastBridge.BridgeParams memory params = IFastBridge.BridgeParams({
             dstChainId: uint32(chainId),
-            sender: msg.sender,
+            sender: originSender,
             to: recipient,
             originToken: token,
             destToken: destQuery.tokenOut,
@@ -97,6 +101,28 @@ contract FastBridgeRouterV2 is DefaultRouter, Ownable, IFastBridgeRouter {
             if (originQueries[i].hasAdapter()) {
                 originQueries[i].routerAdapter = address(this);
             }
+        }
+    }
+
+    /// @dev Retrieves the origin sender from the raw params.
+    /// Note: falls back to msg.sender if origin sender is not specified in the raw params, but
+    /// msg.sender is an EOA.
+    function _getOriginSender(bytes memory rawParams) internal view returns (address originSender) {
+        // Origin sender (if present) is encoded as 20 bytes following the rebate flag
+        if (rawParams.length >= 21) {
+            // The easiest way to read from memory is to use assembly
+            // solhint-disable-next-line no-inline-assembly
+            assembly {
+                // We need to skip the rawParams.length (32 bytes) and the rebate flag (1 byte)
+                originSender := mload(add(rawParams, 33))
+                // Now We have the address in the highest 160 bits. Shift right by 96 to get it in the lowest 160 bits
+                originSender := shr(96, originSender)
+            }
+        }
+        if (originSender == address(0)) {
+            // We fallback to msg.sender if that is EOA. This establishes backwards compatibility
+            // for cases where we can safely assume that the origin sender is the same as msg.sender.
+            return msg.sender.code.length == 0 ? msg.sender : address(0);
         }
     }
 
