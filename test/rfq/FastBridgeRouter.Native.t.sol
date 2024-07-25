@@ -33,12 +33,12 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     }
 
     function prepareAccount(address account) public {
-        token.mint(user, 10 ether);
-        weth.mint(user, 10 ether);
-        deal(user, 10 ether);
-        vm.prank(user);
+        token.mint(account, 10 ether);
+        weth.mint(account, 10 ether);
+        deal(account, 10 ether);
+        vm.prank(account);
         token.approve(address(router), 10 ether);
-        vm.prank(user);
+        vm.prank(account);
         weth.approve(address(router), 10 ether);
     }
 
