@@ -57,13 +57,17 @@ abstract contract FastBridgeRouterV2Test is FastBridgeRouterTest {
 
     // ════════════════════════════════ TESTS: BRIDGE (EOA, ORIGIN SENDER PROVIDED) ════════════════════════════════════
 
-    function check_bridge_noOriginSwap_noGasRebate(address caller, address originSender) public {
+    function check_bridge_noOriginSwap(
+        address caller,
+        address originSender,
+        bool gasRebate
+    ) public {
         uint256 amount = 1 ether;
         SwapQuery memory originQuery = getOriginQueryNoSwap(amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token0),
             originAmount: amount,
-            sendChainGas: false
+            sendChainGas: gasRebate
         });
         vm.expectCall({
             callee: address(fastBridge),
@@ -77,42 +81,24 @@ abstract contract FastBridgeRouterV2Test is FastBridgeRouterTest {
             token: address(token0),
             amount: amount,
             originQuery: originQuery,
-            destQuery: getDestQueryNoRebateWithOriginSender(amount, originSender)
+            destQuery: gasRebate
+                ? getDestQueryWithRebateWithOriginSender(amount, originSender)
+                : getDestQueryNoRebateWithOriginSender(amount, originSender)
         });
     }
 
-    function check_bridge_noOriginSwap_withGasRebate(address caller, address originSender) public {
-        uint256 amount = 1 ether;
-        SwapQuery memory originQuery = getOriginQueryNoSwap(amount);
-        IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
-            originToken: address(token0),
-            originAmount: amount,
-            sendChainGas: true
-        });
-        vm.expectCall({
-            callee: address(fastBridge),
-            msgValue: 0,
-            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
-        });
-        vm.prank(caller);
-        router.bridge({
-            recipient: recipient,
-            chainId: DST_CHAIN_ID,
-            token: address(token0),
-            amount: amount,
-            originQuery: originQuery,
-            destQuery: getDestQueryWithRebateWithOriginSender(amount, originSender)
-        });
-    }
-
-    function check_bridge_withOriginSwap_noGasRebate(address caller, address originSender) public {
+    function check_bridge_withOriginSwap(
+        address caller,
+        address originSender,
+        bool gasRebate
+    ) public {
         uint256 amountBeforeSwap = 1 ether;
         uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
         SwapQuery memory originQuery = getOriginQueryWithSwap(amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token1),
             originAmount: amount,
-            sendChainGas: false
+            sendChainGas: gasRebate
         });
         vm.expectCall({
             callee: address(fastBridge),
@@ -126,84 +112,61 @@ abstract contract FastBridgeRouterV2Test is FastBridgeRouterTest {
             token: address(token0),
             amount: amountBeforeSwap,
             originQuery: originQuery,
-            destQuery: getDestQueryNoRebateWithOriginSender(amount, originSender)
-        });
-    }
-
-    function check_bridge_withOriginSwap_withGasRebate(address caller, address originSender) public {
-        uint256 amountBeforeSwap = 1 ether;
-        uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
-        SwapQuery memory originQuery = getOriginQueryWithSwap(amount);
-        IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
-            originToken: address(token1),
-            originAmount: amount,
-            sendChainGas: true
-        });
-        vm.expectCall({
-            callee: address(fastBridge),
-            msgValue: 0,
-            data: abi.encodeCall(IFastBridge.bridge, (expectedParams))
-        });
-        vm.prank(caller);
-        router.bridge({
-            recipient: recipient,
-            chainId: DST_CHAIN_ID,
-            token: address(token0),
-            amount: amountBeforeSwap,
-            originQuery: originQuery,
-            destQuery: getDestQueryWithRebateWithOriginSender(amount, originSender)
+            destQuery: gasRebate
+                ? getDestQueryWithRebateWithOriginSender(amount, originSender)
+                : getDestQueryNoRebateWithOriginSender(amount, originSender)
         });
     }
 
     function test_bridge_noOriginSwap_noGasRebate_senderEOA_withOriginSenderSet() public {
-        check_bridge_noOriginSwap_noGasRebate({caller: user, originSender: user});
+        check_bridge_noOriginSwap({caller: user, originSender: user, gasRebate: false});
     }
 
     function test_bridge_noOriginSwap_withGasRebate_senderEOA_withOriginSenderSet() public {
-        check_bridge_noOriginSwap_withGasRebate({caller: user, originSender: user});
+        check_bridge_noOriginSwap({caller: user, originSender: user, gasRebate: true});
     }
 
     function test_bridge_withOriginSwap_noGasRebate_senderEOA_withOriginSenderSet() public {
-        check_bridge_withOriginSwap_noGasRebate({caller: user, originSender: user});
+        check_bridge_withOriginSwap({caller: user, originSender: user, gasRebate: false});
     }
 
     function test_bridge_withOriginSwap_withGasRebate_senderEOA_withOriginSenderSet() public {
-        check_bridge_withOriginSwap_withGasRebate({caller: user, originSender: user});
+        check_bridge_withOriginSwap({caller: user, originSender: user, gasRebate: true});
     }
 
     // Note: Calls from EOA with origin sender set to zero address should succeed
     function test_bridge_noOriginSwap_noGasRebate_senderEOA_withOriginSenderZero() public {
-        check_bridge_noOriginSwap_noGasRebate({caller: user, originSender: address(0)});
+        check_bridge_noOriginSwap({caller: user, originSender: address(0), gasRebate: false});
     }
 
     function test_bridge_noOriginSwap_withGasRebate_senderEOA_withOriginSenderZero() public {
-        check_bridge_noOriginSwap_withGasRebate({caller: user, originSender: address(0)});
+        check_bridge_noOriginSwap({caller: user, originSender: address(0), gasRebate: true});
     }
 
     function test_bridge_withOriginSwap_noGasRebate_senderEOA_withOriginSenderZero() public {
-        check_bridge_withOriginSwap_noGasRebate({caller: user, originSender: address(0)});
+        check_bridge_withOriginSwap({caller: user, originSender: address(0), gasRebate: false});
     }
 
     function test_bridge_withOriginSwap_withGasRebate_senderEOA_withOriginSenderZero() public {
-        check_bridge_withOriginSwap_withGasRebate({caller: user, originSender: address(0)});
+        check_bridge_withOriginSwap({caller: user, originSender: address(0), gasRebate: true});
     }
 
     // ═════════════════════════════ TESTS: BRIDGE (CONTRACT, ORIGIN SENDER PROVIDED) ══════════════════════════════════
 
     function test_bridge_noOriginSwap_noGasRebate_senderContract_withOriginSenderSet() public {
-        check_bridge_noOriginSwap_noGasRebate({caller: externalContract, originSender: user});
+        check_bridge_noOriginSwap({caller: externalContract, originSender: user, gasRebate: false});
     }
 
     function test_bridge_noOriginSwap_withGasRebate_senderContract_withOriginSenderSet() public {
-        check_bridge_noOriginSwap_withGasRebate({caller: externalContract, originSender: user});
+        check_bridge_noOriginSwap({caller: externalContract, originSender: user, gasRebate: true});
     }
 
     function test_bridge_withOriginSwap_noGasRebate_senderContract_withOriginSenderSet() public {
-        check_bridge_withOriginSwap_noGasRebate({caller: externalContract, originSender: user});
+        check_bridge_withOriginSwap({caller: externalContract, originSender: user, gasRebate: false});
     }
 
     function test_bridge_withOriginSwap_withGasRebate_senderContract_withOriginSenderSet() public {
-        check_bridge_withOriginSwap_withGasRebate({caller: externalContract, originSender: user});
+        check_bridge_withOriginSwap({caller: externalContract, originSender: user, gasRebate: true});
     }
 
     // ═══════════════════════════ TESTS: BRIDGE (CONTRACT, ORIGIN SENDER NOT PROVIDED) ════════════════════════════════
@@ -239,41 +202,27 @@ abstract contract FastBridgeRouterV2Test is FastBridgeRouterTest {
         });
     }
 
-    function test_bridge_noOriginSwap_noGasRebate_senderContract_revert() public {
+    function test_bridge_noOriginSwap_senderContract_reverts() public {
+        // Revert when origin sender is not encoded into destQuery
         check_bridge_noOriginSwap_senderContract_revert({destQuery: getDestQueryNoRebate(1 ether)});
-    }
-
-    function test_bridge_noOriginSwap_withGasRebate_senderContract_revert() public {
         check_bridge_noOriginSwap_senderContract_revert({destQuery: getDestQueryWithRebate(1 ether)});
-    }
-
-    function test_bridge_withOriginSwap_noGasRebate_senderContract_revert() public {
-        check_bridge_withOriginSwap_senderContract_revert({destQuery: getDestQueryNoRebate(1 ether)});
-    }
-
-    function test_bridge_withOriginSwap_withGasRebate_senderContract_revert() public {
-        check_bridge_withOriginSwap_senderContract_revert({destQuery: getDestQueryWithRebate(1 ether)});
-    }
-
-    function test_bridge_noOriginSwap_noGasRebate_senderContract_withOriginSenderZero_revert() public {
+        // Revert when empty origin sender is encoded into destQuery
         check_bridge_noOriginSwap_senderContract_revert({
             destQuery: getDestQueryNoRebateWithOriginSender(1 ether, address(0))
         });
-    }
-
-    function test_bridge_noOriginSwap_withGasRebate_senderContract_withOriginSenderZero_revert() public {
         check_bridge_noOriginSwap_senderContract_revert({
             destQuery: getDestQueryWithRebateWithOriginSender(1 ether, address(0))
         });
     }
 
-    function test_bridge_withOriginSwap_noGasRebate_senderContract_withOriginSenderZero_revert() public {
+    function test_bridge_withOriginSwap_senderContract_reverts() public {
+        // Revert when origin sender is not encoded into destQuery
+        check_bridge_withOriginSwap_senderContract_revert({destQuery: getDestQueryNoRebate(1 ether)});
+        check_bridge_withOriginSwap_senderContract_revert({destQuery: getDestQueryWithRebate(1 ether)});
+        // Revert when empty origin sender is encoded into destQuery
         check_bridge_withOriginSwap_senderContract_revert({
             destQuery: getDestQueryNoRebateWithOriginSender(1 ether, address(0))
         });
-    }
-
-    function test_bridge_withOriginSwap_withGasRebate_senderContract_withOriginSenderZero_revert() public {
         check_bridge_withOriginSwap_senderContract_revert({
             destQuery: getDestQueryWithRebateWithOriginSender(1 ether, address(0))
         });
