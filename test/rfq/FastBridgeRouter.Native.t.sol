@@ -16,7 +16,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     MockERC20 public token;
     MockWETH public weth;
 
-    function setUp() public override {
+    function setUp() public virtual override {
         super.setUp();
         token = new MockERC20("TKN", 18);
         weth = new MockWETH();
@@ -28,34 +28,70 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
         // Mint some tokens to the pool
         token.mint(address(pool), 100 ether);
         weth.mint(address(pool), 120 ether);
-        // Mint some tokens to the user
+        prepareAccount(user);
+        setUpSwapQuoter();
+    }
+
+    function prepareAccount(address account) public {
         token.mint(user, 10 ether);
         weth.mint(user, 10 ether);
         deal(user, 10 ether);
-        // Approve the Router to spend the user's tokens
         vm.prank(user);
         token.approve(address(router), 10 ether);
         vm.prank(user);
         weth.approve(address(router), 10 ether);
-
-        setUpSwapQuoter();
     }
 
     function setUpSwapQuoter() internal virtual;
+
+    function getOriginQueryNoSwap(address tokenOut, uint256 amount)
+        internal
+        view
+        returns (SwapQuery memory originQuery)
+    {
+        originQuery = SwapQuery({
+            routerAdapter: address(0),
+            tokenOut: tokenOut,
+            minAmountOut: amount,
+            deadline: block.timestamp,
+            rawParams: ""
+        });
+    }
+
+    function getOriginQueryWithSwap(address tokenOut, uint256 amount)
+        internal
+        view
+        returns (SwapQuery memory originQuery)
+    {
+        originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: tokenOut,
+            minAmountOut: amount,
+            deadline: block.timestamp,
+            rawParams: tokenOut == address(token) ? getOriginSwapParams(1, 0) : getOriginSwapParams(0, 1)
+        });
+    }
+
+    function getOriginQueryWithHandleETH(address tokenOut, uint256 amount)
+        internal
+        view
+        returns (SwapQuery memory originQuery)
+    {
+        originQuery = SwapQuery({
+            routerAdapter: address(router),
+            tokenOut: tokenOut,
+            minAmountOut: amount,
+            deadline: block.timestamp,
+            rawParams: getOriginHandleETHParams()
+        });
+    }
 
     // ═══════════════════════════════════════════ TESTS: START FROM ETH ═══════════════════════════════════════════════
 
     // Start from ETH, use ETH for RFQ
     function test_bridge_eth_noOriginSwap_noGasRebate() public {
         uint256 amount = 1 ether;
-        // No swap on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: ETH,
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: ""
-        });
+        SwapQuery memory originQuery = getOriginQueryNoSwap(ETH, amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: ETH,
             originAmount: amount,
@@ -80,14 +116,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     // Start from ETH, use ETH for RFQ (with gas rebate)
     function test_bridge_eth_noOriginSwap_withGasRebate() public {
         uint256 amount = 1 ether;
-        // No swap on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: ETH,
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: ""
-        });
+        SwapQuery memory originQuery = getOriginQueryNoSwap(ETH, amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: ETH,
             originAmount: amount,
@@ -112,14 +141,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     // Start from ETH, use WETH for RFQ
     function test_bridge_eth_withOriginWrap_noGasRebate() public {
         uint256 amount = 1 ether;
-        // Wrap ETH on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: address(weth),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginHandleETHParams()
-        });
+        SwapQuery memory originQuery = getOriginQueryWithHandleETH(address(weth), amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(weth),
             originAmount: amount,
@@ -144,14 +166,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     // Start from ETH, use WETH for RFQ (with gas rebate)
     function test_bridge_eth_withOriginWrap_withGasRebate() public {
         uint256 amount = 1 ether;
-        // Wrap ETH on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: address(weth),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginHandleETHParams()
-        });
+        SwapQuery memory originQuery = getOriginQueryWithHandleETH(address(weth), amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(weth),
             originAmount: amount,
@@ -177,14 +192,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     function test_bridge_eth_withOriginSwap_noGasRebate() public {
         uint256 amountBeforeSwap = 1 ether;
         uint256 amount = pool.calculateSwap(1, 0, amountBeforeSwap);
-        // Swap ETH on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: address(token),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginSwapParams(1, 0)
-        });
+        SwapQuery memory originQuery = getOriginQueryWithSwap(address(token), amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token),
             originAmount: amount,
@@ -210,14 +218,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     function test_bridge_eth_withOriginSwap_withGasRebate() public {
         uint256 amountBeforeSwap = 1 ether;
         uint256 amount = pool.calculateSwap(1, 0, amountBeforeSwap);
-        // Swap ETH on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: address(token),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginSwapParams(1, 0)
-        });
+        SwapQuery memory originQuery = getOriginQueryWithSwap(address(token), amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token),
             originAmount: amount,
@@ -244,14 +245,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     // Start from WETH, use WETH for RFQ
     function test_bridge_weth_noOriginSwap_noGasRebate() public {
         uint256 amount = 1 ether;
-        // No swap on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: address(weth),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: ""
-        });
+        SwapQuery memory originQuery = getOriginQueryNoSwap(address(weth), amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(weth),
             originAmount: amount,
@@ -276,14 +270,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     // Start from WETH, use WETH for RFQ (with gas rebate)
     function test_bridge_weth_noOriginSwap_withGasRebate() public {
         uint256 amount = 1 ether;
-        // No swap on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: address(weth),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: ""
-        });
+        SwapQuery memory originQuery = getOriginQueryNoSwap(address(weth), amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(weth),
             originAmount: amount,
@@ -308,14 +295,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     // Start from WETH, use ETH for RFQ
     function test_bridge_weth_withOriginUnwrap_noGasRebate() public {
         uint256 amount = 1 ether;
-        // Unwrap WETH on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: ETH,
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginHandleETHParams()
-        });
+        SwapQuery memory originQuery = getOriginQueryWithHandleETH(ETH, amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: ETH,
             originAmount: amount,
@@ -340,14 +320,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     // Start from WETH, use ETH for RFQ (with gas rebate)
     function test_bridge_weth_withOriginUnwrap_withGasRebate() public {
         uint256 amount = 1 ether;
-        // Unwrap WETH on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: ETH,
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginHandleETHParams()
-        });
+        SwapQuery memory originQuery = getOriginQueryWithHandleETH(ETH, amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: ETH,
             originAmount: amount,
@@ -373,14 +346,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     function test_bridge_weth_withOriginSwap_noGasRebate() public {
         uint256 amountBeforeSwap = 1 ether;
         uint256 amount = pool.calculateSwap(1, 0, amountBeforeSwap);
-        // Swap WETH on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: address(token),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginSwapParams(1, 0)
-        });
+        SwapQuery memory originQuery = getOriginQueryWithSwap(address(token), amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token),
             originAmount: amount,
@@ -406,14 +372,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     function test_bridge_weth_withOriginSwap_withGasRebate() public {
         uint256 amountBeforeSwap = 1 ether;
         uint256 amount = pool.calculateSwap(1, 0, amountBeforeSwap);
-        // Swap WETH on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: address(token),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginSwapParams(1, 0)
-        });
+        SwapQuery memory originQuery = getOriginQueryWithSwap(address(token), amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token),
             originAmount: amount,
@@ -440,14 +399,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     // Start from paired token, use paired token for RFQ
     function test_bridge_token_noOriginSwap_noGasRebate() public {
         uint256 amount = 1 ether;
-        // No swap on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: address(token),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: ""
-        });
+        SwapQuery memory originQuery = getOriginQueryNoSwap(address(token), amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token),
             originAmount: amount,
@@ -472,14 +424,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     // Start from paired token, use paired token for RFQ (with gas rebate)
     function test_bridge_token_noOriginSwap_withGasRebate() public {
         uint256 amount = 1 ether;
-        // No swap on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: address(token),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: ""
-        });
+        SwapQuery memory originQuery = getOriginQueryNoSwap(address(token), amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token),
             originAmount: amount,
@@ -505,14 +450,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     function test_bridge_token_withOriginSwap_noGasRebate() public {
         uint256 amountBeforeSwap = 1 ether;
         uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
-        // Swap token on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: address(weth),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginSwapParams(0, 1)
-        });
+        SwapQuery memory originQuery = getOriginQueryWithSwap(address(weth), amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(weth),
             originAmount: amount,
@@ -538,14 +476,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     function test_bridge_token_withOriginSwap_withGasRebate() public {
         uint256 amountBeforeSwap = 1 ether;
         uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
-        // Swap token on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: address(weth),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginSwapParams(0, 1)
-        });
+        SwapQuery memory originQuery = getOriginQueryWithSwap(address(weth), amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(weth),
             originAmount: amount,
@@ -571,14 +502,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     function test_bridge_token_withOriginSwapUnwrap_noGasRebate() public {
         uint256 amountBeforeSwap = 1 ether;
         uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
-        // Swap & unwrap token on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: ETH,
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginSwapParams(0, 1)
-        });
+        SwapQuery memory originQuery = getOriginQueryWithSwap(ETH, amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: ETH,
             originAmount: amount,
@@ -604,14 +528,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
     function test_bridge_token_withOriginSwapUnwrap_withGasRebate() public {
         uint256 amountBeforeSwap = 1 ether;
         uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
-        // Swap & unwrap token on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: ETH,
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginSwapParams(0, 1)
-        });
+        SwapQuery memory originQuery = getOriginQueryWithSwap(ETH, amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: ETH,
             originAmount: amount,
@@ -637,13 +554,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
 
     function test_bridge_revert_msgValueWithERC20() public {
         uint256 amount = 1 ether;
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: address(token),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: ""
-        });
+        SwapQuery memory originQuery = getOriginQueryNoSwap(address(token), amount);
         vm.expectRevert(TokenNotETH.selector);
         vm.prank(user);
         router.bridge{value: 1 ether}({
@@ -658,13 +569,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
 
     function test_bridge_revert_msgValueZeroWithETH() public {
         uint256 amount = 1 ether;
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: ETH,
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: ""
-        });
+        SwapQuery memory originQuery = getOriginQueryNoSwap(ETH, amount);
         vm.expectRevert(TokenNotContract.selector);
         vm.prank(user);
         router.bridge({
@@ -679,13 +584,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
 
     function test_bridge_revert_msgValueLowerWithETH() public {
         uint256 amount = 1 ether;
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: ETH,
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: ""
-        });
+        SwapQuery memory originQuery = getOriginQueryNoSwap(ETH, amount);
         vm.expectRevert(MsgValueIncorrect.selector);
         vm.prank(user);
         router.bridge{value: amount - 1}({
@@ -700,13 +599,7 @@ abstract contract FastBridgeRouterNativeTest is FBRTest {
 
     function test_bridge_revert_msgValueHigherWithETH() public {
         uint256 amount = 1 ether;
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: ETH,
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: ""
-        });
+        SwapQuery memory originQuery = getOriginQueryNoSwap(ETH, amount);
         vm.expectRevert(MsgValueIncorrect.selector);
         vm.prank(user);
         router.bridge{value: amount + 1}({

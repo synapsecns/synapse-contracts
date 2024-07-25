@@ -59,14 +59,7 @@ abstract contract FastBridgeRouterV2Test is FastBridgeRouterTest {
 
     function check_bridge_noOriginSwap_noGasRebate(address caller, address originSender) public {
         uint256 amount = 1 ether;
-        // No swap on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: address(token0),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: ""
-        });
+        SwapQuery memory originQuery = getOriginQueryNoSwap(amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token0),
             originAmount: amount,
@@ -90,14 +83,7 @@ abstract contract FastBridgeRouterV2Test is FastBridgeRouterTest {
 
     function check_bridge_noOriginSwap_withGasRebate(address caller, address originSender) public {
         uint256 amount = 1 ether;
-        // No swap on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: address(token0),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: ""
-        });
+        SwapQuery memory originQuery = getOriginQueryNoSwap(amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token0),
             originAmount: amount,
@@ -121,15 +107,8 @@ abstract contract FastBridgeRouterV2Test is FastBridgeRouterTest {
 
     function check_bridge_withOriginSwap_noGasRebate(address caller, address originSender) public {
         uint256 amountBeforeSwap = 1 ether;
-        // T0 -> T1 swap on origin chain
         uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: address(token1),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginSwapParams(0, 1)
-        });
+        SwapQuery memory originQuery = getOriginQueryWithSwap(amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token1),
             originAmount: amount,
@@ -153,15 +132,8 @@ abstract contract FastBridgeRouterV2Test is FastBridgeRouterTest {
 
     function check_bridge_withOriginSwap_withGasRebate(address caller, address originSender) public {
         uint256 amountBeforeSwap = 1 ether;
-        // T0 -> T1 swap on origin chain
         uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: address(token1),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginSwapParams(0, 1)
-        });
+        SwapQuery memory originQuery = getOriginQueryWithSwap(amount);
         IFastBridge.BridgeParams memory expectedParams = getExpectedBridgeParams({
             originToken: address(token1),
             originAmount: amount,
@@ -238,14 +210,7 @@ abstract contract FastBridgeRouterV2Test is FastBridgeRouterTest {
 
     function check_bridge_noOriginSwap_senderContract_revert(SwapQuery memory destQuery) public {
         uint256 amount = 1 ether;
-        // No swap on origin chain
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(0),
-            tokenOut: address(token0),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: ""
-        });
+        SwapQuery memory originQuery = getOriginQueryNoSwap(amount);
         expectRevertOriginSenderNotSpecified();
         vm.prank(externalContract);
         router.bridge({
@@ -260,15 +225,8 @@ abstract contract FastBridgeRouterV2Test is FastBridgeRouterTest {
 
     function check_bridge_withOriginSwap_senderContract_revert(SwapQuery memory destQuery) public {
         uint256 amountBeforeSwap = 1 ether;
-        // T0 -> T1 swap on origin chain
         uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
-        SwapQuery memory originQuery = SwapQuery({
-            routerAdapter: address(router),
-            tokenOut: address(token1),
-            minAmountOut: amount,
-            deadline: block.timestamp,
-            rawParams: getOriginSwapParams(0, 1)
-        });
+        SwapQuery memory originQuery = getOriginQueryWithSwap(amount);
         expectRevertOriginSenderNotSpecified();
         vm.prank(externalContract);
         router.bridge({
