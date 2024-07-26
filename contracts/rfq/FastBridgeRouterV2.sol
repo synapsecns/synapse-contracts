@@ -119,10 +119,10 @@ contract FastBridgeRouterV2 is DefaultRouter, Ownable, IFastBridgeRouter {
                 originSender := shr(96, originSender)
             }
         }
-        if (originSender == address(0)) {
+        if (originSender == address(0) && msg.sender.code.length == 0) {
             // We fallback to msg.sender if that is EOA. This establishes backwards compatibility
             // for cases where we can safely assume that the origin sender is the same as msg.sender.
-            return msg.sender.code.length == 0 ? msg.sender : address(0);
+            originSender = msg.sender;
         }
     }
 
