@@ -113,14 +113,14 @@ contract FastBridgeRouterV2 is DefaultRouter, Ownable, IFastBridgeRouter {
             // The easiest way to read from memory is to use assembly
             // solhint-disable-next-line no-inline-assembly
             assembly {
-                // We need to skip the rawParams.length (32 bytes) and the rebate flag (1 byte)
+                // Skip the rawParams.length (32 bytes) and the rebate flag (1 byte)
                 originSender := mload(add(rawParams, 33))
-                // Now We have the address in the highest 160 bits. Shift right by 96 to get it in the lowest 160 bits
+                // The address is in the highest 160 bits. Shift right by 96 to get it in the lowest 160 bits
                 originSender := shr(96, originSender)
             }
         }
         if (originSender == address(0) && msg.sender.code.length == 0) {
-            // We fallback to msg.sender if that is EOA. This establishes backwards compatibility
+            // Fall back to msg.sender if it is an EOA. This maintains backward compatibility
             // for cases where we can safely assume that the origin sender is the same as msg.sender.
             originSender = msg.sender;
         }
