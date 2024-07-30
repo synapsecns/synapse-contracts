@@ -27,13 +27,17 @@ contract ConfigureFastBridgeRouter is BasicSynapseScript {
     function configureFastBridgeRouter() internal {
         address fastBridge = getDeploymentAddress("FastBridge");
         if (fastBridgeRouter.fastBridge() != fastBridge) {
-            printLog("Setting FastBridge address to %s", fastBridge);
             fastBridgeRouter.setFastBridge(fastBridge);
+            printLog(string.concat(unicode"✅ Fast bridge set to ", vm.toString(fastBridge)));
+        } else {
+            printLog(string.concat(unicode"🟡 Skipping: Fast bridge is already set to ", vm.toString(fastBridge)));
         }
         address swapQuoter = getDeploymentAddress("SwapQuoterV2");
         if (fastBridgeRouter.swapQuoter() != swapQuoter) {
-            printLog("Setting SwapQuoter address to %s", swapQuoter);
             fastBridgeRouter.setSwapQuoter(swapQuoter);
+            printLog(string.concat(unicode"✅ SwapQuoter set to ", vm.toString(swapQuoter)));
+        } else {
+            printLog(string.concat(unicode"🟡 Skipping: SwapQuoter is already set to ", vm.toString(swapQuoter)));
         }
     }
 }

@@ -41,7 +41,7 @@ contract GenerateTokenTree is BasicSynapseScript {
     LinkedPool public linkedPool;
 
     string public graphFN;
-    string public graphSVG;
+    string public graphPNG;
 
     // (pool index => list of nodes added with the pool)
     mapping(uint256 => uint256[]) public poolToAddedNodes;
@@ -52,13 +52,13 @@ contract GenerateTokenTree is BasicSynapseScript {
         string memory configName = StringUtils.concat("LinkedPool.", bridgeSymbol);
         config = getDeployConfig(configName);
         graphFN = genericConfigPath({fileName: configName.concat(".dot")});
-        graphSVG = genericConfigPath({fileName: configName.concat(".svg")});
+        graphPNG = genericConfigPath({fileName: configName.concat(".png")});
         // Deploy new Linked Pool in a forked environment
         deployLinkedPool();
         addPoolsToTokenTree();
         // Inspect the Linked Pool and generate the graph image file
         printGraph();
-        generateSVG();
+        generatePNG();
     }
 
     // ═════════════════════════════════════════════ LINKED POOL SETUP ═════════════════════════════════════════════════
@@ -94,14 +94,14 @@ contract GenerateTokenTree is BasicSynapseScript {
 
     // ═════════════════════════════════════════════ IMAGE GENERATION ══════════════════════════════════════════════════
 
-    /// @notice Generates SVG image from the DOT file.
-    function generateSVG() internal {
+    /// @notice Generates PNG image from the DOT file.
+    function generatePNG() internal {
         string[] memory inputs = new string[](5);
         inputs[0] = "dot";
-        inputs[1] = "-Tsvg";
+        inputs[1] = "-Tpng";
         inputs[2] = graphFN;
         inputs[3] = "-o";
-        inputs[4] = graphSVG;
+        inputs[4] = graphPNG;
         vm.ffi(inputs);
     }
 
