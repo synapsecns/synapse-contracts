@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {DefaultRouter} from "../router/DefaultRouter.sol";
+import {DefaultRouter, DeadlineExceeded, InsufficientOutputAmount} from "../router/DefaultRouter.sol";
 import {UniversalTokenLib} from "../router/libs/UniversalToken.sol";
 import {ActionLib, LimitedToken} from "../router/libs/Structs.sol";
 import {IFastBridge} from "./interfaces/IFastBridge.sol";
@@ -65,6 +65,14 @@ contract FastBridgeRouterV2 is DefaultRouter, Ownable, IFastBridgeRouter {
             (token, amount) = _doSwap(address(this), token, amount, originQuery);
         } else {
             // Otherwise, pull the token from the user to this contract
+            // We still need to perform the deadline and amountOut checks
+            // solhint-disable-next-line not-rely-on-time
+            if (block.timestamp > originQuery.deadline) {
+                revert DeadlineExceeded();
+            }
+            if (amount < originQuery.minAmountOut) {
+                revert InsufficientOutputAmount();
+            }
             amount = _pullToken(address(this), token, amount);
         }
         IFastBridge.BridgeParams memory params = IFastBridge.BridgeParams({
