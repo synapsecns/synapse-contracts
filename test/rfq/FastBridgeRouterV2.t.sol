@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
+import {DeadlineExceeded, InsufficientOutputAmount} from "../../contracts/router/DefaultRouter.sol";
 import {FastBridgeRouterV2} from "../../contracts/rfq/FastBridgeRouterV2.sol";
 
 import {MockSenderContract} from "../mocks/MockSenderContract.sol";
@@ -225,6 +226,74 @@ abstract contract FastBridgeRouterV2Test is FastBridgeRouterTest {
         });
         check_bridge_withOriginSwap_senderContract_revert({
             destQuery: getDestQueryWithRebateWithOriginSender(1 ether, address(0))
+        });
+    }
+
+    // ═══════════════════════════════════════════════ MISC REVERTS ════════════════════════════════════════════════════
+
+    function test_bridge_noOriginSwap_revert_deadlineExceeded() public {
+        uint256 amount = 1 ether;
+        SwapQuery memory originQuery = getOriginQueryNoSwap(amount);
+        originQuery.deadline = block.timestamp - 1;
+        vm.expectRevert(DeadlineExceeded.selector);
+        vm.prank(user);
+        router.bridge({
+            recipient: recipient,
+            chainId: DST_CHAIN_ID,
+            token: address(token0),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: getDestQueryNoRebate(amount)
+        });
+    }
+
+    function test_bridge_withOriginSwap_revert_deadlineExceeded() public {
+        uint256 amountBeforeSwap = 1 ether;
+        uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
+        SwapQuery memory originQuery = getOriginQueryWithSwap(amount);
+        originQuery.deadline = block.timestamp - 1;
+        vm.expectRevert(DeadlineExceeded.selector);
+        vm.prank(user);
+        router.bridge({
+            recipient: recipient,
+            chainId: DST_CHAIN_ID,
+            token: address(token0),
+            amount: amountBeforeSwap,
+            originQuery: originQuery,
+            destQuery: getDestQueryNoRebate(amount)
+        });
+    }
+
+    function test_bridge_noOriginSwap_revert_insufficientOutputAmount() public {
+        uint256 amount = 1 ether;
+        SwapQuery memory originQuery = getOriginQueryNoSwap(amount);
+        originQuery.minAmountOut = amount + 1;
+        vm.expectRevert(InsufficientOutputAmount.selector);
+        vm.prank(user);
+        router.bridge({
+            recipient: recipient,
+            chainId: DST_CHAIN_ID,
+            token: address(token0),
+            amount: amount,
+            originQuery: originQuery,
+            destQuery: getDestQueryNoRebate(amount)
+        });
+    }
+
+    function test_bridge_withOriginSwap_revert_insufficientOutputAmount() public {
+        uint256 amountBeforeSwap = 1 ether;
+        uint256 amount = pool.calculateSwap(0, 1, amountBeforeSwap);
+        SwapQuery memory originQuery = getOriginQueryWithSwap(amount);
+        originQuery.minAmountOut = amount + 1;
+        vm.expectRevert(InsufficientOutputAmount.selector);
+        vm.prank(user);
+        router.bridge({
+            recipient: recipient,
+            chainId: DST_CHAIN_ID,
+            token: address(token0),
+            amount: amountBeforeSwap,
+            originQuery: originQuery,
+            destQuery: getDestQueryNoRebate(amount)
         });
     }
 }
