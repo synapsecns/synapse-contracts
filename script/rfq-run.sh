@@ -20,6 +20,9 @@ fi
 fastBridgeDeployments=$(find ./deployments -name FastBridge.json)
 # Extract chain name from the list of filenames, sort alphabetically
 chainNames=$(echo "$fastBridgeDeployments" | sed 's/.*\/\(.*\)\/FastBridge.json/\1/' | sort)
+# Print the comma separated list of chain aliases, don't put a comma after the last one
+chainNamesFormatted=$(echo "$chainNames" | sed ':a;N;$!ba;s/\n/, /g')
+echo "Running script $scriptFN for chains: [$chainNamesFormatted]"
 
 for chainName in $chainNames; do
   ./script/run.sh "$scriptFN" "$chainName" "$@"
