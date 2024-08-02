@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {FastBridgeRouterTest} from "./FastBridgeRouter.t.sol";
+import {FastBridgeRouterV2Test} from "./FastBridgeRouterV2.t.sol";
 import {ISwapQuoterV1} from "../interfaces/ISwapQuoterV1.sol";
 
-contract FastBridgeRouterQuoterV1Test is FastBridgeRouterTest {
+contract FastBridgeRouterV2QuoterV1Test is FastBridgeRouterV2Test {
     function setUpSwapQuoter() internal override {
         // SwapQuoter V1 is solidity 0.6.12, so we use the cheatcode to deploy it
         // new SwapQuoter(synapseRouter, weth, owner)

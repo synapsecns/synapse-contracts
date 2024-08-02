@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.17;
 
-import {FastBridgeRouterTest} from "./FastBridgeRouter.t.sol";
+import {FastBridgeRouterV2NativeTest} from "./FastBridgeRouterV2.Native.t.sol";
 import {ISwapQuoterV1} from "../interfaces/ISwapQuoterV1.sol";
 
-contract FastBridgeRouterQuoterV1Test is FastBridgeRouterTest {
+contract FastBridgeRouterV2NativeQuoterV1Test is FastBridgeRouterV2NativeTest {
     function setUpSwapQuoter() internal override {
         // SwapQuoter V1 is solidity 0.6.12, so we use the cheatcode to deploy it
         // new SwapQuoter(synapseRouter, weth, owner)
         bytes memory constructorArgs = abi.encode(
             // Existing SwapQuoter will be always pointing towards another router
             address(1), // synapseRouter
-            // We don't care about WETH in this test
-            address(2), // weth
+            address(weth), // weth
             address(this) // owner
         );
         address swapQuoter = deployCode("SwapQuoter.sol", constructorArgs);

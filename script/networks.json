@@ -1,9 +1,6 @@
 {
   "forgeOptions": {
-    "arbitrum": "--with-gas-price 100000000",
     "aurora": "--legacy --slow",
-    "base": "--with-gas-price 100000000",
-    "blast": "--with-gas-price 100000000",
     "boba": "--legacy --skip-simulation --slow",
     "canto": "--legacy --slow",
     "cronos": "--slow",
@@ -14,7 +11,6 @@
     "metis": "--legacy",
     "moonbeam": "--skip-simulation --slow",
     "moonriver": "--skip-simulation --slow",
-    "optimism": "--with-gas-price 1000000",
     "polygon": "--slow"
   }
 }
