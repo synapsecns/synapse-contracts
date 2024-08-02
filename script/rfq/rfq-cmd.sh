@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # This script runs an RFQ script for all chains with FastBridge deployment
-# Usage: ./script/rfq-run.sh pathToScript <args...>
-# - ./script/run.sh pathToScript chain <args...> will be run for all RFQ chains
+# Usage: ./script/rfq-cmd.sh "<command>" <args..>
+# - <command> chain <args...> will be run for all RFQ chains
 
 # Colors
 RED="\033[0;31m"
 NC="\033[0m" # No Color
 
-scriptFN=$1
+command=$1
 # Get the rest of the args
 shift 1
 # Check that all required args exist
-if [ -z "$scriptFN" ]; then
-  echo -e "${RED}Usage: ./script/rfq-run.sh pathToScript <args...>${NC}"
+if [ -z "$command" ]; then
+  echo -e "${RED}Usage: ./script/rfq-cmd.sh <command> <args...>${NC}"
   exit 1
 fi
 
@@ -22,8 +22,8 @@ fastBridgeDeployments=$(find ./deployments -name FastBridge.json)
 chainNames=$(echo "$fastBridgeDeployments" | sed 's/.*\/\(.*\)\/FastBridge.json/\1/' | sort)
 # Print the comma separated list of chain aliases, don't put a comma after the last one
 chainNamesFormatted=$(echo "$chainNames" | sed ':a;N;$!ba;s/\n/, /g')
-echo "Running script $scriptFN for chains: [$chainNamesFormatted]"
+echo "Running $command for chains: [$chainNamesFormatted]"
 
 for chainName in $chainNames; do
-  ./script/run.sh "$scriptFN" "$chainName" "$@"
+  $command "$chainName" "$@"
 done
