@@ -1,0 +1,30 @@
+{
+  "address": "0x0000000000Cc5af216a3E1614091a20e11bbfD32",
+  "constructorArgs": "0x",
+  "abi": [
+    {
+      "type": "function",
+      "name": "calculateAddLiquidity",
+      "inputs": [
+        {
+          "name": "pool",
+          "type": "address",
+          "internalType": "address"
+        },
+        {
+          "name": "amounts",
+          "type": "uint256[]",
+          "internalType": "uint256[]"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "amountOut",
+          "type": "uint256",
+          "internalType": "uint256"
+        }
+      ],
+      "stateMutability": "view"
+    }
+  ]
+}
