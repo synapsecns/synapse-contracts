@@ -1,0 +1,22 @@
+digraph {
+    user [label = "User";];
+    router [label = "RouterV2";shape = rect;];
+    adapterSwap [label = <<I>2. adapterSwap()</I>>;shape = none;];
+    module [label = "Bridge Module";shape = rect;style = dashed;];
+    adapter [label = "Router Adapter";shape = rect;];
+    bridge [label = "SynapseBridge | SynapseCCTP | ...";shape = rect;];
+    initiateBridge [label = <<I>3. Initiate bridging</I>>;shape = none;];
+    
+    subgraph {
+        rank = same;
+        user -> router [label = <<I>1. bridgeViaSynapse()</I>>;];
+        router -> module [label = <<I>3. delegateBridge()</I>>; style = dashed;];
+    }
+    
+    router -> adapterSwap [dir = none;];
+    adapterSwap -> adapter;
+    
+    router:e -> initiateBridge:n [dir = none;];
+    module -> initiateBridge [dir = none; style = dashed; weight = 10;];
+    initiateBridge -> bridge;
+}
