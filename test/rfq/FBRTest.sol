@@ -10,10 +10,11 @@ import {MockDefaultPool} from "../mocks/MockDefaultPool.sol";
 import {Test} from "forge-std/Test.sol";
 
 abstract contract FBRTest is Test {
-    uint256 constant RFQ_DEADLINE = 12 hours;
-    address constant TOKEN_OUT = address(1337);
-    uint256 constant FIXED_FEE = 0.01 ether;
-    uint32 constant DST_CHAIN_ID = 420;
+    uint8 public constant REBATE_FLAG = 42;
+    uint256 public constant RFQ_DEADLINE = 12 hours;
+    address public constant TOKEN_OUT = address(1337);
+    uint256 public constant FIXED_FEE = 0.01 ether;
+    uint32 public constant DST_CHAIN_ID = 420;
 
     FastBridgeRouter public router;
     MockFastBridge public fastBridge;
@@ -29,9 +30,13 @@ abstract contract FBRTest is Test {
         recipient = makeAddr("Recipient");
         user = makeAddr("User");
         fastBridge = new MockFastBridge();
-        router = new FastBridgeRouter(owner);
+        router = FastBridgeRouter(deployRouter());
         vm.prank(owner);
         router.setFastBridge(address(fastBridge));
+    }
+
+    function deployRouter() public virtual returns (address payable) {
+        return payable(new FastBridgeRouter(owner));
     }
 
     function test_constructor() public {
@@ -75,7 +80,7 @@ abstract contract FBRTest is Test {
             tokenOut: TOKEN_OUT,
             minAmountOut: amount - FIXED_FEE,
             deadline: block.timestamp + RFQ_DEADLINE,
-            rawParams: abi.encodePacked(uint8(42))
+            rawParams: abi.encodePacked(REBATE_FLAG)
         });
     }
 
