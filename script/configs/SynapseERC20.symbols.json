@@ -1,4 +1,16 @@
 {
+  "Metis": {
+    "dfk": {
+      "decimals": 18,
+      "name": "Metis Token",
+      "symbol": "Metis"
+    },
+    "klatyn": {
+      "decimals": 18,
+      "name": "Metis Token",
+      "symbol": "Metis"
+    }
+  },
   "SPEC": {
     "base": {
       "decimals": 18,

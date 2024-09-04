@@ -7,7 +7,8 @@
     "JUMP",
     "gOHM",
     "UST",
-    "JEWEL"
+    "JEWEL",
+    "Metis"
   ],
   "tokens": {
     "JEWEL": {
@@ -27,6 +28,15 @@
       "minFee": "0x00000000000000000000000000000000000000000000021e19e0c9bab2400000",
       "token": "0xE3c82A836Ec85311a433fBd9486EfAF4b1AFbF48",
       "tokenType": 0
+    },
+    "Metis": {
+      "bridgeFee": 4000000,
+      "bridgeToken": "0x75cb093E4D61d2A2e65D8e0BBb01DE8d89b53481",
+      "decimals": 18,
+      "maxFee": "0x000000000000000000000000000000000000000000032dcba101cb7220c6938c",
+      "minFee": "0x000000000000000000000000000000000000000000000000002386f26fc10000",
+      "token": "0x75cb093E4D61d2A2e65D8e0BBb01DE8d89b53481",
+      "tokenType": 1
     },
     "SYN": {
       "bridgeFee": 5000000,
@@ -74,5 +84,5 @@
       "tokenType": 0
     }
   },
-  "wgas": "0x0000000000000000000000000000000000000000"
+  "wgas": "0x75cb093E4D61d2A2e65D8e0BBb01DE8d89b53481"
 }
