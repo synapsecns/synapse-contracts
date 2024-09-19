@@ -8,6 +8,8 @@ import {Ownable} from "@openzeppelin/contracts-4.5.0/access/Ownable.sol";
 contract MessageBusManager is IManager, Ownable {
     address public immutable MESSAGE_BUS;
 
+    error MessageBusManager__NotFailed(bytes32 messageId);
+
     constructor(address messageBus_, address owner_) {
         MESSAGE_BUS = messageBus_;
         transferOwnership(owner_);

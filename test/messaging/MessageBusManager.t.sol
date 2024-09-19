@@ -185,7 +185,7 @@ contract MessageBusManagerTest is Test {
         messageBus.setMessageStatus(messageIds[0], MessageBusReceiver.TxStatus.Fail);
         messageBus.setMessageStatus(messageIds[1], MessageBusReceiver.TxStatus.Null);
         messageBus.setMessageStatus(messageIds[2], MessageBusReceiver.TxStatus.Fail);
-        vm.expectRevert();
+        vm.expectRevert(abi.encodeWithSelector(MessageBusManager.MessageBusManager__NotFailed.selector, messageIds[1]));
         vm.prank(owner);
         manager.resetFailedMessages(messageIds);
     }
@@ -195,7 +195,7 @@ contract MessageBusManagerTest is Test {
         messageBus.setMessageStatus(messageIds[0], MessageBusReceiver.TxStatus.Fail);
         messageBus.setMessageStatus(messageIds[1], MessageBusReceiver.TxStatus.Fail);
         messageBus.setMessageStatus(messageIds[2], MessageBusReceiver.TxStatus.Success);
-        vm.expectRevert();
+        vm.expectRevert(abi.encodeWithSelector(MessageBusManager.MessageBusManager__NotFailed.selector, messageIds[2]));
         vm.prank(owner);
         manager.resetFailedMessages(messageIds);
     }
