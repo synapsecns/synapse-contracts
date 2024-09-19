@@ -15,8 +15,14 @@ contract MessageBusManager is IManager, Ownable {
         transferOwnership(owner_);
     }
 
-    function resetFailedMessages(bytes32[] calldata messageIds) external {
-        // TODO: implement
+    function resetFailedMessages(bytes32[] calldata messageIds) external onlyOwner {
+        for (uint256 i = 0; i < messageIds.length; i++) {
+            bytes32 messageId = messageIds[i];
+            if (getExecutedMessage(messageId) != IManageable.TxStatus.Fail) {
+                revert MessageBusManager__NotFailed(messageId);
+            }
+            IManageable(MESSAGE_BUS).updateMessageStatus(messageId, IManageable.TxStatus.Null);
+        }
     }
 
     // ═════════════════════════════════════════════ GENERIC MANAGING ══════════════════════════════════════════════════
