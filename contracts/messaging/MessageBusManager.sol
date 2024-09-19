@@ -12,6 +12,9 @@ contract MessageBusManager is IManager, Ownable {
     error MessageBusManager__ZeroAddress();
 
     constructor(address messageBus_, address owner_) {
+        if (messageBus_ == address(0) || owner_ == address(0)) {
+            revert MessageBusManager__ZeroAddress();
+        }
         MESSAGE_BUS = messageBus_;
         transferOwnership(owner_);
     }
