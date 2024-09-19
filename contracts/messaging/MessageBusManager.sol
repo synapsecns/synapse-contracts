@@ -9,6 +9,7 @@ contract MessageBusManager is IManager, Ownable {
     address public immutable MESSAGE_BUS;
 
     error MessageBusManager__NotFailed(bytes32 messageId);
+    error MessageBusManager__ZeroAddress();
 
     constructor(address messageBus_, address owner_) {
         MESSAGE_BUS = messageBus_;

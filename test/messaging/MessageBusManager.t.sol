@@ -46,6 +46,21 @@ contract MessageBusManagerTest is Test {
         arr[2] = c;
     }
 
+    function test_constructor() public {
+        assertEq(manager.MESSAGE_BUS(), address(messageBus));
+        assertEq(manager.owner(), owner);
+    }
+
+    function test_constructor_revert_zeroMessageBus() public {
+        vm.expectRevert(MessageBusManager.MessageBusManager__ZeroAddress.selector);
+        new MessageBusManager({messageBus_: address(0), owner_: owner});
+    }
+
+    function test_constructor_revert_zeroOwner() public {
+        vm.expectRevert(MessageBusManager.MessageBusManager__ZeroAddress.selector);
+        new MessageBusManager({messageBus_: address(messageBus), owner_: address(0)});
+    }
+
     function test_updateMessageStatus_success() public {
         vm.prank(owner);
         manager.updateMessageStatus(MESSAGE_ID, IManageable.TxStatus.Success);
