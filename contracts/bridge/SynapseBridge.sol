@@ -244,9 +244,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         emit TokenMint(to, token, amount.sub(fee), fee, kappa);
         token.mint(address(this), amount);
         IERC20(token).safeTransfer(to, amount.sub(fee));
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call.value(chainGasAmount)("");
-        }
     }
 
     /**
@@ -353,10 +350,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
-        // Transfer gas airdrop
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call.value(chainGasAmount)("");
-        }
         // first check to make sure more will be given than min amount required
         uint256 expectedOutput = ISwap(pool).calculateSwap(tokenIndexFrom, tokenIndexTo, amount.sub(fee));
 
