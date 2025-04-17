@@ -48,6 +48,12 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         chainGasAmount = amount;
     }
 
+    function withdrawChainGas() external {
+        require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+        (bool success, ) = msg.sender.call{value: address(this).balance}("");
+        require(success, "ETH_TRANSFER_FAILED");
+    }
+
     function setWethAddress(address payable _wethAddress) external {
         require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not admin");
         WETH_ADDRESS = _wethAddress;
@@ -161,7 +167,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
      * @param chainId which chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
      * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-     **/
+     *
+     */
     function deposit(
         address to,
         uint256 chainId,
@@ -178,7 +185,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
      * @param chainId which underlying chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
      * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-     **/
+     *
+     */
     function redeem(
         address to,
         uint256 chainId,
@@ -196,7 +204,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
      * @param amount Amount in native token decimals to withdraw
      * @param fee Amount in native token decimals to save to the contract as fees
      * @param kappa kappa
-     **/
+     *
+     */
     function withdraw(
         address to,
         IERC20 token,
@@ -228,7 +237,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
      * @param amount Amount in native token decimals to transfer cross-chain post-fees
      * @param fee Amount in native token decimals to save to the contract as fees
      * @param kappa kappa
-     **/
+     *
+     */
     function mint(
         address payable to,
         IERC20Mintable token,
@@ -256,7 +266,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
      * @param tokenIndexTo the token the user wants to swap to
      * @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
      * @param deadline latest timestamp to accept this transaction
-     **/
+     *
+     */
     function depositAndSwap(
         address to,
         uint256 chainId,
@@ -281,7 +292,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
      * @param tokenIndexTo the token the user wants to swap to
      * @param minDy the min amount the user would like to receive, or revert to only minting the SynERC20 token crosschain.
      * @param deadline latest timestamp to accept this transaction
-     **/
+     *
+     */
     function redeemAndSwap(
         address to,
         uint256 chainId,
@@ -305,7 +317,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
      * @param swapTokenIndex Specifies which of the underlying LP assets the nodes should attempt to redeem for
      * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
      * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
-     **/
+     *
+     */
     function redeemAndRemove(
         address to,
         uint256 chainId,
@@ -332,7 +345,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
      * @param minDy Minumum amount (in final asset decimals) that must be swapped for, otherwise the user will receive the SynERC20.
      * @param deadline Epoch time of the deadline that the swap is allowed to be executed.
      * @param kappa kappa
-     **/
+     *
+     */
     function mintAndSwap(
         address payable to,
         IERC20Mintable token,
@@ -437,7 +451,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
      * @param swapMinAmount Specifies the minimum amount of the underlying asset needed for the nodes to execute the redeem/swap
      * @param swapDeadline Specificies the deadline that the nodes are allowed to try to redeem/swap the LP token
      * @param kappa kappa
-     **/
+     *
+     */
     function withdrawAndRemove(
         address to,
         IERC20 token,
@@ -513,7 +528,8 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
      * @param chainId which underlying chain to bridge assets onto
      * @param token ERC20 compatible token to deposit into the bridge
      * @param amount Amount in native token decimals to transfer cross-chain pre-fees
-     **/
+     *
+     */
     function redeemV2(
         bytes32 to,
         uint256 chainId,
