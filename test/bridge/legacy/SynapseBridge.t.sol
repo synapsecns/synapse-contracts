@@ -121,7 +121,7 @@ contract SynapseBridgeLegacyTest is Test {
 
     function test_deposit_revert_disabled() public {
         disableLegacySend();
-        vm.expectRevert("Legacy bridge is disabled");
+        vm.expectRevert("Legacy send is disabled");
         vm.prank(user);
         bridge.deposit({to: address(1), chainId: 2, token: IERC20(address(token)), amount: 3});
     }
@@ -159,7 +159,7 @@ contract SynapseBridgeLegacyTest is Test {
 
     function test_depositAndSwap_revert_disabled() public {
         disableLegacySend();
-        vm.expectRevert("Legacy bridge is disabled");
+        vm.expectRevert("Legacy send is disabled");
         vm.prank(user);
         bridge.depositAndSwap({
             to: address(1),
@@ -188,7 +188,7 @@ contract SynapseBridgeLegacyTest is Test {
 
     function test_redeem_revert_disabled() public {
         disableLegacySend();
-        vm.expectRevert("Legacy bridge is disabled");
+        vm.expectRevert("Legacy send is disabled");
         vm.prank(user);
         bridge.redeem({to: address(1), chainId: 2, token: ERC20Burnable(address(token)), amount: 3});
     }
@@ -226,7 +226,7 @@ contract SynapseBridgeLegacyTest is Test {
 
     function test_redeemAndSwap_revert_disabled() public {
         disableLegacySend();
-        vm.expectRevert("Legacy bridge is disabled");
+        vm.expectRevert("Legacy send is disabled");
         vm.prank(user);
         bridge.redeemAndSwap({
             to: address(1),
@@ -271,7 +271,7 @@ contract SynapseBridgeLegacyTest is Test {
 
     function test_redeemAndRemove_revert_disabled() public {
         disableLegacySend();
-        vm.expectRevert("Legacy bridge is disabled");
+        vm.expectRevert("Legacy send is disabled");
         vm.prank(user);
         bridge.redeemAndRemove({
             to: address(1),
@@ -299,7 +299,7 @@ contract SynapseBridgeLegacyTest is Test {
 
     function test_redeemV2_revert_disabled() public {
         disableLegacySend();
-        vm.expectRevert("Legacy bridge is disabled");
+        vm.expectRevert("Legacy send is disabled");
         vm.prank(user);
         bridge.redeemV2({to: bytes32(uint256(1)), chainId: 2, token: ERC20Burnable(address(token)), amount: 3});
     }
