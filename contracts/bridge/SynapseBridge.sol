@@ -34,10 +34,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     address payable public WETH_ADDRESS;
 
     mapping(bytes32 => bool) private kappaMap;
-    bool public isLegacyBridgeDisabled;
+    bool public isLegacySendDisabled;
 
-    modifier legacyBridgeEnabled() {
-        require(!isLegacyBridgeDisabled, "Legacy bridge is disabled");
+    modifier legacySendEnabled() {
+        require(!isLegacySendDisabled, "Legacy send is disabled");
         _;
     }
 
@@ -60,9 +60,9 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         require(success, "ETH_TRANSFER_FAILED");
     }
 
-    function setLegacyBridgeDisabled(bool _isLegacyBridgeDisabled) external {
+    function setLegacySendDisabled(bool _isLegacySendDisabled) external {
         require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
-        isLegacyBridgeDisabled = _isLegacyBridgeDisabled;
+        isLegacySendDisabled = _isLegacySendDisabled;
     }
 
     function setWethAddress(address payable _wethAddress) external {
@@ -184,7 +184,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint256 chainId,
         IERC20 token,
         uint256 amount
-    ) external nonReentrant whenNotPaused legacyBridgeEnabled {
+    ) external nonReentrant whenNotPaused legacySendEnabled {
         emit TokenDeposit(to, chainId, token, amount);
         token.safeTransferFrom(msg.sender, address(this), amount);
     }
@@ -201,7 +201,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint256 chainId,
         ERC20Burnable token,
         uint256 amount
-    ) external nonReentrant whenNotPaused legacyBridgeEnabled {
+    ) external nonReentrant whenNotPaused legacySendEnabled {
         emit TokenRedeem(to, chainId, token, amount);
         token.burnFrom(msg.sender, amount);
     }
@@ -283,7 +283,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint8 tokenIndexTo,
         uint256 minDy,
         uint256 deadline
-    ) external nonReentrant whenNotPaused legacyBridgeEnabled {
+    ) external nonReentrant whenNotPaused legacySendEnabled {
         emit TokenDepositAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
         token.safeTransferFrom(msg.sender, address(this), amount);
     }
@@ -308,7 +308,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint8 tokenIndexTo,
         uint256 minDy,
         uint256 deadline
-    ) external nonReentrant whenNotPaused legacyBridgeEnabled {
+    ) external nonReentrant whenNotPaused legacySendEnabled {
         emit TokenRedeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
         token.burnFrom(msg.sender, amount);
     }
@@ -331,7 +331,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint8 swapTokenIndex,
         uint256 swapMinAmount,
         uint256 swapDeadline
-    ) external nonReentrant whenNotPaused legacyBridgeEnabled {
+    ) external nonReentrant whenNotPaused legacySendEnabled {
         emit TokenRedeemAndRemove(to, chainId, token, amount, swapTokenIndex, swapMinAmount, swapDeadline);
         token.burnFrom(msg.sender, amount);
     }
@@ -536,7 +536,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint256 chainId,
         ERC20Burnable token,
         uint256 amount
-    ) external nonReentrant whenNotPaused legacyBridgeEnabled {
+    ) external nonReentrant whenNotPaused legacySendEnabled {
         emit TokenRedeemV2(to, chainId, token, amount);
         token.burnFrom(msg.sender, amount);
     }

@@ -63,32 +63,32 @@ contract SynapseBridgeLegacyTest is Test {
         token.approve(address(bridge), type(uint256).max);
     }
 
-    function disableLegacyBridge() public {
+    function disableLegacySend() public {
         vm.prank(governance);
-        bridge.setLegacyBridgeDisabled(true);
+        bridge.setLegacySendDisabled(true);
     }
 
-    function enableLegacyBridge() public {
+    function enableLegacySend() public {
         vm.prank(governance);
-        bridge.setLegacyBridgeDisabled(false);
+        bridge.setLegacySendDisabled(false);
     }
 
-    function test_disableLegacyBridge() public {
-        disableLegacyBridge();
-        assertTrue(bridge.isLegacyBridgeDisabled());
+    function test_disableLegacySend() public {
+        disableLegacySend();
+        assertTrue(bridge.isLegacySendDisabled());
     }
 
-    function test_enableLegacyBridge() public {
-        disableLegacyBridge();
-        enableLegacyBridge();
-        assertFalse(bridge.isLegacyBridgeDisabled());
+    function test_enableLegacySend() public {
+        disableLegacySend();
+        enableLegacySend();
+        assertFalse(bridge.isLegacySendDisabled());
     }
 
-    function test_setLegacyBridgeDisabled_revert_notGovernance(address caller) public {
+    function test_setLegacySendDisabled_revert_notGovernance(address caller) public {
         vm.assume(caller != governance);
         vm.prank(caller);
         vm.expectRevert("Not governance");
-        bridge.setLegacyBridgeDisabled(true);
+        bridge.setLegacySendDisabled(true);
     }
 
     function test_withdrawChainGas() public {
@@ -114,13 +114,13 @@ contract SynapseBridgeLegacyTest is Test {
     }
 
     function test_deposit_reenabled() public {
-        disableLegacyBridge();
-        enableLegacyBridge();
+        disableLegacySend();
+        enableLegacySend();
         test_deposit();
     }
 
     function test_deposit_revert_disabled() public {
-        disableLegacyBridge();
+        disableLegacySend();
         vm.expectRevert("Legacy bridge is disabled");
         vm.prank(user);
         bridge.deposit({to: address(1), chainId: 2, token: IERC20(address(token)), amount: 3});
@@ -152,13 +152,13 @@ contract SynapseBridgeLegacyTest is Test {
     }
 
     function test_depositAndSwap_reenabled() public {
-        disableLegacyBridge();
-        enableLegacyBridge();
+        disableLegacySend();
+        enableLegacySend();
         test_depositAndSwap();
     }
 
     function test_depositAndSwap_revert_disabled() public {
-        disableLegacyBridge();
+        disableLegacySend();
         vm.expectRevert("Legacy bridge is disabled");
         vm.prank(user);
         bridge.depositAndSwap({
@@ -181,13 +181,13 @@ contract SynapseBridgeLegacyTest is Test {
     }
 
     function test_redeem_reenabled() public {
-        disableLegacyBridge();
-        enableLegacyBridge();
+        disableLegacySend();
+        enableLegacySend();
         test_redeem();
     }
 
     function test_redeem_revert_disabled() public {
-        disableLegacyBridge();
+        disableLegacySend();
         vm.expectRevert("Legacy bridge is disabled");
         vm.prank(user);
         bridge.redeem({to: address(1), chainId: 2, token: ERC20Burnable(address(token)), amount: 3});
@@ -219,13 +219,13 @@ contract SynapseBridgeLegacyTest is Test {
     }
 
     function test_redeemAndSwap_reenabled() public {
-        disableLegacyBridge();
-        enableLegacyBridge();
+        disableLegacySend();
+        enableLegacySend();
         test_redeemAndSwap();
     }
 
     function test_redeemAndSwap_revert_disabled() public {
-        disableLegacyBridge();
+        disableLegacySend();
         vm.expectRevert("Legacy bridge is disabled");
         vm.prank(user);
         bridge.redeemAndSwap({
@@ -264,13 +264,13 @@ contract SynapseBridgeLegacyTest is Test {
     }
 
     function test_redeemAndRemove_reenabled() public {
-        disableLegacyBridge();
-        enableLegacyBridge();
+        disableLegacySend();
+        enableLegacySend();
         test_redeemAndRemove();
     }
 
     function test_redeemAndRemove_revert_disabled() public {
-        disableLegacyBridge();
+        disableLegacySend();
         vm.expectRevert("Legacy bridge is disabled");
         vm.prank(user);
         bridge.redeemAndRemove({
@@ -292,13 +292,13 @@ contract SynapseBridgeLegacyTest is Test {
     }
 
     function test_redeemV2_reenabled() public {
-        disableLegacyBridge();
-        enableLegacyBridge();
+        disableLegacySend();
+        enableLegacySend();
         test_redeemV2();
     }
 
     function test_redeemV2_revert_disabled() public {
-        disableLegacyBridge();
+        disableLegacySend();
         vm.expectRevert("Legacy bridge is disabled");
         vm.prank(user);
         bridge.redeemV2({to: bytes32(uint256(1)), chainId: 2, token: ERC20Burnable(address(token)), amount: 3});
