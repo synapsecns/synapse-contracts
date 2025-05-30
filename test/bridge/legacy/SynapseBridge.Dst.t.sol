@@ -284,4 +284,56 @@ contract SynapseBridgeLegacyDstTest is Test {
     function test_withdrawAndRemove_legacySendDisabled_reverts_withReentrancy() public withLegacySendDisabled {
         test_withdrawAndRemove_reverts_withReentrancy();
     }
+
+    // ══════════════════════════════════════════ TESTS: NODE GROUP ONLY ═══════════════════════════════════════════════
+
+    function test_mint_reverts_callerNotNodeGroup(address caller) public withMintToken {
+        vm.assume(caller != nodeGroup);
+        vm.prank(caller);
+        vm.expectRevert("Caller is not a node group");
+        bridge.mint(payable(user), IERC20Mintable(address(token)), amount, fee, kappa);
+    }
+
+    function test_mintAndSwap_reverts_callerNotNodeGroup(address caller) public withMintToken {
+        vm.assume(caller != nodeGroup);
+        vm.prank(caller);
+        vm.expectRevert("Caller is not a node group");
+        bridge.mintAndSwap(payable(user), IERC20Mintable(address(token)), amount, fee, ISwap(pool), 0, 0, 1, 0, kappa);
+    }
+
+    function test_mint_legacySendDisabled_reverts_callerNotNodeGroup(address caller) public withLegacySendDisabled {
+        test_mint_reverts_callerNotNodeGroup(caller);
+    }
+
+    function test_mintAndSwap_legacySendDisabled_reverts_callerNotNodeGroup(address caller)
+        public
+        withLegacySendDisabled
+    {
+        test_mintAndSwap_reverts_callerNotNodeGroup(caller);
+    }
+
+    function test_withdraw_reverts_callerNotNodeGroup(address caller) public withWithdrawToken {
+        vm.assume(caller != nodeGroup);
+        vm.prank(caller);
+        vm.expectRevert("Caller is not a node group");
+        bridge.withdraw(payable(user), IERC20(address(token)), amount, fee, kappa);
+    }
+
+    function test_withdrawAndRemove_reverts_callerNotNodeGroup(address caller) public withWithdrawToken {
+        vm.assume(caller != nodeGroup);
+        vm.prank(caller);
+        vm.expectRevert("Caller is not a node group");
+        bridge.withdrawAndRemove(payable(user), IERC20(address(token)), amount, fee, ISwap(pool), 0, 1, 0, kappa);
+    }
+
+    function test_withdraw_legacySendDisabled_reverts_callerNotNodeGroup(address caller) public withLegacySendDisabled {
+        test_withdraw_reverts_callerNotNodeGroup(caller);
+    }
+
+    function test_withdrawAndRemove_legacySendDisabled_reverts_callerNotNodeGroup(address caller)
+        public
+        withLegacySendDisabled
+    {
+        test_withdrawAndRemove_reverts_callerNotNodeGroup(caller);
+    }
 }
