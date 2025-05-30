@@ -3,8 +3,8 @@ pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 import {SynapseBridge, IERC20, ERC20Burnable, IERC20Mintable, ISwap} from "../../../contracts/bridge/SynapseBridge.sol";
-import {SynapseERC20} from "../../../contracts/bridge/SynapseERC20.sol";
 
+import {ReenteringToken} from "./ReenteringToken.sol";
 import {PoolMock} from "./PoolMock.sol";
 
 import {Test} from "forge-std/Test.sol";
@@ -12,7 +12,7 @@ import {Test} from "forge-std/Test.sol";
 // solhint-disable func-name-mixedcase
 contract SynapseBridgeLegacyDstTest is Test {
     SynapseBridge internal bridge;
-    SynapseERC20 internal token;
+    ReenteringToken internal token;
     address internal pool;
 
     address internal nodeGroup = makeAddr("NodeGroup");
@@ -49,6 +49,8 @@ contract SynapseBridgeLegacyDstTest is Test {
         bytes32 indexed kappa
     );
 
+    event TokenDeposit(address indexed to, uint256 chainId, address token, uint256 amount);
+
     modifier withMintToken() {
         token.grantRole(token.MINTER_ROLE(), address(bridge));
         _;
@@ -67,6 +69,13 @@ contract SynapseBridgeLegacyDstTest is Test {
     modifier withLegacySendDisabled() {
         bridge.setLegacySendDisabled(true);
         _;
+    }
+
+    function prepareReentrancyData() public {
+        token.setReenteringData(
+            address(bridge),
+            abi.encodeWithSelector(bridge.deposit.selector, address(user), 1, address(token), 0)
+        );
     }
 
     function expectMintEvent() public {
@@ -90,6 +99,11 @@ contract SynapseBridgeLegacyDstTest is Test {
         emit TokenWithdrawAndRemove(user, address(token), amount - fee, fee, 0, 1, 0, false, kappa);
     }
 
+    function expectReentrancyDepositEvent() public {
+        vm.expectEmit(address(bridge));
+        emit TokenDeposit(user, 1, address(token), 0);
+    }
+
     function expectBalances(
         uint256 bridgeBalance,
         uint256 userBalance,
@@ -106,7 +120,7 @@ contract SynapseBridgeLegacyDstTest is Test {
         bridge.grantRole(bridge.GOVERNANCE_ROLE(), address(this));
         bridge.grantRole(bridge.NODEGROUP_ROLE(), nodeGroup);
 
-        token = new SynapseERC20();
+        token = new ReenteringToken();
         token.initialize("Test", "TST", 18, address(this));
 
         pool = address(new PoolMock());
@@ -210,5 +224,64 @@ contract SynapseBridgeLegacyDstTest is Test {
     /// @notice Pool is never called in legacySendDisabled mode, so should be identical to withdraw fallback.
     function test_withdrawAndRemove_legacySendDisabled_withdrawFallback_withRevertingPool() public withRevertingPool {
         test_withdrawAndRemove_legacySendDisabled_withdrawFallback();
+    }
+
+    // ═════════════════════════════════════════════ TESTS: REENTRANCY ═════════════════════════════════════════════════
+
+    function test_setupReentrancyMint() public withMintToken {
+        token.grantRole(token.MINTER_ROLE(), address(this));
+        prepareReentrancyData();
+        expectReentrancyDepositEvent();
+        token.mint(address(user), 0);
+    }
+
+    function test_setupReentrancyTransfer() public withWithdrawToken {
+        prepareReentrancyData();
+        expectReentrancyDepositEvent();
+        token.transfer(address(user), 0);
+    }
+
+    function test_mint_reverts_withReentrancy() public withMintToken {
+        prepareReentrancyData();
+        vm.expectRevert("ReentrancyGuard: reentrant call");
+        vm.prank(nodeGroup);
+        bridge.mint(payable(user), IERC20Mintable(address(token)), amount, fee, kappa);
+    }
+
+    function test_mintAndSwap_reverts_withReentrancy() public withMintToken {
+        prepareReentrancyData();
+        vm.expectRevert("ReentrancyGuard: reentrant call");
+        vm.prank(nodeGroup);
+        bridge.mintAndSwap(payable(user), IERC20Mintable(address(token)), amount, fee, ISwap(pool), 0, 0, 1, 0, kappa);
+    }
+
+    function test_mint_legacySendDisabled_reverts_withReentrancy() public withLegacySendDisabled {
+        test_mint_reverts_withReentrancy();
+    }
+
+    function test_mintAndSwap_legacySendDisabled_reverts_withReentrancy() public withLegacySendDisabled {
+        test_mintAndSwap_reverts_withReentrancy();
+    }
+
+    function test_withdraw_reverts_withReentrancy() public withWithdrawToken {
+        prepareReentrancyData();
+        vm.expectRevert("ReentrancyGuard: reentrant call");
+        vm.prank(nodeGroup);
+        bridge.withdraw(payable(user), IERC20(address(token)), amount, fee, kappa);
+    }
+
+    function test_withdrawAndRemove_reverts_withReentrancy() public withWithdrawToken {
+        prepareReentrancyData();
+        vm.expectRevert("ReentrancyGuard: reentrant call");
+        vm.prank(nodeGroup);
+        bridge.withdrawAndRemove(payable(user), IERC20(address(token)), amount, fee, ISwap(pool), 0, 1, 0, kappa);
+    }
+
+    function test_withdraw_legacySendDisabled_reverts_withReentrancy() public withLegacySendDisabled {
+        test_withdraw_reverts_withReentrancy();
+    }
+
+    function test_withdrawAndRemove_legacySendDisabled_reverts_withReentrancy() public withLegacySendDisabled {
+        test_withdrawAndRemove_reverts_withReentrancy();
     }
 }
