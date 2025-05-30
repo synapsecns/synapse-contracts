@@ -115,6 +115,16 @@ contract SynapseBridgeLegacyTest is Test {
         bridge.withdrawChainGas();
     }
 
+    function test_setChainGasAmount_revertsAnyCaller(address caller) public {
+        vm.expectRevert("Gas airdrop is disabled");
+        vm.prank(caller);
+        bridge.setChainGasAmount(123456);
+    }
+
+    function test_setChainGasAmount_revertsGovernance() public {
+        test_setChainGasAmount_revertsAnyCaller(governance);
+    }
+
     function test_deposit() public {
         vm.expectEmit(address(bridge));
         emit TokenDeposit({to: address(1), chainId: 2, token: address(token), amount: 3});
