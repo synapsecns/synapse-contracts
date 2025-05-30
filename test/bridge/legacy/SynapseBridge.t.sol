@@ -49,6 +49,9 @@ contract SynapseBridgeLegacyTest is Test {
 
     event TokenRedeemV2(bytes32 indexed to, uint256 chainId, address token, uint256 amount);
 
+    event LegacySendDisabledSet(bool isDisabled);
+    event ChainGasWithdrawn(address to, uint256 amount);
+
     function setUp() public {
         bridge = new SynapseBridge();
         bridge.initialize();
@@ -74,12 +77,16 @@ contract SynapseBridgeLegacyTest is Test {
     }
 
     function test_disableLegacySend() public {
+        vm.expectEmit(address(bridge));
+        emit LegacySendDisabledSet(true);
         disableLegacySend();
         assertTrue(bridge.isLegacySendDisabled());
     }
 
     function test_enableLegacySend() public {
         disableLegacySend();
+        vm.expectEmit(address(bridge));
+        emit LegacySendDisabledSet(false);
         enableLegacySend();
         assertFalse(bridge.isLegacySendDisabled());
     }
@@ -93,6 +100,8 @@ contract SynapseBridgeLegacyTest is Test {
 
     function test_withdrawChainGas() public {
         deal(address(bridge), 123456);
+        vm.expectEmit(address(bridge));
+        emit ChainGasWithdrawn(governance, 123456);
         vm.prank(governance);
         bridge.withdrawChainGas();
         assertEq(governance.balance, 123456);

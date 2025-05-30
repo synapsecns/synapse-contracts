@@ -137,6 +137,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     // v2 events
     event TokenRedeemV2(bytes32 indexed to, uint256 chainId, IERC20 token, uint256 amount);
 
+    // New governance events
+    event LegacySendDisabledSet(bool isDisabled);
+    event ChainGasWithdrawn(address to, uint256 amount);
+
     // VIEW FUNCTIONS ***/
     function getFeeBalance(address tokenAddress) external view returns (uint256) {
         return fees[tokenAddress];
