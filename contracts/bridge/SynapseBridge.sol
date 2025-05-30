@@ -50,12 +50,12 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     }
 
     function setChainGasAmount(uint256 amount) external {
-        require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
-        chainGasAmount = amount;
+        revert("Gas airdrop is disabled");
     }
 
     function withdrawChainGas() external {
         require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+        emit ChainGasWithdrawn(msg.sender, address(this).balance);
         (bool success, ) = msg.sender.call{value: address(this).balance}("");
         require(success, "ETH_TRANSFER_FAILED");
     }
@@ -63,6 +63,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     function setLegacySendDisabled(bool _isLegacySendDisabled) external {
         require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
         isLegacySendDisabled = _isLegacySendDisabled;
+        emit LegacySendDisabledSet(_isLegacySendDisabled);
     }
 
     function setWethAddress(address payable _wethAddress) external {
