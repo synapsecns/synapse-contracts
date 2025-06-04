@@ -221,12 +221,15 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint256 fee,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
+        require(amount > fee, "Amount must be greater than fee");
+        require(!kappaMap[kappa], "Kappa is already present");
         _withdraw(to, token, amount, fee, kappa);
     }
 
     /**
      * @dev Common internal logic for withdraw and withdrawAndRemove (once legacy workflows are disabled).
-     * Note: reentrancy and pausability checks are handled outside of this function.
+     * Note: all security checks are handled outside of this function.
      */
     function _withdraw(
         address to,
@@ -235,9 +238,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint256 fee,
         bytes32 kappa
     ) internal {
-        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
-        require(amount > fee, "Amount must be greater than fee");
-        require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
         if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
@@ -267,12 +267,15 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint256 fee,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
+        require(amount > fee, "Amount must be greater than fee");
+        require(!kappaMap[kappa], "Kappa is already present");
         _mint(to, token, amount, fee, kappa);
     }
 
     /**
      * @dev Common internal logic for mint and mintAndSwap (once legacy workflows are disabled).
-     * Note: reentrancy and pausability checks are handled outside of this function.
+     * Note: all security checks are handled outside of this function.
      */
     function _mint(
         address payable to,
@@ -281,9 +284,6 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint256 fee,
         bytes32 kappa
     ) internal {
-        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
-        require(amount > fee, "Amount must be greater than fee");
-        require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
         emit TokenMint(to, token, amount.sub(fee), fee, kappa);
@@ -390,13 +390,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint256 deadline,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
+        require(amount > fee, "Amount must be greater than fee");
+        require(!kappaMap[kappa], "Kappa is already present");
         // Fallback to regular mint if legacy workflows are disabled.
         if (isLegacySendDisabled) {
             return _mint(to, token, amount, fee, kappa);
         }
-        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
-        require(amount > fee, "Amount must be greater than fee");
-        require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
         // first check to make sure more will be given than min amount required
@@ -498,13 +498,13 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint256 swapDeadline,
         bytes32 kappa
     ) external nonReentrant whenNotPaused {
+        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
+        require(amount > fee, "Amount must be greater than fee");
+        require(!kappaMap[kappa], "Kappa is already present");
         // Fallback to regular withdraw if legacy workflows are disabled.
         if (isLegacySendDisabled) {
             return _withdraw(to, token, amount, fee, kappa);
         }
-        require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
-        require(amount > fee, "Amount must be greater than fee");
-        require(!kappaMap[kappa], "Kappa is already present");
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
         // first check to make sure more will be given than min amount required
