@@ -30,7 +30,9 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
 
     uint256 public startBlockNumber;
     uint256 public constant bridgeVersion = 8;
-    uint256 public chainGasAmount;
+    uint256 public constant chainGasAmount = 0;
+    /// @dev This is a variable taking the storage slot of deprecated chainGasAmount to prevent storage gap
+    uint256 private _deprecatedChainGasAmount;
     address payable public WETH_ADDRESS;
 
     mapping(bytes32 => bool) private kappaMap;
