@@ -155,9 +155,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     function withdrawFees(IERC20 token, address to) external whenNotPaused {
         require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
         require(to != address(0), "Address is 0x000");
-        if (fees[address(token)] != 0) {
-            token.safeTransfer(to, fees[address(token)]);
+        uint256 amount = fees[address(token)];
+        if (amount != 0) {
             fees[address(token)] = 0;
+            token.safeTransfer(to, amount);
         }
     }
 
