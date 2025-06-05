@@ -25,7 +25,8 @@ contract GasFeePricingTest is Test {
         gasFeePricing = new GasFeePricing();
     }
 
-    function testFailSetCostAsNotOwner() public {
+    function testSetCostAsNotOwnerRevert() public {
+        vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(address(0));
         gasFeePricing.setCostPerChain(expectedDstChainId, expectedDstGasPrice, expectedGasTokenPriceRatio);
     }
@@ -85,15 +86,12 @@ contract GasFeePricingTest is Test {
         assertEq(dstAddress, _address);
     }
 
-    function testFailRevertNoDstNativeAddress() public {
+    function testNoDstNativeAddressRevert() public {
         bytes memory options = gasFeePricing.encodeOptions(2, 300000, 100000000000000000, bytes32(0));
-
+        vm.expectRevert("dstNativeAddress empty");
         (uint16 txType, uint256 gasLimit, uint256 dstAirdrop, bytes32 dstAddress) = gasFeePricing.decodeOptions(
             options
         );
-        assertEq(txType, 2);
-        assertEq(gasLimit, 300000);
-        assertEq(dstAirdrop, 100000000000000000);
     }
 
     function testEstimateFeeWithOptionsTypeOne(uint64 _gasLimit) public {

@@ -50,38 +50,35 @@ contract MessageBusSenderTest is Test {
     }
 
     // Test fee query on an unset dstChain
-    function testFailUnsetEstimateFee() public {
+    function testUnsetEstimateFeeRevert() public {
+        vm.expectRevert("Fee not set");
         messageBusSender.estimateFee(1, bytes(""));
     }
 
-    function testFailSendMessageWrongChainID() public {
+    function testSendMessageWrongChainIDRevert() public {
         bytes32 receiverAddress = addressToBytes32(address(1337));
         // 99 is default foundry chain id
+        vm.expectRevert("Fee not set");
         messageBusSender.sendMessage(receiverAddress, 99, bytes(""), bytes(""));
     }
 
     // Enforce fees above returned fee amount from fee calculator
-    function testFailSendMessageWithLowFees() public {
-        uint256 estimatedFee = messageBusSender.estimateFee(gasFeePricingTest.expectedDstChainId(), bytes(""));
+    function testSendMessageWithLowFeesRevert() public {
+        uint256 dstChainId = gasFeePricingTest.expectedDstChainId();
+        uint256 estimatedFee = messageBusSender.estimateFee(dstChainId, bytes(""));
         bytes32 receiverAddress = addressToBytes32(address(1337));
-        messageBusSender.sendMessage{value: estimatedFee - 1}(
-            receiverAddress,
-            gasFeePricingTest.expectedDstChainId(),
-            bytes(""),
-            bytes("")
-        );
+        vm.expectRevert("Insuffient gas fee");
+        messageBusSender.sendMessage{value: estimatedFee - 1}(receiverAddress, dstChainId, bytes(""), bytes(""));
     }
 
     // Fee calculator reverts upon 0 fees (Fee is unset)
-    function testFailMessageOnUnsetFees() public {
-        uint256 estimatedFee = messageBusSender.estimateFee(gasFeePricingTest.expectedDstChainId() - 1, bytes(""));
+    function testMessageOnUnsetFeesRevert() public {
+        uint256 dstChainId = gasFeePricingTest.expectedDstChainId() - 1;
+        vm.expectRevert("Fee not set");
+        uint256 estimatedFee = messageBusSender.estimateFee(dstChainId, bytes(""));
         bytes32 receiverAddress = addressToBytes32(address(1337));
-        messageBusSender.sendMessage{value: estimatedFee}(
-            receiverAddress,
-            gasFeePricingTest.expectedDstChainId() - 1,
-            bytes(""),
-            bytes("")
-        );
+        vm.expectRevert("Fee not set");
+        messageBusSender.sendMessage{value: estimatedFee}(receiverAddress, dstChainId, bytes(""), bytes(""));
     }
 
     // Send message without reversion, pay correct amount of fees, emit correct event

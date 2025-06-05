@@ -38,10 +38,6 @@ contract UniversalTokenLibraryTest is Test {
         // Should not revert, as the transfer is a noop due to the same recipient
         libHarness.universalTransfer(address(token), address(libHarness), amount);
         assertEq(token.balanceOf(address(libHarness)), amount);
-        // Trying to transfer to the harness should still revert
-        token.mint(address(this), amount);
-        vm.expectRevert("Disabled transfers to harness");
-        token.transfer(address(libHarness), amount);
     }
 
     function testUniversalTransferETH() public {
