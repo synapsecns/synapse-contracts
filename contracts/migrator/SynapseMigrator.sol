@@ -10,6 +10,10 @@ contract SynapseMigrator is Ownable, ISynapseMigrator, ISynapseMigratorErrors {
     event Migrated(address indexed user, address indexed oldToken, uint256 amount);
     event TokenPairAdded(address indexed oldToken, address indexed newToken);
 
+    constructor(address owner_) {
+        transferOwnership(owner_);
+    }
+
     /// @inheritdoc ISynapseMigrator
     function addTokenPair(address oldToken, address newToken) external onlyOwner {
         // TODO: implement
