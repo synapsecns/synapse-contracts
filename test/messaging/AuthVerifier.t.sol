@@ -20,7 +20,8 @@ contract AuthVerifierTest is Test {
         assertEq(authVerifier.nodegroup(), address(7331));
     }
 
-    function testFailUnauthorizedNodeGroupSet() public {
+    function testUnauthorizedNodeGroupSetRevert() public {
+        vm.expectRevert("Ownable: caller is not the owner");
         vm.prank(address(9999));
         authVerifier.setNodeGroup(address(7331));
     }
