@@ -26,11 +26,14 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     bytes32 public constant NODEGROUP_ROLE = keccak256("NODEGROUP_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
+    uint256 public constant bridgeVersion = 8;
+    uint256 public constant chainGasAmount = 0;
+
     mapping(address => uint256) private fees;
 
     uint256 public startBlockNumber;
-    uint256 public constant bridgeVersion = 8;
-    uint256 public chainGasAmount;
+    /// @dev This is a variable taking the storage slot of deprecated chainGasAmount to prevent storage gap
+    uint256 private _deprecatedChainGasAmount;
     address payable public WETH_ADDRESS;
 
     mapping(bytes32 => bool) private kappaMap;
@@ -50,12 +53,12 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     }
 
     function setChainGasAmount(uint256 amount) external {
-        require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
-        chainGasAmount = amount;
+        revert("Gas airdrop is disabled");
     }
 
     function withdrawChainGas() external {
         require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+        emit ChainGasWithdrawn(msg.sender, address(this).balance);
         (bool success, ) = msg.sender.call{value: address(this).balance}("");
         require(success, "ETH_TRANSFER_FAILED");
     }
@@ -63,6 +66,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     function setLegacySendDisabled(bool _isLegacySendDisabled) external {
         require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
         isLegacySendDisabled = _isLegacySendDisabled;
+        emit LegacySendDisabledSet(_isLegacySendDisabled);
     }
 
     function setWethAddress(address payable _wethAddress) external {
@@ -136,6 +140,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
 
     // v2 events
     event TokenRedeemV2(bytes32 indexed to, uint256 chainId, IERC20 token, uint256 amount);
+
+    // New governance events
+    event LegacySendDisabledSet(bool isDisabled);
+    event ChainGasWithdrawn(address to, uint256 amount);
 
     // VIEW FUNCTIONS ***/
     function getFeeBalance(address tokenAddress) external view returns (uint256) {
