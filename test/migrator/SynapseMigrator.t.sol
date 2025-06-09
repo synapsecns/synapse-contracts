@@ -7,6 +7,7 @@ import {MockBurnableToken} from "../mocks/MockBurnableToken.sol";
 
 import {Test} from "forge-std/Test.sol";
 
+// solhint-disable func-name-mixedcase
 abstract contract SynapseMigratorTest is Test, ISynapseMigratorErrors {
     event Migrated(address indexed user, address indexed oldToken, uint256 amount);
 

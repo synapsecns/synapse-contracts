@@ -3,6 +3,7 @@ pragma solidity 0.8.17;
 
 import {SynapseMigratorTest} from "./SynapseMigrator.t.sol";
 
+// solhint-disable func-name-mixedcase
 contract SynapseMigratorLessDecimalsTest is SynapseMigratorTest {
     constructor() SynapseMigratorTest(18, 6) {}
 
