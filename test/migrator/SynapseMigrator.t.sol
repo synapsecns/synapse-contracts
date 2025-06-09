@@ -92,13 +92,15 @@ abstract contract SynapseMigratorTest is Test, ISynapseMigratorErrors {
     }
 
     function test_previewMigrate() public {
-        uint256 previewedAmount = migrator.previewMigrate(address(oldToken), amount);
+        (address previewedNewToken, uint256 previewedAmount) = migrator.previewMigrate(address(oldToken), amount);
+        assertEq(previewedNewToken, address(newToken));
         assertEq(previewedAmount, expectedNewAmount);
     }
 
     function test_previewMigrate_returnsZero_tokenNotAdded() public {
         migrator = new SynapseMigrator(address(this));
-        uint256 previewedAmount = migrator.previewMigrate(address(oldToken), amount);
+        (address previewedNewToken, uint256 previewedAmount) = migrator.previewMigrate(address(oldToken), amount);
+        assertEq(previewedNewToken, address(0));
         assertEq(previewedAmount, 0);
     }
 }

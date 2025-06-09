@@ -45,7 +45,7 @@ contract SynapseMigrator is Ownable, ISynapseMigrator, ISynapseMigratorErrors {
     /// @inheritdoc ISynapseMigrator
     function migrate(address oldToken, uint256 amount) external {
         if (oldToken == address(0)) revert SM__ZeroAddress();
-        (address newToken, uint256 newAmount) = _previewMigrate(oldToken, amount);
+        (address newToken, uint256 newAmount) = previewMigrate(oldToken, amount);
         if (newToken == address(0)) revert SM__TokenPairNotAdded();
         if (newAmount == 0) revert SM__ZeroAmount();
         // Burn old tokens from the user
@@ -61,13 +61,8 @@ contract SynapseMigrator is Ownable, ISynapseMigrator, ISynapseMigratorErrors {
     }
 
     /// @inheritdoc ISynapseMigrator
-    function previewMigrate(address oldToken, uint256 amount) public view returns (uint256 newAmount) {
-        (, newAmount) = _previewMigrate(oldToken, amount);
-    }
-
-    /// @dev Internal function to preview the amount of new tokens that will be received
-    function _previewMigrate(address oldToken, uint256 amount)
-        internal
+    function previewMigrate(address oldToken, uint256 amount)
+        public
         view
         returns (address newToken, uint256 newAmount)
     {

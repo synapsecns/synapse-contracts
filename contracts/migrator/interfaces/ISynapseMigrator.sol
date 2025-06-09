@@ -23,7 +23,10 @@ interface ISynapseMigrator {
     /// @dev Will return the zero address if the token pair is not added for the old token.
     function getTokenPair(address oldToken) external view returns (address newToken);
 
-    /// @notice Returns the amount of new tokens that will be received for the given amount of old tokens.
-    /// @dev Will return 0 if the token pair is not added for the old token.
-    function previewMigrate(address oldToken, uint256 amount) external view returns (uint256 newAmount);
+    /// @notice Returns the new token and amount of new tokens that will be received for the given amount of old tokens.
+    /// @dev Will return (address(0), 0) if the token pair is not added for the old token.
+    function previewMigrate(address oldToken, uint256 amount)
+        external
+        view
+        returns (address newToken, uint256 newAmount);
 }
