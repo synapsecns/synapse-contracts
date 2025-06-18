@@ -29,9 +29,7 @@ contract SaveRouterConfigScript is BridgeConfigV3Lens, SynapseScript {
             return;
         }
         address bridge = loadDeployment("SynapseBridge");
-        // Apparently, METIS predeploy at 0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000
-        // could be used as ERC20 token representing METIS, rendering the concept of WGAS useless on that chain.
-        address wgas = _chainId() == METIS_CHAINID ? address(0) : loadDeployment("WGAS");
+        address wgas = loadDeployment("WGAS");
 
         string memory fullConfig = "full";
         string memory tokensConfig = "";
