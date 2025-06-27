@@ -15,6 +15,7 @@ import {IWETH9} from "../../contracts/bridge/interfaces/IWETH9.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 
 contract ERC20Mock is ERC20, Ownable {
     constructor(string memory name_, uint8 decimals_) public ERC20(name_, name_) {
@@ -185,7 +186,8 @@ contract Utilities06 is Test {
     }
 
     function deployBridge() public returns (SynapseBridge bridge) {
-        bridge = new SynapseBridge();
+        address implementation = address(new SynapseBridge());
+        bridge = SynapseBridge(payable(Clones.clone(implementation)));
         setupBridge(bridge);
     }
 
