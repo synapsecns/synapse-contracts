@@ -6,12 +6,10 @@ import {SynapseBridge, IERC20, ERC20Burnable, IERC20Mintable, ISwap} from "../..
 
 import {ReenteringToken} from "./ReenteringToken.sol";
 import {PoolMock} from "./PoolMock.sol";
-
-import {Test} from "forge-std/Test.sol";
+import {SynapseBridgeProxyTest} from "./SynapseBridge.Proxy.t.sol";
 
 // solhint-disable func-name-mixedcase
-contract SynapseBridgeLegacyDstTest is Test {
-    SynapseBridge internal bridge;
+contract SynapseBridgeLegacyDstTest is SynapseBridgeProxyTest {
     ReenteringToken internal token;
     address internal pool;
 
@@ -114,8 +112,8 @@ contract SynapseBridgeLegacyDstTest is Test {
         assertEq(bridge.getFeeBalance(address(token)), bridgeFees);
     }
 
-    function setUp() public {
-        bridge = new SynapseBridge();
+    function setUp() public virtual override {
+        super.setUp();
         bridge.initialize();
         bridge.grantRole(bridge.GOVERNANCE_ROLE(), address(this));
         bridge.grantRole(bridge.NODEGROUP_ROLE(), nodeGroup);

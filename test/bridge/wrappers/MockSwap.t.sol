@@ -9,6 +9,8 @@ import "../../../contracts/bridge/wrappers/swap/MockSwap.sol";
 import "../../../contracts/bridge/SynapseBridge.sol";
 import "../../../contracts/bridge/SynapseERC20.sol";
 
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
+
 //solhint-disable func-name-mixedcase
 contract MockSwapTest is Test {
     MockSwap internal mockSwap;
@@ -19,7 +21,8 @@ contract MockSwapTest is Test {
 
     function setUp() public {
         mockSwap = new MockSwap();
-        bridge = new SynapseBridge();
+        address implementation = address(new SynapseBridge());
+        bridge = SynapseBridge(payable(Clones.clone(implementation)));
         bridge.initialize();
         bridge.grantRole(bridge.NODEGROUP_ROLE(), address(this));
 

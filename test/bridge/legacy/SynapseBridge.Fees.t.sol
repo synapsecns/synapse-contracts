@@ -4,8 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import {SynapseBridge, IERC20} from "../../../contracts/bridge/SynapseBridge.sol";
 import {ReenteringToken} from "./ReenteringToken.sol";
-
-import {Test} from "forge-std/Test.sol";
+import {SynapseBridgeProxyTest} from "./SynapseBridge.Proxy.t.sol";
 
 contract Governance {
     function withdrawFees(SynapseBridge bridge, address token) public {
@@ -14,18 +13,17 @@ contract Governance {
 }
 
 // solhint-disable func-name-mixedcase
-contract SynapseBridgeLegacyFeesTest is Test {
-    SynapseBridge internal bridge;
+contract SynapseBridgeLegacyFeesTest is SynapseBridgeProxyTest {
     ReenteringToken internal token;
     Governance internal governance;
 
     uint256 internal feesAmount = 1 ether;
     uint256 internal lockedAmount = 10 ether;
 
-    function setUp() public {
-        governance = new Governance();
-        bridge = new SynapseBridge();
+    function setUp() public virtual override {
+        super.setUp();
         bridge.initialize();
+        governance = new Governance();
         bridge.grantRole(bridge.GOVERNANCE_ROLE(), address(governance));
         bridge.grantRole(bridge.NODEGROUP_ROLE(), address(this));
 
