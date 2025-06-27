@@ -44,6 +44,9 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         _;
     }
 
+    /// @dev We add initializer modifier to constructor to prevent implementation from being initialized
+    constructor() public initializer {}
+
     receive() external payable {}
 
     function initialize() external initializer {
