@@ -5,11 +5,10 @@ pragma experimental ABIEncoderV2;
 import {SynapseBridge, IERC20, ERC20Burnable} from "../../../contracts/bridge/SynapseBridge.sol";
 import {SynapseERC20} from "../../../contracts/bridge/SynapseERC20.sol";
 
-import {Test} from "forge-std/Test.sol";
+import {SynapseBridgeProxyTest} from "./SynapseBridge.Proxy.t.sol";
 
 // solhint-disable func-name-mixedcase
-contract SynapseBridgeLegacyTest is Test {
-    SynapseBridge internal bridge;
+contract SynapseBridgeLegacyTest is SynapseBridgeProxyTest {
     SynapseERC20 internal token;
 
     address internal user = makeAddr("User");
@@ -52,8 +51,8 @@ contract SynapseBridgeLegacyTest is Test {
     event LegacySendDisabledSet(bool isDisabled);
     event ChainGasWithdrawn(address to, uint256 amount);
 
-    function setUp() public {
-        bridge = new SynapseBridge();
+    function setUp() public virtual override {
+        super.setUp();
         bridge.initialize();
         bridge.grantRole(bridge.GOVERNANCE_ROLE(), governance);
 
