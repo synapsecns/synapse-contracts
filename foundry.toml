@@ -52,30 +52,30 @@ op_sepolia = "${OP_SEPOLIA_API}"
 scroll_sepolia = "${SCROLL_SEPOLIA_API}"
 
 [etherscan]
-arbitrum = { key = "${ARBITRUM_ETHERSCAN_KEY}", url = "${ARBITRUM_ETHERSCAN_URL}" }
-# TODO: find out if this is correct
-aurora = { key = "", url = "${AURORA_BLOCKSCOUT_URL}" }
-avalanche = { key = "${AVALANCHE_ETHERSCAN_KEY}", url = "${AVALANCHE_ETHERSCAN_URL}" }
-base = { key = "${BASE_ETHERSCAN_KEY}", url = "${BASE_ETHERSCAN_URL}" }
-blast = { key = "${BLAST_ETHERSCAN_KEY}", url = "${BLAST_ETHERSCAN_URL}" }
-boba = { key = "${BOBA_ETHERSCAN_KEY}", url = "${BOBA_ETHERSCAN_URL}" }
-bsc = { key = "${BSC_ETHERSCAN_KEY}", url = "${BSC_ETHERSCAN_URL}" }
-canto = { key = "", url = "${CANTO_BLOCKSCOUT_URL}" }
-cronos = { key = "${CRONOS_ETHERSCAN_KEY}", url = "${CRONOS_ETHERSCAN_URL}" }
+# Chains that are not currently using etherscan are commented out
+arbitrum = { key = "${ARBITRUM_ETHERSCAN_KEY}", url = "${ARBITRUM_ETHERSCAN_URL}", chain = 42161 }
+# aurora = { key = "", url = "${AURORA_BLOCKSCOUT_URL}" }
+avalanche = { key = "${AVALANCHE_ETHERSCAN_KEY}", url = "${AVALANCHE_ETHERSCAN_URL}", chain = 43114 }
+base = { key = "${BASE_ETHERSCAN_KEY}", url = "${BASE_ETHERSCAN_URL}", chain = 8453 }
+blast = { key = "${BLAST_ETHERSCAN_KEY}", url = "${BLAST_ETHERSCAN_URL}", chain = 81457 }
+# boba = { key = "${BOBA_ETHERSCAN_KEY}", url = "${BOBA_ETHERSCAN_URL}" }
+bsc = { key = "${BSC_ETHERSCAN_KEY}", url = "${BSC_ETHERSCAN_URL}", chain = 56 }
+# canto = { key = "", url = "${CANTO_BLOCKSCOUT_URL}" }
+cronos = { key = "${CRONOS_ETHERSCAN_KEY}", url = "${CRONOS_ETHERSCAN_URL}", chain = 25 }
 # DFK is using Sourcify for verification
-dogechain = { key = "", url = "${DOGECHAIN_BLOCKSCOUT_URL}" }
-fantom = { key = "${FANTOM_ETHERSCAN_KEY}", url = "${FANTOM_ETHERSCAN_URL}" }
+# dogechain = { key = "", url = "${DOGECHAIN_BLOCKSCOUT_URL}" }
+# fantom = { key = "${FANTOM_ETHERSCAN_KEY}", url = "${FANTOM_ETHERSCAN_URL}" }
 # Harmony doesn't have an endpoint for verification, and Sourcify does not support Harmony
 # Klaytn doesn't have an endpoint for verification, and doesn't support Sourcify yet
-linea = { key = "${LINEA_ETHERSCAN_KEY}", url = "${LINEA_ETHERSCAN_URL}" }
-mainnet = { key = "${MAINNET_ETHERSCAN_KEY}", url = "${MAINNET_ETHERSCAN_URL}" }
-metis = { key = "", url = "${METIS_BLOCKSCOUT_URL}" }
-moonbeam = { key = "${MOONBEAM_ETHERSCAN_KEY}", url = "${MOONBEAM_ETHERSCAN_URL}" }
-moonriver = { key = "${MOONRIVER_ETHERSCAN_KEY}", url = "${MOONRIVER_ETHERSCAN_URL}" }
-optimism = { key = "${OPTIMISM_ETHERSCAN_KEY}", url = "${OPTIMISM_ETHERSCAN_URL}" }
-polygon = { key = "${POLYGON_ETHERSCAN_KEY}", url = "${POLYGON_ETHERSCAN_URL}" }
-scroll = { key = "${SCROLL_ETHERSCAN_KEY}", url = "${SCROLL_ETHERSCAN_URL}" }
-zkevm = { key = "${ZKEVM_ETHERSCAN_KEY}", url = "${ZKEVM_ETHERSCAN_URL}" }
+linea = { key = "${LINEA_ETHERSCAN_KEY}", url = "${LINEA_ETHERSCAN_URL}", chain = 59144 }
+mainnet = { key = "${MAINNET_ETHERSCAN_KEY}", url = "${MAINNET_ETHERSCAN_URL}", chain = 1 }
+# metis = { key = "", url = "${METIS_BLOCKSCOUT_URL}" }
+moonbeam = { key = "${MOONBEAM_ETHERSCAN_KEY}", url = "${MOONBEAM_ETHERSCAN_URL}", chain = 1284 }
+moonriver = { key = "${MOONRIVER_ETHERSCAN_KEY}", url = "${MOONRIVER_ETHERSCAN_URL}", chain = 1285 }
+optimism = { key = "${OPTIMISM_ETHERSCAN_KEY}", url = "${OPTIMISM_ETHERSCAN_URL}", chain = 10 }
+polygon = { key = "${POLYGON_ETHERSCAN_KEY}", url = "${POLYGON_ETHERSCAN_URL}", chain = 137 }
+scroll = { key = "${SCROLL_ETHERSCAN_KEY}", url = "${SCROLL_ETHERSCAN_URL}", chain = 534532 }
+zkevm = { key = "${ZKEVM_ETHERSCAN_KEY}", url = "${ZKEVM_ETHERSCAN_URL}", chain = 1101 }
 # Testnets
 arb_sepolia = { key = "${ARB_SEPOLIA_ETHERSCAN_KEY}", url = "${ARB_SEPOLIA_ETHERSCAN_URL}" }
 base_sepolia = { key = "${BASE_SEPOLIA_ETHERSCAN_KEY}", url = "${BASE_SEPOLIA_ETHERSCAN_URL}" }

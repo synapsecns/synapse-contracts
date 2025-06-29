@@ -15,6 +15,11 @@ contract DeploySynapseBridge is BasicSynapseScript {
     function run() external {
         // Setup the BasicSynapseScript
         setUp();
+        address bridge = tryGetDeploymentAddress("SynapseBridge");
+        if (bridge == address(0)) {
+            printLog(StringUtils.concat("🟡 Skipping: SynapseBridge is not deployed on ", activeChain));
+            return;
+        }
         vm.startBroadcast();
         address predicted = predictAddress(type(SynapseBridge).creationCode, salt);
         printLog(StringUtils.concat("Predicted address: ", vm.toString(predicted)));
