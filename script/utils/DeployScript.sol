@@ -98,14 +98,13 @@ abstract contract DeployScript is SynapseScript {
         sortJSON(freshFN);
         // Then, initiate the jq command to add "abi" as the next key
         // This makes sure that "address" value is printed first later
+        // Example: jq .abi=$data[0].abi --slurpfile data path/to/input.json path/to/output.json
         string[] memory inputs = new string[](6);
         inputs[0] = "jq";
-        // Read the full artifact file into $artifact variable
-        inputs[1] = "--argfile";
-        inputs[2] = "artifact";
-        inputs[3] = _artifactPath(contractName);
-        // Set value for ".abi" key to artifact's ABI
-        inputs[4] = ".abi = $artifact.abi";
+        inputs[1] = ".abi = $artifact.abi";
+        inputs[2] = "--slurpfile";
+        inputs[3] = "data";
+        inputs[4] = _artifactPath(contractName);
         inputs[5] = freshFN;
         bytes memory full = vm.ffi(inputs);
         // Finally, print the updated deployment JSON
