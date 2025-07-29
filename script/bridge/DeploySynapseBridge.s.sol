@@ -31,6 +31,7 @@ contract DeploySynapseBridge is BasicSynapseScript {
             constructorArgs: "",
             deployCode: deployCreate2
         });
+        assertContractCodeExists("SynapseBridge.Implementation", deployed);
         if (predicted != deployed) {
             printLog(TAB.concat("❌ Predicted address mismatch"));
             assert(false);
