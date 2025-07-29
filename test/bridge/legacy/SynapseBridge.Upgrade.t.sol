@@ -41,6 +41,11 @@ contract SynapseBridgeUpgradeArbitrumTest is Test {
         roleAdmin = SynapseBridge(bridge).getRoleMember(SynapseBridge(bridge).DEFAULT_ADMIN_ROLE(), 0);
         governance = SynapseBridge(bridge).getRoleMember(SynapseBridge(bridge).GOVERNANCE_ROLE(), 0);
         nodeGroup = SynapseBridge(bridge).getRoleMember(SynapseBridge(bridge).NODEGROUP_ROLE(), 0);
+
+        vm.label(bridge, "SynapseBridge");
+        vm.label(proxyAdmin, "ProxyAdmin");
+        vm.label(implementation, "OldImplementation");
+        vm.label(newBridgeImplementation, "NewImplementation");
     }
 
     function upgrade() public {
