@@ -2,7 +2,7 @@
   "forgeOptions": {
     "aurora": "--legacy --slow",
     "boba": "--legacy --skip-simulation --slow",
-    "canto": "--legacy --slow",
+    "canto": "--legacy --skip-simulation --slow",
     "cronos": "--slow",
     "dfk": "--slow",
     "dogechain": "--legacy --slow",
