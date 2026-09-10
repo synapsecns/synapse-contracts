@@ -1,16 +1,17 @@
 {
   "forgeOptions": {
-    "aurora": "--legacy --slow",
+    "aurora": "--legacy --slow --verifier blockscout --verifier-url https://explorer.mainnet.aurora.dev/api?",
     "boba": "--legacy --skip-simulation --slow",
-    "canto": "--legacy --slow",
+    "canto": "--legacy --skip-simulation --slow",
     "cronos": "--slow",
     "dfk": "--slow",
     "dogechain": "--legacy --slow",
-    "harmony": "--legacy --slow",
-    "klatyn": "--skip-simulation",
+    "fantom": "--verifier blockscout --verifier-url https://ftmscout.com/api?",
+    "harmony": "--legacy --slow --verifier blockscout --verifier-url https://explorer.harmony.one/api?",
+    "klatyn": "--skip-simulation --verifier-url https://compiler-api-v2.kaiascan.io/mainnet/forge-verify",
     "metis": "--legacy",
-    "moonbeam": "--skip-simulation --slow",
-    "moonriver": "--skip-simulation --slow",
+    "moonbeam": "--slow",
+    "moonriver": "--slow",
     "polygon": "--slow"
   }
 }
