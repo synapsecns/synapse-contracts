@@ -69,7 +69,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: nightly
+          version: v1.3.6
 
       - name: Run tests
         run: ./script/foundry-base.sh
@@ -100,7 +100,7 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
         with:
-          version: nightly
+          version: v1.3.6
 
       - name: Build contracts
         run: forge build
