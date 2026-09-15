@@ -118,6 +118,11 @@ bash -x -c "forge script $SCRIPT_PATH \
     $WALLET_OPTIONS \
     $CHAIN_OPTIONS \
     $FORGE_OPTIONS"
+FORGE_EXIT_CODE=$?
+if [ "$FORGE_EXIT_CODE" -ne 0 ]; then
+    echo -e "${RED}Forge failed; deployment artifacts were not promoted.${NC}"
+    exit "$FORGE_EXIT_CODE"
+fi
 
 # Save new deployments if this is a broadcasted deployment script
 if [ "$IS_BROADCASTED_DEPLOYMENT" == "1" ]; then
