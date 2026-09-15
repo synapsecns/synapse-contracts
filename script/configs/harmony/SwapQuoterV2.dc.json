@@ -1,0 +1,16 @@
+{
+  "pools": {
+    "0": {
+      "description": "AVAX",
+      "isLinked": false,
+      "pool": "0x00A4F57D926781f62D09bb05ec76e6D8aE4268da",
+      "token": "0xD9eAA386cCD65F30b77FF175F6b52115FE454fD6"
+    },
+    "1": {
+      "description": "JEWEL",
+      "isLinked": false,
+      "pool": "0x7bE461cce1501f07969BCE24Ccb2140fCA0a35b3",
+      "token": "0x28b42698Caf46B4B012CF38b6C75867E0762186D"
+    }
+  }
+}

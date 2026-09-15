@@ -275,11 +275,11 @@ abstract contract BasicUtils is CommonBase {
         string memory pathOutput,
         string memory key
     ) internal returns (string memory fullInputData) {
-        // Example: jq .abi=$data.abi --argfile data path/to/input.json path/to/output.json
+        // Example: jq .abi=$data[0].abi --slurpfile data path/to/input.json path/to/output.json
         string[] memory inputs = new string[](6);
         inputs[0] = "jq";
-        inputs[1] = key.concat(" = $data", key);
-        inputs[2] = "--argfile";
+        inputs[1] = key.concat(" = $data[0]", key);
+        inputs[2] = "--slurpfile";
         inputs[3] = "data";
         inputs[4] = pathInput;
         inputs[5] = pathOutput;

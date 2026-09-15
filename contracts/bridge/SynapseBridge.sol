@@ -26,14 +26,26 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     bytes32 public constant NODEGROUP_ROLE = keccak256("NODEGROUP_ROLE");
     bytes32 public constant GOVERNANCE_ROLE = keccak256("GOVERNANCE_ROLE");
 
+    uint256 public constant bridgeVersion = 8;
+    uint256 public constant chainGasAmount = 0;
+
     mapping(address => uint256) private fees;
 
     uint256 public startBlockNumber;
-    uint256 public constant bridgeVersion = 6;
-    uint256 public chainGasAmount;
+    /// @dev This is a variable taking the storage slot of deprecated chainGasAmount to prevent storage gap
+    uint256 private _deprecatedChainGasAmount;
     address payable public WETH_ADDRESS;
 
     mapping(bytes32 => bool) private kappaMap;
+    bool public isLegacySendDisabled;
+
+    modifier legacySendEnabled() {
+        require(!isLegacySendDisabled, "Legacy send is disabled");
+        _;
+    }
+
+    /// @dev We add initializer modifier to constructor to prevent implementation from being initialized
+    constructor() public initializer {}
 
     receive() external payable {}
 
@@ -44,8 +56,20 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     }
 
     function setChainGasAmount(uint256 amount) external {
+        revert("Gas airdrop is disabled");
+    }
+
+    function withdrawChainGas() external {
         require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
-        chainGasAmount = amount;
+        emit ChainGasWithdrawn(msg.sender, address(this).balance);
+        (bool success, ) = msg.sender.call{value: address(this).balance}("");
+        require(success, "ETH_TRANSFER_FAILED");
+    }
+
+    function setLegacySendDisabled(bool _isLegacySendDisabled) external {
+        require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
+        isLegacySendDisabled = _isLegacySendDisabled;
+        emit LegacySendDisabledSet(_isLegacySendDisabled);
     }
 
     function setWethAddress(address payable _wethAddress) external {
@@ -120,6 +144,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     // v2 events
     event TokenRedeemV2(bytes32 indexed to, uint256 chainId, IERC20 token, uint256 amount);
 
+    // New governance events
+    event LegacySendDisabledSet(bool isDisabled);
+    event ChainGasWithdrawn(address to, uint256 amount);
+
     // VIEW FUNCTIONS ***/
     function getFeeBalance(address tokenAddress) external view returns (uint256) {
         return fees[tokenAddress];
@@ -138,9 +166,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
     function withdrawFees(IERC20 token, address to) external whenNotPaused {
         require(hasRole(GOVERNANCE_ROLE, msg.sender), "Not governance");
         require(to != address(0), "Address is 0x000");
-        if (fees[address(token)] != 0) {
-            token.safeTransfer(to, fees[address(token)]);
+        uint256 amount = fees[address(token)];
+        if (amount != 0) {
             fees[address(token)] = 0;
+            token.safeTransfer(to, amount);
         }
     }
 
@@ -167,7 +196,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint256 chainId,
         IERC20 token,
         uint256 amount
-    ) external nonReentrant whenNotPaused {
+    ) external nonReentrant whenNotPaused legacySendEnabled {
         emit TokenDeposit(to, chainId, token, amount);
         token.safeTransferFrom(msg.sender, address(this), amount);
     }
@@ -184,7 +213,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint256 chainId,
         ERC20Burnable token,
         uint256 amount
-    ) external nonReentrant whenNotPaused {
+    ) external nonReentrant whenNotPaused legacySendEnabled {
         emit TokenRedeem(to, chainId, token, amount);
         token.burnFrom(msg.sender, amount);
     }
@@ -207,6 +236,20 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
+        _withdraw(to, token, amount, fee, kappa);
+    }
+
+    /**
+     * @dev Common internal logic for withdraw and withdrawAndRemove (once legacy workflows are disabled).
+     * Note: all security checks are handled outside of this function.
+     */
+    function _withdraw(
+        address to,
+        IERC20 token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) internal {
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
         if (address(token) == WETH_ADDRESS && WETH_ADDRESS != address(0)) {
@@ -239,14 +282,25 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
+        _mint(to, token, amount, fee, kappa);
+    }
+
+    /**
+     * @dev Common internal logic for mint and mintAndSwap (once legacy workflows are disabled).
+     * Note: all security checks are handled outside of this function.
+     */
+    function _mint(
+        address payable to,
+        IERC20Mintable token,
+        uint256 amount,
+        uint256 fee,
+        bytes32 kappa
+    ) internal {
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
         emit TokenMint(to, token, amount.sub(fee), fee, kappa);
         token.mint(address(this), amount);
         IERC20(token).safeTransfer(to, amount.sub(fee));
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call.value(chainGasAmount)("");
-        }
     }
 
     /**
@@ -269,7 +323,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint8 tokenIndexTo,
         uint256 minDy,
         uint256 deadline
-    ) external nonReentrant whenNotPaused {
+    ) external nonReentrant whenNotPaused legacySendEnabled {
         emit TokenDepositAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
         token.safeTransferFrom(msg.sender, address(this), amount);
     }
@@ -294,7 +348,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint8 tokenIndexTo,
         uint256 minDy,
         uint256 deadline
-    ) external nonReentrant whenNotPaused {
+    ) external nonReentrant whenNotPaused legacySendEnabled {
         emit TokenRedeemAndSwap(to, chainId, token, amount, tokenIndexFrom, tokenIndexTo, minDy, deadline);
         token.burnFrom(msg.sender, amount);
     }
@@ -317,7 +371,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint8 swapTokenIndex,
         uint256 swapMinAmount,
         uint256 swapDeadline
-    ) external nonReentrant whenNotPaused {
+    ) external nonReentrant whenNotPaused legacySendEnabled {
         emit TokenRedeemAndRemove(to, chainId, token, amount, swapTokenIndex, swapMinAmount, swapDeadline);
         token.burnFrom(msg.sender, amount);
     }
@@ -351,12 +405,12 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
+        // Fallback to regular mint if legacy workflows are disabled.
+        if (isLegacySendDisabled) {
+            return _mint(to, token, amount, fee, kappa);
+        }
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
-        // Transfer gas airdrop
-        if (chainGasAmount != 0 && address(this).balance > chainGasAmount) {
-            to.call.value(chainGasAmount)("");
-        }
         // first check to make sure more will be given than min amount required
         uint256 expectedOutput = ISwap(pool).calculateSwap(tokenIndexFrom, tokenIndexTo, amount.sub(fee));
 
@@ -459,6 +513,10 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         require(hasRole(NODEGROUP_ROLE, msg.sender), "Caller is not a node group");
         require(amount > fee, "Amount must be greater than fee");
         require(!kappaMap[kappa], "Kappa is already present");
+        // Fallback to regular withdraw if legacy workflows are disabled.
+        if (isLegacySendDisabled) {
+            return _withdraw(to, token, amount, fee, kappa);
+        }
         kappaMap[kappa] = true;
         fees[address(token)] = fees[address(token)].add(fee);
         // first check to make sure more will be given than min amount required
@@ -526,7 +584,7 @@ contract SynapseBridge is Initializable, AccessControlUpgradeable, ReentrancyGua
         uint256 chainId,
         ERC20Burnable token,
         uint256 amount
-    ) external nonReentrant whenNotPaused {
+    ) external nonReentrant whenNotPaused legacySendEnabled {
         emit TokenRedeemV2(to, chainId, token, amount);
         token.burnFrom(msg.sender, amount);
     }
