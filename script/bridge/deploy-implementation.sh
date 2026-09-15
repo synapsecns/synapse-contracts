@@ -22,7 +22,8 @@ cd "$PROJECT_ROOT" || exit 1
 
 # Run the script on all chains with SynapseBridge deployment
 # Look within deployments/chainName for SynapseBridge.json
-for chainName in $(ls deployments); do
+for chainName in deployments/*/; do
+  chainName=$(basename "$chainName")
   if [ -f "deployments/$chainName/SynapseBridge.json" ]; then
     ./script/run.sh ./script/bridge/DeploySynapseBridge.s.sol "$chainName" "$WALLET_NAME" "$@"
   fi

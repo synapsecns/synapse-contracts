@@ -101,7 +101,7 @@ abstract contract DeployScript is SynapseScript {
         // Example: jq .abi=$data[0].abi --slurpfile data path/to/input.json path/to/output.json
         string[] memory inputs = new string[](6);
         inputs[0] = "jq";
-        inputs[1] = ".abi = $artifact.abi";
+        inputs[1] = ".abi = $data[0].abi";
         inputs[2] = "--slurpfile";
         inputs[3] = "data";
         inputs[4] = _artifactPath(contractName);
